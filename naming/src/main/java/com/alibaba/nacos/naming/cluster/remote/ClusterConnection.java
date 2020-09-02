@@ -17,11 +17,12 @@
 package com.alibaba.nacos.naming.cluster.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.RequestFuture;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
-import com.alibaba.nacos.core.remote.PushFuture;
 
 /**
  * Cluster connection.
@@ -35,21 +36,21 @@ public class ClusterConnection extends Connection {
     }
     
     @Override
-    public boolean sendRequest(ServerPushRequest request, long timeoutMills) throws NacosException {
-        return false;
-    }
-    
-    @Override
-    public void sendRequestNoAck(ServerPushRequest request) throws NacosException {
-    }
-    
-    @Override
-    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws NacosException {
+    public Response sendRequest(Request request, long timeoutMills) throws NacosException {
         return null;
     }
     
     @Override
-    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws NacosException {
+    public void sendRequestNoAck(Request request) throws NacosException {
+    }
+    
+    @Override
+    public RequestFuture sendRequestWithFuture(Request request) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public void sendRequestWithCallBack(Request request, RequestCallBack callBack) throws NacosException {
     
     }
     

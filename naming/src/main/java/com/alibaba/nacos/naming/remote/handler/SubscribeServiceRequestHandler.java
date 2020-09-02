@@ -18,14 +18,10 @@ package com.alibaba.nacos.naming.remote.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.ServiceInfoGenerator;
@@ -33,10 +29,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.RemotePushService;
 import com.alibaba.nacos.naming.remote.RemotingConnectionHolder;
-import com.google.common.collect.Lists;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * Handler to handle subscribe service.
@@ -45,7 +38,7 @@ import java.util.List;
  * @author xiweng.yy
  */
 @Component
-public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServiceRequest> {
+public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServiceRequest, SubscribeServiceResponse> {
     
     private final ServiceInfoGenerator serviceInfoGenerator;
     
@@ -61,12 +54,7 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     }
     
     @Override
-    public SubscribeServiceRequest parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, SubscribeServiceRequest.class);
-    }
-    
-    @Override
-    public Response handle(Request request, RequestMeta meta) throws NacosException {
+    public SubscribeServiceResponse handle(SubscribeServiceRequest request, RequestMeta meta) throws NacosException {
         SubscribeServiceRequest subscribeServiceRequest = (SubscribeServiceRequest) request;
         String namespaceId = subscribeServiceRequest.getNamespace();
         String serviceName = subscribeServiceRequest.getServiceName();
@@ -88,8 +76,4 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
     }
     
-    @Override
-    public List<String> getRequestTypes() {
-        return Lists.newArrayList(NamingRemoteConstants.SUBSCRIBE_SERVICE);
-    }
 }

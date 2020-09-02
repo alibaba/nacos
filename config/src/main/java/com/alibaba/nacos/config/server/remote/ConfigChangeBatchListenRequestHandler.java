@@ -17,17 +17,12 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigRequestTypeConstants;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -42,18 +37,15 @@ import java.util.Map;
  * @version $Id: ConfigChangeListenRequestHandler.java, v 0.1 2020年07月14日 10:11 AM liuzunfei Exp $
  */
 @Component
-public class ConfigChangeBatchListenRequestHandler extends RequestHandler {
+public class ConfigChangeBatchListenRequestHandler
+        extends RequestHandler<ConfigBatchListenRequest, ConfigChangeBatchListenResponse> {
     
     @Autowired
     ConfigChangeListenContext configChangeListenContext;
     
     @Override
-    public Request parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, ConfigBatchListenRequest.class);
-    }
-    
-    @Override
-    public Response handle(Request request, RequestMeta requestMeta) throws NacosException {
+    public ConfigChangeBatchListenResponse handle(ConfigBatchListenRequest request, RequestMeta requestMeta)
+            throws NacosException {
         ConfigBatchListenRequest configChangeListenRequest = (ConfigBatchListenRequest) request;
         String listeningConfigs = configChangeListenRequest.getListeningConfigs();
         Map<String, String> clientMd5Map = MD5Util.getClientMd5Map(listeningConfigs);
@@ -79,11 +71,6 @@ public class ConfigChangeBatchListenRequestHandler extends RequestHandler {
         }
         return ConfigChangeBatchListenResponse.buildSucessResponse(changedGroups);
         
-    }
-    
-    @Override
-    public List<String> getRequestTypes() {
-        return Lists.newArrayList(ConfigRequestTypeConstants.BATCH_CHANGE_LISTEN_CONFIG);
     }
     
 }

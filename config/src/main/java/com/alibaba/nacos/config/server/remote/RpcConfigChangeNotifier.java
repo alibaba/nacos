@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.GroupKey;
+import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.core.utils.ClassUtils;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -77,17 +79,30 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
      * @param notifyRequet notifyRequet
      */
     public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequet) {
-        
-        Set<String> clients = configChangeListenContext.getListeners(groupKey);
+    
+        Set<String> clients = new HashSet<>(configChangeListenContext.getListeners(groupKey));
+        int notifyCount = 0;
         if (!CollectionUtils.isEmpty(clients)) {
             for (final String client : clients) {
+                Connection connection = connectionManager.getConnection(client);
+                if (connection == null) {
+                    continue;
+                }
     
+                if (notifyRequet.isBeta()) {
+                    List<String> betaIps = notifyRequet.getBetaIps();
+                    if (betaIps != null && betaIps.contains(connection.getMetaInfo().getClientIp())) {
+                        continue;
+                    }
+                }
+                
                 RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequet, 5, client);
                 push(rpcPushRetryTask);
+                notifyCount++;
             }
         }
     
-        Loggers.RPC.info("push {} clients ,groupKey={}", clients == null ? 0 : clients.size(), groupKey);
+        Loggers.RPC.info("push {} clients ,groupKey={}", clients == null ? 0 : notifyCount, groupKey);
     }
     
     @Override
@@ -99,8 +114,10 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         String dataid = strings[0];
         String group = strings[1];
         String tenant = strings.length > 2 ? strings[2] : "";
-        ConfigChangeNotifyRequest notifyResponse = ConfigChangeNotifyRequest.build(dataid, group, tenant);
-        configDataChanged(groupKey, notifyResponse);
+        ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataid, group, tenant);
+        notifyRequest.setBeta(isBeta);
+        notifyRequest.setBetaIps(betaIps);
+        configDataChanged(groupKey, notifyRequest);
         
     }
     
@@ -135,37 +152,36 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         
         @Override
         public void run() {
-            tryTimes++;
             rpcPushService.pushWithCallback(clientId, notifyRequet, new AbstractPushCallBack(500L) {
+                int retryTimes = tryTimes;
                 
                 @Override
                 public void onSuccess() {
-                    Loggers.CORE
-                            .warn("push callback retry success.dataId={},group={},tenant={},clientId={},tryTimes={}",
-                                    notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
-                                    clientId, tryTimes);
+                    Loggers.CORE.warn("push callback  success.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
+                            retryTimes);
                 }
                 
                 @Override
                 public void onFail(Exception e) {
-                    Loggers.CORE.warn("push callback retry fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                    Loggers.CORE.warn("push callback  fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
                             notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
-                            tryTimes);
-    
+                            retryTimes);
+                    
                     push(RpcPushTask.this);
                 }
                 
                 @Override
                 public void onTimeout() {
-                    Loggers.CORE
-                            .warn("push callback retry timeout.dataId={},group={},tenant={},clientId={},tryTimes={}",
-                                    notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
-                                    clientId, tryTimes);
+                    Loggers.CORE.warn("push callback  timeout.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
+                            retryTimes);
                     push(RpcPushTask.this);
                 }
                 
             });
-            
+    
+            tryTimes++;
         }
     }
     

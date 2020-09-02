@@ -21,10 +21,7 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.cluster.remote.ClusterClientManager;
@@ -35,10 +32,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.remote.RemotingConnectionHolder;
-import com.google.common.collect.Lists;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * Instance request handler.
@@ -46,7 +40,7 @@ import java.util.List;
  * @author xiweng.yy
  */
 @Component
-public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
+public class InstanceRequestHandler extends RequestHandler<InstanceRequest, InstanceResponse> {
     
     private final ServiceManager serviceManager;
     
@@ -65,12 +59,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
     }
     
     @Override
-    public InstanceRequest parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, InstanceRequest.class);
-    }
-    
-    @Override
-    public Response handle(Request request, RequestMeta meta) throws NacosException {
+    public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
         InstanceRequest instanceRequest = (InstanceRequest) request;
         String serviceName = NamingUtils
                 .getGroupedName(instanceRequest.getServiceName(), instanceRequest.getGroupName());
@@ -81,7 +70,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
         }
     }
     
-    private Response handleResponsibleRequest(String serviceName, InstanceRequest request, RequestMeta meta)
+    private InstanceResponse handleResponsibleRequest(String serviceName, InstanceRequest request, RequestMeta meta)
             throws NacosException {
         String namespace = request.getNamespace();
         switch (request.getType()) {
@@ -95,18 +84,18 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
         }
     }
     
-    private Response forwardRequestToResponsibleServer(String serviceName, InstanceRequest request, RequestMeta meta)
-            throws NacosException {
+    private InstanceResponse forwardRequestToResponsibleServer(String serviceName, InstanceRequest request,
+            RequestMeta meta) throws NacosException {
         String targetAddress = distroMapper.mapSrv(serviceName);
         if (clusterClientManager.hasClientForMember(targetAddress)) {
-            return clusterClientManager.getClusterClient(targetAddress)
+            return (InstanceResponse) clusterClientManager.getClusterClient(targetAddress)
                     .request(new ForwardInstanceRequest(request, meta));
         }
         throw new NacosException(NacosException.BAD_GATEWAY,
                 String.format("Can't find responsible server for service %s", serviceName));
     }
     
-    private Response registerInstance(String namespace, String serviceName, InstanceRequest instanceRequest,
+    private InstanceResponse registerInstance(String namespace, String serviceName, InstanceRequest instanceRequest,
             RequestMeta meta) throws NacosException {
         if (!serviceManager.containService(namespace, serviceName)) {
             serviceManager.createEmptyService(namespace, serviceName, false);
@@ -122,7 +111,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
     
-    private Response deregisterInstance(String namespace, String serviceName, InstanceRequest instanceRequest,
+    private InstanceResponse deregisterInstance(String namespace, String serviceName, InstanceRequest instanceRequest,
             RequestMeta meta) throws NacosException {
         if (!serviceManager.containService(namespace, serviceName)) {
             Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
@@ -146,8 +135,4 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
         return result;
     }
     
-    @Override
-    public List<String> getRequestTypes() {
-        return Lists.newArrayList(NamingRemoteConstants.REGISTER_INSTANCE, NamingRemoteConstants.DE_REGISTER_INSTANCE);
-    }
 }

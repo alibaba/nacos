@@ -43,11 +43,6 @@ public class ConfigQueryResponse extends Response {
     public ConfigQueryResponse() {
     }
     
-    @Override
-    public String getType() {
-        return ConfigResponseTypeConstants.CONFIG_QUERY;
-    }
-    
     /**
      * add label to this response.
      *

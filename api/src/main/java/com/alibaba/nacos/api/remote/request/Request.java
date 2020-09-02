@@ -49,7 +49,10 @@ public abstract class Request {
      * @param headers headers to put.
      */
     public void putAllHeader(Map<String, String> headers) {
-        headers.putAll(headers);
+        if (headers == null || headers.isEmpty()) {
+            return;
+        }
+        this.headers.putAll(headers);
     }
     
     /**
@@ -97,13 +100,6 @@ public abstract class Request {
      *
      * @return property value of type
      */
-    public abstract String getType();
-    
-    /**
-     * Getter method for property <tt>type</tt>.
-     *
-     * @return property value of type
-     */
     public abstract String getModule();
     
     /**
@@ -119,4 +115,6 @@ public abstract class Request {
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
     }
+    
+    
 }

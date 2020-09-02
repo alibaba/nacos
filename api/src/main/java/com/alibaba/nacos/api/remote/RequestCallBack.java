@@ -14,14 +14,37 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.request;
+package com.alibaba.nacos.api.remote;
+
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * request to check server if unimpeded.
+ * call bakck for request.
  *
  * @author liuzunfei
- * @version $Id: ServerCheckRequest.java, v 0.1 2020年07月22日 8:32 PM liuzunfei Exp $
+ * @version $Id: PushCallBack.java, v 0.1 2020年09月01日 6:33 PM liuzunfei Exp $
  */
-public class ServerCheckRequest extends InternalRequest {
-
+public interface RequestCallBack {
+    
+    /**
+     * get timeout mills.
+     *
+     * @return
+     */
+    public long getTimeout();
+    
+    /**
+     * called on success.
+     *
+     * @param response
+     */
+    public void onResponse(Response response);
+    
+    /**
+     * called on failed.
+     *
+     * @param e exception throwed.
+     */
+    public void onException(Exception e);
+    
 }

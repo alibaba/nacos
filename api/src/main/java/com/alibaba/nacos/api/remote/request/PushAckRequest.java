@@ -30,11 +30,6 @@ public class PushAckRequest extends InternalRequest {
     
     private Exception exception;
     
-    @Override
-    public String getType() {
-        return RequestTypeConstants.PUSH_ACK;
-    }
-    
     /**
      * build push ack request.
      *

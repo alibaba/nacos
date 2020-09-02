@@ -17,25 +17,11 @@
 package com.alibaba.nacos.api.remote.response;
 
 /**
- * internal ResponseTypeConstants.
+ * connection reset response.
+ *
  * @author liuzunfei
- * @version $Id: RequestTypeConstants.java, v 0.1 2020年07月13日 9:18 PM liuzunfei Exp $
+ * @version $Id: ConnectResetResponse.java, v 0.1 2020年09月01日 2:43 PM liuzunfei Exp $
  */
-public class ResponseTypeConstants {
-    
-    public static final String PLAIN_BODY_STRING = "PLAIN_BODY_STRING";
-    
-    public static final String HEART_BEAT = "HEART_BEAT";
-    
-    public static final String CONNECTION_RESET = "CONNECTION_RESET";
-    
-    public static final String UNKNOW = "UNKNOW";
-    
-    public static final String SERVER_CHECK = "SERVER_CHECK";
-    
-    public static final String CONNECION_UNREGISTER = "CONNECION_UNREGISTER";
-    
-    public static final String PUSH_ACK = "PUSH_ACK";
-    
+public class ConnectResetResponse extends Response {
     
 }

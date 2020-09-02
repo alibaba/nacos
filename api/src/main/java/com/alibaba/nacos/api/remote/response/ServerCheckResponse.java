@@ -24,8 +24,4 @@ package com.alibaba.nacos.api.remote.response;
  */
 public class ServerCheckResponse extends Response {
     
-    @Override
-    public String getType() {
-        return ResponseTypeConstants.SERVER_CHECK;
-    }
 }

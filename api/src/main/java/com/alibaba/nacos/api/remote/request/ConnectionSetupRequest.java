@@ -48,11 +48,6 @@ public class ConnectionSetupRequest extends InternalRequest {
         this.labels = labels;
     }
     
-    @Override
-    public String getType() {
-        return RequestTypeConstants.CONNECTION_SETUP;
-    }
-    
     /**
      * Getter method for property <tt>clientIp</tt>.
      *

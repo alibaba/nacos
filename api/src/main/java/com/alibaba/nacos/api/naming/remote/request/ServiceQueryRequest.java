@@ -38,11 +38,6 @@ public class ServiceQueryRequest extends AbstractNamingRequest {
         super(namespace, serviceName, null);
     }
     
-    @Override
-    public String getType() {
-        return NamingRemoteConstants.QUERY_SERVICE;
-    }
-    
     public String getCluster() {
         return cluster;
     }

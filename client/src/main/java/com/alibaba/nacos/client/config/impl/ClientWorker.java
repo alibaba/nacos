@@ -26,12 +26,14 @@ import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
@@ -60,6 +62,8 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -315,6 +319,8 @@ public class ClientWorker implements Closeable {
                 cache.setInitializing(true);
             } else {
                 cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
+                cache.setTaskId(taskId);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
                     String[] ct = getServerConfig(dataId, group, tenant, 3000L);
@@ -515,11 +521,14 @@ public class ClientWorker implements Closeable {
         private BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<Object>(1);
         
         private Object bellItem = new Object();
-        
-        private RpcClient rpcClient;
+    
+        private Map<String, RpcClient> rpcClientMap = new HashMap<String, RpcClient>();
         
         public ConfigRpcTransportClient(Properties properties, ServerListManager serverListManager) {
             super(properties, serverListManager);
+        }
+    
+        private ConnectionType getConectiontype() {
             ConnectionType connectionType = ConnectionType.GRPC;
             String connetionType = ParamUtils.configRemoteConnectionType();
             if (StringUtils.isNotBlank(connetionType)) {
@@ -528,18 +537,24 @@ public class ClientWorker implements Closeable {
                     connectionType = connectionType1;
                 }
             }
+            return connectionType;
+        }
+    
+        private Map<String, String> getLabels() {
+        
             Map<String, String> labels = new HashMap<String, String>();
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
-            
-            rpcClient = RpcClientFactory.createClient("config", connectionType, labels);
-            
+            return labels;
+        }
+    
+        private void initHandlerRpcClient(RpcClient rpcClientInner) {
             /*
              * Register Listen Change Handler
              */
-            rpcClient.registerServerPushResponseHandler(new ServerRequestHandler() {
+            rpcClientInner.registerServerPushResponseHandler(new ServerRequestHandler() {
                 @Override
-                public void requestReply(ServerPushRequest request) {
+                public Response requestReply(Request request) {
                     if (request instanceof ConfigChangeNotifyRequest) {
                         ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
                         String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
@@ -549,56 +564,54 @@ public class ClientWorker implements Closeable {
                             cacheData.setListenSuccess(false);
                             notifyListenConfig();
                         }
+                        return new ConfigChangeNotifyResponse();
                     }
+                    return null;
                 }
-                
+    
             });
+        
+            rpcClientInner.registerConnectionListener(new ConnectionEventListener() {
             
-            rpcClient.registerConnectionListener(new ConnectionEventListener() {
-                
                 @Override
                 public void onConnected() {
                     notifyListenConfig();
                 }
-                
+            
                 @Override
                 public void onDisConnect() {
                     Collection<CacheData> values = cacheMap.get().values();
-                    
+                
                     for (CacheData cacheData : values) {
                         cacheData.setListenSuccess(false);
                     }
                 }
-                
-            });
             
-            rpcClient.init(new ServerListFactory() {
+            });
+        
+            rpcClientInner.init(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
-                    ConfigRpcTransportClient.super.serverListManager.refreshCurrentServerAddr();
-                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServerAddr();
-                    
+                    return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
+    
                 }
-                
+            
                 @Override
                 public String getCurrentServer() {
                     return ConfigRpcTransportClient.super.serverListManager.getCurrentServerAddr();
-                    
-                }
                 
+                }
+            
                 @Override
                 public List<String> getServerList() {
                     return ConfigRpcTransportClient.super.serverListManager.serverUrls;
-                    
+                
                 }
             });
-            
         }
         
         @Override
         public void startIntenal() throws NacosException {
-            
-            rpcClient.start();
             executor.schedule(new Runnable() {
                 @Override
                 public void run() {
@@ -621,21 +634,24 @@ public class ClientWorker implements Closeable {
             NotifyCenter.registerSubscriber(new Subscriber() {
                 @Override
                 public void onEvent(Event event) {
-                    RpcClient.ServerInfo currentServer = rpcClient.getCurrentServer();
-                    if (currentServer != null) {
-                        List<String> serverUrls = serverListManager.getServerUrls();
-                        String currentServerIp = currentServer.getServerIp();
-                        int currentServerPort = currentServer.getServerPort() - rpcClient.rpcPortOffset();
-                        String currentAddress = currentServerIp + ":" + currentServerPort;
-                        for (String server : serverUrls) {
-                            if (server.equals(currentAddress)) {
-                                rpcClient.switchServerAsync();
-                                return;
+                    for (RpcClient rpcClient : rpcClientMap.values()) {
+                        RpcClient.ServerInfo currentServer = rpcClient.getCurrentServer();
+                        if (currentServer != null) {
+                            List<String> serverUrls = serverListManager.getServerUrls();
+                            String currentServerIp = currentServer.getServerIp();
+                            int currentServerPort = currentServer.getServerPort() - rpcClient.rpcPortOffset();
+                            String currentAddress = currentServerIp + ":" + currentServerPort;
+                            for (String server : serverUrls) {
+                                if (server.equals(currentAddress)) {
+                                    rpcClient.switchServerAsync();
+                                    return;
+                                }
                             }
                         }
                     }
+                    
                 }
-        
+    
                 @Override
                 public Class<? extends Event> subscribeType() {
                     return ServerlistChangeEvent.class;
@@ -656,78 +672,157 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void executeConfigListen() {
+    
+            Map<String, List<CacheData>> listenCachesMap = new HashMap<String, List<CacheData>>();
+            Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>();
             
             List<CacheData> listenCaches = new LinkedList<CacheData>();
             List<CacheData> removeListenCaches = new LinkedList<CacheData>();
             
-            StringBuilder listenConfigsBuilder = new StringBuilder();
-            
-            StringBuilder removeListenConfigsBuilder = new StringBuilder();
-            
             for (CacheData cache : cacheMap.get().values()) {
-                //get listen fail config and remove listen fail config
+                //get listen  config and remove listen  config
                 if (!CollectionUtils.isEmpty(cache.getListeners()) && !cache.isListenSuccess()) {
                     if (!cache.isUseLocalConfigInfo()) {
-                        listenCaches.add(cache);
-                        listenConfigsBuilder.append(cache.dataId).append(WORD_SEPARATOR);
-                        listenConfigsBuilder.append(cache.group).append(WORD_SEPARATOR);
-                        if (StringUtils.isBlank(cache.tenant)) {
-                            listenConfigsBuilder.append(cache.getMd5()).append(LINE_SEPARATOR);
-                        } else {
-                            listenConfigsBuilder.append(cache.getMd5()).append(WORD_SEPARATOR);
-                            listenConfigsBuilder.append(cache.getTenant()).append(LINE_SEPARATOR);
+                        List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
+                        if (cacheDatas == null) {
+                            cacheDatas = new LinkedList<CacheData>();
+                            listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
                         }
+                        cacheDatas.add(cache);
+                        
                     }
                 } else if (CollectionUtils.isEmpty(cache.getListeners()) && cache.isListenSuccess()) {
                     
                     if (!cache.isUseLocalConfigInfo()) {
-                        removeListenCaches.add(cache);
-                        removeListenConfigsBuilder.append(cache.dataId).append(WORD_SEPARATOR);
-                        removeListenConfigsBuilder.append(cache.group).append(WORD_SEPARATOR);
-                        if (StringUtils.isBlank(cache.tenant)) {
-                            removeListenConfigsBuilder.append(cache.getMd5()).append(LINE_SEPARATOR);
-                        } else {
-                            removeListenConfigsBuilder.append(cache.getMd5()).append(WORD_SEPARATOR);
-                            removeListenConfigsBuilder.append(cache.getTenant()).append(LINE_SEPARATOR);
+                        List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
+                        if (cacheDatas == null) {
+                            cacheDatas = new LinkedList<CacheData>();
+                            removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
                         }
+                        cacheDatas.add(cache);
+                        
                     }
                 }
             }
-            
-            String listenConfigString = listenConfigsBuilder.toString();
-            if (StringUtils.isNotBlank(listenConfigString)) {
-                try {
-                    ConfigBatchListenRequest configChangeListenRequest = ConfigBatchListenRequest
-                            .buildListenRequest(listenConfigString);
-                    ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) rpcClient
-                            .request(configChangeListenRequest);
-                    if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
-                        
-                        if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedGroupKeys())) {
-                            for (String groupKey : configChangeBatchListenResponse.getChangedGroupKeys()) {
-                                refreshContentAndCheck(groupKey);
+    
+            if (!listenCachesMap.isEmpty()) {
+                for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
+                    String taskId = entry.getKey();
+                    List<CacheData> value = entry.getValue();
+                    String cacheString = buildConfigStr(value);
+                    try {
+                        RpcClient rpcClient = ensureRpcClient(taskId);
+                        ConfigBatchListenRequest configChangeListenRequest = ConfigBatchListenRequest
+                                .buildListenRequest(cacheString);
+                        ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
+                                rpcClient, configChangeListenRequest);
+                        if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
+    
+                            if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedGroupKeys())) {
+                                for (String groupKey : configChangeBatchListenResponse.getChangedGroupKeys()) {
+                                    refreshContentAndCheck(groupKey);
+                                }
+                            }
+                            for (CacheData cacheData : listenCaches) {
+                                cacheData.setListenSuccess(true);
                             }
                         }
-                        for (CacheData cacheData : listenCaches) {
-                            cacheData.setListenSuccess(true);
+                    } catch (Exception e) {
+                        LOGGER.error("async listen config change error ", e);
+                    }
+                }
+            }
+    
+            if (!removeListenCachesMap.isEmpty()) {
+                for (Map.Entry<String, List<CacheData>> entry : removeListenCachesMap.entrySet()) {
+                    String taskId = entry.getKey();
+                    List<CacheData> value = entry.getValue();
+                    String cacheString = buildConfigStr(value);
+                    try {
+                        RpcClient rpcClient = ensureRpcClient(taskId);
+                        boolean removeSuccess = unListenConfigChange(rpcClient, cacheString);
+                        if (removeSuccess) {
+                            for (CacheData cacheData : removeListenCaches) {
+                                ClientWorker.this.removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
+                            }
                         }
+    
+                    } catch (Exception e) {
+                        LOGGER.error("async remove listen config change error ", e);
                     }
-                } catch (Exception e) {
-                    LOGGER.error("async listen config change error ", e);
                 }
             }
-            String removeListenConfigs = removeListenConfigsBuilder.toString();
-            
-            if (StringUtils.isNotBlank(removeListenConfigs)) {
-                try {
-                    boolean removeSuccess = unListenConfigChange(removeListenConfigs);
-                    for (CacheData cacheData : removeListenCaches) {
-                        ClientWorker.this.removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
-                    }
-                } catch (NacosException e) {
-                    LOGGER.error("async unlisten config change error ", e);
+        }
+    
+        private RpcClient ensureRpcClient(String taskId) throws NacosException {
+            Map<String, String> labels = getLabels();
+            Map<String, String> newlabels = new HashMap<String, String>(labels);
+            newlabels.put("taskId", taskId);
+        
+            RpcClient rpcClient = RpcClientFactory.createClient("config-" + taskId, getConectiontype(), newlabels);
+            if (rpcClient.isWaitInited()) {
+                initHandlerRpcClient(rpcClient);
+                rpcClient.start();
+            }
+        
+            return rpcClient;
+        }
+    
+        /**
+         * build config strings.
+         * @param caches caches to build config string.
+         * @return
+         */
+        private List<String> buildConfigStrs(List<CacheData> caches) {
+            StringBuilder listenConfigsBuilder = new StringBuilder();
+            List<String> configStrings = new ArrayList<String>();
+            int index = 0;
+            for (CacheData cache : caches) {
+                index++;
+                listenConfigsBuilder.append(cache.dataId).append(WORD_SEPARATOR);
+                listenConfigsBuilder.append(cache.group).append(WORD_SEPARATOR);
+                if (StringUtils.isBlank(cache.tenant)) {
+                    listenConfigsBuilder.append(cache.getMd5()).append(LINE_SEPARATOR);
+                } else {
+                    listenConfigsBuilder.append(cache.getMd5()).append(WORD_SEPARATOR);
+                    listenConfigsBuilder.append(cache.getTenant()).append(LINE_SEPARATOR);
+                }
+    
+                if (index >= 3000) {
+                    configStrings.add(listenConfigsBuilder.toString());
+                    listenConfigsBuilder = new StringBuilder();
+                    index = 0;
                 }
             }
+    
+            if (listenConfigsBuilder.length() > 0) {
+                configStrings.add(listenConfigsBuilder.toString());
+        
+            }
+            return configStrings;
+        }
+    
+        /**
+         * build config string.
+         * @param caches caches to build config string.
+         * @return
+         */
+        private String buildConfigStr(List<CacheData> caches) {
+            StringBuilder listenConfigsBuilder = new StringBuilder();
+            List<String> configStrings = new ArrayList<String>();
+            for (CacheData cache : caches) {
+                listenConfigsBuilder.append(cache.dataId).append(WORD_SEPARATOR);
+                listenConfigsBuilder.append(cache.group).append(WORD_SEPARATOR);
+                if (StringUtils.isBlank(cache.tenant)) {
+                    listenConfigsBuilder.append(cache.getMd5()).append(LINE_SEPARATOR);
+                } else {
+                    listenConfigsBuilder.append(cache.getMd5()).append(WORD_SEPARATOR);
+                    listenConfigsBuilder.append(cache.getTenant()).append(LINE_SEPARATOR);
+                }
+    
+            }
+    
+            return listenConfigsBuilder.toString();
         }
         
         @Override
@@ -737,15 +832,15 @@ public class ClientWorker implements Closeable {
         }
         
         /**
-         * sned cancel listen config change request .
+         * send cancel listen config change request .
          *
          * @param configListenString string of remove listen config string.
          */
-        private boolean unListenConfigChange(String configListenString) throws NacosException {
+        private boolean unListenConfigChange(RpcClient rpcClient, String configListenString) throws NacosException {
             ConfigBatchListenRequest configChangeListenRequest = ConfigBatchListenRequest
                     .buildRemoveListenRequest(configListenString);
-            ConfigChangeBatchListenResponse response = (ConfigChangeBatchListenResponse) rpcClient
-                    .request(configChangeListenRequest);
+            ConfigChangeBatchListenResponse response = (ConfigChangeBatchListenResponse) requestProxy(rpcClient,
+                    configChangeListenRequest);
             return response.isSuccess();
         }
         
@@ -753,7 +848,7 @@ public class ClientWorker implements Closeable {
         public String[] queryConfig(String dataId, String group, String tenant, long readTimeous)
                 throws NacosException {
             ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
-            ConfigQueryResponse response = (ConfigQueryResponse) rpcClient.request(request);
+            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(getOneRunningClient(), request);
             
             String[] ct = new String[2];
             if (response.isSuccess()) {
@@ -783,6 +878,29 @@ public class ClientWorker implements Closeable {
                 
             }
         }
+    
+        private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
+            try {
+                request.putAllHeader(super.getSecurityHeaders());
+                request.putAllHeader(super.getSpasHeaders());
+            } catch (Exception e) {
+                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
+            }
+    
+            JsonObject asJsonObjectTemp = new Gson().toJsonTree(request).getAsJsonObject();
+            asJsonObjectTemp.remove("headers");
+            asJsonObjectTemp.remove("requestId");
+            boolean limit = Limiter.isLimit(request.getClass() + asJsonObjectTemp.toString());
+            if (limit) {
+                throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
+                        "More than client-side current limit threshold");
+            }
+            return rpcClientInner.request(request);
+        }
+    
+        RpcClient getOneRunningClient() throws NacosException {
+            return ensureRpcClient("0");
+        }
         
         @Override
         public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
@@ -792,7 +910,7 @@ public class ClientWorker implements Closeable {
                 request.putAdditonalParam("tag", tag);
                 request.putAdditonalParam("appName", appName);
                 request.putAdditonalParam("betaIps", betaIps);
-                ConfigPubishResponse response = (ConfigPubishResponse) rpcClient.request(request);
+                ConfigPubishResponse response = (ConfigPubishResponse) requestProxy(getOneRunningClient(), request);
                 return response.isSuccess();
             } catch (Exception e) {
                 LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
@@ -804,7 +922,7 @@ public class ClientWorker implements Closeable {
         @Override
         public boolean removeConfig(String dataid, String group, String tenat, String tag) throws NacosException {
             ConfigRemoveRequest request = new ConfigRemoveRequest(dataid, group, tenat, tag);
-            ConfigRemoveResponse response = (ConfigRemoveResponse) rpcClient.request(request);
+            ConfigRemoveResponse response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
             return response.isSuccess();
         }
     }
@@ -1234,7 +1352,7 @@ public class ClientWorker implements Closeable {
         }
     
         try {
-    
+        
             //assemble headers.
             Map<String, String> securityHeaders = configTransportClient.getSecurityHeaders();
             if (securityHeaders != null) {

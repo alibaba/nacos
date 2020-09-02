@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,14 +52,11 @@ public class RequestHandlerRegistry {
      * @param requestHandler requestHandler to registry
      */
     public void registryHandler(RequestHandler requestHandler) {
+        Class tClass = (Class) ((ParameterizedType) requestHandler.getClass().getGenericSuperclass())
+                .getActualTypeArguments()[0];
     
-        Loggers.RPC.info(" register request handler, type={},handler={} ", requestHandler.getRequestTypes(),
-                requestHandler.getClass().getSimpleName());
-        List<String> requestTypes = requestHandler.getRequestTypes();
-        for (String requestType : requestTypes) {
-            //TODO should throw exception when hander conflicted.
-            registryHandlers.putIfAbsent(requestType, requestHandler);
-        }
+        registryHandlers.putIfAbsent(tClass.getName(), requestHandler);
+        
     }
     
 }

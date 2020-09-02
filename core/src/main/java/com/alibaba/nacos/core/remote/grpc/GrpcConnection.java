@@ -17,13 +17,18 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.grpc.GrpcUtils;
+import com.alibaba.nacos.api.grpc.auto.Metadata;
+import com.alibaba.nacos.api.remote.DefaultRequestFuture;
+import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.RequestFuture;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
-import com.alibaba.nacos.core.remote.DefaultPushFuture;
-import com.alibaba.nacos.core.remote.PushFuture;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.StatusRuntimeException;
@@ -32,7 +37,6 @@ import io.grpc.stub.StreamObserver;
 
 /**
  * grpc connection.
- *
  * @author liuzunfei
  * @version $Id: GrpcConnection.java, v 0.1 2020年07月13日 7:26 PM liuzunfei Exp $
  */
@@ -49,8 +53,8 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public boolean sendRequest(ServerPushRequest request, long timeoutMills) throws NacosException {
-        DefaultPushFuture pushFuture = (DefaultPushFuture) sendRequestWithFuture(request);
+    public Response sendRequest(Request request, long timeoutMills) throws NacosException {
+        DefaultRequestFuture pushFuture = (DefaultRequestFuture) sendRequestWithFuture(request);
         try {
             return pushFuture.get(timeoutMills);
         } catch (Exception e) {
@@ -61,9 +65,9 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public void sendRequestNoAck(ServerPushRequest request) throws NacosException {
+    public void sendRequestNoAck(Request request) throws NacosException {
         try {
-            streamObserver.onNext(GrpcUtils.convert(request));
+            streamObserver.onNext(GrpcUtils.convert(request, buildMeta()));
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
                 throw new ConnectionAlreadyClosedException(e);
@@ -72,22 +76,28 @@ public class GrpcConnection extends Connection {
         }
     }
     
+    Metadata buildMeta() {
+        Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP())
+                .setVersion(VersionUtils.getFullClientVersion()).build();
+        return meta;
+    }
+    
     @Override
-    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws NacosException {
+    public RequestFuture sendRequestWithFuture(Request request) throws NacosException {
         return sendRequestInner(request, null);
     }
     
     @Override
-    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws NacosException {
+    public void sendRequestWithCallBack(Request request, RequestCallBack callBack) throws NacosException {
         sendRequestInner(request, callBack);
     }
     
-    private DefaultPushFuture sendRequestInner(ServerPushRequest request, PushCallBack callBack) throws NacosException {
+    private DefaultRequestFuture sendRequestInner(Request request, RequestCallBack callBack) throws NacosException {
         Loggers.RPC_DIGEST.info("Grpc sendRequest :" + request);
         String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
         sendRequestNoAck(request);
-        DefaultPushFuture defaultPushFuture = new DefaultPushFuture(requestId, callBack);
+        DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(requestId, callBack);
         RpcAckCallbackSynchronizer.syncCallback(getConnectionId(), requestId, defaultPushFuture);
         return defaultPushFuture;
     }

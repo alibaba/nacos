@@ -31,11 +31,6 @@ public class ConfigPubishResponse extends Response {
         super();
     }
     
-    @Override
-    public String getType() {
-        return ConfigResponseTypeConstants.CONFIG_PUBLISH;
-    }
-    
     /**
      * Buidl success resposne.
      *

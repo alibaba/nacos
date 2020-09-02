@@ -183,7 +183,9 @@ public class ConfigTest {
         final String dataId = "xiaochun.xxc";
         final String group = "xiaochun.xxc";
         final String content = "lessspring-" + System.currentTimeMillis();
-    
+        System.out.println(System.getProperty("nacos.logging.path"));
+        System.out.println(System.getProperty("limitTime"));
+        
         Thread th = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -192,11 +194,11 @@ public class ConfigTest {
                 int times = 1000;
                 while (times > 0) {
                     try {
-                        configService.publishConfig(dataId, group,
+                        configService.publishConfig(dataId + random.nextInt(10), group,
                                 "value" + System.currentTimeMillis());
-    
+                        
                         times--;
-                        Thread.sleep(1000L);
+                        Thread.sleep(300L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -205,11 +207,11 @@ public class ConfigTest {
                 System.out.println(times);
                 System.out.println("Write Done");
             }
-        
+    
         });
     
         th.start();
-    
+        
         Listener listener = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
@@ -217,23 +219,18 @@ public class ConfigTest {
             }
         };
     
-        for (int i = 0; i < 1; i++) {
-            final int ls = i;
-            configService.addListener(dataId, group, new AbstractListener() {
-                @Override
-                public void receiveConfigInfo(String configInfo) {
-                    System.out.println("receiveConfigInfo :" + ls + configInfo);
-                }
-            });
-
-        }
-    
-        Thread.sleep(10000L);
-    
         for (int i = 0; i < 20; i++) {
-            //configService.removeListener(dataId + i, group, listener);
+            final int ls = i;
+            configService.addListener(dataId + i, group, listener);
+            
         }
-        //System.out.println("remove listens.");
+    
+        Thread.sleep(1000000L);
+        
+        for (int i = 0; i < 20; i++) {
+            configService.removeListener(dataId + i, group, listener);
+        }
+        System.out.println("remove listens.");
         
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");

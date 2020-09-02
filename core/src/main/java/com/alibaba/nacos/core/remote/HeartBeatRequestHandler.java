@@ -18,19 +18,12 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
 import com.alibaba.nacos.api.remote.response.HeartBeatResponse;
-import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.event.RemotingHeartBeatEvent;
-import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * HeartBeatRequestHandler.
@@ -39,26 +32,18 @@ import java.util.List;
  * @version $Id: HeartBeatRequestHandler.java, v 0.1 2020年07月14日 1:58 PM liuzunfei Exp $
  */
 @Component
-public class HeartBeatRequestHandler extends RequestHandler {
+public class HeartBeatRequestHandler extends RequestHandler<HeartBeatRequest, HeartBeatResponse> {
     
     @Autowired
     ConnectionManager connectionManager;
     
     @Override
-    public Request parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, HeartBeatRequest.class);
-    }
-    
-    @Override
-    public Response handle(Request request, RequestMeta meta) throws NacosException {
+    public HeartBeatResponse handle(HeartBeatRequest request, RequestMeta meta) throws NacosException {
         String connectionId = meta.getConnectionId();
         connectionManager.refreshActiveTime(connectionId);
-        NotifyCenter.publishEvent(new RemotingHeartBeatEvent(connectionId, meta.getClientIp(), meta.getClientVersion()));
+        NotifyCenter
+                .publishEvent(new RemotingHeartBeatEvent(connectionId, meta.getClientIp(), meta.getClientVersion()));
         return new HeartBeatResponse();
     }
     
-    @Override
-    public List<String> getRequestTypes() {
-        return Lists.newArrayList(RequestTypeConstants.HEART_BEAT);
-    }
 }

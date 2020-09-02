@@ -17,12 +17,12 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.grpc.GrpcMetadata;
-import com.alibaba.nacos.api.grpc.GrpcRequest;
-import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.api.grpc.GrpcUtils;
-import com.alibaba.nacos.api.grpc.RequestGrpc;
-import com.alibaba.nacos.api.grpc.RequestStreamGrpc;
+
+import com.alibaba.nacos.api.grpc.auto.Metadata;
+import com.alibaba.nacos.api.grpc.auto.Payload;
+import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
+import com.alibaba.nacos.api.grpc.auto.RequestStreamGrpc;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
@@ -33,7 +33,9 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.grpc.Grpc;
 import io.grpc.ManagedChannel;
+import io.grpc.stub.StreamObserver;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.concurrent.ExecutorService;
@@ -68,40 +70,55 @@ public class GrpcConnection extends Connection {
      */
     protected RequestGrpc.RequestFutureStub grpcFutureServiceStub;
     
-    public GrpcConnection(RpcClient.ServerInfo serverInfo) {
+    protected StreamObserver<Payload> payloadStreamObserver;
+    
+    public GrpcConnection(RpcClient.ServerInfo serverInfo, StreamObserver<Payload> payloadStreamObserver) {
         super(serverInfo);
+        this.payloadStreamObserver = payloadStreamObserver;
     }
     
     @Override
     public Response request(Request request) throws NacosException {
-        GrpcRequest grpcRequest = GrpcUtils.convertToGrpcRequest(request, buildMeta());
-        
-        ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(grpcRequest);
-        GrpcResponse grpcResponse = null;
+        Payload grpcRequest = GrpcUtils.convert(request, buildMeta());
+    
+        ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
+        Payload grpcResponse = null;
         try {
             grpcResponse = requestFuture.get();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
-        Response response = GrpcUtils.parseResponsefromGrpcResponse(grpcResponse);
+    
+        Response response = (Response) GrpcUtils.parse(grpcResponse);
         return response;
     }
     
-    private GrpcMetadata buildMeta() {
-        GrpcMetadata meta = GrpcMetadata.newBuilder().setClientIp(NetUtils.localIP())
+    public void sendResponse(Response response) {
+        Payload convert = GrpcUtils.convert(response);
+        payloadStreamObserver.onNext(convert);
+    }
+    
+    public void sendRequest(Request request) {
+        Payload convert = GrpcUtils.convert(request, buildMeta());
+        System.out.println("send noack request:" + request.toString());
+        payloadStreamObserver.onNext(convert);
+    }
+    
+    private Metadata buildMeta() {
+        Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP())
                 .setVersion(VersionUtils.getFullClientVersion()).build();
         return meta;
     }
     
     @Override
     public void asyncRequest(Request request, final FutureCallback<Response> callback) throws NacosException {
-        GrpcRequest grpcRequest = GrpcUtils.convertToGrpcRequest(request, buildMeta());
-        ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(grpcRequest);
-        Futures.addCallback(requestFuture, new FutureCallback<GrpcResponse>() {
+        Payload grpcRequest = GrpcUtils.convert(request, buildMeta());
+        ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
+        Futures.addCallback(requestFuture, new FutureCallback<Payload>() {
             @Override
-            public void onSuccess(@NullableDecl GrpcResponse grpcResponse) {
-                Response response = GrpcUtils.parseResponsefromGrpcResponse(grpcResponse);
+            public void onSuccess(@NullableDecl Payload grpcResponse) {
+                Response response = (Response) GrpcUtils.parse(grpcResponse);
                 if (response != null && response.isSuccess()) {
                     callback.onSuccess(response);
                 } else {
