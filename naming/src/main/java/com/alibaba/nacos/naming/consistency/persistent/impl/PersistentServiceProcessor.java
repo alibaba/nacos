@@ -21,8 +21,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ByteUtils;
-import com.alibaba.nacos.common.utils.Observable;
-import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -45,7 +43,6 @@ import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
@@ -59,7 +56,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -77,12 +74,12 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
          * write ops.
          */
         Write("Write"),
-    
+        
         /**
          * read ops.
          */
         Read("Read"),
-    
+        
         /**
          * delete ops.
          */
@@ -97,7 +94,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     
     private final CPProtocol<RaftConfig, LogProcessor4CP> protocol;
     
-    private final KvStorage rocksStorage;
+    private final KvStorage kvStorage;
     
     private final RaftStore oldStore;
     
@@ -129,12 +126,11 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         this.protocol = protocol;
         this.oldStore = oldStore;
         this.versionJudgement = versionJudgement;
-        this.rocksStorage = StorageFactory
-                .createKVStorage(
-                        KvStorage.KVType.File, "naming-persistent", Paths.get(UtilsAndCommons.DATA_BASE_DIR, "persistent").toString());
+        this.kvStorage = StorageFactory.createKVStorage(KvStorage.KVType.File, "naming-persistent",
+                Paths.get(UtilsAndCommons.DATA_BASE_DIR, "persistent").toString());
         this.notifier = new PersistentNotifier(key -> {
             try {
-                byte[] data = rocksStorage.get(ByteUtils.toBytes(key));
+                byte[] data = kvStorage.get(ByteUtils.toBytes(key));
                 return serializer.deserialize(data);
             } catch (KVStorageException ex) {
                 throw new NacosRuntimeException(ex.getErrCode(), ex.getErrMsg());
@@ -146,20 +142,16 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     private void init() {
         NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
         this.protocol.addLogProcessors(Collections.singletonList(this));
-        this.startLoadOldData();
         this.protocol.protocolMetaData()
-                .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA, new Observer() {
-                    @Override
-                    public void update(Observable o, Object arg) {
-                        hasLeader = StringUtils.isNotBlank(String.valueOf(arg));
-                    }
-                });
+                .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
+                        (o, arg) -> hasLeader = StringUtils.isNotBlank(String.valueOf(arg)));
         
         this.versionJudgement.registerObserver(isNewVersion -> {
             if (isNewVersion) {
+                loadFromOldData();
                 NotifyCenter.registerSubscriber(notifier);
             }
-        });
+        }, 10);
     }
     
     @Override
@@ -168,7 +160,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         final Lock lock = readLock;
         lock.lock();
         try {
-            final Map<byte[], byte[]> result = rocksStorage.batchGet(keys);
+            final Map<byte[], byte[]> result = kvStorage.batchGet(keys);
             return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(result)))
                     .build();
         } catch (KVStorageException e) {
@@ -188,10 +180,10 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         try {
             switch (op) {
                 case Write:
-                    rocksStorage.batchPut(request.getKeys(), request.getValues());
+                    kvStorage.batchPut(request.getKeys(), request.getValues());
                     break;
                 case Delete:
-                    rocksStorage.batchDelete(request.getKeys());
+                    kvStorage.batchDelete(request.getKeys());
                     break;
                 default:
                     return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + op).build();
@@ -211,21 +203,17 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(new NamingSnapshotOperation(this.rocksStorage, lock));
-    }
-    
-    private void startLoadOldData() {
-        GlobalExecutor.submitLoadOldData(this::loadFromOldData, TimeUnit.SECONDS.toMillis(5));
+        return Collections.singletonList(new NamingSnapshotOperation(this.kvStorage, lock));
     }
     
     /**
-     * Pull old data into the new data store.
+     * Pull old data into the new data store. When loading old data information, write locks must be added, and new
+     * requests can be processed only after the old data has been loaded
      */
     public void loadFromOldData() {
+        final Lock lock = this.lock.writeLock();
+        lock.lock();
         try {
-            if (versionJudgement.isAllMemberIsNewVersion()) {
-                return;
-            }
             if (protocol.isLeader(Constants.NAMING_PERSISTENT_SERVICE_GROUP)) {
                 Map<String, Datum> datumMap = new HashMap<>(64);
                 oldStore.loadDatums(null, datumMap);
@@ -233,6 +221,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                 List<byte[]> keys = new ArrayList<>(totalSize);
                 List<byte[]> values = new ArrayList<>(totalSize);
                 int batchSize = 100;
+                List<CompletableFuture> futures = new ArrayList<>(16);
                 for (Map.Entry<String, Datum> entry : datumMap.entrySet()) {
                     totalSize--;
                     keys.add(ByteUtils.toBytes(entry.getKey()));
@@ -241,8 +230,9 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                         BatchWriteRequest request = new BatchWriteRequest();
                         request.setKeys(keys);
                         request.setValues(values);
-                        protocol.submitAsync(Log.newBuilder().setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
-                                .setData(ByteString.copyFrom(serializer.serialize(request))).build())
+                        CompletableFuture<Response> future = protocol.submitAsync(
+                                Log.newBuilder().setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
+                                        .setData(ByteString.copyFrom(serializer.serialize(request))).build())
                                 .whenComplete(((response, throwable) -> {
                                     if (throwable == null) {
                                         Loggers.RAFT.error("submit old raft data result : {}", response);
@@ -250,15 +240,19 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                                         Loggers.RAFT.error("submit old raft data occur exception : {}", throwable);
                                     }
                                 }));
+                        futures.add(future);
                         keys.clear();
                         values.clear();
                     }
                 }
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
             }
         } catch (Throwable ex) {
+            hasError = true;
             Loggers.RAFT.error("load old raft data occur exception : {}", ex);
+        } finally {
+            lock.unlock();
         }
-        GlobalExecutor.submitLoadOldData(this::loadFromOldData, TimeUnit.SECONDS.toMillis(5));
     }
     
     @Override
@@ -299,7 +293,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                 return serializer.deserialize(resp.getData().toByteArray(), Datum.class);
             }
             throw new NacosException(ErrorCode.ProtoReadError.getCode(), resp.getErrMsg());
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new NacosException(ErrorCode.ProtoReadError.getCode(), e.getMessage());
         }
     }

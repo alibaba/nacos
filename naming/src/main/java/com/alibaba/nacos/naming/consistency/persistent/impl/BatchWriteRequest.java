@@ -26,9 +26,9 @@ import java.util.List;
  */
 public class BatchWriteRequest {
     
-    private List<byte[]> keys = new ArrayList<>();
+    private List<byte[]> keys = new ArrayList<>(16);
     
-    private List<byte[]> values = new ArrayList<>();
+    private List<byte[]> values = new ArrayList<>(16);
     
     public List<byte[]> getKeys() {
         return keys;

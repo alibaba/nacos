@@ -174,13 +174,13 @@ public abstract class DumpService {
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
                 DiskUtil.clearAllBeta();
                 if (persistService.isExistTable(BETA_TABLE_NAME)) {
-                    dumpAllBetaProcessor.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
+                    dumpAllBetaProcessor.process(new DumpAllBetaTask());
                 }
                 // update Tag cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-tag.");
                 DiskUtil.clearAllTag();
                 if (persistService.isExistTable(TAG_TABLE_NAME)) {
-                    dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
+                    dumpAllTagProcessor.process(new DumpAllTagTask());
                 }
                 
                 // add to dump aggr
@@ -256,12 +256,12 @@ public abstract class DumpService {
             if (isAllDump) {
                 LogUtil.DEFAULT_LOG.info("start clear all config-info.");
                 DiskUtil.clearAll();
-                dumpAllProcessor.process(DumpAllTask.TASK_ID, new DumpAllTask());
+                dumpAllProcessor.process(new DumpAllTask());
             } else {
                 Timestamp beforeTimeStamp = getBeforeStamp(heartheatLastStamp, timeStep);
                 DumpChangeProcessor dumpChangeProcessor = new DumpChangeProcessor(this, beforeTimeStamp,
                         TimeUtils.getCurrentTime());
-                dumpChangeProcessor.process(DumpChangeTask.TASK_ID, new DumpChangeTask());
+                dumpChangeProcessor.process(new DumpChangeTask());
                 Runnable checkMd5Task = () -> {
                     LogUtil.DEFAULT_LOG.error("start checkMd5Task");
                     List<String> diffList = ConfigCacheService.checkMd5();

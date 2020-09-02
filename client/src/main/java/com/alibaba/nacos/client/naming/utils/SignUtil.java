@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
-import com.alibaba.nacos.client.identify.Base64;
+import com.alibaba.nacos.common.codec.Base64;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;

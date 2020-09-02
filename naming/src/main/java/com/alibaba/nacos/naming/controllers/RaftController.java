@@ -93,7 +93,7 @@ public class RaftController {
      */
     @PostMapping("/vote")
     public JsonNode vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         RaftPeer peer = raftCore.receivedVote(JacksonUtils.toObj(WebUtils.required(request, "vote"), RaftPeer.class));
@@ -111,7 +111,7 @@ public class RaftController {
      */
     @PostMapping("/beat")
     public JsonNode beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), StandardCharsets.UTF_8);
@@ -134,7 +134,7 @@ public class RaftController {
      */
     @GetMapping("/peer")
     public JsonNode getPeer(HttpServletRequest request, HttpServletResponse response) {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         List<RaftPeer> peers = raftCore.getPeers();
@@ -164,7 +164,7 @@ public class RaftController {
      */
     @PutMapping("/datum/reload")
     public String reloadDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         String key = WebUtils.required(request, "key");
@@ -182,7 +182,7 @@ public class RaftController {
      */
     @PostMapping("/datum")
     public String publish(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -222,7 +222,7 @@ public class RaftController {
      */
     @DeleteMapping("/datum")
     public String delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -242,7 +242,7 @@ public class RaftController {
      */
     @GetMapping("/datum")
     public String get(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -271,7 +271,7 @@ public class RaftController {
      */
     @GetMapping("/state")
     public JsonNode state(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -295,7 +295,7 @@ public class RaftController {
      */
     @PostMapping("/datum/commit")
     public String onPublish(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -337,7 +337,7 @@ public class RaftController {
      */
     @DeleteMapping("/datum/commit")
     public String onDelete(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -366,7 +366,7 @@ public class RaftController {
      */
     @GetMapping("/leader")
     public JsonNode getLeader(HttpServletRequest request, HttpServletResponse response) {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
@@ -383,7 +383,7 @@ public class RaftController {
      */
     @GetMapping("/listeners")
     public JsonNode getAllListeners(HttpServletRequest request, HttpServletResponse response) {
-        if (versionJudgement.isAllMemberIsNewVersion()) {
+        if (versionJudgement.allMemberIsNewVersion()) {
             throw new IllegalStateException("old raft protocol already stop");
         }
         ObjectNode result = JacksonUtils.createEmptyJsonNode();

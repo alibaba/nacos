@@ -266,7 +266,7 @@ public final class DiskUtils {
                 String errMsg = ioe.getMessage();
                 if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN) || errMsg
                         .contains(DISK_QUATA_EN)) {
-                    LOGGER.warn("磁盘满，自杀退出");
+                    LOGGER.warn("Disk full, suicide exits");
                     System.exit(0);
                 }
             } else {
