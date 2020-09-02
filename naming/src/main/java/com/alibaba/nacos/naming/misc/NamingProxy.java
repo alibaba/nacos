@@ -81,7 +81,7 @@ public class NamingProxy {
             String url = "http://" + server + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer();
             
-            ASYNC_REST_TEMPLATE.putJson(url, header, JacksonUtils.toJson(checksumMap), String.class, new Callback<String>() {
+            ASYNC_REST_TEMPLATE.put(url, header, Query.EMPTY, checksums, String.class, new Callback<String>() {
                 @Override
                 public void onReceive(RestResult<String> result) {
                     if (!result.ok()) {
