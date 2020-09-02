@@ -27,6 +27,8 @@ import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import org.slf4j.Logger;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
 /**
@@ -124,6 +126,8 @@ public class HttpClientManager implements Closeable {
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
                     .setReadTimeOutMillis(TIME_OUT_MILLIS)
+                    .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
+                    .setUserAgent(UtilsAndCommons.SERVER_VERSION)
                     .setMaxRedirects(0).build();
         }
     

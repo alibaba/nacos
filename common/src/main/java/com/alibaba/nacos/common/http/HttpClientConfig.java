@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.http;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * http client config build.
  *
@@ -32,6 +34,16 @@ public class HttpClientConfig {
      * read time out.
      */
     private final int readTimeOutMillis;
+    
+    /**
+     * connTimeToLive.
+     */
+    private long connTimeToLive;
+    
+    /**
+     * connTimeToLiveTimeUnit.
+     */
+    private TimeUnit connTimeToLiveTimeUnit;
     
     /**
      * max redirect.
@@ -53,10 +65,12 @@ public class HttpClientConfig {
      */
     private final String userAgent;
     
-    public HttpClientConfig(int conTimeOutMillis, int readTimeOutMillis, int maxRedirects, int maxConnTotal,
-            int maxConnPerRoute, String userAgent) {
+    public HttpClientConfig(int conTimeOutMillis, int readTimeOutMillis, long connTimeToLive, TimeUnit timeUnit,
+            int maxRedirects, int maxConnTotal, int maxConnPerRoute, String userAgent) {
         this.conTimeOutMillis = conTimeOutMillis;
         this.readTimeOutMillis = readTimeOutMillis;
+        this.connTimeToLive = connTimeToLive;
+        this.connTimeToLiveTimeUnit = timeUnit;
         this.maxRedirects = maxRedirects;
         this.maxConnTotal = maxConnTotal;
         this.maxConnPerRoute = maxConnPerRoute;
@@ -69,6 +83,22 @@ public class HttpClientConfig {
     
     public int getReadTimeOutMillis() {
         return readTimeOutMillis;
+    }
+    
+    public long getConnTimeToLive() {
+        return connTimeToLive;
+    }
+    
+    public void setConnTimeToLive(long connTimeToLive) {
+        this.connTimeToLive = connTimeToLive;
+    }
+    
+    public TimeUnit getConnTimeToLiveTimeUnit() {
+        return connTimeToLiveTimeUnit;
+    }
+    
+    public void setConnTimeToLiveTimeUnit(TimeUnit connTimeToLiveTimeUnit) {
+        this.connTimeToLiveTimeUnit = connTimeToLiveTimeUnit;
     }
     
     public int getMaxRedirects() {
@@ -97,10 +127,14 @@ public class HttpClientConfig {
         
         private int readTimeOutMillis = -1;
         
+        private long connTimeToLive = -1;
+        
+        private TimeUnit connTimeToLiveTimeUnit = TimeUnit.MILLISECONDS;
+        
         private int maxRedirects = 50;
-    
+        
         private int maxConnTotal = 0;
-    
+        
         private int maxConnPerRoute = 0;
         
         private String userAgent;
@@ -115,29 +149,35 @@ public class HttpClientConfig {
             return this;
         }
         
+        public HttpClientConfigBuilder setConnectionTimeToLive(long connTimeToLive, TimeUnit connTimeToLiveTimeUnit) {
+            this.connTimeToLive = connTimeToLive;
+            this.connTimeToLiveTimeUnit = connTimeToLiveTimeUnit;
+            return this;
+        }
+        
         public HttpClientConfigBuilder setMaxRedirects(int maxRedirects) {
             this.maxRedirects = maxRedirects;
             return this;
         }
-    
+        
         public HttpClientConfigBuilder setMaxConnTotal(int maxConnTotal) {
             this.maxConnTotal = maxConnTotal;
             return this;
         }
-    
+        
         public HttpClientConfigBuilder setMaxConnPerRoute(int maxConnPerRoute) {
             this.maxConnPerRoute = maxConnPerRoute;
             return this;
         }
-    
+        
         public HttpClientConfigBuilder setUserAgent(String userAgent) {
             this.userAgent = userAgent;
             return this;
         }
         
         public HttpClientConfig build() {
-            return new HttpClientConfig(conTimeOutMillis, readTimeOutMillis, maxRedirects, maxConnTotal,
-                    maxConnPerRoute, userAgent);
+            return new HttpClientConfig(conTimeOutMillis, readTimeOutMillis, connTimeToLive, connTimeToLiveTimeUnit,
+                    maxRedirects, maxConnTotal, maxConnPerRoute, userAgent);
         }
     }
 }
