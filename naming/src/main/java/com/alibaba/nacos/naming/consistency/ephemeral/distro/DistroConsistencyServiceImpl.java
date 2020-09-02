@@ -376,10 +376,11 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
     
     @Override
-    public void processData(DistroData distroData) {
+    public boolean processData(DistroData distroData) {
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
         Datum<Instances> datum = (Datum<Instances>) distroHttpData.getDeserializedContent();
         onPut(datum.key, datum.value);
+        return true;
     }
     
     @Override
@@ -394,6 +395,15 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
         onReceiveChecksums(verifyData, sourceServer);
         return true;
+    }
+    
+    @Override
+    public boolean processSnapshot(DistroData distroData) {
+        try {
+            return processData(distroData.getContent());
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     @Override

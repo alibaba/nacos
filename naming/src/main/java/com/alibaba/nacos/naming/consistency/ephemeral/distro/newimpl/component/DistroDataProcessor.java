@@ -36,8 +36,9 @@ public interface DistroDataProcessor {
      * Process received data.
      *
      * @param distroData received data
+     * @return true if process data successfully, otherwise false
      */
-    void processData(DistroData distroData);
+    boolean processData(DistroData distroData);
     
     /**
      * Process received verify data.
@@ -46,4 +47,12 @@ public interface DistroDataProcessor {
      * @return true if the data is available, otherwise false
      */
     boolean processVerifyData(DistroData distroData);
+    
+    /**
+     * Process snapshot data.
+     *
+     * @param distroData snapshot data
+     * @return true if process data successfully, otherwise false
+     */
+    boolean processSnapshot(DistroData distroData);
 }

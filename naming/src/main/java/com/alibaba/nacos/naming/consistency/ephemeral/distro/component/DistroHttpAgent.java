@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.component;
 
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroTransportAgent;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.exception.DistroException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 
@@ -58,7 +60,6 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public DistroData getData(DistroKey key, String targetServer) {
-        DistroData result = new DistroData(key, new byte[0]);
         try {
             List<String> toUpdateKeys = null;
             if (key instanceof DistroHttpCombinedKey) {
@@ -68,20 +69,19 @@ public class DistroHttpAgent implements DistroTransportAgent {
                 toUpdateKeys.add(key.getResourceKey());
             }
             byte[] queriedData = NamingProxy.getData(toUpdateKeys, key.getTargetServer());
-            result.setContent(queriedData);
+            return new DistroData(key, queriedData);
         } catch (Exception e) {
-            Loggers.DISTRO.error("[DISTRO-FAILED] Get data from {} failed. ", key.getTargetServer(), e);
+            throw new DistroException(String.format("Get data from %s failed.", key.getTargetServer()), e);
         }
-        return result;
     }
     
     @Override
-    public List<DistroData> getDatum(List<DistroKey> keys, String targetServer) {
-        return null;
-    }
-    
-    @Override
-    public List<DistroData> getAllDatum(String targetServer) {
-        return null;
+    public DistroData getDatumSnapshot(String targetServer) {
+        try {
+            byte[] allDatum = NamingProxy.getAllData(targetServer);
+            return new DistroData(new DistroKey("snapshot", KeyBuilder.INSTANCE_LIST_KEY_PREFIX), allDatum);
+        } catch (Exception e) {
+            throw new DistroException(String.format("Get snapshot from %s failed.", targetServer), e);
+        }
     }
 }

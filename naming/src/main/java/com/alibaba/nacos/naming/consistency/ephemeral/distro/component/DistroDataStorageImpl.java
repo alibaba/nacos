@@ -60,6 +60,14 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     }
     
     @Override
+    public DistroData getDatumSnapshot() {
+        Map<String, Datum> result = dataStore.getDataMap();
+        byte[] dataContent = ApplicationUtils.getBean(Serializer.class).serialize(result);
+        DistroKey distroKey = new DistroKey("snapshot", KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
+        return new DistroData(distroKey, dataContent);
+    }
+    
+    @Override
     public DistroData getVerifyData() {
         Map<String, String> keyChecksums = new HashMap<>(64);
         for (String key : dataStore.keys()) {
