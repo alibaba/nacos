@@ -18,8 +18,10 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.RequestFuture;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Map;
@@ -33,28 +35,6 @@ import java.util.Map;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection {
     
-    public static final String HEALTHY = "healthy";
-    
-    private String status = HEALTHY;
-    
-    /**
-     * Getter method for property <tt>status</tt>.
-     *
-     * @return property value of status
-     */
-    public String getStatus() {
-        return status;
-    }
-    
-    /**
-     * Setter method for property <tt>status</tt>.
-     *
-     * @param status value to be assigned to property status
-     */
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    
     private final ConnectionMetaInfo metaInfo;
     
     public Connection(ConnectionMetaInfo metaInfo) {
@@ -66,28 +46,28 @@ public abstract class Connection {
      *
      * @param request request
      */
-    public abstract boolean sendRequest(ServerPushRequest request, long timeoutMills) throws NacosException;
+    public abstract Response sendRequest(Request request, long timeoutMills) throws NacosException;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request
      */
-    public abstract void sendRequestNoAck(ServerPushRequest request) throws NacosException;
+    public abstract void sendRequestNoAck(Request request) throws NacosException;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request.
      */
-    public abstract PushFuture sendRequestWithFuture(ServerPushRequest request) throws NacosException;
+    public abstract RequestFuture sendRequestWithFuture(Request request) throws NacosException;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request.
      */
-    public abstract void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack)
+    public abstract void sendRequestWithCallBack(Request request, RequestCallBack callBack)
             throws NacosException;
     
     /**

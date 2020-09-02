@@ -38,9 +38,4 @@ public class InstanceResponse extends Response {
         this.type = type;
     }
     
-    @Override
-    public String getType() {
-        return this.type;
-    }
-    
 }

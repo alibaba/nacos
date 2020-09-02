@@ -29,11 +29,6 @@ public class ConnectResetRequest extends ServerPushRequest {
     String serverPort;
     
     @Override
-    public String getType() {
-        return RequestTypeConstants.CONNECTION_RESET;
-    }
-    
-    @Override
     public String getModule() {
         return "internal";
     }

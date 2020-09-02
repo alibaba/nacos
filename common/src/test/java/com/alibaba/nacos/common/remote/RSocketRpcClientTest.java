@@ -36,7 +36,7 @@ public class RSocketRpcClientTest {
     public void testConectToServer() throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         System.out.println(compiler.getSourceVersions());
-        RsocketRpcClient rsocketRpcClient = new RsocketRpcClient();
+        RsocketRpcClient rsocketRpcClient = new RsocketRpcClient("");
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
         serverInfo.setServerPort(9948);

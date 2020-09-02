@@ -17,14 +17,10 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigRequestTypeConstants;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
@@ -37,7 +33,6 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -50,7 +45,6 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
@@ -62,7 +56,7 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_H
  * @version $Id: ConfigQueryRequestHandler.java, v 0.1 2020年07月14日 9:54 AM liuzunfei Exp $
  */
 @Component
-public class ConfigQueryRequestHandler extends RequestHandler {
+public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest, ConfigQueryResponse> {
     
     private static final int TRY_GET_LOCK_TIMES = 9;
     
@@ -70,12 +64,7 @@ public class ConfigQueryRequestHandler extends RequestHandler {
     private PersistService persistService;
     
     @Override
-    public Request parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, ConfigQueryRequest.class);
-    }
-    
-    @Override
-    public Response handle(Request request, RequestMeta requestMeta) throws NacosException {
+    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta requestMeta) throws NacosException {
         ConfigQueryRequest configQueryRequest = (ConfigQueryRequest) request;
         
         String group = configQueryRequest.getGroup();
@@ -339,8 +328,4 @@ public class ConfigQueryRequestHandler extends RequestHandler {
         return false;
     }
     
-    @Override
-    public List<String> getRequestTypes() {
-        return Lists.newArrayList(ConfigRequestTypeConstants.QUERY_CONFIG);
-    }
 }

@@ -17,19 +17,17 @@
 package com.alibaba.nacos.naming.cluster.remote.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.grpc.GrpcMetadata;
-import com.alibaba.nacos.api.grpc.GrpcRequest;
-import com.alibaba.nacos.api.grpc.GrpcResponse;
-import com.alibaba.nacos.api.grpc.RequestGrpc;
-import com.alibaba.nacos.api.grpc.RequestStreamGrpc;
+import com.alibaba.nacos.api.grpc.auto.Metadata;
+import com.alibaba.nacos.api.grpc.auto.Payload;
+import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
+import com.alibaba.nacos.api.grpc.auto.RequestStreamGrpc;
+import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
-import com.alibaba.nacos.common.remote.client.ResponseRegistry;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.cluster.remote.RpcClient;
 import com.alibaba.nacos.naming.cluster.remote.RpcClientStatus;
@@ -207,12 +205,12 @@ public class GrpcClient extends RpcClient {
                 return;
             }
             HeartBeatRequest heartBeatRequest = new HeartBeatRequest();
-            GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta())
-                    .setType(heartBeatRequest.getType()).setBody(
+            Payload streamRequest = Payload.newBuilder().setMetadata(buildMeta())
+                    .setType(heartBeatRequest.getClass().getName()).setBody(
                             Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(heartBeatRequest)))
                                     .build()).build();
-            GrpcResponse response = grpcServiceStub.request(streamRequest);
-            if (ResponseTypeConstants.CONNECION_UNREGISTER.equals(response.getType())) {
+            Payload response = grpcServiceStub.request(streamRequest);
+            if (ConnectionUnregisterResponse.class.getName().equals(response.getType())) {
                 LOGGER.warn("Send heart beat fail,connection is not registerd,trying to switch server ");
                 switchServer(false);
             }
@@ -228,8 +226,8 @@ public class GrpcClient extends RpcClient {
         }
     }
     
-    private GrpcMetadata buildMeta() {
-        GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localServer())
+    private Metadata buildMeta() {
+        Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localServer())
                 .setVersion(UtilsAndCommons.SERVER_VERSION).build();
         
         return meta;
@@ -245,11 +243,11 @@ public class GrpcClient extends RpcClient {
         try {
             
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
-            GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta())
-                    .setType(serverCheckRequest.getType()).setBody(
+            Payload streamRequest = Payload.newBuilder().setMetadata(buildMeta())
+                    .setType(serverCheckRequest.getClass().getName()).setBody(
                             Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(serverCheckRequest)))
                                     .build()).build();
-            GrpcResponse response = requestBlockingStub.request(streamRequest);
+            Payload response = requestBlockingStub.request(streamRequest);
             return response != null;
         } catch (Exception e) {
             return false;
@@ -262,11 +260,11 @@ public class GrpcClient extends RpcClient {
      * @param streamStub streamStub to bind.
      */
     private void bindRequestStream(RequestStreamGrpc.RequestStreamStub streamStub) {
-        GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).build();
+        Payload streamRequest = Payload.newBuilder().setMetadata(buildMeta()).build();
         LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
-        streamStub.requestStream(streamRequest, new StreamObserver<GrpcResponse>() {
+        streamStub.requestStream(streamRequest, new StreamObserver<Payload>() {
             @Override
-            public void onNext(GrpcResponse grpcResponse) {
+            public void onNext(Payload grpcResponse) {
                 
                 LOGGER.debug(" stream response receive  ,original reponse :{}", grpcResponse);
                 try {
@@ -274,7 +272,7 @@ public class GrpcClient extends RpcClient {
                     String message = grpcResponse.getBody().getValue().toStringUtf8();
                     String type = grpcResponse.getType();
                     String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
-                    Class classByType = ResponseRegistry.getClassByType(type);
+                    Class classByType = PayloadRegistry.getClassbyType(type);
                     final Response response;
                     if (classByType != null) {
                         response = (Response) JacksonUtils.toObj(bodyString, classByType);
@@ -307,15 +305,15 @@ public class GrpcClient extends RpcClient {
             throw new IllegalStateException("Client is not connected to any server now,please retry later");
         }
         try {
-            
-            GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).setType(request.getType())
+    
+            Payload grpcrequest = Payload.newBuilder().setMetadata(buildMeta()).setType(request.getClass().getName())
                     .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(request)))).build();
-            GrpcResponse response = grpcServiceStub.request(grpcrequest);
+            Payload response = grpcServiceStub.request(grpcrequest);
             String type = response.getType();
             String bodyString = response.getBody().getValue().toStringUtf8();
             
             // transfrom grpcResponse to response model
-            Class classByType = ResponseRegistry.getClassByType(type);
+            Class classByType = PayloadRegistry.getClassbyType(type);
             if (classByType != null) {
                 Object object = JacksonUtils.toObj(bodyString, classByType);
                 if (object instanceof ConnectionUnregisterResponse) {

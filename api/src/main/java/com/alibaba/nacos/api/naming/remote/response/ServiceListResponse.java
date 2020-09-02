@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.naming.remote.response;
 
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 
@@ -56,11 +55,6 @@ public class ServiceListResponse extends Response {
         result.setErrorCode(ResponseCode.FAIL.getCode());
         result.setMessage(message);
         return result;
-    }
-    
-    @Override
-    public String getType() {
-        return NamingRemoteConstants.LIST_SERVICE;
     }
     
     public int getCount() {

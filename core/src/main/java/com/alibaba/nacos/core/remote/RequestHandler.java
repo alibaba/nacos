@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.remote.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
-import java.util.List;
 
 /**
  * Nacos based request handler.
@@ -31,7 +30,7 @@ import java.util.List;
  * @author liuzunfei
  * @author xiweng.yy
  */
-public abstract class RequestHandler<T extends Request> {
+public abstract class RequestHandler<T extends Request, S extends Response> {
     
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
@@ -42,14 +41,6 @@ public abstract class RequestHandler<T extends Request> {
     }
     
     /**
-     * Parse request body to specified {@link Request}.
-     *
-     * @param bodyString body string
-     * @return request
-     */
-    public abstract T parseBodyString(String bodyString);
-    
-    /**
      * Handler request.
      *
      * @param request request
@@ -57,13 +48,6 @@ public abstract class RequestHandler<T extends Request> {
      * @return response
      * @throws NacosException nacos exception when handle request has problem.
      */
-    public abstract Response handle(Request request, RequestMeta meta) throws NacosException;
-    
-    /**
-     * Return the request type that this handler can handler.
-     *
-     * @return request types this handler responsible.
-     */
-    public abstract List<String> getRequestTypes();
+    public abstract S handle(T request, RequestMeta meta) throws NacosException;
     
 }

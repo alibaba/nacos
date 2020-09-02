@@ -34,11 +34,6 @@ public class PlainBodyResponse extends Response {
         this.bodyString = bodyString;
     }
     
-    @Override
-    public String getType() {
-        return ResponseTypeConstants.PLAIN_BODY_STRING;
-    }
-    
     /**
      * Getter method for property <tt>bodyString</tt>.
      *

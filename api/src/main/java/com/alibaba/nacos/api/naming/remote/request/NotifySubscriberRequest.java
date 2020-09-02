@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.naming.remote.request;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 
 /**
@@ -60,11 +59,6 @@ public class NotifySubscriberRequest extends ServerPushRequest {
     public static NotifySubscriberRequest buildFailResponse(String message) {
         NotifySubscriberRequest result = new NotifySubscriberRequest();
         return result;
-    }
-    
-    @Override
-    public String getType() {
-        return NamingRemoteConstants.NOTIFY_SUBSCRIBER;
     }
     
     public ServiceInfo getServiceInfo() {

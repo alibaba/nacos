@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -33,6 +34,10 @@ public abstract class RpcServer {
     
     @Autowired
     private ConnectionManager connectionManager;
+    
+    static {
+        PayloadRegistry.init();
+    }
     
     /**
      * Start sever.

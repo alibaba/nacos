@@ -24,8 +24,4 @@ package com.alibaba.nacos.api.remote.response;
  */
 public class ConnectionUnregisterResponse extends Response {
     
-    @Override
-    public String getType() {
-        return ResponseTypeConstants.CONNECION_UNREGISTER;
-    }
 }

@@ -17,18 +17,13 @@
 package com.alibaba.nacos.naming.remote.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
-import com.google.common.collect.Lists;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
@@ -41,7 +36,7 @@ import java.util.Map;
  * @author xiweng.yy
  */
 @Component
-public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest> {
+public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest, ServiceListResponse> {
     
     private final ServiceManager serviceManager;
     
@@ -50,13 +45,7 @@ public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest
     }
     
     @Override
-    public ServiceListRequest parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, ServiceListRequest.class);
-    }
-    
-    @Override
-    public Response handle(Request request, RequestMeta meta) throws NacosException {
-        ServiceListRequest serviceListRequest = (ServiceListRequest) request;
+    public ServiceListResponse handle(ServiceListRequest serviceListRequest, RequestMeta meta) throws NacosException {
         Map<String, Service> serviceMap = serviceManager.chooseServiceMap(serviceListRequest.getNamespace());
         ServiceListResponse result = ServiceListResponse.buildSuccessResponse(0, new LinkedList<>());
         if (null != serviceMap && !serviceMap.isEmpty()) {
@@ -70,8 +59,4 @@ public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest
         return result;
     }
     
-    @Override
-    public List<String> getRequestTypes() {
-        return Lists.newArrayList(NamingRemoteConstants.LIST_SERVICE);
-    }
 }

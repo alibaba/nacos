@@ -17,6 +17,8 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.DefaultRequestFuture;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
 import com.alipay.hessian.clhm.EvictionListener;
 
@@ -33,14 +35,15 @@ import java.util.function.Consumer;
  */
 public class RpcAckCallbackSynchronizer {
     
-    private static final Map<String, Map<String, DefaultPushFuture>> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultPushFuture>>()
-            .maximumWeightedCapacity(1000000).listener(new EvictionListener<String, Map<String, DefaultPushFuture>>() {
+    private static final Map<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultRequestFuture>>()
+            .maximumWeightedCapacity(1000000)
+            .listener(new EvictionListener<String, Map<String, DefaultRequestFuture>>() {
                 @Override
-                public void onEviction(String s, Map<String, DefaultPushFuture> pushCallBack) {
-                    
-                    pushCallBack.entrySet().forEach(new Consumer<Map.Entry<String, DefaultPushFuture>>() {
+                public void onEviction(String s, Map<String, DefaultRequestFuture> pushCallBack) {
+    
+                    pushCallBack.entrySet().forEach(new Consumer<Map.Entry<String, DefaultRequestFuture>>() {
                         @Override
-                        public void accept(Map.Entry<String, DefaultPushFuture> stringDefaultPushFutureEntry) {
+                        public void accept(Map.Entry<String, DefaultRequestFuture> stringDefaultPushFutureEntry) {
                             stringDefaultPushFutureEntry.getValue().setFailResult(new TimeoutException());
                         }
                     });
@@ -50,35 +53,36 @@ public class RpcAckCallbackSynchronizer {
     /**
      * notify  ackid.
      */
-    public static void ackNotify(String connectionId, String requestId, boolean success, Exception e) {
+    public static void ackNotify(String connectionId, Response response) {
     
-        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
+        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
         if (stringDefaultPushFutureMap == null) {
             return;
         }
     
-        DefaultPushFuture currentCallback = stringDefaultPushFutureMap.get(requestId);
+        DefaultRequestFuture currentCallback = stringDefaultPushFutureMap.get(response.getRequestId());
         if (currentCallback == null) {
             return;
         }
-        if (success) {
-            currentCallback.setSuccessResult();
+        if (response.isSuccess()) {
+            currentCallback.setResponse(response);
         } else {
-            currentCallback.setFailResult(e);
+            currentCallback.setFailResult(new NacosException(response.getErrorCode(), response.getMessage()));
         }
     }
     
     /**
      * notify  ackid.
      */
-    public static void syncCallback(String connectionId, String requestId, DefaultPushFuture defaultPushFuture)
+    public static void syncCallback(String connectionId, String requestId, DefaultRequestFuture defaultPushFuture)
             throws NacosException {
         if (!CALLBACK_CONTEXT.containsKey(connectionId)) {
-            CALLBACK_CONTEXT.putIfAbsent(connectionId, new HashMap<String, DefaultPushFuture>());
+            CALLBACK_CONTEXT.putIfAbsent(connectionId, new HashMap<String, DefaultRequestFuture>());
         }
-        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
+        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
         if (!stringDefaultPushFutureMap.containsKey(requestId)) {
-            DefaultPushFuture pushCallBackPrev = stringDefaultPushFutureMap.putIfAbsent(requestId, defaultPushFuture);
+            DefaultRequestFuture pushCallBackPrev = stringDefaultPushFutureMap
+                    .putIfAbsent(requestId, defaultPushFuture);
             if (pushCallBackPrev == null) {
                 return;
             }
@@ -102,7 +106,7 @@ public class RpcAckCallbackSynchronizer {
      * @param connetionId connetionId
      */
     public static void clearFuture(String connetionId, String requestId) {
-        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connetionId);
+        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connetionId);
         
         if (stringDefaultPushFutureMap == null || !stringDefaultPushFutureMap.containsKey(requestId)) {
             return;

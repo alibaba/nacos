@@ -33,6 +33,26 @@ public abstract class Response {
     
     String message;
     
+    String requestId;
+    
+    /**
+     * Getter method for property <tt>requestId</tt>.
+     *
+     * @return property value of requestId
+     */
+    public String getRequestId() {
+        return requestId;
+    }
+    
+    /**
+     * Setter method for property <tt>requestId</tt>.
+     *
+     * @param requestId value to be assigned to property requestId
+     */
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+    
     /**
      * Check Response  is Successd.
      *
@@ -41,13 +61,6 @@ public abstract class Response {
     public boolean isSuccess() {
         return this.resultCode == ResponseCode.SUCCESS.getCode();
     }
-    
-    /**
-     * get type.
-     *
-     * @return type value;
-     */
-    public abstract String getType();
     
     /**
      * Getter method for property <tt>resultCode</tt>.

@@ -38,11 +38,6 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
      */
     private String listeningConfigs;
     
-    @Override
-    public String getType() {
-        return ConfigRequestTypeConstants.BATCH_CHANGE_LISTEN_CONFIG;
-    }
-    
     /**
      * build batch listen request.
      *

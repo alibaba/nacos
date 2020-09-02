@@ -21,9 +21,9 @@ import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
-option java_package = "com.alibaba.nacos.api.grpc";
+option java_package = "com.alibaba.nacos.api.grpc.auto";
 
-message GrpcMetadata {
+message Metadata {
 
     string name = 1;
 
@@ -38,31 +38,29 @@ message GrpcMetadata {
     map<string,string> labels = 6;
 }
 
-message GrpcRequest {
+message Payload {
 
     string type = 2;
     // Common metadata describing the resource.
-    GrpcMetadata metadata = 1;
+    Metadata metadata = 1;
     // The primary payload for the resource.
     google.protobuf.Any body = 3;
 }
 
-
-message GrpcResponse {
-    int32 code = 1;
-    // reponse body
-    google.protobuf.Any body = 2;
-    string ack = 4;
-    string type = 3;
-
-}
-
 service RequestStream {
     // build a streamRequest
-    rpc requestStream (GrpcRequest) returns (stream GrpcResponse) {}
+    rpc requestStream (Payload) returns (stream Payload) {
+    }
 }
 
 service Request {
     // Sends a commonRequest
-    rpc request (GrpcRequest) returns (GrpcResponse) {}
+    rpc request (Payload) returns (Payload) {
+    }
+}
+
+service BiRequestStream {
+    // Sends a commonRequest
+    rpc requestBiStream (stream Payload) returns (stream Payload) {
+    }
 }

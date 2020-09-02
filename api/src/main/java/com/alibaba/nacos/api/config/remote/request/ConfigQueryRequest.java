@@ -32,11 +32,6 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     
     private String tag;
     
-    @Override
-    public String getType() {
-        return ConfigRequestTypeConstants.QUERY_CONFIG;
-    }
-    
     /**
      * request builder.
      *

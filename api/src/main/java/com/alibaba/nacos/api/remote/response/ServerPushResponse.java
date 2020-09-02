@@ -44,8 +44,4 @@ public class ServerPushResponse extends Response {
         this.requestId = requestId;
     }
     
-    @Override
-    public String getType() {
-        return ResponseTypeConstants.PUSH_ACK;
-    }
 }

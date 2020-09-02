@@ -38,11 +38,6 @@ public class SubscribeServiceRequest extends AbstractNamingRequest {
         this.subscribe = subscribe;
     }
     
-    @Override
-    public String getType() {
-        return NamingRemoteConstants.SUBSCRIBE_SERVICE;
-    }
-    
     public String getClusters() {
         return clusters;
     }

@@ -63,12 +63,10 @@ public class RsocketConnection extends Connection {
             response.subscribe(new Consumer<Payload>() {
                 @Override
                 public void accept(Payload payload) {
-                    System.out.println("asyncRequest..." + payload.getDataUtf8());
                     callback.onSuccess(RsocketUtils.parseResponseFromPayload(payload));
                 }
             });
         } catch (Exception e) {
-            System.out.println("asyncRequest exception ..." + e.getMessage());
             callback.onFailure(e);
         }
     }

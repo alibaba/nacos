@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.naming.remote.response;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
@@ -37,11 +36,6 @@ public class SubscribeServiceResponse extends Response {
         setResultCode(resultCode);
         setMessage(message);
         this.serviceInfo = serviceInfo;
-    }
-    
-    @Override
-    public String getType() {
-        return NamingRemoteConstants.SUBSCRIBE_SERVICE;
     }
     
     public ServiceInfo getServiceInfo() {
