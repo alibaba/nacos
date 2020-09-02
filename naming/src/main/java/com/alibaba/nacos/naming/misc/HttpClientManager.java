@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.common.http.AbstractApacheHttpClientFactory;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpClientFactory;
-import com.alibaba.nacos.common.http.HttpComponentsHttpClientFactory;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -118,7 +118,7 @@ public class HttpClientManager implements Closeable {
         }
     }
     
-    private static class ApacheSyncHttpClientFactory extends HttpComponentsHttpClientFactory {
+    private static class ApacheSyncHttpClientFactory extends AbstractApacheHttpClientFactory {
     
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
