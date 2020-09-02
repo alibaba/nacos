@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.config.remote.response;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,39 +30,41 @@ import java.util.List;
  */
 public class ConfigChangeBatchListenResponse extends Response {
     
-    List<String> changedGroupKeys;
+    List<ConfigContext> changedConfigs = new ArrayList<ConfigContext>();
     
     public ConfigChangeBatchListenResponse() {
     }
     
     /**
-     * build sucess response.
-     *
-     * @return
+     *  add changed config.
+     * @param dataId dataId.
+     * @param group group.
+     * @param tenant tenant.
      */
-    public static ConfigChangeBatchListenResponse buildSucessResponse(List<String> changedGroupKeys) {
-        ConfigChangeBatchListenResponse response = new ConfigChangeBatchListenResponse();
-        response.setChangedGroupKeys(changedGroupKeys);
-        response.setResultCode(ResponseCode.SUCCESS.getCode());
-        return response;
+    public void addChangeConfig(String dataId, String group, String tenant) {
+        ConfigContext configContext = new ConfigContext();
+        configContext.dataId = dataId;
+        configContext.group = group;
+        configContext.tenant = tenant;
+        changedConfigs.add(configContext);
     }
     
     /**
-     * Getter method for property <tt>changedGroupKeys</tt>.
+     * Getter method for property <tt>changedConfigs</tt>.
      *
-     * @return property value of changedGroupKeys
+     * @return property value of changedConfigs
      */
-    public List<String> getChangedGroupKeys() {
-        return changedGroupKeys;
+    public List<ConfigContext> getChangedConfigs() {
+        return changedConfigs;
     }
     
     /**
-     * Setter method for property <tt>changedGroupKeys</tt>.
+     * Setter method for property <tt>changedConfigs</tt>.
      *
-     * @param changedGroupKeys value to be assigned to property changedGroupKeys
+     * @param changedConfigs value to be assigned to property changedConfigs
      */
-    public void setChangedGroupKeys(List<String> changedGroupKeys) {
-        this.changedGroupKeys = changedGroupKeys;
+    public void setChangedConfigs(List<ConfigContext> changedConfigs) {
+        this.changedConfigs = changedConfigs;
     }
     
     /**
@@ -75,6 +78,73 @@ public class ConfigChangeBatchListenResponse extends Response {
         response.setResultCode(ResponseCode.FAIL.getCode());
         response.setMessage(errorMessage);
         return response;
+    }
+    
+    public static class ConfigContext {
+        
+        String group;
+        
+        String dataId;
+        
+        String tenant;
+        
+        public ConfigContext() {
+        
+        }
+        
+        /**
+         * Getter method for property <tt>groupId</tt>.
+         *
+         * @return property value of groupId
+         */
+        public String getGroup() {
+            return group;
+        }
+        
+        /**
+         * Setter method for property <tt>groupId</tt>.
+         *
+         * @param group value to be assigned to property groupId
+         */
+        public void setGroup(String group) {
+            this.group = group;
+        }
+        
+        /**
+         * Getter method for property <tt>dataId</tt>.
+         *
+         * @return property value of dataId
+         */
+        public String getDataId() {
+            return dataId;
+        }
+        
+        /**
+         * Setter method for property <tt>dataId</tt>.
+         *
+         * @param dataId value to be assigned to property dataId
+         */
+        public void setDataId(String dataId) {
+            this.dataId = dataId;
+        }
+        
+        /**
+         * Getter method for property <tt>tenant</tt>.
+         *
+         * @return property value of tenant
+         */
+        public String getTenant() {
+            return tenant;
+        }
+        
+        /**
+         * Setter method for property <tt>tenant</tt>.
+         *
+         * @param tenant value to be assigned to property tenant
+         */
+        public void setTenant(String tenant) {
+            this.tenant = tenant;
+        }
     }
     
 }

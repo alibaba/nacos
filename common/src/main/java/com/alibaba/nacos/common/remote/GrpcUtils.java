@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.grpc;
+package com.alibaba.nacos.common.remote;
 
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -81,33 +82,45 @@ public class GrpcUtils {
         }
     }
     
+    /**
+     * convert request to payload.
+     *
+     * @param request request.
+     * @param meta    request meta.
+     * @return
+     */
     public static Payload convert(Request request, RequestMeta meta) {
         String jsonString = toJson(request);
         byte[] bytes = null;
         try {
-            bytes = jsonString.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
+            bytes = IoUtils.tryCompress(jsonString, "UTF-8");
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+        
         Payload.Builder builder = Payload.newBuilder();
         if (meta != null) {
-            Metadata metadata = Metadata.newBuilder().setClientIp(meta.getClientIp())
-                    .setVersion(meta.getClientVersion()).build();
+            Metadata metadata = Metadata.newBuilder().setClientIp(meta.getClientIp()).setVersion(meta.getClientVersion()).build();
             builder.setMetadata(metadata);
         }
-        Payload payload = builder.setType(request.getClass().getName())
-                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        Payload payload = builder.setType(request.getClass().getName()).setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
         return payload;
         
     }
     
+    /**
+     * convert request to payload.
+     * @param request request.
+     * @param meta meta
+     * @return
+     */
     public static Payload convert(Request request, Metadata meta) {
         String jsonString = toJson(request);
         byte[] bytes = null;
         try {
-            bytes = jsonString.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
+            bytes = IoUtils.tryCompress(jsonString, "UTF-8");
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
@@ -115,35 +128,47 @@ public class GrpcUtils {
         if (meta != null) {
             builder.setMetadata(meta);
         }
-        Payload payload = builder.setType(request.getClass().getName())
-                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        Payload payload = builder.setType(request.getClass().getName()).setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
         return payload;
         
     }
     
+    /**
+     * convert response to payload.
+     * @param response response.
+     * @return
+     */
     public static Payload convert(Response response) {
         String jsonString = toJson(response);
         byte[] bytes = null;
         try {
-            bytes = jsonString.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
+            bytes = IoUtils.tryCompress(jsonString, "UTF-8");
+            ;
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
-        Payload payload = Payload.newBuilder().setType(response.getClass().getName())
-                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        Payload payload = Payload.newBuilder().setType(response.getClass().getName()).setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
         return payload;
     }
     
     /**
      * parse payload to request/response model.
-     * @param payload
+     *
+     * @param payload payload to be parsed.
      * @return
      */
     public static Object parse(Payload payload) {
         Class classbyType = PayloadRegistry.getClassbyType(payload.getType());
         if (classbyType != null) {
-            Object obj = toObj(payload.getBody().getValue().toStringUtf8(), classbyType);
+            byte[] value = new byte[0];
+            try {
+                value = IoUtils.tryDecompress(payload.getBody().getValue().toByteArray());
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+            Object obj = toObj(ByteString.copyFrom(value).toStringUtf8(), classbyType);
             return obj;
         }
         return null;
