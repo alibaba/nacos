@@ -23,8 +23,8 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.rsocket.RsocketUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.RsocketUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
@@ -96,13 +96,13 @@ public class RsocketRpcServer extends RpcServer {
                 sendingSocket.dispose();
                 return Mono.just(sendingSocket);
             } else {
-    
+        
                 String connectionid = UUID.randomUUID().toString();
                 ConnectionSetupRequest connectionSetupRequest = RsocketUtils
                         .toObj(palinrequest.getBody(), ConnectionSetupRequest.class);
-                ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionid,
-                        connectionSetupRequest.getClientIp(), ConnectionType.RSOCKET.getType(),
-                        connectionSetupRequest.getClientVersion(), connectionSetupRequest.getLabels());
+                ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionid, connectionSetupRequest.getClientIp(),
+                        ConnectionType.RSOCKET.getType(), connectionSetupRequest.getClientVersion(),
+                        connectionSetupRequest.getLabels());
                 Connection connection = new RsocketConnection(metaInfo, sendingSocket);
                 connectionManager.register(connection.getConnectionId(), connection);
                 
@@ -129,12 +129,12 @@ public class RsocketRpcServer extends RpcServer {
                         connectionManager.unregister(connectionId);
                     }
                 });
-    
+        
                 RSocketProxy rSocketProxy = new NacosRSocket(sendingSocket, connectionid);
-    
+        
                 return Mono.just(rSocketProxy);
             }
-        
+    
         })).bind(TcpServerTransport.create("0.0.0.0", (ApplicationUtils.getPort() + PORT_OFFSET))).block();
     
         rSocketServer = rSocketServerInner;

@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.api.grpc.GrpcUtils;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
-import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.GrpcUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -69,7 +68,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (connectionManager.isOverLimit()) {
                         //Not register to the connection manager if current server is over limit.
                         try {
-                            System.out.println("over limit ...");
                             connection.sendRequestNoAck(new ConnectResetRequest());
                             connection.closeGrapcefully();
                         } catch (Exception e) {

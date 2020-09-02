@@ -17,8 +17,6 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.grpc.GrpcUtils;
-
 import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
@@ -27,13 +25,13 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.remote.GrpcUtils;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import io.grpc.Grpc;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
@@ -101,7 +99,6 @@ public class GrpcConnection extends Connection {
     
     public void sendRequest(Request request) {
         Payload convert = GrpcUtils.convert(request, buildMeta());
-        System.out.println("send noack request:" + request.toString());
         payloadStreamObserver.onNext(convert);
     }
     

@@ -21,14 +21,13 @@ import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenRespo
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.utils.MD5Util;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.SingletonRepository;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * config change listen request handler.
@@ -47,29 +46,30 @@ public class ConfigChangeBatchListenRequestHandler
     public ConfigChangeBatchListenResponse handle(ConfigBatchListenRequest request, RequestMeta requestMeta)
             throws NacosException {
         ConfigBatchListenRequest configChangeListenRequest = (ConfigBatchListenRequest) request;
-        String listeningConfigs = configChangeListenRequest.getListeningConfigs();
-        Map<String, String> clientMd5Map = MD5Util.getClientMd5Map(listeningConfigs);
         String connectionId = requestMeta.getConnectionId();
         List<String> changedGroups = null;
         String header = request.getHeader("Vipserver-Tag");
     
-        for (Map.Entry<String, String> entry : clientMd5Map.entrySet()) {
-            String groupKey = entry.getKey();
-            String md5 = entry.getValue();
-            if (configChangeListenRequest.isListenConfig()) {
+        ConfigChangeBatchListenResponse configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
+        for (ConfigBatchListenRequest.ConfigListenContext listenContext : request.getConfigListenContexts()) {
+            String groupKey = GroupKey2
+                    .getKey(listenContext.getDataId(), listenContext.getGroup(), listenContext.getTenant());
+            groupKey = SingletonRepository.DataIdGroupIdCache.getSingleton(groupKey);
+        
+            String md5 = listenContext.getMd5();
+            if (configChangeListenRequest.isListen()) {
                 configChangeListenContext.addListen(groupKey, md5, connectionId);
                 boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, requestMeta.getClientIp(), header);
                 if (!isUptoDate) {
-                    if (changedGroups == null) {
-                        changedGroups = new LinkedList<>();
-                    }
-                    changedGroups.add(groupKey);
+                    configChangeBatchListenResponse.addChangeConfig(listenContext.getDataId(), listenContext.getGroup(),
+                            listenContext.getTenant());
                 }
             } else {
                 configChangeListenContext.removeListen(groupKey, connectionId);
             }
         }
-        return ConfigChangeBatchListenResponse.buildSucessResponse(changedGroups);
+    
+        return configChangeBatchListenResponse;
         
     }
     
