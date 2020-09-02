@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.rsocket;
+package com.alibaba.nacos.common.remote;
 
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.remote.PayloadRegistry;
+import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -34,6 +38,8 @@ import io.rsocket.Payload;
 import io.rsocket.util.DefaultPayload;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
 
 /**
  * rsocket utils.
@@ -109,7 +115,9 @@ public class RsocketUtils {
         jsonObject.addProperty("type", request.getClass().getName());
         jsonObject.addProperty("body", toJson(request));
         jsonObject.addProperty("meta", toJson(meta));
-        return DefaultPayload.create(jsonObject.toString());
+        byte[] bytes = IoUtils.tryCompress(jsonObject.toString(), "UTF-8");
+        return DefaultPayload.create(bytes);
+        
     }
     
     /**
@@ -122,7 +130,8 @@ public class RsocketUtils {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("type", response.getClass().getName());
         jsonObject.addProperty("body", toJson(response));
-        return DefaultPayload.create(jsonObject.toString());
+        byte[] bytes = IoUtils.tryCompress(jsonObject.toString(), "UTF-8");
+        return DefaultPayload.create(bytes);
     }
     
     /**
@@ -132,8 +141,8 @@ public class RsocketUtils {
      * @return response.
      */
     public static Response parseResponseFromPayload(Payload payload) {
-        String message = payload.getDataUtf8();
-        JsonNode jsonNode = toObj(message);
+        String payloadString = getPayloadString(payload);
+        JsonNode jsonNode = toObj(payloadString);
         String type = jsonNode.get("type").textValue();
         String bodyString = jsonNode.get("body").textValue();
         Class classbyType = PayloadRegistry.getClassbyType(type);
@@ -154,16 +163,15 @@ public class RsocketUtils {
      * @param payload payload of socket.
      * @return request.
      */
-    public static ServerPushRequest parseServerRequestFromPayload(Payload payload) {
-        // {"type":"type","body":"bodyString"}
-        String message = payload.getDataUtf8();
-        JsonNode jsonNode = toObj(message);
+    public static Request parseServerRequestFromPayload(Payload payload) {
+        String payloadString = getPayloadString(payload);
+        JsonNode jsonNode = toObj(payloadString);
         String type = jsonNode.get("type").textValue();
         String bodyString = jsonNode.get("body").textValue();
         Class classByType = PayloadRegistry.getClassbyType(type);
-        final ServerPushRequest request;
+        final Request request;
         if (classByType != null) {
-            request = (ServerPushRequest) toObj(bodyString, classByType);
+            request = (Request) toObj(bodyString, classByType);
             return request;
         } else {
             return null;
@@ -177,9 +185,9 @@ public class RsocketUtils {
      * @return plain request.
      */
     public static PlainRequest parsePlainRequestFromPayload(Payload payload) {
-        // {"type":"type","body":"bodyString"}
-        String message = payload.getDataUtf8();
-        JsonNode jsonNode = toObj(message);
+    
+        String payloadString = getPayloadString(payload);
+        JsonNode jsonNode = toObj(payloadString);
         String type = jsonNode.has("type") ? jsonNode.get("type").textValue() : "";
         String bodyString = jsonNode.has("body") ? jsonNode.get("body").textValue() : "";
         String meta = jsonNode.has("meta") ? jsonNode.get("meta").textValue() : "";
@@ -188,6 +196,21 @@ public class RsocketUtils {
         plainRequest.setBody(bodyString);
         plainRequest.setMeta(meta);
         return plainRequest;
+    
+    }
+    
+    private static String getPayloadString(Payload payload) {
+        ByteBuffer data1 = payload.getData();
+        byte[] data = new byte[data1.remaining()];
+        payload.data().readBytes(data);
+        byte[] bytes = new byte[0];
+        try {
+            bytes = IoUtils.tryDecompress(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return new String(bytes);
     }
     
     public static class PlainRequest {

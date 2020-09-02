@@ -18,14 +18,15 @@ package com.alibaba.nacos.common.remote.client.rsocket;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
-import com.alibaba.nacos.api.rsocket.RsocketUtils;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.RsocketUtils;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -93,7 +94,7 @@ public class RsocketRpcClient extends RpcClient {
                         @Override
                         public Mono<Payload> requestResponse(Payload payload) {
                             try {
-                                final ServerPushRequest request = RsocketUtils.parseServerRequestFromPayload(payload);
+                                final Request request = RsocketUtils.parseServerRequestFromPayload(payload);
                                 try {
                                     Response response = handleServerRequest(request);
                                     response.setRequestId(request.getRequestId());
@@ -117,7 +118,7 @@ public class RsocketRpcClient extends RpcClient {
                 
                         @Override
                         public Mono<Void> fireAndForget(Payload payload) {
-                            final ServerPushRequest request = RsocketUtils.parseServerRequestFromPayload(payload);
+                            final Request request = RsocketUtils.parseServerRequestFromPayload(payload);
                             handleServerRequest(request);
                             return Mono.just(null);
                         }

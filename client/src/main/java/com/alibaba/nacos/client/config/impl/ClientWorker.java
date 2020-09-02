@@ -225,6 +225,7 @@ public class ClientWorker implements Closeable {
     
     /**
      * remove config.
+     *
      * @param tenant
      * @param dataId
      * @param group
@@ -238,6 +239,7 @@ public class ClientWorker implements Closeable {
     
     /**
      * publish config.
+     *
      * @param dataId
      * @param group
      * @param tenant
@@ -709,18 +711,22 @@ public class ClientWorker implements Closeable {
                 for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
                     List<CacheData> value = entry.getValue();
-                    String cacheString = buildConfigStr(value);
+    
+                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(value);
+                    configChangeListenRequest.setListen("Y");
                     try {
                         RpcClient rpcClient = ensureRpcClient(taskId);
-                        ConfigBatchListenRequest configChangeListenRequest = ConfigBatchListenRequest
-                                .buildListenRequest(cacheString);
+    
                         ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
                                 rpcClient, configChangeListenRequest);
                         if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
     
-                            if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedGroupKeys())) {
-                                for (String groupKey : configChangeBatchListenResponse.getChangedGroupKeys()) {
-                                    refreshContentAndCheck(groupKey);
+                            if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedConfigs())) {
+                                for (ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
+                                        .getChangedConfigs()) {
+                                    refreshContentAndCheck(
+                                            GroupKey.getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
+                                                    changeConfig.getTenant()));
                                 }
                             }
                             for (CacheData cacheData : listenCaches) {
@@ -737,10 +743,11 @@ public class ClientWorker implements Closeable {
                 for (Map.Entry<String, List<CacheData>> entry : removeListenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
                     List<CacheData> value = entry.getValue();
-                    String cacheString = buildConfigStr(value);
+                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(value);
+                    configChangeListenRequest.setListen("N");
                     try {
                         RpcClient rpcClient = ensureRpcClient(taskId);
-                        boolean removeSuccess = unListenConfigChange(rpcClient, cacheString);
+                        boolean removeSuccess = unListenConfigChange(rpcClient, configChangeListenRequest);
                         if (removeSuccess) {
                             for (CacheData cacheData : removeListenCaches) {
                                 ClientWorker.this.removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
@@ -770,6 +777,7 @@ public class ClientWorker implements Closeable {
     
         /**
          * build config strings.
+         *
          * @param caches caches to build config string.
          * @return
          */
@@ -804,6 +812,7 @@ public class ClientWorker implements Closeable {
     
         /**
          * build config string.
+         *
          * @param caches caches to build config string.
          * @return
          */
@@ -824,6 +833,22 @@ public class ClientWorker implements Closeable {
     
             return listenConfigsBuilder.toString();
         }
+    
+        /**
+         * build config string.
+         *
+         * @param caches caches to build config string.
+         * @return
+         */
+        private ConfigBatchListenRequest buildConfigRequest(List<CacheData> caches) {
+        
+            ConfigBatchListenRequest configChangeListenRequest = new ConfigBatchListenRequest();
+            for (CacheData cacheData : caches) {
+                configChangeListenRequest.addConfigListenContext(cacheData.group, cacheData.dataId, cacheData.tenant,
+                        cacheData.getMd5());
+            }
+            return configChangeListenRequest;
+        }
         
         @Override
         public void removeCache(String dataId, String group) {
@@ -836,9 +861,9 @@ public class ClientWorker implements Closeable {
          *
          * @param configListenString string of remove listen config string.
          */
-        private boolean unListenConfigChange(RpcClient rpcClient, String configListenString) throws NacosException {
-            ConfigBatchListenRequest configChangeListenRequest = ConfigBatchListenRequest
-                    .buildRemoveListenRequest(configListenString);
+        private boolean unListenConfigChange(RpcClient rpcClient, ConfigBatchListenRequest configChangeListenRequest)
+                throws NacosException {
+            
             ConfigChangeBatchListenResponse response = (ConfigChangeBatchListenResponse) requestProxy(rpcClient,
                     configChangeListenRequest);
             return response.isSuccess();
@@ -886,7 +911,7 @@ public class ClientWorker implements Closeable {
             } catch (Exception e) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
             }
-    
+        
             JsonObject asJsonObjectTemp = new Gson().toJsonTree(request).getAsJsonObject();
             asJsonObjectTemp.remove("headers");
             asJsonObjectTemp.remove("requestId");

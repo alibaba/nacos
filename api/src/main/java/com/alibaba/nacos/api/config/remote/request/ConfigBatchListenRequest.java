@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * request of listening a batch of configs.
  *
@@ -24,71 +27,50 @@ package com.alibaba.nacos.api.config.remote.request;
  */
 public class ConfigBatchListenRequest extends AbstractConfigRequest {
     
-    private static final String Y = "Y";
-    
-    private static final String N = "N";
-    
     /**
      * listen or remove listen.
      */
-    private String listen;
+    private String listen = "Y";
+    
+    private List<ConfigListenContext> configListenContexts = new ArrayList<ConfigListenContext>();
     
     /**
-     * batch operation config value string.
-     */
-    private String listeningConfigs;
-    
-    /**
-     * build batch listen request.
+     * add listen congif.
      *
-     * @param listeningConfigs configstring of listening
-     * @return
+     * @param group  group.
+     * @param dataId dataId.
+     * @param tenant tenant.
+     * @param md5    md5.
      */
-    public static ConfigBatchListenRequest buildListenRequest(String listeningConfigs) {
-        ConfigBatchListenRequest request = new ConfigBatchListenRequest();
-        request.setListeningConfigs(listeningConfigs);
-        request.setListen(Y);
-        return request;
+    public void addConfigListenContext(String group, String dataId, String tenant, String md5) {
+        ConfigListenContext configListenContext = new ConfigListenContext();
+        configListenContext.dataId = dataId;
+        configListenContext.group = group;
+        configListenContext.md5 = md5;
+        configListenContext.tenant = tenant;
+        configListenContexts.add(configListenContext);
     }
     
     /**
-     * build batch listen request.
+     * Getter method for property <tt>configListenContexts</tt>.
      *
-     * @param listeningConfigs configstring of cancel listening
-     * @return
+     * @return property value of configListenContexts
      */
-    public static ConfigBatchListenRequest buildRemoveListenRequest(String listeningConfigs) {
-        ConfigBatchListenRequest request = new ConfigBatchListenRequest();
-        request.setListeningConfigs(listeningConfigs);
-        request.setListen(N);
-        return request;
+    public List<ConfigListenContext> getConfigListenContexts() {
+        return configListenContexts;
     }
     
     /**
-     * Getter method for property <tt>listeningConfigs</tt>.
+     * Setter method for property <tt>configListenContexts</tt>.
      *
-     * @return property value of listeningConfigs
+     * @param configListenContexts value to be assigned to property configListenContexts
      */
-    public String getListeningConfigs() {
-        return listeningConfigs;
+    public void setConfigListenContexts(List<ConfigListenContext> configListenContexts) {
+        this.configListenContexts = configListenContexts;
     }
     
-    /**
-     * Setter method for property <tt>listeningConfigs</tt>.
-     *
-     * @param listeningConfigs value to be assigned to property listeningConfigs
-     */
-    public void setListeningConfigs(String listeningConfigs) {
-        this.listeningConfigs = listeningConfigs;
-    }
-    
-    /**
-     * if it is a listen config request.
-     *
-     * @return if is a listen request.
-     */
     public boolean isListenConfig() {
-        return Y.equalsIgnoreCase(this.listen);
+        return "Y".equals(this.listen);
     }
     
     /**
@@ -107,5 +89,92 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
      */
     public void setListen(String listen) {
         this.listen = listen;
+    }
+    
+    public static class ConfigListenContext {
+        
+        String group;
+        
+        String md5;
+        
+        String dataId;
+        
+        String tenant;
+        
+        public ConfigListenContext() {
+        
+        }
+        
+        /**
+         * Getter method for property <tt>group</tt>.
+         *
+         * @return property value of group
+         */
+        public String getGroup() {
+            return group;
+        }
+        
+        /**
+         * Setter method for property <tt>groupId</tt>.
+         *
+         * @param group value to be assigned to property groupId
+         */
+        public void setGroup(String group) {
+            this.group = group;
+        }
+        
+        /**
+         * Getter method for property <tt>md5</tt>.
+         *
+         * @return property value of md5
+         */
+        public String getMd5() {
+            return md5;
+        }
+        
+        /**
+         * Setter method for property <tt>md5</tt>.
+         *
+         * @param md5 value to be assigned to property md5
+         */
+        public void setMd5(String md5) {
+            this.md5 = md5;
+        }
+        
+        /**
+         * Getter method for property <tt>dataId</tt>.
+         *
+         * @return property value of dataId
+         */
+        public String getDataId() {
+            return dataId;
+        }
+        
+        /**
+         * Setter method for property <tt>dataId</tt>.
+         *
+         * @param dataId value to be assigned to property dataId
+         */
+        public void setDataId(String dataId) {
+            this.dataId = dataId;
+        }
+        
+        /**
+         * Getter method for property <tt>tenant</tt>.
+         *
+         * @return property value of tenant
+         */
+        public String getTenant() {
+            return tenant;
+        }
+        
+        /**
+         * Setter method for property <tt>tenant</tt>.
+         *
+         * @param tenant value to be assigned to property tenant
+         */
+        public void setTenant(String tenant) {
+            this.tenant = tenant;
+        }
     }
 }

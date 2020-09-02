@@ -94,7 +94,6 @@ public class ConfigTest {
             listenConfigsBuilder.append(group).append(WORD_SEPARATOR);
             listenConfigsBuilder.append(new String(new byte[100])).append(WORD_SEPARATOR);
             listenConfigsBuilder.append("default").append(LINE_SEPARATOR);
-            syncRequest.setListeningConfigs(listenConfigsBuilder.toString());
             if (i == 10) {
                 System.out.println("单个报文大小长度：" + listenConfigsBuilder.toString().length());
             }
@@ -113,7 +112,6 @@ public class ConfigTest {
         System.out.println("100K start send batch 100 request...");
         long start2 = System.currentTimeMillis();
         System.out.println("总报文大小长度：" + listenConfigsBuilder.toString().length());
-        syncRequest.setListeningConfigs(listenConfigsBuilder.toString());
         Response response = client.request(syncRequest);
         long end2 = System.currentTimeMillis();
         System.out.println("toal cost:" + (end2 - start2));
@@ -198,7 +196,7 @@ public class ConfigTest {
                                 "value" + System.currentTimeMillis());
                         
                         times--;
-                        Thread.sleep(300L);
+                        Thread.sleep(2000L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

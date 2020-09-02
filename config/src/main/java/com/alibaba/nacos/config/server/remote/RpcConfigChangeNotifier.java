@@ -80,7 +80,12 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
      */
     public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequet) {
     
-        Set<String> clients = new HashSet<>(configChangeListenContext.getListeners(groupKey));
+        Set<String> listeners = configChangeListenContext.getListeners(groupKey);
+        if (listeners == null || listeners.isEmpty()) {
+            return;
+        }
+    
+        Set<String> clients = new HashSet<>(listeners);
         int notifyCount = 0;
         if (!CollectionUtils.isEmpty(clients)) {
             for (final String client : clients) {
@@ -157,14 +162,14 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 
                 @Override
                 public void onSuccess() {
-                    Loggers.CORE.warn("push callback  success.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                    Loggers.CORE.warn("push success.dataId={},group={},tenant={},clientId={},tryTimes={}",
                             notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
                             retryTimes);
                 }
                 
                 @Override
                 public void onFail(Exception e) {
-                    Loggers.CORE.warn("push callback  fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                    Loggers.CORE.warn("push fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
                             notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
                             retryTimes);
                     
@@ -173,7 +178,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 
                 @Override
                 public void onTimeout() {
-                    Loggers.CORE.warn("push callback  timeout.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                    Loggers.CORE.warn("push timeout.dataId={},group={},tenant={},clientId={},tryTimes={}",
                             notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
                             retryTimes);
                     push(RpcPushTask.this);
