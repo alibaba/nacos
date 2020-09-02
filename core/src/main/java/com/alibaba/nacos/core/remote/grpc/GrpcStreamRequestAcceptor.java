@@ -50,7 +50,7 @@ public class GrpcStreamRequestAcceptor extends RequestStreamGrpc.RequestStreamIm
         Metadata metadata = request.getMetadata();
         String clientIp = metadata.getClientIp();
         String connectionId = metadata.getConnectionId();
-        String version = metadata.getVersion();
+        String version = metadata.getClientVersion();
         ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId, clientIp, ConnectionType.GRPC.getType(),
                 version, metadata.getLabelsMap());
     

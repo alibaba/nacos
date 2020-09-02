@@ -83,27 +83,33 @@ public class RsocketRpcServer extends RpcServer {
     public void startServer() throws Exception {
         RSocketServer rSocketServerInner = RSocketServer.create();
         closeChannel = rSocketServerInner.acceptor(((setup, sendingSocket) -> {
-            Loggers.RPC.info("Receive connection rsocket:" + setup.getDataUtf8());
             RsocketUtils.PlainRequest palinrequest = null;
             try {
                 palinrequest = RsocketUtils.parsePlainRequestFromPayload(setup);
             } catch (Exception e) {
-                //Do Nothing
+                Loggers.RPC.error(String
+                        .format("[%s] error to parse new connection request :%s, error message: %s ", "rsocket",
+                                setup.getDataUtf8(), e.getMessage(), e));
             }
     
-            if (palinrequest == null || !ConnectionSetupRequest.class.getName().equals(palinrequest.getType())) {
-                Loggers.RPC.info("Illegal  set up payload:" + setup.getDataUtf8());
+            if (palinrequest == null || !(palinrequest.getBody() instanceof ConnectionSetupRequest)) {
+                Loggers.RPC.info(String.format("[%s] invalid connection setup request, request info : %s", "rsocket",
+                        palinrequest.toString()));
                 sendingSocket.dispose();
                 return Mono.just(sendingSocket);
             } else {
         
                 String connectionid = UUID.randomUUID().toString();
-                ConnectionSetupRequest connectionSetupRequest = RsocketUtils
-                        .toObj(palinrequest.getBody(), ConnectionSetupRequest.class);
+                Loggers.RPC.info(String
+                        .format("[%s] new connection receive, connection id : %s, clientMeta :%s", "rsocket",
+                                connectionid, palinrequest.getMetadata()));
+        
+                ConnectionSetupRequest connectionSetupRequest = (ConnectionSetupRequest) palinrequest.getBody();
                 ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionid, connectionSetupRequest.getClientIp(),
                         ConnectionType.RSOCKET.getType(), connectionSetupRequest.getClientVersion(),
                         connectionSetupRequest.getLabels());
                 Connection connection = new RsocketConnection(metaInfo, sendingSocket);
+        
                 connectionManager.register(connection.getConnectionId(), connection);
                 
                 sendingSocket.onClose().subscribe(new Subscriber<Void>() {
@@ -120,12 +126,19 @@ public class RsocketRpcServer extends RpcServer {
                     
                     @Override
                     public void onError(Throwable throwable) {
+    
+                        Loggers.RPC.error(String
+                                .format("[%s] error on  connection, connection id : %s, error message :%s", "rsocket",
+                                        connectionid, throwable.getMessage(), throwable));
                         throwable.printStackTrace();
                         connectionManager.unregister(connectionId);
                     }
                     
                     @Override
                     public void onComplete() {
+    
+                        Loggers.RPC.info(String
+                                .format("[%s]  connection finished ,connection id  %s", "rsocket", connectionid));
                         connectionManager.unregister(connectionId);
                     }
                 });
@@ -156,25 +169,37 @@ public class RsocketRpcServer extends RpcServer {
         
         @Override
         public Mono<Payload> requestResponse(Payload payload) {
-            Loggers.RPC_DIGEST.info("Receive request :" + payload.getDataUtf8());
-            RsocketUtils.PlainRequest requestType = RsocketUtils.parsePlainRequestFromPayload(payload);
-            RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(requestType.getType());
-            if (requestHandler != null) {
-                Class classbyType = PayloadRegistry.getClassbyType(requestType.getType());
-                Request request = (Request) JacksonUtils.toObj(requestType.getBody(), classbyType);
-                String meta = requestType.getMeta();
-                RequestMeta requestMeta = RsocketUtils.toObj(meta, RequestMeta.class);
-                requestMeta.setConnectionId(connectionId);
-                try {
-                    Response response = requestHandler.handle(request, requestMeta);
-                    return Mono.just(RsocketUtils.convertResponseToPayload(response));
-                    
-                } catch (NacosException e) {
-                    return Mono.just(RsocketUtils
-                            .convertResponseToPayload(new PlainBodyResponse("exception:" + e.getMessage())));
+            try {
+                RsocketUtils.PlainRequest requestType = RsocketUtils.parsePlainRequestFromPayload(payload);
+                Loggers.RPC_DIGEST.debug(String.format("[%s] request receive : %s", "rsocket", requestType.toString()));
+        
+                RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(requestType.getType());
+                if (requestHandler != null) {
+                    RequestMeta requestMeta = requestType.getMetadata();
+                    requestMeta.setConnectionId(connectionId);
+                    try {
+                        Response response = requestHandler.handle(requestType.getBody(), requestMeta);
+                        return Mono.just(RsocketUtils.convertResponseToPayload(response));
+                
+                    } catch (NacosException e) {
+                        Loggers.RPC_DIGEST.debug(String
+                                .format("[%s] fail to handle request, error message : %s ", "rsocket", e.getMessage(),
+                                        e));
+                        return Mono.just(RsocketUtils
+                                .convertResponseToPayload(new PlainBodyResponse("exception:" + e.getMessage())));
+                    }
                 }
+        
+                Loggers.RPC_DIGEST.debug(String
+                        .format("[%s] no handler for request type : %s :", "rsocket", requestType.getType()));
+                return Mono.just(RsocketUtils.convertResponseToPayload(new PlainBodyResponse("No Handler")));
+            } catch (Exception e) {
+                Loggers.RPC_DIGEST.debug(String
+                        .format("[%s] fail to parse request, error message : %s ", "rsocket", e.getMessage(), e));
+                return Mono.just(RsocketUtils
+                        .convertResponseToPayload(new PlainBodyResponse("exception:" + e.getMessage())));
             }
-            return Mono.just(RsocketUtils.convertResponseToPayload(new PlainBodyResponse("No Handler")));
+            
         }
     }
     

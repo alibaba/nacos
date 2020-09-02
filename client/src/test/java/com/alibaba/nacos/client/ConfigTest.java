@@ -196,7 +196,7 @@ public class ConfigTest {
                                 "value" + System.currentTimeMillis());
                         
                         times--;
-                        Thread.sleep(2000L);
+                        Thread.sleep(500L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

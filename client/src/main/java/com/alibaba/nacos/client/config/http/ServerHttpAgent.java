@@ -234,11 +234,6 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     @Override
-    public ServerListManager getServerListManager() {
-        return this.serverListMgr;
-    }
-    
-    @Override
     public void start() throws NacosException {
         serverListMgr.start();
     }

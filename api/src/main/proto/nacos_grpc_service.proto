@@ -25,25 +25,21 @@ option java_package = "com.alibaba.nacos.api.grpc.auto";
 
 message Metadata {
 
-    string name = 1;
+    string type = 2;
 
-    string client_ip=2;
+    string client_ip = 3;
 
-    string connection_id=3;
+    string connection_id = 4;
 
-    google.protobuf.Timestamp create_time = 4;
-
-    string version = 5;
+    string client_version = 5;
 
     map<string,string> labels = 6;
+
+    map<string, string> headers = 7;
 }
 
 message Payload {
-
-    string type = 2;
-    // Common metadata describing the resource.
-    Metadata metadata = 1;
-    // The primary payload for the resource.
+    Metadata metadata = 2;
     google.protobuf.Any body = 3;
 }
 

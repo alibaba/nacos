@@ -42,6 +42,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
+ * rpc request accetor of grpc.
+ *
  * @author liuzunfei
  * @version $Id: GrpcCommonRequestAcceptor.java, v 0.1 2020年09月01日 10:52 AM liuzunfei Exp $
  */
@@ -54,15 +56,16 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     @Autowired
     private ConnectionManager connectionManager;
     
-    
     @Override
     public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
-        
-        Loggers.RPC_DIGEST.debug(" gRpc Server receive request :" + grpcRequest);
-        String type = grpcRequest.getType();
+    
+        String type = grpcRequest.getMetadata().getType();
         
         if (ServerCheckRequest.class.getName().equals(type)) {
-            responseObserver.onNext(convertResponseToPayload(new ServerCheckResponse()));
+    
+            Loggers.RPC_DIGEST.debug(String.format("[%s]  server check request receive ,clientIp : ", "grpc",
+                    grpcRequest.getMetadata().getClientIp()));
+            responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse()));
             responseObserver.onCompleted();
             return;
         }
@@ -72,36 +75,44 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         if (parseObj != null) {
             if (parseObj instanceof Response) {
                 Response response = (Response) parseObj;
+                Loggers.RPC_DIGEST.debug(String.format("[%s]  response receive :  %s ", "grpc", response.toString()));
+    
                 String connectionId = grpcRequest.getMetadata().getConnectionId();
                 RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
-                responseObserver.onNext(convertResponseToPayload(new PlainBodyResponse()));
+                responseObserver.onNext(GrpcUtils.convert(new PlainBodyResponse()));
                 responseObserver.onCompleted();
                 return;
             } else {
                 Request request = (Request) parseObj;
+                Loggers.RPC_DIGEST.debug(String.format("[%s] request receive :%s ", "grpc", request.toString()));
                 RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
                 if (requestHandler != null) {
                     try {
                         RequestMeta requestMeta = convertMeta(grpcRequest.getMetadata());
                         boolean requestValid = connectionManager.checkValid(requestMeta.getConnectionId());
                         if (!requestValid) {
-                            responseObserver.onNext(convertResponseToPayload(new ConnectionUnregisterResponse()));
+                            responseObserver.onNext(GrpcUtils.convert(new ConnectionUnregisterResponse()));
                             responseObserver.onCompleted();
                             return;
                         }
                         connectionManager.refreshActiveTime(requestMeta.getConnectionId());
                         Response response = requestHandler.handle(request, requestMeta);
-                        responseObserver.onNext(convertResponseToPayload(response));
+                        responseObserver.onNext(GrpcUtils.convert(response));
                         responseObserver.onCompleted();
+                        return;
                     } catch (Exception e) {
-                        Loggers.RPC_DIGEST.error(" gRpc Server handle  request  exception :" + e.getMessage(), e);
-                        responseObserver.onNext(convertResponseToPayload(buildFailResponse("Error")));
+    
+                        Loggers.RPC_DIGEST.error(String
+                                .format("[%s] fail to handle request ,error message :%s", "grpc", e.getMessage(), e));
+                        responseObserver.onNext(GrpcUtils.convert(buildFailResponse("Error")));
                         responseObserver.onCompleted();
+                        return;
                     }
                 } else {
-                    Loggers.RPC_DIGEST.error(" gRpc Server requestHandler Not found ！ ");
-                    responseObserver.onNext(convertResponseToPayload(buildFailResponse("RequestHandler Not Found")));
+                    Loggers.RPC_DIGEST.debug(String.format("[%s] no handler for request type : %s :", "grpc", type));
+                    responseObserver.onNext(GrpcUtils.convert(buildFailResponse("RequestHandler Not Found")));
                     responseObserver.onCompleted();
+                    return;
                 }
             }
         }
@@ -111,15 +122,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp(metadata.getClientIp());
         requestMeta.setConnectionId(metadata.getConnectionId());
-        requestMeta.setClientVersion(metadata.getVersion());
+        requestMeta.setClientVersion(metadata.getClientVersion());
         return requestMeta;
-    }
-    
-    private Payload convertResponseToPayload(Response response) {
-        Payload payload = Payload.newBuilder()
-                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(JacksonUtils.toJsonBytes(response))))
-                .setType(response.getClass().getName()).build();
-        return payload;
     }
     
     private Response buildFailResponse(String msg) {

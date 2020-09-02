@@ -48,17 +48,18 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public Response request(Request request) throws NacosException {
-        Payload response = rSocketClient.requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()))
+    public Response request(Request request, RequestMeta requestMeta) throws NacosException {
+        Payload response = rSocketClient.requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta))
                 .block();
         return RsocketUtils.parseResponseFromPayload(response);
     }
     
     @Override
-    public void asyncRequest(Request request, final FutureCallback<Response> callback) throws NacosException {
+    public void asyncRequest(Request request, RequestMeta requestMeta, final FutureCallback<Response> callback)
+            throws NacosException {
         try {
             Mono<Payload> response = rSocketClient
-                    .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
+                    .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
             
             response.subscribe(new Consumer<Payload>() {
                 @Override
@@ -69,13 +70,6 @@ public class RsocketConnection extends Connection {
         } catch (Exception e) {
             callback.onFailure(e);
         }
-    }
-    
-    private RequestMeta buildMeta() {
-        RequestMeta meta = new RequestMeta();
-        meta.setClientVersion(VersionUtils.getFullClientVersion());
-        meta.setClientIp(NetUtils.localIP());
-        return meta;
     }
     
     @Override

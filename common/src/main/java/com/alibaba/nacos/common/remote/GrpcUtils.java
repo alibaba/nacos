@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -33,7 +34,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * grpc utils, use to parse request and response.
@@ -93,48 +94,51 @@ public class GrpcUtils {
         String jsonString = toJson(request);
         byte[] bytes = null;
         try {
-            bytes = IoUtils.tryCompress(jsonString, "UTF-8");
+            bytes = IoUtils.tryCompress(jsonString, StandardCharsets.UTF_8.name());
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
         
         Payload.Builder builder = Payload.newBuilder();
+        Metadata.Builder metaBuilder = Metadata.newBuilder();
         if (meta != null) {
-            Metadata metadata = Metadata.newBuilder().setClientIp(meta.getClientIp()).setVersion(meta.getClientVersion()).build();
-            builder.setMetadata(metadata);
+            metaBuilder.setClientIp(meta.getClientIp()).putAllLabels(meta.getLabels())
+                    .putAllHeaders(request.getHeaders()).setClientVersion(meta.getClientVersion())
+                    .setType(request.getClass().getName()).build();
         }
-        Payload payload = builder.setType(request.getClass().getName()).setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        builder.setMetadata(metaBuilder.build());
+        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
         return payload;
         
     }
     
     /**
      * convert request to payload.
+     *
      * @param request request.
-     * @param meta meta
+     * @param meta    meta
      * @return
      */
     public static Payload convert(Request request, Metadata meta) {
         String jsonString = toJson(request);
         byte[] bytes = null;
         try {
-            bytes = IoUtils.tryCompress(jsonString, "UTF-8");
+            bytes = IoUtils.tryCompress(jsonString, StandardCharsets.UTF_8.name());
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
         Payload.Builder builder = Payload.newBuilder();
-        if (meta != null) {
-            builder.setMetadata(meta);
-        }
-        Payload payload = builder.setType(request.getClass().getName()).setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).setMetadata(meta)
+                .build();
         return payload;
         
     }
     
     /**
      * convert response to payload.
+     *
      * @param response response.
      * @return
      */
@@ -142,13 +146,17 @@ public class GrpcUtils {
         String jsonString = toJson(response);
         byte[] bytes = null;
         try {
-            bytes = IoUtils.tryCompress(jsonString, "UTF-8");
+            bytes = IoUtils.tryCompress(jsonString, StandardCharsets.UTF_8.name());
             ;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
-        Payload payload = Payload.newBuilder().setType(response.getClass().getName()).setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        Metadata.Builder metaBuilder = Metadata.newBuilder();
+        metaBuilder.setClientVersion(VersionUtils.getFullClientVersion()).setType(response.getClass().getName());
+    
+        Payload payload = Payload.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes)))
+                .setMetadata(metaBuilder.build()).build();
         return payload;
     }
     
@@ -159,7 +167,7 @@ public class GrpcUtils {
      * @return
      */
     public static Object parse(Payload payload) {
-        Class classbyType = PayloadRegistry.getClassbyType(payload.getType());
+        Class classbyType = PayloadRegistry.getClassbyType(payload.getMetadata().getType());
         if (classbyType != null) {
             byte[] value = new byte[0];
             try {
