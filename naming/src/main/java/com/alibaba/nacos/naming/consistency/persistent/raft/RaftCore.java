@@ -182,7 +182,7 @@ public class RaftCore {
                 masterTask.cancel(true);
                 heartbeatTask.cancel(true);
             }
-        });
+        }, 100);
     
         NotifyCenter.registerSubscriber(notifier);
     
