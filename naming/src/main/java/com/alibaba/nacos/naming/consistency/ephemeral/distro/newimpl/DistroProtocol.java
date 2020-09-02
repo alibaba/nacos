@@ -21,6 +21,8 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataStorage;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroTransportAgent;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
@@ -67,20 +69,41 @@ public class DistroProtocol {
     }
     
     /**
-     * Start to sync.
+     * Start to sync data to all remote server.
      *
      * @param distroKey distro key of sync data
      * @param action    the action of data operation
      */
     public void sync(DistroKey distroKey, ApplyAction action, long delay) {
         for (Member each : memberManager.allMembersWithoutSelf()) {
-            DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(), each.getAddress());
+            DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
+                    each.getAddress());
             DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
             distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
             if (Loggers.DISTRO.isDebugEnabled()) {
                 Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, each.getAddress());
             }
         }
+    }
+    
+    /**
+     * Query data from specified server.
+     *
+     * @param distroKey data key
+     * @return data
+     */
+    public DistroData queryFromRemote(DistroKey distroKey) {
+        if (null == distroKey.getTargetServer()) {
+            Loggers.DISTRO.warn("[DISTRO] Can't query data from empty server");
+            return null;
+        }
+        String resourceType = distroKey.getResourceType();
+        DistroTransportAgent transportAgent = distroComponentHolder.findTransportAgent(resourceType);
+        if (null == transportAgent) {
+            Loggers.DISTRO.warn("[DISTRO] Can't find transport agent for key {}", resourceType);
+            return null;
+        }
+        return transportAgent.getData(distroKey, distroKey.getTargetServer());
     }
     
     /**
@@ -92,7 +115,7 @@ public class DistroProtocol {
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
-            Loggers.DISTRO.warn("[DISTRO] Can't find data process for receive data {}", resourceType);
+            Loggers.DISTRO.warn("[DISTRO] Can't find data process for received data {}", resourceType);
             return;
         }
         dataProcessor.processData(distroData);
@@ -107,9 +130,25 @@ public class DistroProtocol {
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
-            Loggers.DISTRO.warn("[DISTRO] Can't find verify data process for receive data {}", resourceType);
+            Loggers.DISTRO.warn("[DISTRO] Can't find verify data process for received data {}", resourceType);
             return;
         }
         dataProcessor.processVerifyData(distroData);
+    }
+    
+    /**
+     * Query data of input distro key.
+     *
+     * @param distroKey key of data
+     * @return data
+     */
+    public DistroData onQuery(DistroKey distroKey) {
+        String resourceType = distroKey.getResourceType();
+        DistroDataStorage distroDataStorage = distroComponentHolder.findDataStorage(resourceType);
+        if (null == distroDataStorage) {
+            Loggers.DISTRO.warn("[DISTRO] Can't find data storage for received key {}", resourceType);
+            return new DistroData(distroKey, new byte[0]);
+        }
+        return distroDataStorage.getDistroData(distroKey);
     }
 }

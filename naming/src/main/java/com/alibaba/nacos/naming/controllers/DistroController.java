@@ -22,9 +22,10 @@ import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroHttpData;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -41,7 +42,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -56,9 +56,6 @@ public class DistroController {
     
     @Autowired
     private Serializer serializer;
-    
-    @Autowired
-    private DistroConsistencyServiceImpl consistencyService;
     
     @Autowired
     private DataStore dataStore;
@@ -130,17 +127,12 @@ public class DistroController {
         JsonNode bodyNode = JacksonUtils.toObj(body);
         String keys = bodyNode.get("keys").asText();
         String keySplitter = ",";
-        Map<String, Datum> datumMap = new HashMap<>(64);
+        DistroHttpCombinedKey distroKey = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, "");
         for (String key : keys.split(keySplitter)) {
-            Datum datum = consistencyService.get(key);
-            if (datum == null) {
-                continue;
-            }
-            datumMap.put(key, datum);
+            distroKey.getActualResourceTypes().add(key);
         }
-        
-        byte[] content = serializer.serialize(datumMap);
-        return ResponseEntity.ok(content);
+        DistroData distroData = distroProtocol.onQuery(distroKey);
+        return ResponseEntity.ok(distroData.getContent());
     }
     
     /**

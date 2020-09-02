@@ -29,6 +29,7 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKeyTaskFailedHandler;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpDelayTaskProcessor;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroDataStorageImpl;
@@ -292,8 +293,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
             
             try {
-                byte[] result = NamingProxy.getData(toUpdateKeys, server);
-                processData(result);
+                DistroHttpCombinedKey distroKey = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, server);
+                distroKey.getActualResourceTypes().addAll(toUpdateKeys);
+                DistroData remoteData = distroProtocol.queryFromRemote(distroKey);
+                if (null != remoteData) {
+                    processData(remoteData.getContent());
+                }
             } catch (Exception e) {
                 Loggers.DISTRO.error("get data from " + server + " failed!", e);
             }
