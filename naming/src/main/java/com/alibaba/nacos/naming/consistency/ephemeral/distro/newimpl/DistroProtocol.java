@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataStorage;
@@ -47,6 +48,8 @@ public class DistroProtocol {
     
     private final DistroTaskEngineHolder distroTaskEngineHolder;
     
+    private volatile boolean loadCompleted = false;
+    
     public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
             DistroTaskEngineHolder distroTaskEngineHolder) {
         this.memberManager = memberManager;
@@ -56,8 +59,23 @@ public class DistroProtocol {
     }
     
     private void startVerifyTask() {
+        DistroCallback loadCallback = new DistroCallback() {
+            @Override
+            public void onSuccess() {
+                loadCompleted = true;
+            }
+    
+            @Override
+            public void onFailed(Throwable throwable) {
+                loadCompleted = false;
+            }
+        };
         GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder));
-        GlobalExecutor.submitLoadDataTask(new DistroLoadDataTask(memberManager, distroComponentHolder));
+        GlobalExecutor.submitLoadDataTask(new DistroLoadDataTask(memberManager, distroComponentHolder, loadCallback));
+    }
+    
+    public boolean isLoadCompleted() {
+        return loadCompleted;
     }
     
     /**

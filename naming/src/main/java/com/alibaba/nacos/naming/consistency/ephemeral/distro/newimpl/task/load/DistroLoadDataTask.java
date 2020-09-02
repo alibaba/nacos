@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.load;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroTransportAgent;
@@ -42,11 +43,15 @@ public class DistroLoadDataTask implements Runnable {
     
     private final DistroComponentHolder distroComponentHolder;
     
+    private final DistroCallback loadCallback;
+    
     private final Map<String, Boolean> loadCompletedMap;
     
-    public DistroLoadDataTask(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder) {
+    public DistroLoadDataTask(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
+            DistroCallback loadCallback) {
         this.memberManager = memberManager;
         this.distroComponentHolder = distroComponentHolder;
+        this.loadCallback = loadCallback;
         loadCompletedMap = new HashMap<>(1);
     }
     
@@ -58,9 +63,11 @@ public class DistroLoadDataTask implements Runnable {
                 GlobalConfig globalConfig = ApplicationUtils.getBean(GlobalConfig.class);
                 GlobalExecutor.submitLoadDataTask(this, globalConfig.getLoadDataRetryDelayMillis());
             } else {
+                loadCallback.onSuccess();
                 Loggers.DISTRO.info("[DISTRO-INIT] load snapshot data success");
             }
         } catch (Exception e) {
+            loadCallback.onFailed(e);
             Loggers.DISTRO.error("[DISTRO-INIT] load snapshot data failed. ", e);
         }
     }

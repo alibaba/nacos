@@ -23,7 +23,6 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.D
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.exception.DistroException;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 
 import java.util.ArrayList;

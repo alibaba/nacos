@@ -19,8 +19,6 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 
-import java.util.List;
-
 /**
  * Distro transport agent.
  *
