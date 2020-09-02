@@ -17,27 +17,33 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
 
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 
 /**
- * Distro data storage.
+ * Distro data processor.
  *
  * @author xiweng.yy
  */
-public interface DistroDataStorage {
+public interface DistroDataProcessor {
     
     /**
-     * Get distro datum.
+     * Process type of this processor.
      *
-     * @param distroKey key of distro datum
-     * @return need to sync datum
+     * @return type of this processor
      */
-    DistroData getDistroData(DistroKey distroKey);
+    String processType();
     
     /**
-     * Get verify datum.
+     * Process received data.
      *
-     * @return verify datum
+     * @param distroData received data
      */
-    DistroData getVerifyData();
+    void processData(DistroData distroData);
+    
+    /**
+     * Process received verify data.
+     *
+     * @param distroData verify data
+     * @return true if the data is available, otherwise false
+     */
+    boolean processVerifyData(DistroData distroData);
 }

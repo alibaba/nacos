@@ -29,12 +29,15 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKeyTaskFailedHandler;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpDelayTaskProcessor;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroDataStorageImpl;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroHttpAgent;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -74,7 +77,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 @DependsOn("ProtocolManager")
 @org.springframework.stereotype.Service("distroConsistencyService")
-public class DistroConsistencyServiceImpl implements EphemeralConsistencyService {
+public class DistroConsistencyServiceImpl implements EphemeralConsistencyService, DistroDataProcessor {
     
     private final DistroMapper distroMapper;
     
@@ -123,6 +126,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 new DistroHttpCombinedKeyTaskFailedHandler(globalConfig, taskEngineHolder));
         taskEngineHolder.registerNacosTaskProcessor(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
                 new DistroHttpDelayTaskProcessor(globalConfig, taskEngineHolder));
+        componentHolder.registerDataProcessor(this);
     }
     
     @PostConstruct
@@ -289,8 +293,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
             
             try {
-                byte[] result = NamingProxy.getData(toUpdateKeys, server);
-                processData(result);
+                DistroHttpCombinedKey distroKey = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, server);
+                distroKey.getActualResourceTypes().addAll(toUpdateKeys);
+                DistroData remoteData = distroProtocol.queryFromRemote(distroKey);
+                if (null != remoteData) {
+                    processData(remoteData.getContent());
+                }
             } catch (Exception e) {
                 Loggers.DISTRO.error("get data from " + server + " failed!", e);
             }
@@ -364,6 +372,27 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 dataStore.put(entry.getKey(), entry.getValue());
             }
         }
+        return true;
+    }
+    
+    @Override
+    public void processData(DistroData distroData) {
+        DistroHttpData distroHttpData = (DistroHttpData) distroData;
+        Datum<Instances> datum = (Datum<Instances>) distroHttpData.getDeserializedContent();
+        onPut(datum.key, datum.value);
+    }
+    
+    @Override
+    public String processType() {
+        return KeyBuilder.INSTANCE_LIST_KEY_PREFIX;
+    }
+    
+    @Override
+    public boolean processVerifyData(DistroData distroData) {
+        DistroHttpData distroHttpData = (DistroHttpData) distroData;
+        String sourceServer = distroData.getDistroKey().getResourceKey();
+        Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
+        onReceiveChecksums(verifyData, sourceServer);
         return true;
     }
     
