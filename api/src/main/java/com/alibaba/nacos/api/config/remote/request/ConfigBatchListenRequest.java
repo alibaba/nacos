@@ -30,7 +30,7 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
     /**
      * listen or remove listen.
      */
-    private String listen = "Y";
+    private boolean listen = true;
     
     private List<ConfigListenContext> configListenContexts = new ArrayList<ConfigListenContext>();
     
@@ -69,16 +69,12 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
         this.configListenContexts = configListenContexts;
     }
     
-    public boolean isListenConfig() {
-        return "Y".equals(this.listen);
-    }
-    
     /**
      * Getter method for property <tt>listen</tt>.
      *
      * @return property value of listen
      */
-    public String getListen() {
+    public boolean isListen() {
         return listen;
     }
     
@@ -87,7 +83,7 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
      *
      * @param listen value to be assigned to property listen
      */
-    public void setListen(String listen) {
+    public void setListen(boolean listen) {
         this.listen = listen;
     }
     

@@ -713,7 +713,7 @@ public class ClientWorker implements Closeable {
                     List<CacheData> value = entry.getValue();
     
                     ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(value);
-                    configChangeListenRequest.setListen("Y");
+                    configChangeListenRequest.setListen(true);
                     try {
                         RpcClient rpcClient = ensureRpcClient(taskId);
     
@@ -744,7 +744,7 @@ public class ClientWorker implements Closeable {
                     String taskId = entry.getKey();
                     List<CacheData> value = entry.getValue();
                     ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(value);
-                    configChangeListenRequest.setListen("N");
+                    configChangeListenRequest.setListen(false);
                     try {
                         RpcClient rpcClient = ensureRpcClient(taskId);
                         boolean removeSuccess = unListenConfigChange(rpcClient, configChangeListenRequest);

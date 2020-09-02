@@ -82,7 +82,7 @@ public class ConfigTest {
         client.start();
     
         ConfigBatchListenRequest syncRequest = new ConfigBatchListenRequest();
-        syncRequest.setListen("Y");
+        syncRequest.setListen(true);
         final String dataId = "xiaochun.xxc";
         final String group = "xiaochun.xxc";
         long start = System.currentTimeMillis();

@@ -57,7 +57,7 @@ public class ConfigChangeBatchListenRequestHandler
             groupKey = SingletonRepository.DataIdGroupIdCache.getSingleton(groupKey);
         
             String md5 = listenContext.getMd5();
-            if (configChangeListenRequest.isListenConfig()) {
+            if (configChangeListenRequest.isListen()) {
                 configChangeListenContext.addListen(groupKey, md5, connectionId);
                 boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, requestMeta.getClientIp(), header);
                 if (!isUptoDate) {
