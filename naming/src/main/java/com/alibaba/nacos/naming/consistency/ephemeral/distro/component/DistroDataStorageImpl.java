@@ -60,7 +60,7 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     }
     
     @Override
-    public DistroData getVerifyData(DistroKey distroKey) {
+    public DistroData getVerifyData() {
         Map<String, String> keyChecksums = new HashMap<>(64);
         for (String key : dataStore.keys()) {
             if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
@@ -75,6 +75,7 @@ public class DistroDataStorageImpl implements DistroDataStorage {
         if (keyChecksums.isEmpty()) {
             return null;
         }
+        DistroKey distroKey = new DistroKey("checksum", KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
         return new DistroData(distroKey, ApplicationUtils.getBean(Serializer.class).serialize(keyChecksums));
     }
 }

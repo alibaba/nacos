@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.component;
 
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroTransportAgent;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -55,7 +58,21 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public DistroData getData(DistroKey key, String targetServer) {
-        return null;
+        DistroData result = new DistroData(key, new byte[0]);
+        try {
+            List<String> toUpdateKeys = null;
+            if (key instanceof DistroHttpCombinedKey) {
+                toUpdateKeys = ((DistroHttpCombinedKey) key).getActualResourceTypes();
+            } else {
+                toUpdateKeys = new ArrayList<>(1);
+                toUpdateKeys.add(key.getResourceKey());
+            }
+            byte[] queriedData = NamingProxy.getData(toUpdateKeys, key.getTargetServer());
+            result.setContent(queriedData);
+        } catch (Exception e) {
+            Loggers.DISTRO.error("[DISTRO-FAILED] Get data from {} failed. ", key.getTargetServer(), e);
+        }
+        return result;
     }
     
     @Override
