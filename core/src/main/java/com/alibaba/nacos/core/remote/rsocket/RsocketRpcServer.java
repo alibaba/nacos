@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.rsocket;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
@@ -107,7 +108,18 @@ public class RsocketRpcServer extends RpcServer {
                         palinrequest.getMetadata().getClientVersion(), palinrequest.getMetadata().getLabels());
                 Connection connection = new RsocketConnection(metaInfo, sendingSocket);
         
-                connectionManager.register(connection.getConnectionId(), connection);
+                if (connectionManager.isOverLimit()) {
+                    //Not register to the connection manager if current server is over limit.
+                    try {
+                        connection.sendRequestNoAck(new ConnectResetRequest());
+                        connection.closeGrapcefully();
+                    } catch (Exception e) {
+                        //Do nothing.
+                    }
+            
+                } else {
+                    connectionManager.register(connection.getConnectionId(), connection);
+                }
                 
                 sendingSocket.onClose().subscribe(new Subscriber<Void>() {
                     String connectionId;
@@ -169,7 +181,7 @@ public class RsocketRpcServer extends RpcServer {
             try {
                 RsocketUtils.PlainRequest requestType = RsocketUtils.parsePlainRequestFromPayload(payload);
                 Loggers.RPC_DIGEST.debug(String.format("[%s] request receive : %s", "rsocket", requestType.toString()));
-        
+    
                 RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(requestType.getType());
                 if (requestHandler != null) {
                     RequestMeta requestMeta = requestType.getMetadata();
@@ -177,7 +189,7 @@ public class RsocketRpcServer extends RpcServer {
                     try {
                         Response response = requestHandler.handle(requestType.getBody(), requestMeta);
                         return Mono.just(RsocketUtils.convertResponseToPayload(response));
-                
+    
                     } catch (NacosException e) {
                         Loggers.RPC_DIGEST.debug(String
                                 .format("[%s] fail to handle request, error message : %s ", "rsocket", e.getMessage(),
@@ -186,7 +198,7 @@ public class RsocketRpcServer extends RpcServer {
                                 .convertResponseToPayload(new PlainBodyResponse("exception:" + e.getMessage())));
                     }
                 }
-        
+    
                 Loggers.RPC_DIGEST.debug(String
                         .format("[%s] no handler for request type : %s :", "rsocket", requestType.getType()));
                 return Mono.just(RsocketUtils.convertResponseToPayload(new PlainBodyResponse("No Handler")));

@@ -78,6 +78,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
@@ -225,6 +226,7 @@ public class ClientWorker implements Closeable {
     
     /**
      * remove config.
+     *
      * @param tenant
      * @param dataId
      * @param group
@@ -238,6 +240,7 @@ public class ClientWorker implements Closeable {
     
     /**
      * publish config.
+     *
      * @param dataId
      * @param group
      * @param tenant
@@ -508,6 +511,8 @@ public class ClientWorker implements Closeable {
     
     private boolean isHealthServer = true;
     
+    private String uuid = UUID.randomUUID().toString();
+    
     private long timeout;
     
     private ConfigTransportClient agent;
@@ -761,7 +766,8 @@ public class ClientWorker implements Closeable {
             Map<String, String> newlabels = new HashMap<String, String>(labels);
             newlabels.put("taskId", taskId);
         
-            RpcClient rpcClient = RpcClientFactory.createClient("config-" + taskId, getConectiontype(), newlabels);
+            RpcClient rpcClient = RpcClientFactory
+                    .createClient("config-" + taskId + "-" + uuid, getConectiontype(), newlabels);
             if (rpcClient.isWaitInited()) {
                 initHandlerRpcClient(rpcClient);
                 rpcClient.start();
@@ -836,7 +842,7 @@ public class ClientWorker implements Closeable {
          * @return
          */
         private ConfigBatchListenRequest buildConfigRequest(List<CacheData> caches) {
-        
+    
             ConfigBatchListenRequest configChangeListenRequest = new ConfigBatchListenRequest();
             for (CacheData cacheData : caches) {
                 configChangeListenRequest.addConfigListenContext(cacheData.group, cacheData.dataId, cacheData.tenant,
