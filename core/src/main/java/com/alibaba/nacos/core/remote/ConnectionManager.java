@@ -220,9 +220,36 @@ public class ConnectionManager {
         this.maxClient = maxClient;
     }
     
-    public void loadClientsSmoth(int loadClient, String redirectAddress) {
+    public void loadCount(int loadClient, String redirectAddress) {
         this.loadClient = loadClient;
         this.redirectAddress = redirectAddress;
+    }
+    
+    /**
+     * send load request to spefic connetionId.
+     *
+     * @param connectionId
+     * @param redirectAddress
+     */
+    public void loadSingle(String connectionId, String redirectAddress) {
+        Connection connection = getConnection(connectionId);
+        
+        if (connection != null) {
+            ConnectResetRequest connectResetRequest = new ConnectResetRequest();
+            if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(":")) {
+                String[] split = redirectAddress.split(":");
+                connectResetRequest.setServerIp(split[0]);
+                connectResetRequest.setServerPort(split[1]);
+            }
+            try {
+                connection.sendRequestNoAck(connectResetRequest);
+            } catch (ConnectionAlreadyClosedException e) {
+                unregister(connectionId);
+            } catch (Exception e) {
+                Loggers.RPC.error("error occurs when expel connetion :", connectionId, e);
+            }
+        }
+        
     }
     
     /**
