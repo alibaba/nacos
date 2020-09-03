@@ -171,6 +171,7 @@ public class GrpcClient extends RpcClient {
     private StreamObserver<Payload> bindRequestStream(final BiRequestStreamGrpc.BiRequestStreamStub streamStub) {
         
         final StreamObserver<Payload> payloadStreamObserver = streamStub.requestBiStream(new StreamObserver<Payload>() {
+    
             @Override
             public void onNext(Payload payload) {
                 LOGGER.debug(" stream server reuqust receive  ,original info :{}", payload.toString());
@@ -195,9 +196,6 @@ public class GrpcClient extends RpcClient {
             
             @Override
             public void onError(Throwable throwable) {
-                throwable.printStackTrace();
-                System.out.println("on error ,switch server ");
-                switchServerAsync();
             }
             
             @Override

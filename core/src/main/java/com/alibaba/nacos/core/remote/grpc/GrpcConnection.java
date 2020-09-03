@@ -67,7 +67,7 @@ public class GrpcConnection extends Connection {
     @Override
     public void sendRequestNoAck(Request request) throws NacosException {
         try {
-            streamObserver.onNext(GrpcUtils.convert(request, buildMeta()));
+            streamObserver.onNext(GrpcUtils.convert(request, buildMeta(request.getClass().getName())));
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
                 throw new ConnectionAlreadyClosedException(e);
@@ -76,8 +76,8 @@ public class GrpcConnection extends Connection {
         }
     }
     
-    Metadata buildMeta() {
-        Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP())
+    Metadata buildMeta(String type) {
+        Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP()).setType(type)
                 .setClientVersion(VersionUtils.getFullClientVersion()).build();
         return meta;
     }

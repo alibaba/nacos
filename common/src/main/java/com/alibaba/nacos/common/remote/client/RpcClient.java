@@ -270,7 +270,6 @@ public abstract class RpcClient implements Closeable {
                         synchronized (this) {
                             if (isRunning()) {
                                 ConnectResetRequest connectResetRequest = (ConnectResetRequest) request;
-                                clearContextOnResetRequest();
                                 if (StringUtils.isNotBlank(connectResetRequest.getServerIp()) && NumberUtils
                                         .isDigits(connectResetRequest.getServerPort())) {
     
@@ -340,15 +339,17 @@ public abstract class RpcClient implements Closeable {
                             Connection connectNew = connectToServer(serverInfo);
                             if (connectNew != null) {
                                 System.out.println(RpcClient.this.name + "-success to connect server:" + serverInfo);
-                                
+        
                                 //successfully create a new connect.
+                                currentConnetion.setAbandon(true);
                                 closeConnection(currentConnetion);
                                 currentConnetion = connectNew;
                                 rpcClientStatus.set(RpcClientStatus.RUNNING);
                                 switchSuccess = true;
-                                boolean s = eventLinkedBlockingQueue
-                                        .add(new ConnectionEvent(ConnectionEvent.CONNECTED));
+                                boolean s = eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.CONNECTED));
                                 return;
+                            } else {
+                                System.out.println(RpcClient.this.name + "-fail to connect server:" + serverInfo);
                             }
     
                         } catch (Exception e) {
@@ -366,6 +367,9 @@ public abstract class RpcClient implements Closeable {
                             // Do  nothing.
                         }
                     }
+        
+                    System.out.println(RpcClient.this.name + "-success to connect server,return");
+                    
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {

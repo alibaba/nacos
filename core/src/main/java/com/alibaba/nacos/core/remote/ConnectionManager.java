@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +52,8 @@ public class ConnectionManager {
      * current loader adjust count,only effective once,use to rebalance.
      */
     private int loadClient = -1;
+    
+    String redirectAddress = null;
     
     private static final long EXPIRE_MILLSECOND = 10000L;
     
@@ -179,10 +182,17 @@ public class ConnectionManager {
                         try {
                             Connection connection = getConnection(expeledClientId);
                             if (connection != null) {
-                                connection.closeGrapcefully();
-                                //connection.sendRequestNoAck(new ConnectResetRequest());
-                                Loggers.RPC.info("expel connection ,send switch server response connectionid = {} ",
-                                        expeledClientId);
+    
+                                ConnectResetRequest connectResetRequest = new ConnectResetRequest();
+                                if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(":")) {
+                                    String[] split = redirectAddress.split(":");
+                                    connectResetRequest.setServerIp(split[0]);
+                                    connectResetRequest.setServerPort(split[1]);
+                                }
+                                connection.sendRequestNoAck(connectResetRequest);
+                                Loggers.RPC
+                                        .info("expel connection ,send switch server response connectionid = {},connectResetRequest={} ",
+                                                expeledClientId, connectResetRequest);
                             }
                             
                         } catch (ConnectionAlreadyClosedException e) {
@@ -195,6 +205,7 @@ public class ConnectionManager {
                     //reset loader client
                     if (isLoaderClient) {
                         loadClient = -1;
+                        redirectAddress = null;
                     }
                     
                 } catch (Exception e) {
@@ -209,8 +220,9 @@ public class ConnectionManager {
         this.maxClient = maxClient;
     }
     
-    public void loadClientsSmoth(int loadClient) {
+    public void loadClientsSmoth(int loadClient, String redirectAddress) {
         this.loadClient = loadClient;
+        this.redirectAddress = redirectAddress;
     }
     
     /**
@@ -276,4 +288,7 @@ public class ConnectionManager {
         return maxClient > 0 && this.connetions.size() >= maxClient;
     }
     
+    public int countLimited() {
+        return maxClient;
+    }
 }

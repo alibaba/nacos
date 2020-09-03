@@ -24,6 +24,7 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.RpcServer;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.Attributes;
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -109,6 +110,7 @@ public class GrpcServer extends RpcServer {
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
                         String connectionid = transportAttrs.get(TRANS_KEY_CONN_ID);
+                        Loggers.RPC.info(" connection transportTerminated,connectionid = {} ", connectionid);
                         connectionManager.unregister(connectionid);
                     }
                 }).build();
