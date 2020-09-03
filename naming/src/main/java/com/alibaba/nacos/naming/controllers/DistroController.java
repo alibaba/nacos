@@ -18,10 +18,8 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroHttpData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
@@ -53,12 +51,6 @@ import java.util.Map;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
 public class DistroController {
-    
-    @Autowired
-    private Serializer serializer;
-    
-    @Autowired
-    private DataStore dataStore;
     
     @Autowired
     private DistroProtocol distroProtocol;
@@ -142,8 +134,8 @@ public class DistroController {
      */
     @GetMapping("/datums")
     public ResponseEntity getAllDatums() {
-        byte[] content = serializer.serialize(dataStore.getDataMap());
-        return ResponseEntity.ok(content);
+        DistroData distroData = distroProtocol.onSnapshot(KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
+        return ResponseEntity.ok(distroData.getContent());
     }
     
     private DistroKey createDistroKey(String resourceKey) {

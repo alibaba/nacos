@@ -36,7 +36,7 @@ public class DistroComponentHolder {
     
     private final Map<String, DistroFailedTaskHandler> failedTaskHandlerMap = new HashMap<>();
     
-    private final Map<String, DistroDataProcessor> dataProcessorConcurrentMap = new HashMap<>();
+    private final Map<String, DistroDataProcessor> dataProcessorMap = new HashMap<>();
     
     public DistroTransportAgent findTransportAgent(String type) {
         return transportAgentMap.get(type);
@@ -67,10 +67,10 @@ public class DistroComponentHolder {
     }
     
     public void registerDataProcessor(DistroDataProcessor dataProcessor) {
-        dataProcessorConcurrentMap.putIfAbsent(dataProcessor.processType(), dataProcessor);
+        dataProcessorMap.putIfAbsent(dataProcessor.processType(), dataProcessor);
     }
     
     public DistroDataProcessor findDataProcessor(String processType) {
-        return dataProcessorConcurrentMap.get(processType);
+        return dataProcessorMap.get(processType);
     }
 }

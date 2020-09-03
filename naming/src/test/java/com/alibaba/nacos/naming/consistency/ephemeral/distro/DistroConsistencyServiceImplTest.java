@@ -86,8 +86,8 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     public void setUp() throws Exception {
         doReturn(distroComponentHolder).when(context).getBean(DistroComponentHolder.class);
         doReturn(distroTaskEngineHolder).when(context).getBean(DistroTaskEngineHolder.class);
-        distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, serializer,
-                serverMemberManager, switchDomain, globalConfig, distroProtocol);
+        distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, serializer, switchDomain,
+                globalConfig, distroProtocol);
         ReflectionTestUtils.setField(distroConsistencyService, "notifier", notifier);
         ReflectionTestUtils.setField(distroConsistencyService, "distroProtocol", distroProtocol);
         listeners = (Map<String, ConcurrentLinkedQueue<RecordListener>>) ReflectionTestUtils

@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataStorage;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.Dist
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.load.DistroLoadDataTask;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.verify.DistroVerifyTask;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -46,6 +48,8 @@ public class DistroProtocol {
     
     private final DistroTaskEngineHolder distroTaskEngineHolder;
     
+    private volatile boolean loadCompleted = false;
+    
     public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
             DistroTaskEngineHolder distroTaskEngineHolder) {
         this.memberManager = memberManager;
@@ -55,7 +59,23 @@ public class DistroProtocol {
     }
     
     private void startVerifyTask() {
+        DistroCallback loadCallback = new DistroCallback() {
+            @Override
+            public void onSuccess() {
+                loadCompleted = true;
+            }
+    
+            @Override
+            public void onFailed(Throwable throwable) {
+                loadCompleted = false;
+            }
+        };
         GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder));
+        GlobalExecutor.submitLoadDataTask(new DistroLoadDataTask(memberManager, distroComponentHolder, loadCallback));
+    }
+    
+    public boolean isLoadCompleted() {
+        return loadCompleted;
     }
     
     /**
@@ -110,30 +130,32 @@ public class DistroProtocol {
      * Receive synced distro data, find processor to process.
      *
      * @param distroData Received data
+     * @return true if handle receive data successfully, otherwise false
      */
-    public void onReceive(DistroData distroData) {
+    public boolean onReceive(DistroData distroData) {
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
             Loggers.DISTRO.warn("[DISTRO] Can't find data process for received data {}", resourceType);
-            return;
+            return false;
         }
-        dataProcessor.processData(distroData);
+        return dataProcessor.processData(distroData);
     }
     
     /**
      * Receive verify data, find processor to process.
      *
      * @param distroData verify data
+     * @return true if verify data successfully, otherwise false
      */
-    public void onVerify(DistroData distroData) {
+    public boolean onVerify(DistroData distroData) {
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
             Loggers.DISTRO.warn("[DISTRO] Can't find verify data process for received data {}", resourceType);
-            return;
+            return false;
         }
-        dataProcessor.processVerifyData(distroData);
+        return dataProcessor.processVerifyData(distroData);
     }
     
     /**
@@ -150,5 +172,20 @@ public class DistroProtocol {
             return new DistroData(distroKey, new byte[0]);
         }
         return distroDataStorage.getDistroData(distroKey);
+    }
+    
+    /**
+     * Query all datum snapshot.
+     *
+     * @param type datum type
+     * @return all datum snapshot
+     */
+    public DistroData onSnapshot(String type) {
+        DistroDataStorage distroDataStorage = distroComponentHolder.findDataStorage(type);
+        if (null == distroDataStorage) {
+            Loggers.DISTRO.warn("[DISTRO] Can't find data storage for received key {}", type);
+            return new DistroData(new DistroKey("snapshot", type), new byte[0]);
+        }
+        return distroDataStorage.getDatumSnapshot();
     }
 }

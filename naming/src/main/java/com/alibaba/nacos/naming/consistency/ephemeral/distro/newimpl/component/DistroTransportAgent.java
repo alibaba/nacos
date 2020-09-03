@@ -19,8 +19,6 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 
-import java.util.List;
-
 /**
  * Distro transport agent.
  *
@@ -74,19 +72,10 @@ public interface DistroTransportAgent {
     DistroData getData(DistroKey key, String targetServer);
     
     /**
-     * Get datum.
-     *
-     * @param keys         keys of datum
-     * @param targetServer target server
-     * @return list of distro data
-     */
-    List<DistroData> getDatum(List<DistroKey> keys, String targetServer);
-    
-    /**
-     * Get all datum from target server.
+     * Get all datum snapshot from target server.
      *
      * @param targetServer target server.
-     * @return list of distro data
+     * @return distro data
      */
-    List<DistroData> getAllDatum(String targetServer);
+    DistroData getDatumSnapshot(String targetServer);
 }
