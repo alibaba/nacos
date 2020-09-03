@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.impl;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,9 @@ import java.util.List;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class BatchWriteRequest {
+public class BatchWriteRequest implements Serializable {
+    
+    private static final long serialVersionUID = 5620748357962129879L;
     
     private List<byte[]> keys = new ArrayList<>(16);
     

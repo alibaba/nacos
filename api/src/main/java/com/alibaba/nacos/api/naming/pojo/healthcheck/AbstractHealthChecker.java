@@ -25,6 +25,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
+import java.io.Serializable;
+
 /**
  * Abstract health checker.
  *
@@ -34,7 +36,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 @JsonSubTypes({@JsonSubTypes.Type(name = Http.TYPE, value = Http.class),
         @JsonSubTypes.Type(name = Mysql.TYPE, value = Mysql.class),
         @JsonSubTypes.Type(name = Tcp.TYPE, value = Tcp.class)})
-public abstract class AbstractHealthChecker implements Cloneable {
+public abstract class AbstractHealthChecker implements Cloneable, Serializable {
+    
+    private static final long serialVersionUID = 3848305577423336421L;
     
     @JsonIgnore
     protected final String type;

@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
@@ -70,22 +70,22 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
     }
     
     /**
-     * notify value to listener with {@link ApplyAction} and key.
+     * notify value to listener with {@link DataOperation} and key.
      *
      * @param key key
-     * @param action {@link ApplyAction}
+     * @param action {@link DataOperation}
      * @param value value
      * @param <T> type
      */
-    public <T extends Record> void notify(final String key, final ApplyAction action, final T value) {
+    public <T extends Record> void notify(final String key, final DataOperation action, final T value) {
         if (listenerMap.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
             if (KeyBuilder.matchServiceMetaKey(key) && !KeyBuilder.matchSwitchKey(key)) {
                 for (RecordListener listener : listenerMap.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
                     try {
-                        if (action == ApplyAction.CHANGE) {
+                        if (action == DataOperation.CHANGE) {
                             listener.onChange(key, value);
                         }
-                        if (action == ApplyAction.DELETE) {
+                        if (action == DataOperation.DELETE) {
                             listener.onDelete(key);
                         }
                     } catch (Throwable e) {
@@ -103,11 +103,11 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
     
         for (RecordListener listener : listenerMap.get(key)) {
             try {
-                if (action == ApplyAction.CHANGE) {
+                if (action == DataOperation.CHANGE) {
                     listener.onChange(key, value);
                     continue;
                 }
-                if (action == ApplyAction.DELETE) {
+                if (action == DataOperation.DELETE) {
                     listener.onDelete(key);
                 }
             } catch (Throwable e) {

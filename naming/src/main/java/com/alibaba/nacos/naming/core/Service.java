@@ -62,7 +62,10 @@ import java.util.Map;
 @JsonInclude(Include.NON_NULL)
 public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, RecordListener<Instances> {
     
+    
     private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z@\\.:_-]+";
+    
+    private static final long serialVersionUID = -1341508935415925039L;
     
     @JsonIgnore
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
