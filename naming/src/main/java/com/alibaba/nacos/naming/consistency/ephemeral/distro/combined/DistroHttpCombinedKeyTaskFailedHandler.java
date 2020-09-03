@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroFailedTaskHandler;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
+import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandler;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
+import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 
 /**
@@ -42,7 +42,7 @@ public class DistroHttpCombinedKeyTaskFailedHandler implements DistroFailedTaskH
     }
     
     @Override
-    public void retry(DistroKey distroKey, ApplyAction action) {
+    public void retry(DistroKey distroKey, DataOperation action) {
         DistroHttpCombinedKey combinedKey = (DistroHttpCombinedKey) distroKey;
         for (String each : combinedKey.getActualResourceTypes()) {
             DistroKey newKey = new DistroKey(each, KeyBuilder.INSTANCE_LIST_KEY_PREFIX, distroKey.getTargetServer());

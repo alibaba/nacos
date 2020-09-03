@@ -17,10 +17,10 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -36,7 +36,7 @@ public class DistroHttpCombinedKeyDelayTask extends DistroDelayTask {
     
     private final Set<String> actualResourceKeys = new HashSet<>();
     
-    public DistroHttpCombinedKeyDelayTask(DistroKey distroKey, ApplyAction action, long delayTime, int batchSize) {
+    public DistroHttpCombinedKeyDelayTask(DistroKey distroKey, DataOperation action, long delayTime, int batchSize) {
         super(distroKey, action, delayTime);
         this.batchSize = batchSize;
     }

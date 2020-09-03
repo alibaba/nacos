@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl;
+package com.alibaba.nacos.core.distributed.distro;
 
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataStorage;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroTransportAgent;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.load.DistroLoadDataTask;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.verify.DistroVerifyTask;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
+import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
+import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
+import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
+import com.alibaba.nacos.core.distributed.distro.task.load.DistroLoadDataTask;
+import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTask;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.stereotype.Component;
 
 /**
@@ -48,13 +48,16 @@ public class DistroProtocol {
     
     private final DistroTaskEngineHolder distroTaskEngineHolder;
     
+    private final DistroConfig distroConfig;
+    
     private volatile boolean loadCompleted = false;
     
     public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
-            DistroTaskEngineHolder distroTaskEngineHolder) {
+            DistroTaskEngineHolder distroTaskEngineHolder, DistroConfig distroConfig) {
         this.memberManager = memberManager;
         this.distroComponentHolder = distroComponentHolder;
         this.distroTaskEngineHolder = distroTaskEngineHolder;
+        this.distroConfig = distroConfig;
         startVerifyTask();
     }
     
@@ -64,14 +67,16 @@ public class DistroProtocol {
             public void onSuccess() {
                 loadCompleted = true;
             }
-    
+            
             @Override
             public void onFailed(Throwable throwable) {
                 loadCompleted = false;
             }
         };
-        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder));
-        GlobalExecutor.submitLoadDataTask(new DistroLoadDataTask(memberManager, distroComponentHolder, loadCallback));
+        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder),
+                distroConfig.getVerifyIntervalMillis());
+        GlobalExecutor.submitLoadDataTask(
+                new DistroLoadDataTask(memberManager, distroComponentHolder, distroConfig, loadCallback));
     }
     
     public boolean isLoadCompleted() {
@@ -79,13 +84,13 @@ public class DistroProtocol {
     }
     
     /**
-     * Start to sync immediately.
+     * Start to sync by configured delay.
      *
      * @param distroKey distro key of sync data
      * @param action    the action of data operation
      */
-    public void sync(DistroKey distroKey, ApplyAction action) {
-        sync(distroKey, action, 0L);
+    public void sync(DistroKey distroKey, DataOperation action) {
+        sync(distroKey, action, distroConfig.getSyncDelayMillis());
     }
     
     /**
@@ -94,7 +99,7 @@ public class DistroProtocol {
      * @param distroKey distro key of sync data
      * @param action    the action of data operation
      */
-    public void sync(DistroKey distroKey, ApplyAction action, long delay) {
+    public void sync(DistroKey distroKey, DataOperation action, long delay) {
         for (Member each : memberManager.allMembersWithoutSelf()) {
             DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
                     each.getAddress());

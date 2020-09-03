@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute;
+package com.alibaba.nacos.core.distributed.distro.task.execute;
 
 /**
  * Distro execute workers manager.

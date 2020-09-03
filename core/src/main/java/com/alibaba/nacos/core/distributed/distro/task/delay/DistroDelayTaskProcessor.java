@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay;
+package com.alibaba.nacos.core.distributed.distro.task.delay;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute.DistroSyncChangeTask;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
+import com.alibaba.nacos.core.distributed.distro.task.execute.DistroSyncChangeTask;
 
 /**
  * Distro delay task processor.
@@ -48,7 +48,7 @@ public class DistroDelayTaskProcessor implements NacosTaskProcessor {
         }
         DistroDelayTask distroDelayTask = (DistroDelayTask) task;
         DistroKey distroKey = distroDelayTask.getDistroKey();
-        if (ApplyAction.CHANGE.equals(distroDelayTask.getAction())) {
+        if (DataOperation.CHANGE.equals(distroDelayTask.getAction())) {
             DistroSyncChangeTask syncChangeTask = new DistroSyncChangeTask(distroKey, distroComponentHolder);
             distroTaskEngineHolder.getExecuteWorkersManager().dispatch(distroKey, syncChangeTask);
             return true;

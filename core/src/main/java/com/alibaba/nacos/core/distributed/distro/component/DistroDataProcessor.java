@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
+package com.alibaba.nacos.core.distributed.distro.component;
 
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 
 /**
  * Distro data processor.

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity;
+package com.alibaba.nacos.core.distributed.distro.entity;
 
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 
 /**
  * Distro data.
@@ -27,7 +27,7 @@ public class DistroData {
     
     private DistroKey distroKey;
     
-    private ApplyAction type;
+    private DataOperation type;
     
     private byte[] content;
     
@@ -47,11 +47,11 @@ public class DistroData {
         this.distroKey = distroKey;
     }
     
-    public ApplyAction getType() {
+    public DataOperation getType() {
         return type;
     }
     
-    public void setType(ApplyAction type) {
+    public void setType(DataOperation type) {
         this.type = type;
     }
     
