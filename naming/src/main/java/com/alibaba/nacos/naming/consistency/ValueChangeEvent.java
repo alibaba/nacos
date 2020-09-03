@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.pojo.Record;
 
 /**
@@ -30,9 +31,9 @@ public class ValueChangeEvent extends Event {
     
     private final Record value;
     
-    private final ApplyAction action;
+    private final DataOperation action;
     
-    public ValueChangeEvent(String key, Record value, ApplyAction action) {
+    public ValueChangeEvent(String key, Record value, DataOperation action) {
         this.key = key;
         this.value = value;
         this.action = action;
@@ -46,7 +47,7 @@ public class ValueChangeEvent extends Event {
         return value;
     }
     
-    public ApplyAction getAction() {
+    public DataOperation getAction() {
         return action;
     }
     
@@ -60,7 +61,7 @@ public class ValueChangeEvent extends Event {
         
         private Record value;
         
-        private ApplyAction action;
+        private DataOperation action;
         
         private ValueChangeEventBuilder() {
         }
@@ -75,7 +76,7 @@ public class ValueChangeEvent extends Event {
             return this;
         }
         
-        public ValueChangeEventBuilder action(ApplyAction action) {
+        public ValueChangeEventBuilder action(DataOperation action) {
             this.action = action;
             return this;
         }

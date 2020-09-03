@@ -81,8 +81,9 @@ public class ClusterVersionJudgement {
                 allMemberIsNewVersion = false;
             }
         }
-        this.allMemberIsNewVersion = allMemberIsNewVersion;
-        if (allMemberIsNewVersion) {
+        // can only trigger once
+        if (allMemberIsNewVersion && !this.allMemberIsNewVersion) {
+            this.allMemberIsNewVersion = true;
             Collections.sort(observers);
             for (consumerWithPriority consumer : observers) {
                 consumer.consumer.accept(true);
