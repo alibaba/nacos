@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -33,7 +34,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * grpc utils, use to parse request and response.
@@ -90,51 +91,60 @@ public class GrpcUtils {
      * @return
      */
     public static Payload convert(Request request, RequestMeta meta) {
+        //meta.
+        Payload.Builder builder = Payload.newBuilder();
+        Metadata.Builder metaBuilder = Metadata.newBuilder();
+        if (meta != null) {
+            metaBuilder.setClientIp(meta.getClientIp()).putAllLabels(meta.getLabels())
+                    .putAllHeaders(request.getHeaders()).setClientVersion(meta.getClientVersion())
+                    .setType(request.getClass().getName());
+        }
+        builder.setMetadata(metaBuilder.build());
+    
+        // request body .
+        request.clearHeaders();
         String jsonString = toJson(request);
         byte[] bytes = null;
         try {
-            bytes = IoUtils.tryCompress(jsonString, "UTF-8");
+            bytes = IoUtils.tryCompress(jsonString, StandardCharsets.UTF_8.name());
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
-        
-        Payload.Builder builder = Payload.newBuilder();
-        if (meta != null) {
-            Metadata metadata = Metadata.newBuilder().setClientIp(meta.getClientIp()).setVersion(meta.getClientVersion()).build();
-            builder.setMetadata(metadata);
-        }
-        Payload payload = builder.setType(request.getClass().getName()).setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
         return payload;
         
     }
     
     /**
      * convert request to payload.
+     *
      * @param request request.
-     * @param meta meta
+     * @param meta    meta
      * @return
      */
     public static Payload convert(Request request, Metadata meta) {
+    
+        Metadata buildMeta = meta.toBuilder().putAllHeaders(request.getHeaders()).build();
+        request.clearHeaders();
         String jsonString = toJson(request);
         byte[] bytes = null;
         try {
-            bytes = IoUtils.tryCompress(jsonString, "UTF-8");
+            bytes = IoUtils.tryCompress(jsonString, StandardCharsets.UTF_8.name());
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
         Payload.Builder builder = Payload.newBuilder();
-        if (meta != null) {
-            builder.setMetadata(meta);
-        }
-        Payload payload = builder.setType(request.getClass().getName()).setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).setMetadata(buildMeta)
+                .build();
         return payload;
         
     }
     
     /**
      * convert response to payload.
+     *
      * @param response response.
      * @return
      */
@@ -142,13 +152,17 @@ public class GrpcUtils {
         String jsonString = toJson(response);
         byte[] bytes = null;
         try {
-            bytes = IoUtils.tryCompress(jsonString, "UTF-8");
+            bytes = IoUtils.tryCompress(jsonString, StandardCharsets.UTF_8.name());
             ;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
-        Payload payload = Payload.newBuilder().setType(response.getClass().getName()).setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        Metadata.Builder metaBuilder = Metadata.newBuilder();
+        metaBuilder.setClientVersion(VersionUtils.getFullClientVersion()).setType(response.getClass().getName());
+    
+        Payload payload = Payload.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes)))
+                .setMetadata(metaBuilder.build()).build();
         return payload;
     }
     
@@ -158,8 +172,9 @@ public class GrpcUtils {
      * @param payload payload to be parsed.
      * @return
      */
-    public static Object parse(Payload payload) {
-        Class classbyType = PayloadRegistry.getClassbyType(payload.getType());
+    public static PlainRequest parse(Payload payload) {
+        PlainRequest plainRequest = new PlainRequest();
+        Class classbyType = PayloadRegistry.getClassbyType(payload.getMetadata().getType());
         if (classbyType != null) {
             byte[] value = new byte[0];
             try {
@@ -168,10 +183,89 @@ public class GrpcUtils {
                 e.printStackTrace();
                 return null;
             }
+    
             Object obj = toObj(ByteString.copyFrom(value).toStringUtf8(), classbyType);
-            return obj;
+            if (obj instanceof Request) {
+                ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
+            }
+            plainRequest.body = obj;
         }
-        return null;
+    
+        plainRequest.type = payload.getMetadata().getType();
+        plainRequest.metadata = convertMeta(payload.getMetadata());
+        return plainRequest;
+    }
+    
+    private static RequestMeta convertMeta(Metadata metadata) {
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp(metadata.getClientIp());
+        requestMeta.setConnectionId(metadata.getConnectionId());
+        requestMeta.setClientVersion(metadata.getClientVersion());
+        requestMeta.setLabels(metadata.getLabelsMap());
+        return requestMeta;
+    }
+    
+    public static class PlainRequest {
+        
+        String type;
+        
+        Object body;
+        
+        RequestMeta metadata;
+        
+        /**
+         * Getter method for property <tt>metadata</tt>.
+         *
+         * @return property value of metadata
+         */
+        public RequestMeta getMetadata() {
+            return metadata;
+        }
+        
+        /**
+         * Setter method for property <tt>metadata</tt>.
+         *
+         * @param metadata value to be assigned to property metadata
+         */
+        public void setMetadata(RequestMeta metadata) {
+            this.metadata = metadata;
+        }
+        
+        /**
+         * Getter method for property <tt>type</tt>.
+         *
+         * @return property value of type
+         */
+        public String getType() {
+            return type;
+        }
+        
+        /**
+         * Setter method for property <tt>type</tt>.
+         *
+         * @param type value to be assigned to property type
+         */
+        public void setType(String type) {
+            this.type = type;
+        }
+        
+        /**
+         * Getter method for property <tt>body</tt>.
+         *
+         * @return property value of body
+         */
+        public Object getBody() {
+            return body;
+        }
+        
+        /**
+         * Setter method for property <tt>body</tt>.
+         *
+         * @param body value to be assigned to property body
+         */
+        public void setBody(Object body) {
+            this.body = body;
+        }
     }
     
 }

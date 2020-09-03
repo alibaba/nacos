@@ -78,7 +78,7 @@ public class GrpcConnection extends Connection {
     
     Metadata buildMeta() {
         Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP())
-                .setVersion(VersionUtils.getFullClientVersion()).build();
+                .setClientVersion(VersionUtils.getFullClientVersion()).build();
         return meta;
     }
     

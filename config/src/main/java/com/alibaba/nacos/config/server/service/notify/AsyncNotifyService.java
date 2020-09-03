@@ -230,9 +230,11 @@ public class AsyncNotifyService {
                             ConfigChangeClusterSyncResponse response = configClusterRpcClientProxy
                                     .syncConfigChange(member, syncRequest);
                             if (response == null || !response.isSuccess()) {
+                                MetricsMonitor.getConfigNotifyException().increment();
                                 asyncTaskExecute(task);
                             }
                         } catch (Exception e) {
+                            MetricsMonitor.getConfigNotifyException().increment();
                             asyncTaskExecute(task);
                         }
                     }

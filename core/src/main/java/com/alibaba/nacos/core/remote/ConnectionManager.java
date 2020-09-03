@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -53,7 +54,7 @@ public class ConnectionManager {
     
     private static final long EXPIRE_MILLSECOND = 10000L;
     
-    private ScheduledExecutorService executors = Executors.newScheduledThreadPool(2);
+    private ScheduledExecutorService executors = Executors.newScheduledThreadPool(1);
     
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
@@ -157,6 +158,9 @@ public class ConnectionManager {
             @Override
             public void run() {
                 try {
+    
+                    MetricsMonitor.getLongConnectionMonitor().set(connetions.size());
+    
                     long currentStamp = System.currentTimeMillis();
                     Set<Map.Entry<String, Connection>> entries = connetions.entrySet();
                     boolean isLoaderClient = loadClient >= 0;

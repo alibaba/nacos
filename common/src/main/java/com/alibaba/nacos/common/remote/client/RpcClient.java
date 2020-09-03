@@ -20,13 +20,16 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -92,6 +95,14 @@ public abstract class RpcClient implements Closeable {
         this.name = name;
     }
     
+    protected RequestMeta buildMeta() {
+        RequestMeta meta = new RequestMeta();
+        meta.setClientVersion(VersionUtils.getFullClientVersion());
+        meta.setClientIp(NetUtils.localIP());
+        meta.setLabels(labels);
+        return meta;
+    }
+    
     public RpcClient(ServerListFactory serverListFactory) {
         this.serverListFactory = serverListFactory;
         rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
@@ -154,24 +165,6 @@ public abstract class RpcClient implements Closeable {
      */
     public boolean isRunning() {
         return this.rpcClientStatus.get() == RpcClientStatus.RUNNING;
-    }
-    
-    /**
-     * check is this client is in init status,have not start th client.
-     *
-     * @return
-     */
-    public boolean isInitStatus() {
-        return this.rpcClientStatus.get() == RpcClientStatus.INITED;
-    }
-    
-    /**
-     * check is this client is in starting process.
-     *
-     * @return
-     */
-    public boolean isStarting() {
-        return this.rpcClientStatus.get() == RpcClientStatus.STARTING;
     }
     
     /**
@@ -435,7 +428,7 @@ public abstract class RpcClient implements Closeable {
                 if (this.currentConnetion == null) {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "client not connected.");
                 }
-                Response response = this.currentConnetion.request(request);
+                Response response = this.currentConnetion.request(request, buildMeta());
                 if (response != null && response instanceof ConnectionUnregisterResponse) {
                     synchronized (this) {
                         clearContextOnResetRequest();
@@ -474,7 +467,7 @@ public abstract class RpcClient implements Closeable {
                 if (this.currentConnetion == null) {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "client not connected.");
                 }
-                this.currentConnetion.asyncRequest(request, callback);
+                this.currentConnetion.asyncRequest(request, buildMeta(), callback);
                 refereshActiveTimestamp();
                 return;
             } catch (Exception e) {
