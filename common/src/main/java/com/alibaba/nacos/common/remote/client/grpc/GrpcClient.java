@@ -182,7 +182,7 @@ public class GrpcClient extends RpcClient {
     
                 LOGGER.debug(" stream server reuqust receive  ,original info :{}", payload.toString());
                 try {
-                    final Request request = (Request) GrpcUtils.parse(payload);
+                    final Request request = (Request) GrpcUtils.parse(payload).getBody();
                     
                     if (request != null) {
                         try {
@@ -222,7 +222,7 @@ public class GrpcClient extends RpcClient {
             public void onNext(Payload payload) {
                 LOGGER.debug(" stream server reuqust receive  ,original info :{}", payload.toString());
                 try {
-                    final Request request = (Request) GrpcUtils.parse(payload);
+                    final Request request = (Request) GrpcUtils.parse(payload).getBody();
                     
                     if (request != null) {
                         try {
@@ -301,8 +301,7 @@ public class GrpcClient extends RpcClient {
                         .newStub(newChannelStubTemp.getChannel());
                 StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub);
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, payloadStreamObserver);
-                ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(),
-                        VersionUtils.getFullClientVersion(), labels);
+                ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest();
                 grpcConn.sendRequest(conconSetupRequest, buildMeta());
                 
                 //switch current channel and stub

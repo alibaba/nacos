@@ -113,7 +113,7 @@ public class RsocketUtils {
         jsonObject.addProperty("labels", toJson(meta.getLabels()));
         jsonObject.addProperty("headers", toJson(request.getHeaders()));
         jsonObject.addProperty("type", request.getClass().getName());
-    
+        request.clearHeaders();
         byte[] bytes = IoUtils.tryCompress(toJson(request), StandardCharsets.UTF_8.name());
         return DefaultPayload.create(bytes, jsonObject.toString().getBytes());
         
@@ -167,7 +167,6 @@ public class RsocketUtils {
         String clientVersion = metaJsonNode.get("clientVersion").textValue();
         String type = metaJsonNode.get("type").textValue();
         Map<String, String> labels = (Map<String, String>) toObj(metaJsonNode.get("labels").textValue(), Map.class);
-        Map<String, String> headers = (Map<String, String>) toObj(metaJsonNode.get("headers").textValue(), Map.class);
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp(clientIp);
         requestMeta.setClientVersion(clientVersion);
@@ -178,6 +177,7 @@ public class RsocketUtils {
         PlainRequest plainRequest = new PlainRequest();
         plainRequest.setType(type);
         Request request = (Request) toObj(bodyString, classbyType);
+        Map<String, String> headers = (Map<String, String>) toObj(metaJsonNode.get("headers").textValue(), Map.class);
         request.putAllHeader(headers);
         plainRequest.setBody(request);
     
@@ -207,7 +207,12 @@ public class RsocketUtils {
         Request body;
     
         RequestMeta metadata;
-        
+    
+        @Override
+        public String toString() {
+            return "PlainRequest{" + "type='" + type + '\'' + ", body=" + body + ", metadata=" + metadata + '}';
+        }
+    
         /**
          * Getter method for property <tt>metadata</tt>.
          *

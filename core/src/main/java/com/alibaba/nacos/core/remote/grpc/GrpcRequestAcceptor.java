@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
@@ -29,14 +27,11 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.api.remote.response.UnKnowResponse;
 import com.alibaba.nacos.common.remote.GrpcUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.google.protobuf.Any;
-import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -63,18 +58,18 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         if (ServerCheckRequest.class.getName().equals(type)) {
     
-            Loggers.RPC_DIGEST.debug(String.format("[%s]  server check request receive ,clientIp : ", "grpc",
+            Loggers.RPC_DIGEST.debug(String.format("[%s]  server check request receive ,clientIp : %s ", "grpc",
                     grpcRequest.getMetadata().getClientIp()));
             responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse()));
             responseObserver.onCompleted();
             return;
         }
-        
-        Object parseObj = GrpcUtils.parse(grpcRequest);
+    
+        GrpcUtils.PlainRequest parseObj = GrpcUtils.parse(grpcRequest);
         
         if (parseObj != null) {
-            if (parseObj instanceof Response) {
-                Response response = (Response) parseObj;
+            if (parseObj.getBody() instanceof Response) {
+                Response response = (Response) parseObj.getBody();
                 Loggers.RPC_DIGEST.debug(String.format("[%s]  response receive :  %s ", "grpc", response.toString()));
     
                 String connectionId = grpcRequest.getMetadata().getConnectionId();
@@ -83,20 +78,19 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                 responseObserver.onCompleted();
                 return;
             } else {
-                Request request = (Request) parseObj;
+                Request request = (Request) parseObj.getBody();
                 Loggers.RPC_DIGEST.debug(String.format("[%s] request receive :%s ", "grpc", request.toString()));
                 RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
                 if (requestHandler != null) {
                     try {
-                        RequestMeta requestMeta = convertMeta(grpcRequest.getMetadata());
-                        boolean requestValid = connectionManager.checkValid(requestMeta.getConnectionId());
+                        boolean requestValid = connectionManager.checkValid(parseObj.getMetadata().getConnectionId());
                         if (!requestValid) {
                             responseObserver.onNext(GrpcUtils.convert(new ConnectionUnregisterResponse()));
                             responseObserver.onCompleted();
                             return;
                         }
-                        connectionManager.refreshActiveTime(requestMeta.getConnectionId());
-                        Response response = requestHandler.handle(request, requestMeta);
+                        connectionManager.refreshActiveTime(parseObj.getMetadata().getConnectionId());
+                        Response response = requestHandler.handle(request, parseObj.getMetadata());
                         responseObserver.onNext(GrpcUtils.convert(response));
                         responseObserver.onCompleted();
                         return;
@@ -116,14 +110,6 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                 }
             }
         }
-    }
-    
-    private RequestMeta convertMeta(Metadata metadata) {
-        RequestMeta requestMeta = new RequestMeta();
-        requestMeta.setClientIp(metadata.getClientIp());
-        requestMeta.setConnectionId(metadata.getConnectionId());
-        requestMeta.setClientVersion(metadata.getClientVersion());
-        return requestMeta;
     }
     
     private Response buildFailResponse(String msg) {

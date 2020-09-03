@@ -99,6 +99,7 @@ public abstract class RpcClient implements Closeable {
         RequestMeta meta = new RequestMeta();
         meta.setClientVersion(VersionUtils.getFullClientVersion());
         meta.setClientIp(NetUtils.localIP());
+        meta.setLabels(labels);
         return meta;
     }
     
@@ -164,24 +165,6 @@ public abstract class RpcClient implements Closeable {
      */
     public boolean isRunning() {
         return this.rpcClientStatus.get() == RpcClientStatus.RUNNING;
-    }
-    
-    /**
-     * check is this client is in init status,have not start th client.
-     *
-     * @return
-     */
-    public boolean isInitStatus() {
-        return this.rpcClientStatus.get() == RpcClientStatus.INITED;
-    }
-    
-    /**
-     * check is this client is in starting process.
-     *
-     * @return
-     */
-    public boolean isStarting() {
-        return this.rpcClientStatus.get() == RpcClientStatus.STARTING;
     }
     
     /**

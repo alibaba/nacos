@@ -17,15 +17,12 @@
 package com.alibaba.nacos.core.remote.rsocket;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.RsocketUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -105,9 +102,9 @@ public class RsocketRpcServer extends RpcServer {
                                 connectionid, palinrequest.getMetadata()));
         
                 ConnectionSetupRequest connectionSetupRequest = (ConnectionSetupRequest) palinrequest.getBody();
-                ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionid, connectionSetupRequest.getClientIp(),
-                        ConnectionType.RSOCKET.getType(), connectionSetupRequest.getClientVersion(),
-                        connectionSetupRequest.getLabels());
+                ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionid,
+                        palinrequest.getMetadata().getClientIp(), ConnectionType.RSOCKET.getType(),
+                        palinrequest.getMetadata().getClientVersion(), palinrequest.getMetadata().getLabels());
                 Connection connection = new RsocketConnection(metaInfo, sendingSocket);
         
                 connectionManager.register(connection.getConnectionId(), connection);

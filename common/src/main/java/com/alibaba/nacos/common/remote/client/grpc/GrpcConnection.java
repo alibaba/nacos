@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.grpc.auto.RequestStreamGrpc;
@@ -25,11 +24,9 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.GrpcUtils;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -89,7 +86,7 @@ public class GrpcConnection extends Connection {
             return null;
         }
     
-        Response response = (Response) GrpcUtils.parse(grpcResponse);
+        Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
         return response;
     }
     
@@ -111,7 +108,7 @@ public class GrpcConnection extends Connection {
         Futures.addCallback(requestFuture, new FutureCallback<Payload>() {
             @Override
             public void onSuccess(@NullableDecl Payload grpcResponse) {
-                Response response = (Response) GrpcUtils.parse(grpcResponse);
+                Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
                 if (response != null && response.isSuccess()) {
                     callback.onSuccess(response);
                 } else {
