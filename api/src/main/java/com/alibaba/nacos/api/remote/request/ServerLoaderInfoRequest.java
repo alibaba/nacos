@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.api.remote.request;
 
 /**
- * ConnectionHeathyChecker.
+ * get server node loader info.
  * @author liuzunfei
- * @version $Id: ConnectionHeathyChecker.java, v 0.1 2020年07月14日 12:01 AM liuzunfei Exp $
+ * @version $Id: ServerLoaderInfoRequest.java, v 0.1 2020年09月03日 2:45 PM liuzunfei Exp $
  */
-public interface ConnectionHeathyChecker {
+public class ServerLoaderInfoRequest extends InternalRequest {
+    
+    public ServerLoaderInfoRequest() {
+    }
 }

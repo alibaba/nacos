@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.core.remote.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.HeartBeatResponse;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.event.RemotingHeartBeatEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

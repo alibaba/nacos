@@ -111,13 +111,20 @@ public class RsocketRpcClient extends RpcClient {
                             }
                         }
         
+                        @Override
+                        public Mono<Void> fireAndForget(Payload payload) {
+                            final RsocketUtils.PlainRequest plainRequest = RsocketUtils
+                                    .parsePlainRequestFromPayload(payload);
+                            handleServerRequest(plainRequest.getBody());
+                            return Mono.empty();
+                        }
                     };
     
                     return Mono.just((RSocket) rsocket);
                 }
             }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
             RsocketConnection connection = new RsocketConnection(serverInfo, rSocket);
-            fireOnCloseEvent(rSocket);
+            fireOnCloseEvent(rSocket, connection);
             return connection;
         } catch (Exception e) {
             shutDownRsocketClient(rSocket);
@@ -131,22 +138,12 @@ public class RsocketRpcClient extends RpcClient {
         }
     }
     
-    void cancelfireOnCloseEvent(RSocket rSocket) {
-        
-        if (rSocket != null) {
-            rSocket.onClose().subscribe().dispose();
-        }
-    }
-    
-    @Override
-    protected void clearContextOnResetRequest() {
-        RsocketConnection rsocket = (RsocketConnection) currentConnetion;
-        cancelfireOnCloseEvent(rsocket.getrSocketClient());
-    }
-    
-    void fireOnCloseEvent(final RSocket rSocket) {
+    void fireOnCloseEvent(final RSocket rSocket, final Connection connectionInner) {
         
         Subscriber subscriber = new Subscriber<Void>() {
+    
+            Connection connection = connectionInner;
+            
             @Override
             public void onSubscribe(Subscription subscription) {
             
@@ -158,11 +155,17 @@ public class RsocketRpcClient extends RpcClient {
             
             @Override
             public void onError(Throwable throwable) {
+                if (connectionInner.isAbandon()) {
+                    return;
+                }
                 switchServerAsync();
             }
             
             @Override
             public void onComplete() {
+                if (connectionInner.isAbandon()) {
+                    return;
+                }
                 switchServerAsync();
             }
         };

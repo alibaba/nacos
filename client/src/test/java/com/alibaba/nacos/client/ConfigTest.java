@@ -208,7 +208,7 @@ public class ConfigTest {
     
         });
     
-        th.start();
+        //th.start();
         
         Listener listener = new AbstractListener() {
             @Override
