@@ -22,8 +22,6 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
@@ -33,14 +31,12 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -95,37 +91,24 @@ public class ServerLoaderController {
      * @return state json.
      */
     @GetMapping("/reload")
-    public ResponseEntity reloadClients(@RequestParam Integer count,
+    public ResponseEntity reloadCount(@RequestParam Integer count,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         Map<String, String> responseMap = new HashMap<>(3);
-        connectionManager.loadClientsSmoth(count, redirectAddress);
+        connectionManager.loadCount(count, redirectAddress);
         return ResponseEntity.ok().body("success");
     }
     
     /**
-     * Get current clients count with specifiec labels.
+     * Get server state of current server.
      *
      * @return state json.
      */
-    @GetMapping("/current")
-    public ResponseEntity currentCount(@RequestParam(value = "filters", required = false) String filters) {
-        Map<String, String> filterLabels = new HashMap<>(3);
-        try {
-            if (StringUtils.isNotBlank(filters)) {
-                HashMap<String, String> filterMap = (HashMap<String, String>) JSONUtils
-                        .deserializeObject(filters, HashMap.class);
-                int count = connectionManager.currentClientsCount(filterMap);
-                return ResponseEntity.ok().body(count);
-            } else {
-                int count = connectionManager.currentClientsCount();
-                return ResponseEntity.ok().body(count);
-            }
-    
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-    
-        }
-        
+    @GetMapping("/reloadsingle")
+    public ResponseEntity reloadSingle(@RequestParam String connectionId,
+            @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
+        Map<String, String> responseMap = new HashMap<>(3);
+        connectionManager.loadSingle(connectionId, redirectAddress);
+        return ResponseEntity.ok().body("success");
     }
     
     /**
@@ -133,7 +116,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
-    @GetMapping("/all")
+    @GetMapping("/current")
     public ResponseEntity currentClients() {
         Map<String, String> responseMap = new HashMap<>(3);
         Map<String, Connection> stringConnectionMap = connectionManager.currentClients();
@@ -146,14 +129,14 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
-    @GetMapping("/clustercon")
+    @GetMapping("/clustermetric")
     public ResponseEntity clusterLoader() {
         
         Map<String, String> responseMap = new HashMap<>(3);
-        return ResponseEntity.ok().body(getConInfo());
+        return ResponseEntity.ok().body(getMetrics());
     }
     
-    private List<ServerLoaderMetris> getConInfo() {
+    private List<ServerLoaderMetris> getMetrics() {
         
         ScheduledExecutorService executorService = ExecutorFactory
                 .newScheduledExecutorService(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
@@ -174,7 +157,6 @@ public class ServerLoaderController {
             if (MemberUtils.isSupportedLongCon(member)) {
                 count++;
                 ServerLoaderInfoRequest serverLoaderInfoRequest = new ServerLoaderInfoRequest();
-                
                 completionService.submit(new RpcTask<ServerLoaderInfoRequest>(serverLoaderInfoRequest, member));
             }
         }
