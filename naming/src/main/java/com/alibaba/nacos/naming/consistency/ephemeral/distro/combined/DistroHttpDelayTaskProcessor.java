@@ -18,9 +18,9 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
+import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 
 /**

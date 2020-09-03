@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute;
+package com.alibaba.nacos.core.distributed.distro.task.execute;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -31,8 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Distro execute worker.
  *
- * @author ConfigServer Generation Owners
- * @date 2019-04-17 4:44 PM
+ * @author xiweng.yy
  */
 public final class DistroExecuteWorker implements Closeable {
     
@@ -49,8 +48,8 @@ public final class DistroExecuteWorker implements Closeable {
     public DistroExecuteWorker(final int mod, final int total) {
         name = getClass().getName() + "_" + mod + "%" + total;
         queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
-        new InnerWorker(name).start();
         closed = new AtomicBoolean(false);
+        new InnerWorker(name).start();
     }
 
     public String getName() {

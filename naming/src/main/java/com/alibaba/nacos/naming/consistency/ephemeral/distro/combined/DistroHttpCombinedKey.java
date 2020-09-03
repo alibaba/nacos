@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 
 import java.util.LinkedList;
 import java.util.List;

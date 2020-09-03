@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.verify;
+package com.alibaba.nacos.core.distributed.distro.task.verify;
 
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.List;
 
@@ -61,7 +61,7 @@ public class DistroVerifyTask implements Runnable {
         if (null == distroData) {
             return;
         }
-        distroData.setType(ApplyAction.VERIFY);
+        distroData.setType(DataOperation.VERIFY);
         for (Member member : targetServer) {
             try {
                 distroComponentHolder.findTransportAgent(type).syncVerifyData(distroData, member.getAddress());

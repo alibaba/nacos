@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
+package com.alibaba.nacos.core.distributed.distro.component;
+
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 
 /**
- * Distro callback.
+ * Distro failed task handler.
  *
  * @author xiweng.yy
  */
-public interface DistroCallback {
+public interface DistroFailedTaskHandler {
     
     /**
-     * Callback when distro task execute successfully.
-     */
-    void onSuccess();
-    
-    /**
-     * Callback when distro task execute failed.
+     * Build retry task when distro task execute failed.
      *
-     * @param throwable throwable if execute failed caused by exception
+     * @param distroKey distro key of failed task
+     * @param action action of task
      */
-    void onFailed(Throwable throwable);
+    void retry(DistroKey distroKey, DataOperation action);
 }

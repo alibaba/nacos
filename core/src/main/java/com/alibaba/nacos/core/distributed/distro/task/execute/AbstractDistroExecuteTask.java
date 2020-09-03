@@ -14,35 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.event;
+package com.alibaba.nacos.core.distributed.distro.task.execute;
 
-import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 
 /**
- * Distro task retry event.
+ * Abstract distro execute task.
  *
  * @author xiweng.yy
  */
-public class DistroTaskRetryEvent extends Event {
-    
-    private static final long serialVersionUID = 2039399053393791138L;
+public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask implements Runnable {
     
     private final DistroKey distroKey;
     
-    private final ApplyAction action;
-    
-    public DistroTaskRetryEvent(DistroKey distroKey, ApplyAction action) {
+    protected AbstractDistroExecuteTask(DistroKey distroKey) {
         this.distroKey = distroKey;
-        this.action = action;
     }
     
-    public DistroKey getDistroKey() {
+    protected DistroKey getDistroKey() {
         return distroKey;
-    }
-    
-    public ApplyAction getAction() {
-        return action;
     }
 }
