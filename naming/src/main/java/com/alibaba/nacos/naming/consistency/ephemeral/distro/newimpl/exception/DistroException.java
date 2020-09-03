@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.exception;
 
 /**
- * Apply action.
+ * Distro exception.
  *
- * @author nkorange
+ * @author xiweng.yy
  */
-public enum ApplyAction {
-    /**
-     * Data changed.
-     */
-    CHANGE,
-    /**
-     * Data deleted.
-     */
-    DELETE,
-    /**
-     * Data verify.
-     */
-    VERIFY;
+public class DistroException extends RuntimeException {
+    
+    private static final long serialVersionUID = 1711141952413139786L;
+    
+    public DistroException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    
+    @Override
+    public String getMessage() {
+        return "[DISTRO-EXCEPTION]" + super.getMessage();
+    }
 }

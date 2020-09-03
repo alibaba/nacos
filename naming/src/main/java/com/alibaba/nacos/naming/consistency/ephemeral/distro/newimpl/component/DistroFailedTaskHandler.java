@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
+
+import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 
 /**
- * Apply action.
+ * Distro failed task handler.
  *
- * @author nkorange
+ * @author xiweng.yy
  */
-public enum ApplyAction {
+public interface DistroFailedTaskHandler {
+    
     /**
-     * Data changed.
+     * Build retry task when distro task execute failed.
+     *
+     * @param distroKey distro key of failed task
+     * @param action action of task
      */
-    CHANGE,
-    /**
-     * Data deleted.
-     */
-    DELETE,
-    /**
-     * Data verify.
-     */
-    VERIFY;
+    void retry(DistroKey distroKey, ApplyAction action);
 }
