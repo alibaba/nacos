@@ -299,7 +299,7 @@ public class RaftStore {
                 String oldDatumKey = datum.key
                         .replace(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER, StringUtils.EMPTY);
                 
-                cacheFile = cacheFile(cacheFileName(namespaceId, datum.key));
+                cacheFile = cacheFile(cacheFileName(namespaceId, oldDatumKey));
                 if (cacheFile.exists() && !cacheFile.delete()) {
                     Loggers.RAFT.error("[RAFT-DELETE] failed to delete old format datum: {}, value: {}", datum.key,
                             datum.value);

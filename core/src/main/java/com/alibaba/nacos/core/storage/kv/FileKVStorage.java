@@ -45,8 +45,9 @@ public class FileKVStorage implements KvStorage {
     
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
     
-    public FileKVStorage(String baseDir) {
+    public FileKVStorage(String baseDir) throws IOException {
         this.baseDir = baseDir;
+        DiskUtils.forceMkdir(baseDir);
     }
     
     @Override

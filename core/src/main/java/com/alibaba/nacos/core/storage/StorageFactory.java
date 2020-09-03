@@ -27,7 +27,7 @@ import com.alibaba.nacos.core.storage.kv.RocksStorage;
  */
 public final class StorageFactory {
     
-    public static KvStorage createKVStorage(KvStorage.KVType type, final String label, final String baseDir) {
+    public static KvStorage createKVStorage(KvStorage.KVType type, final String label, final String baseDir) throws Exception {
         switch (type) {
             case File:
                 return new FileKVStorage(baseDir);

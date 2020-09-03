@@ -122,7 +122,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     private volatile boolean hasError = false;
     
     public PersistentServiceProcessor(final ProtocolManager protocolManager,
-            final ClusterVersionJudgement versionJudgement, final RaftStore oldStore) {
+            final ClusterVersionJudgement versionJudgement, final RaftStore oldStore) throws Exception {
         this.protocol = protocolManager.getCpProtocol();
         this.oldStore = oldStore;
         this.versionJudgement = versionJudgement;
@@ -235,6 +235,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                         request.setValues(values);
                         CompletableFuture future = protocol.submitAsync(
                                 Log.newBuilder().setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
+                                        .setOperation(Op.Write.name())
                                         .setData(ByteString.copyFrom(serializer.serialize(request))).build())
                                 .whenComplete(((response, throwable) -> {
                                     if (throwable == null) {
