@@ -33,6 +33,8 @@ import java.util.Map;
  */
 public abstract class Connection {
     
+    private boolean abandon = false;
+    
     protected RpcClient.ServerInfo serverInfo;
     
     protected Map<String, String> labels = new HashMap<String, String>();
@@ -51,6 +53,24 @@ public abstract class Connection {
     
     public void putLabels(Map<String, String> labels) {
         labels.putAll(labels);
+    }
+    
+    /**
+     * Getter method for property <tt>abandon</tt>.
+     *
+     * @return property value of abandon
+     */
+    public boolean isAbandon() {
+        return abandon;
+    }
+    
+    /**
+     * Setter method for property <tt>abandon</tt>.
+     *
+     * @param abandon value to be assigned to property abandon
+     */
+    public void setAbandon(boolean abandon) {
+        this.abandon = abandon;
     }
     
     /**

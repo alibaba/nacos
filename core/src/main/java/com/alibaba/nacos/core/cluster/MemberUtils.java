@@ -110,6 +110,16 @@ public class MemberUtils {
         }
     }
     
+    /**
+     * get support member connection type.
+     *
+     * @param member
+     * @return
+     */
+    public static boolean isSupportedLongCon(Member member) {
+        return getSupportedConnectionType(member) != null;
+    }
+    
     public static int calculateRaftPort(Member member) {
         return member.getPort() - 1000;
     }

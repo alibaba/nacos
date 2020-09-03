@@ -16,10 +16,22 @@
 
 package com.alibaba.nacos.console.controller;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest;
+import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.JSONUtils;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +42,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * controller to controll server loader.
@@ -44,6 +67,15 @@ public class ServerLoaderController {
     
     @Autowired
     private ConnectionManager connectionManager;
+    
+    @Autowired
+    private ServerMemberManager serverMemberManager;
+    
+    @Autowired
+    private ClusterRpcClientProxy clusterRpcClientProxy;
+    
+    @Autowired
+    private ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
     
     /**
      * Get server state of current server.
@@ -63,9 +95,10 @@ public class ServerLoaderController {
      * @return state json.
      */
     @GetMapping("/reload")
-    public ResponseEntity reloadClients(@RequestParam Integer count) {
+    public ResponseEntity reloadClients(@RequestParam Integer count,
+            @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         Map<String, String> responseMap = new HashMap<>(3);
-        connectionManager.loadClientsSmoth(count);
+        connectionManager.loadClientsSmoth(count, redirectAddress);
         return ResponseEntity.ok().body("success");
     }
     
@@ -87,10 +120,10 @@ public class ServerLoaderController {
                 int count = connectionManager.currentClientsCount();
                 return ResponseEntity.ok().body(count);
             }
-        
+    
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        
+    
         }
         
     }
@@ -105,5 +138,149 @@ public class ServerLoaderController {
         Map<String, String> responseMap = new HashMap<>(3);
         Map<String, Connection> stringConnectionMap = connectionManager.currentClients();
         return ResponseEntity.ok().body(stringConnectionMap);
+    }
+    
+    
+    /**
+     * Get current clients.
+     *
+     * @return state json.
+     */
+    @GetMapping("/clustercon")
+    public ResponseEntity clusterLoader() {
+        
+        Map<String, String> responseMap = new HashMap<>(3);
+        return ResponseEntity.ok().body(getConInfo());
+    }
+    
+    private List<ServerLoaderMetris> getConInfo() {
+        
+        ScheduledExecutorService executorService = ExecutorFactory
+                .newScheduledExecutorService(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        String threadName = "nacos.core.server.cluster.Thread";
+                        Thread thread = new Thread(r, threadName);
+                        thread.setDaemon(true);
+                        return thread;
+                    }
+                });
+        
+        CompletionService<ServerLoaderMetris> completionService = new ExecutorCompletionService<ServerLoaderMetris>(
+                executorService);
+        
+        int count = 0;
+        for (Member member : serverMemberManager.allMembersWithoutSelf()) {
+            if (MemberUtils.isSupportedLongCon(member)) {
+                count++;
+                ServerLoaderInfoRequest serverLoaderInfoRequest = new ServerLoaderInfoRequest();
+                
+                completionService.submit(new RpcTask<ServerLoaderInfoRequest>(serverLoaderInfoRequest, member));
+            }
+        }
+        
+        List<ServerLoaderMetris> responseList = new LinkedList<ServerLoaderMetris>();
+        
+        try {
+            ServerLoaderInfoResponse handle = serverLoaderInfoRequestHandler
+                    .handle(new ServerLoaderInfoRequest(), new RequestMeta());
+            ServerLoaderMetris metris = new ServerLoaderMetris();
+            metris.setAddress(serverMemberManager.getSelf().getAddress());
+            metris.setMetric(handle.getLoaderMetrics());
+            responseList.add(metris);
+        } catch (NacosException e) {
+            e.printStackTrace();
+        }
+        
+        for (int i = 0; i < count; i++) {
+            try {
+                Future<ServerLoaderMetris> f = completionService.poll(1000, TimeUnit.MILLISECONDS);
+                try {
+                    if (f != null) {
+                        ServerLoaderMetris response = f.get(500, TimeUnit.MILLISECONDS);
+                        if (response != null) {
+                            responseList.add(response);
+                        }
+                    }
+                } catch (TimeoutException e) {
+                    if (f != null) {
+                        f.cancel(true);
+                    }
+                }
+            } catch (InterruptedException e) {
+                LogUtil.DEFAULT_LOG.warn("get task result with InterruptedException: {} ", e.getMessage());
+            } catch (ExecutionException e) {
+                LogUtil.DEFAULT_LOG.warn("get task result with ExecutionException: {} ", e.getMessage());
+            }
+        }
+        
+        return responseList;
+        
+    }
+    
+    class RpcTask<T extends Request> implements Callable<ServerLoaderMetris> {
+        
+        T request;
+        
+        Member member;
+        
+        public RpcTask(T t, Member member) {
+            this.request = t;
+            this.member = member;
+        }
+        
+        @Override
+        public ServerLoaderMetris call() throws Exception {
+            
+            ServerLoaderInfoResponse response = (ServerLoaderInfoResponse) clusterRpcClientProxy
+                    .sendRequest(this.member, this.request);
+            ServerLoaderMetris metris = new ServerLoaderMetris();
+            metris.setAddress(member.getAddress());
+            metris.setMetric(response.getLoaderMetrics());
+            return metris;
+        }
+    }
+    
+    class ServerLoaderMetris {
+        
+        String address;
+        
+        Map<String, String> metric = new HashMap<>();
+        
+        /**
+         * Getter method for property <tt>address</tt>.
+         *
+         * @return property value of address
+         */
+        public String getAddress() {
+            return address;
+        }
+        
+        /**
+         * Setter method for property <tt>address</tt>.
+         *
+         * @param address value to be assigned to property address
+         */
+        public void setAddress(String address) {
+            this.address = address;
+        }
+        
+        /**
+         * Getter method for property <tt>metric</tt>.
+         *
+         * @return property value of metric
+         */
+        public Map<String, String> getMetric() {
+            return metric;
+        }
+        
+        /**
+         * Setter method for property <tt>metric</tt>.
+         *
+         * @param metric value to be assigned to property metric
+         */
+        public void setMetric(Map<String, String> metric) {
+            this.metric = metric;
+        }
     }
 }
