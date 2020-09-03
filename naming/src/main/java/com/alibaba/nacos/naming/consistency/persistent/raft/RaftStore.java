@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.Instance;
@@ -79,7 +79,7 @@ public class RaftStore {
                     datum = readDatum(datumFile, cache.getName());
                     if (datum != null) {
                         datums.put(datum.key, datum);
-                        notifier.addTask(datum.key, ApplyAction.CHANGE);
+                        notifier.addTask(datum.key, DataOperation.CHANGE);
                     }
                 }
                 continue;

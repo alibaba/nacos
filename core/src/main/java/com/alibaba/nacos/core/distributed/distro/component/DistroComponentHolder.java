@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
+package com.alibaba.nacos.core.distributed.distro.component;
 
 import org.springframework.stereotype.Component;
 

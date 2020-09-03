@@ -14,23 +14,37 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.exception;
+package com.alibaba.nacos.core.distributed.distro.component;
+
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 
 /**
- * Distro exception.
+ * Distro data storage.
  *
  * @author xiweng.yy
  */
-public class DistroException extends RuntimeException {
+public interface DistroDataStorage {
     
-    private static final long serialVersionUID = 1711141952413139786L;
+    /**
+     * Get distro datum.
+     *
+     * @param distroKey key of distro datum
+     * @return need to sync datum
+     */
+    DistroData getDistroData(DistroKey distroKey);
     
-    public DistroException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    /**
+     * Get all distro datum snapshot.
+     *
+     * @return all datum
+     */
+    DistroData getDatumSnapshot();
     
-    @Override
-    public String getMessage() {
-        return "[DISTRO-EXCEPTION]" + super.getMessage();
-    }
+    /**
+     * Get verify datum.
+     *
+     * @return verify datum
+     */
+    DistroData getVerifyData();
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity;
+package com.alibaba.nacos.core.distributed.distro.entity;
 
 import java.util.Objects;
 

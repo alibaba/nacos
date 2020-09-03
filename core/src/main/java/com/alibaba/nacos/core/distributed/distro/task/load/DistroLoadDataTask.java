@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.load;
+package com.alibaba.nacos.core.distributed.distro.task.load;
 
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroTransportAgent;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.misc.GlobalConfig;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
+import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
+import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
+import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,14 +42,17 @@ public class DistroLoadDataTask implements Runnable {
     
     private final DistroComponentHolder distroComponentHolder;
     
+    private final DistroConfig distroConfig;
+    
     private final DistroCallback loadCallback;
     
     private final Map<String, Boolean> loadCompletedMap;
     
     public DistroLoadDataTask(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
-            DistroCallback loadCallback) {
+            DistroConfig distroConfig, DistroCallback loadCallback) {
         this.memberManager = memberManager;
         this.distroComponentHolder = distroComponentHolder;
+        this.distroConfig = distroConfig;
         this.loadCallback = loadCallback;
         loadCompletedMap = new HashMap<>(1);
     }
@@ -60,8 +62,7 @@ public class DistroLoadDataTask implements Runnable {
         try {
             load();
             if (!checkCompleted()) {
-                GlobalConfig globalConfig = ApplicationUtils.getBean(GlobalConfig.class);
-                GlobalExecutor.submitLoadDataTask(this, globalConfig.getLoadDataRetryDelayMillis());
+                GlobalExecutor.submitLoadDataTask(this, distroConfig.getLoadDataRetryDelayMillis());
             } else {
                 loadCallback.onSuccess();
                 Loggers.DISTRO.info("[DISTRO-INIT] load snapshot data success");
@@ -101,7 +102,9 @@ public class DistroLoadDataTask implements Runnable {
                 Loggers.DISTRO.info("[DISTRO-INIT] load snapshot {} from {}", resourceType, each.getAddress());
                 DistroData distroData = transportAgent.getDatumSnapshot(each.getAddress());
                 boolean result = dataProcessor.processSnapshot(distroData);
-                Loggers.DISTRO.info("[DISTRO-INIT] load snapshot {} from {} result: {}", resourceType, each.getAddress(), result);
+                Loggers.DISTRO
+                        .info("[DISTRO-INIT] load snapshot {} from {} result: {}", resourceType, each.getAddress(),
+                                result);
                 if (result) {
                     return true;
                 }

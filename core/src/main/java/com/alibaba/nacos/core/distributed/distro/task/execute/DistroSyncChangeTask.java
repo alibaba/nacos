@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute;
+package com.alibaba.nacos.core.distributed.distro.task.execute;
 
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroFailedTaskHandler;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandler;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.utils.Loggers;
 
 /**
  * Distro sync change task.
@@ -43,7 +43,7 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
         try {
             String type = getDistroKey().getResourceType();
             DistroData distroData = distroComponentHolder.findDataStorage(type).getDistroData(getDistroKey());
-            distroData.setType(ApplyAction.CHANGE);
+            distroData.setType(DataOperation.CHANGE);
             boolean result = distroComponentHolder.findTransportAgent(type).syncData(distroData, getDistroKey().getTargetServer());
             if (!result) {
                 handleFailedTask();
@@ -62,7 +62,7 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
             Loggers.DISTRO.warn("[DISTRO] Can't find failed task for type {}, so discarded", type);
             return;
         }
-        failedTaskHandler.retry(getDistroKey(), ApplyAction.CHANGE);
+        failedTaskHandler.retry(getDistroKey(), DataOperation.CHANGE);
     }
     
     @Override
