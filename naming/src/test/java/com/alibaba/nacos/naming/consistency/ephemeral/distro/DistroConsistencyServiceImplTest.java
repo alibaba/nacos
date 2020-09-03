@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.consistency.DataOperation;
@@ -34,7 +33,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Map;
@@ -46,6 +44,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DistroConsistencyServiceImplTest extends BaseTest {
     
@@ -61,9 +60,6 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     private DistroProtocol distroProtocol;
     
     @Mock
-    private ServerMemberManager serverMemberManager;
-    
-    @Spy
     private GlobalConfig globalConfig;
     
     @Mock
@@ -86,6 +82,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     public void setUp() throws Exception {
         doReturn(distroComponentHolder).when(context).getBean(DistroComponentHolder.class);
         doReturn(distroTaskEngineHolder).when(context).getBean(DistroTaskEngineHolder.class);
+        when(globalConfig.getTaskDispatchPeriod()).thenReturn(2000);
         distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, serializer, switchDomain,
                 globalConfig, distroProtocol);
         ReflectionTestUtils.setField(distroConsistencyService, "notifier", notifier);
