@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
@@ -86,7 +86,7 @@ public class RaftStore {
                         datums.put(datum.key, datum);
                         if (notifier != null) {
                             NotifyCenter
-                                    .publishEvent(ValueChangeEvent.builder().key(datum.key).action(ApplyAction.CHANGE).build());
+                                    .publishEvent(ValueChangeEvent.builder().key(datum.key).action(DataOperation.CHANGE).build());
                         }
                     }
                 }

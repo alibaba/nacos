@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -178,8 +178,12 @@ public class RaftCore {
         versionJudgement.registerObserver(isAllNewVersion -> {
             stopWork = isAllNewVersion;
             if (stopWork) {
+                Loggers.RAFT.warn("start to close old raft protocol!!!");
+                Loggers.RAFT.warn("stop old raft protocol task for notifier");
                 NotifyCenter.deregisterSubscriber(notifier);
+                Loggers.RAFT.warn("stop old raft protocol task for master task");
                 masterTask.cancel(true);
+                Loggers.RAFT.warn("stop old raft protocol task for heartbeat task");
                 heartbeatTask.cancel(true);
             }
         }, 100);
@@ -386,9 +390,7 @@ public class RaftCore {
             }
         }
         raftStore.updateTerm(local.term.get());
-    
-        NotifyCenter.publishEvent(ValueChangeEvent.builder().key(datum.key).action(ApplyAction.CHANGE).build());
-        
+        NotifyCenter.publishEvent(ValueChangeEvent.builder().key(datum.key).action(DataOperation.CHANGE).build());
         Loggers.RAFT.info("data added/updated, key={}, term={}", datum.key, local.term);
     }
     
@@ -838,7 +840,8 @@ public class RaftCore {
                                     raftStore.write(newDatum);
                                     
                                     datums.put(newDatum.key, newDatum);
-                                    NotifyCenter.publishEvent(ValueChangeEvent.builder().key(newDatum.key).action(ApplyAction.CHANGE).build());
+
+                                    NotifyCenter.publishEvent(ValueChangeEvent.builder().key(newDatum.key).action(DataOperation.CHANGE).build());
                                     
                                     local.resetLeaderDue();
                                     
@@ -1008,7 +1011,7 @@ public class RaftCore {
     
     public void addDatum(Datum datum) {
         datums.put(datum.key, datum);
-        NotifyCenter.publishEvent(ValueChangeEvent.builder().key(datum.key).action(ApplyAction.CHANGE).build());
+        NotifyCenter.publishEvent(ValueChangeEvent.builder().key(datum.key).action(DataOperation.CHANGE).build());
     }
     
     /**
@@ -1037,7 +1040,7 @@ public class RaftCore {
                 raftStore.delete(deleted);
                 Loggers.RAFT.info("datum deleted, key: {}", key);
             }
-            NotifyCenter.publishEvent(ValueChangeEvent.builder().key(URLDecoder.decode(key, "UTF-8")).action(ApplyAction.DELETE).build());
+            NotifyCenter.publishEvent(ValueChangeEvent.builder().key(URLDecoder.decode(key, "UTF-8")).action(DataOperation.DELETE).build());
         } catch (UnsupportedEncodingException e) {
             Loggers.RAFT.warn("datum key decode failed: {}", key);
         }
@@ -1051,4 +1054,5 @@ public class RaftCore {
     public int getNotifyTaskCount() {
         return (int) publisher.currentEventSize();
     }
+    
 }

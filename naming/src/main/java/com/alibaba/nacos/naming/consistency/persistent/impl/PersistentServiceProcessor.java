@@ -31,7 +31,7 @@ import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
-import com.alibaba.nacos.core.distributed.raft.RaftConfig;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KVStorageException;
 import com.alibaba.nacos.core.storage.StorageFactory;
@@ -92,7 +92,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         }
     }
     
-    private final CPProtocol<RaftConfig, LogProcessor4CP> protocol;
+    private final CPProtocol protocol;
     
     private final KvStorage kvStorage;
     
@@ -121,9 +121,9 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
      */
     private volatile boolean hasError = false;
     
-    public PersistentServiceProcessor(final CPProtocol<RaftConfig, LogProcessor4CP> protocol,
+    public PersistentServiceProcessor(final ProtocolManager protocolManager,
             final ClusterVersionJudgement versionJudgement, final RaftStore oldStore) {
-        this.protocol = protocol;
+        this.protocol = protocolManager.getCpProtocol();
         this.oldStore = oldStore;
         this.versionJudgement = versionJudgement;
         this.kvStorage = StorageFactory.createKVStorage(KvStorage.KVType.File, "naming-persistent",
@@ -139,6 +139,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         init();
     }
     
+    @SuppressWarnings("unchecked")
     private void init() {
         NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
         this.protocol.addLogProcessors(Collections.singletonList(this));
@@ -210,9 +211,11 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
      * Pull old data into the new data store. When loading old data information, write locks must be added, and new
      * requests can be processed only after the old data has been loaded
      */
+    @SuppressWarnings("unchecked")
     public void loadFromOldData() {
         final Lock lock = this.lock.writeLock();
         lock.lock();
+        Loggers.RAFT.warn("start to load data to new raft protocol!!!");
         try {
             if (protocol.isLeader(Constants.NAMING_PERSISTENT_SERVICE_GROUP)) {
                 Map<String, Datum> datumMap = new HashMap<>(64);
@@ -230,7 +233,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                         BatchWriteRequest request = new BatchWriteRequest();
                         request.setKeys(keys);
                         request.setValues(values);
-                        CompletableFuture<Response> future = protocol.submitAsync(
+                        CompletableFuture future = protocol.submitAsync(
                                 Log.newBuilder().setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
                                         .setData(ByteString.copyFrom(serializer.serialize(request))).build())
                                 .whenComplete(((response, throwable) -> {
