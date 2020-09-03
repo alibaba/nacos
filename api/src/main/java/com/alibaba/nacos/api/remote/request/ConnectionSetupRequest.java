@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * request to setup a connection.
  *
@@ -27,78 +24,6 @@ import java.util.Map;
  */
 public class ConnectionSetupRequest extends InternalRequest {
     
-    private String clientIp;
-    
-    private String clientVersion;
-    
-    protected Map<String, String> labels = new HashMap<String, String>();
-    
     public ConnectionSetupRequest() {
-    }
-    
-    public ConnectionSetupRequest(String clientIp, String clientVersion) {
-        this.clientIp = clientIp;
-        this.clientVersion = clientVersion;
-    }
-    
-    public ConnectionSetupRequest(String clientIp, String clientVersion,
-            Map<String, String> labels) {
-        this.clientIp = clientIp;
-        this.clientVersion = clientVersion;
-        this.labels = labels;
-    }
-    
-    /**
-     * Getter method for property <tt>clientIp</tt>.
-     *
-     * @return property value of clientIp
-     */
-    public String getClientIp() {
-        return clientIp;
-    }
-    
-    /**
-     * Setter method for property <tt>clientIp</tt>.
-     *
-     * @param clientIp value to be assigned to property clientIp
-     */
-    public void setClientIp(String clientIp) {
-        this.clientIp = clientIp;
-    }
-    
-    /**
-     * Getter method for property <tt>clientVersion</tt>.
-     *
-     * @return property value of clientVersion
-     */
-    public String getClientVersion() {
-        return clientVersion;
-    }
-    
-    /**
-     * Setter method for property <tt>clientVersion</tt>.
-     *
-     * @param clientVersion value to be assigned to property clientVersion
-     */
-    public void setClientVersion(String clientVersion) {
-        this.clientVersion = clientVersion;
-    }
-    
-    /**
-     * Getter method for property <tt>labels</tt>.
-     *
-     * @return property value of labels
-     */
-    public Map<String, String> getLabels() {
-        return labels;
-    }
-    
-    /**
-     * Setter method for property <tt>labels</tt>.
-     *
-     * @param labels value to be assigned to property labels
-     */
-    public void setLabels(Map<String, String> labels) {
-        this.labels = labels;
     }
 }

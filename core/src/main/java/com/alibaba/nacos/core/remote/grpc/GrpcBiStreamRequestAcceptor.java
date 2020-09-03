@@ -37,6 +37,7 @@ import static com.alibaba.nacos.core.remote.grpc.GrpcServer.CONTEXT_KEY_CHANNEL;
 import static com.alibaba.nacos.core.remote.grpc.GrpcServer.CONTEXT_KEY_CONN_ID;
 
 /**
+ * grpc bi stream request .
  * @author liuzunfei
  * @version $Id: GrpcBiStreamRequest.java, v 0.1 2020年09月01日 10:41 PM liuzunfei Exp $
  */
@@ -53,14 +54,14 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             @Override
             public void onNext(Payload payload) {
                 String connectionId = CONTEXT_KEY_CONN_ID.get();
-                
-                Object parseObj = GrpcUtils.parse(payload);
-                if (parseObj instanceof ConnectionSetupRequest) {
-                    ConnectionSetupRequest setupRequest = (ConnectionSetupRequest) parseObj;
+    
+                GrpcUtils.PlainRequest plainRequest = GrpcUtils.parse(payload);
+                if (plainRequest.getBody() instanceof ConnectionSetupRequest) {
+                    ConnectionSetupRequest setupRequest = (ConnectionSetupRequest) plainRequest.getBody();
                     Context current = Context.current();
                     Metadata metadata = payload.getMetadata();
                     String clientIp = metadata.getClientIp();
-                    String version = metadata.getVersion();
+                    String version = metadata.getClientVersion();
                     ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId, clientIp,
                             ConnectionType.GRPC.getType(), version, metadata.getLabelsMap());
                     
@@ -76,8 +77,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     } else {
                         connectionManager.register(connectionId, connection);
                     }
-                } else if (parseObj instanceof Response) {
-                    Response response = (Response) parseObj;
+                } else if (plainRequest.getBody() instanceof Response) {
+                    Response response = (Response) plainRequest.getBody();
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
                 }
                 

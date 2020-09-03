@@ -96,7 +96,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
                 if (notifyRequet.isBeta()) {
                     List<String> betaIps = notifyRequet.getBetaIps();
-                    if (betaIps != null && betaIps.contains(connection.getMetaInfo().getClientIp())) {
+                    if (betaIps != null && !betaIps.contains(connection.getMetaInfo().getClientIp())) {
                         continue;
                     }
                 }

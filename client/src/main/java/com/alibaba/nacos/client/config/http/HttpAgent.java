@@ -29,14 +29,7 @@ import java.util.Map;
  * @author Nacos
  */
 public interface HttpAgent extends Closeable {
-
-    /**
-     * get server list manager.
-     * @return
-     */
-    ServerListManager getServerListManager();
-
-
+    
     /**
      * start to get nacos ip list.
      *

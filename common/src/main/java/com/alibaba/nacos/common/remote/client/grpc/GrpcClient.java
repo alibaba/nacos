@@ -119,7 +119,7 @@ public class GrpcClient extends RpcClient {
                     return;
                 }
                 HeartBeatRequest heartBeatRequest = new HeartBeatRequest();
-                Response heartBeatResponse = this.currentConnetion.request(heartBeatRequest);
+                Response heartBeatResponse = this.currentConnetion.request(heartBeatRequest, buildMeta());
                 if (heartBeatResponse != null && heartBeatResponse instanceof ConnectResetResponse) {
                     LOGGER.warn(" connection is not register to current server ,trying to switch server ");
                     switchServerAsync();
@@ -141,9 +141,9 @@ public class GrpcClient extends RpcClient {
         switchServerAsync();
     }
     
-    private Metadata buildMeta(String connectionIdInner) {
+    private Metadata buildGrpcMeta() {
         Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP())
-                .setVersion(VersionUtils.getFullClientVersion()).putAllLabels(labels).build();
+                .setClientVersion(VersionUtils.getFullClientVersion()).putAllLabels(labels).build();
         return meta;
     }
     
@@ -159,60 +159,13 @@ public class GrpcClient extends RpcClient {
                 return false;
             }
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
-            Payload grpcRequest = GrpcUtils.convert(serverCheckRequest, buildMeta(""));
+            Payload grpcRequest = GrpcUtils.convert(serverCheckRequest, buildMeta());
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
             Payload response = responseFuture.get();
             return response != null;
         } catch (Exception e) {
             return false;
         }
-    }
-    
-    /**
-     * bind request stream observer (send a connection).
-     *
-     * @param streamStub streamStub to bind.
-     */
-    private void bindRequestStream(final RequestStreamGrpc.RequestStreamStub streamStub) {
-        Payload streamRequest = Payload.newBuilder().setMetadata(buildMeta("")).build();
-        LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
-        streamStub.requestStream(streamRequest, new StreamObserver<Payload>() {
-            @Override
-            public void onNext(Payload payload) {
-    
-                LOGGER.debug(" stream server reuqust receive  ,original info :{}", payload.toString());
-                try {
-                    final Request request = (Request) GrpcUtils.parse(payload);
-                    
-                    if (request != null) {
-                        try {
-                            Response response = handleServerRequest(request);
-                            response.setRequestId(request.getRequestId());
-                            sendResponse(response);
-                        } catch (Exception e) {
-                            sendResponse(request.getRequestId(), false);
-                        }
-                    }
-    
-                } catch (Exception e) {
-                    LOGGER.error("error tp process server push response  :{}",
-                            payload.getBody().getValue().toStringUtf8());
-                }
-            }
-            
-            @Override
-            public void onError(Throwable throwable) {
-                throwable.printStackTrace();
-                System.out.println("on error1 ,switch server ");
-                switchServerAsync();
-            }
-            
-            @Override
-            public void onCompleted() {
-                System.out.println("onCompleted 1,switch server " + this);
-                switchServerAsync();
-            }
-        });
     }
     
     private StreamObserver<Payload> bindRequestStream(final BiRequestStreamGrpc.BiRequestStreamStub streamStub) {
@@ -222,7 +175,7 @@ public class GrpcClient extends RpcClient {
             public void onNext(Payload payload) {
                 LOGGER.debug(" stream server reuqust receive  ,original info :{}", payload.toString());
                 try {
-                    final Request request = (Request) GrpcUtils.parse(payload);
+                    final Request request = (Request) GrpcUtils.parse(payload).getBody();
                     
                     if (request != null) {
                         try {
@@ -260,7 +213,7 @@ public class GrpcClient extends RpcClient {
     private void sendResponse(String ackId, boolean success) {
         try {
             PushAckRequest request = PushAckRequest.build(ackId, success);
-            this.currentConnetion.request(request);
+            this.currentConnetion.request(request, buildMeta());
         } catch (Exception e) {
             LOGGER.error("error to send ack  response,ackId->:{}", ackId);
         }
@@ -301,9 +254,8 @@ public class GrpcClient extends RpcClient {
                         .newStub(newChannelStubTemp.getChannel());
                 StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub);
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, payloadStreamObserver);
-                ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(),
-                        VersionUtils.getFullClientVersion(), labels);
-                grpcConn.sendRequest(conconSetupRequest);
+                ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest();
+                grpcConn.sendRequest(conconSetupRequest, buildMeta());
                 
                 //switch current channel and stub
                 RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc

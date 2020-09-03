@@ -19,15 +19,10 @@ package com.alibaba.nacos.common.remote;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.remote.PayloadRegistry;
-import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
-import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -39,7 +34,8 @@ import io.rsocket.util.DefaultPayload;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * rsocket utils.
@@ -112,11 +108,14 @@ public class RsocketUtils {
      */
     public static Payload convertRequestToPayload(Request request, RequestMeta meta) {
         JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("clientIp", meta.getClientIp());
+        jsonObject.addProperty("clientVersion", meta.getClientVersion());
+        jsonObject.addProperty("labels", toJson(meta.getLabels()));
+        jsonObject.addProperty("headers", toJson(request.getHeaders()));
         jsonObject.addProperty("type", request.getClass().getName());
-        jsonObject.addProperty("body", toJson(request));
-        jsonObject.addProperty("meta", toJson(meta));
-        byte[] bytes = IoUtils.tryCompress(jsonObject.toString(), "UTF-8");
-        return DefaultPayload.create(bytes);
+        request.clearHeaders();
+        byte[] bytes = IoUtils.tryCompress(toJson(request), StandardCharsets.UTF_8.name());
+        return DefaultPayload.create(bytes, jsonObject.toString().getBytes());
         
     }
     
@@ -129,9 +128,9 @@ public class RsocketUtils {
     public static Payload convertResponseToPayload(Response response) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("type", response.getClass().getName());
-        jsonObject.addProperty("body", toJson(response));
-        byte[] bytes = IoUtils.tryCompress(jsonObject.toString(), "UTF-8");
-        return DefaultPayload.create(bytes);
+    
+        byte[] bytes = IoUtils.tryCompress(toJson(response), StandardCharsets.UTF_8.name());
+        return DefaultPayload.create(bytes, jsonObject.toString().getBytes());
     }
     
     /**
@@ -141,41 +140,17 @@ public class RsocketUtils {
      * @return response.
      */
     public static Response parseResponseFromPayload(Payload payload) {
-        String payloadString = getPayloadString(payload);
-        JsonNode jsonNode = toObj(payloadString);
-        String type = jsonNode.get("type").textValue();
-        String bodyString = jsonNode.get("body").textValue();
-        Class classbyType = PayloadRegistry.getClassbyType(type);
-        final Response response;
-        if (classbyType != null) {
-            response = (Response) toObj(bodyString, classbyType);
-        } else {
-            PlainBodyResponse myresponse = toObj(bodyString, PlainBodyResponse.class);
-            myresponse.setBodyString(bodyString);
-            response = myresponse;
-        }
-        return response;
-    }
+        //parse meta
+        String metaString = payload.getMetadataUtf8();
+        JsonNode metaJsonNode = toObj(metaString);
+        String type = metaJsonNode.get("type").textValue();
     
-    /**
-     * parse server request from payload.
-     *
-     * @param payload payload of socket.
-     * @return request.
-     */
-    public static Request parseServerRequestFromPayload(Payload payload) {
-        String payloadString = getPayloadString(payload);
-        JsonNode jsonNode = toObj(payloadString);
-        String type = jsonNode.get("type").textValue();
-        String bodyString = jsonNode.get("body").textValue();
-        Class classByType = PayloadRegistry.getClassbyType(type);
-        final Request request;
-        if (classByType != null) {
-            request = (Request) toObj(bodyString, classByType);
-            return request;
-        } else {
-            return null;
-        }
+        String bodyString = getPayloadString(payload);
+        Class classbyType = PayloadRegistry.getClassbyType(type);
+        PlainRequest plainRequest = new PlainRequest();
+        plainRequest.setType(type);
+        Response response = (Response) toObj(bodyString, classbyType);
+        return response;
     }
     
     /**
@@ -185,16 +160,28 @@ public class RsocketUtils {
      * @return plain request.
      */
     public static PlainRequest parsePlainRequestFromPayload(Payload payload) {
+        //parse meta
+        String metaString = payload.getMetadataUtf8();
+        JsonNode metaJsonNode = toObj(metaString);
+        String clientIp = metaJsonNode.get("clientIp").textValue();
+        String clientVersion = metaJsonNode.get("clientVersion").textValue();
+        String type = metaJsonNode.get("type").textValue();
+        Map<String, String> labels = (Map<String, String>) toObj(metaJsonNode.get("labels").textValue(), Map.class);
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp(clientIp);
+        requestMeta.setClientVersion(clientVersion);
+        requestMeta.setLabels(labels);
     
-        String payloadString = getPayloadString(payload);
-        JsonNode jsonNode = toObj(payloadString);
-        String type = jsonNode.has("type") ? jsonNode.get("type").textValue() : "";
-        String bodyString = jsonNode.has("body") ? jsonNode.get("body").textValue() : "";
-        String meta = jsonNode.has("meta") ? jsonNode.get("meta").textValue() : "";
+        String bodyString = getPayloadString(payload);
+        Class classbyType = PayloadRegistry.getClassbyType(type);
         PlainRequest plainRequest = new PlainRequest();
         plainRequest.setType(type);
-        plainRequest.setBody(bodyString);
-        plainRequest.setMeta(meta);
+        Request request = (Request) toObj(bodyString, classbyType);
+        Map<String, String> headers = (Map<String, String>) toObj(metaJsonNode.get("headers").textValue(), Map.class);
+        request.putAllHeader(headers);
+        plainRequest.setBody(request);
+    
+        plainRequest.setMetadata(requestMeta);
         return plainRequest;
     
     }
@@ -216,27 +203,32 @@ public class RsocketUtils {
     public static class PlainRequest {
         
         String type;
-        
-        String body;
     
-        String meta;
+        Request body;
     
-        /**
-         * Getter method for property <tt>meta</tt>.
-         *
-         * @return property value of meta
-         */
-        public String getMeta() {
-            return meta;
+        RequestMeta metadata;
+    
+        @Override
+        public String toString() {
+            return "PlainRequest{" + "type='" + type + '\'' + ", body=" + body + ", metadata=" + metadata + '}';
         }
     
         /**
-         * Setter method for property <tt>meta</tt>.
+         * Getter method for property <tt>metadata</tt>.
          *
-         * @param meta value to be assigned to property meta
+         * @return property value of metadata
          */
-        public void setMeta(String meta) {
-            this.meta = meta;
+        public RequestMeta getMetadata() {
+            return metadata;
+        }
+    
+        /**
+         * Setter method for property <tt>metadata</tt>.
+         *
+         * @param metadata value to be assigned to property metadata
+         */
+        public void setMetadata(RequestMeta metadata) {
+            this.metadata = metadata;
         }
     
         /**
@@ -262,7 +254,7 @@ public class RsocketUtils {
          *
          * @return property value of body
          */
-        public String getBody() {
+        public Request getBody() {
             return body;
         }
         
@@ -271,7 +263,7 @@ public class RsocketUtils {
          *
          * @param body value to be assigned to property body
          */
-        public void setBody(String body) {
+        public void setBody(Request body) {
             this.body = body;
         }
     }

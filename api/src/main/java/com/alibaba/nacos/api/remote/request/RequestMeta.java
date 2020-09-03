@@ -106,4 +106,10 @@ public class RequestMeta {
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
     }
+    
+    @Override
+    public String toString() {
+        return "RequestMeta{" + "connectionId='" + connectionId + '\'' + ", clientIp='" + clientIp + '\''
+                + ", clientVersion='" + clientVersion + '\'' + ", labels=" + labels + '}';
+    }
 }

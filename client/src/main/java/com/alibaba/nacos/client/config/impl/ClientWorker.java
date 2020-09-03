@@ -225,7 +225,6 @@ public class ClientWorker implements Closeable {
     
     /**
      * remove config.
-     *
      * @param tenant
      * @param dataId
      * @param group
@@ -239,7 +238,6 @@ public class ClientWorker implements Closeable {
     
     /**
      * publish config.
-     *
      * @param dataId
      * @param group
      * @param tenant
@@ -248,7 +246,7 @@ public class ClientWorker implements Closeable {
      * @param betaIps
      * @param content
      * @return
-     * @throws NacosException
+     * @throws NacosException exception throw.
      */
     public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
             String content) throws NacosException {
@@ -678,9 +676,6 @@ public class ClientWorker implements Closeable {
             Map<String, List<CacheData>> listenCachesMap = new HashMap<String, List<CacheData>>();
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>();
             
-            List<CacheData> listenCaches = new LinkedList<CacheData>();
-            List<CacheData> removeListenCaches = new LinkedList<CacheData>();
-            
             for (CacheData cache : cacheMap.get().values()) {
                 //get listen  config and remove listen  config
                 if (!CollectionUtils.isEmpty(cache.getListeners()) && !cache.isListenSuccess()) {
@@ -710,9 +705,9 @@ public class ClientWorker implements Closeable {
             if (!listenCachesMap.isEmpty()) {
                 for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
-                    List<CacheData> value = entry.getValue();
+                    List<CacheData> listenCaches = entry.getValue();
     
-                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(value);
+                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(listenCaches);
                     configChangeListenRequest.setListen(true);
                     try {
                         RpcClient rpcClient = ensureRpcClient(taskId);
@@ -742,8 +737,8 @@ public class ClientWorker implements Closeable {
             if (!removeListenCachesMap.isEmpty()) {
                 for (Map.Entry<String, List<CacheData>> entry : removeListenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
-                    List<CacheData> value = entry.getValue();
-                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(value);
+                    List<CacheData> removeListenCaches = entry.getValue();
+                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(removeListenCaches);
                     configChangeListenRequest.setListen(false);
                     try {
                         RpcClient rpcClient = ensureRpcClient(taskId);

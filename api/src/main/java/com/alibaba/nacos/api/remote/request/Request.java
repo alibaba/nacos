@@ -111,10 +111,13 @@ public abstract class Request {
         return headers;
     }
     
+    public void clearHeaders() {
+        this.headers.clear();
+    }
+    
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
     }
-    
     
 }

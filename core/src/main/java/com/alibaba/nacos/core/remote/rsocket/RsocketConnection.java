@@ -113,7 +113,7 @@ public class RsocketConnection extends Connection {
         Loggers.RPC_DIGEST.info("Rsocket sendRequestWithCallBack :" + request);
         
         Mono<Payload> payloadMono = clientSocket
-                .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
         payloadMono.subscribe(new Consumer<Payload>() {
 
             @Override

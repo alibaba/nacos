@@ -20,11 +20,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.RsocketUtils;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
@@ -48,17 +46,18 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public Response request(Request request) throws NacosException {
-        Payload response = rSocketClient.requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()))
+    public Response request(Request request, RequestMeta requestMeta) throws NacosException {
+        Payload response = rSocketClient.requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta))
                 .block();
         return RsocketUtils.parseResponseFromPayload(response);
     }
     
     @Override
-    public void asyncRequest(Request request, final FutureCallback<Response> callback) throws NacosException {
+    public void asyncRequest(Request request, RequestMeta requestMeta, final FutureCallback<Response> callback)
+            throws NacosException {
         try {
             Mono<Payload> response = rSocketClient
-                    .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
+                    .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
             
             response.subscribe(new Consumer<Payload>() {
                 @Override
@@ -69,13 +68,6 @@ public class RsocketConnection extends Connection {
         } catch (Exception e) {
             callback.onFailure(e);
         }
-    }
-    
-    private RequestMeta buildMeta() {
-        RequestMeta meta = new RequestMeta();
-        meta.setClientVersion(VersionUtils.getFullClientVersion());
-        meta.setClientIp(NetUtils.localIP());
-        return meta;
     }
     
     @Override

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.test.core;
 
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
-import com.alibaba.nacos.api.utils.NetUtils;
 import io.rsocket.ConnectionSetupPayload;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
@@ -29,21 +28,19 @@ import io.rsocket.util.RSocketProxy;
 import org.junit.Test;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
 import java.util.UUID;
 
 /**
+ * roskcet tester.
  * @author liuzunfei
  * @version $Id: RsocketClientTest.java, v 0.1 2020年08月07日 11:05 PM liuzunfei Exp $
  */
 public class RsocketClientTest {
     
-    
     @Test
     public void testConnection() throws Exception {
         String connectId = UUID.randomUUID().toString();
-        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(), "1.4.0",
-                new HashMap<>());
+        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest();
         Payload setUpPayload = DefaultPayload.create(connectId);
         ;
         System.out.println("setUpPayload：" + setUpPayload.getDataUtf8());
@@ -78,8 +75,7 @@ public class RsocketClientTest {
     
     public static void main(String[] args) throws Exception {
         String connectId = UUID.randomUUID().toString();
-        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(), "1.4.0",
-                new HashMap<>());
+        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest();
         Payload setUpPayload = DefaultPayload.create(connectId);
         ;
         System.out.println("setUpPayload2：" + setUpPayload.getDataUtf8());

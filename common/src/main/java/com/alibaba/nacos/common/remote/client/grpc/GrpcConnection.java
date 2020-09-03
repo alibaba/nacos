@@ -17,18 +17,16 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.grpc.auto.RequestStreamGrpc;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.GrpcUtils;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -76,9 +74,9 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public Response request(Request request) throws NacosException {
-        Payload grpcRequest = GrpcUtils.convert(request, buildMeta());
-    
+    public Response request(Request request, RequestMeta requestMeta) throws NacosException {
+        Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
+        
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
         Payload grpcResponse = null;
         try {
@@ -88,7 +86,7 @@ public class GrpcConnection extends Connection {
             return null;
         }
     
-        Response response = (Response) GrpcUtils.parse(grpcResponse);
+        Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
         return response;
     }
     
@@ -97,25 +95,20 @@ public class GrpcConnection extends Connection {
         payloadStreamObserver.onNext(convert);
     }
     
-    public void sendRequest(Request request) {
-        Payload convert = GrpcUtils.convert(request, buildMeta());
+    public void sendRequest(Request request, RequestMeta meta) {
+        Payload convert = GrpcUtils.convert(request, meta);
         payloadStreamObserver.onNext(convert);
     }
     
-    private Metadata buildMeta() {
-        Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP())
-                .setVersion(VersionUtils.getFullClientVersion()).build();
-        return meta;
-    }
-    
     @Override
-    public void asyncRequest(Request request, final FutureCallback<Response> callback) throws NacosException {
-        Payload grpcRequest = GrpcUtils.convert(request, buildMeta());
+    public void asyncRequest(Request request, RequestMeta requestMeta, final FutureCallback<Response> callback)
+            throws NacosException {
+        Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
         Futures.addCallback(requestFuture, new FutureCallback<Payload>() {
             @Override
             public void onSuccess(@NullableDecl Payload grpcResponse) {
-                Response response = (Response) GrpcUtils.parse(grpcResponse);
+                Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
                 if (response != null && response.isSuccess()) {
                     callback.onSuccess(response);
                 } else {

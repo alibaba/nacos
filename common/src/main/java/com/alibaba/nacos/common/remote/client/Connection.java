@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.google.common.util.concurrent.FutureCallback;
 
@@ -58,14 +59,15 @@ public abstract class Connection {
      * @param request request.
      * @return
      */
-    public abstract Response request(Request request) throws NacosException;
+    public abstract Response request(Request request, RequestMeta requestMeta) throws NacosException;
     
     /**
      * send aync request.
      *
      * @param request request.
      */
-    public abstract void asyncRequest(Request request, FutureCallback<Response> callback) throws NacosException;
+    public abstract void asyncRequest(Request request, RequestMeta requestMeta, FutureCallback<Response> callback)
+            throws NacosException;
     
     /**
      * close connection.
