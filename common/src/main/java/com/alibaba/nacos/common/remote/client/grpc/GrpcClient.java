@@ -168,53 +168,6 @@ public class GrpcClient extends RpcClient {
         }
     }
     
-    /**
-     * bind request stream observer (send a connection).
-     *
-     * @param streamStub streamStub to bind.
-     */
-    private void bindRequestStream(final RequestStreamGrpc.RequestStreamStub streamStub) {
-        Payload streamRequest = Payload.newBuilder().setMetadata(buildGrpcMeta()).build();
-        LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
-        streamStub.requestStream(streamRequest, new StreamObserver<Payload>() {
-            @Override
-            public void onNext(Payload payload) {
-    
-                LOGGER.debug(" stream server reuqust receive  ,original info :{}", payload.toString());
-                try {
-                    final Request request = (Request) GrpcUtils.parse(payload).getBody();
-                    
-                    if (request != null) {
-                        try {
-                            Response response = handleServerRequest(request);
-                            response.setRequestId(request.getRequestId());
-                            sendResponse(response);
-                        } catch (Exception e) {
-                            sendResponse(request.getRequestId(), false);
-                        }
-                    }
-    
-                } catch (Exception e) {
-                    LOGGER.error("error tp process server push response  :{}",
-                            payload.getBody().getValue().toStringUtf8());
-                }
-            }
-            
-            @Override
-            public void onError(Throwable throwable) {
-                throwable.printStackTrace();
-                System.out.println("on error1 ,switch server ");
-                switchServerAsync();
-            }
-            
-            @Override
-            public void onCompleted() {
-                System.out.println("onCompleted 1,switch server " + this);
-                switchServerAsync();
-            }
-        });
-    }
-    
     private StreamObserver<Payload> bindRequestStream(final BiRequestStreamGrpc.BiRequestStreamStub streamStub) {
         
         final StreamObserver<Payload> payloadStreamObserver = streamStub.requestBiStream(new StreamObserver<Payload>() {
