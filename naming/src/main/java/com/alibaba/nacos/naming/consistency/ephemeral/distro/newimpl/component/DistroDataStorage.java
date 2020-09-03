@@ -35,6 +35,13 @@ public interface DistroDataStorage {
     DistroData getDistroData(DistroKey distroKey);
     
     /**
+     * Get all distro datum snapshot.
+     *
+     * @return all datum
+     */
+    DistroData getDatumSnapshot();
+    
+    /**
      * Get verify datum.
      *
      * @return verify datum

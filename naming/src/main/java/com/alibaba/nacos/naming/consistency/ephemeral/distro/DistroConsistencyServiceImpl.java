@@ -19,8 +19,6 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.Objects;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
@@ -46,7 +44,6 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.apache.commons.lang3.StringUtils;
@@ -85,31 +82,23 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     private final Serializer serializer;
     
-    private final ServerMemberManager memberManager;
-    
     private final SwitchDomain switchDomain;
     
     private final GlobalConfig globalConfig;
     
     private final DistroProtocol distroProtocol;
     
-    private boolean initialized = false;
-    
     private volatile Notifier notifier = new Notifier();
-    
-    private LoadDataTask loadDataTask = new LoadDataTask();
     
     private Map<String, ConcurrentLinkedQueue<RecordListener>> listeners = new ConcurrentHashMap<>();
     
     private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
     
     public DistroConsistencyServiceImpl(DistroMapper distroMapper, DataStore dataStore, Serializer serializer,
-            ServerMemberManager memberManager, SwitchDomain switchDomain, GlobalConfig globalConfig,
-            DistroProtocol distroProtocol) {
+            SwitchDomain switchDomain, GlobalConfig globalConfig, DistroProtocol distroProtocol) {
         this.distroMapper = distroMapper;
         this.dataStore = dataStore;
         this.serializer = serializer;
-        this.memberManager = memberManager;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
         this.distroProtocol = distroProtocol;
@@ -131,52 +120,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @PostConstruct
     public void init() {
-        GlobalExecutor.submitLoadDataTask(loadDataTask);
         GlobalExecutor.submitDistroNotifyTask(notifier);
-    }
-    
-    private class LoadDataTask implements Runnable {
-        
-        @Override
-        public void run() {
-            try {
-                load();
-                if (!initialized) {
-                    GlobalExecutor.submitLoadDataTask(this, globalConfig.getLoadDataRetryDelayMillis());
-                } else {
-                    Loggers.DISTRO.info("load data success");
-                }
-            } catch (Exception e) {
-                Loggers.DISTRO.error("load data failed.", e);
-            }
-        }
-    }
-    
-    private void load() throws Exception {
-        if (ApplicationUtils.getStandaloneMode()) {
-            initialized = true;
-            return;
-        }
-        // size = 1 means only myself in the list, we need at least one another server alive:
-        while (memberManager.getServerList().size() <= 1) {
-            Thread.sleep(1000L);
-            Loggers.DISTRO.info("waiting server list init...");
-        }
-        
-        for (Map.Entry<String, Member> entry : memberManager.getServerList().entrySet()) {
-            final String address = entry.getValue().getAddress();
-            if (ApplicationUtils.getLocalAddress().equals(address)) {
-                continue;
-            }
-            if (Loggers.DISTRO.isDebugEnabled()) {
-                Loggers.DISTRO.debug("sync from " + address);
-            }
-            // try sync data from remote server:
-            if (syncAllDataFromRemote(address)) {
-                initialized = true;
-                return;
-            }
-        }
     }
     
     @Override
@@ -293,7 +237,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
             
             try {
-                DistroHttpCombinedKey distroKey = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, server);
+                DistroHttpCombinedKey distroKey = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
+                        server);
                 distroKey.getActualResourceTypes().addAll(toUpdateKeys);
                 DistroData remoteData = distroProtocol.queryFromRemote(distroKey);
                 if (null != remoteData) {
@@ -305,17 +250,6 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         } finally {
             // Remove this 'in process' flag:
             syncChecksumTasks.remove(server);
-        }
-    }
-    
-    private boolean syncAllDataFromRemote(String server) {
-        
-        try {
-            byte[] data = NamingProxy.getAllData(server);
-            return processData(data);
-        } catch (Exception e) {
-            Loggers.DISTRO.error("sync full data from " + server + " failed!", e);
-            return false;
         }
     }
     
@@ -376,10 +310,11 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
     
     @Override
-    public void processData(DistroData distroData) {
+    public boolean processData(DistroData distroData) {
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
         Datum<Instances> datum = (Datum<Instances>) distroHttpData.getDeserializedContent();
         onPut(datum.key, datum.value);
+        return true;
     }
     
     @Override
@@ -394,6 +329,15 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
         onReceiveChecksums(verifyData, sourceServer);
         return true;
+    }
+    
+    @Override
+    public boolean processSnapshot(DistroData distroData) {
+        try {
+            return processData(distroData.getContent());
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     @Override
@@ -428,7 +372,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
     
     public boolean isInitialized() {
-        return initialized || !globalConfig.isDataWarmup();
+        return distroProtocol.isLoadCompleted() || !globalConfig.isDataWarmup();
     }
     
     public class Notifier implements Runnable {
