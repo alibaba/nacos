@@ -101,7 +101,7 @@ public class AsyncNotifyService {
                         }
                     }
                     if (!httpQueue.isEmpty()) {
-                        ConfigExecutor.executeAsyncNotify(new AsyncTask(nacosAsyncRestTemplate, queue));
+                        ConfigExecutor.executeAsyncNotify(new AsyncTask(nacosAsyncRestTemplate, httpQueue));
                     }
                     if (!rpcQueue.isEmpty()) {
                         ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(rpcQueue));
