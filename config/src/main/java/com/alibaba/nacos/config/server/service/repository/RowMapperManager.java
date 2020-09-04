@@ -475,6 +475,7 @@ public final class RowMapperManager {
             configHistoryInfo.setTenant(rs.getString("tenant_id"));
             configHistoryInfo.setAppName(rs.getString("app_name"));
             configHistoryInfo.setSrcIp(rs.getString("src_ip"));
+            configHistoryInfo.setSrcUser(rs.getString("src_user"));
             configHistoryInfo.setOpType(rs.getString("op_type"));
             configHistoryInfo.setCreatedTime(rs.getTimestamp("gmt_create"));
             configHistoryInfo.setLastModifiedTime(rs.getTimestamp("gmt_modified"));

@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpClientFactory;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import org.slf4j.Logger;
 
@@ -40,7 +41,7 @@ public class NamingHttpClientManager implements Closeable {
     
     private static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
     
-    private static final boolean ENABLE_HTTPS = Boolean.getBoolean("com.alibaba.nacos.client.naming.tls.enable");
+    private static final boolean ENABLE_HTTPS = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
     private static final int MAX_REDIRECTS = 5;
     
@@ -85,7 +86,7 @@ public class NamingHttpClientManager implements Closeable {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
                     .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).setMaxRedirects(MAX_REDIRECTS).build();
         }
-    
+        
         @Override
         protected Logger assignLogger() {
             return NAMING_LOGGER;

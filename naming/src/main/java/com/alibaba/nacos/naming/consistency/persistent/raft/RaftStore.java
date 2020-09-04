@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.Instance;
@@ -79,7 +79,7 @@ public class RaftStore {
                     datum = readDatum(datumFile, cache.getName());
                     if (datum != null) {
                         datums.put(datum.key, datum);
-                        notifier.addTask(datum.key, ApplyAction.CHANGE);
+                        notifier.addTask(datum.key, DataOperation.CHANGE);
                     }
                 }
                 continue;
@@ -231,12 +231,12 @@ public class RaftStore {
         }
     }
     
-    private String cacheFileName(String namespaceId, Datum datum) {
+    private String cacheFileName(String namespaceId, String datumKey) {
         String fileName;
         if (StringUtils.isNotBlank(namespaceId)) {
-            fileName = CACHE_DIR + File.separator + namespaceId + File.separator + encodeDatumKey(datum.key);
+            fileName = CACHE_DIR + File.separator + namespaceId + File.separator + encodeDatumKey(datumKey);
         } else {
-            fileName = CACHE_DIR + File.separator + encodeDatumKey(datum.key);
+            fileName = CACHE_DIR + File.separator + encodeDatumKey(datumKey);
         }
         return fileName;
     }
@@ -259,7 +259,7 @@ public class RaftStore {
         
         String namespaceId = KeyBuilder.getNamespace(datum.key);
         
-        File cacheFile = cacheFile(cacheFileName(namespaceId, datum));
+        File cacheFile = cacheFile(cacheFileName(namespaceId, datum.key));
         
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
             MetricsMonitor.getDiskException().increment();
@@ -288,10 +288,10 @@ public class RaftStore {
         // remove old format file:
         if (StringUtils.isNoneBlank(namespaceId)) {
             if (datum.key.contains(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER)) {
-                String oldFormatKey = datum.key
+                String oldDatumKey = datum.key
                         .replace(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER, StringUtils.EMPTY);
                 
-                cacheFile = cacheFile(cacheFileName(namespaceId, datum));
+                cacheFile = cacheFile(cacheFileName(namespaceId, oldDatumKey));
                 if (cacheFile.exists() && !cacheFile.delete()) {
                     Loggers.RAFT.error("[RAFT-DELETE] failed to delete old format datum: {}, value: {}", datum.key,
                             datum.value);
@@ -322,7 +322,7 @@ public class RaftStore {
         
         if (StringUtils.isNotBlank(namespaceId)) {
             
-            File cacheFile = new File(cacheFileName(namespaceId, datum));
+            File cacheFile = new File(cacheFileName(namespaceId, datum.key));
             if (cacheFile.exists() && !cacheFile.delete()) {
                 Loggers.RAFT.error("[RAFT-DELETE] failed to delete datum: {}, value: {}", datum.key, datum.value);
                 throw new IllegalStateException("failed to delete datum: " + datum.key);
