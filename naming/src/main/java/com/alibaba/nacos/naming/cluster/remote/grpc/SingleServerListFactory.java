@@ -18,6 +18,8 @@ package com.alibaba.nacos.naming.cluster.remote.grpc;
 
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 
+import java.util.List;
+
 /**
  * Single server list factory.
  *
@@ -39,5 +41,10 @@ public class SingleServerListFactory implements ServerListFactory {
     @Override
     public String getCurrentServer() {
         return address;
+    }
+    
+    @Override
+    public List<String> getServerList() {
+        return null;
     }
 }
