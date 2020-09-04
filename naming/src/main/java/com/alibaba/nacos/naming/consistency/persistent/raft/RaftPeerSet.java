@@ -57,7 +57,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @DependsOn("ProtocolManager")
 public class RaftPeerSet extends MemberChangeListener {
     
-    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientManager.getInstance().getAsyncRestTemplate();
+    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientManager.getAsyncRestTemplate();
     
     private final ServerMemberManager memberManager;
     

@@ -102,7 +102,7 @@ public class RaftCore {
     
     public static final String API_GET_PEER = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/peer";
     
-    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientManager.getInstance().getAsyncRestTemplate();
+    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientManager.getAsyncRestTemplate();
     
     private final ScheduledExecutorService executor = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),

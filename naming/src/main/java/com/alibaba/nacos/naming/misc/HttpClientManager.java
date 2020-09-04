@@ -23,8 +23,8 @@ import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpClientFactory;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 
 import java.util.concurrent.TimeUnit;
@@ -36,7 +36,7 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  *
  * @author mai.jh
  */
-public class HttpClientManager implements Closeable {
+public class HttpClientManager {
     
     private static final int TIME_OUT_MILLIS = 10000;
     
@@ -48,33 +48,43 @@ public class HttpClientManager implements Closeable {
     
     private static final HttpClientFactory APACHE_SYNC_HTTP_CLIENT_FACTORY = new ApacheSyncHttpClientFactory();
     
-    private static class NamingHttpClientManagerInstance {
+    private static final NacosRestTemplate NACOS_REST_TEMPLATE;
+    
+    private static final NacosRestTemplate APACHE_NACOS_REST_TEMPLATE;
+    
+    private static final NacosAsyncRestTemplate NACOS_ASYNC_REST_TEMPLATE;
+    
+    static {
+        // build nacos rest template
+        NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(SYNC_HTTP_CLIENT_FACTORY);
+        APACHE_NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(APACHE_SYNC_HTTP_CLIENT_FACTORY);
+        NACOS_ASYNC_REST_TEMPLATE = HttpClientBeanHolder.getNacosAsyncRestTemplate(ASYNC_HTTP_CLIENT_FACTORY);
         
-        private static final HttpClientManager INSTANCE = new HttpClientManager();
+        ThreadUtils.addShutdownHook(new Runnable() {
+            @Override
+            public void run() {
+                shutdown();
+            }
+        });
     }
     
-    public static HttpClientManager getInstance() {
-        return NamingHttpClientManagerInstance.INSTANCE;
-    }
-    
-    public NacosRestTemplate getNacosRestTemplate() {
-        return HttpClientBeanHolder.getNacosRestTemplate(SYNC_HTTP_CLIENT_FACTORY);
+    public static NacosRestTemplate getNacosRestTemplate() {
+        return NACOS_REST_TEMPLATE;
     }
     
     /**
      * Use apache http client to achieve.
      * @return NacosRestTemplate
      */
-    public NacosRestTemplate getApacheRestTemplate() {
-        return HttpClientBeanHolder.getNacosRestTemplate(APACHE_SYNC_HTTP_CLIENT_FACTORY);
+    public static NacosRestTemplate getApacheRestTemplate() {
+        return APACHE_NACOS_REST_TEMPLATE;
     }
     
-    public NacosAsyncRestTemplate getAsyncRestTemplate() {
-        return HttpClientBeanHolder.getNacosAsyncRestTemplate(ASYNC_HTTP_CLIENT_FACTORY);
+    public static NacosAsyncRestTemplate getAsyncRestTemplate() {
+        return NACOS_ASYNC_REST_TEMPLATE;
     }
     
-    @Override
-    public void shutdown() {
+    private static void shutdown() {
         SRV_LOG.warn("[NamingServerHttpClientManager] Start destroying HTTP-Client");
         try {
             HttpClientBeanHolder.shutdownNacostSyncRest(SYNC_HTTP_CLIENT_FACTORY.getClass().getName());
@@ -124,8 +134,7 @@ public class HttpClientManager implements Closeable {
     
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(TIME_OUT_MILLIS)
+            return HttpClientConfig.builder()
                     .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
                     .setUserAgent(UtilsAndCommons.SERVER_VERSION)
                     .setMaxRedirects(0).build();

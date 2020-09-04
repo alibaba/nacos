@@ -69,7 +69,7 @@ public class HealthCheckCommon {
     
     private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
     
-    private final NacosRestTemplate restTemplate = HttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate restTemplate = HttpClientManager.getNacosRestTemplate();
     
     /**
      * Init Health check.

@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class ServerStatusSynchronizer implements Synchronizer {
     
-    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getInstance().getAsyncRestTemplate();
+    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getAsyncRestTemplate();
     
     @Override
     public void send(final String serverIP, Message msg) {

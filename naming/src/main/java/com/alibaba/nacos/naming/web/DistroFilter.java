@@ -66,7 +66,7 @@ public class DistroFilter implements Filter {
     
     private static final int PROXY_READ_TIMEOUT = 2000;
     
-    private final NacosRestTemplate nacosRestTemplate = HttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate = HttpClientManager.getNacosRestTemplate();
     
     @Autowired
     private DistroMapper distroMapper;

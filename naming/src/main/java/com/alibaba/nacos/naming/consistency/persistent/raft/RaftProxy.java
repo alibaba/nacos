@@ -37,7 +37,7 @@ import java.util.Map;
 @Component
 public class RaftProxy {
     
-    private final NacosRestTemplate restTemplate = HttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate restTemplate = HttpClientManager.getNacosRestTemplate();
     
     /**
      * Proxy get method.

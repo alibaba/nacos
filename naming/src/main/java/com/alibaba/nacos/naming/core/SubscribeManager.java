@@ -57,7 +57,7 @@ public class SubscribeManager {
     
     private static final String SUBSCRIBER_ON_SYNC_URL = "/service/subscribers";
     
-    private final NacosRestTemplate restTemplate = HttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate restTemplate = HttpClientManager.getNacosRestTemplate();
     
     @Autowired
     private PushService pushService;

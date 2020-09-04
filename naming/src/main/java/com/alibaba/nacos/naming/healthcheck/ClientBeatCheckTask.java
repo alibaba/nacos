@@ -46,7 +46,7 @@ import java.util.List;
  */
 public class ClientBeatCheckTask implements Runnable {
     
-    private NacosAsyncRestTemplate restTemplate = HttpClientManager.getInstance().getAsyncRestTemplate();
+    private final NacosAsyncRestTemplate restTemplate = HttpClientManager.getAsyncRestTemplate();
     
     private Service service;
     

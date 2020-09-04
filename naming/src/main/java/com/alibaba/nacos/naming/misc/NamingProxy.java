@@ -41,13 +41,11 @@ import java.util.Map;
  */
 public class NamingProxy {
     
-    private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE = HttpClientManager.getInstance()
-            .getAsyncRestTemplate();
+    private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE = HttpClientManager.getAsyncRestTemplate();
     
-    private static final NacosRestTemplate REST_TEMPLATE = HttpClientManager.getInstance().getNacosRestTemplate();
+    private static final NacosRestTemplate REST_TEMPLATE = HttpClientManager.getNacosRestTemplate();
     
-    private static final NacosRestTemplate APACHE_REST_TEMPLATE = HttpClientManager.getInstance()
-            .getApacheRestTemplate();
+    private static final NacosRestTemplate APACHE_REST_TEMPLATE = HttpClientManager.getApacheRestTemplate();
     
     private static final String DATA_ON_SYNC_URL = "/distro/datum";
     
