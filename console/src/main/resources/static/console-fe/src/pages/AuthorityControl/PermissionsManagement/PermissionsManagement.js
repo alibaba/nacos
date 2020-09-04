@@ -60,6 +60,7 @@ class PermissionsManagement extends React.Component {
   }
 
   getPermissions() {
+    this.setState({ loading: true });
     const { pageNo, pageSize } = this.state;
     this.props
       .getPermissions({ pageNo, pageSize })
@@ -93,6 +94,9 @@ class PermissionsManagement extends React.Component {
         <div className="filter-panel">
           <Button type="primary" onClick={() => this.setState({ createPermissionVisible: true })}>
             {locale.addPermission}
+          </Button>
+          <Button type="secondary" onClick={() => this.getPermissions()}>
+            {locale.refresh}
           </Button>
         </div>
         <Table dataSource={permissions.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>

@@ -1130,8 +1130,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int configInfoCount(String tenant) {
-        String sql = " SELECT COUNT(ID) FROM config_info where tenant_id like '" + tenant + "'";
-        Integer result = jt.queryForObject(sql, Integer.class);
+        String sql = " SELECT COUNT(ID) FROM config_info where tenant_id like ?";
+        Integer result = jt.queryForObject(sql, new Object[] {tenant}, Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
@@ -2240,7 +2240,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ?";
         String sqlFetchRows =
-                "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,gmt_create,gmt_modified from his_config_info "
+                "select nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified from his_config_info "
                         + "where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
         
         Page<ConfigHistoryInfo> page = null;
@@ -2249,7 +2249,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     .fetchPage(sqlCountRows, sqlFetchRows, new Object[] {dataId, group, tenantTmp}, pageNo, pageSize,
                             HISTORY_LIST_ROW_MAPPER);
         } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[list-config-history] error, dataId:{}, group:{}", new Object[] {dataId, group}, e);
+            LogUtil.FATAL_LOG
+                    .error("[list-config-history] error, dataId:{}, group:{}", new Object[] {dataId, group}, e);
             throw e;
         }
         return page;

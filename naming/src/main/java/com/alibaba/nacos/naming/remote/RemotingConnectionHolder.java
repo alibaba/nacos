@@ -159,7 +159,7 @@ public class RemotingConnectionHolder extends ClientConnectionEventListener {
         }
         
         private boolean isExpireConnection(long currentTime, RemotingConnection remotingConnection) {
-            return remotingConnection.getLastHeartBeatTime() - currentTime > Constants.DEFAULT_IP_DELETE_TIMEOUT * 2;
+            return currentTime - remotingConnection.getLastHeartBeatTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT * 2;
         }
     }
 }

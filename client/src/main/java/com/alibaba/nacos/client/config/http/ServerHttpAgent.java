@@ -59,10 +59,12 @@ public class ServerHttpAgent implements HttpAgent {
         do {
             try {
                 Header newHeaders = Header.newInstance();
-                newHeaders.addAll(headers);
-                
+                if (headers != null) {
+                    newHeaders.addAll(headers);
+                }
+                Query query = Query.newInstance().initParams(paramValues);
                 HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                        .get(getUrl(currentServerAddr, path), httpConfig, newHeaders, paramValues, String.class);
+                        .get(getUrl(currentServerAddr, path), httpConfig, newHeaders, query, String.class);
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                             serverListMgr.getCurrentServerAddr(), result.getCode());
@@ -112,10 +114,11 @@ public class ServerHttpAgent implements HttpAgent {
         do {
             try {
                 Header newHeaders = Header.newInstance();
-                newHeaders.addAll(headers);
+                if (headers != null) {
+                    newHeaders.addAll(headers);
+                }
                 HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                        .postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders,
-                                new HashMap<String, String>(0), paramValues, String.class);
+                        .postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders, paramValues, String.class);
                 
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", currentServerAddr,
@@ -165,9 +168,12 @@ public class ServerHttpAgent implements HttpAgent {
         do {
             try {
                 Header newHeaders = Header.newInstance();
-                newHeaders.addAll(headers);
+                if (headers != null) {
+                    newHeaders.addAll(headers);
+                }
+                Query query = Query.newInstance().initParams(paramValues);
                 HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                        .delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, paramValues, String.class);
+                        .delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, query, String.class);
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                             serverListMgr.getCurrentServerAddr(), result.getCode());

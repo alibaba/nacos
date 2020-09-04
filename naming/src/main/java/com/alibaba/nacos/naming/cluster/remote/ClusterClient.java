@@ -28,6 +28,13 @@ import com.alibaba.nacos.api.remote.response.Response;
 public interface ClusterClient {
     
     /**
+     * Start.
+     *
+     * @throws NacosException nacos exception
+     */
+    void start() throws NacosException;
+    
+    /**
      * Send request to target server.
      *
      * @param request request
