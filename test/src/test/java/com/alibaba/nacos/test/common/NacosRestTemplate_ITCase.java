@@ -18,20 +18,14 @@ package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.utils.JSONUtils;
-import com.alibaba.nacos.core.utils.GenericType;
-import com.alibaba.nacos.test.smoke.nacosSmoke_ITCase;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -47,7 +41,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * NacosRestTemplate_ITCase
+ * NacosRestTemplate_ITCase.
  *
  * @author mai.jh
  */
@@ -82,7 +76,7 @@ public class NacosRestTemplate_ITCase {
         param.put("group", "DEFAULT_GROUP");
         param.put("content", "aaa=b");
         HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), Query.EMPTY, param, String.class);
+                .postForm(url, Header.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
@@ -110,7 +104,7 @@ public class NacosRestTemplate_ITCase {
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
         HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), Query.newInstance(), param, String.class);
+                .postForm(url, Header.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
@@ -123,7 +117,7 @@ public class NacosRestTemplate_ITCase {
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
         HttpRestResult<String> restResult = nacosRestTemplate
-                .putForm(url, Header.newInstance(), Query.newInstance(), param, String.class);
+                .putForm(url, Header.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
@@ -143,7 +137,7 @@ public class NacosRestTemplate_ITCase {
         String url = IP + INSTANCE_PATH + "/instance/list";
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test");
-        HttpRestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), param, Map.class);
+        HttpRestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class);
         Assert.assertTrue(restResult.ok());
         Assert.assertEquals(restResult.getData().get("dom"), "app-test");
         System.out.println(restResult.getData());

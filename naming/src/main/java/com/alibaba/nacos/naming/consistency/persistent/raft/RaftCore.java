@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -360,7 +360,7 @@ public class RaftCore {
         }
         raftStore.updateTerm(local.term.get());
         
-        notifier.addTask(datum.key, ApplyAction.CHANGE);
+        notifier.addTask(datum.key, DataOperation.CHANGE);
         
         Loggers.RAFT.info("data added/updated, key={}, term={}", datum.key, local.term);
     }
@@ -799,7 +799,7 @@ public class RaftCore {
                                     raftStore.write(newDatum);
                                     
                                     datums.put(newDatum.key, newDatum);
-                                    notifier.addTask(newDatum.key, ApplyAction.CHANGE);
+                                    notifier.addTask(newDatum.key, DataOperation.CHANGE);
                                     
                                     local.resetLeaderDue();
                                     
@@ -969,7 +969,7 @@ public class RaftCore {
     
     public void addDatum(Datum datum) {
         datums.put(datum.key, datum);
-        notifier.addTask(datum.key, ApplyAction.CHANGE);
+        notifier.addTask(datum.key, DataOperation.CHANGE);
     }
     
     /**
@@ -998,7 +998,7 @@ public class RaftCore {
                 raftStore.delete(deleted);
                 Loggers.RAFT.info("datum deleted, key: {}", key);
             }
-            notifier.addTask(URLDecoder.decode(key, "UTF-8"), ApplyAction.DELETE);
+            notifier.addTask(URLDecoder.decode(key, "UTF-8"), DataOperation.DELETE);
         } catch (UnsupportedEncodingException e) {
             Loggers.RAFT.warn("datum key decode failed: {}", key);
         }
@@ -1024,12 +1024,12 @@ public class RaftCore {
          * @param datumKey datum key
          * @param action   action of datum
          */
-        public void addTask(String datumKey, ApplyAction action) {
+        public void addTask(String datumKey, DataOperation action) {
             
-            if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
+            if (services.containsKey(datumKey) && action == DataOperation.CHANGE) {
                 return;
             }
-            if (action == ApplyAction.CHANGE) {
+            if (action == DataOperation.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
             
@@ -1056,7 +1056,7 @@ public class RaftCore {
                     }
                     
                     String datumKey = (String) pair.getValue0();
-                    ApplyAction action = (ApplyAction) pair.getValue1();
+                    DataOperation action = (DataOperation) pair.getValue1();
                     
                     services.remove(datumKey);
                     
@@ -1070,11 +1070,11 @@ public class RaftCore {
                             
                             for (RecordListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
                                 try {
-                                    if (action == ApplyAction.CHANGE) {
+                                    if (action == DataOperation.CHANGE) {
                                         listener.onChange(datumKey, getDatum(datumKey).value);
                                     }
                                     
-                                    if (action == ApplyAction.DELETE) {
+                                    if (action == DataOperation.DELETE) {
                                         listener.onDelete(datumKey);
                                     }
                                 } catch (Throwable e) {
@@ -1095,12 +1095,12 @@ public class RaftCore {
                         count++;
                         
                         try {
-                            if (action == ApplyAction.CHANGE) {
+                            if (action == DataOperation.CHANGE) {
                                 listener.onChange(datumKey, getDatum(datumKey).value);
                                 continue;
                             }
                             
-                            if (action == ApplyAction.DELETE) {
+                            if (action == DataOperation.DELETE) {
                                 listener.onDelete(datumKey);
                                 continue;
                             }

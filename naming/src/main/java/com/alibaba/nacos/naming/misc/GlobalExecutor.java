@@ -46,8 +46,6 @@ public class GlobalExecutor {
     
     public static final long TICK_PERIOD_MS = TimeUnit.MILLISECONDS.toMillis(500L);
     
-    private static final long PARTITION_DATA_TIMED_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(5);
-    
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
     
     public static final int DEFAULT_THREAD_COUNT =
@@ -57,16 +55,6 @@ public class GlobalExecutor {
             .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     Runtime.getRuntime().availableProcessors() * 2,
                     new NameThreadFactory("com.alibaba.nacos.naming.timer"));
-    
-    private static final ScheduledExecutorService TASK_DISPATCHER_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    Runtime.getRuntime().availableProcessors(),
-                    new NameThreadFactory("com.alibaba.nacos.naming.distro.task.dispatcher"));
-    
-    private static final ScheduledExecutorService DATA_SYNC_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    Runtime.getRuntime().availableProcessors(),
-                    new NameThreadFactory("com.alibaba.nacos.naming.distro.data.syncer"));
     
     private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
@@ -131,15 +119,6 @@ public class GlobalExecutor {
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.remote-connection-manager"));
     
-    public static void submitDataSync(Runnable runnable, long delay) {
-        DATA_SYNC_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
-    }
-    
-    public static void schedulePartitionDataTimedSync(Runnable runnable) {
-        DATA_SYNC_EXECUTOR.scheduleWithFixedDelay(runnable, PARTITION_DATA_TIMED_SYNC_INTERVAL,
-                PARTITION_DATA_TIMED_SYNC_INTERVAL, TimeUnit.MILLISECONDS);
-    }
-    
     public static void registerMasterElection(Runnable runnable) {
         NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
@@ -162,18 +141,6 @@ public class GlobalExecutor {
     
     public static void scheduleMcpPushTask(Runnable runnable, long initialDelay, long period) {
         NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
-    }
-    
-    public static void submitTaskDispatch(Runnable runnable) {
-        TASK_DISPATCHER_EXECUTOR.submit(runnable);
-    }
-    
-    public static void submitLoadDataTask(Runnable runnable) {
-        NAMING_TIMER_EXECUTOR.submit(runnable);
-    }
-    
-    public static void submitLoadDataTask(Runnable runnable, long delay) {
-        NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
     
     public static void submitDistroNotifyTask(Runnable runnable) {

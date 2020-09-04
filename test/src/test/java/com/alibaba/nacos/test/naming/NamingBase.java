@@ -21,12 +21,13 @@ import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author nkorange
@@ -178,13 +179,13 @@ public class NamingBase extends HttpClient4Test {
         String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
-        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, Query.EMPTY, new HashMap<>(), String.class);
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
         System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
 
         url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
 
-        result = nacosRestTemplate.putForm(url, header, Query.EMPTY, new HashMap<>(), String.class);
+        result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
         System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }
@@ -194,7 +195,7 @@ public class NamingBase extends HttpClient4Test {
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
 
-        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, Query.EMPTY, new HashMap<>(), String.class);
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
         System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }

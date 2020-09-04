@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.console.security.nacos.roles;
 
+import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.auth.PermissionPersistService;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
@@ -23,8 +25,6 @@ import com.alibaba.nacos.config.server.auth.RolePersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
-import com.alibaba.nacos.core.auth.AuthConfigs;
-import com.alibaba.nacos.core.auth.Permission;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.jsonwebtoken.lang.Collections;
 import org.apache.commons.lang3.StringUtils;
@@ -64,11 +64,11 @@ public class NacosRoleServiceImpl {
     @Autowired
     private PermissionPersistService permissionPersistService;
     
-    private final Set<String> roleSet = new ConcurrentHashSet<>();
+    private volatile Set<String> roleSet = new ConcurrentHashSet<>();
     
-    private final Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
+    private volatile Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
     
-    private final Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
+    private volatile Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
     
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
@@ -95,9 +95,9 @@ public class NacosRoleServiceImpl {
                 tmpPermissionInfoMap.put(role, permissionInfoPage.getPageItems());
             }
             
-            roleSet.addAll(tmpRoleSet);
-            roleInfoMap.putAll(tmpRoleInfoMap);
-            permissionInfoMap.putAll(tmpPermissionInfoMap);
+            roleSet = tmpRoleSet;
+            roleInfoMap = tmpRoleInfoMap;
+            permissionInfoMap = tmpPermissionInfoMap;
         } catch (Exception e) {
             Loggers.AUTH.warn("[LOAD-ROLES] load failed", e);
         }
@@ -234,5 +234,9 @@ public class NacosRoleServiceImpl {
     
     public void deletePermission(String role, String resource, String action) {
         permissionPersistService.deletePermission(role, resource, action);
+    }
+    
+    public List<String> findRolesLikeRoleName(String role) {
+        return rolePersistService.findRolesLikeRoleName(role);
     }
 }

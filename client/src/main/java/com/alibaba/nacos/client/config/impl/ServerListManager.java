@@ -346,7 +346,7 @@ public class ServerListManager implements Closeable {
     private List<String> getApacheServerList(String url, String name) {
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.get(url, Header.EMPTY, Query.EMPTY, String.class);
-    
+            
             if (httpResult.ok()) {
                 if (DEFAULT_NAME.equals(name)) {
                     EnvUtil.setSelfEnv(httpResult.getHeader().getOriginalResponseHeader());

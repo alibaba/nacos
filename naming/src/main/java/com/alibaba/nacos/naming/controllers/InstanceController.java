@@ -20,10 +20,11 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.auth.ActionTypes;
-import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -322,7 +323,7 @@ public class InstanceController {
     public ObjectNode beat(HttpServletRequest request) throws Exception {
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
+        result.put(SwitchEntry.CLIENT_BEAT_INTERVAL, switchDomain.getClientBeatInterval());
         
         String beat = WebUtils.optional(request, "beat", StringUtils.EMPTY);
         RsInfo clientBeat = null;
@@ -385,7 +386,9 @@ public class InstanceController {
         service.processClientBeat(clientBeat);
         
         result.put(CommonParams.CODE, NamingResponseCode.OK);
-        result.put("clientBeatInterval", instance.getInstanceHeartBeatInterval());
+        if (instance.containsMetadata(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
+            result.put(SwitchEntry.CLIENT_BEAT_INTERVAL, instance.getInstanceHeartBeatInterval());
+        }
         result.put(SwitchEntry.LIGHT_BEAT_ENABLED, switchDomain.isLightBeatEnabled());
         return result;
     }
@@ -513,19 +516,6 @@ public class InstanceController {
         ClientInfo clientInfo = new ClientInfo(agent);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         Service service = serviceManager.getService(namespaceId, serviceName);
-        
-        if (service == null) {
-            if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
-            }
-            result.put("name", serviceName);
-            result.put("clusters", clusters);
-            result.replace("hosts", JacksonUtils.createEmptyArrayNode());
-            return result;
-        }
-        
-        checkIfDisabled(service);
-        
         long cacheMillis = switchDomain.getDefaultCacheMillis();
         
         // now try to enable the push
@@ -542,6 +532,19 @@ public class InstanceController {
                     .error("[NACOS-API] failed to added push client {}, {}:{}", clientInfo, clientIP, udpPort, e);
             cacheMillis = switchDomain.getDefaultCacheMillis();
         }
+        
+        if (service == null) {
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
+            }
+            result.put("name", serviceName);
+            result.put("clusters", clusters);
+            result.put("cacheMillis", cacheMillis);
+            result.replace("hosts", JacksonUtils.createEmptyArrayNode());
+            return result;
+        }
+        
+        checkIfDisabled(service);
         
         List<Instance> srvedIPs;
         

@@ -21,10 +21,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.HttpClientRequestInterceptor;
-import com.alibaba.nacos.common.http.client.HttpClientResponse;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import org.junit.Assert;
 import org.junit.Before;
@@ -119,7 +118,7 @@ public class NacosRestTemplate_Interceptors_ITCase {
         param.put("group", "DEFAULT_GROUP");
         param.put("content", "aaa=b");
         HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), Query.EMPTY, param, String.class);
+                .postForm(url, Header.newInstance(), param, String.class);
         Assert.assertEquals(500, restResult.getCode());
         Assert.assertEquals("Stop request", restResult.getData());
         System.out.println(restResult.getData());

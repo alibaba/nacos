@@ -54,7 +54,16 @@ public class NamingProxy {
      * @param server      server address
      */
     public static void syncCheckSums(Map<String, String> checksumMap, String server) {
-        
+        syncCheckSums(JacksonUtils.toJsonBytes(checksumMap), server);
+    }
+    
+    /**
+     * Synchronize check sums.
+     *
+     * @param checksums checksum map bytes
+     * @param server    server address
+     */
+    public static void syncCheckSums(byte[] checksums, String server) {
         try {
             Map<String, String> headers = new HashMap<>(128);
             
@@ -64,8 +73,8 @@ public class NamingProxy {
             
             HttpClient.asyncHttpPutLarge(
                     "http://" + server + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                            + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer(), headers,
-                    JacksonUtils.toJsonBytes(checksumMap), new AsyncCompletionHandler() {
+                            + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer(), headers, checksums,
+                    new AsyncCompletionHandler() {
                         @Override
                         public Object onCompleted(Response response) throws Exception {
                             if (HttpURLConnection.HTTP_OK != response.getStatusCode()) {
