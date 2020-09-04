@@ -76,7 +76,7 @@ class DiffEditorDialog extends React.Component {
 
   confirmPub() {
     this.closeDialog();
-    this.props.publishConfig();
+    this.props.publishConfig(this.diffeditor.editor().getValue());
   }
 
   render() {

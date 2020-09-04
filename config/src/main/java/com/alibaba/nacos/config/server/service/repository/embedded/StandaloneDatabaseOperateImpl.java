@@ -128,7 +128,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
     
     @Override
     public Boolean update(List<ModifyRequest> modifyRequests, BiConsumer<Boolean, Throwable> consumer) {
-        return update(modifyRequests);
+        return update(transactionTemplate, jdbcTemplate, modifyRequests, consumer);
     }
     
     @Override

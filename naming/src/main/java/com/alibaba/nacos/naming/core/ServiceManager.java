@@ -763,10 +763,6 @@ public class ServiceManager implements RecordListener<Service> {
         return total;
     }
     
-    public Map<String, Service> getServiceMap(String namespaceId) {
-        return serviceMap.get(namespaceId);
-    }
-    
     public int getPagedService(String namespaceId, int startPage, int pageSize, String param, String containedInstance,
             List<Service> serviceList, boolean hasIpCount) {
         
