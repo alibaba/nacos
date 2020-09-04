@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
+package com.alibaba.nacos.core.distributed.distro.component;
 
 import org.springframework.stereotype.Component;
 
@@ -35,6 +35,8 @@ public class DistroComponentHolder {
     private final Map<String, DistroDataStorage> dataStorageMap = new HashMap<>();
     
     private final Map<String, DistroFailedTaskHandler> failedTaskHandlerMap = new HashMap<>();
+    
+    private final Map<String, DistroDataProcessor> dataProcessorMap = new HashMap<>();
     
     public DistroTransportAgent findTransportAgent(String type) {
         return transportAgentMap.get(type);
@@ -62,5 +64,13 @@ public class DistroComponentHolder {
     
     public void registerFailedTaskHandler(String type, DistroFailedTaskHandler failedTaskHandler) {
         failedTaskHandlerMap.put(type, failedTaskHandler);
+    }
+    
+    public void registerDataProcessor(DistroDataProcessor dataProcessor) {
+        dataProcessorMap.putIfAbsent(dataProcessor.processType(), dataProcessor);
+    }
+    
+    public DistroDataProcessor findDataProcessor(String processType) {
+        return dataProcessorMap.get(processType);
     }
 }

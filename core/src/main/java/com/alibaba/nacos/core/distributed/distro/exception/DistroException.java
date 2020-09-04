@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
-
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+package com.alibaba.nacos.core.distributed.distro.exception;
 
 /**
- * Distro failed task handler.
+ * Distro exception.
  *
  * @author xiweng.yy
  */
-public interface DistroFailedTaskHandler {
+public class DistroException extends RuntimeException {
     
-    /**
-     * Build retry task when distro task execute failed.
-     *
-     * @param distroKey distro key of failed task
-     * @param action action of task
-     */
-    void retry(DistroKey distroKey, ApplyAction action);
+    private static final long serialVersionUID = 1711141952413139786L;
+    
+    public DistroException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    
+    @Override
+    public String getMessage() {
+        return "[DISTRO-EXCEPTION]" + super.getMessage();
+    }
 }

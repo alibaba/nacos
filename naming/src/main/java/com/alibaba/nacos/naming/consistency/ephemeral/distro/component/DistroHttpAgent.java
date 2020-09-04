@@ -16,12 +16,16 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.component;
 
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroTransportAgent;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
+import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
+import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.exception.DistroException;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -55,16 +59,28 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public DistroData getData(DistroKey key, String targetServer) {
-        return null;
+        try {
+            List<String> toUpdateKeys = null;
+            if (key instanceof DistroHttpCombinedKey) {
+                toUpdateKeys = ((DistroHttpCombinedKey) key).getActualResourceTypes();
+            } else {
+                toUpdateKeys = new ArrayList<>(1);
+                toUpdateKeys.add(key.getResourceKey());
+            }
+            byte[] queriedData = NamingProxy.getData(toUpdateKeys, key.getTargetServer());
+            return new DistroData(key, queriedData);
+        } catch (Exception e) {
+            throw new DistroException(String.format("Get data from %s failed.", key.getTargetServer()), e);
+        }
     }
     
     @Override
-    public List<DistroData> getDatum(List<DistroKey> keys, String targetServer) {
-        return null;
-    }
-    
-    @Override
-    public List<DistroData> getAllDatum(String targetServer) {
-        return null;
+    public DistroData getDatumSnapshot(String targetServer) {
+        try {
+            byte[] allDatum = NamingProxy.getAllData(targetServer);
+            return new DistroData(new DistroKey("snapshot", KeyBuilder.INSTANCE_LIST_KEY_PREFIX), allDatum);
+        } catch (Exception e) {
+            throw new DistroException(String.format("Get snapshot from %s failed.", targetServer), e);
+        }
     }
 }

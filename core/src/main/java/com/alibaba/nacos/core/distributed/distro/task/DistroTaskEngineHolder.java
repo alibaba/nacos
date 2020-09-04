@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task;
+package com.alibaba.nacos.core.distributed.distro.task;
 
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskExecuteEngine;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute.DistroExecuteWorkersManager;
+import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTaskExecuteEngine;
+import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTaskProcessor;
+import com.alibaba.nacos.core.distributed.distro.task.execute.DistroExecuteWorkersManager;
 import org.springframework.stereotype.Component;
 
 /**

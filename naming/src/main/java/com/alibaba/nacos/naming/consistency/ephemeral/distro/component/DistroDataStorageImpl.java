@@ -22,9 +22,9 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataStorage;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.DistroMapper;
 
 import java.util.HashMap;
@@ -60,7 +60,15 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     }
     
     @Override
-    public DistroData getVerifyData(DistroKey distroKey) {
+    public DistroData getDatumSnapshot() {
+        Map<String, Datum> result = dataStore.getDataMap();
+        byte[] dataContent = ApplicationUtils.getBean(Serializer.class).serialize(result);
+        DistroKey distroKey = new DistroKey("snapshot", KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
+        return new DistroData(distroKey, dataContent);
+    }
+    
+    @Override
+    public DistroData getVerifyData() {
         Map<String, String> keyChecksums = new HashMap<>(64);
         for (String key : dataStore.keys()) {
             if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
@@ -75,6 +83,7 @@ public class DistroDataStorageImpl implements DistroDataStorage {
         if (keyChecksums.isEmpty()) {
             return null;
         }
+        DistroKey distroKey = new DistroKey("checksum", KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
         return new DistroData(distroKey, ApplicationUtils.getBean(Serializer.class).serialize(keyChecksums));
     }
 }

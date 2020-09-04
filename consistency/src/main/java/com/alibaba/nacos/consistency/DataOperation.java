@@ -14,25 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute;
-
-import com.alibaba.nacos.common.task.AbstractExecuteTask;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+package com.alibaba.nacos.consistency;
 
 /**
- * Abstract distro execute task.
+ * Apply action.
  *
- * @author xiweng.yy
+ * @author nkorange
  */
-public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask implements Runnable {
-    
-    private final DistroKey distroKey;
-    
-    protected AbstractDistroExecuteTask(DistroKey distroKey) {
-        this.distroKey = distroKey;
-    }
-    
-    protected DistroKey getDistroKey() {
-        return distroKey;
-    }
+public enum DataOperation {
+    /**
+     * Data add.
+     */
+    ADD,
+    /**
+     * Data changed.
+     */
+    CHANGE,
+    /**
+     * Data deleted.
+     */
+    DELETE,
+    /**
+     * Data verify.
+     */
+    VERIFY;
 }

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay;
+package com.alibaba.nacos.core.distributed.distro.task.delay;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 
 /**
  * Distro delay task.
@@ -29,15 +29,15 @@ public class DistroDelayTask extends AbstractDelayTask {
     
     private final DistroKey distroKey;
     
-    private ApplyAction action;
+    private DataOperation action;
     
     private long createTime;
     
     public DistroDelayTask(DistroKey distroKey, long delayTime) {
-        this(distroKey, ApplyAction.CHANGE, delayTime);
+        this(distroKey, DataOperation.CHANGE, delayTime);
     }
     
-    public DistroDelayTask(DistroKey distroKey, ApplyAction action, long delayTime) {
+    public DistroDelayTask(DistroKey distroKey, DataOperation action, long delayTime) {
         this.distroKey = distroKey;
         this.action = action;
         this.createTime = System.currentTimeMillis();
@@ -49,7 +49,7 @@ public class DistroDelayTask extends AbstractDelayTask {
         return distroKey;
     }
     
-    public ApplyAction getAction() {
+    public DataOperation getAction() {
         return action;
     }
     
