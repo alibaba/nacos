@@ -136,7 +136,6 @@ public class HttpClientManager {
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder()
                     .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
-                    .setUserAgent(UtilsAndCommons.SERVER_VERSION)
                     .setMaxRedirects(0).build();
         }
     
