@@ -17,14 +17,14 @@ package com.alibaba.nacos.naming.pojo;
 
 /**
  * Record to transfer and store in Nacos cluster
- *
+ * 记录要传输并存储在Nacos集群中
  * @author nkorange
  * @since 1.0.0
  */
 public interface Record {
     /**
      * get the checksum of this record, usually for record comparison
-     *
+     *获取该记录的校验和，通常用于记录比较
      * @return checksum of record
      */
     String getChecksum();

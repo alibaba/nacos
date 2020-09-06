@@ -56,6 +56,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
+ *  实现raft算法的核心类，也是raft启动的地方；
  */
 @Component
 public class RaftCore {
@@ -115,15 +116,15 @@ public class RaftCore {
 
     private boolean initialized = false;
 
-    @PostConstruct
+    @PostConstruct //@PostConstruct 注解使得该方法在servlet init()之前自动执行。
     public void init() throws Exception {
 
         Loggers.RAFT.info("initializing Raft sub-system");
-
+        //周期执行任务的线程池提交notifier对象
         executor.submit(notifier);
 
         long start = System.currentTimeMillis();
-
+        //loadDatums()读取磁盘中的datum  这一步是同步本地service与instance的信息。
         raftStore.loadDatums(notifier, datums);
 
         setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
@@ -140,7 +141,7 @@ public class RaftCore {
         initialized = true;
 
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
-
+        //开启选举和心跳
         GlobalExecutor.registerMasterElection(new MasterElection());
         GlobalExecutor.registerHeartbeat(new HeartBeat());
 
@@ -370,14 +371,14 @@ public class RaftCore {
                 RaftPeer local = peers.local();
                 local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
 
+                //当递减至值小于零，说明follower未接收到心跳，则自动变为candidate，参与选举。
                 if (local.leaderDueMs > 0) {
                     return;
                 }
-
                 // reset timeout
                 local.resetLeaderDue();
                 local.resetHeartbeatDue();
-
+                //选举
                 sendVote();
             } catch (Exception e) {
                 Loggers.RAFT.warn("[RAFT] error while master election {}", e);
@@ -426,6 +427,12 @@ public class RaftCore {
         }
     }
 
+    /**
+     * 接收选举
+     * term小于等于自己当前的term，则不为其投票，直接返回local，反之则投票，并把自己的状态修改成follower，并重置leaderDue时间。
+     * @param remote remote
+     * @return RaftPeer
+     */
     public RaftPeer receivedVote(RaftPeer remote) {
         if (!peers.contains(remote)) {
             throw new IllegalStateException("can not find peer: " + remote.ip);
@@ -574,7 +581,7 @@ public class RaftCore {
 
         }
     }
-
+    //接收心跳
     public RaftPeer receivedBeat(JSONObject beat) throws Exception {
         final RaftPeer local = peers.local();
         final RaftPeer remote = new RaftPeer();

@@ -45,6 +45,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
+ * 当前节点持有的同伴节点信息
  */
 @Component
 @DependsOn("serverListManager")
@@ -140,6 +141,14 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return peers.size();
     }
 
+    /**
+     * 决定leader
+     * 把接收到的节点信息放入hashmap，遍历peers，
+     * 记录每个节点所投的票，统计出得票最大的节点，
+     * 若此数值>majorityCount，则相应的节点成为leader。
+     * @param candidate
+     * @return
+     */
     public RaftPeer decideLeader(RaftPeer candidate) {
         peers.put(candidate.ip, candidate);
 
@@ -161,7 +170,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         if (maxApproveCount >= majorityCount()) {
             RaftPeer peer = peers.get(maxApprovePeer);
             peer.state = RaftPeer.State.LEADER;
-
+            //leader选举成功后，会向其他节点发送心跳
             if (!Objects.equals(leader, peer)) {
                 leader = peer;
                 applicationContext.publishEvent(new LeaderElectFinishedEvent(this, leader));

@@ -26,6 +26,7 @@ import java.util.Map;
 
 /**
  * @author nacos
+ * 用于转发请求给leader
  */
 @Component
 public class RaftProxy {

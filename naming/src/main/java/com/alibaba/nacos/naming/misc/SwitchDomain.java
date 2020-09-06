@@ -69,6 +69,7 @@ public class SwitchDomain implements Record, Cloneable {
     private Map<String, Integer> limitedUrlMap = new HashMap<>();
 
     /**
+     * 如果服务器的两个报告间隔比这个变量慢，则认为服务器已过期。
      * The server is regarded as expired if its two reporting interval is lagger than this variable.
      */
     private long distroServerExpiredMillis = TimeUnit.SECONDS.toMillis(10);
@@ -360,7 +361,7 @@ public class SwitchDomain implements Record, Cloneable {
     public String getChecksum() {
         return null;
     }
-
+    //健康指标
     public interface HealthParams {
         /**
          * Maximum RT

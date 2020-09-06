@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 
 /**
  * Core manager storing all services in Nacos
- *
+ * 在Nacos中存储所有服务的核心管理器
  * @author nkorange
  */
 @Component
@@ -65,11 +65,11 @@ public class ServiceManager implements RecordListener<Service> {
     private Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
 
     private LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
-
+    //同步消息
     private Synchronizer synchronizer = new ServiceStatusSynchronizer();
 
     private final Lock lock = new ReentrantLock();
-
+    //一致性服务
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
 
@@ -78,10 +78,10 @@ public class ServiceManager implements RecordListener<Service> {
 
     @Autowired
     private DistroMapper distroMapper;
-
+    //用于全局刷新和操作服务器列表的管理器。
     @Autowired
     private ServerListManager serverListManager;
-
+    //推送服务
     @Autowired
     private PushService pushService;
 

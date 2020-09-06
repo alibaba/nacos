@@ -55,14 +55,14 @@ public class DistroMapper implements ServerChangeListener {
     public void init() {
         serverListManager.listen(this);
     }
-
+    //判断是否是可靠的实例
     public boolean responsible(Cluster cluster, Instance instance) {
         return switchDomain.isHealthCheckEnabled(cluster.getServiceName())
             && !cluster.getHealthCheckTask().isCancelled()
             && responsible(cluster.getServiceName())
             && cluster.contains(instance);
     }
-
+    //?
     public boolean responsible(String serviceName) {
         if (!switchDomain.isDistroEnabled() || SystemUtils.STANDALONE_MODE) {
             return true;

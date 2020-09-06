@@ -21,7 +21,7 @@ package com.alibaba.nacos.naming.misc;
 public interface Synchronizer {
     /**
      * Send message to server
-     *
+     * 发送消息到服务器
      * @param serverIP target server address
      * @param msg      message to send
      */
@@ -29,7 +29,7 @@ public interface Synchronizer {
 
     /**
      * Get message from server using message key
-     *
+     * 使用消息密钥从服务器获取消息
      * @param serverIP source server address
      * @param key      message key
      * @return message

@@ -34,7 +34,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.*;
 
 /**
  * The manager to globally refresh and operate server list.
- *
+ * 用于全局刷新和操作服务器列表的管理器。
  * @author nkorange
  * @since 1.0.0
  */

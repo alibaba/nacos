@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author nacos
+ *  持久化节点信息到磁盘的类
  */
 @Component
 public class RaftStore {

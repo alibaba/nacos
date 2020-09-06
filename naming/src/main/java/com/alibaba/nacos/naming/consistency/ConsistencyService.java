@@ -19,7 +19,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.pojo.Record;
 
 /**
- * Consistence service for all implementations to derive.
+ * Consistence service for all implementations to derive. 所有要派生的实现的一致性服务。
  * <p>
  * We announce this consistency service to decouple the specific consistency implementation with business logic.
  * User should not be aware of what consistency protocol is being used.
@@ -34,7 +34,7 @@ public interface ConsistencyService {
 
     /**
      * Put a data related to a key to Nacos cluster
-     *
+     * 将与一个密钥相关的数据放到Nacos集群中
      * @param key   key of data, this key should be globally unique
      * @param value value of data
      * @throws NacosException
@@ -79,7 +79,7 @@ public interface ConsistencyService {
 
     /**
      * Tell the status of this consistency service
-     *
+     * 告知一致性服务的状态
      * @return true if available
      */
     boolean isAvailable();

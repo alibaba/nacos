@@ -37,6 +37,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     private static final String CLUSTER_NAME_SYNTAX = "[0-9a-zA-Z-]+";
     /**
+     * 一个新增的站点路由，可以将多个站点分组到一个区域，如杭州，上海等。
      * a addition for same site routing, can group multiple sites into a region, like Hangzhou, Shanghai, etc.
      */
     private String sitegroup = StringUtils.EMPTY;
@@ -47,10 +48,10 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     @JSONField(serialize = false)
     private HealthCheckTask checkTask;
-
+    //稳定的实例
     @JSONField(serialize = false)
     private Set<Instance> persistentInstances = new HashSet<>();
-
+    //暂时的实例
     @JSONField(serialize = false)
     private Set<Instance> ephemeralInstances = new HashSet<>();
 

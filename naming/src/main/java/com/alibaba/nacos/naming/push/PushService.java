@@ -259,7 +259,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         });
         return clients;
     }
-
+    //移除丧尸服务
     public static void removeClientIfZombie() {
 
         int size = 0;
@@ -359,13 +359,13 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     public static void resetPushState() {
         ackMap.clear();
     }
-
+    //推送服务端消息TO 客户端
     public class PushClient {
         private String namespaceId;
         private String serviceName;
         private String clusters;
         private String agent;
-        private String tenant;
+        private String tenant;//租约
         private String app;
         private InetSocketAddress socketAddr;
         private DataSource dataSource;
@@ -406,7 +406,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         public PushClient(InetSocketAddress socketAddr) {
             this.socketAddr = socketAddr;
         }
-
+        //当前时间-最后同步时间》10s
         public boolean zombie() {
             return System.currentTimeMillis() - lastRefTime > switchDomain.getPushCacheMillis(serviceName);
         }
@@ -579,7 +579,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             udpSocket.send(ackEntry.origin);
 
             ackEntry.increaseRetryTime();
-
+            //定时发送消息
             executorService.schedule(new Retransmitter(ackEntry), TimeUnit.NANOSECONDS.toMillis(ACK_TIMEOUT_NANOS),
                 TimeUnit.MILLISECONDS);
 
@@ -598,7 +598,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     private static String getACKKey(String host, int port, long lastRefTime) {
         return StringUtils.strip(host) + "," + port + "," + lastRefTime;
     }
-
+    //转播发射器
     public static class Retransmitter implements Runnable {
         Receiver.AckEntry ackEntry;
 
@@ -614,7 +614,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             }
         }
     }
-
+    //接收器
     public static class Receiver implements Runnable {
         @Override
         public void run() {

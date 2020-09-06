@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  * Nacos cluster member change event listener
- *
+ * Nacos集群成员更改事件侦听器
  * @author nkorange
  * @since 1.0.0
  */
@@ -27,14 +27,14 @@ public interface ServerChangeListener {
 
     /**
      * If member list changed, this method is invoked.
-     *
+     * 如果成员列表发生更改，则调用此方法。
      * @param servers servers after change
      */
     void onChangeServerList(List<Server> servers);
 
     /**
      * If reachable member list changed, this method is invoked.
-     *
+     * 如果可达成员列表发生更改，则调用此方法。
      * @param healthyServer reachable servers after change
      */
     void onChangeHealthyServerList(List<Server> healthyServer);

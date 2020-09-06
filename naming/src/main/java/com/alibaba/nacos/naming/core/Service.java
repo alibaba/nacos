@@ -41,7 +41,7 @@ import java.security.MessageDigest;
 import java.util.*;
 
 /**
- * Service of Nacos server side
+ * Service of Nacos server side Nacos服务器端服务
  * <p>
  * We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters,
  * which contain a list of instances.
@@ -64,7 +64,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     private Selector selector = new NoneSelector();
     private String namespaceId;
 
-    /**
+    /**IP将被删除，如果它没有发送心跳一段时间，默认的超时是30秒
      * IP will be deleted if it has not send beat for some time, default timeout is 30 seconds.
      */
     private long ipDeleteTimeout = 30 * 1000;

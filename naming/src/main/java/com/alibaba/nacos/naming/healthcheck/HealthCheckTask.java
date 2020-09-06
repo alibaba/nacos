@@ -25,11 +25,12 @@ import org.apache.commons.lang3.RandomUtils;
 
 /**
  * @author nacos
+ * 健康检查任务
  */
 public class HealthCheckTask implements Runnable {
 
     private Cluster cluster;
-
+    //. 标准化的
     private long checkRTNormalized = -1;
     private long checkRTBest = -1;
     private long checkRTWorst = -1;
@@ -38,7 +39,7 @@ public class HealthCheckTask implements Runnable {
     private long checkRTLastLast = -1;
 
     private long startTime;
-
+    //被取消
     private volatile boolean cancelled = false;
 
     @JSONField(serialize = false)
@@ -59,7 +60,7 @@ public class HealthCheckTask implements Runnable {
     }
 
     public void initCheckRT() {
-        // first check time delay
+        // first check time delay 首检时间延迟
         checkRTNormalized = 2000 + RandomUtils.nextInt(0, RandomUtils.nextInt(0, switchDomain.getTcpHealthParams().getMax()));
         checkRTBest = Long.MAX_VALUE;
         checkRTWorst = 0L;

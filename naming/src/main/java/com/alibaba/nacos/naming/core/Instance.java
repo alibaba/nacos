@@ -46,7 +46,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     private volatile boolean mockValid = false;
 
     private volatile boolean marked = false;
-
+    //承租人
     private String tenant;
 
     private String app;
@@ -312,7 +312,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
     }
 
-    /**
+    /**生成用于雪花算法的实例id。
      * Generate instance id which could be used for snowflake algorithm.
      * @param currentInstanceIds existing instance ids, which can not be used by new instance.
      * @return

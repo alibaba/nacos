@@ -20,7 +20,7 @@ import com.alibaba.nacos.naming.core.Instance;
 import java.util.List;
 
 /**
- * Selector defines a rule for load-balance for service discovery.
+ * Selector defines a rule for load-balance for service discovery.选择器定义用于服务发现的负载平衡规则。
  * <p>
  * Every service in Nacos can apply an existing selector and uses it to give the consumer
  * a subset of selected providers.
@@ -47,7 +47,7 @@ public interface Selector {
 
     /**
      * Select qualified instances from providers
-     *
+     * 从提供实例中选择合格的实例
      * @param consumer  consumer address
      * @param providers candidate provider addresses
      * @return selected provider addresses

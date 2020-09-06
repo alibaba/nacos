@@ -38,7 +38,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 public class Instances implements Record {
-
+    //实现数据加密
     private static MessageDigest MESSAGE_DIGEST;
 
     static {

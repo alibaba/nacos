@@ -17,7 +17,7 @@ package com.alibaba.nacos.api.naming;
 
 /**
  * Some keys of metadata that are recognized by Nacos
- *
+ * 由Nacos识别的元数据的一些键
  * @author nkorange
  * @since 1.0.0
  */
