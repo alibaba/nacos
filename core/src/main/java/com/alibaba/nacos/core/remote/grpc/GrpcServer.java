@@ -44,7 +44,6 @@ import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
 import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 /**
  * Grpc implementation as  a rpc server.
@@ -52,10 +51,7 @@ import org.springframework.stereotype.Service;
  * @author liuzunfei
  * @version $Id: GrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
-@Service
-public class GrpcServer extends RpcServer {
-    
-    private static final int PORT_OFFSET = 1000;
+public abstract class GrpcServer extends RpcServer {
     
     private Server server;
     
@@ -160,11 +156,6 @@ public class GrpcServer extends RpcServer {
                 .addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
         
-    }
-    
-    @Override
-    public int rpcPortOffset() {
-        return PORT_OFFSET;
     }
     
     @Override

@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.cluster.remote.grpc;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
 import com.alibaba.nacos.naming.cluster.remote.ClusterClient;
 
@@ -33,7 +32,7 @@ public class GrpcClusterClient implements ClusterClient {
     private final GrpcClient grpcClient;
     
     public GrpcClusterClient(String targetAddress) {
-        this.grpcClient = new GrpcClient(targetAddress);
+        this.grpcClient = new com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient(targetAddress);
     }
     
     @Override

@@ -37,6 +37,7 @@ import io.grpc.stub.StreamObserver;
 
 /**
  * grpc connection.
+ *
  * @author liuzunfei
  * @version $Id: GrpcConnection.java, v 0.1 2020年07月13日 7:26 PM liuzunfei Exp $
  */
@@ -97,7 +98,7 @@ public class GrpcConnection extends Connection {
         String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
         sendRequestNoAck(request);
-        DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(requestId, callBack);
+        DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(this.getConnectionId(), requestId, callBack);
         RpcAckCallbackSynchronizer.syncCallback(getConnectionId(), requestId, defaultPushFuture);
         return defaultPushFuture;
     }

@@ -60,15 +60,33 @@ public class RpcAckCallbackSynchronizer {
             return;
         }
     
-        DefaultRequestFuture currentCallback = stringDefaultPushFutureMap.get(response.getRequestId());
+        DefaultRequestFuture currentCallback = stringDefaultPushFutureMap.remove(response.getRequestId());
         if (currentCallback == null) {
             return;
         }
+    
         if (response.isSuccess()) {
             currentCallback.setResponse(response);
         } else {
             currentCallback.setFailResult(new NacosException(response.getErrorCode(), response.getMessage()));
         }
+    }
+    
+    /**
+     * notify  ackid.
+     */
+    public static void exceptionNotify(String connectionId, String requestId, Exception e) {
+        
+        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
+        if (stringDefaultPushFutureMap == null) {
+            return;
+        }
+        
+        DefaultRequestFuture currentCallback = stringDefaultPushFutureMap.remove(requestId);
+        if (currentCallback == null) {
+            return;
+        }
+        currentCallback.setFailResult(e);
     }
     
     /**

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.grpc.auto.RequestStreamGrpc;
+import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -34,8 +35,11 @@ import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * grpc connection.
@@ -48,7 +52,7 @@ public class GrpcConnection extends Connection {
     /**
      * executor to execute future request.
      */
-    static ExecutorService aynsRequestExecutor = Executors
+    static ScheduledExecutorService aynsRequestExecutor = Executors
             .newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
     
     /**
@@ -75,20 +79,26 @@ public class GrpcConnection extends Connection {
     
     @Override
     public Response request(Request request, RequestMeta requestMeta) throws NacosException {
+        return request(request, requestMeta, 3000L);
+    }
+    
+    @Override
+    public Response request(Request request, RequestMeta requestMeta, long timeouts) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
         
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
         Payload grpcResponse = null;
         try {
-            grpcResponse = requestFuture.get();
+            grpcResponse = requestFuture.get(timeouts, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
-    
+        
         Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
         return response;
     }
+    
     
     public void sendResponse(Response response) {
         Payload convert = GrpcUtils.convert(response);
@@ -101,18 +111,20 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public void asyncRequest(Request request, RequestMeta requestMeta, final FutureCallback<Response> callback)
+    public void asyncRequest(Request request, RequestMeta requestMeta, final RequestCallBack requestCallBack)
             throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
+    
+        //set callback .
         Futures.addCallback(requestFuture, new FutureCallback<Payload>() {
             @Override
             public void onSuccess(@NullableDecl Payload grpcResponse) {
                 Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
                 if (response != null && response.isSuccess()) {
-                    callback.onSuccess(response);
+                    requestCallBack.onResponse(response);
                 } else {
-                    callback.onFailure(new NacosException(
+                    requestCallBack.onException(new NacosException(
                             (response == null) ? ResponseCode.FAIL.getCode() : response.getErrorCode(),
                             (response == null) ? "null" : response.getMessage()));
                 }
@@ -120,9 +132,18 @@ public class GrpcConnection extends Connection {
             
             @Override
             public void onFailure(Throwable throwable) {
-                callback.onFailure(throwable);
+                if (throwable instanceof CancellationException) {
+                    requestCallBack.onException(
+                            new TimeoutException("Timeout after " + requestCallBack.getTimeout() + " millseconds."));
+                } else {
+                    requestCallBack.onException(throwable);
+                }
             }
         }, aynsRequestExecutor);
+        // set timeout future.
+        ListenableFuture<Payload> payloadListenableFuture = Futures
+                .withTimeout(requestFuture, requestCallBack.getTimeout(), TimeUnit.MILLISECONDS, aynsRequestExecutor);
+        
     }
     
     @Override
