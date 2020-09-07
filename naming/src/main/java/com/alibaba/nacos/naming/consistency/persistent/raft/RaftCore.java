@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.utils.IpUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
@@ -937,7 +938,7 @@ public class RaftCore {
      * @return api url
      */
     public static String buildUrl(String ip, String api) {
-        if (!ip.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+        if (!IpUtil.containsPort(ip)) {
             ip = ip + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         return "http://" + ip + ApplicationUtils.getContextPath() + api;

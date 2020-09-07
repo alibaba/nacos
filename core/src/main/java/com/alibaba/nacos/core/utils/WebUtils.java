@@ -92,6 +92,11 @@ public class WebUtils {
         try {
             value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
         } catch (UnsupportedEncodingException ignore) {
+        } catch (Exception ex) {
+            final String seq = "URLDecoder";
+            if (!StringUtils.contains(ex.toString(), seq)) {
+                throw ex;
+            }
         }
         return value.trim();
     }

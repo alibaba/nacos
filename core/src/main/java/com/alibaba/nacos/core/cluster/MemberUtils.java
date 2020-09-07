@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.IpUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
@@ -39,8 +40,6 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class MemberUtils {
-    
-    private static final String SEMICOLON = ":";
     
     private static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
     
@@ -78,8 +77,8 @@ public class MemberUtils {
         
         String address = member;
         int port = defaultPort;
-        if (address.contains(SEMICOLON)) {
-            String[] info = address.split(SEMICOLON);
+        String[] info = IpUtil.splitIpPortStr(address);
+        if (info.length > 1) {
             address = info[0];
             port = Integer.parseInt(info[1]);
         }

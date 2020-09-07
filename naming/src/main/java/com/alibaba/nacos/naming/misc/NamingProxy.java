@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.utils.IpUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -198,7 +199,7 @@ public class NamingProxy {
             
             HttpClient.HttpResult result;
             
-            if (!curServer.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            if (!IpUtil.containsPort(curServer)) {
                 curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
             }
             
@@ -240,7 +241,7 @@ public class NamingProxy {
             
             HttpClient.HttpResult result;
             
-            if (!curServer.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            if (!IpUtil.containsPort(curServer)) {
                 curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
             }
             
@@ -290,7 +291,7 @@ public class NamingProxy {
             
             HttpClient.HttpResult result;
             
-            if (!curServer.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            if (!IpUtil.containsPort(curServer)) {
                 curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
             }
             

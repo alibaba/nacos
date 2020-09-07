@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.address.util;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.alibaba.nacos.common.utils.IpUtil;
 
 /**
  * Provides a unified tool class for address server parameter verification.
@@ -31,10 +30,6 @@ public class AddressServerParamCheckUtil {
     public static final String CHECK_OK = "ok";
     
     public static final String ILLEGAL_IP_PREFIX = "illegal ip: ";
-    
-    private static final String IP_REGEX = "(2(5[0-5]{1}|[0-4]\\d{1})|[0-1]?\\d{1,2})(\\.(2(5[0-5]{1}|[0-4]\\d{1})|[0-1]?\\d{1,2})){3}";
-    
-    private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
     
     /**
      * Check ips.
@@ -51,8 +46,7 @@ public class AddressServerParamCheckUtil {
         // illegal response
         StringBuilder illegalResponse = new StringBuilder();
         for (String ip : ips) {
-            Matcher matcher = IP_PATTERN.matcher(ip);
-            if (matcher.matches()) {
+            if (IpUtil.isIp(ip)) {
                 continue;
             }
             illegalResponse.append(ip + ",");

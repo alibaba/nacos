@@ -18,12 +18,14 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
+import com.alibaba.nacos.common.utils.IpUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
@@ -31,8 +33,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.core.utils.Constants.IGNORED_INTERFACES;
 import static com.alibaba.nacos.core.utils.Constants.IP_ADDRESS;
@@ -50,12 +50,6 @@ import static com.alibaba.nacos.core.utils.Constants.USE_ONLY_SITE_INTERFACES;
 public class InetUtils {
     
     private static final Logger LOG = LoggerFactory.getLogger(InetUtils.class);
-    
-    private static final String NUM = "(25[0-5]|2[0-4]\\d|[0-1]\\d{2}|[1-9]?\\d)";
-    
-    private static final String IP_REGEX = "^" + NUM + "\\." + NUM + "\\." + NUM + "\\." + NUM + "$";
-    
-    private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
     
     private static String selfIp;
     
@@ -89,7 +83,7 @@ public class InetUtils {
                         nacosIp = PropertyUtil.getProperty(IP_ADDRESS);
                     }
                     
-                    if (!StringUtils.isBlank(nacosIp) && !isIP(nacosIp)) {
+                    if (!StringUtils.isBlank(nacosIp) && !IpUtil.isIp(nacosIp)) {
                         throw new RuntimeException("nacos address " + nacosIp + " is not ip");
                     }
                     String tmpSelfIp = nacosIp;
@@ -117,7 +111,10 @@ public class InetUtils {
                             tmpSelfIp = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
                         }
                     }
-                    
+                    if (IpUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIp.startsWith(IpUtil.IPV6_START_MARK) && !tmpSelfIp
+                            .endsWith(IpUtil.IPV6_END_MARK)) {
+                        tmpSelfIp = IpUtil.IPV6_START_MARK + tmpSelfIp + IpUtil.IPV6_END_MARK;
+                    }
                     if (!Objects.equals(selfIp, tmpSelfIp) && Objects.nonNull(selfIp)) {
                         IPChangeEvent event = new IPChangeEvent();
                         event.setOldIp(selfIp);
@@ -162,8 +159,9 @@ public class InetUtils {
                     if (!ignoreInterface(ifc.getDisplayName())) {
                         for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
                             InetAddress address = addrs.nextElement();
-                            if (address instanceof Inet4Address && !address.isLoopbackAddress() && isPreferredAddress(
-                                    address)) {
+                            if ((IpUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
+                                    : address instanceof Inet4Address) && !address.isLoopbackAddress()
+                                    && isPreferredAddress(address)) {
                                 LOG.debug("Found non-loopback interface: " + ifc.getDisplayName());
                                 result = address;
                             }
@@ -217,11 +215,6 @@ public class InetUtils {
             }
         }
         return false;
-    }
-    
-    public static boolean isIP(String str) {
-        Matcher matcher = IP_PATTERN.matcher(str);
-        return matcher.matches();
     }
     
     /**

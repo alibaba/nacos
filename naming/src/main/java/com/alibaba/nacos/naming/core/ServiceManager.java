@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.IpUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -796,7 +797,8 @@ public class ServiceManager implements RecordListener<Service> {
                 contained = false;
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
-                    if (containedInstance.contains(":")) {
+                    String[] containedInstanceIpPort = IpUtil.splitIpPortStr(containedInstance);
+                    if (containedInstanceIpPort.length == IpUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
                         if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), containedInstance)) {
                             contained = true;
                             break;
