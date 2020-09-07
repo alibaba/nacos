@@ -24,9 +24,6 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.naming.cluster.remote.ClusterClientManager;
-import com.alibaba.nacos.naming.cluster.remote.request.ForwardInstanceRequest;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -46,32 +43,14 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     
     private final RemotingConnectionHolder remotingConnectionHolder;
     
-    private final ClusterClientManager clusterClientManager;
-    
-    private final DistroMapper distroMapper;
-    
-    public InstanceRequestHandler(ServiceManager serviceManager, RemotingConnectionHolder remotingConnectionHolder,
-            ClusterClientManager clusterClientManager, DistroMapper distroMapper) {
+    public InstanceRequestHandler(ServiceManager serviceManager, RemotingConnectionHolder remotingConnectionHolder) {
         this.serviceManager = serviceManager;
         this.remotingConnectionHolder = remotingConnectionHolder;
-        this.clusterClientManager = clusterClientManager;
-        this.distroMapper = distroMapper;
     }
     
     @Override
     public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
-        InstanceRequest instanceRequest = (InstanceRequest) request;
-        String serviceName = NamingUtils
-                .getGroupedName(instanceRequest.getServiceName(), instanceRequest.getGroupName());
-        if (distroMapper.responsible(serviceName)) {
-            return handleResponsibleRequest(serviceName, instanceRequest, meta);
-        } else {
-            return forwardRequestToResponsibleServer(serviceName, instanceRequest, meta);
-        }
-    }
-    
-    private InstanceResponse handleResponsibleRequest(String serviceName, InstanceRequest request, RequestMeta meta)
-            throws NacosException {
+        String serviceName = NamingUtils.getGroupedName(request.getServiceName(), request.getGroupName());
         String namespace = request.getNamespace();
         switch (request.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
@@ -84,17 +63,6 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
         }
     }
     
-    private InstanceResponse forwardRequestToResponsibleServer(String serviceName, InstanceRequest request,
-            RequestMeta meta) throws NacosException {
-        String targetAddress = distroMapper.mapSrv(serviceName);
-        if (clusterClientManager.hasClientForMember(targetAddress)) {
-            return (InstanceResponse) clusterClientManager.getClusterClient(targetAddress)
-                    .request(new ForwardInstanceRequest(request, meta));
-        }
-        throw new NacosException(NacosException.BAD_GATEWAY,
-                String.format("Can't find responsible server for service %s", serviceName));
-    }
-    
     private InstanceResponse registerInstance(String namespace, String serviceName, InstanceRequest instanceRequest,
             RequestMeta meta) throws NacosException {
         if (!serviceManager.containService(namespace, serviceName)) {
@@ -104,6 +72,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
         instance.setServiceName(serviceName);
         instance.setInstanceId(instance.generateInstanceId());
         instance.setLastBeat(System.currentTimeMillis());
+        instance.setMarked(true);
         // Register instance by connection, do not need keep alive by beat.
         serviceManager.addInstance(namespace, serviceName, instance.isEphemeral(), instance);
         remotingConnectionHolder.getRemotingConnection(meta.getConnectionId())
