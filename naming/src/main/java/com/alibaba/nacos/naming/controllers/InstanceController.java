@@ -115,9 +115,10 @@ public class InstanceController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String register(HttpServletRequest request) throws Exception {
         
-        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         
         final Instance instance = parseInstance(request);
         
@@ -139,6 +140,7 @@ public class InstanceController {
         Instance instance = getIpAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -161,9 +163,10 @@ public class InstanceController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         final Instance instance = parseInstance(request);
         
         String agent = WebUtils.getUserAgent(request);
@@ -190,8 +193,9 @@ public class InstanceController {
     @PatchMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String patch(HttpServletRequest request) throws Exception {
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         String ip = WebUtils.required(request, "ip");
         String port = WebUtils.required(request, "port");
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
@@ -242,8 +246,9 @@ public class InstanceController {
     public ObjectNode list(HttpServletRequest request) throws Exception {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
+        
         String agent = WebUtils.getUserAgent(request);
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
@@ -274,6 +279,7 @@ public class InstanceController {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
@@ -344,8 +350,9 @@ public class InstanceController {
             ip = clientBeat.getIp();
             port = clientBeat.getPort();
         }
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, clusterName, ip, port);
         
@@ -413,7 +420,7 @@ public class InstanceController {
             namespaceId = Constants.DEFAULT_NAMESPACE_ID;
             serviceName = key;
         }
-        
+        checkServiceNameFormat(serviceName);
         Service service = serviceManager.getService(namespaceId, serviceName);
         
         if (service == null) {
@@ -431,6 +438,23 @@ public class InstanceController {
         
         result.replace("ips", ipArray);
         return result;
+    }
+    
+    private void checkServiceNameFormat(String serviceName) {
+        try {
+            String[] split = serviceName.split(Constants.SERVICE_INFO_SPLITER);
+            String groupName = split[0];
+            String service = split[1];
+            if (StringUtils.isBlank(groupName)) {
+                throw new IllegalArgumentException("Param 'serviceName' is illegal, groupName is blank");
+            }
+            if (StringUtils.isBlank(service)) {
+                throw new IllegalArgumentException("Param 'serviceName' is illegal, service is blank");
+            }
+        } catch (IndexOutOfBoundsException e) {
+            throw new IllegalArgumentException(
+                    "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName");
+        }
     }
     
     private Instance parseInstance(HttpServletRequest request) throws Exception {
