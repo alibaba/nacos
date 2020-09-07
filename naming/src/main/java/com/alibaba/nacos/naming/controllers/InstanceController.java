@@ -301,8 +301,8 @@ public class InstanceController {
                 result.put("clusterName", cluster);
                 result.put("weight", instance.getWeight());
                 result.put("healthy", instance.isHealthy());
-                result.put("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
                 result.put("instanceId", instance.getInstanceId());
+                result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
                 return result;
             }
         }
@@ -568,7 +568,6 @@ public class InstanceController {
                 result.put("dom", NamingUtils.getServiceName(serviceName));
             }
             
-            result.put("hosts", JacksonUtils.createEmptyArrayNode());
             result.put("name", serviceName);
             result.put("cacheMillis", cacheMillis);
             result.put("lastRefTime", System.currentTimeMillis());
@@ -576,7 +575,8 @@ public class InstanceController {
             result.put("useSpecifiedURL", false);
             result.put("clusters", clusters);
             result.put("env", env);
-            result.put("metadata", JacksonUtils.transferToJsonNode(service.getMetadata()));
+            result.set("hosts", JacksonUtils.createEmptyArrayNode());
+            result.set("metadata", JacksonUtils.transferToJsonNode(service.getMetadata()));
             return result;
         }
         
@@ -637,7 +637,7 @@ public class InstanceController {
                 ipObj.put("healthy", entry.getKey());
                 ipObj.put("marked", instance.isMarked());
                 ipObj.put("instanceId", instance.getInstanceId());
-                ipObj.put("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
+                ipObj.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
                 ipObj.put("enabled", instance.isEnabled());
                 ipObj.put("weight", instance.getWeight());
                 ipObj.put("clusterName", instance.getClusterName());
