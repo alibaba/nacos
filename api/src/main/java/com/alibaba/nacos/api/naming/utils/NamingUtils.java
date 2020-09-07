@@ -31,9 +31,6 @@ public class NamingUtils {
         if (StringUtils.isBlank(serviceName)) {
             throw new IllegalArgumentException("Param 'serviceName' is illegal, serviceName is blank");
         }
-        if (StringUtils.isBlank(groupName)) {
-            throw new IllegalArgumentException("Param 'serviceName' is illegal, groupName is blank");
-        }
         final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         return resultGroupedName.intern();
     }

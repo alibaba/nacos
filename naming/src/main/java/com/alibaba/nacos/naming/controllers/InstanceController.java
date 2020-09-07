@@ -443,11 +443,7 @@ public class InstanceController {
     private void checkServiceNameFormat(String serviceName) {
         try {
             String[] split = serviceName.split(Constants.SERVICE_INFO_SPLITER);
-            String groupName = split[0];
             String service = split[1];
-            if (StringUtils.isBlank(groupName)) {
-                throw new IllegalArgumentException("Param 'serviceName' is illegal, groupName is blank");
-            }
             if (StringUtils.isBlank(service)) {
                 throw new IllegalArgumentException("Param 'serviceName' is illegal, service is blank");
             }
