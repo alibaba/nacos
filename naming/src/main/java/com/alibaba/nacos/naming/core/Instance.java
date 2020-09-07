@@ -115,9 +115,10 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
         
         String provider = ipAddressAttributes[0];
-        String[] providerAddr = IpUtil.splitIpPortStr(provider);
-        if (providerAddr.length != IpUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
-            // not ip:port string
+        String[] providerAddr;
+        try {
+            providerAddr = IpUtil.splitIpPortStr(provider);
+        } catch (Exception ex) {
             return null;
         }
         
@@ -356,7 +357,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     public void validate() throws NacosException {
         if (onlyContainsDigitAndDot()) {
             String[] providerAddr = IpUtil.splitIpPortStr(getIp() + ":" + getPort());
-            if (providerAddr.length != IpUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
+            if (!IpUtil.containsPort(getIp() + ":" + getPort())) {
                 throw new NacosException(NacosException.INVALID_PARAM,
                         "instance format invalid: Your IP address is spelled incorrectly");
             }

@@ -34,13 +34,21 @@ public class IpUtil {
     
     public static final String IPV6_END_MARK = "]";
     
-    public static final int SPLIT_IP_PORT_RESULT_LENGTH = 2;
+    public static final String CHECK_OK = "ok";
+    
+    public static final String ILLEGAL_IP_PREFIX = "illegal ip: ";
     
     private static final String LOCAL_HOST_IP_V4 = "127.0.0.1";
     
     private static final String LOCAL_HOST_IP_V6 = "[::1]";
     
     private static Pattern ipv4Pattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+    
+    private static final int SPLIT_IP_PORT_RESULT_LENGTH = 2;
+    
+    private static final int IPV4_ADDRESS_LENGTH = 4;
+    
+    private static final int IPV6_ADDRESS_LENGTH = 16;
     
     /**
      * get localhost ip.
@@ -61,7 +69,7 @@ public class IpUtil {
      */
     public static boolean isIpv4(String addr) {
         try {
-            return InetAddress.getByName(addr).getAddress().length == 4;
+            return InetAddress.getByName(addr).getAddress().length == IPV4_ADDRESS_LENGTH;
         } catch (UnknownHostException e) {
             return false;
         }
@@ -75,7 +83,7 @@ public class IpUtil {
      */
     public static boolean isIpv6(String addr) {
         try {
-            return InetAddress.getByName(addr).getAddress().length == 16;
+            return InetAddress.getByName(addr).getAddress().length == IPV6_ADDRESS_LENGTH;
         } catch (UnknownHostException e) {
             return false;
         }
@@ -103,7 +111,7 @@ public class IpUtil {
      * @return boolean
      */
     public static boolean containsPort(String address) {
-        return splitIpPortStr(address).length == 2;
+        return splitIpPortStr(address).length == SPLIT_IP_PORT_RESULT_LENGTH;
     }
     
     /**
@@ -156,7 +164,6 @@ public class IpUtil {
             result = str.substring(str.indexOf(IPV6_START_MARK), (str.indexOf(IPV6_END_MARK) + 1));
             if (!isIpv6(result)) {
                 result = "";
-                //throw new IllegalArgumentException("The IPv6 address(\"" + result + "\") is incorrect.");
             }
         } else {
             Matcher m = ipv4Pattern.matcher(str);
@@ -164,12 +171,38 @@ public class IpUtil {
                 result = m.group();
                 if (!isIpv4(result)) {
                     result = "";
-                    //throw new IllegalArgumentException("The IPv4 address(\"" + result + "\") is incorrect.");
                 }
             }
-            //throw new IllegalArgumentException("There is no IP in the string.");
         }
         return result;
+    }
+    
+    /**
+     * Check ips.
+     *
+     * @param ips ips
+     * @return 'ok' if check passed, otherwise illegal ip
+     */
+    public static String checkIps(String... ips) {
+        
+        if (ips == null || ips.length == 0) {
+            
+            return CHECK_OK;
+        }
+        // illegal response
+        StringBuilder illegalResponse = new StringBuilder();
+        for (String ip : ips) {
+            if (IpUtil.isIp(ip)) {
+                continue;
+            }
+            illegalResponse.append(ip + ",");
+        }
+        
+        if (illegalResponse.length() == 0) {
+            return CHECK_OK;
+        }
+        
+        return ILLEGAL_IP_PREFIX + illegalResponse.substring(0, illegalResponse.length() - 1);
     }
     
 }

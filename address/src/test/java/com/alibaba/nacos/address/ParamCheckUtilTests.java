@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.address;
 
-import com.alibaba.nacos.address.util.AddressServerParamCheckUtil;
+import com.alibaba.nacos.common.utils.IpUtil;
 import org.junit.Test;
 
 public class ParamCheckUtilTests {
@@ -24,9 +24,9 @@ public class ParamCheckUtilTests {
     @Test
     public void checkIps() {
         String[] ips = {"127.0.0.1"};
-        System.out.println(AddressServerParamCheckUtil.checkIps(ips));
+        System.out.println(IpUtil.checkIps(ips));
         
         String[] illlegalIps = {"127.100.19", "127.0.0.1"};
-        System.err.println(AddressServerParamCheckUtil.checkIps(illlegalIps));
+        System.err.println(IpUtil.checkIps(illlegalIps));
     }
 }

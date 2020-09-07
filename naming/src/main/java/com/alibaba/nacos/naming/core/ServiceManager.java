@@ -797,8 +797,7 @@ public class ServiceManager implements RecordListener<Service> {
                 contained = false;
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
-                    String[] containedInstanceIpPort = IpUtil.splitIpPortStr(containedInstance);
-                    if (containedInstanceIpPort.length == IpUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
+                    if (IpUtil.containsPort(containedInstance)) {
                         if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), containedInstance)) {
                             contained = true;
                             break;
