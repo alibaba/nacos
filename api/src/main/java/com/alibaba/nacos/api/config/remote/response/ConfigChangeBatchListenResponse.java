@@ -145,6 +145,12 @@ public class ConfigChangeBatchListenResponse extends Response {
         public void setTenant(String tenant) {
             this.tenant = tenant;
         }
+    
+        @Override
+        public String toString() {
+            return "ConfigContext{" + "group='" + group + '\'' + ", dataId='" + dataId + '\'' + ", tenant='" + tenant
+                    + '\'' + '}';
+        }
     }
     
 }

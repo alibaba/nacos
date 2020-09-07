@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.AbstractRequestCallBack;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -25,6 +25,8 @@ import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedExceptio
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.Executor;
 
 /**
  * push response  to clients.
@@ -45,14 +47,16 @@ public class RpcPushService {
      * @param request         request.
      * @param requestCallBack requestCallBack.
      */
-    public void pushWithCallback(String connectionId, ServerPushRequest request, PushCallBack requestCallBack) {
+    public void pushWithCallback(String connectionId, ServerPushRequest request, PushCallBack requestCallBack,
+            Executor executor) {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                connection.sendRequestWithCallBack(request, new RequestCallBack() {
+                connection.sendRequestWithCallBack(request, new AbstractRequestCallBack(requestCallBack.getTimeout()) {
+                    
                     @Override
-                    public long getTimeout() {
-                        return requestCallBack.getTimeout();
+                    public Executor getExcutor() {
+                        return executor;
                     }
         
                     @Override
@@ -65,7 +69,7 @@ public class RpcPushService {
                     }
         
                     @Override
-                    public void onException(Exception e) {
+                    public void onException(Throwable e) {
                         requestCallBack.onFail(e);
                     }
                 });

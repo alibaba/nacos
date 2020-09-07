@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.remote.rsocket;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
+import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -33,8 +34,12 @@ import io.rsocket.RSocket;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * connection of rsocket.
@@ -107,28 +112,40 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public void sendRequestWithCallBack(Request request, RequestCallBack callBack) throws NacosException {
-    
+    public void sendRequestWithCallBack(Request request, RequestCallBack requestCallBack) throws NacosException {
+        
         long id = System.currentTimeMillis();
         Loggers.RPC_DIGEST.info("Rsocket sendRequestWithCallBack :" + request);
-        
-        Mono<Payload> payloadMono = clientSocket
-                .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
-        payloadMono.subscribe(new Consumer<Payload>() {
-
-            @Override
-            public void accept(Payload payload) {
-                Response response = RsocketUtils.parseResponseFromPayload(payload);
-                callBack.onResponse(response);
-            }
-
-        }, new Consumer<Throwable>() {
-            @Override
-            public void accept(Throwable throwable) {
-                callBack.onException(new Exception(throwable));
-            }
-        });
     
+        try {
+            Mono<Payload> response = clientSocket
+                    .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
+        
+            response.toFuture().acceptEither(failAfter(requestCallBack.getTimeout()), new Consumer<Payload>() {
+                @Override
+                public void accept(Payload payload) {
+                    requestCallBack.onResponse(RsocketUtils.parseResponseFromPayload(payload));
+                }
+            }).exceptionally(throwable -> {
+                requestCallBack.onException(throwable);
+                return null;
+            });
+        
+        } catch (Exception e) {
+            requestCallBack.onException(e);
+        }
+    }
+    
+    private static <T> CompletableFuture<T> failAfter(final long timeouts) {
+        final CompletableFuture<T> promise = new CompletableFuture<T>();
+        RpcScheduledExecutor.TIMEOUT_SHEDULER.schedule(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                final TimeoutException ex = new TimeoutException("Timeout after " + timeouts);
+                return promise.completeExceptionally(ex);
+            }
+        }, timeouts, MILLISECONDS);
+        return promise;
     }
     
     @Override

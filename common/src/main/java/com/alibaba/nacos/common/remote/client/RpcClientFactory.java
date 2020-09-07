@@ -18,7 +18,8 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
 import com.alibaba.nacos.common.remote.client.rsocket.RsocketRpcClient;
 
 import java.util.HashMap;
@@ -70,23 +71,25 @@ public class RpcClientFactory {
      * @param connectionType client type.
      * @return
      */
-    public static RpcClient createClient(String clientName, ConnectionType connectionType) {
+    public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
+        String clientNameInner = clientName;
         synchronized (clientMap) {
-            if (clientMap.get(clientName) == null) {
+            if (clientMap.get(clientNameInner) == null) {
                 RpcClient moduleClient = null;
                 if (ConnectionType.GRPC.equals(connectionType)) {
-                    moduleClient = new GrpcClient(clientName);
-    
+                    moduleClient = new GrpcSdkClient(clientNameInner);
+                    
                 } else if (ConnectionType.RSOCKET.equals(connectionType)) {
-                    moduleClient = new RsocketRpcClient(clientName);
+                    moduleClient = new RsocketRpcClient(clientNameInner);
                 }
                 if (moduleClient == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
                 }
-                clientMap.put(clientName, moduleClient);
+                moduleClient.initLabels(labels);
+                clientMap.put(clientNameInner, moduleClient);
                 return moduleClient;
             }
-            return clientMap.get(clientName);
+            return clientMap.get(clientNameInner);
         }
     }
     
@@ -97,14 +100,14 @@ public class RpcClientFactory {
      * @param connectionType client type.
      * @return
      */
-    public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
-        //TODO to be deleted.
+    public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
+            Map<String, String> labels) {
         String clientNameInner = clientName;
         synchronized (clientMap) {
             if (clientMap.get(clientNameInner) == null) {
                 RpcClient moduleClient = null;
                 if (ConnectionType.GRPC.equals(connectionType)) {
-                    moduleClient = new GrpcClient(clientNameInner);
+                    moduleClient = new GrpcClusterClient(clientNameInner);
                     
                 } else if (ConnectionType.RSOCKET.equals(connectionType)) {
                     moduleClient = new RsocketRpcClient(clientNameInner);
