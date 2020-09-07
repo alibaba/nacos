@@ -73,7 +73,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     private ConnectionManager connectionManager;
     
     /**
-     * adaptor to config module ,when server side congif change ,invoke this method.
+     * adaptor to config module ,when server side config change ,invoke this method.
      *
      * @param groupKey     groupKey
      * @param notifyRequet notifyRequet
@@ -84,7 +84,6 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         if (listeners == null || listeners.isEmpty()) {
             return;
         }
-    
         Set<String> clients = new HashSet<>(listeners);
         int notifyCount = 0;
         if (!CollectionUtils.isEmpty(clients)) {
@@ -100,8 +99,8 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                         continue;
                     }
                 }
-                
-                RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequet, 5, client);
+    
+                RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequet, 50, client);
                 push(rpcPushRetryTask);
                 notifyCount++;
             }
@@ -168,24 +167,17 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 }
                 
                 @Override
-                public void onFail(Exception e) {
+                public void onFail(Throwable e) {
+                    Loggers.CORE.error("On failt ", e);
                     Loggers.CORE.warn("push fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
                             notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
                             retryTimes);
                     
                     push(RpcPushTask.this);
                 }
-                
-                @Override
-                public void onTimeout() {
-                    Loggers.CORE.warn("push timeout.dataId={},group={},tenant={},clientId={},tryTimes={}",
-                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
-                            retryTimes);
-                    push(RpcPushTask.this);
-                }
-                
-            });
     
+            }, ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR);
+            
             tryTimes++;
         }
     }

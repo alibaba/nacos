@@ -112,12 +112,6 @@ public class ConfigChangeNotifyRequest extends ServerPushRequest {
         this.tenant = tenant;
     }
     
-    @Override
-    public String toString() {
-        return "ConfigChangeNotifyResponse{" + "dataId='" + dataId + '\'' + ", group='" + group + '\'' + ", tenant='"
-                + tenant + '\'' + '}';
-    }
-    
     /**
      * Getter method for property <tt>beta</tt>.
      *

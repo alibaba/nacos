@@ -18,6 +18,8 @@ package com.alibaba.nacos.api.remote;
 
 import com.alibaba.nacos.api.remote.response.Response;
 
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -40,7 +42,11 @@ public class DefaultRequestFuture implements RequestFuture {
     
     private String requestId;
     
+    private String connectionId;
+    
     private Response response;
+    
+    private ScheduledFuture timeoutFuture;
     
     /**
      * Getter method for property <tt>requestCallBack</tt>.
@@ -63,32 +69,39 @@ public class DefaultRequestFuture implements RequestFuture {
     public DefaultRequestFuture() {
     }
     
-    public DefaultRequestFuture(String requestId) {
-        this(requestId, null);
+    public DefaultRequestFuture(String connectionId, String requestId) {
+        this(connectionId, requestId, null);
     }
     
-    public DefaultRequestFuture(String requestId, RequestCallBack requestCallBack) {
+    public DefaultRequestFuture(String connectionId, String requestId, RequestCallBack requestCallBack) {
         this.timeStamp = System.currentTimeMillis();
         this.requestCallBack = requestCallBack;
         this.requestId = requestId;
+        this.connectionId = connectionId;
+        this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SHEDULER
+                .schedule(new TimeoutHandler(), requestCallBack.getTimeout(), TimeUnit.MILLISECONDS);
     }
     
-    public void setResponse(Response response) {
+    public void setResponse(final Response response) {
         isDone = true;
         this.response = response;
         this.isSuccess = response.isSuccess();
+        if (this.timeoutFuture != null) {
+            timeoutFuture.cancel(true);
+        }
         synchronized (this) {
             notifyAll();
         }
         
         if (requestCallBack != null) {
-            requestCallBack.onResponse(response);
+            requestCallBack.getExcutor().execute(new CallBackHandler());
         }
     }
     
     public void setFailResult(Exception e) {
         isDone = true;
         isSuccess = false;
+        this.exception = e;
         synchronized (this) {
             notifyAll();
         }
@@ -141,5 +154,46 @@ public class DefaultRequestFuture implements RequestFuture {
         } else {
             throw new TimeoutException();
         }
+    }
+    
+    class CallBackHandler implements Runnable {
+        
+        @Override
+        public void run() {
+            if (exception != null) {
+                requestCallBack.onException(exception);
+            } else {
+                requestCallBack.onResponse(response);
+            }
+        }
+    }
+    
+    class TimeoutHandler implements Runnable {
+        
+        public TimeoutHandler() {
+        }
+        
+        @Override
+        public void run() {
+            setFailResult(new TimeoutException("Timeout After " + requestCallBack.getTimeout() + " millseconds."));
+        }
+    }
+    
+    /**
+     * Getter method for property <tt>connectionId</tt>.
+     *
+     * @return property value of connectionId
+     */
+    public String getConnectionId() {
+        return connectionId;
+    }
+    
+    /**
+     * Setter method for property <tt>timeoutFuture</tt>.
+     *
+     * @param timeoutFuture value to be assigned to property timeoutFuture
+     */
+    public void setTimeoutFuture(ScheduledFuture timeoutFuture) {
+        this.timeoutFuture = timeoutFuture;
     }
 }

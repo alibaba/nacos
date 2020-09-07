@@ -14,20 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.response;
+package com.alibaba.nacos.common.remote.client.grpc;
 
 /**
- * callback of push service.
+ * sdk client for grpc.
  *
  * @author liuzunfei
- * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
+ * @version $Id: GrpcSdkClient.java, v 0.1 2020年09月07日 11:05 AM liuzunfei Exp $
  */
-public interface PushCallBack {
+public class GrpcSdkClient extends GrpcClient {
     
-    public long getTimeout();
+    /**
+     * Empty constructor.
+     *
+     * @param name name of client.
+     */
+    public GrpcSdkClient(String name) {
+        super(name);
+    }
     
-    public void onSuccess();
-    
-    public void onFail(Throwable e);
+    @Override
+    public int rpcPortOffset() {
+        return 1000;
+    }
     
 }

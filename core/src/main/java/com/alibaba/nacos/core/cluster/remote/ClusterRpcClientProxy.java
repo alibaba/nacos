@@ -109,12 +109,13 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     }
     
     private void createRpcClientAndStart(Member member, ConnectionType type) throws NacosException {
-        RpcClient client = RpcClientFactory.createClient(memberClientKey(member), type);
+        Map<String, String> labels = new HashMap<String, String>();
+        labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_NODE);
+    
+        RpcClient client = RpcClientFactory.createClusterClient(memberClientKey(member), type, labels);
         if (!client.getConnectionType().equals(type)) {
             RpcClientFactory.destroyClient(memberClientKey(member));
-            Map<String, String> labels = new HashMap<String, String>();
-            labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_NODE);
-            client = RpcClientFactory.createClient(memberClientKey(member), type, labels);
+            client = RpcClientFactory.createClusterClient(memberClientKey(member), type, labels);
         }
     
         if (client.isWaitInited()) {
@@ -144,6 +145,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     
     /**
      * send request to member.
+     *
      * @param member
      * @param request
      * @return

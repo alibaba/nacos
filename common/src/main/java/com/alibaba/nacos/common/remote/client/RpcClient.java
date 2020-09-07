@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PayloadRegistry;
+import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.google.common.util.concurrent.FutureCallback;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 
@@ -462,7 +462,7 @@ public abstract class RpcClient implements Closeable {
      * @param request request.
      * @return
      */
-    public void asyncRequest(Request request, FutureCallback<Response> callback) throws NacosException {
+    public void asyncRequest(Request request, RequestCallBack callback) throws NacosException {
         int retryTimes = 3;
     
         Exception exceptionToThrow = null;

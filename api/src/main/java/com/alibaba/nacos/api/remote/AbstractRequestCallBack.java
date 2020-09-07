@@ -16,44 +16,26 @@
 
 package com.alibaba.nacos.api.remote;
 
-import com.alibaba.nacos.api.remote.response.Response;
-
-import java.util.concurrent.Executor;
-
 /**
- * call bakck for request.
+ * abstract request call back.
  *
  * @author liuzunfei
- * @version $Id: PushCallBack.java, v 0.1 2020年09月01日 6:33 PM liuzunfei Exp $
+ * @version $Id: AbstractRequestCallBack.java, v 0.1 2020年09月07日 3:30 PM liuzunfei Exp $
  */
-public interface RequestCallBack {
+public abstract class AbstractRequestCallBack implements RequestCallBack {
     
-    /**
-     * get executor on callback.
-     *
-     * @return
-     */
-    public Executor getExcutor();
+    long timeoutMills;
     
-    /**
-     * get timeout mills.
-     *
-     * @return
-     */
-    public long getTimeout();
+    public AbstractRequestCallBack(long timeoutMill) {
+        this.timeoutMills = timeoutMill;
+    }
     
-    /**
-     * called on success.
-     *
-     * @param response
-     */
-    public void onResponse(Response response);
+    public AbstractRequestCallBack() {
+        this(3000L);
+    }
     
-    /**
-     * called on failed.
-     *
-     * @param e exception throwed.
-     */
-    public void onException(Throwable e);
-    
+    @Override
+    public long getTimeout() {
+        return timeoutMills;
+    }
 }

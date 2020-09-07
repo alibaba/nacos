@@ -18,25 +18,15 @@ package com.alibaba.nacos.client.config.listener.impl;
 
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
-import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
-
-import static org.mockito.Mockito.mock;
 
 public class ClientWorkerTest {
     
@@ -52,37 +42,6 @@ public class ClientWorkerTest {
     private final String group = "group";
     
     private final String currentLongingTaskCount = "currentLongingTaskCount";
-    
-    @Before
-    public void init() {
-        MockitoAnnotations.initMocks(this);
-        clientWorker = new ClientWorker(mock(MetricsHttpAgent.class), mock(ConfigFilterChainManager.class),
-                mock(Properties.class));
-        try {
-            Field executorServiceField = clientWorker.getClass().getDeclaredField("executorService");
-            executorServiceField.setAccessible(true);
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(executorServiceField, executorServiceField.getModifiers() & ~Modifier.FINAL);
-            executorServiceField.set(clientWorker, scheduledExecutorService);
-            Listener listener = new Listener() {
-                @Override
-                public Executor getExecutor() {
-                    return null;
-                }
-                
-                @Override
-                public void receiveConfigInfo(String configInfo) {
-                
-                }
-            };
-            listeners = Arrays.asList(listener);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-    }
     
     @Test
     public void testAddLongPollNumberThreads() {

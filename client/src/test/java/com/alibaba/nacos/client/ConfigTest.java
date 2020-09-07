@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
+import com.alibaba.nacos.api.remote.AbstractRequestCallBack;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
@@ -34,10 +36,13 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.concurrent.Executor;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
@@ -51,8 +56,8 @@ public class ConfigTest {
     public void before() throws Exception {
         Properties properties = new Properties();
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160..148:8848,127.0.0.1:8848,127.0.0.1:8848");
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848,11.160.144.149:8848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848,11.160.144.149:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
@@ -61,7 +66,10 @@ public class ConfigTest {
     
     @Test
     public void test222() throws Exception {
-        RpcClient client = RpcClientFactory.createClient("1234", ConnectionType.RSOCKET);
+        Map<String, String> labels = new HashMap<String, String>();
+        labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_NODE);
+    
+        RpcClient client = RpcClientFactory.createClient("1234", ConnectionType.RSOCKET, labels);
         client.init(new ServerListFactory() {
             @Override
             public String genNextServer() {
@@ -117,6 +125,62 @@ public class ConfigTest {
         System.out.println("toal cost:" + (end2 - start2));
         
         Thread.sleep(50000000L);
+        
+    }
+    
+    @Test
+    public void test333() throws Exception {
+        Map<String, String> labels = new HashMap<String, String>();
+        labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
+        
+        RpcClient client = RpcClientFactory.createClient("1234", ConnectionType.GRPC, labels);
+        client.init(new ServerListFactory() {
+            @Override
+            public String genNextServer() {
+                return "127.0.0.1:8848";
+            }
+            
+            @Override
+            public String getCurrentServer() {
+                return "127.0.0.1:8848";
+            }
+            
+            @Override
+            public List<String> getServerList() {
+                return Lists.newArrayList("127.0.0.1:8848");
+            }
+            
+        });
+        client.start();
+        
+        ConfigBatchListenRequest syncRequest = new ConfigBatchListenRequest();
+        syncRequest.setListen(true);
+        final String dataId = "xiaochun.xxc";
+        final String group = "xiaochun.xxc";
+        syncRequest.addConfigListenContext(group, dataId, null, null);
+        long start = System.currentTimeMillis();
+        System.out.println("send :" + System.currentTimeMillis());
+        client.asyncRequest(syncRequest, new AbstractRequestCallBack(2001L) {
+            
+            @Override
+            public Executor getExcutor() {
+                return null;
+            }
+            
+            @Override
+            public void onResponse(Response response) {
+                System.out.println("onSuccess:" + response);
+                System.out.println("receive :" + System.currentTimeMillis());
+            }
+            
+            @Override
+            public void onException(Throwable throwable) {
+                System.out.println("onFailure:" + throwable);
+            }
+            
+        });
+        
+        Thread.sleep(10000L);
         
     }
     
@@ -181,8 +245,6 @@ public class ConfigTest {
         final String dataId = "xiaochun.xxc";
         final String group = "xiaochun.xxc";
         final String content = "lessspring-" + System.currentTimeMillis();
-        System.out.println(System.getProperty("nacos.logging.path"));
-        System.out.println(System.getProperty("limitTime"));
         
         Thread th = new Thread(new Runnable() {
             @Override
@@ -192,11 +254,10 @@ public class ConfigTest {
                 int times = 1000;
                 while (times > 0) {
                     try {
-                        configService.publishConfig(dataId + random.nextInt(10), group,
-                                "value" + System.currentTimeMillis());
+                        configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
                         
                         times--;
-                        Thread.sleep(2000L);
+                        Thread.sleep(1000L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -217,9 +278,11 @@ public class ConfigTest {
             }
         };
     
+        configService.addListener(dataId, group, listener);
+        
         for (int i = 0; i < 20; i++) {
             final int ls = i;
-            configService.addListener(dataId + i, group, listener);
+            //configService.addListener(dataId + i, group, listener);
             
         }
     

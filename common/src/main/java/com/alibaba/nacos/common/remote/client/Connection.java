@@ -17,10 +17,10 @@
 package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.google.common.util.concurrent.FutureCallback;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,18 +75,27 @@ public abstract class Connection {
     
     /**
      * send request.
-     *
+     * default time out 3 seconds.
      * @param request request.
      * @return
      */
     public abstract Response request(Request request, RequestMeta requestMeta) throws NacosException;
     
     /**
+     * send request.
+     *
+     * @param request      request.
+     * @param timeoutMills mills of timeouts.
+     * @return
+     */
+    public abstract Response request(Request request, RequestMeta requestMeta, long timeoutMills) throws NacosException;
+    
+    /**
      * send aync request.
      *
      * @param request request.
      */
-    public abstract void asyncRequest(Request request, RequestMeta requestMeta, FutureCallback<Response> callback)
+    public abstract void asyncRequest(Request request, RequestMeta requestMeta, RequestCallBack requestCallBack)
             throws NacosException;
     
     /**

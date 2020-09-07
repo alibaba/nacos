@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.selector.AbstractSelector;
@@ -42,6 +43,8 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -62,7 +65,10 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     public NamingGrpcClientProxy(String namespaceId, ServerListFactory serverListFactory,
             ServiceInfoHolder serviceInfoHolder) throws NacosException {
         this.namespaceId = namespaceId;
-        this.rpcClient = RpcClientFactory.createClient("naming", ConnectionType.GRPC);
+        Map<String, String> labels = new HashMap<String, String>();
+        labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
+        labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
+        this.rpcClient = RpcClientFactory.createClient("naming", ConnectionType.GRPC, labels);
         this.namingGrpcConnectionEventListener = new NamingGrpcConnectionEventListener(this);
         start(serverListFactory, serviceInfoHolder);
     }

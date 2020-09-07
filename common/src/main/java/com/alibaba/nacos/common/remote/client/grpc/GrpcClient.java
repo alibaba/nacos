@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  * @author liuzunfei
  * @version $Id: GrpcClient.java, v 0.1 2020年07月13日 9:16 PM liuzunfei Exp $
  */
-public class GrpcClient extends RpcClient {
+public abstract class GrpcClient extends RpcClient {
     
     static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
     
@@ -101,10 +101,6 @@ public class GrpcClient extends RpcClient {
         }
     }
     
-    @Override
-    public int rpcPortOffset() {
-        return 1000;
-    }
     
     /**
      * Send Heart Beat Request.
@@ -174,6 +170,7 @@ public class GrpcClient extends RpcClient {
     
             @Override
             public void onNext(Payload payload) {
+    
                 LOGGER.debug(" stream server reuqust receive  ,original info :{}", payload.toString());
                 try {
                     final Request request = (Request) GrpcUtils.parse(payload).getBody();

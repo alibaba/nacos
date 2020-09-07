@@ -16,36 +16,27 @@
 
 package com.alibaba.nacos.api.remote;
 
-import com.alibaba.nacos.api.remote.response.Response;
-
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 
 /**
- * future for request.
+ * rpc scheduler executor .
+ *
  * @author liuzunfei
- * @version $Id: RequestFuture.java, v 0.1 2020年09月01日 6:31 PM liuzunfei Exp $
+ * @version $Id: RpcScheduledExecutor.java, v 0.1 2020年09月07日 4:12 PM liuzunfei Exp $
  */
-public interface RequestFuture {
+public class RpcScheduledExecutor extends ScheduledThreadPoolExecutor {
     
-    /**
-     * @return
-     */
-    boolean isDone();
+    public static final RpcScheduledExecutor TIMEOUT_SHEDULER = new RpcScheduledExecutor(
+            "com.alibaba.nacos.remote.TimerScheduler");
     
-    /**
-     * @return
-     * @throws TimeoutException
-     * @throws InterruptedException
-     */
-    Response get() throws TimeoutException, InterruptedException;
-    
-    /**
-     * @param timeout
-     * @return
-     * @throws TimeoutException
-     * @throws RemotingException
-     * @throws InterruptedException
-     */
-    Response get(long timeout) throws TimeoutException, InterruptedException;
+    public RpcScheduledExecutor(final String threadName) {
+        super(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, threadName);
+            }
+        });
+    }
     
 }
