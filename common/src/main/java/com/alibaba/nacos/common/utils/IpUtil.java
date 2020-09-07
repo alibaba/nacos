@@ -38,6 +38,8 @@ public class IpUtil {
     
     public static final String ILLEGAL_IP_PREFIX = "illegal ip: ";
     
+    public static final String IP_PORT_SPLITER = ":";
+    
     private static final String LOCAL_HOST_IP_V4 = "127.0.0.1";
     
     private static final String LOCAL_HOST_IP_V6 = "[::1]";

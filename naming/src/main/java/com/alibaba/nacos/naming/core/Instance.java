@@ -356,8 +356,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
      */
     public void validate() throws NacosException {
         if (onlyContainsDigitAndDot()) {
-            String[] providerAddr = IpUtil.splitIpPortStr(getIp() + ":" + getPort());
-            if (!IpUtil.containsPort(getIp() + ":" + getPort())) {
+            if (!IpUtil.containsPort(getIp() + IpUtil.IP_PORT_SPLITER + getPort())) {
                 throw new NacosException(NacosException.INVALID_PARAM,
                         "instance format invalid: Your IP address is spelled incorrectly");
             }
