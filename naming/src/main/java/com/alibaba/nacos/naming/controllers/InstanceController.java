@@ -441,15 +441,14 @@ public class InstanceController {
     }
     
     private void checkServiceNameFormat(String serviceName) {
-        try {
-            String[] split = serviceName.split(Constants.SERVICE_INFO_SPLITER);
-            String service = split[1];
-            if (StringUtils.isBlank(service)) {
-                throw new IllegalArgumentException("Param 'serviceName' is illegal, service is blank");
-            }
-        } catch (IndexOutOfBoundsException e) {
+        String[] split = serviceName.split(Constants.SERVICE_INFO_SPLITER);
+        if (split.length <= 1) {
             throw new IllegalArgumentException(
                     "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName");
+        }
+        String service = split[1];
+        if (StringUtils.isBlank(service)) {
+            throw new IllegalArgumentException("Param 'serviceName' is illegal, service is blank");
         }
     }
     
