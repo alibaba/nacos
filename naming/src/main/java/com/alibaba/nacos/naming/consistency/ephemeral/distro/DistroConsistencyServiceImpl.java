@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.Objects;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.consistency.DataOperation;
@@ -28,16 +27,10 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKeyTaskFailedHandler;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpDelayTaskProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroDataStorageImpl;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroHttpAgent;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
-import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
-import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -102,20 +95,6 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
         this.distroProtocol = distroProtocol;
-        registerDistroComponent();
-    }
-    
-    private void registerDistroComponent() {
-        DistroComponentHolder componentHolder = ApplicationUtils.getBean(DistroComponentHolder.class);
-        DistroTaskEngineHolder taskEngineHolder = ApplicationUtils.getBean(DistroTaskEngineHolder.class);
-        componentHolder.registerDataStorage(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
-                new DistroDataStorageImpl(dataStore, distroMapper));
-        componentHolder.registerTransportAgent(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, new DistroHttpAgent());
-        componentHolder.registerFailedTaskHandler(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
-                new DistroHttpCombinedKeyTaskFailedHandler(globalConfig, taskEngineHolder));
-        taskEngineHolder.registerNacosTaskProcessor(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
-                new DistroHttpDelayTaskProcessor(globalConfig, taskEngineHolder));
-        componentHolder.registerDataProcessor(this);
     }
     
     @PostConstruct

@@ -33,8 +33,8 @@ public class DistroHttpData extends DistroData {
     
     private Object deserializedContent;
     
-    public DistroHttpData(DistroKey distroKey, byte[] content, Object deserializedContent) {
-        super(distroKey, content);
+    public DistroHttpData(DistroKey distroKey, Object deserializedContent) {
+        super(distroKey, null);
         this.deserializedContent = deserializedContent;
     }
     
