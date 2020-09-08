@@ -17,9 +17,6 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.springframework.util.StringUtils;
@@ -34,8 +31,6 @@ import java.util.Map;
  * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 public class ServerStatusSynchronizer implements Synchronizer {
-    
-    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getAsyncRestTemplate();
     
     @Override
     public void send(final String serverIP, Message msg) {
@@ -54,25 +49,30 @@ public class ServerStatusSynchronizer implements Synchronizer {
             url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/operator/server/status";
         }
-        nacosAsyncRestTemplate.get(url, Header.EMPTY, Query.newInstance().initParams(params), String.class, new Callback<String>() {
-            @Override
-            public void onReceive(RestResult<String> result) {
-                if (!result.ok()) {
-                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}",
-                            serverIP);
+        
+        try {
+            HttpClient.asyncHttpGet(url, null, params, new Callback<String>() {
+                @Override
+                public void onReceive(RestResult<String> result) {
+                    if (!result.ok()) {
+                        Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}",
+                                serverIP);
+                    }
                 }
-            }
+    
+                @Override
+                public void onError(Throwable throwable) {
+                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, throwable);
+                }
+    
+                @Override
+                public void onCancel() {
         
-            @Override
-            public void onError(Throwable throwable) {
-                Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, throwable);
-            }
-        
-            @Override
-            public void onCancel() {
-            
-            }
-        });
+                }
+            });
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, e);
+        }
     }
     
     @Override

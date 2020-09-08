@@ -38,12 +38,17 @@ public class HttpClientConfig {
     /**
      * connTimeToLive.
      */
-    private long connTimeToLive;
+    private final long connTimeToLive;
     
     /**
      * connTimeToLiveTimeUnit.
      */
-    private TimeUnit connTimeToLiveTimeUnit;
+    private final TimeUnit connTimeToLiveTimeUnit;
+    
+    /**
+     * connectionRequestTimeout.
+     */
+    private final int connectionRequestTimeout;
     
     /**
      * max redirect.
@@ -66,11 +71,12 @@ public class HttpClientConfig {
     private final String userAgent;
     
     public HttpClientConfig(int conTimeOutMillis, int readTimeOutMillis, long connTimeToLive, TimeUnit timeUnit,
-            int maxRedirects, int maxConnTotal, int maxConnPerRoute, String userAgent) {
+            int connectionRequestTimeout, int maxRedirects, int maxConnTotal, int maxConnPerRoute, String userAgent) {
         this.conTimeOutMillis = conTimeOutMillis;
         this.readTimeOutMillis = readTimeOutMillis;
         this.connTimeToLive = connTimeToLive;
         this.connTimeToLiveTimeUnit = timeUnit;
+        this.connectionRequestTimeout = connectionRequestTimeout;
         this.maxRedirects = maxRedirects;
         this.maxConnTotal = maxConnTotal;
         this.maxConnPerRoute = maxConnPerRoute;
@@ -89,16 +95,12 @@ public class HttpClientConfig {
         return connTimeToLive;
     }
     
-    public void setConnTimeToLive(long connTimeToLive) {
-        this.connTimeToLive = connTimeToLive;
-    }
-    
     public TimeUnit getConnTimeToLiveTimeUnit() {
         return connTimeToLiveTimeUnit;
     }
     
-    public void setConnTimeToLiveTimeUnit(TimeUnit connTimeToLiveTimeUnit) {
-        this.connTimeToLiveTimeUnit = connTimeToLiveTimeUnit;
+    public int getConnectionRequestTimeout() {
+        return connectionRequestTimeout;
     }
     
     public int getMaxRedirects() {
@@ -131,6 +133,8 @@ public class HttpClientConfig {
         
         private TimeUnit connTimeToLiveTimeUnit = TimeUnit.MILLISECONDS;
         
+        private int connectionRequestTimeout = -1;
+        
         private int maxRedirects = 50;
         
         private int maxConnTotal = 0;
@@ -152,6 +156,11 @@ public class HttpClientConfig {
         public HttpClientConfigBuilder setConnectionTimeToLive(long connTimeToLive, TimeUnit connTimeToLiveTimeUnit) {
             this.connTimeToLive = connTimeToLive;
             this.connTimeToLiveTimeUnit = connTimeToLiveTimeUnit;
+            return this;
+        }
+    
+        public HttpClientConfigBuilder setConnectionRequestTimeout(int connectionRequestTimeout) {
+            this.connectionRequestTimeout = connectionRequestTimeout;
             return this;
         }
         
@@ -177,7 +186,7 @@ public class HttpClientConfig {
         
         public HttpClientConfig build() {
             return new HttpClientConfig(conTimeOutMillis, readTimeOutMillis, connTimeToLive, connTimeToLiveTimeUnit,
-                    maxRedirects, maxConnTotal, maxConnPerRoute, userAgent);
+                    connectionRequestTimeout, maxRedirects, maxConnTotal, maxConnPerRoute, userAgent);
         }
     }
 }

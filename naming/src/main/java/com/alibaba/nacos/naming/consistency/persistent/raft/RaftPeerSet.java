@@ -17,9 +17,6 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -28,7 +25,7 @@ import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.misc.HttpClientManager;
+import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import org.apache.commons.collections.SortedBag;
@@ -56,8 +53,6 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 @DependsOn("ProtocolManager")
 public class RaftPeerSet extends MemberChangeListener {
-    
-    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientManager.getAsyncRestTemplate();
     
     private final ServerMemberManager memberManager;
     
@@ -219,26 +214,27 @@ public class RaftPeerSet extends MemberChangeListener {
         }
         
         for (final RaftPeer peer : peers.values()) {
+            Map<String, String> params = new HashMap<>(1);
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
                     String url = RaftCore.buildUrl(peer.ip, RaftCore.API_GET_PEER);
-                    asyncRestTemplate.get(url, Header.EMPTY, Query.EMPTY, String.class, new Callback<String>() {
+                    HttpClient.asyncHttpGet(url, null, params, new Callback<String>() {
                         @Override
                         public void onReceive(RestResult<String> result) {
-                            if (result.ok()) {
-                                update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
-                            } else {
+                            if (!result.ok()) {
                                 Loggers.RAFT
-                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", result.getMessage(),
+                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", result.getCode(),
                                                 peer.ip);
                                 peer.state = RaftPeer.State.FOLLOWER;
+                                return;
                             }
+    
+                            update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
                         }
     
                         @Override
                         public void onError(Throwable throwable) {
-                            peer.state = RaftPeer.State.FOLLOWER;
-                            Loggers.RAFT.error("[NACOS-RAFT] error while getting peer from peer: {}", peer.ip);
+        
                         }
     
                         @Override

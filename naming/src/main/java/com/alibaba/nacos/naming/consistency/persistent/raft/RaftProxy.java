@@ -16,13 +16,9 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.misc.HttpClientManager;
+import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -36,8 +32,6 @@ import java.util.Map;
  */
 @Component
 public class RaftProxy {
-    
-    private final NacosRestTemplate restTemplate = HttpClientManager.getNacosRestTemplate();
     
     /**
      * Proxy get method.
@@ -53,8 +47,8 @@ public class RaftProxy {
             server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
-        RestResult<Object> result = restTemplate
-                .get(url, Header.EMPTY, Query.newInstance().initParams(params), String.class);
+        
+        RestResult<String> result = HttpClient.httpGet(url, null, params);
         if (!result.ok()) {
             throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
@@ -78,13 +72,13 @@ public class RaftProxy {
         RestResult<String> result;
         switch (method) {
             case GET:
-                result = restTemplate.get(url, Header.EMPTY, Query.newInstance().initParams(params), String.class);
+                result = HttpClient.httpGet(url, null, params);
                 break;
             case POST:
-                result = restTemplate.postForm(url, Header.EMPTY, params, String.class);
+                result = HttpClient.httpPost(url, null, params);
                 break;
             case DELETE:
-                result = restTemplate.delete(url, Header.EMPTY, Query.newInstance().initParams(params), String.class);
+                result = HttpClient.httpDelete(url, null, params);
                 break;
             default:
                 throw new RuntimeException("unsupported method:" + method);
@@ -111,11 +105,8 @@ public class RaftProxy {
             server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
-        Header header = Header.newInstance();
-        if (MapUtils.isNotEmpty(headers)) {
-            header.addAll(headers);
-        }
-        RestResult<Object> result = restTemplate.postJson(url, header, content, String.class);
+        
+        RestResult<String> result = HttpClient.httpPostLarge(url, headers, content);
         if (!result.ok()) {
             throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }

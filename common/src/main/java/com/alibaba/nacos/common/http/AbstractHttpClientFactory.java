@@ -80,6 +80,7 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         HttpClientConfig httpClientConfig = buildHttpClientConfig();
         return RequestConfig.custom().setConnectTimeout(httpClientConfig.getConTimeOutMillis())
                 .setSocketTimeout(httpClientConfig.getReadTimeOutMillis())
+                .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout())
                 .setMaxRedirects(httpClientConfig.getMaxRedirects()).build();
     }
     

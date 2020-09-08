@@ -441,7 +441,7 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> exchangeForm(String url, HttpClientConfig config, Header header, Query query,
+    public <T> HttpRestResult<T> exchange(String url, HttpClientConfig config, Header header, Query query,
             Object body, String httpMethod, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header, query, body);
         return execute(url, httpMethod, requestHttpEntity, responseType);

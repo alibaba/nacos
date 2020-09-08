@@ -17,16 +17,12 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.misc.HttpClientManager;
-import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -56,8 +52,6 @@ import java.util.stream.Collectors;
 public class SubscribeManager {
     
     private static final String SUBSCRIBER_ON_SYNC_URL = "/service/subscribers";
-    
-    private final NacosRestTemplate restTemplate = HttpClientManager.getNacosRestTemplate();
     
     @Autowired
     private PushService pushService;
@@ -102,19 +96,16 @@ public class SubscribeManager {
                     subscriberList.addAll(getSubscribersFuzzy(serviceName, namespaceId));
                     continue;
                 }
-                String url = "http://" + server.getAddress() + ApplicationUtils.getContextPath()
-                        + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL;
-                try {
-                    RestResult<String> result = restTemplate
-                            .get(url, Header.EMPTY, Query.newInstance().initParams(paramValues), String.class);
-                    if (result.ok()) {
-                        Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
-                        subscriberList.addAll(subscribers.getSubscribers());
-                    }
-                } catch (Exception e) {
-                    Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
+                
+                RestResult<String> result = HttpClient.httpGet(
+                        "http://" + server.getAddress() + ApplicationUtils.getContextPath()
+                                + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(),
+                        paramValues);
+                
+                if (!result.ok()) {
+                    Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
+                    subscriberList.addAll(subscribers.getSubscribers());
                 }
-               
             }
             return CollectionUtils.isNotEmpty(subscriberList) ? subscriberList.stream()
                     .filter(distinctByKey(Subscriber::toString)).collect(Collectors.toList()) : Collections.EMPTY_LIST;

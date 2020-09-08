@@ -19,15 +19,12 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
-import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -35,7 +32,7 @@ import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.naming.misc.HttpClientManager;
+import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -62,6 +59,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,8 +99,6 @@ public class RaftCore {
     public static final String API_ON_DEL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/datum/commit";
     
     public static final String API_GET_PEER = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/peer";
-    
-    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientManager.getAsyncRestTemplate();
     
     private final ScheduledExecutorService executor = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
@@ -226,30 +222,30 @@ public class RaftCore {
                     continue;
                 }
                 final String url = buildUrl(server, API_ON_PUB);
-                asyncRestTemplate.postJson(url, Header.newInstance().addParam("key", key), content, String.class,
+                HttpClient.asyncHttpPostLarge(url, Arrays.asList("key=" + key), content,
                         new Callback<String>() {
-                            
                             @Override
                             public void onReceive(RestResult<String> result) {
-                                if (result.ok()) {
-                                    latch.countDown();
-                                } else {
+                                if (!result.ok()) {
                                     Loggers.RAFT
                                             .warn("[RAFT] failed to publish data to peer, datumId={}, peer={}, http code={}",
                                                     datum.key, server, result.getCode());
+                                    return;
                                 }
+                                latch.countDown();
                             }
-                            
+    
                             @Override
                             public void onError(Throwable throwable) {
                                 Loggers.RAFT.error("[RAFT] failed to publish data to peer", throwable);
                             }
-                            
+    
                             @Override
                             public void onCancel() {
-                            
+        
                             }
                         });
+                
             }
             
             if (!latch.await(UtilsAndCommons.RAFT_PUBLISH_TIMEOUT, TimeUnit.MILLISECONDS)) {
@@ -294,28 +290,29 @@ public class RaftCore {
             
             for (final String server : peers.allServersWithoutMySelf()) {
                 String url = buildUrl(server, API_ON_DEL);
-                asyncRestTemplate.delete(url, Header.EMPTY, json.toString(), String.class, new Callback<String>() {
+                HttpClient.asyncHttpDeleteLarge(url, null, json.toString(), new Callback<String>() {
                     @Override
                     public void onReceive(RestResult<String> result) {
-                        if (result.ok()) {
-                            RaftPeer local = peers.local();
-                            
-                            local.resetLeaderDue();
-                        } else {
+                        if (!result.ok()) {
                             Loggers.RAFT
                                     .warn("[RAFT] failed to delete data from peer, datumId={}, peer={}, http code={}",
                                             key, server, result.getCode());
+                            return;
                         }
+    
+                        RaftPeer local = peers.local();
+    
+                        local.resetLeaderDue();
                     }
-                    
+    
                     @Override
                     public void onError(Throwable throwable) {
                         Loggers.RAFT.error("[RAFT] failed to delete data from peer", throwable);
                     }
-                    
+    
                     @Override
                     public void onCancel() {
-                    
+        
                     }
                 });
             }
@@ -472,29 +469,31 @@ public class RaftCore {
             for (final String server : peers.allServersWithoutMySelf()) {
                 final String url = buildUrl(server, API_VOTE);
                 try {
-                    asyncRestTemplate.postForm(url, Header.EMPTY, params, String.class, new Callback<String>() {
+                    HttpClient.asyncHttpPost(url, null, params, new Callback<String>() {
                         @Override
                         public void onReceive(RestResult<String> result) {
-                            if (result.ok()) {
-                                
-                                RaftPeer peer = JacksonUtils.toObj(result.getData(), RaftPeer.class);
-                                
-                                Loggers.RAFT.info("received approve from peer: {}", JacksonUtils.toJson(peer));
-                                
-                                peers.decideLeader(peer);
-                            } else {
-                                Loggers.RAFT.error("NACOS-RAFT vote failed: {}, url: {}", result.getMessage(), url);
+                            if (!result.ok()) {
+                                Loggers.RAFT
+                                        .error("NACOS-RAFT vote failed: {}, url: {}", result.getCode(), url);
+                                return;
                             }
+    
+                            RaftPeer peer = JacksonUtils.toObj(result.getData(), RaftPeer.class);
+    
+                            Loggers.RAFT.info("received approve from peer: {}", JacksonUtils.toJson(peer));
+    
+                            peers.decideLeader(peer);
+    
                         }
-                        
+    
                         @Override
                         public void onError(Throwable throwable) {
                             Loggers.RAFT.error("error while sending vote to server: {}", server, throwable);
                         }
-                        
+    
                         @Override
                         public void onCancel() {
-                        
+        
                         }
                     });
                 } catch (Exception e) {
@@ -626,35 +625,33 @@ public class RaftCore {
                     if (Loggers.RAFT.isDebugEnabled()) {
                         Loggers.RAFT.debug("send beat to server " + server);
                     }
-                    asyncRestTemplate.post(url, Header.newInstance(), Query.EMPTY, compressedBytes, String.class,
-                            new Callback<String>() {
-                                @Override
-                                public void onReceive(RestResult<String> result) {
-                                    if (result.ok()) {
-                                        peers.update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
-                                        if (Loggers.RAFT.isDebugEnabled()) {
-                                            Loggers.RAFT.debug("receive beat response from: {}", url);
-                                        }
-                                    } else {
-                                        Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", result.getMessage(),
-                                                server);
-                                        MetricsMonitor.getLeaderSendBeatFailedException().increment();
-                                    }
-                                }
-                                
-                                @Override
-                                public void onError(Throwable throwable) {
-                                    Loggers.RAFT
-                                            .error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server,
-                                                    throwable);
-                                    MetricsMonitor.getLeaderSendBeatFailedException().increment();
-                                }
-                                
-                                @Override
-                                public void onCancel() {
-                                
-                                }
-                            });
+                    HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new Callback<String>() {
+                        @Override
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
+                                Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", result.getCode(),
+                                        server);
+                                MetricsMonitor.getLeaderSendBeatFailedException().increment();
+                                return;
+                            }
+    
+                            peers.update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
+                            if (Loggers.RAFT.isDebugEnabled()) {
+                                Loggers.RAFT.debug("receive beat response from: {}", url);
+                            }
+                        }
+    
+                        @Override
+                        public void onError(Throwable throwable) {
+                            Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server, throwable);
+                            MetricsMonitor.getLeaderSendBeatFailedException().increment();
+                        }
+    
+                        @Override
+                        public void onCancel() {
+        
+                        }
+                    });
                 } catch (Exception e) {
                     Loggers.RAFT.error("error while sending heart-beat to peer: {} {}", server, e);
                     MetricsMonitor.getLeaderSendBeatFailedException().increment();
@@ -772,103 +769,103 @@ public class RaftCore {
                             processedCount, beatDatums.size(), datums.size());
                     
                     // update datum entry
-                    String url = buildUrl(remote.ip, API_GET);
-                    asyncRestTemplate.get(url, Header.EMPTY, Query.newInstance().addParam("keys", keys), String.class,
-                            new Callback<String>() {
-                                @Override
-                                public void onReceive(RestResult<String> result) {
-                                    if (result.ok()) {
-                                        List<JsonNode> datumList = JacksonUtils
-                                                .toObj(result.getData(), new TypeReference<List<JsonNode>>() {
-                                                });
-                                        for (JsonNode datumJson : datumList) {
-                                            Datum newDatum = null;
-                                            OPERATE_LOCK.lock();
-                                            try {
-                                                Datum oldDatum = getDatum(datumJson.get("key").asText());
-                                                
-                                                if (oldDatum != null
-                                                        && datumJson.get("timestamp").asLong() <= oldDatum.timestamp
-                                                        .get()) {
-                                                    Loggers.RAFT
-                                                            .info("[NACOS-RAFT] timestamp is smaller than that of mine, "
-                                                                            + "key: {}, remote: {}, local: {}",
-                                                                    datumJson.get("key").asText(),
-                                                                    datumJson.get("timestamp").asLong(),
-                                                                    oldDatum.timestamp);
-                                                    continue;
-                                                }
-                                                
-                                                if (KeyBuilder.matchServiceMetaKey(datumJson.get("key").asText())) {
-                                                    Datum<Service> serviceDatum = new Datum<>();
-                                                    serviceDatum.key = datumJson.get("key").asText();
-                                                    serviceDatum.timestamp.set(datumJson.get("timestamp").asLong());
-                                                    serviceDatum.value = JacksonUtils
-                                                            .toObj(datumJson.get("value").toString(), Service.class);
-                                                    newDatum = serviceDatum;
-                                                }
-                                                
-                                                if (KeyBuilder.matchInstanceListKey(datumJson.get("key").asText())) {
-                                                    Datum<Instances> instancesDatum = new Datum<>();
-                                                    instancesDatum.key = datumJson.get("key").asText();
-                                                    instancesDatum.timestamp.set(datumJson.get("timestamp").asLong());
-                                                    instancesDatum.value = JacksonUtils
-                                                            .toObj(datumJson.get("value").toString(), Instances.class);
-                                                    newDatum = instancesDatum;
-                                                }
-                                                
-                                                if (newDatum == null || newDatum.value == null) {
-                                                    Loggers.RAFT.error("receive null datum: {}", datumJson);
-                                                    continue;
-                                                }
-                                                
-                                                raftStore.write(newDatum);
-                                                
-                                                datums.put(newDatum.key, newDatum);
-                                                notifier.addTask(newDatum.key, DataOperation.CHANGE);
-                                                
-                                                local.resetLeaderDue();
-                                                
-                                                if (local.term.get() + 100 > remote.term.get()) {
-                                                    getLeader().term.set(remote.term.get());
-                                                    local.term.set(getLeader().term.get());
-                                                } else {
-                                                    local.term.addAndGet(100);
-                                                }
-                                                
-                                                raftStore.updateTerm(local.term.get());
-                                                
-                                                Loggers.RAFT
-                                                        .info("data updated, key: {}, timestamp: {}, from {}, local term: {}",
-                                                                newDatum.key, newDatum.timestamp,
-                                                                JacksonUtils.toJson(remote), local.term);
-                                                
-                                            } catch (Throwable e) {
-                                                Loggers.RAFT
-                                                        .error("[RAFT-BEAT] failed to sync datum from leader, datum: {}",
-                                                                newDatum, e);
-                                            } finally {
-                                                OPERATE_LOCK.unlock();
-                                            }
-                                        }
-                                        try {
-                                            TimeUnit.MILLISECONDS.sleep(200);
-                                        } catch (InterruptedException e) {
-                                            Loggers.RAFT.error("[RAFT-BEAT] Interrupted error ", e);
-                                        }
+                    String url = buildUrl(remote.ip, API_GET) + "?keys=" + URLEncoder.encode(keys, "UTF-8");
+                    HttpClient.asyncHttpGet(url, null, null, new Callback<String>() {
+                        @Override
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
+                                return;
+                            }
+    
+                            List<JsonNode> datumList = JacksonUtils
+                                    .toObj(result.getData(), new TypeReference<List<JsonNode>>() {
+                                    });
+    
+                            for (JsonNode datumJson : datumList) {
+                                Datum newDatum = null;
+                                OPERATE_LOCK.lock();
+                                try {
+            
+                                    Datum oldDatum = getDatum(datumJson.get("key").asText());
+            
+                                    if (oldDatum != null && datumJson.get("timestamp").asLong() <= oldDatum.timestamp
+                                            .get()) {
+                                        Loggers.RAFT
+                                                .info("[NACOS-RAFT] timestamp is smaller than that of mine, key: {}, remote: {}, local: {}",
+                                                        datumJson.get("key").asText(),
+                                                        datumJson.get("timestamp").asLong(), oldDatum.timestamp);
+                                        continue;
                                     }
+            
+                                    if (KeyBuilder.matchServiceMetaKey(datumJson.get("key").asText())) {
+                                        Datum<Service> serviceDatum = new Datum<>();
+                                        serviceDatum.key = datumJson.get("key").asText();
+                                        serviceDatum.timestamp.set(datumJson.get("timestamp").asLong());
+                                        serviceDatum.value = JacksonUtils
+                                                .toObj(datumJson.get("value").toString(), Service.class);
+                                        newDatum = serviceDatum;
+                                    }
+            
+                                    if (KeyBuilder.matchInstanceListKey(datumJson.get("key").asText())) {
+                                        Datum<Instances> instancesDatum = new Datum<>();
+                                        instancesDatum.key = datumJson.get("key").asText();
+                                        instancesDatum.timestamp.set(datumJson.get("timestamp").asLong());
+                                        instancesDatum.value = JacksonUtils
+                                                .toObj(datumJson.get("value").toString(), Instances.class);
+                                        newDatum = instancesDatum;
+                                    }
+            
+                                    if (newDatum == null || newDatum.value == null) {
+                                        Loggers.RAFT.error("receive null datum: {}", datumJson);
+                                        continue;
+                                    }
+            
+                                    raftStore.write(newDatum);
+            
+                                    datums.put(newDatum.key, newDatum);
+                                    notifier.addTask(newDatum.key, DataOperation.CHANGE);
+            
+                                    local.resetLeaderDue();
+            
+                                    if (local.term.get() + 100 > remote.term.get()) {
+                                        getLeader().term.set(remote.term.get());
+                                        local.term.set(getLeader().term.get());
+                                    } else {
+                                        local.term.addAndGet(100);
+                                    }
+            
+                                    raftStore.updateTerm(local.term.get());
+            
+                                    Loggers.RAFT.info("data updated, key: {}, timestamp: {}, from {}, local term: {}",
+                                            newDatum.key, newDatum.timestamp, JacksonUtils.toJson(remote), local.term);
+            
+                                } catch (Throwable e) {
+                                    Loggers.RAFT
+                                            .error("[RAFT-BEAT] failed to sync datum from leader, datum: {}", newDatum,
+                                                    e);
+                                } finally {
+                                    OPERATE_LOCK.unlock();
                                 }
-                                
-                                @Override
-                                public void onError(Throwable throwable) {
-                                    Loggers.RAFT.error("[RAFT-BEAT] failed to sync datum from leader", throwable);
-                                }
-                                
-                                @Override
-                                public void onCancel() {
-                                
-                                }
-                            });
+                            }
+                            try {
+                                TimeUnit.MILLISECONDS.sleep(200);
+                            } catch (InterruptedException e) {
+                                Loggers.RAFT.error("[RAFT-BEAT] Interrupted error ", e);
+                            }
+                            return;
+                        }
+    
+                        @Override
+                        public void onError(Throwable throwable) {
+                            Loggers.RAFT.error("[RAFT-BEAT] failed to sync datum from leader", throwable);
+                        }
+    
+                        @Override
+                        public void onCancel() {
+        
+                        }
+                        
+                    });
                     
                     batch.clear();
                     

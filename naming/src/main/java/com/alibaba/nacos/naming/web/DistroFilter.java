@@ -19,11 +19,6 @@ package com.alibaba.nacos.naming.web;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.http.HttpClientConfig;
-import com.alibaba.nacos.common.http.HttpUtils;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -33,7 +28,7 @@ import com.alibaba.nacos.core.utils.ReuseHttpRequest;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.misc.HttpClientManager;
+import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.codec.Charsets;
@@ -52,7 +47,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.security.AccessControlException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -65,8 +62,6 @@ public class DistroFilter implements Filter {
     private static final int PROXY_CONNECT_TIMEOUT = 2000;
     
     private static final int PROXY_READ_TIMEOUT = 2000;
-    
-    private final NacosRestTemplate nacosRestTemplate = HttpClientManager.getNacosRestTemplate();
     
     @Autowired
     private DistroMapper distroMapper;
@@ -134,23 +129,23 @@ public class DistroFilter implements Filter {
                 
                 final String targetServer = distroMapper.mapSrv(groupedServiceName);
                 
-                Header header = Header.newInstance();
+                List<String> headerList = new ArrayList<>(16);
                 Enumeration<String> headers = req.getHeaderNames();
                 while (headers.hasMoreElements()) {
                     String headerName = headers.nextElement();
-                    header.addParam(headerName, req.getHeader(headerName));
+                    headerList.add(headerName);
+                    headerList.add(req.getHeader(headerName));
                 }
                 
                 final String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
-                final Map<String, String> paramsValue = HttpUtils.translateParameterMap(req.getParameterMap());
-                HttpClientConfig httpConfig = HttpClientConfig.builder().setReadTimeOutMillis(PROXY_READ_TIMEOUT)
-                        .setConTimeOutMillis(PROXY_CONNECT_TIMEOUT).build();
+                final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
                 
-                RestResult<String> result = nacosRestTemplate.exchangeForm("http://" + targetServer + req.getRequestURI(), httpConfig, header,
-                        Query.newInstance().initParams(paramsValue), body,  req.getMethod(), String.class);
-                String resultData = result.ok() ? result.getData() : result.getMessage();
+                RestResult<String> result = HttpClient
+                        .request("http://" + targetServer + req.getRequestURI(), headerList, paramsValue, body,
+                                PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
+                String data = result.ok() ? result.getData() : result.getMessage();
                 try {
-                    WebUtils.response(resp, resultData, result.getCode());
+                    WebUtils.response(resp, data, result.getCode());
                 } catch (Exception ignore) {
                     Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(groupedServiceName)
                             + urlString);
