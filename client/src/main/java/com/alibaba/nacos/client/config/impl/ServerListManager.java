@@ -90,7 +90,7 @@ public class ServerListManager implements Closeable {
         for (String serverAddr : fixed) {
             String[] serverAddrArr = IpUtil.splitIpPortStr(serverAddr);
             if (serverAddrArr.length == 1) {
-                serverAddrs.add(serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                serverAddrs.add(serverAddrArr[0] + IpUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
             } else {
                 serverAddrs.add(serverAddr);
             }
@@ -159,7 +159,8 @@ public class ServerListManager implements Closeable {
                 } else {
                     String[] serverAddrArr = IpUtil.splitIpPortStr(serverAddr);
                     if (serverAddrArr.length == 1) {
-                        serverAddrs.add(HTTP + serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                        serverAddrs.add(HTTP + serverAddrArr[0] + IpUtil.IP_PORT_SPLITER + ParamUtil
+                                .getDefaultServerPort());
                     } else {
                         serverAddrs.add(HTTP + serverAddr);
                     }
@@ -359,7 +360,7 @@ public class ServerListManager implements Closeable {
                         String[] ipPort = IpUtil.splitIpPortStr(serverAddr.trim());
                         String ip = ipPort[0].trim();
                         if (ipPort.length == 1) {
-                            result.add(ip + ":" + ParamUtil.getDefaultServerPort());
+                            result.add(ip + IpUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
                         } else {
                             result.add(serverAddr);
                         }

@@ -939,7 +939,7 @@ public class RaftCore {
      */
     public static String buildUrl(String ip, String api) {
         if (!IpUtil.containsPort(ip)) {
-            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+            ip = ip + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         return "http://" + ip + ApplicationUtils.getContextPath() + api;
     }

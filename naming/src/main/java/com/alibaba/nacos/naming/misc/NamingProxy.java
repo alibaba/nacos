@@ -200,7 +200,7 @@ public class NamingProxy {
             HttpClient.HttpResult result;
             
             if (!IpUtil.containsPort(curServer)) {
-                curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+                curServer = curServer + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
             }
             
             result = HttpClient.httpGet("http://" + curServer + api, headers, params);
@@ -242,7 +242,7 @@ public class NamingProxy {
             HttpClient.HttpResult result;
             
             if (!IpUtil.containsPort(curServer)) {
-                curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+                curServer = curServer + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
             }
             
             if (isPost) {
@@ -292,7 +292,7 @@ public class NamingProxy {
             HttpClient.HttpResult result;
             
             if (!IpUtil.containsPort(curServer)) {
-                curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+                curServer = curServer + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
             }
             
             if (isPost) {

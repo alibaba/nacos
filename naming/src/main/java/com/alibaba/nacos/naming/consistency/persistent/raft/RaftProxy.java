@@ -45,7 +45,7 @@ public class RaftProxy {
     public void proxyGet(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
         if (!IpUtil.containsPort(server)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+            server = server + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         
@@ -67,7 +67,7 @@ public class RaftProxy {
     public void proxy(String server, String api, Map<String, String> params, HttpMethod method) throws Exception {
         // do proxy
         if (!IpUtil.containsPort(server)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+            server = server + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         HttpClient.HttpResult result;
@@ -103,7 +103,7 @@ public class RaftProxy {
             throws Exception {
         // do proxy
         if (!IpUtil.containsPort(server)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+            server = server + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         

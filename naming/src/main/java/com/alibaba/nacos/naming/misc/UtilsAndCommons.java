@@ -95,8 +95,6 @@ public class UtilsAndCommons {
     
     public static final String CACHE_KEY_SPLITER = "@@@@";
     
-    public static final String IP_PORT_SPLITER = ":";
-    
     public static final int MAX_PUBLISH_WAIT_TIME_MILLIS = 5000;
     
     public static final String VERSION_STRING_SYNTAX = "[0-9]+\\.[0-9]+\\.[0-9]+";
