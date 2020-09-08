@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationService;
+import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
 
@@ -41,10 +41,10 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     
     private final ServiceStorage serviceStorage;
     
-    private final EphemeralClientOperationService clientOperationService;
+    private final EphemeralClientOperationServiceImpl clientOperationService;
     
     public SubscribeServiceRequestHandler(ServiceStorage serviceStorage,
-            EphemeralClientOperationService clientOperationService) {
+            EphemeralClientOperationServiceImpl clientOperationService) {
         this.serviceStorage = serviceStorage;
         this.clientOperationService = clientOperationService;
     }

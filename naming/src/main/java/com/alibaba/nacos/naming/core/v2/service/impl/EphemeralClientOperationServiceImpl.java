@@ -36,11 +36,11 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component("ephemeralClientOperationService")
-public class EphemeralClientOperationService implements ClientOperationService {
+public class EphemeralClientOperationServiceImpl implements ClientOperationService {
     
     private final ConnectionBasedClientManager connectionBasedClientManager;
     
-    public EphemeralClientOperationService(ConnectionBasedClientManager connectionBasedClientManager) {
+    public EphemeralClientOperationServiceImpl(ConnectionBasedClientManager connectionBasedClientManager) {
         this.connectionBasedClientManager = connectionBasedClientManager;
     }
     
