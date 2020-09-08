@@ -38,6 +38,7 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
+import com.alibaba.nacos.naming.web.DistroFilter;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -440,15 +441,19 @@ public class InstanceController {
         return result;
     }
     
-    private void checkServiceNameFormat(String serviceName) {
-        String[] split = serviceName.split(Constants.SERVICE_INFO_SPLITER);
+    /**
+     * check combineServiceName format, the serviceName can't be blank. some relational logic in {@link
+     * DistroFilter#doFilter}, it will handle combineServiceName in some case, you should know it
+     *
+     * @param combineServiceName such as: groupName@@serviceName
+     */
+    private void checkServiceNameFormat(String combineServiceName) {
+        String[] split = combineServiceName.split(Constants.SERVICE_INFO_SPLITER);
+        //namingService.registerInstance("", "", instance); the length = 0
+        //namingService.registerInstance("", "DEFAULT_GROUP", instance); the length = 1
         if (split.length <= 1) {
             throw new IllegalArgumentException(
                     "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName");
-        }
-        String service = split[1];
-        if (StringUtils.isBlank(service)) {
-            throw new IllegalArgumentException("Param 'serviceName' is illegal, service is blank");
         }
     }
     
