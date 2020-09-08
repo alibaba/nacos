@@ -442,15 +442,19 @@ public class InstanceController {
     }
     
     /**
-     * check combineServiceName format, the serviceName can't be blank. some relational logic in {@link
-     * DistroFilter#doFilter}, it will handle combineServiceName in some case, you should know it
+     * check combineServiceName format. the serviceName can't be blank. some relational logic in {@link
+     * DistroFilter#doFilter}, it will handle combineServiceName in some case, you should know it.
+     * <pre>
+     * serviceName = "@@"; the length = 0; illegal
+     * serviceName = "group@@"; the length = 1; illegal
+     * serviceName = "@@serviceName"; the length = 2; legal
+     * serviceName = "group@@serviceName"; the length = 2; legal
+     * </pre>
      *
      * @param combineServiceName such as: groupName@@serviceName
      */
     private void checkServiceNameFormat(String combineServiceName) {
         String[] split = combineServiceName.split(Constants.SERVICE_INFO_SPLITER);
-        //namingService.registerInstance("", "", instance); the length = 0
-        //namingService.registerInstance("", "DEFAULT_GROUP", instance); the length = 1
         if (split.length <= 1) {
             throw new IllegalArgumentException(
                     "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName");
