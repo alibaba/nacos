@@ -20,15 +20,14 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.naming.core.ServiceInfoGenerator;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationService;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.RemotePushService;
-import com.alibaba.nacos.naming.remote.RemotingConnectionHolder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,38 +39,30 @@ import org.springframework.stereotype.Component;
 @Component
 public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServiceRequest, SubscribeServiceResponse> {
     
-    private final ServiceInfoGenerator serviceInfoGenerator;
+    private final ServiceStorage serviceStorage;
     
-    private final RemotePushService remotePushService;
+    private final EphemeralClientOperationService clientOperationService;
     
-    private final RemotingConnectionHolder remotingConnectionHolder;
-    
-    public SubscribeServiceRequestHandler(ServiceInfoGenerator serviceInfoGenerator,
-            RemotePushService remotePushService, RemotingConnectionHolder remotingConnectionHolder) {
-        this.serviceInfoGenerator = serviceInfoGenerator;
-        this.remotePushService = remotePushService;
-        this.remotingConnectionHolder = remotingConnectionHolder;
+    public SubscribeServiceRequestHandler(ServiceStorage serviceStorage,
+            EphemeralClientOperationService clientOperationService) {
+        this.serviceStorage = serviceStorage;
+        this.clientOperationService = clientOperationService;
     }
     
     @Override
     public SubscribeServiceResponse handle(SubscribeServiceRequest request, RequestMeta meta) throws NacosException {
-        SubscribeServiceRequest subscribeServiceRequest = (SubscribeServiceRequest) request;
-        String namespaceId = subscribeServiceRequest.getNamespace();
-        String serviceName = subscribeServiceRequest.getServiceName();
-        String serviceKey = UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName);
-        String connectionId = meta.getConnectionId();
-        ServiceInfo serviceInfo = serviceInfoGenerator
-                .generateServiceInfo(namespaceId, serviceName, StringUtils.EMPTY, false, meta.getClientIp());
-        Subscriber subscriber = new Subscriber(meta.getClientIp(), "", "unknown", meta.getClientIp(), namespaceId,
-                serviceName);
-        if (subscribeServiceRequest.isSubscribe()) {
-            remotePushService.registerSubscribeForService(serviceKey, subscriber, connectionId);
-            remotingConnectionHolder.getRemotingConnection(connectionId)
-                    .addNewSubscriber(namespaceId, serviceName, subscriber);
+        String namespaceId = request.getNamespace();
+        String serviceName = request.getServiceName();
+        String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
+        String groupName = NamingUtils.getGroupName(serviceName);
+        Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup, true);
+        ServiceInfo serviceInfo = serviceStorage.getData(service);
+        Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), "unknown",
+                meta.getClientIp(), namespaceId, serviceName);
+        if (request.isSubscribe()) {
+            clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
         } else {
-            remotePushService.removeSubscribeForService(serviceKey, subscriber);
-            remotingConnectionHolder.getRemotingConnection(connectionId)
-                    .removeSubscriber(namespaceId, serviceName, subscriber);
+            clientOperationService.unsubscribeService(service, subscriber, meta.getConnectionId());
         }
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
     }

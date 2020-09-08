@@ -46,6 +46,11 @@ public abstract class AbstractClient implements Client {
     }
     
     @Override
+    public InstancePublishInfo getInstancePublishInfo(Service service) {
+        return publishers.get(service);
+    }
+    
+    @Override
     public boolean addServiceSubscriber(Service service, Subscriber subscriber) {
         subscribers.put(service, subscriber);
         return true;
@@ -55,5 +60,10 @@ public abstract class AbstractClient implements Client {
     public boolean removeServiceSubscriber(Service service) {
         subscribers.remove(service);
         return true;
+    }
+    
+    @Override
+    public Subscriber getSubscriber(Service service) {
+        return subscribers.get(service);
     }
 }

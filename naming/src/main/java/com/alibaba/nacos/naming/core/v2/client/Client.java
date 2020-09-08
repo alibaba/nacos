@@ -47,7 +47,7 @@ public interface Client {
     /**
      * Add a new instance for service for current client.
      *
-     * @param service  publish service
+     * @param service             publish service
      * @param instancePublishInfo instance
      * @return true if add successfully, otherwise false
      */
@@ -60,6 +60,14 @@ public interface Client {
      * @return true if remove successfully, otherwise false
      */
     boolean removeServiceInstance(Service service);
+    
+    /**
+     * Get instance info of service from client.
+     *
+     * @param service service of instance
+     * @return instance info
+     */
+    InstancePublishInfo getInstancePublishInfo(Service service);
     
     /**
      * Add a new subscriber for target service.
@@ -77,4 +85,12 @@ public interface Client {
      * @return true if remove successfully, otherwise false
      */
     boolean removeServiceSubscriber(Service service);
+    
+    /**
+     * Get subscriber of service from client.
+     *
+     * @param service service of subscriber
+     * @return subscriber
+     */
+    Subscriber getSubscriber(Service service);
 }

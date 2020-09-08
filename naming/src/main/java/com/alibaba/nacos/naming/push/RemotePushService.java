@@ -18,17 +18,23 @@ package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RpcPushService;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceInfoGenerator;
+import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
+import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
+import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -39,11 +45,15 @@ import java.util.concurrent.ConcurrentMap;
  * @author xiweng.yy
  */
 @Component
-public class RemotePushService implements ApplicationListener<ServiceChangeEvent> {
-    
-    private final ServiceInfoGenerator serviceInfoGenerator;
+public class RemotePushService extends SmartSubscriber {
     
     private final RpcPushService notifier;
+    
+    private final ConnectionBasedClientManager clientManager;
+    
+    private final ClientServiceIndexesManager indexesManager;
+    
+    private final ServiceStorage serviceStorage;
     
     /**
      * ServiceKey --> actual Subscriber. The Subscriber may be only subscribe part of cluster of service.
@@ -52,9 +62,12 @@ public class RemotePushService implements ApplicationListener<ServiceChangeEvent
     
     private final ConcurrentMap<Subscriber, String> subscribeConnectionMap = new ConcurrentHashMap<>();
     
-    public RemotePushService(ServiceInfoGenerator serviceInfoGenerator, RpcPushService notifier) {
-        this.serviceInfoGenerator = serviceInfoGenerator;
+    public RemotePushService(RpcPushService notifier, ConnectionBasedClientManager clientManager,
+            ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage) {
         this.notifier = notifier;
+        this.clientManager = clientManager;
+        this.indexesManager = indexesManager;
+        this.serviceStorage = serviceStorage;
     }
     
     /**
@@ -101,22 +114,33 @@ public class RemotePushService implements ApplicationListener<ServiceChangeEvent
     }
     
     public Set<Subscriber> getSubscribes(String namespaceId, String serviceName) {
-        return getSubscribes(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+        String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
+        String groupName = NamingUtils.getGroupName(serviceName);
+        Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup, true);
+        return getSubscribes(service);
     }
     
-    public Set<Subscriber> getSubscribes(String serviceKey) {
-        return serviceSubscribesMap.getOrDefault(serviceKey, new HashSet<>());
+    public Set<Subscriber> getSubscribes(Service service) {
+        Set<Subscriber> result = new HashSet<>();
+        for (String each : indexesManager.getAllClientsRegisteredService(service)) {
+            result.add(clientManager.getClient(each).getSubscriber(service));
+        }
+        return result;
     }
     
     @Override
-    public void onApplicationEvent(ServiceChangeEvent serviceChangeEvent) {
-        Service service = serviceChangeEvent.getService();
-        String serviceKey = UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName());
-        ServiceInfo serviceInfo = serviceInfoGenerator
-                .generateServiceInfo(service, StringUtils.EMPTY, false, StringUtils.EMPTY);
-        for (Subscriber each : serviceSubscribesMap.getOrDefault(serviceKey, new HashSet<>())) {
-            notifier.pushWithoutAck(subscribeConnectionMap.get(each),
-                    NotifySubscriberRequest.buildSuccessResponse(serviceInfo));
+    public List<Class<? extends Event>> subscribeTypes() {
+        return Collections.singletonList(ServiceEvent.ServiceChangedEvent.class);
+    }
+    
+    @Override
+    public void onEvent(Event event) {
+        // TODO delay & merge push task, and dispatch push task to execute async
+        ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
+        com.alibaba.nacos.naming.core.v2.pojo.Service service = serviceChangedEvent.getService();
+        ServiceInfo serviceInfo = serviceStorage.getPushData(service);
+        for (String each : indexesManager.getAllClientsSubscribeService(service)) {
+            notifier.pushWithoutAck(each, NotifySubscriberRequest.buildSuccessResponse(serviceInfo));
         }
     }
 }
