@@ -40,13 +40,13 @@ public class IpUtil {
     
     public static final String IP_PORT_SPLITER = ":";
     
+    public static final int SPLIT_IP_PORT_RESULT_LENGTH = 2;
+    
     private static final String LOCAL_HOST_IP_V4 = "127.0.0.1";
     
     private static final String LOCAL_HOST_IP_V6 = "[::1]";
     
     private static Pattern ipv4Pattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
-    
-    private static final int SPLIT_IP_PORT_RESULT_LENGTH = 2;
     
     private static final int IPV4_ADDRESS_LENGTH = 4;
     

@@ -123,7 +123,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
         
         int port = 0;
-        if (NumberUtils.isNumber(providerAddr[1])) {
+        if (providerAddr.length == IpUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils.isNumber(providerAddr[1])) {
             port = Integer.parseInt(providerAddr[1]);
         }
         
