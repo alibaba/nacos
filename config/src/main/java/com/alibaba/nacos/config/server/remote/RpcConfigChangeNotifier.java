@@ -38,9 +38,7 @@ import org.springframework.stereotype.Component;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -51,9 +49,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
-    
-    private ThreadPoolExecutor retryPushexecutors = new ThreadPoolExecutor(15, 30, 5, TimeUnit.SECONDS,
-            new ArrayBlockingQueue<Runnable>(1000000), new ThreadPoolExecutor.AbortPolicy());
     
     private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 100,

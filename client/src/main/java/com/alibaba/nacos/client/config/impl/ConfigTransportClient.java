@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
  * @author liuzunfei
  * @version $Id: ConfigTransportClient.java, v 0.1 2020年08月24日 2:01 PM liuzunfei Exp $
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ConfigTransportClient {
     
     private static final Logger LOGGER = LogUtils.logger(ConfigTransportClient.class);
@@ -82,7 +83,8 @@ public abstract class ConfigTransportClient {
         } else {
             this.encode = encodeTmp.trim();
         }
-        this.tenant = tenant;
+    
+        this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
         this.securityProxy = new SecurityProxy(properties,
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
@@ -92,12 +94,12 @@ public abstract class ConfigTransportClient {
     /**
      * Spas-SecurityToken/Spas-AccessKey.
      *
-     * @return
-     * @throws Exception
+     * @return spas headers map.
+     * @throws Exception exeption may throw.
      */
     protected Map<String, String> getSpasHeaders() throws Exception {
-        
-        Map<String, String> spasHeaders = new HashMap<String, String>();
+    
+        Map<String, String> spasHeaders = new HashMap<String, String>(2);
         
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
         if (StsConfig.getInstance().isStsOn()) {
@@ -121,11 +123,8 @@ public abstract class ConfigTransportClient {
         if (StringUtils.isBlank(securityProxy.getAccessToken())) {
             return null;
         }
-        Map<String, String> spasHeaders = new HashMap<String, String>();
+        Map<String, String> spasHeaders = new HashMap<String, String>(2);
         spasHeaders.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
-        //TODO        if (StringUtils.isNotBlank(namespaceId) && !params.containsKey(SpasAdapter.TENANT_KEY)) {
-        //            params.put(SpasAdapter.TENANT_KEY, namespaceId);
-        //        }
         return spasHeaders;
     }
     
@@ -135,7 +134,7 @@ public abstract class ConfigTransportClient {
      * @return
      */
     protected Map<String, String> getCommonHeader() {
-        Map<String, String> headers = new HashMap<String, String>();
+        Map<String, String> headers = new HashMap<String, String>(16);
         
         String ts = String.valueOf(System.currentTimeMillis());
         String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), Constants.ENCODE);
@@ -229,28 +228,36 @@ public abstract class ConfigTransportClient {
     }
     
     /**
-     * start client.
+     * base start client.
      */
     public void start() throws NacosException {
-        
-        securityProxy.login(serverListManager.getServerUrls());
-        
-        this.executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                securityProxy.login(serverListManager.getServerUrls());
-            }
-        }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
     
+        if (securityProxy.isEnabled()) {
+            securityProxy.login(serverListManager.getServerUrls());
+        
+            this.executor.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    securityProxy.login(serverListManager.getServerUrls());
+                }
+            }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+        
+        }
+        
         startIntenal();
     }
     
+    /**
+     * start client inner.
+     *
+     * @throws NacosException exception may throw.
+     */
     public abstract void startIntenal() throws NacosException;
     
     /**
      * get client name.
      *
-     * @return
+     * @return name.
      */
     public abstract String getName();
     
@@ -295,10 +302,11 @@ public abstract class ConfigTransportClient {
     /**
      * query config.
      *
-     * @param dataId dataId
-     * @param group  group
-     * @param tenat  tenat
-     * @return ConfigQueryResponse.
+     * @param dataId      dataId.
+     * @param group       group.
+     * @param tenat       tenat.
+     * @param readTimeous readTimeous.
+     * @return content.
      * @throws NacosException throw where query fail .
      */
     public abstract String[] queryConfig(String dataId, String group, String tenat, long readTimeous)
@@ -307,10 +315,14 @@ public abstract class ConfigTransportClient {
     /**
      * publish config.
      *
-     * @param dataId dataId
-     * @param group  group
-     * @param tenant tenant
-     * @return push  result.
+     * @param dataId  dataId.
+     * @param group   group.
+     * @param tenant  tenant.
+     * @param appName appName.
+     * @param tag     tag.
+     * @param betaIps betaIps.
+     * @param content content.
+     * @return success or not.
      * @throws NacosException throw where publish fail.
      */
     public abstract boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
@@ -319,10 +331,11 @@ public abstract class ConfigTransportClient {
     /**
      * remove config.
      *
-     * @param dataid dataid
-     * @param group  group
-     * @param tenat  tenat
-     * @return response.
+     * @param dataid dataid.
+     * @param group  group.
+     * @param tenat  tenat.
+     * @param tag    tag.
+     * @return success or not.
      * @throws NacosException throw where publish fail.
      */
     public abstract boolean removeConfig(String dataid, String group, String tenat, String tag) throws NacosException;

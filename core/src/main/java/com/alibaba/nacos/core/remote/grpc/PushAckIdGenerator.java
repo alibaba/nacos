@@ -28,11 +28,13 @@ public class PushAckIdGenerator {
     
     private static AtomicLong id = new AtomicLong(0L);
     
+    private static final int ID_PREV_REGEN_OFFSET = 1000;
+    
     /**
      * get server push id.
      */
     public static long getNextId() {
-        if (id.longValue() > Long.MAX_VALUE - 1000) {
+        if (id.longValue() > Long.MAX_VALUE - ID_PREV_REGEN_OFFSET) {
             id.getAndSet(0L);
         }
         return id.incrementAndGet();

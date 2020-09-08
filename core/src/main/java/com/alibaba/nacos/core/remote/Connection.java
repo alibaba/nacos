@@ -44,14 +44,18 @@ public abstract class Connection {
     /**
      * Send response to this client that associated to this connection.
      *
-     * @param request request
+     * @param request request.
+     * @param timeoutMills timeoutMills.
+     * @return Response resonse.
+     * @throws NacosException exception may throw.
      */
     public abstract Response sendRequest(Request request, long timeoutMills) throws NacosException;
     
     /**
      * Send response to this client that associated to this connection.
      *
-     * @param request request
+     * @param request request.
+     * @throws NacosException exception may throw.
      */
     public abstract void sendRequestNoAck(Request request) throws NacosException;
     
@@ -59,6 +63,8 @@ public abstract class Connection {
      * Send response to this client that associated to this connection.
      *
      * @param request request.
+     * @return future of request.
+     * @throws NacosException exception may throw.
      */
     public abstract RequestFuture sendRequestWithFuture(Request request) throws NacosException;
     
@@ -66,6 +72,8 @@ public abstract class Connection {
      * Send response to this client that associated to this connection.
      *
      * @param request request.
+     * @param callBack call back.
+     * @throws NacosException exception may throw.
      */
     public abstract void sendRequestWithCallBack(Request request, RequestCallBack callBack)
             throws NacosException;

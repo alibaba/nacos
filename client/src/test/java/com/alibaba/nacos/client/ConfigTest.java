@@ -22,8 +22,8 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
-import com.alibaba.nacos.api.remote.AbstractRequestCallBack;
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.concurrent.Executor;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
@@ -132,8 +131,8 @@ public class ConfigTest {
     public void test333() throws Exception {
         Map<String, String> labels = new HashMap<String, String>();
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
-        
-        RpcClient client = RpcClientFactory.createClient("1234", ConnectionType.GRPC, labels);
+    
+        RpcClient client = RpcClientFactory.createClient("1234", ConnectionType.RSOCKET, labels);
         client.init(new ServerListFactory() {
             @Override
             public String genNextServer() {
@@ -160,25 +159,16 @@ public class ConfigTest {
         syncRequest.addConfigListenContext(group, dataId, null, null);
         long start = System.currentTimeMillis();
         System.out.println("send :" + System.currentTimeMillis());
-        client.asyncRequest(syncRequest, new AbstractRequestCallBack(2001L) {
-            
-            @Override
-            public Executor getExcutor() {
-                return null;
+    
+        RequestFuture requestFuture = client.requestFuture(syncRequest);
+        while (true) {
+            Thread.sleep(1L);
+            System.out.println(requestFuture.isDone());
+            if (requestFuture.isDone()) {
+                System.out.println(requestFuture.get());
+                break;
             }
-            
-            @Override
-            public void onResponse(Response response) {
-                System.out.println("onSuccess:" + response);
-                System.out.println("receive :" + System.currentTimeMillis());
-            }
-            
-            @Override
-            public void onException(Throwable throwable) {
-                System.out.println("onFailure:" + throwable);
-            }
-            
-        });
+        }
         
         Thread.sleep(10000L);
         
@@ -257,7 +247,7 @@ public class ConfigTest {
                         configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
                         
                         times--;
-                        Thread.sleep(1000L);
+                        Thread.sleep(500L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

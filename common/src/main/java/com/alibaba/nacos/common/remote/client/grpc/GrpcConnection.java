@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.grpc.auto.RequestStreamGrpc;
 import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.RequestFuture;
+import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -36,8 +38,7 @@ import io.grpc.stub.StreamObserver;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -48,12 +49,6 @@ import java.util.concurrent.TimeoutException;
  * @version $Id: GrpcConnection.java, v 0.1 2020年08月09日 1:36 PM liuzunfei Exp $
  */
 public class GrpcConnection extends Connection {
-    
-    /**
-     * executor to execute future request.
-     */
-    static ScheduledExecutorService aynsRequestExecutor = Executors
-            .newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
     
     /**
      * grpc channel.
@@ -99,6 +94,47 @@ public class GrpcConnection extends Connection {
         return response;
     }
     
+    @Override
+    public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException {
+        Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
+        
+        final ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
+        return new RequestFuture() {
+            
+            @Override
+            public boolean isDone() {
+                return requestFuture.isDone();
+            }
+            
+            @Override
+            public Response get() throws InterruptedException, ExecutionException {
+                Payload grpcResponse = null;
+                try {
+                    grpcResponse = requestFuture.get();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+                
+                Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
+                return response;
+            }
+            
+            @Override
+            public Response get(long timeout) throws TimeoutException, InterruptedException, ExecutionException {
+                Payload grpcResponse = null;
+                try {
+                    grpcResponse = requestFuture.get(timeout, TimeUnit.MILLISECONDS);
+                } catch (TimeoutException e) {
+                    throw e;
+                } catch (ExecutionException e) {
+                    throw e;
+                }
+                Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
+                return response;
+            }
+        };
+    }
     
     public void sendResponse(Response response) {
         Payload convert = GrpcUtils.convert(response);
@@ -139,10 +175,11 @@ public class GrpcConnection extends Connection {
                     requestCallBack.onException(throwable);
                 }
             }
-        }, aynsRequestExecutor);
+        }, RpcScheduledExecutor.AYNS_REQUEST_EXECUTOR);
         // set timeout future.
         ListenableFuture<Payload> payloadListenableFuture = Futures
-                .withTimeout(requestFuture, requestCallBack.getTimeout(), TimeUnit.MILLISECONDS, aynsRequestExecutor);
+                .withTimeout(requestFuture, requestCallBack.getTimeout(), TimeUnit.MILLISECONDS,
+                        RpcScheduledExecutor.TIMEOUT_SHEDULER);
         
     }
     

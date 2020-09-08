@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -54,6 +56,7 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
  * @author liuzunfei
  * @version $Id: RpcClient.java, v 0.1 2020年07月13日 9:15 PM liuzunfei Exp $
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RpcClient implements Closeable {
     
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(RpcClient.class);
@@ -339,14 +342,15 @@ public abstract class RpcClient implements Closeable {
                             Connection connectNew = connectToServer(serverInfo);
                             if (connectNew != null) {
                                 System.out.println(RpcClient.this.name + "-success to connect server:" + serverInfo);
-        
+    
                                 //successfully create a new connect.
                                 currentConnetion.setAbandon(true);
                                 closeConnection(currentConnetion);
                                 currentConnetion = connectNew;
                                 rpcClientStatus.set(RpcClientStatus.RUNNING);
                                 switchSuccess = true;
-                                boolean s = eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.CONNECTED));
+                                boolean s = eventLinkedBlockingQueue
+                                        .add(new ConnectionEvent(ConnectionEvent.CONNECTED));
                                 return;
                             } else {
                                 System.out.println(RpcClient.this.name + "-fail to connect server:" + serverInfo);
@@ -488,10 +492,26 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
+     * send aync request.
+     *
+     * @param request request.
+     * @return
+     */
+    public RequestFuture requestFuture(Request request) throws NacosException {
+        if (this.currentConnetion == null) {
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "client not connected.");
+        }
+        RequestFuture requestFuture = this.currentConnetion.requestFuture(request, buildMeta());
+        return requestFuture;
+        
+    }
+    
+    /**
      * connect to server.
      *
      * @param serverInfo server address to connect.
-     * @return whether sucussfully connect to server.
+     * @return return connection when sucussfully connect to server, or null if failed.
+     * @throws Exception exception when fail to connect to server.
      */
     public abstract Connection connectToServer(ServerInfo serverInfo) throws Exception;
     
@@ -559,7 +579,7 @@ public abstract class RpcClient implements Closeable {
     private ServerInfo resolveServerInfo(String serverAddress) {
         ServerInfo serverInfo = new ServerInfo();
         serverInfo.serverPort = rpcPortOffset();
-        if (serverAddress.contains("http")) {
+        if (serverAddress.contains(Constants.HTTP_PREFIX)) {
             serverInfo.serverIp = serverAddress.split(":")[1].replaceAll("//", "");
             serverInfo.serverPort += Integer.valueOf(serverAddress.split(":")[2].replaceAll("//", ""));
         } else {

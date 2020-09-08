@@ -164,4 +164,8 @@ public class SecurityProxy {
     public String getAccessToken() {
         return accessToken;
     }
+    
+    public boolean isEnabled() {
+        return StringUtils.isNotBlank(this.username);
+    }
 }

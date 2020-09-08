@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.remote.client.rsocket;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -32,8 +33,11 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -65,21 +69,51 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
+    public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException {
+        final Mono<Payload> response = rSocketClient
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
+        final CompletableFuture<Payload> payloadCompletableFuture = response.toFuture();
+        return new RequestFuture() {
+            
+            @Override
+            public boolean isDone() {
+                return payloadCompletableFuture.isDone();
+            }
+            
+            @Override
+            public Response get() throws InterruptedException, ExecutionException {
+                Payload block = payloadCompletableFuture.get();
+                return RsocketUtils.parseResponseFromPayload(block);
+            }
+            
+            @Override
+            public Response get(long timeout) throws TimeoutException, InterruptedException, ExecutionException {
+                Payload block = payloadCompletableFuture.get(timeout, TimeUnit.MILLISECONDS);
+                return RsocketUtils.parseResponseFromPayload(block);
+            }
+        };
+    }
+    
+    @Override
     public void asyncRequest(Request request, RequestMeta requestMeta, final RequestCallBack requestCallBack)
             throws NacosException {
         try {
             Mono<Payload> response = rSocketClient
                     .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
-    
-            response.toFuture().acceptEither(RsocketConnection.<Payload>failAfter(requestCallBack.getTimeout()),
+            CompletableFuture<Payload> payloadCompletableFuture = response.toFuture();
+            payloadCompletableFuture.acceptEither(RsocketConnection.<Payload>failAfter(requestCallBack.getTimeout()),
                     new Consumer<Payload>() {
                         @Override
                         public void accept(Payload payload) {
                             requestCallBack.onResponse(RsocketUtils.parseResponseFromPayload(payload));
                         }
-                    }).exceptionally(throwable -> {
-                requestCallBack.onException(throwable);
-                return null;
+                    });
+            payloadCompletableFuture.exceptionally(new Function<Throwable, Payload>() {
+                @Override
+                public Payload apply(Throwable throwable) {
+                    requestCallBack.onException(throwable);
+                    return null;
+                }
             });
     
         } catch (Exception e) {

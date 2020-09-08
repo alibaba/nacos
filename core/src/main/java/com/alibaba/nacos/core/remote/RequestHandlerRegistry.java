@@ -16,13 +16,11 @@
 
 package com.alibaba.nacos.core.remote;
 
+import org.springframework.stereotype.Service;
+
 import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import com.alibaba.nacos.core.utils.Loggers;
-import org.springframework.stereotype.Service;
 
 /**
  * RequestHandlerRegistry.

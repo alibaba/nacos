@@ -39,9 +39,10 @@ public class ConfigClusterRpcClientProxy {
     
     /**
      * sync config change request.
-     * @param member
-     * @param request
-     * @return
+     *
+     * @param member  member of server.
+     * @param request request of config change sync.
+     * @return response of config sync.
      * @throws NacosException exception.
      */
     public ConfigChangeClusterSyncResponse syncConfigChange(Member member, ConfigChangeClusterSyncRequest request)

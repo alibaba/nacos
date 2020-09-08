@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -31,6 +32,7 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: Connection.java, v 0.1 2020年08月09日 1:32 PM liuzunfei Exp $
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection {
     
     private boolean abandon = false;
@@ -77,23 +79,39 @@ public abstract class Connection {
      * send request.
      * default time out 3 seconds.
      * @param request request.
-     * @return
+     * @param requestMeta requestMeta.
+     * @return response.
+     * @throws NacosException exception throw.
      */
     public abstract Response request(Request request, RequestMeta requestMeta) throws NacosException;
     
     /**
      * send request.
      *
-     * @param request      request.
+     * @param request  request.
+     * @param requestMeta requestMeta.
      * @param timeoutMills mills of timeouts.
-     * @return
+     * @return response  response returned.
+     * @throws NacosException exception throw.
      */
     public abstract Response request(Request request, RequestMeta requestMeta, long timeoutMills) throws NacosException;
     
     /**
-     * send aync request.
+     * send request.
      *
-     * @param request request.
+     * @param request     request.
+     * @param requestMeta meta of request.
+     * @return request future.
+     * @throws NacosException exception throw.
+     */
+    public abstract RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException;
+    
+    /**
+     * send aync request.
+     =    * @param request request.
+     * @param requestMeta meta of request.
+     * @param requestCallBack callback of request.
+     * @throws NacosException exception throw.
      */
     public abstract void asyncRequest(Request request, RequestMeta requestMeta, RequestCallBack requestCallBack)
             throws NacosException;

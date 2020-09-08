@@ -28,9 +28,9 @@ import javax.annotation.PostConstruct;
  * abstrat rpc server .
  *
  * @author liuzunfei
- * @version $Id: RpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
+ * @version $Id: BaseRpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
  */
-public abstract class RpcServer {
+public abstract class BaseRpcServer {
     
     @Autowired
     private ConnectionManager connectionManager;
@@ -57,12 +57,13 @@ public abstract class RpcServer {
             public void run() {
                 Loggers.RPC.info("Nacos {} Rpc server stopping", getClass().getSimpleName());
                 try {
-                    RpcServer.this.stopServer();
+                    BaseRpcServer.this.stopServer();
                     Loggers.RPC.info("Nacos {} Rpc server stopped successfully...",
-                            RpcServer.this.getClass().getSimpleName());
+                            BaseRpcServer.this.getClass().getSimpleName());
                 } catch (Exception e) {
                     Loggers.RPC
-                            .error("Nacos {} Rpc server stopped fail...", RpcServer.this.getClass().getSimpleName(), e);
+                            .error("Nacos {} Rpc server stopped fail...", BaseRpcServer.this.getClass().getSimpleName(),
+                                    e);
                 }
             }
         });
@@ -77,6 +78,7 @@ public abstract class RpcServer {
     
     /**
      * Start sever.
+     * @throws Exception excetpion throw if start server fail.
      */
     public abstract void startServer() throws Exception;
     
@@ -89,6 +91,7 @@ public abstract class RpcServer {
     
     /**
      * Stop Server.
+     * @throws excetpion throw if stop server fail.
      */
     public void stopServer() throws Exception {
         shundownServer();

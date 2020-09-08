@@ -14,32 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.core.remote.grpc;
+
+import org.springframework.stereotype.Service;
 
 /**
- * call back for push.
+ * Grpc implementation as  a rpc server.
  *
  * @author liuzunfei
- * @version $Id: PushCallBack.java, v 0.1 2020年09月01日 5:55 PM liuzunfei Exp $
+ * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
-public interface PushCallBack {
+@Service
+public class BaseRpcServer extends BaseGrpcServer {
     
-    /**
-     * get timeout mills.
-     *
-     * @return
-     */
-    public long getTimeout();
+    private static final int PORT_OFFSET = 1001;
     
-    /**
-     * called on success.
-     **/
-    public void onSuccess();
-    
-    /**
-     * called on failed.
-     *
-     * @param e exception throwed.
-     */
-    public void onException(Exception e);
+    @Override
+    public int rpcPortOffset() {
+        return PORT_OFFSET;
+    }
 }

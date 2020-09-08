@@ -103,7 +103,7 @@ public class CommunicationController {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         Set<String> listenersClients = configChangeListenContext.getListeners(groupKey);
         SampleResult rpcSample = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>();
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenersClients.size(), 1);
         for (String connectionId : listenersClients) {
             Connection client = connectionManager.getConnection(connectionId);
             if (client != null) {
@@ -128,7 +128,7 @@ public class CommunicationController {
         Connection connectionByIp = connectionManager.getConnectionByIp(ip);
         if (connectionByIp != null) {
             Set<GroupKeyContext> listenKeys = configChangeListenContext.getListenKeys(connectionByIp.getConnectionId());
-            Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>();
+            Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenKeys.size(), 1);
             for (GroupKeyContext listenKey : listenKeys) {
                 lisentersGroupkeyStatus.put(listenKey.getGroupkey(), listenKey.getMd5());
             }

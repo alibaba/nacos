@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
  * @author liuzunfei
  * @version $Id: GrpcClient.java, v 0.1 2020年07月13日 9:16 PM liuzunfei Exp $
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class GrpcClient extends RpcClient {
     
     static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
@@ -100,7 +101,6 @@ public abstract class GrpcClient extends RpcClient {
             managedChannel.shutdownNow();
         }
     }
-    
     
     /**
      * Send Heart Beat Request.
