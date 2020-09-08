@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
@@ -44,8 +43,8 @@ public class RaftProxy {
      */
     public void proxyGet(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
-        if (!IpUtil.containsPort(server)) {
-            server = server + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        if (!IPUtil.containsPort(server)) {
+            server = server + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         
@@ -66,8 +65,8 @@ public class RaftProxy {
      */
     public void proxy(String server, String api, Map<String, String> params, HttpMethod method) throws Exception {
         // do proxy
-        if (!IpUtil.containsPort(server)) {
-            server = server + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        if (!IPUtil.containsPort(server)) {
+            server = server + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         HttpClient.HttpResult result;
@@ -102,8 +101,8 @@ public class RaftProxy {
     public void proxyPostLarge(String server, String api, String content, Map<String, String> headers)
             throws Exception {
         // do proxy
-        if (!IpUtil.containsPort(server)) {
-            server = server + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        if (!IPUtil.containsPort(server)) {
+            server = server + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         

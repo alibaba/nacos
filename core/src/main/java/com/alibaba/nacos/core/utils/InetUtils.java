@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,7 +83,7 @@ public class InetUtils {
                         nacosIp = PropertyUtil.getProperty(IP_ADDRESS);
                     }
                     
-                    if (!StringUtils.isBlank(nacosIp) && !IpUtil.isIp(nacosIp)) {
+                    if (!StringUtils.isBlank(nacosIp) && !IPUtil.isIP(nacosIp)) {
                         throw new RuntimeException("nacos address " + nacosIp + " is not ip");
                     }
                     String tmpSelfIp = nacosIp;
@@ -111,9 +111,9 @@ public class InetUtils {
                             tmpSelfIp = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
                         }
                     }
-                    if (IpUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIp.startsWith(IpUtil.IPV6_START_MARK) && !tmpSelfIp
-                            .endsWith(IpUtil.IPV6_END_MARK)) {
-                        tmpSelfIp = IpUtil.IPV6_START_MARK + tmpSelfIp + IpUtil.IPV6_END_MARK;
+                    if (IPUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIp.startsWith(IPUtil.IPV6_START_MARK) && !tmpSelfIp
+                            .endsWith(IPUtil.IPV6_END_MARK)) {
+                        tmpSelfIp = IPUtil.IPV6_START_MARK + tmpSelfIp + IPUtil.IPV6_END_MARK;
                     }
                     if (!Objects.equals(selfIp, tmpSelfIp) && Objects.nonNull(selfIp)) {
                         IPChangeEvent event = new IPChangeEvent();
@@ -159,7 +159,7 @@ public class InetUtils {
                     if (!ignoreInterface(ifc.getDisplayName())) {
                         for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
                             InetAddress address = addrs.nextElement();
-                            if ((IpUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
+                            if ((IPUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
                                     : address instanceof Inet4Address) && !address.isLoopbackAddress()
                                     && isPreferredAddress(address)) {
                                 LOG.debug("Found non-loopback interface: " + ifc.getDisplayName());

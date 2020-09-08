@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -187,10 +187,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
                     // The master is unhealthy.
-                    return "DOWN:" + IpUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "DOWN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     // The slave  is unhealthy.
-                    return "WARN:" + IpUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "WARN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
@@ -256,10 +256,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         FATAL_LOG.error("[db-error] master db {} down.",
-                                IpUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl()));
+                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         FATAL_LOG.error("[db-error] slave db {} down.",
-                                IpUtil.getIpFromString(dataSourceList.get(i).getJdbcUrl()));
+                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     

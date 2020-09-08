@@ -30,7 +30,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
@@ -88,9 +88,9 @@ public class ServerListManager implements Closeable {
         this.isStarted = true;
         List<String> serverAddrs = new ArrayList<String>();
         for (String serverAddr : fixed) {
-            String[] serverAddrArr = IpUtil.splitIpPortStr(serverAddr);
+            String[] serverAddrArr = IPUtil.splitIPPortStr(serverAddr);
             if (serverAddrArr.length == 1) {
-                serverAddrs.add(serverAddrArr[0] + IpUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
+                serverAddrs.add(serverAddrArr[0] + IPUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
             } else {
                 serverAddrs.add(serverAddr);
             }
@@ -157,9 +157,9 @@ public class ServerListManager implements Closeable {
                 if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
                 } else {
-                    String[] serverAddrArr = IpUtil.splitIpPortStr(serverAddr);
+                    String[] serverAddrArr = IPUtil.splitIPPortStr(serverAddr);
                     if (serverAddrArr.length == 1) {
-                        serverAddrs.add(HTTP + serverAddrArr[0] + IpUtil.IP_PORT_SPLITER + ParamUtil
+                        serverAddrs.add(HTTP + serverAddrArr[0] + IPUtil.IP_PORT_SPLITER + ParamUtil
                                 .getDefaultServerPort());
                     } else {
                         serverAddrs.add(HTTP + serverAddr);
@@ -357,10 +357,10 @@ public class ServerListManager implements Closeable {
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
                     if (StringUtils.isNotBlank(serverAddr)) {
-                        String[] ipPort = IpUtil.splitIpPortStr(serverAddr.trim());
+                        String[] ipPort = IPUtil.splitIPPortStr(serverAddr.trim());
                         String ip = ipPort[0].trim();
                         if (ipPort.length == 1) {
-                            result.add(ip + IpUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
+                            result.add(ip + IPUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
                         } else {
                             result.add(serverAddr);
                         }

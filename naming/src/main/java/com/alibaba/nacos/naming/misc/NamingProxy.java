@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -199,8 +199,8 @@ public class NamingProxy {
             
             HttpClient.HttpResult result;
             
-            if (!IpUtil.containsPort(curServer)) {
-                curServer = curServer + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
+            if (!IPUtil.containsPort(curServer)) {
+                curServer = curServer + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
             }
             
             result = HttpClient.httpGet("http://" + curServer + api, headers, params);
@@ -241,8 +241,8 @@ public class NamingProxy {
             
             HttpClient.HttpResult result;
             
-            if (!IpUtil.containsPort(curServer)) {
-                curServer = curServer + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
+            if (!IPUtil.containsPort(curServer)) {
+                curServer = curServer + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
             }
             
             if (isPost) {
@@ -291,8 +291,8 @@ public class NamingProxy {
             
             HttpClient.HttpResult result;
             
-            if (!IpUtil.containsPort(curServer)) {
-                curServer = curServer + IpUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
+            if (!IPUtil.containsPort(curServer)) {
+                curServer = curServer + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
             }
             
             if (isPost) {

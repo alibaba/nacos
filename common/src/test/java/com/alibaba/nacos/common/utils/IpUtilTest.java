@@ -24,71 +24,72 @@ import org.junit.Test;
  * @ClassName: IpUtilTest
  * @date 2020/9/3 10:31
  */
-public class IpUtilTest {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+public class IPUtilTest {
     
     @Test
-    public void testIsIpv4() {
-        Assert.assertTrue(IpUtil.isIpv4("127.0.0.1"));
-        Assert.assertFalse(IpUtil.isIpv4("[::1]"));
-        Assert.assertFalse(IpUtil.isIpv4("asdfasf"));
-        Assert.assertFalse(IpUtil.isIpv4("ffgertert"));
+    public void testIsIPv4() {
+        Assert.assertTrue(IPUtil.isIPv4("127.0.0.1"));
+        Assert.assertFalse(IPUtil.isIPv4("[::1]"));
+        Assert.assertFalse(IPUtil.isIPv4("asdfasf"));
+        Assert.assertFalse(IPUtil.isIPv4("ffgertert"));
     }
     
     @Test
-    public void testIsIpv6() {
-        Assert.assertTrue(IpUtil.isIpv6("[::1]"));
-        Assert.assertFalse(IpUtil.isIpv6("127.0.0.1"));
-        Assert.assertFalse(IpUtil.isIpv6("er34234"));
+    public void testIsIPv6() {
+        Assert.assertTrue(IPUtil.isIPv6("[::1]"));
+        Assert.assertFalse(IPUtil.isIPv6("127.0.0.1"));
+        Assert.assertFalse(IPUtil.isIPv6("er34234"));
     }
     
     @Test
-    public void testIsIp() {
-        Assert.assertTrue(IpUtil.isIp("[::1]"));
-        Assert.assertTrue(IpUtil.isIp("127.0.0.1"));
-        Assert.assertFalse(IpUtil.isIp("er34234"));
+    public void testIsIP() {
+        Assert.assertTrue(IPUtil.isIP("[::1]"));
+        Assert.assertTrue(IPUtil.isIP("127.0.0.1"));
+        Assert.assertFalse(IPUtil.isIP("er34234"));
     }
     
     @Test
-    public void testGetIpFromString() {
-        Assert.assertEquals("[::1]", IpUtil.getIpFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
-        Assert.assertEquals("[::1]", IpUtil.getIpFromString(
+    public void testGetIPFromString() {
+        Assert.assertEquals("[::1]", IPUtil.getIPFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        Assert.assertEquals("[::1]", IPUtil.getIPFromString(
                 "jdbc:mysql://[::1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         Assert.assertEquals("127.0.0.1",
-                IpUtil.getIpFromString("http://127.0.0.1:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
-        Assert.assertEquals("127.0.0.1", IpUtil.getIpFromString(
+                IPUtil.getIPFromString("http://127.0.0.1:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        Assert.assertEquals("127.0.0.1", IPUtil.getIPFromString(
                 "jdbc:mysql://127.0.0.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
     
         Assert.assertEquals("",
-                IpUtil.getIpFromString("http://[dddd]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
-        Assert.assertEquals("", IpUtil.getIpFromString(
+                IPUtil.getIPFromString("http://[dddd]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        Assert.assertEquals("", IPUtil.getIPFromString(
                 "jdbc:mysql://[127.0.0.1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("", IpUtil.getIpFromString(
+        Assert.assertEquals("", IPUtil.getIPFromString(
                 "jdbc:mysql://666.288.333.444:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
     }
     
     @Test
     public void testSplitIpPort() {
-        checkSplitIpPortStr("[::1]:88", false, "[::1]", "88");
-        checkSplitIpPortStr("[::1]", false, "[::1]");
-        checkSplitIpPortStr("127.0.0.1:88", false, "127.0.0.1", "88");
-        checkSplitIpPortStr("127.0.0.1", false, "127.0.0.1");
-        checkSplitIpPortStr("[2001:db8:0:0:1:0:0:1]:88", false, "[2001:db8:0:0:1:0:0:1]", "88");
-        checkSplitIpPortStr("[2001:0db8:0:0:1:0:0:1]:88", false, "[2001:0db8:0:0:1:0:0:1]", "88");
-        checkSplitIpPortStr("[2001:db8::1:0:0:1]:88", false, "[2001:db8::1:0:0:1]", "88");
-        checkSplitIpPortStr("[2001:db8::0:1:0:0:1]:88", false, "[2001:db8::0:1:0:0:1]", "88");
-        checkSplitIpPortStr("[2001:0db8::1:0:0:1]:88", false, "[2001:0db8::1:0:0:1]", "88");
-        checkSplitIpPortStr("[2001:db8:0:0:1::1]:88", false, "[2001:db8:0:0:1::1]", "88");
-        checkSplitIpPortStr("[2001:db8:0000:0:1::1]:88", false, "[2001:db8:0000:0:1::1]", "88");
-        checkSplitIpPortStr("[2001:DB8:0:0:1::1]:88", false, "[2001:DB8:0:0:1::1]", "88");
-        checkSplitIpPortStr("[fe80::3ce6:7132:808e:707a%19]:88", false, "[fe80::3ce6:7132:808e:707a%19]", "88");
-        
-        checkSplitIpPortStr("::1:88", true);
-        checkSplitIpPortStr("[::1:88", true);
-        checkSplitIpPortStr("[127.0.0.1]:88", true);
+        checkSplitIPPortStr("[::1]:88", false, "[::1]", "88");
+        checkSplitIPPortStr("[::1]", false, "[::1]");
+        checkSplitIPPortStr("127.0.0.1:88", false, "127.0.0.1", "88");
+        checkSplitIPPortStr("127.0.0.1", false, "127.0.0.1");
+        checkSplitIPPortStr("[2001:db8:0:0:1:0:0:1]:88", false, "[2001:db8:0:0:1:0:0:1]", "88");
+        checkSplitIPPortStr("[2001:0db8:0:0:1:0:0:1]:88", false, "[2001:0db8:0:0:1:0:0:1]", "88");
+        checkSplitIPPortStr("[2001:db8::1:0:0:1]:88", false, "[2001:db8::1:0:0:1]", "88");
+        checkSplitIPPortStr("[2001:db8::0:1:0:0:1]:88", false, "[2001:db8::0:1:0:0:1]", "88");
+        checkSplitIPPortStr("[2001:0db8::1:0:0:1]:88", false, "[2001:0db8::1:0:0:1]", "88");
+        checkSplitIPPortStr("[2001:db8:0:0:1::1]:88", false, "[2001:db8:0:0:1::1]", "88");
+        checkSplitIPPortStr("[2001:db8:0000:0:1::1]:88", false, "[2001:db8:0000:0:1::1]", "88");
+        checkSplitIPPortStr("[2001:DB8:0:0:1::1]:88", false, "[2001:DB8:0:0:1::1]", "88");
+        checkSplitIPPortStr("[fe80::3ce6:7132:808e:707a%19]:88", false, "[fe80::3ce6:7132:808e:707a%19]", "88");
+    
+        checkSplitIPPortStr("::1:88", true);
+        checkSplitIPPortStr("[::1:88", true);
+        checkSplitIPPortStr("[127.0.0.1]:88", true);
     }
     
     /**
@@ -98,9 +99,9 @@ public class IpUtilTest {
      * @param isEx isEx
      * @param equalsStrs equalsStrs
      */
-    public static void checkSplitIpPortStr(String addr, boolean isEx, String... equalsStrs) {
+    public static void checkSplitIPPortStr(String addr, boolean isEx, String... equalsStrs) {
         try {
-            String[] array = IpUtil.splitIpPortStr(addr);
+            String[] array = IPUtil.splitIPPortStr(addr);
             Assert.assertTrue(array.length == equalsStrs.length);
             if (array.length > 1) {
                 Assert.assertTrue(array[0].equals(equalsStrs[0]));

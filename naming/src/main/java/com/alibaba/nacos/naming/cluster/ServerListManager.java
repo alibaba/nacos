@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
@@ -126,7 +126,7 @@ public class ServerListManager extends MemberChangeListener {
                 continue;
             }
     
-            String[] info = IpUtil.splitIpPortStr(params[1]);
+            String[] info = IPUtil.splitIPPortStr(params[1]);
             Member server = Optional.ofNullable(memberManager.find(params[1]))
                     .orElse(Member.builder().ip(info[0]).state(NodeState.UP)
                             .port(Integer.parseInt(info[1])).build());
@@ -214,7 +214,7 @@ public class ServerListManager extends MemberChangeListener {
                 }
                 
                 if (allServers.size() > 0 && !ApplicationUtils.getLocalAddress()
-                        .contains(IpUtil.localHostIp())) {
+                        .contains(IPUtil.localHostIP())) {
                     for (Member server : allServers) {
                         if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
                             continue;

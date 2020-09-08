@@ -26,15 +26,14 @@ import java.util.regex.Pattern;
  *
  * @author Nacos
  */
-public class IpUtil {
+@SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
+public class IPUtil {
     
     public static final boolean PREFER_IPV6_ADDRESSES = Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"));
     
     public static final String IPV6_START_MARK = "[";
     
     public static final String IPV6_END_MARK = "]";
-    
-    public static final String CHECK_OK = "ok";
     
     public static final String ILLEGAL_IP_PREFIX = "illegal ip: ";
     
@@ -52,11 +51,13 @@ public class IpUtil {
     
     private static final int IPV6_ADDRESS_LENGTH = 16;
     
+    private static final String CHECK_OK = "ok";
+    
     /**
      * get localhost ip.
      * @return java.lang.String
      */
-    public static String localHostIp() {
+    public static String localHostIP() {
         if (PREFER_IPV6_ADDRESSES) {
             return LOCAL_HOST_IP_V6;
         }
@@ -69,7 +70,7 @@ public class IpUtil {
      * @param addr ip address
      * @return boolean
      */
-    public static boolean isIpv4(String addr) {
+    public static boolean isIPv4(String addr) {
         try {
             return InetAddress.getByName(addr).getAddress().length == IPV4_ADDRESS_LENGTH;
         } catch (UnknownHostException e) {
@@ -83,7 +84,7 @@ public class IpUtil {
      * @param addr ip address
      * @return boolean
      */
-    public static boolean isIpv6(String addr) {
+    public static boolean isIPv6(String addr) {
         try {
             return InetAddress.getByName(addr).getAddress().length == IPV6_ADDRESS_LENGTH;
         } catch (UnknownHostException e) {
@@ -97,7 +98,7 @@ public class IpUtil {
      * @param addr ip address str
      * @return boolean
      */
-    public static boolean isIp(String addr) {
+    public static boolean isIP(String addr) {
         try {
             InetAddress.getByName(addr);
             return true;
@@ -113,7 +114,7 @@ public class IpUtil {
      * @return boolean
      */
     public static boolean containsPort(String address) {
-        return splitIpPortStr(address).length == SPLIT_IP_PORT_RESULT_LENGTH;
+        return splitIPPortStr(address).length == SPLIT_IP_PORT_RESULT_LENGTH;
     }
     
     /**
@@ -122,7 +123,7 @@ public class IpUtil {
      * @param str ip and port string
      * @return java.lang.String[]
      */
-    public static String[] splitIpPortStr(String str) {
+    public static String[] splitIPPortStr(String str) {
         if (StringUtils.isBlank(str)) {
             throw new IllegalArgumentException("ip and port string cannot be empty!");
         }
@@ -136,7 +137,7 @@ public class IpUtil {
                 serverAddrArr[0] = str.substring(0, (str.indexOf(IPV6_END_MARK) + 1));
                 serverAddrArr[1] = str.substring((str.indexOf(IPV6_END_MARK) + 2));
             }
-            if (!isIpv6(serverAddrArr[0])) {
+            if (!isIPv6(serverAddrArr[0])) {
                 throw new IllegalArgumentException("The IPv6 address(\"" + serverAddrArr[0] + "\") is incorrect.");
             }
         } else {
@@ -145,7 +146,7 @@ public class IpUtil {
                 throw new IllegalArgumentException("The IP address(\"" + str
                         + "\") is incorrect. If it is an IPv6 address, please use [] to enclose the IP part!");
             }
-            if (!isIpv4(serverAddrArr[0])) {
+            if (!isIPv4(serverAddrArr[0])) {
                 throw new IllegalArgumentException("The IPv4 address(\"" + serverAddrArr[0] + "\") is incorrect.");
             }
         }
@@ -157,21 +158,21 @@ public class IpUtil {
      * @param str string containing IP address
      * @return java.lang.String
      */
-    public static String getIpFromString(String str) {
+    public static String getIPFromString(String str) {
         if (StringUtils.isBlank(str)) {
             return "";
         }
         String result = "";
         if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK) && StringUtils.containsIgnoreCase(str, IPV6_END_MARK)) {
             result = str.substring(str.indexOf(IPV6_START_MARK), (str.indexOf(IPV6_END_MARK) + 1));
-            if (!isIpv6(result)) {
+            if (!isIPv6(result)) {
                 result = "";
             }
         } else {
             Matcher m = ipv4Pattern.matcher(str);
             if (m.find()) {
                 result = m.group();
-                if (!isIpv4(result)) {
+                if (!isIPv4(result)) {
                     result = "";
                 }
             }
@@ -185,7 +186,7 @@ public class IpUtil {
      * @param ips ips
      * @return 'ok' if check passed, otherwise illegal ip
      */
-    public static String checkIps(String... ips) {
+    public static String checkIPs(String... ips) {
         
         if (ips == null || ips.length == 0) {
             
@@ -194,7 +195,7 @@ public class IpUtil {
         // illegal response
         StringBuilder illegalResponse = new StringBuilder();
         for (String ip : ips) {
-            if (IpUtil.isIp(ip)) {
+            if (IPUtil.isIP(ip)) {
                 continue;
             }
             illegalResponse.append(ip + ",");
@@ -205,6 +206,15 @@ public class IpUtil {
         }
         
         return ILLEGAL_IP_PREFIX + illegalResponse.substring(0, illegalResponse.length() - 1);
+    }
+    
+    /**
+     * Check whether checkIPs result is "ok".
+     * @param checkIPsResult checkIPs result
+     * @return boolean
+     */
+    public static boolean checkOK(String checkIPsResult) {
+        return CHECK_OK.equals(checkIPsResult);
     }
     
 }

@@ -18,7 +18,7 @@ package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.naming.core.Instance;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -86,8 +86,8 @@ public class AddressServerGeneratorManager {
     }
     
     private String[] generateIpAndPort(String ip) {
-        String[] result = IpUtil.splitIpPortStr(ip);
-        if (result.length != IpUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
+        String[] result = IPUtil.splitIPPortStr(ip);
+        if (result.length != IPUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
             return new String[] {result[0], String.valueOf(AddressServerConstants.DEFAULT_SERVER_PORT)};
         }
         return result;

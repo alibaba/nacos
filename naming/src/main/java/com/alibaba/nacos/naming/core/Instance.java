@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -117,13 +117,13 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         String provider = ipAddressAttributes[0];
         String[] providerAddr;
         try {
-            providerAddr = IpUtil.splitIpPortStr(provider);
+            providerAddr = IPUtil.splitIPPortStr(provider);
         } catch (Exception ex) {
             return null;
         }
         
         int port = 0;
-        if (providerAddr.length == IpUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils.isNumber(providerAddr[1])) {
+        if (providerAddr.length == IPUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils.isNumber(providerAddr[1])) {
             port = Integer.parseInt(providerAddr[1]);
         }
         
@@ -356,7 +356,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
      */
     public void validate() throws NacosException {
         if (onlyContainsDigitAndDot()) {
-            if (!IpUtil.containsPort(getIp() + IpUtil.IP_PORT_SPLITER + getPort())) {
+            if (!IPUtil.containsPort(getIp() + IPUtil.IP_PORT_SPLITER + getPort())) {
                 throw new NacosException(NacosException.INVALID_PARAM,
                         "instance format invalid: Your IP address is spelled incorrectly");
             }

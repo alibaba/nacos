@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -137,7 +137,7 @@ public class ClientBeatCheckTask implements Runnable {
                     .appendParam("ephemeral", "true").appendParam("clusterName", instance.getClusterName())
                     .appendParam("serviceName", service.getName()).appendParam("namespaceId", service.getNamespaceId());
             
-            String url = "http://" + IpUtil.localHostIp() + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
+            String url = "http://" + IPUtil.localHostIP() + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
             
             // delete instance asynchronously:

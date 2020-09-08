@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.IpUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
@@ -77,7 +77,7 @@ public class MemberUtils {
         
         String address = member;
         int port = defaultPort;
-        String[] info = IpUtil.splitIpPortStr(address);
+        String[] info = IPUtil.splitIPPortStr(address);
         if (info.length > 1) {
             address = info[0];
             port = Integer.parseInt(info[1]);
