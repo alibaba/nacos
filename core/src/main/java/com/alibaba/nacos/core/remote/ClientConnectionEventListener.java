@@ -26,6 +26,7 @@ import javax.annotation.PostConstruct;
  * @author liuzunfei
  * @version $Id: ClientConnectionEventListener.java, v 0.1 2020年07月16日 3:06 PM liuzunfei Exp $
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ClientConnectionEventListener {
     
     /**

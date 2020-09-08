@@ -48,6 +48,8 @@ public class DefaultRequestFuture implements RequestFuture {
     
     private ScheduledFuture timeoutFuture;
     
+    TimeoutInnerTrigger timeoutInnerTrigger;
+    
     /**
      * Getter method for property <tt>requestCallBack</tt>.
      *
@@ -70,16 +72,18 @@ public class DefaultRequestFuture implements RequestFuture {
     }
     
     public DefaultRequestFuture(String connectionId, String requestId) {
-        this(connectionId, requestId, null);
+        this(connectionId, requestId, null, null);
     }
     
-    public DefaultRequestFuture(String connectionId, String requestId, RequestCallBack requestCallBack) {
+    public DefaultRequestFuture(String connectionId, String requestId, RequestCallBack requestCallBack,
+            TimeoutInnerTrigger timeoutInnerTrigger) {
         this.timeStamp = System.currentTimeMillis();
         this.requestCallBack = requestCallBack;
         this.requestId = requestId;
         this.connectionId = connectionId;
         this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SHEDULER
                 .schedule(new TimeoutHandler(), requestCallBack.getTimeout(), TimeUnit.MILLISECONDS);
+        this.timeoutInnerTrigger = timeoutInnerTrigger;
     }
     
     public void setResponse(final Response response) {
@@ -121,7 +125,7 @@ public class DefaultRequestFuture implements RequestFuture {
     }
     
     @Override
-    public Response get() throws TimeoutException, InterruptedException {
+    public Response get() throws InterruptedException {
         synchronized (this) {
             while (!isDone) {
                 wait();
@@ -152,6 +156,9 @@ public class DefaultRequestFuture implements RequestFuture {
         if (isDone) {
             return response;
         } else {
+            if (timeoutInnerTrigger != null) {
+                timeoutInnerTrigger.triggerOnTimeout();
+            }
             throw new TimeoutException();
         }
     }
@@ -179,6 +186,15 @@ public class DefaultRequestFuture implements RequestFuture {
         }
     }
     
+    public interface TimeoutInnerTrigger {
+        
+        /**
+         * triggered on timeout .
+         */
+        public void triggerOnTimeout();
+        
+    }
+    
     /**
      * Getter method for property <tt>connectionId</tt>.
      *
@@ -196,4 +212,5 @@ public class DefaultRequestFuture implements RequestFuture {
     public void setTimeoutFuture(ScheduledFuture timeoutFuture) {
         this.timeoutFuture = timeoutFuture;
     }
+    
 }

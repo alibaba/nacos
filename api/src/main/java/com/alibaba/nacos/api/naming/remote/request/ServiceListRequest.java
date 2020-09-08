@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
-
 /**
  * Service list request.
  *

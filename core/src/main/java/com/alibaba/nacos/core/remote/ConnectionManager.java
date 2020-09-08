@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -30,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -56,8 +56,6 @@ public class ConnectionManager {
     String redirectAddress = null;
     
     private static final long EXPIRE_MILLSECOND = 10000L;
-    
-    private ScheduledExecutorService executors = Executors.newScheduledThreadPool(1);
     
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
@@ -157,7 +155,7 @@ public class ConnectionManager {
     public void start() {
         
         // Start UnHeathy Conection Expel Task.
-        executors.scheduleWithFixedDelay(new Runnable() {
+        RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -185,7 +183,7 @@ public class ConnectionManager {
     
                                 ConnectResetRequest connectResetRequest = new ConnectResetRequest();
                                 if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(":")) {
-                                    String[] split = redirectAddress.split(":");
+                                    String[] split = redirectAddress.split(Constants.COLON);
                                     connectResetRequest.setServerIp(split[0]);
                                     connectResetRequest.setServerPort(split[1]);
                                 }
@@ -228,16 +226,16 @@ public class ConnectionManager {
     /**
      * send load request to spefic connetionId.
      *
-     * @param connectionId
-     * @param redirectAddress
+     * @param connectionId    connection id of client.
+     * @param redirectAddress server address to redirect.
      */
     public void loadSingle(String connectionId, String redirectAddress) {
         Connection connection = getConnection(connectionId);
         
         if (connection != null) {
             ConnectResetRequest connectResetRequest = new ConnectResetRequest();
-            if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(":")) {
-                String[] split = redirectAddress.split(":");
+            if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(Constants.COLON)) {
+                String[] split = redirectAddress.split(Constants.COLON);
                 connectResetRequest.setServerIp(split[0]);
                 connectResetRequest.setServerPort(split[1]);
             }

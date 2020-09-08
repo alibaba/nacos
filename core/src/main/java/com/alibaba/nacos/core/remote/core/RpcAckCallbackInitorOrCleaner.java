@@ -23,15 +23,16 @@ import org.springframework.stereotype.Component;
 
 /**
  * RemoteConnectionEventListener.
+ *
  * @author liuzunfei
  * @version $Id: RemoteConnectionEventListener.java, v 0.1 2020年08月10日 1:04 AM liuzunfei Exp $
  */
 @Component
-public class RemoteConnectionEventListener extends ClientConnectionEventListener {
+public class RpcAckCallbackInitorOrCleaner extends ClientConnectionEventListener {
     
     @Override
     public void clientConnected(Connection connect) {
-    
+        RpcAckCallbackSynchronizer.initContextIfNecessary(connect.getConnectionId());
     }
     
     @Override

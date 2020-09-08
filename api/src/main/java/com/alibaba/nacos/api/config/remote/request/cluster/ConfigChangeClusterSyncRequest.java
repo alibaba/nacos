@@ -47,7 +47,6 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
         return "Y".equalsIgnoreCase(isBeta);
     }
     
-    
     /**
      * Getter method for property <tt>dataId</tt>.
      *

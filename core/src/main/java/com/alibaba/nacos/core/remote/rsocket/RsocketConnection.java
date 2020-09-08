@@ -36,6 +36,8 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -58,8 +60,9 @@ public class RsocketConnection extends Connection {
     
     @Override
     public Response sendRequest(Request request, long timeoutMills) throws NacosException {
-        Loggers.RPC_DIGEST.info("Rsocket sendRequest :" + request);
     
+        Loggers.RPC_DIGEST.debug(String.format("[%s] send request  : %s", "rsocket", request));
+        
         try {
             Mono<Payload> payloadMono = clientSocket
                     .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
@@ -72,7 +75,7 @@ public class RsocketConnection extends Connection {
     
     @Override
     public void sendRequestNoAck(Request request) throws NacosException {
-        Loggers.RPC_DIGEST.info("Rsocket sendRequestNoAck :" + request);
+        Loggers.RPC_DIGEST.debug(String.format("[%s] send no ack request  : %s", "rsocket", request));
         clientSocket.fireAndForget(RsocketUtils.convertRequestToPayload(request, buildMeta())).block();
     }
     
@@ -85,26 +88,27 @@ public class RsocketConnection extends Connection {
     
     @Override
     public RequestFuture sendRequestWithFuture(Request request) throws NacosException {
-        Loggers.RPC_DIGEST.info("Rsocket sendRequestWithFuture :" + request);
+        Loggers.RPC_DIGEST.debug(String.format("[%s] send future request  : %s", "rsocket", request));
         final Mono<Payload> payloadMono = clientSocket
                 .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
-    
+        final CompletableFuture<Payload> payloadCompletableFuture = payloadMono.toFuture();
+        
         RequestFuture defaultPushFuture = new RequestFuture() {
             
             @Override
             public boolean isDone() {
-                return payloadMono.take(Duration.ofMillis(0L)) == null;
+                return payloadCompletableFuture.isDone();
             }
             
             @Override
-            public Response get() throws TimeoutException, InterruptedException {
-                Payload block = payloadMono.block();
+            public Response get() throws InterruptedException, ExecutionException {
+                Payload block = payloadCompletableFuture.get();
                 return RsocketUtils.parseResponseFromPayload(block);
             }
             
             @Override
-            public Response get(long timeoutMills) throws TimeoutException, InterruptedException {
-                Payload block = payloadMono.block(Duration.ofMillis(timeoutMills));
+            public Response get(long timeoutMills) throws TimeoutException, InterruptedException, ExecutionException {
+                Payload block = payloadCompletableFuture.get(timeoutMills, TimeUnit.MILLISECONDS);
                 return RsocketUtils.parseResponseFromPayload(block);
             }
         };
@@ -113,14 +117,13 @@ public class RsocketConnection extends Connection {
     
     @Override
     public void sendRequestWithCallBack(Request request, RequestCallBack requestCallBack) throws NacosException {
-        
-        long id = System.currentTimeMillis();
-        Loggers.RPC_DIGEST.info("Rsocket sendRequestWithCallBack :" + request);
     
+        Loggers.RPC_DIGEST.debug(String.format("[%s] send callback request  : %s", "rsocket", request));
+        
         try {
             Mono<Payload> response = clientSocket
                     .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
-        
+    
             response.toFuture().acceptEither(failAfter(requestCallBack.getTimeout()), new Consumer<Payload>() {
                 @Override
                 public void accept(Payload payload) {
@@ -130,7 +133,7 @@ public class RsocketConnection extends Connection {
                 requestCallBack.onException(throwable);
                 return null;
             });
-        
+    
         } catch (Exception e) {
             requestCallBack.onException(e);
         }

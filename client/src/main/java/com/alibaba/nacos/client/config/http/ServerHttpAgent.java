@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 

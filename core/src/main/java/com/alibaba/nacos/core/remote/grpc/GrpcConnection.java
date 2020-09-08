@@ -94,11 +94,17 @@ public class GrpcConnection extends Connection {
     }
     
     private DefaultRequestFuture sendRequestInner(Request request, RequestCallBack callBack) throws NacosException {
-        Loggers.RPC_DIGEST.info("Grpc sendRequest :" + request);
+        Loggers.RPC_DIGEST.debug(String.format("[%s] send request  : %s", "grpc", request.toString()));
         String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
         sendRequestNoAck(request);
-        DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(this.getConnectionId(), requestId, callBack);
+        DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(this.getConnectionId(), requestId, callBack,
+                new DefaultRequestFuture.TimeoutInnerTrigger() {
+                    @Override
+                    public void triggerOnTimeout() {
+                        RpcAckCallbackSynchronizer.clearFuture(getConnectionId(), requestId);
+                    }
+                });
         RpcAckCallbackSynchronizer.syncCallback(getConnectionId(), requestId, defaultPushFuture);
         return defaultPushFuture;
     }
@@ -108,7 +114,7 @@ public class GrpcConnection extends Connection {
         try {
             streamObserver.onCompleted();
         } catch (Exception e) {
-            Loggers.RPC_DIGEST.warn("Grpc connection close exception .", e);
+            Loggers.RPC.debug(String.format("[%s] connection close exception  : %s", "grpc", e.getMessage()));
         }
     }
     

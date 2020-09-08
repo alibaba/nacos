@@ -127,7 +127,6 @@ public class IoUtils {
         return out.toByteArray();
     }
     
-    
     private static BufferedReader toBufferedReader(Reader reader) {
         return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);
     }

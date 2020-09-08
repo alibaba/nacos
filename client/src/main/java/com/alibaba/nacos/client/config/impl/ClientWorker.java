@@ -227,12 +227,12 @@ public class ClientWorker implements Closeable {
     /**
      * remove config.
      *
-     * @param tenant
-     * @param dataId
-     * @param group
-     * @param tag
-     * @return
-     * @throws NacosException
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @param tag    tag.
+     * @return success or not.
+     * @throws NacosException exception to throw.
      */
     public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
         return agent.removeConfig(dataId, group, tenant, tag);
@@ -241,14 +241,14 @@ public class ClientWorker implements Closeable {
     /**
      * publish config.
      *
-     * @param dataId
-     * @param group
-     * @param tenant
-     * @param appName
-     * @param tag
-     * @param betaIps
-     * @param content
-     * @return
+     * @param dataId  dataId.
+     * @param group   group.
+     * @param tenant  tenant.
+     * @param appName appName.
+     * @param tag     tag.
+     * @param betaIps betaIps.
+     * @param content content.
+     * @return success or not.
      * @throws NacosException exception throw.
      */
     public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
@@ -546,8 +546,8 @@ public class ClientWorker implements Closeable {
         }
     
         private Map<String, String> getLabels() {
-        
-            Map<String, String> labels = new HashMap<String, String>();
+    
+            Map<String, String> labels = new HashMap<String, String>(2, 1);
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
             return labels;
@@ -678,8 +678,8 @@ public class ClientWorker implements Closeable {
         @Override
         public void executeConfigListen() {
     
-            Map<String, List<CacheData>> listenCachesMap = new HashMap<String, List<CacheData>>();
-            Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>();
+            Map<String, List<CacheData>> listenCachesMap = new HashMap<String, List<CacheData>>(16);
+            Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
             
             for (CacheData cache : cacheMap.get().values()) {
                 //get listen  config and remove listen  config
@@ -1035,7 +1035,7 @@ public class ClientWorker implements Closeable {
                     params.put("tenant", tenant);
                 }
     
-                Map<String, String> headers = new HashMap<String, String>();
+                Map<String, String> headers = new HashMap<String, String>(16);
                 result = httpGet(Constants.CONFIG_CONTROLLER_PATH, headers, params, agent.getEncode(), readTimeout);
             } catch (Exception ex) {
                 String message = String
@@ -1085,6 +1085,9 @@ public class ClientWorker implements Closeable {
             if (securityHeaders != null) {
                 //put security header to param
                 params.putAll(securityHeaders);
+                if (StringUtils.isNotBlank(super.tenant) && !params.containsKey(SpasAdapter.TENANT_KEY)) {
+                    params.put(SpasAdapter.TENANT_KEY, tenant);
+                }
             }
             Map<String, String> spasHeaders = super.getSpasHeaders();
             if (spasHeaders != null) {
@@ -1164,7 +1167,7 @@ public class ClientWorker implements Closeable {
         private HttpRestResult<String> httpPost(String path, Map<String, String> headers,
                 Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
             if (headers == null) {
-                headers = new HashMap<String, String>();
+                headers = new HashMap<String, String>(16);
             }
             assembleHttpParams(paramValues, headers);
             return agent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
@@ -1173,7 +1176,7 @@ public class ClientWorker implements Closeable {
         private HttpRestResult<String> httpGet(String path, Map<String, String> headers,
                 Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
             if (headers == null) {
-                headers = new HashMap<String, String>();
+                headers = new HashMap<String, String>(16);
             }
             assembleHttpParams(paramValues, headers);
             return agent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
@@ -1182,7 +1185,7 @@ public class ClientWorker implements Closeable {
         private HttpRestResult<String> httpDelete(String path, Map<String, String> headers,
                 Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
             if (headers == null) {
-                headers = new HashMap<String, String>();
+                headers = new HashMap<String, String>(16);
             }
             assembleHttpParams(paramValues, headers);
             return agent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
