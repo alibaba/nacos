@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.cluster.remote.request;
 
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 

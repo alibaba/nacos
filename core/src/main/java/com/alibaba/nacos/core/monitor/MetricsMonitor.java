@@ -43,7 +43,6 @@ public final class MetricsMonitor {
     
     private static AtomicInteger longConnection = new AtomicInteger();
     
-    
     static {
         RAFT_READ_INDEX_FAILED = NacosMeterRegistry.summary("protocol", "raft_read_index_failed");
         RAFT_FROM_LEADER = NacosMeterRegistry.summary("protocol", "raft_read_from_leader");

@@ -24,12 +24,12 @@ import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.RsocketUtils;
+import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
-import com.alibaba.nacos.core.remote.RpcServer;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.rsocket.Payload;
@@ -53,7 +53,7 @@ import java.util.UUID;
  * @version $Id: RsocketRpcServer.java, v 0.1 2020年08月06日 11:52 AM liuzunfei Exp $
  */
 @Service
-public class RsocketRpcServer extends RpcServer {
+public class RsocketRpcServer extends BaseRpcServer {
     
     private static final int PORT_OFFSET = 1100;
     
@@ -151,8 +151,8 @@ public class RsocketRpcServer extends RpcServer {
                         connectionManager.unregister(connectionId);
                     }
                 });
-        
-                RSocketProxy rSocketProxy = new NacosRSocket(sendingSocket, connectionid);
+    
+                RSocketProxy rSocketProxy = new NacosRsocket(sendingSocket, connectionid);
         
                 return Mono.just(rSocketProxy);
             }
@@ -163,15 +163,15 @@ public class RsocketRpcServer extends RpcServer {
     
     }
     
-    class NacosRSocket extends RSocketProxy {
+    class NacosRsocket extends RSocketProxy {
         
         String connectionId;
         
-        public NacosRSocket(RSocket source) {
+        public NacosRsocket(RSocket source) {
             super(source);
         }
         
-        public NacosRSocket(RSocket source, String connectionId) {
+        public NacosRsocket(RSocket source, String connectionId) {
             super(source);
             this.connectionId = connectionId;
         }

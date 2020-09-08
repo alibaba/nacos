@@ -31,6 +31,7 @@ public interface ServerRequestHandler {
      * Handle logic when response received.
      *
      * @param request request
+     * @return response.
      */
     Response requestReply(Request request);
     

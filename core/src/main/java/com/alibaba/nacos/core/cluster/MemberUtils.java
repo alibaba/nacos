@@ -97,8 +97,8 @@ public class MemberUtils {
     /**
      * get support member connection type.
      *
-     * @param member
-     * @return
+     * @param member member instance of server
+     * @return supported connection tyoe of the member.
      */
     public static ConnectionType getSupportedConnectionType(Member member) {
         Map<String, Object> extendInfo = member.getExtendInfo();
@@ -111,10 +111,10 @@ public class MemberUtils {
     }
     
     /**
-     * get support member connection type.
+     * check whether the member support long connection or not.
      *
-     * @param member
-     * @return
+     * @param member member instance of server.
+     * @return support long connection or not.
      */
     public static boolean isSupportedLongCon(Member member) {
         return getSupportedConnectionType(member) != null;

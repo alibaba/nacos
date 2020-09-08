@@ -22,10 +22,10 @@ import org.springframework.stereotype.Service;
  * Grpc implementation as  a rpc server.
  *
  * @author liuzunfei
- * @version $Id: GrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
+ * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
 @Service
-public class GrpcSdkServer extends GrpcServer {
+public class GrpcSdkServer extends BaseGrpcServer {
     
     private static final int PORT_OFFSET = 1000;
     

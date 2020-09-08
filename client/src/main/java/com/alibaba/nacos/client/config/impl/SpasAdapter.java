@@ -17,8 +17,8 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.client.identify.CredentialService;
+import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.crypto.Mac;
@@ -65,7 +65,6 @@ public class SpasAdapter {
         }
         return getSignHeaders(resource, secretKey);
     }
-    
     
     public static Map<String, String> getSignHeaders(Map<String, String> paramValues, String secretKey) {
         if (null == paramValues) {

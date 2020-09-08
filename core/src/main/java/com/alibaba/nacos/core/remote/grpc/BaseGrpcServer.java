@@ -20,9 +20,9 @@ import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.UuidUtils;
+import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
-import com.alibaba.nacos.core.remote.RpcServer;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.Attributes;
@@ -49,11 +49,19 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Grpc implementation as  a rpc server.
  *
  * @author liuzunfei
- * @version $Id: GrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
+ * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
-public abstract class GrpcServer extends RpcServer {
+public abstract class BaseGrpcServer extends BaseRpcServer {
     
     private Server server;
+    
+    private static final String REQUEST_BI_STREAM_SERVICE_NAME = "BiRequestStream";
+    
+    private static final String REQUEST_BI_STREAM_METHOD_NAME = "requestBiStream";
+    
+    private static final String REQUEST_SERVICE_NAME = "Request";
+    
+    private static final String REQUEST_METHOD_NAME = "request";
     
     @Autowired
     private GrpcRequestAcceptor grpcCommonRequestAcceptor;
@@ -81,11 +89,11 @@ public abstract class GrpcServer extends RpcServer {
         // server intercetpor to set connection id.
         ServerInterceptor serverInterceptor = new ServerInterceptor() {
             @Override
-            public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers,
-                    ServerCallHandler<ReqT, RespT> next) {
+            public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
+                    ServerCallHandler<T, S> next) {
                 Context ctx = Context.current()
                         .withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID));
-                if ("RequestStream".equals(call.getMethodDescriptor().getServiceName())) {
+                if (REQUEST_BI_STREAM_SERVICE_NAME.equals(call.getMethodDescriptor().getServiceName())) {
                     Channel internalChannel = getInternalChannel(call);
                     ctx = ctx.withValue(CONTEXT_KEY_CHANNEL, internalChannel);
                 }
@@ -124,7 +132,7 @@ public abstract class GrpcServer extends RpcServer {
         // unary common call register.
         final MethodDescriptor<Payload, Payload> unarypayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.UNARY)
-                .setFullMethodName(MethodDescriptor.generateFullMethodName("Request", "request"))
+                .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
     
@@ -136,7 +144,7 @@ public abstract class GrpcServer extends RpcServer {
                     grpcCommonRequestAcceptor.request(requestNew, responseObserver);
                 });
     
-        final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder("Request")
+        final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)
                 .addMethod(unarypayloadMethod, payloadHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
     
@@ -147,12 +155,13 @@ public abstract class GrpcServer extends RpcServer {
                 });
     
         final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.BIDI_STREAMING)
-                .setFullMethodName(MethodDescriptor.generateFullMethodName("BiRequestStream", "requestBiStream"))
+                .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor
+                        .generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
     
-        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition.builder("BiRequestStream")
+        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
+                .builder(REQUEST_BI_STREAM_SERVICE_NAME)
                 .addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
         

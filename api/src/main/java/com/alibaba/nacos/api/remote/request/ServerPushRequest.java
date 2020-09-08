@@ -22,6 +22,7 @@ package com.alibaba.nacos.api.remote.request;
  * @author liuzunfei
  * @version $Id: ServerPushResponse.java, v 0.1 2020年07月20日 1:21 PM liuzunfei Exp $
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ServerPushRequest extends Request {
 
 }

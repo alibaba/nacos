@@ -70,7 +70,7 @@ public class ForwardInstanceRequestHandler extends RequestHandler<ForwardInstanc
     private void addRemotingConnectionIfAbsent(RequestMeta sourceRequestMeta) {
         if (null == remotingConnectionHolder.getRemotingConnection(sourceRequestMeta.getConnectionId())) {
             ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(sourceRequestMeta.getConnectionId(),
-                    sourceRequestMeta.getClientIp(), "cluster", sourceRequestMeta.getClientVersion(), new HashMap<>());
+                    sourceRequestMeta.getClientIp(), "cluster", sourceRequestMeta.getClientVersion(), new HashMap<>(2));
             remotingConnectionHolder.clientConnected(new ClusterConnection(metaInfo));
         }
     }

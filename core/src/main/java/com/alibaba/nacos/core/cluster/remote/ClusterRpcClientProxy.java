@@ -109,7 +109,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     }
     
     private void createRpcClientAndStart(Member member, ConnectionType type) throws NacosException {
-        Map<String, String> labels = new HashMap<String, String>();
+        Map<String, String> labels = new HashMap<String, String>(2);
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_NODE);
     
         RpcClient client = RpcClientFactory.createClusterClient(memberClientKey(member), type, labels);
@@ -146,9 +146,9 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     /**
      * send request to member.
      *
-     * @param member
-     * @param request
-     * @return
+     * @param member  member of server.
+     * @param request request.
+     * @return Response response.
      * @throws NacosException exception may throws.
      */
     public Response sendRequest(Member member, Request request) throws NacosException {
@@ -164,9 +164,8 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     /**
      * send request to member.
      *
-     * @param request
-     * @return
-     * @throws NacosException
+     * @param request request.
+     * @throws NacosException exception may throw.
      */
     public void sendRequestToAllMembers(Request request) throws NacosException {
         List<Member> members = serverMemberManager.allMembersWithoutSelf();

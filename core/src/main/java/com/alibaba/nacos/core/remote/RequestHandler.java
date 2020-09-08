@@ -30,6 +30,7 @@ import javax.annotation.PostConstruct;
  * @author liuzunfei
  * @author xiweng.yy
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RequestHandler<T extends Request, S extends Response> {
     
     @Autowired

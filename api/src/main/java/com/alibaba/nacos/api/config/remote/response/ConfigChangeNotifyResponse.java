@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.config.remote.response;
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
+ * config change notify response from client.
  * @author liuzunfei
  * @version $Id: ConfigChangeNotifyResponse.java, v 0.1 2020年09月01日 2:59 PM liuzunfei Exp $
  */

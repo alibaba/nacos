@@ -17,18 +17,32 @@
 package com.alibaba.nacos.common.remote.client;
 
 /**
- * RpcClientStatus.
+ * statsu of rpc client.
+ *
  * @author liuzunfei
  * @version $Id: RpcClientStatus.java, v 0.1 2020年07月14日 3:49 PM liuzunfei Exp $
  */
 public enum RpcClientStatus {
     
+    /**
+     * wait to init.
+     */
     WAIT_INIT(0, "wait to  init serverlist factory... "),
-    INITED(1, "server list factory is ready,wait to start"),
-    STARTING(2, "server list factory is ready,wait to start"),
-    RUNNING(3, "client is running..."),
-    SWITCHING_SERVER(5, "reconnecting...");
     
+    /**
+     * inited.
+     */
+    INITED(1, "server list factory is ready,wait to start"),
+    
+    /**
+     * is in starting.
+     */
+    STARTING(2, "server list factory is ready,wait to start"),
+    
+    /**
+     * running.
+     */
+    RUNNING(3, "client is running...");
     
     int status;
     

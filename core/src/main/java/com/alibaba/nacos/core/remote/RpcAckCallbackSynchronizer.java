@@ -94,10 +94,9 @@ public class RpcAckCallbackSynchronizer {
      */
     public static void syncCallback(String connectionId, String requestId, DefaultRequestFuture defaultPushFuture)
             throws NacosException {
-        if (!CALLBACK_CONTEXT.containsKey(connectionId)) {
-            CALLBACK_CONTEXT.putIfAbsent(connectionId, new HashMap<String, DefaultRequestFuture>());
-        }
-        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
+    
+        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = initContextIfNecessary(connectionId);
+        ;
         if (!stringDefaultPushFutureMap.containsKey(requestId)) {
             DefaultRequestFuture pushCallBackPrev = stringDefaultPushFutureMap
                     .putIfAbsent(requestId, defaultPushFuture);
@@ -116,6 +115,22 @@ public class RpcAckCallbackSynchronizer {
      */
     public static void clearContext(String connetionId) {
         CALLBACK_CONTEXT.remove(connetionId);
+    }
+    
+    /**
+     * clear context of connectionId.
+     *
+     * @param connetionId connetionId
+     */
+    public static Map<String, DefaultRequestFuture> initContextIfNecessary(String connetionId) {
+        if (!CALLBACK_CONTEXT.containsKey(connetionId)) {
+            Map<String, DefaultRequestFuture> context = new HashMap<String, DefaultRequestFuture>(128);
+            Map<String, DefaultRequestFuture> stringDefaultRequestFutureMap = CALLBACK_CONTEXT
+                    .putIfAbsent(connetionId, context);
+            return stringDefaultRequestFutureMap == null ? context : stringDefaultRequestFutureMap;
+        } else {
+            return CALLBACK_CONTEXT.get(connetionId);
+        }
     }
     
     /**

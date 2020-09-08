@@ -85,9 +85,9 @@ public class ConfigChangeListenContext {
     }
     
     /**
-     * remove listen context for connectionId .
-     * @param lisnteKey    listenKey
-     * @param connectionId connectionId
+     * remove listen context for connection id .
+     * @param listenKey    listenKey.
+     * @param connectionId connection id.
      */
     public void removeListen(String listenKey, String connectionId) {
         
