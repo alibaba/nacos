@@ -23,6 +23,7 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.Loggers;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +34,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author xiweng.yy
  */
+@Component("connectionBasedClientManager")
 public class ConnectionBasedClientManager extends ClientConnectionEventListener implements ClientManager {
     
     private final ConcurrentMap<String, ConnectionBasedClient> clients = new ConcurrentHashMap<>();

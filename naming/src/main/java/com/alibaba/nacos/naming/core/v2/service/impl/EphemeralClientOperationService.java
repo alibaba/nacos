@@ -16,19 +16,26 @@
 
 package com.alibaba.nacos.naming.core.v2.service.impl;
 
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import org.springframework.stereotype.Component;
 
 /**
  * Operation service for ephemeral clients and services.
  *
  * @author xiweng.yy
  */
+@Component("ephemeralClientOperationService")
 public class EphemeralClientOperationService implements ClientOperationService {
     
     private final ConnectionBasedClientManager connectionBasedClientManager;
@@ -39,37 +46,45 @@ public class EphemeralClientOperationService implements ClientOperationService {
     
     @Override
     public void registerInstance(Service service, Instance instance, String clientId) {
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = connectionBasedClientManager.getClient(clientId);
         InstancePublishInfo instancePublishInfo = getPublishInfo(instance);
-        client.addServiceInstance(service, instancePublishInfo);
-        // TODO send register service event
+        client.addServiceInstance(singleton, instancePublishInfo);
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
     }
     
     @Override
     public void deregisterInstance(Service service, Instance instance, String clientId) {
+        if (!ServiceManager.getInstance().containSingleton(service)) {
+            Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", service);
+            return;
+        }
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = connectionBasedClientManager.getClient(clientId);
-        client.removeServiceInstance(service);
-        // TODO send deregister service event
+        client.removeServiceInstance(singleton);
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
     }
     
     private InstancePublishInfo getPublishInfo(Instance instance) {
         InstancePublishInfo result = new InstancePublishInfo(instance.getIp(), instance.getPort());
         result.getExtendDatum().putAll(instance.getMetadata());
-        result.getExtendDatum().put("cluster", instance.getClusterName());
+        result.getExtendDatum().put(CommonParams.CLUSTER_NAME, instance.getClusterName());
         return result;
     }
     
     @Override
     public void subscribeService(Service service, Subscriber subscriber, String clientId) {
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = connectionBasedClientManager.getClient(clientId);
-        client.addServiceSubscriber(service, subscriber);
-        // TODO send subscribe service event
+        client.addServiceSubscriber(singleton, subscriber);
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
     }
     
     @Override
     public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = connectionBasedClientManager.getClient(clientId);
-        client.removeServiceSubscriber(service);
-        // TODO send unsubscribe service event
+        client.removeServiceSubscriber(singleton);
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
     }
 }

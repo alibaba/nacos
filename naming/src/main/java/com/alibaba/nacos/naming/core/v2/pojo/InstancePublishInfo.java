@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Instance POJO for Nacos v2.
+ * Instance POJO of client published for Nacos v2.
  *
  * @author xiweng.yy
  */

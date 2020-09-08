@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.pojo;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Service POJO for Nacos v2.
@@ -33,11 +34,21 @@ public class Service {
     
     private final boolean ephemeral;
     
-    public Service(String namespace, String group, String name, boolean ephemeral) {
+    private final AtomicLong revision;
+    
+    private long lastUpdatedTime;
+    
+    private Service(String namespace, String group, String name, boolean ephemeral) {
         this.namespace = namespace;
         this.group = group;
         this.name = name;
         this.ephemeral = ephemeral;
+        revision = new AtomicLong();
+        lastUpdatedTime = System.currentTimeMillis();
+    }
+    
+    public static Service newService(String namespace, String group, String name, boolean ephemeral) {
+        return new Service(namespace, group, name, ephemeral);
     }
     
     public String getNamespace() {
@@ -56,6 +67,19 @@ public class Service {
         return ephemeral;
     }
     
+    public long getRevision() {
+        return revision.get();
+    }
+    
+    public long getLastUpdatedTime() {
+        return lastUpdatedTime;
+    }
+    
+    public void incrementRevision() {
+        revision.incrementAndGet();
+        lastUpdatedTime = System.currentTimeMillis();
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -65,11 +89,18 @@ public class Service {
             return false;
         }
         Service service = (Service) o;
-        return namespace.equals(service.namespace) && group.equals(service.group) && name.equals(service.name);
+        return ephemeral == service.ephemeral && namespace.equals(service.namespace) && group.equals(service.group)
+                && name.equals(service.name);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespace, group, name);
+        return Objects.hash(namespace, group, name, ephemeral);
+    }
+    
+    @Override
+    public String toString() {
+        return "Service{" + "namespace='" + namespace + '\'' + ", group='" + group + '\'' + ", name='" + name + '\''
+                + ", ephemeral=" + ephemeral + ", revision=" + revision + '}';
     }
 }
