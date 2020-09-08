@@ -111,7 +111,7 @@ public class HttpClient {
         query.addParam("nofix", "1");
         try {
             return SYNC_NACOS_REST_TEMPLATE
-                    .exchange(url, httpClientConfig, header, query, method, body, String.class);
+                    .exchange(url, httpClientConfig, header, query, body, method, String.class);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();
