@@ -72,35 +72,6 @@ public class RemotePushService extends SmartSubscriber {
     }
     
     /**
-     * Register subscribe For service.
-     *
-     * @param serviceKey   service key
-     * @param subscriber   subscriber
-     * @param connectionId connection Id of subscriber
-     */
-    public void registerSubscribeForService(String serviceKey, Subscriber subscriber, String connectionId) {
-        if (!serviceSubscribesMap.containsKey(serviceKey)) {
-            serviceSubscribesMap.put(serviceKey, new ConcurrentHashSet<>());
-        }
-        serviceSubscribesMap.get(serviceKey).add(subscriber);
-        subscribeConnectionMap.put(subscriber, connectionId);
-    }
-    
-    /**
-     * Remove subscribe For service.
-     *
-     * @param serviceKey service key
-     * @param subscriber subscriber
-     */
-    public void removeSubscribeForService(String serviceKey, Subscriber subscriber) {
-        if (!serviceSubscribesMap.containsKey(serviceKey)) {
-            return;
-        }
-        serviceSubscribesMap.get(serviceKey).remove(subscriber);
-        subscribeConnectionMap.remove(subscriber);
-    }
-    
-    /**
      * Remove All subscribe for service.
      *
      * @param serviceKey service key
