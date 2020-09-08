@@ -35,12 +35,13 @@ import java.util.function.Consumer;
  */
 public class RpcAckCallbackSynchronizer {
     
+    @SuppressWarnings("checkstyle:linelength")
     private static final Map<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultRequestFuture>>()
             .maximumWeightedCapacity(1000000)
             .listener(new EvictionListener<String, Map<String, DefaultRequestFuture>>() {
                 @Override
                 public void onEviction(String s, Map<String, DefaultRequestFuture> pushCallBack) {
-    
+                    
                     pushCallBack.entrySet().forEach(new Consumer<Map.Entry<String, DefaultRequestFuture>>() {
                         @Override
                         public void accept(Map.Entry<String, DefaultRequestFuture> stringDefaultPushFutureEntry) {
@@ -54,17 +55,17 @@ public class RpcAckCallbackSynchronizer {
      * notify  ackid.
      */
     public static void ackNotify(String connectionId, Response response) {
-    
+        
         Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
         if (stringDefaultPushFutureMap == null) {
             return;
         }
-    
+        
         DefaultRequestFuture currentCallback = stringDefaultPushFutureMap.remove(response.getRequestId());
         if (currentCallback == null) {
             return;
         }
-    
+        
         if (response.isSuccess()) {
             currentCallback.setResponse(response);
         } else {
@@ -94,7 +95,7 @@ public class RpcAckCallbackSynchronizer {
      */
     public static void syncCallback(String connectionId, String requestId, DefaultRequestFuture defaultPushFuture)
             throws NacosException {
-    
+        
         Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = initContextIfNecessary(connectionId);
         ;
         if (!stringDefaultPushFutureMap.containsKey(requestId)) {
