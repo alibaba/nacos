@@ -222,7 +222,7 @@ public class RaftCore {
                     continue;
                 }
                 final String url = buildUrl(server, API_ON_PUB);
-                HttpClient.asyncHttpPostLarge(url, Arrays.asList("key=" + key), content, new Callback<String>() {
+                HttpClient.asyncHttpPostLarge(url, Arrays.asList("key", key), content, new Callback<String>() {
                     @Override
                     public void onReceive(RestResult<String> result) {
                         if (!result.ok()) {
