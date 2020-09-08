@@ -19,38 +19,12 @@ package com.alibaba.nacos.common.utils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
-
 /**
  * test IpUtil.
  * @ClassName: IpUtilTest
  * @date 2020/9/3 10:31
  */
 public class IpUtilTest {
-    
-    @Test
-    public void test111(){
-        try {
-            Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
-            while (en.hasMoreElements()) {
-                NetworkInterface ni = en.nextElement();
-                Enumeration<InetAddress> ads = ni.getInetAddresses();
-                while (ads.hasMoreElements()) {
-                    InetAddress ip = ads.nextElement();
-                    System.out.println(ip.getHostAddress());
-                    // Compatible group does not regulate 11 network segments
-                    if (!ip.isLoopbackAddress() && ip.getHostAddress().indexOf(":") == -1
-                        /* && ip.isSiteLocalAddress() */) {
-//                        System.out.println(ip.getHostAddress());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
     
     @Test
     public void testIsIpv4() {
