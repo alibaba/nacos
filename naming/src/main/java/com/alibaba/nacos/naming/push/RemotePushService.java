@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.remote.RpcPushService;
@@ -67,6 +68,7 @@ public class RemotePushService extends SmartSubscriber {
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
         this.serviceStorage = serviceStorage;
+        NotifyCenter.registerSubscriber(this);
     }
     
     /**
