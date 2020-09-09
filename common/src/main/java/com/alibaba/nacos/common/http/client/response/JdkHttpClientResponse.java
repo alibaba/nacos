@@ -61,7 +61,7 @@ public class JdkHttpClientResponse implements HttpClientResponse {
         String contentEncoding = headers.getValue(HttpHeaderConsts.CONTENT_ENCODING);
         // Used to process http content_encoding, when content_encoding is GZIP, use GZIPInputStream
         if (CONTENT_ENCODING.equals(contentEncoding)) {
-            byte[] bytes = IoUtils.tryDecompress(responseStream);
+            byte[] bytes = IoUtils.tryDecompress(this.responseStream);
             if (bytes == null) {
                 throw new IOException("decompress http response error");
             }
