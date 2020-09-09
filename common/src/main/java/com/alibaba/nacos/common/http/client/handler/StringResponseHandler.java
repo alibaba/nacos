@@ -33,7 +33,7 @@ public class StringResponseHandler extends AbstractResponseHandler<String> {
     @Override
     public HttpRestResult<String> convertResult(HttpClientResponse response, Type responseType) throws Exception {
         final Header headers = response.getHeaders();
-        String extractBody = IoUtils.toString(getBody(response), headers.getCharset());
+        String extractBody = IoUtils.toString(response.getBody(), headers.getCharset());
         return new HttpRestResult<String>(headers, response.getStatusCode(), extractBody, null);
     }
 }
