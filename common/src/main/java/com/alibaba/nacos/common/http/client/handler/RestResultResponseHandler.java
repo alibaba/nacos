@@ -36,7 +36,7 @@ public class RestResultResponseHandler<T> extends AbstractResponseHandler<T> {
     @SuppressWarnings("unchecked")
     public HttpRestResult<T> convertResult(HttpClientResponse response, Type responseType) throws Exception {
         final Header headers = response.getHeaders();
-        InputStream body = response.getBody();
+        InputStream body = getBody(response);
         T extractBody = JacksonUtils.toObj(body, responseType);
         HttpRestResult<T> httpRestResult = convert((RestResult<T>) extractBody);
         httpRestResult.setHeader(headers);

@@ -16,12 +16,16 @@
 
 package com.alibaba.nacos.common.http.client.handler;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.IoUtils;
 import org.apache.http.HttpStatus;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 
 /**
@@ -32,6 +36,8 @@ import java.lang.reflect.Type;
 public abstract class AbstractResponseHandler<T> implements ResponseHandler<T> {
     
     private Type responseType;
+    
+    private static final String CONTENT_ENCODING = "gzip";
     
     @Override
     public final void setResponseType(Type responseType) {
@@ -50,6 +56,26 @@ public abstract class AbstractResponseHandler<T> implements ResponseHandler<T> {
         Header headers = response.getHeaders();
         String message = IoUtils.toString(response.getBody(), headers.getCharset());
         return new HttpRestResult<T>(headers, response.getStatusCode(), null, message);
+    }
+    
+    /**
+     * Used to process http content_encoding, when content_encoding is GZIP, use GZIPInputStream.
+     *
+     * @param response HttpClientResponse
+     * @return InputStream
+     * @throws Exception Exception
+     */
+    protected InputStream getBody(HttpClientResponse response) throws Exception {
+        final Header headers = response.getHeaders();
+        final String contentEncoding = headers.getValue(HttpHeaderConsts.CONTENT_ENCODING);
+        if (CONTENT_ENCODING.equals(contentEncoding)) {
+            byte[] bytes = IoUtils.tryDecompress(response.getBody());
+            if (bytes == null) {
+                throw new IOException("decompress http response error");
+            }
+            return new ByteArrayInputStream(bytes);
+        }
+        return response.getBody();
     }
     
     /**
