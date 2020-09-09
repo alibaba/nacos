@@ -41,6 +41,8 @@ public class IPUtil {
     
     public static final int SPLIT_IP_PORT_RESULT_LENGTH = 2;
     
+    public static final String PERCENT_SIGN_IN_IPV6 = "%";
+    
     private static final String LOCAL_HOST_IP_V4 = "127.0.0.1";
     
     private static final String LOCAL_HOST_IP_V6 = "[::1]";

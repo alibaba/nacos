@@ -114,6 +114,10 @@ public class InetUtils {
                     if (IPUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIp.startsWith(IPUtil.IPV6_START_MARK) && !tmpSelfIp
                             .endsWith(IPUtil.IPV6_END_MARK)) {
                         tmpSelfIp = IPUtil.IPV6_START_MARK + tmpSelfIp + IPUtil.IPV6_END_MARK;
+                        if (StringUtils.contains(tmpSelfIp, IPUtil.PERCENT_SIGN_IN_IPV6)) {
+                            tmpSelfIp = tmpSelfIp.substring(0, tmpSelfIp.indexOf(IPUtil.PERCENT_SIGN_IN_IPV6))
+                                    + IPUtil.IPV6_END_MARK;
+                        }
                     }
                     if (!Objects.equals(selfIp, tmpSelfIp) && Objects.nonNull(selfIp)) {
                         IPChangeEvent event = new IPChangeEvent();
