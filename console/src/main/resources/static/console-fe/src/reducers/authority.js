@@ -61,6 +61,13 @@ const createUser = ([username, password]) =>
   request.post('v1/auth/users', { username, password }).then(res => successMsg(res));
 
 /**
+ * 通过username 模糊匹配
+ * @param {*} param0
+ */
+const searchUsers = username =>
+  request.get('v1/auth/users/search', { params: { username } }).then(res => successMsg(res));
+
+/**
  * 删除用户
  * @param {*} username
  */
@@ -81,6 +88,13 @@ const passwordReset = ([username, newPassword]) =>
 
 const getRoles = params => dispatch =>
   request.get('v1/auth/roles', { params }).then(data => dispatch({ type: ROLE_LIST, data }));
+
+/**
+ * 通过username 模糊匹配
+ * @param {*} param0
+ */
+const searchRoles = role =>
+  request.get('v1/auth/roles/search', { params: { role } }).then(res => successMsg(res));
 
 /**
  * 创建角色
@@ -133,10 +147,12 @@ export default (state = initialState, action) => {
 };
 
 export {
+  searchUsers,
   getUsers,
   createUser,
   deleteUser,
   passwordReset,
+  searchRoles,
   getRoles,
   createRole,
   deleteRole,

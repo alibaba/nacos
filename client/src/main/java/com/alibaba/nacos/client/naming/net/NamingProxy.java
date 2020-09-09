@@ -596,7 +596,7 @@ public class NamingProxy implements Closeable {
         
         try {
             HttpRestResult<String> restResult = nacosRestTemplate
-                    .exchangeForm(url, header, params, body, method, String.class);
+                    .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
             
             MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))

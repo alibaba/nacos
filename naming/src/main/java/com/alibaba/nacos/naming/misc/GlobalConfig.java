@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
 
 /**
  * Stores some configurations for Distro protocol.
@@ -27,6 +30,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class GlobalConfig {
+    
+    private final DistroConfig distroConfig;
     
     @Value("${nacos.naming.distro.taskDispatchPeriod:2000}")
     private int taskDispatchPeriod = 2000;
@@ -45,6 +50,22 @@ public class GlobalConfig {
     
     @Value("${nacos.naming.distro.loadDataRetryDelayMillis:30000}")
     private long loadDataRetryDelayMillis = 30000;
+    
+    public GlobalConfig(DistroConfig distroConfig) {
+        this.distroConfig = distroConfig;
+    }
+    
+    @PostConstruct
+    public void printGlobalConfig() {
+        Loggers.SRV_LOG.info(toString());
+        overrideDistroConfiguration();
+    }
+    
+    private void overrideDistroConfiguration() {
+        distroConfig.setSyncDelayMillis(taskDispatchPeriod);
+        distroConfig.setSyncRetryDelayMillis(syncRetryDelay);
+        distroConfig.setLoadDataRetryDelayMillis(loadDataRetryDelayMillis);
+    }
     
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
@@ -68,5 +89,12 @@ public class GlobalConfig {
     
     public long getLoadDataRetryDelayMillis() {
         return loadDataRetryDelayMillis;
+    }
+    
+    @Override
+    public String toString() {
+        return "GlobalConfig{" + "taskDispatchPeriod=" + taskDispatchPeriod + ", batchSyncKeyCount=" + batchSyncKeyCount
+                + ", syncRetryDelay=" + syncRetryDelay + ", dataWarmup=" + dataWarmup + ", expireInstance="
+                + expireInstance + ", loadDataRetryDelayMillis=" + loadDataRetryDelayMillis + '}';
     }
 }
