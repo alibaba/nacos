@@ -45,7 +45,6 @@ public class Header {
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
         addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip");
-        addParam(HttpHeaderConsts.CONTENT_ENCODING, "gzip");
     }
     
     public static Header newInstance() {
