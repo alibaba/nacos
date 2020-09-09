@@ -79,7 +79,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 @Component(value = "serverMemberManager")
 public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent> {
     
-    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CORE);
+    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder
+            .getNacosAsyncRestTemplate(Loggers.CORE);
     
     /**
      * Cluster node list.
@@ -135,7 +136,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.localAddress = InetUtils.getSelfIp() + ":" + port;
         this.self = MemberUtils.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
-        this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE, ConnectionType.RSOCKET.getType());
+        this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE, ApplicationUtils
+                .getProperty(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE, ConnectionType.GRPC.getType()));
         serverList.put(self.getAddress(), self);
         
         // register NodeChangeEvent publisher to NotifyManager

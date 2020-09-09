@@ -585,6 +585,7 @@ public class ClientWorker implements Closeable {
             
                 @Override
                 public void onDisConnect() {
+                    System.out.println("clear listen context...");
                     Collection<CacheData> values = cacheMap.get().values();
                 
                     for (CacheData cacheData : values) {

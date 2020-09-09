@@ -55,8 +55,8 @@ public class ConfigTest {
     public void before() throws Exception {
         Properties properties = new Properties();
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160..148:8848,127.0.0.1:8848,127.0.0.1:8848");
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848,11.160.144.149:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848,11.160.144.148:8848,127.0.0.1:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
@@ -235,7 +235,7 @@ public class ConfigTest {
         final String dataId = "xiaochun.xxc";
         final String group = "xiaochun.xxc";
         final String content = "lessspring-" + System.currentTimeMillis();
-        
+    
         Thread th = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -247,7 +247,7 @@ public class ConfigTest {
                         configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
                         
                         times--;
-                        Thread.sleep(500L);
+                        Thread.sleep(2000L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

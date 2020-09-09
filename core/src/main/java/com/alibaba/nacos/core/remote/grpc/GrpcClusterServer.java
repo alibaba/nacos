@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
 @Service
-public class BaseRpcServer extends BaseGrpcServer {
+public class GrpcClusterServer extends BaseGrpcServer {
     
     private static final int PORT_OFFSET = 1001;
     

@@ -19,7 +19,6 @@ package com.alibaba.nacos.common.remote.client.grpc;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
-import com.alibaba.nacos.api.grpc.auto.RequestStreamGrpc;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
@@ -54,12 +53,7 @@ public class GrpcConnection extends Connection {
      * grpc channel.
      */
     protected ManagedChannel channel;
-    
-    /**
-     * stub to send stream request.
-     */
-    protected RequestStreamGrpc.RequestStreamStub grpcStreamServiceStub;
-    
+
     /**
      * stub to send request.
      */
@@ -67,9 +61,8 @@ public class GrpcConnection extends Connection {
     
     protected StreamObserver<Payload> payloadStreamObserver;
     
-    public GrpcConnection(RpcClient.ServerInfo serverInfo, StreamObserver<Payload> payloadStreamObserver) {
+    public GrpcConnection(RpcClient.ServerInfo serverInfo) {
         super(serverInfo);
-        this.payloadStreamObserver = payloadStreamObserver;
     }
     
     @Override
@@ -209,24 +202,6 @@ public class GrpcConnection extends Connection {
     }
     
     /**
-     * Getter method for property <tt>grpcStreamServiceStub</tt>.
-     *
-     * @return property value of grpcStreamServiceStub
-     */
-    public RequestStreamGrpc.RequestStreamStub getGrpcStreamServiceStub() {
-        return grpcStreamServiceStub;
-    }
-    
-    /**
-     * Setter method for property <tt>grpcStreamServiceStub</tt>.
-     *
-     * @param grpcStreamServiceStub value to be assigned to property grpcStreamServiceStub
-     */
-    public void setGrpcStreamServiceStub(RequestStreamGrpc.RequestStreamStub grpcStreamServiceStub) {
-        this.grpcStreamServiceStub = grpcStreamServiceStub;
-    }
-    
-    /**
      * Getter method for property <tt>grpcFutureServiceStub</tt>.
      *
      * @return property value of grpcFutureServiceStub
@@ -242,5 +217,23 @@ public class GrpcConnection extends Connection {
      */
     public void setGrpcFutureServiceStub(RequestGrpc.RequestFutureStub grpcFutureServiceStub) {
         this.grpcFutureServiceStub = grpcFutureServiceStub;
+    }
+    
+    /**
+     * Getter method for property <tt>payloadStreamObserver</tt>.
+     *
+     * @return property value of payloadStreamObserver
+     */
+    public StreamObserver<Payload> getPayloadStreamObserver() {
+        return payloadStreamObserver;
+    }
+    
+    /**
+     * Setter method for property <tt>payloadStreamObserver</tt>.
+     *
+     * @param payloadStreamObserver value to be assigned to property payloadStreamObserver
+     */
+    public void setPayloadStreamObserver(StreamObserver<Payload> payloadStreamObserver) {
+        this.payloadStreamObserver = payloadStreamObserver;
     }
 }
