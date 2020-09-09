@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
