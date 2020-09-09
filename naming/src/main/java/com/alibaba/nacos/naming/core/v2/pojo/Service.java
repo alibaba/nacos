@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.core.v2.pojo;
 
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
+
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -78,6 +80,10 @@ public class Service {
     public void incrementRevision() {
         revision.incrementAndGet();
         lastUpdatedTime = System.currentTimeMillis();
+    }
+    
+    public String getGroupedServiceName() {
+        return NamingUtils.getGroupedName(name, group);
     }
     
     @Override
