@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +132,19 @@ public class ServiceUtil {
      * @return service name list by paged
      */
     public static List<String> pageServiceName(int pageNo, int pageSize, Map<String, Service> serviceMap) {
-        List<String> result = new ArrayList<>(serviceMap.keySet());
+        return pageServiceName(pageNo, pageSize, serviceMap.keySet());
+    }
+    
+    /**
+     * Page service name.
+     *
+     * @param pageNo         page number
+     * @param pageSize       size per page
+     * @param serviceNameSet service name set
+     * @return service name list by paged
+     */
+    public static List<String> pageServiceName(int pageNo, int pageSize, Collection<String> serviceNameSet) {
+        List<String> result = new ArrayList<>(serviceNameSet);
         int start = (pageNo - 1) * pageSize;
         if (start < 0) {
             start = 0;

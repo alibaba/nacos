@@ -20,16 +20,19 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -47,10 +50,13 @@ public class ServiceStorage {
     
     private final ConcurrentMap<Service, ServiceInfo> serviceDataIndexes;
     
+    private final ConcurrentMap<String, Set<Service>> namespaceServiceIndex;
+    
     public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager, ConnectionBasedClientManager clientManager) {
         this.serviceIndexesManager = serviceIndexesManager;
         this.clientManager = clientManager;
         serviceDataIndexes = new ConcurrentHashMap<>();
+        namespaceServiceIndex = new ConcurrentHashMap<>();
     }
     
     public ServiceInfo getData(Service service) {
@@ -68,7 +74,12 @@ public class ServiceStorage {
         }
         result.setHosts(instances);
         serviceDataIndexes.put(service, result);
+        updateNamespaceIndex(service);
         return result;
+    }
+    
+    public Collection<Service> getAllServicesOfNamespace(String namespace) {
+        return namespaceServiceIndex.getOrDefault(namespace, new ConcurrentHashSet<>());
     }
     
     private Instance parseInstance(Service service, InstancePublishInfo instancePublishInfo) {
@@ -87,5 +98,12 @@ public class ServiceStorage {
         result.setMetadata(instanceMetadata);
         result.setEphemeral(service.isEphemeral());
         return result;
+    }
+    
+    private void updateNamespaceIndex(Service service) {
+        if (!namespaceServiceIndex.containsKey(service.getNamespace())) {
+            namespaceServiceIndex.putIfAbsent(service.getNamespace(), new ConcurrentHashSet<>());
+        }
+        namespaceServiceIndex.get(service.getNamespace()).add(service);
     }
 }
