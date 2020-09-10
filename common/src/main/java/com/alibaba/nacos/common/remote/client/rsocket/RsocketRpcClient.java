@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.remote.client.rsocket;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
@@ -25,6 +24,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.RsocketUtils;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import io.rsocket.ConnectionSetupPayload;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -57,11 +58,6 @@ public class RsocketRpcClient extends RpcClient {
     
     public RsocketRpcClient(String name) {
         super(name);
-    }
-    
-    @Override
-    public void shutdown() throws NacosException {
-        shutDownRsocketClient(rSocketClient.get());
     }
     
     @Override
@@ -141,8 +137,6 @@ public class RsocketRpcClient extends RpcClient {
     void fireOnCloseEvent(final RSocket rSocket, final Connection connectionInner) {
         
         Subscriber subscriber = new Subscriber<Void>() {
-    
-            Connection connection = connectionInner;
             
             @Override
             public void onSubscribe(Subscription subscription) {
@@ -155,20 +149,35 @@ public class RsocketRpcClient extends RpcClient {
             
             @Override
             public void onError(Throwable throwable) {
-                if (connectionInner.isAbandon()) {
-                    return;
+                if (isRunning() && !connectionInner.isAbandon()) {
+                    System.out.println("onError ,switch server " + this + new Date().toString());
+        
+                    if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
+                        switchServerAsync();
+                    }
+                } else {
+                    System.out.println(
+                            "client is not running status ,ignore error event , " + this + new Date().toString());
+        
                 }
-                switchServerAsync();
             }
             
             @Override
             public void onComplete() {
-                if (connectionInner.isAbandon()) {
-                    return;
+    
+                if (isRunning() && !connectionInner.isAbandon()) {
+                    System.out.println("onCompleted ,switch server " + this);
+                    if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
+                        switchServerAsync();
+                    }
+                } else {
+                    System.out.println(
+                            "client is not running status ,ignore complete  event , " + this + new Date().toString());
+        
                 }
-                switchServerAsync();
             }
         };
+    
         rSocket.onClose().subscribe(subscriber);
     }
     

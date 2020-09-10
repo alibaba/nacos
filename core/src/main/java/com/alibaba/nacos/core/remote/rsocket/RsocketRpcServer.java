@@ -73,11 +73,6 @@ public class RsocketRpcServer extends BaseRpcServer {
     }
     
     @Override
-    public void shundownServer() {
-    
-    }
-    
-    @Override
     public void startServer() throws Exception {
         RSocketServer rSocketServerInner = RSocketServer.create();
         closeChannel = rSocketServerInner.acceptor(((setup, sendingSocket) -> {
@@ -218,7 +213,7 @@ public class RsocketRpcServer extends BaseRpcServer {
     }
     
     @Override
-    public void stopServer() throws Exception {
+    public void shundownServer() {
         if (this.closeChannel != null && !closeChannel.isDisposed()) {
             this.closeChannel.dispose();
         }

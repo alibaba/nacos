@@ -42,7 +42,17 @@ public enum RpcClientStatus {
     /**
      * running.
      */
-    RUNNING(3, "client is running...");
+    RUNNING(4, "client is running..."),
+    
+    /**
+     * is in starting.
+     */
+    UNHEALTHY(3, "client unhealthy,may closed by server,in rereconnecting"),
+    
+    /**
+     * running.
+     */
+    SHUTDOWN(5, "client is shutdown...");
     
     int status;
     

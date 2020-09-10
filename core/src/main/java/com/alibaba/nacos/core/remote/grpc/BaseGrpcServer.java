@@ -170,7 +170,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     @Override
     public void shundownServer() {
         if (server != null) {
-            server.shutdown();
+            server.shutdownNow();
         }
     }
     
