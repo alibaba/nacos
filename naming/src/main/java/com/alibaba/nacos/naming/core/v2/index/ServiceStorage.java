@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -48,13 +49,17 @@ public class ServiceStorage {
     
     private final ConnectionBasedClientManager clientManager;
     
+    private final SwitchDomain switchDomain;
+    
     private final ConcurrentMap<Service, ServiceInfo> serviceDataIndexes;
     
     private final ConcurrentMap<String, Set<Service>> namespaceServiceIndex;
     
-    public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager, ConnectionBasedClientManager clientManager) {
+    public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager, ConnectionBasedClientManager clientManager,
+            SwitchDomain switchDomain) {
         this.serviceIndexesManager = serviceIndexesManager;
         this.clientManager = clientManager;
+        this.switchDomain = switchDomain;
         serviceDataIndexes = new ConcurrentHashMap<>();
         namespaceServiceIndex = new ConcurrentHashMap<>();
     }
@@ -67,6 +72,8 @@ public class ServiceStorage {
         ServiceInfo result = new ServiceInfo();
         result.setName(service.getName());
         result.setGroupName(service.getGroup());
+        result.setLastRefTime(System.currentTimeMillis());
+        result.setCacheMillis(switchDomain.getDefaultPushCacheMillis());
         List<Instance> instances = new LinkedList<>();
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
             Client client = clientManager.getClient(each);

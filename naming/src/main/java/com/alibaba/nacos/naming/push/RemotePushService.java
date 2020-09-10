@@ -87,7 +87,7 @@ public class RemotePushService extends SmartSubscriber {
     public Set<Subscriber> getSubscribes(String namespaceId, String serviceName) {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup, true);
+        Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup);
         return getSubscribes(service);
     }
     

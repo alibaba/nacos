@@ -110,8 +110,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     @Override
     public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
             boolean healthyOnly) throws NacosException {
-        ServiceQueryRequest request = new ServiceQueryRequest(namespaceId,
-                NamingUtils.getGroupedName(serviceName, groupName));
+        ServiceQueryRequest request = new ServiceQueryRequest(namespaceId, serviceName, groupName);
         request.setCluster(clusters);
         request.setHealthyOnly(healthyOnly);
         request.setUdpPort(udpPort);
