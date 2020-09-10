@@ -17,11 +17,13 @@
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
@@ -68,8 +70,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
         if (null == client) {
             return true;
         }
-        // TODO remove all subscribers
-        // TODO remove all instances
+        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
         return true;
     }
     

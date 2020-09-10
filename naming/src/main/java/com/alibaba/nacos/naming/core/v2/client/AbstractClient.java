@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -51,6 +52,11 @@ public abstract class AbstractClient implements Client {
     }
     
     @Override
+    public Collection<Service> getAllPublishedService() {
+        return publishers.keySet();
+    }
+    
+    @Override
     public boolean addServiceSubscriber(Service service, Subscriber subscriber) {
         subscribers.put(service, subscriber);
         return true;
@@ -65,5 +71,10 @@ public abstract class AbstractClient implements Client {
     @Override
     public Subscriber getSubscriber(Service service) {
         return subscribers.get(service);
+    }
+    
+    @Override
+    public Collection<Service> getAllSubscribeService() {
+        return subscribers.keySet();
     }
 }

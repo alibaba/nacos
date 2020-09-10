@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -76,8 +77,8 @@ public class ServiceStorage {
         result.setCacheMillis(switchDomain.getDefaultPushCacheMillis());
         List<Instance> instances = new LinkedList<>();
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
-            Client client = clientManager.getClient(each);
-            instances.add(parseInstance(service, client.getInstancePublishInfo(service)));
+            Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(each, service);
+            instancePublishInfo.ifPresent(publishInfo -> instances.add(parseInstance(service, publishInfo)));
         }
         result.setHosts(instances);
         serviceDataIndexes.put(service, result);
@@ -87,6 +88,14 @@ public class ServiceStorage {
     
     public Collection<Service> getAllServicesOfNamespace(String namespace) {
         return namespaceServiceIndex.getOrDefault(namespace, new ConcurrentHashSet<>());
+    }
+    
+    private Optional<InstancePublishInfo> getInstanceInfo(String clientId, Service service) {
+        Client client = clientManager.getClient(clientId);
+        if (null == client) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(client.getInstancePublishInfo(service));
     }
     
     private Instance parseInstance(Service service, InstancePublishInfo instancePublishInfo) {

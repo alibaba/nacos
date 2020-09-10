@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.event.client;
 
+import com.alibaba.nacos.common.notify.SlowEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 /**
@@ -23,15 +24,21 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
  *
  * @author xiweng.yy
  */
-public class ClientOperationEvent extends ClientEvent {
+public class ClientOperationEvent extends SlowEvent {
     
     private static final long serialVersionUID = -4582413232902517619L;
+    
+    private final String clientId;
     
     private final Service service;
     
     public ClientOperationEvent(String clientId, Service service) {
-        super(clientId);
+        this.clientId = clientId;
         this.service = service;
+    }
+    
+    public String getClientId() {
+        return clientId;
     }
     
     public Service getService() {
