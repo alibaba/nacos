@@ -234,8 +234,8 @@ public class ConfigTest {
         Random random = new Random();
         final String dataId = "xiaochun.xxc";
         final String group = "xiaochun.xxc";
-        final String content = "lessspring-" + System.currentTimeMillis();
-    
+        // final String content = "lessspring-" + System.currentTimeMillis();
+        
         Thread th = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -244,7 +244,9 @@ public class ConfigTest {
                 int times = 1000;
                 while (times > 0) {
                     try {
-                        configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
+                        String content1 = "value" + System.currentTimeMillis();
+                        System.out.println("publish content:" + content1);
+                        configService.publishConfig(dataId, group, content1);
                         
                         times--;
                         Thread.sleep(2000L);
@@ -264,7 +266,8 @@ public class ConfigTest {
         Listener listener = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                System.out.println("receiveConfigInfo1 :" + configInfo);
+                System.out.println("receiveConfigInfo1 content:" + configInfo + "," + System.currentTimeMillis());
+    
             }
         };
     

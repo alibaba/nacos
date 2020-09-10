@@ -301,7 +301,7 @@ public abstract class RpcClient implements Closeable {
                 } catch (NacosException e) {
                     e.printStackTrace();
                 }
-            
+    
             }
         });
         
@@ -454,6 +454,16 @@ public abstract class RpcClient implements Closeable {
      * @return
      */
     public Response request(Request request) throws NacosException {
+        return request(request, 3000L);
+    }
+    
+    /**
+     * send request.
+     *
+     * @param request request.
+     * @return
+     */
+    public Response request(Request request, long timeoutMills) throws NacosException {
         int retryTimes = 3;
         Response response = null;
         Exception exceptionToThrow = null;
@@ -463,7 +473,7 @@ public abstract class RpcClient implements Closeable {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "client not connected.");
                 }
                 response = this.currentConnetion.request(request, buildMeta());
-    
+                
                 if (response != null) {
                     if (response instanceof ConnectionUnregisterResponse) {
                         synchronized (this) {
@@ -477,7 +487,7 @@ public abstract class RpcClient implements Closeable {
                         return response;
                     }
                 }
-    
+                
             } catch (Exception e) {
                 LoggerUtils.printIfErrorEnabled(LOGGER, "Fail to send request,request={},errorMesssage={}", request,
                         e.getMessage());
@@ -486,7 +496,7 @@ public abstract class RpcClient implements Closeable {
             retryTimes--;
             
         }
-    
+        
         if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
             switchServerAsync();
         }
