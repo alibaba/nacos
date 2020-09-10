@@ -97,7 +97,8 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         while (iterator.hasNext()) {
             Map.Entry<String, RpcClient> next1 = iterator.next();
             if (next1.getKey().startsWith("Cluster-") && !newMemberKeys.contains(next1.getKey())) {
-                next1.getValue().shutdown();
+                Loggers.CLUSTER.info("member leave,destroy client of member - > : {}", next1.getKey());
+                RpcClientFactory.getClient(next1.getKey()).shutdown();
                 iterator.remove();
             }
         }
@@ -111,16 +112,17 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     private void createRpcClientAndStart(Member member, ConnectionType type) throws NacosException {
         Map<String, String> labels = new HashMap<String, String>(2);
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_NODE);
-    
-        RpcClient client = RpcClientFactory.createClusterClient(memberClientKey(member), type, labels);
+        String memberClientKey = memberClientKey(member);
+        RpcClient client = RpcClientFactory.createClusterClient(memberClientKey, type, labels);
         if (!client.getConnectionType().equals(type)) {
-            RpcClientFactory.destroyClient(memberClientKey(member));
-            client = RpcClientFactory.createClusterClient(memberClientKey(member), type, labels);
+            Loggers.CLUSTER.info(",connection type changed,destroy client of member - > : {}", member);
+            RpcClientFactory.destroyClient(memberClientKey);
+            client = RpcClientFactory.createClusterClient(memberClientKey, type, labels);
         }
     
         if (client.isWaitInited()) {
-            Loggers.CLUSTER.info("create a new rpc client to member - > : {}", member);
-        
+            Loggers.CLUSTER.info("start a new rpc client to member - > : {}", member);
+            
             //one fixed server
             client.init(new ServerListFactory() {
                 @Override

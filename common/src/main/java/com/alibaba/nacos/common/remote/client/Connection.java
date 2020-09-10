@@ -68,6 +68,7 @@ public abstract class Connection {
     
     /**
      * Setter method for property <tt>abandon</tt>.
+     * connection event will be ignored if connection is abandoned.
      *
      * @param abandon value to be assigned to property abandon
      */

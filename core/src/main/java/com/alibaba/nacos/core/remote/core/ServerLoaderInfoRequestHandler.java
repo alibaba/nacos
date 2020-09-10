@@ -23,11 +23,10 @@ import com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,18 +51,10 @@ public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderI
         serverLoaderInfoResponse
                 .putMetricsValue("sdkConCount", String.valueOf(connectionManager.currentClientsCount(filter)));
         serverLoaderInfoResponse.putMetricsValue("countLimit", String.valueOf(connectionManager.countLimited()));
-        serverLoaderInfoResponse.putMetricsValue("cpuLoad", String.valueOf(getSystemCpuLoad()));
+        serverLoaderInfoResponse.putMetricsValue("load", String.valueOf(ApplicationUtils.getLoad()));
+        serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(ApplicationUtils.getCPU()));
         
         return serverLoaderInfoResponse;
     }
     
-    public static double getSystemCpuLoad() {
-        
-        OperatingSystemMXBean osmxb = (OperatingSystemMXBean) ManagementFactory
-                
-                .getOperatingSystemMXBean();
-        
-        return osmxb.getSystemLoadAverage();
-        
-    }
 }
