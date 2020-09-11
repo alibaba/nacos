@@ -16,12 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
-import com.alibaba.nacos.api.remote.RequestCallBack;
-import com.alibaba.nacos.api.remote.RequestFuture;
-import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.Requester;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Map;
@@ -33,55 +29,13 @@ import java.util.Map;
  * @version $Id: Connection.java, v 0.1 2020年07月13日 7:08 PM liuzunfei Exp $
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class Connection {
+public abstract class Connection implements Requester {
     
     private final ConnectionMetaInfo metaInfo;
     
     public Connection(ConnectionMetaInfo metaInfo) {
         this.metaInfo = metaInfo;
     }
-    
-    /**
-     * Send response to this client that associated to this connection.
-     *
-     * @param request request.
-     * @param timeoutMills timeoutMills.
-     * @return Response resonse.
-     * @throws NacosException exception may throw.
-     */
-    public abstract Response sendRequest(Request request, long timeoutMills) throws NacosException;
-    
-    /**
-     * Send response to this client that associated to this connection.
-     *
-     * @param request request.
-     * @throws NacosException exception may throw.
-     */
-    public abstract void sendRequestNoAck(Request request) throws NacosException;
-    
-    /**
-     * Send response to this client that associated to this connection.
-     *
-     * @param request request.
-     * @return future of request.
-     * @throws NacosException exception may throw.
-     */
-    public abstract RequestFuture sendRequestWithFuture(Request request) throws NacosException;
-    
-    /**
-     * Send response to this client that associated to this connection.
-     *
-     * @param request request.
-     * @param callBack call back.
-     * @throws NacosException exception may throw.
-     */
-    public abstract void sendRequestWithCallBack(Request request, RequestCallBack callBack)
-            throws NacosException;
-    
-    /**
-     * Close this connection, if this connection is not active yet.
-     */
-    public abstract void closeGrapcefully();
     
     /**
      * Update last Active Time to now.
@@ -99,6 +53,11 @@ public abstract class Connection {
         return metaInfo.lastActiveTime;
     }
     
+    /**
+     * get connection Id.
+     *
+     * @return
+     */
     public String getConnectionId() {
         return metaInfo.connectionId;
     }

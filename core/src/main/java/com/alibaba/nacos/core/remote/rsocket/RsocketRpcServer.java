@@ -22,8 +22,10 @@ import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.RsocketUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
@@ -106,8 +108,8 @@ public class RsocketRpcServer extends BaseRpcServer {
                 if (connectionManager.isOverLimit()) {
                     //Not register to the connection manager if current server is over limit.
                     try {
-                        connection.sendRequestNoAck(new ConnectResetRequest());
-                        connection.closeGrapcefully();
+                        connection.request(new ConnectResetRequest(), buildMeta());
+                        connection.close();
                     } catch (Exception e) {
                         //Do nothing.
                     }
@@ -146,7 +148,7 @@ public class RsocketRpcServer extends BaseRpcServer {
                         connectionManager.unregister(connectionId);
                     }
                 });
-    
+        
                 RSocketProxy rSocketProxy = new NacosRsocket(sendingSocket, connectionid);
         
                 return Mono.just(rSocketProxy);
@@ -217,5 +219,12 @@ public class RsocketRpcServer extends BaseRpcServer {
         if (this.closeChannel != null && !closeChannel.isDisposed()) {
             this.closeChannel.dispose();
         }
+    }
+    
+    private RequestMeta buildMeta() {
+        RequestMeta meta = new RequestMeta();
+        meta.setClientVersion(VersionUtils.getFullClientVersion());
+        meta.setClientIp(NetUtils.localIP());
+        return meta;
     }
 }

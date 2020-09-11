@@ -18,10 +18,13 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.AbstractRequestCallBack;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -52,27 +55,29 @@ public class RpcPushService {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                connection.sendRequestWithCallBack(request, new AbstractRequestCallBack(requestCallBack.getTimeout()) {
-                    
-                    @Override
-                    public Executor getExcutor() {
-                        return executor;
-                    }
-        
-                    @Override
-                    public void onResponse(Response response) {
-                        if (response.isSuccess()) {
-                            requestCallBack.onSuccess();
-                        } else {
-                            requestCallBack.onFail(new NacosException(response.getErrorCode(), response.getMessage()));
-                        }
-                    }
-        
-                    @Override
-                    public void onException(Throwable e) {
-                        requestCallBack.onFail(e);
-                    }
-                });
+                connection
+                        .asyncRequest(request, buildMeta(), new AbstractRequestCallBack(requestCallBack.getTimeout()) {
+                
+                            @Override
+                            public Executor getExcutor() {
+                                return executor;
+                            }
+                
+                            @Override
+                            public void onResponse(Response response) {
+                                if (response.isSuccess()) {
+                                    requestCallBack.onSuccess();
+                                } else {
+                                    requestCallBack
+                                            .onFail(new NacosException(response.getErrorCode(), response.getMessage()));
+                                }
+                            }
+                
+                            @Override
+                            public void onException(Throwable e) {
+                                requestCallBack.onFail(e);
+                            }
+                        });
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
                 requestCallBack.onSuccess();
@@ -96,7 +101,7 @@ public class RpcPushService {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                connection.sendRequestNoAck(request);
+                connection.request(request, buildMeta());
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
@@ -105,6 +110,13 @@ public class RpcPushService {
                                 request, e);
             }
         }
+    }
+    
+    private RequestMeta buildMeta() {
+        RequestMeta meta = new RequestMeta();
+        meta.setClientVersion(VersionUtils.getFullClientVersion());
+        meta.setClientIp(NetUtils.localIP());
+        return meta;
     }
     
 }

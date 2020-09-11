@@ -31,7 +31,7 @@ public class RemoteConstants {
     
     public static final String LABEL_SOURCE_SDK = "sdk";
     
-    public static final String LABEL_SOURCE_NODE = "node";
+    public static final String LABEL_SOURCE_CLUSTER = "cluster";
     
     public static final String LABEL_MODULE = "module";
     

@@ -16,12 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.RequestCallBack;
-import com.alibaba.nacos.api.remote.RequestFuture;
-import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.Requester;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +28,7 @@ import java.util.Map;
  * @version $Id: Connection.java, v 0.1 2020年08月09日 1:32 PM liuzunfei Exp $
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class Connection {
+public abstract class Connection implements Requester {
     
     private boolean abandon = false;
     
@@ -43,18 +38,6 @@ public abstract class Connection {
     
     public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
-    }
-    
-    public String getLabel(String labelKey) {
-        return labels.get(labelKey);
-    }
-    
-    public void putLabel(String labelKey, String labelValue) {
-        labels.put(labelKey, labelValue);
-    }
-    
-    public void putLabels(Map<String, String> labels) {
-        labels.putAll(labels);
     }
     
     /**
@@ -67,8 +50,7 @@ public abstract class Connection {
     }
     
     /**
-     * Setter method for property <tt>abandon</tt>.
-     * connection event will be ignored if connection is abandoned.
+     * Setter method for property <tt>abandon</tt>. connection event will be ignored if connection is abandoned.
      *
      * @param abandon value to be assigned to property abandon
      */
@@ -77,49 +59,28 @@ public abstract class Connection {
     }
     
     /**
-     * send request.
-     * default time out 3 seconds.
-     * @param request request.
-     * @param requestMeta requestMeta.
-     * @return response.
-     * @throws NacosException exception throw.
-     */
-    public abstract Response request(Request request, RequestMeta requestMeta) throws NacosException;
-    
-    /**
-     * send request.
+     * Getter method for property <tt>labels</tt>.
      *
-     * @param request  request.
-     * @param requestMeta requestMeta.
-     * @param timeoutMills mills of timeouts.
-     * @return response  response returned.
-     * @throws NacosException exception throw.
+     * @return property value of labels
      */
-    public abstract Response request(Request request, RequestMeta requestMeta, long timeoutMills) throws NacosException;
+    @Override
+    public Map<String, String> getLabels() {
+        return labels;
+    }
     
     /**
-     * send request.
+     * Setter method for property <tt>labels</tt>.
      *
-     * @param request     request.
-     * @param requestMeta meta of request.
-     * @return request future.
-     * @throws NacosException exception throw.
+     * @param labels value to be assigned to property labels
      */
-    public abstract RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException;
+    public void putLabels(Map<String, String> labels) {
+        this.labels = labels;
+    }
     
     /**
-     * send aync request.
-     =    * @param request request.
-     * @param requestMeta meta of request.
-     * @param requestCallBack callback of request.
-     * @throws NacosException exception throw.
+     * Setter method for property <tt>labels</tt>.
      */
-    public abstract void asyncRequest(Request request, RequestMeta requestMeta, RequestCallBack requestCallBack)
-            throws NacosException;
-    
-    /**
-     * close connection.
-     */
-    public abstract void close();
-    
+    public void putLabel(String labelName, String labelValue) {
+        this.labels.put(labelName, labelValue);
+    }
 }

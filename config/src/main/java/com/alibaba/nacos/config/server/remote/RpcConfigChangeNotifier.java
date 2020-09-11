@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,11 +48,12 @@ import java.util.concurrent.TimeUnit;
  * @author liuzunfei
  * @version $Id: ConfigChangeNotifier.java, v 0.1 2020年07月20日 3:00 PM liuzunfei Exp $
  */
-@Component
+@Component(value = "rpcConfigChangeNotifier")
 public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 100,
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
+                    Runtime.getRuntime().availableProcessors() * 2,
                     new NameThreadFactory("com.alibaba.nacos.config.server.remote.ConfigChangeNotifier"));
     
     public RpcConfigChangeNotifier() {
@@ -101,7 +103,8 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             }
         }
     
-        Loggers.RPC.info("push {} clients ,groupKey={}", clients == null ? 0 : notifyCount, groupKey);
+        Loggers.RPC.info("push {} clients ,groupKey={},queue size={}", clients == null ? 0 : notifyCount, groupKey,
+                ((ScheduledThreadPoolExecutor) ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR).getQueue().size());
     }
     
     @Override
@@ -151,7 +154,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         
         @Override
         public void run() {
-            rpcPushService.pushWithCallback(clientId, notifyRequet, new AbstractPushCallBack(500L) {
+            rpcPushService.pushWithCallback(clientId, notifyRequet, new AbstractPushCallBack(3000L) {
                 int retryTimes = tryTimes;
                 
                 @Override
@@ -163,14 +166,13 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 
                 @Override
                 public void onFail(Throwable e) {
-                    Loggers.CORE.error("On failt ", e);
                     Loggers.CORE.warn("push fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
                             notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
                             retryTimes);
                     
                     push(RpcPushTask.this);
                 }
-    
+        
             }, ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR);
             
             tryTimes++;
