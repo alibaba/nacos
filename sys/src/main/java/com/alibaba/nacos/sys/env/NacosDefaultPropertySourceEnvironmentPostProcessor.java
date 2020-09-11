@@ -1,20 +1,20 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *  Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
-package com.alibaba.nacos.core.env;
+package com.alibaba.nacos.sys.env;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
@@ -43,6 +43,7 @@ import static org.springframework.core.io.support.ResourcePatternResolver.CLASSP
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
  */
+@Deprecated
 public class NacosDefaultPropertySourceEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
     
     /**
@@ -56,7 +57,7 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
      * @see ResourcePatternResolver#CLASSPATH_ALL_URL_PREFIX
      */
     public static final String RESOURCE_LOCATION_PATTERN =
-            CLASSPATH_ALL_URL_PREFIX + "META-INF/nacos-default.properties";
+            ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX + "META-INF/nacos-default.properties";
     
     private static final String FILE_ENCODING = "UTF-8";
     
@@ -114,6 +115,6 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
     
     @Override
     public int getOrder() {
-        return LOWEST_PRECEDENCE;
+        return Ordered.LOWEST_PRECEDENCE;
     }
 }

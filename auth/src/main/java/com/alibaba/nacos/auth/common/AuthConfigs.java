@@ -18,6 +18,7 @@ package com.alibaba.nacos.auth.common;
 
 import com.alibaba.nacos.auth.common.env.ReloadableConfigs;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.jsonwebtoken.io.Decoders;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -93,7 +94,7 @@ public class AuthConfigs {
             return BooleanUtils.toBoolean(enabled);
         }
         return BooleanUtils
-                .toBoolean(reloadableConfigs.getProperties().getProperty("nacos.core.auth.enabled", "false"));
+                .toBoolean(ApplicationUtils.getProperty("nacos.core.auth.enabled", "false"));
     }
     
     /**
@@ -106,7 +107,7 @@ public class AuthConfigs {
             return cachingEnabled;
         }
         return BooleanUtils
-                .toBoolean(reloadableConfigs.getProperties().getProperty("nacos.core.auth.caching.enabled", "true"));
+                .toBoolean(ApplicationUtils.getProperty("nacos.core.auth.caching.enabled", "true"));
     }
     
     @JustForTest
