@@ -51,9 +51,9 @@ public class IoUtils {
      *
      * @param raw compress stream
      * @return byte array after decompress
-     * @throws Exception exception
+     * @throws IOException exception
      */
-    public static byte[] tryDecompress(InputStream raw) throws Exception {
+    public static byte[] tryDecompress(InputStream raw) throws IOException {
         GZIPInputStream gis = null;
         ByteArrayOutputStream out = null;
         try {
@@ -61,7 +61,7 @@ public class IoUtils {
             out = new ByteArrayOutputStream();
             copy(gis, out);
             return out.toByteArray();
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         } finally {
             if (out != null) {

@@ -24,9 +24,7 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
-import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
-import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import org.junit.After;
@@ -41,7 +39,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,20 +65,12 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     @Mock
     private RecordListener<Instances> recordListener;
     
-    @Mock
-    private DistroComponentHolder distroComponentHolder;
-    
-    @Mock
-    private DistroTaskEngineHolder distroTaskEngineHolder;
-    
     private Map<String, ConcurrentLinkedQueue<RecordListener>> listeners;
     
     private Instances instances;
     
     @Before
     public void setUp() throws Exception {
-        doReturn(distroComponentHolder).when(context).getBean(DistroComponentHolder.class);
-        doReturn(distroTaskEngineHolder).when(context).getBean(DistroTaskEngineHolder.class);
         when(globalConfig.getTaskDispatchPeriod()).thenReturn(2000);
         distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, serializer, switchDomain,
                 globalConfig, distroProtocol);
