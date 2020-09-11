@@ -54,9 +54,9 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160..148:8848,127.0.0.1:8848,127.0.0.1:8848");
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848,11.160.144.148:8848,127.0.0.1:8848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848,11.160.144.148:8848,127.0.0.1:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
@@ -66,8 +66,8 @@ public class ConfigTest {
     @Test
     public void test222() throws Exception {
         Map<String, String> labels = new HashMap<String, String>();
-        labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_NODE);
-    
+        labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_CLUSTER);
+        
         RpcClient client = RpcClientFactory.createClient("1234", ConnectionType.RSOCKET, labels);
         client.init(new ServerListFactory() {
             @Override
@@ -181,21 +181,27 @@ public class ConfigTest {
     
     @Test
     public void test2() throws Exception {
+        final String dataId = "xiaochun.xxc";
+        final String group = "xiaochun.xxc";
         Properties properties = new Properties();
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848,11.160.144.149:8848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848");
         //"
         List<ConfigService> configServiceList = new ArrayList<ConfigService>();
         for (int i = 0; i < 300; i++) {
             
             ConfigService configService = NacosFactory.createConfigService(properties);
-            configService.addListener("test", "test", new AbstractListener() {
     
+            Listener listener = new AbstractListener() {
                 @Override
                 public void receiveConfigInfo(String configInfo) {
-                    System.out.println("listener2:" + configInfo);
+                    System.out.println(
+                            "receiveConfigInfo1 content:" + (System.currentTimeMillis() - Long.valueOf(configInfo)));
+            
                 }
-            });
-            configServiceList.add(configService);
+            };
+    
+            configService.addListener(dataId, group, listener);
+    
             System.out.println(configServiceList.size());
         }
         System.out.println("2");
@@ -208,13 +214,10 @@ public class ConfigTest {
                 int times = 10000;
                 while (times > 0) {
                     try {
-                        System.out.println("3");
-    
-                        boolean result = configService
-                                .publishConfig("test", "test", "value" + System.currentTimeMillis());
-    
+                        boolean result = configService.publishConfig(dataId, group, "" + System.currentTimeMillis());
+                        
                         times--;
-                        Thread.sleep(3000L);
+                        Thread.sleep(1000L);
                     } catch (Exception e) {
                         e.printStackTrace();
     
@@ -223,7 +226,7 @@ public class ConfigTest {
             }
         
         });
-        //th.start();
+        th.start();
         
         Thread.sleep(1000000L);
     }
@@ -244,12 +247,12 @@ public class ConfigTest {
                 int times = 1000;
                 while (times > 0) {
                     try {
-                        String content1 = "value" + System.currentTimeMillis();
-                        System.out.println("publish content:" + content1);
+                        String content1 = System.currentTimeMillis() + "";
+                        //System.out.println("publish content:" + content1);
                         configService.publishConfig(dataId, group, content1);
                         
                         times--;
-                        Thread.sleep(2000L);
+                        Thread.sleep(1000L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -261,13 +264,14 @@ public class ConfigTest {
     
         });
     
-        th.start();
+        //th.start();
         
         Listener listener = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                System.out.println("receiveConfigInfo1 content:" + configInfo + "," + System.currentTimeMillis());
-    
+                System.out.println(
+                        "receiveConfigInfo1 content:" + (System.currentTimeMillis() - Long.valueOf(configInfo)));
+                
             }
         };
     

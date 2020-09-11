@@ -28,6 +28,7 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
+import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +79,9 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         connectionManager.register(connectionId, connection);
                     }
                 } else if (plainRequest.getBody() instanceof Response) {
+    
                     Response response = (Response) plainRequest.getBody();
+                    Loggers.RPC_DIGEST.debug(String.format("[%s] response receive :%s ", "grpc", response.toString()));
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
                 }
                 
