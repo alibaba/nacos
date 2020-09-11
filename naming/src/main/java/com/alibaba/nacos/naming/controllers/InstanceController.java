@@ -38,6 +38,7 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
+import com.alibaba.nacos.naming.web.DistroFilter;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -115,9 +116,10 @@ public class InstanceController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String register(HttpServletRequest request) throws Exception {
         
-        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         
         final Instance instance = parseInstance(request);
         
@@ -139,6 +141,7 @@ public class InstanceController {
         Instance instance = getIpAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -161,9 +164,10 @@ public class InstanceController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         final Instance instance = parseInstance(request);
         
         String agent = WebUtils.getUserAgent(request);
@@ -190,8 +194,9 @@ public class InstanceController {
     @PatchMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String patch(HttpServletRequest request) throws Exception {
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         String ip = WebUtils.required(request, "ip");
         String port = WebUtils.required(request, "port");
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
@@ -242,8 +247,9 @@ public class InstanceController {
     public ObjectNode list(HttpServletRequest request) throws Exception {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
+        
         String agent = WebUtils.getUserAgent(request);
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
@@ -274,6 +280,7 @@ public class InstanceController {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
@@ -301,8 +308,8 @@ public class InstanceController {
                 result.put("clusterName", cluster);
                 result.put("weight", instance.getWeight());
                 result.put("healthy", instance.isHealthy());
-                result.put("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
                 result.put("instanceId", instance.getInstanceId());
+                result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
                 return result;
             }
         }
@@ -344,8 +351,9 @@ public class InstanceController {
             ip = clientBeat.getIp();
             port = clientBeat.getPort();
         }
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        checkServiceNameFormat(serviceName);
         Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, clusterName, ip, port);
         
@@ -413,7 +421,7 @@ public class InstanceController {
             namespaceId = Constants.DEFAULT_NAMESPACE_ID;
             serviceName = key;
         }
-        
+        checkServiceNameFormat(serviceName);
         Service service = serviceManager.getService(namespaceId, serviceName);
         
         if (service == null) {
@@ -431,6 +439,26 @@ public class InstanceController {
         
         result.replace("ips", ipArray);
         return result;
+    }
+    
+    /**
+     * check combineServiceName format. the serviceName can't be blank. some relational logic in {@link
+     * DistroFilter#doFilter}, it will handle combineServiceName in some case, you should know it.
+     * <pre>
+     * serviceName = "@@"; the length = 0; illegal
+     * serviceName = "group@@"; the length = 1; illegal
+     * serviceName = "@@serviceName"; the length = 2; legal
+     * serviceName = "group@@serviceName"; the length = 2; legal
+     * </pre>
+     *
+     * @param combineServiceName such as: groupName@@serviceName
+     */
+    private void checkServiceNameFormat(String combineServiceName) {
+        String[] split = combineServiceName.split(Constants.SERVICE_INFO_SPLITER);
+        if (split.length <= 1) {
+            throw new IllegalArgumentException(
+                    "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName");
+        }
     }
     
     private Instance parseInstance(HttpServletRequest request) throws Exception {
@@ -568,7 +596,6 @@ public class InstanceController {
                 result.put("dom", NamingUtils.getServiceName(serviceName));
             }
             
-            result.put("hosts", JacksonUtils.createEmptyArrayNode());
             result.put("name", serviceName);
             result.put("cacheMillis", cacheMillis);
             result.put("lastRefTime", System.currentTimeMillis());
@@ -576,7 +603,8 @@ public class InstanceController {
             result.put("useSpecifiedURL", false);
             result.put("clusters", clusters);
             result.put("env", env);
-            result.put("metadata", JacksonUtils.transferToJsonNode(service.getMetadata()));
+            result.set("hosts", JacksonUtils.createEmptyArrayNode());
+            result.set("metadata", JacksonUtils.transferToJsonNode(service.getMetadata()));
             return result;
         }
         
@@ -637,7 +665,7 @@ public class InstanceController {
                 ipObj.put("healthy", entry.getKey());
                 ipObj.put("marked", instance.isMarked());
                 ipObj.put("instanceId", instance.getInstanceId());
-                ipObj.put("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
+                ipObj.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
                 ipObj.put("enabled", instance.isEnabled());
                 ipObj.put("weight", instance.getWeight());
                 ipObj.put("clusterName", instance.getClusterName());

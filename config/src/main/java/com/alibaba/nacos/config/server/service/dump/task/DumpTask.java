@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.config.server.service.dump.task;
 
-import com.alibaba.nacos.config.server.manager.AbstractTask;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
 
 /**
  * Dump data task.
  *
  * @author Nacos
  */
-public class DumpTask extends AbstractTask {
+public class DumpTask extends AbstractDelayTask {
     
     public DumpTask(String groupKey, long lastModified, String handleIp) {
         this.groupKey = groupKey;
@@ -56,7 +56,7 @@ public class DumpTask extends AbstractTask {
     }
     
     @Override
-    public void merge(AbstractTask task) {
+    public void merge(AbstractDelayTask task) {
     }
     
     final String groupKey;
