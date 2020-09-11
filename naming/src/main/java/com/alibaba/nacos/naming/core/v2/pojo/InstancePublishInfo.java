@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.pojo;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Instance POJO of client published for Nacos v2.
@@ -26,13 +27,16 @@ import java.util.Map;
  */
 public class InstancePublishInfo {
     
-    private final String ip;
+    private String ip;
     
-    private final int port;
+    private int port;
     
     private Map<String, Object> extendDatum;
     
     private boolean healthy;
+    
+    public InstancePublishInfo() {
+    }
     
     public InstancePublishInfo(String ip, int port) {
         this.ip = ip;
@@ -40,8 +44,16 @@ public class InstancePublishInfo {
         extendDatum = new HashMap<>(1);
     }
     
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+    
     public String getIp() {
         return ip;
+    }
+    
+    public void setPort(int port) {
+        this.port = port;
     }
     
     public int getPort() {
@@ -62,5 +74,23 @@ public class InstancePublishInfo {
     
     public void setHealthy(boolean healthy) {
         this.healthy = healthy;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof InstancePublishInfo)) {
+            return false;
+        }
+        InstancePublishInfo that = (InstancePublishInfo) o;
+        return port == that.port && healthy == that.healthy && Objects.equals(ip, that.ip) && Objects
+                .equals(extendDatum, that.extendDatum);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(ip, port, extendDatum, healthy);
     }
 }

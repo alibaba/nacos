@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.service.impl;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
 
@@ -68,7 +70,9 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     private InstancePublishInfo getPublishInfo(Instance instance) {
         InstancePublishInfo result = new InstancePublishInfo(instance.getIp(), instance.getPort());
         result.getExtendDatum().putAll(instance.getMetadata());
-        result.getExtendDatum().put(CommonParams.CLUSTER_NAME, instance.getClusterName());
+        String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
+                : instance.getClusterName();
+        result.getExtendDatum().put(CommonParams.CLUSTER_NAME, clusterName);
         return result;
     }
     

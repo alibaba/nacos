@@ -20,34 +20,30 @@ import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
-import com.alibaba.nacos.core.utils.Loggers;
 
 /**
- * Distro sync change task.
+ * Distro sync delete task.
  *
  * @author xiweng.yy
  */
-public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
+public class DistroSyncDeleteTask extends AbstractDistroExecuteTask {
     
-    public DistroSyncChangeTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
+    public DistroSyncDeleteTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
         super(distroKey, distroComponentHolder);
     }
     
     @Override
     protected boolean doExecute() {
         String type = getDistroKey().getResourceType();
-        DistroData distroData = getDistroComponentHolder().findDataStorage(type).getDistroData(getDistroKey());
-        if (null != distroData) {
-            distroData.setType(DataOperation.CHANGE);
-            return getDistroComponentHolder().findTransportAgent(type)
-                    .syncData(distroData, getDistroKey().getTargetServer());
-        }
-        Loggers.DISTRO.warn("[DISTRO-END] {} with null data to sync, skip", toString());
-        return false;
+        DistroData distroData = new DistroData();
+        distroData.setDistroKey(getDistroKey());
+        distroData.setType(DataOperation.DELETE);
+        return getDistroComponentHolder().findTransportAgent(type)
+                .syncData(distroData, getDistroKey().getTargetServer());
     }
     
     @Override
     public String toString() {
-        return "DistroSyncChangeTask for " + getDistroKey().toString();
+        return "DistroSyncDeleteTask for " + getDistroKey().toString();
     }
 }

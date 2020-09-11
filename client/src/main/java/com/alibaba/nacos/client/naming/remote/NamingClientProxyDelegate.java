@@ -59,7 +59,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         this.serverListManager = new ServerListManager(properties);
         this.serviceInfoHolder = serviceInfoHolder;
         this.httpClientProxy = new NamingHttpClientProxy(namespace, serverListManager, properties, serviceInfoHolder);
-        this.grpcClientProxy = new NamingGrpcClientProxy(namespace, serverListManager, serviceInfoHolder);
+        this.grpcClientProxy = new NamingGrpcClientProxy(namespace, serverListManager, properties, serviceInfoHolder);
     }
     
     @Override

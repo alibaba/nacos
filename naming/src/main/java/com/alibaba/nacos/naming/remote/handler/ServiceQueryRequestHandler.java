@@ -17,13 +17,22 @@
 package com.alibaba.nacos.naming.remote.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.naming.core.ServiceInfoGenerator;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Nacos query instances request handler.
@@ -33,22 +42,53 @@ import org.springframework.stereotype.Component;
 @Component
 public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
     
-    private final ServiceInfoGenerator serviceInfoGenerator;
+    private final ServiceStorage serviceStorage;
     
-    public ServiceQueryRequestHandler(ServiceInfoGenerator serviceInfoGenerator) {
-        this.serviceInfoGenerator = serviceInfoGenerator;
+    public ServiceQueryRequestHandler(ServiceStorage serviceStorage) {
+        this.serviceStorage = serviceStorage;
     }
     
     @Override
     public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta) throws NacosException {
-        ServiceQueryRequest queryRequest = (ServiceQueryRequest) request;
-        String namespaceId = queryRequest.getNamespace();
-        String serviceName = queryRequest.getServiceName();
-        String cluster = null == queryRequest.getCluster() ? "" : queryRequest.getCluster();
-        boolean healthyOnly = queryRequest.isHealthyOnly();
-        ServiceInfo result = serviceInfoGenerator
-                .generateServiceInfo(namespaceId, serviceName, cluster, healthyOnly, meta.getClientIp());
+        String namespaceId = request.getNamespace();
+        String groupName = request.getGroupName();
+        String serviceName = request.getServiceName();
+        Service service = Service.newService(namespaceId, groupName, serviceName);
+        String cluster = null == request.getCluster() ? "" : request.getCluster();
+        boolean healthyOnly = request.isHealthyOnly();
+        ServiceInfo result = serviceStorage.getData(service);
+        result = filterInstance(result, cluster, healthyOnly);
         return QueryServiceResponse.buildSuccessResponse(result);
+    }
+    
+    private ServiceInfo filterInstance(ServiceInfo serviceInfo, String cluster, boolean healthyOnly) {
+        ServiceInfo result = new ServiceInfo();
+        result.setName(serviceInfo.getName());
+        result.setGroupName(serviceInfo.getGroupName());
+        result.setCacheMillis(serviceInfo.getCacheMillis());
+        result.setLastRefTime(System.currentTimeMillis());
+        result.setClusters(cluster);
+        Set<String> clusterSets =
+                StringUtils.isNotBlank(cluster) ? new HashSet<>(Arrays.asList(cluster.split(","))) : new HashSet<>();
+        List<Instance> filteredInstance = new LinkedList<>();
+        for (Instance each : serviceInfo.getHosts()) {
+            if (checkCluster(clusterSets, each) && checkHealthy(healthyOnly, each)) {
+                filteredInstance.add(each);
+            }
+        }
+        result.setHosts(filteredInstance);
+        return result;
+    }
+    
+    private boolean checkCluster(Set<String> clusterSets, Instance instance) {
+        if (clusterSets.isEmpty()) {
+            return true;
+        }
+        return clusterSets.contains(instance.getClusterName());
+    }
+    
+    private boolean checkHealthy(boolean healthyOnly, Instance instance) {
+        return !healthyOnly || instance.isHealthy();
     }
     
 }

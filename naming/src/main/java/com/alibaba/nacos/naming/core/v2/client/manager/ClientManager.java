@@ -57,4 +57,19 @@ public interface ClientManager {
      * @return collection of client id
      */
     Collection<String> allClientId();
+    
+    /**
+     * Whether the client is responsible by current server.
+     *
+     * @param client client
+     * @return true if responsible, otherwise false
+     */
+    boolean isResponsibleClient(Client client);
+    
+    /**
+     * verify client.
+     *
+     * @param clientId client id
+     */
+    void verifyClient(String clientId);
 }
