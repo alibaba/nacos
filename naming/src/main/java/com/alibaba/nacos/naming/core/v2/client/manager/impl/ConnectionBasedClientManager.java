@@ -46,12 +46,12 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
         if (!RemoteConstants.LABEL_MODULE_NAMING.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
             return;
         }
-        Loggers.SRV_LOG.info("Client connection {} connect", connect.getConnectionId());
         clientConnected(new ConnectionBasedClient(connect.getConnectionId(), true));
     }
     
     @Override
     public boolean clientConnected(Client client) {
+        Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
         if (!clients.containsKey(client.getClientId())) {
             clients.put(client.getClientId(), (ConnectionBasedClient) client);
         }
@@ -82,5 +82,19 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     @Override
     public Collection<String> allClientId() {
         return clients.keySet();
+    }
+    
+    @Override
+    public boolean isResponsibleClient(Client client) {
+        return (client instanceof ConnectionBasedClient) && ((ConnectionBasedClient) client).isNative();
+    }
+    
+    @Override
+    public void verifyClient(String clientId) {
+        ConnectionBasedClient client = clients.get(clientId);
+        if (null != client) {
+            client.setLastRenewTime();
+        }
+        // TODO get client from source
     }
 }

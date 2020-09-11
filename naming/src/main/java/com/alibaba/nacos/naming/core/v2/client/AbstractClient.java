@@ -16,11 +16,16 @@
 
 package com.alibaba.nacos.naming.core.v2.client;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -37,12 +42,14 @@ public abstract class AbstractClient implements Client {
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         publishers.put(service, instancePublishInfo);
+        NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         return true;
     }
     
     @Override
     public boolean removeServiceInstance(Service service) {
         publishers.remove(service);
+        NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         return true;
     }
     
@@ -76,5 +83,20 @@ public abstract class AbstractClient implements Client {
     @Override
     public Collection<Service> getAllSubscribeService() {
         return subscribers.keySet();
+    }
+    
+    @Override
+    public ClientSyncData generateSyncData() {
+        List<String> namespaces = new LinkedList<>();
+        List<String> groupNames = new LinkedList<>();
+        List<String> serviceNames = new LinkedList<>();
+        List<InstancePublishInfo> instances = new LinkedList<>();
+        for (Map.Entry<Service, InstancePublishInfo> entry : publishers.entrySet()) {
+            namespaces.add(entry.getKey().getNamespace());
+            groupNames.add(entry.getKey().getGroup());
+            serviceNames.add(entry.getKey().getName());
+            instances.add(entry.getValue());
+        }
+        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances);
     }
 }

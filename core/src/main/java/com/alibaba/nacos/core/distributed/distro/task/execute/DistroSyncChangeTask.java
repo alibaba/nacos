@@ -43,12 +43,16 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
         try {
             String type = getDistroKey().getResourceType();
             DistroData distroData = distroComponentHolder.findDataStorage(type).getDistroData(getDistroKey());
-            distroData.setType(DataOperation.CHANGE);
-            boolean result = distroComponentHolder.findTransportAgent(type).syncData(distroData, getDistroKey().getTargetServer());
-            if (!result) {
-                handleFailedTask();
+            if (null != distroData) {
+                distroData.setType(DataOperation.CHANGE);
+                boolean result = distroComponentHolder.findTransportAgent(type).syncData(distroData, getDistroKey().getTargetServer());
+                if (!result) {
+                    handleFailedTask();
+                }
+                Loggers.DISTRO.info("[DISTRO-END] {} result: {}", toString(), result);
+            } else {
+                Loggers.DISTRO.warn("[DISTRO-END] {} with null data to sync, skip", toString());
             }
-            Loggers.DISTRO.info("[DISTRO-END] {} result: {}", toString(), result);
         } catch (Exception e) {
             Loggers.DISTRO.warn("[DISTRO] Sync data change failed.", e);
             handleFailedTask();

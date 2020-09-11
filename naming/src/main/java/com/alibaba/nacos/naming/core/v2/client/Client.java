@@ -109,4 +109,11 @@ public interface Client {
      * @return subscribe services
      */
     Collection<Service> getAllSubscribeService();
+    
+    /**
+     * Generate sync data.
+     *
+     * @return sync data
+     */
+    ClientSyncData generateSyncData();
 }

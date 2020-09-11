@@ -52,6 +52,9 @@ public class DistroDelayTaskProcessor implements NacosTaskProcessor {
             DistroSyncChangeTask syncChangeTask = new DistroSyncChangeTask(distroKey, distroComponentHolder);
             distroTaskEngineHolder.getExecuteWorkersManager().dispatch(distroKey, syncChangeTask);
             return true;
+        } else if (DataOperation.DELETE.equals(distroDelayTask.getAction())) {
+            // TODO do sync delete task
+            return true;
         }
         return false;
     }

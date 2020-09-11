@@ -14,27 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.exception;
+package com.alibaba.nacos.naming.cluster.remote.response;
+
+import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 
 /**
- * Distro exception.
+ * Distro data response.
  *
  * @author xiweng.yy
  */
-public class DistroException extends RuntimeException {
+public class DistroDataResponse extends Response {
     
-    private static final long serialVersionUID = 1711141952413139786L;
+    private DistroData distroData;
     
-    public DistroException(String message) {
-        super(message);
+    public DistroData getDistroData() {
+        return distroData;
     }
     
-    public DistroException(String message, Throwable cause) {
-        super(message, cause);
-    }
-    
-    @Override
-    public String getMessage() {
-        return "[DISTRO-EXCEPTION]" + super.getMessage();
+    public void setDistroData(DistroData distroData) {
+        this.distroData = distroData;
     }
 }
