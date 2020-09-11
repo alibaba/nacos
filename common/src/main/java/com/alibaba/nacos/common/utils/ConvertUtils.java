@@ -126,7 +126,7 @@ public final class ConvertUtils {
      * @return the boolean value of the string, {@code false} if no match or the String is null
      */
     public static boolean toBoolean(final String str) {
-        return toBooleanObject(str) == Boolean.TRUE;
+        return Boolean.TRUE.equals(toBooleanObject(str));
     }
     
     /**
