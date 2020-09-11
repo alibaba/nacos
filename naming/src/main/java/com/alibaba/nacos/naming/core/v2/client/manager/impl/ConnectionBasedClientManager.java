@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
@@ -24,12 +25,14 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The manager of {@code ConnectionBasedClient}.
@@ -40,6 +43,11 @@ import java.util.concurrent.ConcurrentMap;
 public class ConnectionBasedClientManager extends ClientConnectionEventListener implements ClientManager {
     
     private final ConcurrentMap<String, ConnectionBasedClient> clients = new ConcurrentHashMap<>();
+    
+    public ConnectionBasedClientManager() {
+        GlobalExecutor.scheduleRemoteConnectionManager(new ConnectionBasedClientManager.ExpiredClientCleaner(this), 0,
+                Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
+    }
     
     @Override
     public void clientConnected(Connection connect) {
@@ -94,7 +102,32 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
         ConnectionBasedClient client = clients.get(clientId);
         if (null != client) {
             client.setLastRenewTime();
+        } else {
+            // TODO get client from source
         }
-        // TODO get client from source
+    }
+    
+    private static class ExpiredClientCleaner implements Runnable {
+        
+        private final ConnectionBasedClientManager clientManager;
+        
+        public ExpiredClientCleaner(ConnectionBasedClientManager clientManager) {
+            this.clientManager = clientManager;
+        }
+        
+        @Override
+        public void run() {
+            long currentTime = System.currentTimeMillis();
+            for (String each : clientManager.allClientId()) {
+                ConnectionBasedClient client = (ConnectionBasedClient) clientManager.getClient(each);
+                if (null != client && isExpireClient(currentTime, client)) {
+                    clientManager.clientDisconnected(each);
+                }
+            }
+        }
+        
+        private boolean isExpireClient(long currentTime, ConnectionBasedClient client) {
+            return !client.isNative() && currentTime - client.getLastRenewTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
+        }
     }
 }
