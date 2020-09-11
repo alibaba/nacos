@@ -346,6 +346,9 @@ public abstract class RpcClient implements Closeable {
                     switchingFlag.compareAndSet(false, true);
                     // loop until start client success.
                     boolean switchSuccess = false;
+        
+                    int reConnectTimes = 0;
+                    Exception lastException = null;
                     while (!switchSuccess && !isShutdwon()) {
                         
                         //1.get a new server
@@ -353,7 +356,6 @@ public abstract class RpcClient implements Closeable {
                         //2.create a new channel to new server
                         try {
                             serverInfo = recommendServer.get() == null ? nextRpcServer() : recommendServer.get();
-                            System.out.println(RpcClient.this.name + "trying  to connect server:" + serverInfo);
                             
                             Connection connectNew = connectToServer(serverInfo);
                             if (connectNew != null) {
@@ -368,19 +370,26 @@ public abstract class RpcClient implements Closeable {
                                 boolean s = eventLinkedBlockingQueue
                                         .add(new ConnectionEvent(ConnectionEvent.CONNECTED));
                                 return;
-                            } else {
-                                System.out.println(RpcClient.this.name + "-fail to connect server:" + serverInfo);
                             }
     
                             if (isShutdwon()) {
                                 closeConnection(connectNew);
                             }
+    
+                            lastException = null;
                             
                         } catch (Exception e) {
-                            System.out.println(RpcClient.this.name + "-fail to connect server:" + serverInfo
-                                    + " ,error message is " + e.getMessage());
+                            lastException = e;
                         } finally {
                             recommendServer.set(null);
+                        }
+    
+                        reConnectTimes++;
+    
+                        if (reConnectTimes % 30 == 0) {
+                            System.out.println(
+                                    RpcClient.this.name + "-fail to connect server,after trying " + reConnectTimes
+                                            + " times, last tryed server is " + serverInfo);
                         }
                         
                         try {
@@ -431,10 +440,6 @@ public abstract class RpcClient implements Closeable {
      */
     public abstract int rpcPortOffset();
     
-    protected void clearContextOnResetRequest() {
-        // Default do nothing.
-    }
-    
     /**
      * get current server.
      *
@@ -477,7 +482,6 @@ public abstract class RpcClient implements Closeable {
                 if (response != null) {
                     if (response instanceof ConnectionUnregisterResponse) {
                         synchronized (this) {
-                            clearContextOnResetRequest();
                             if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
                                 switchServerAsync();
                             }

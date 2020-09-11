@@ -20,9 +20,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
+
+import java.util.Map;
 
 /**
  * Cluster connection.
@@ -36,25 +39,33 @@ public class ClusterConnection extends Connection {
     }
     
     @Override
-    public Response sendRequest(Request request, long timeoutMills) throws NacosException {
+    public Response request(Request request, RequestMeta requestMeta) throws NacosException {
         return null;
     }
     
     @Override
-    public void sendRequestNoAck(Request request) throws NacosException {
-    }
-    
-    @Override
-    public RequestFuture sendRequestWithFuture(Request request) throws NacosException {
+    public Response request(Request request, RequestMeta requestMeta, long timeoutMills) throws NacosException {
         return null;
     }
     
     @Override
-    public void sendRequestWithCallBack(Request request, RequestCallBack callBack) throws NacosException {
-    
+    public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException {
+        return null;
     }
     
     @Override
-    public void closeGrapcefully() {
+    public void asyncRequest(Request request, RequestMeta requestMeta, RequestCallBack requestCallBack)
+            throws NacosException {
+        
+    }
+    
+    @Override
+    public Map<String, String> getLabels() {
+        return null;
+    }
+    
+    @Override
+    public void close() {
+    
     }
 }

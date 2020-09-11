@@ -19,8 +19,11 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,8 +57,6 @@ public class ConnectionManager {
     private int loadClient = -1;
     
     String redirectAddress = null;
-    
-    private static final long EXPIRE_MILLSECOND = 10000L;
     
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
@@ -94,7 +95,7 @@ public class ConnectionManager {
     public void unregister(String connectionId) {
         Connection remove = this.connetions.remove(connectionId);
         if (remove != null) {
-            remove.closeGrapcefully();
+            remove.close();
             Loggers.RPC.info(" connection unregistered successfully,connectionid = {} ", connectionId);
             clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
         }
@@ -187,7 +188,7 @@ public class ConnectionManager {
                                     connectResetRequest.setServerIp(split[0]);
                                     connectResetRequest.setServerPort(split[1]);
                                 }
-                                connection.sendRequestNoAck(connectResetRequest);
+                                connection.request(connectResetRequest, buildMeta());
                                 Loggers.RPC
                                         .info("expel connection ,send switch server response connectionid = {},connectResetRequest={} ",
                                                 expeledClientId, connectResetRequest);
@@ -212,6 +213,13 @@ public class ConnectionManager {
             }
         }, 500L, 3000L, TimeUnit.MILLISECONDS);
         
+    }
+    
+    private RequestMeta buildMeta() {
+        RequestMeta meta = new RequestMeta();
+        meta.setClientVersion(VersionUtils.getFullClientVersion());
+        meta.setClientIp(NetUtils.localIP());
+        return meta;
     }
     
     public void coordinateMaxClientsSmoth(int maxClient) {
@@ -240,7 +248,7 @@ public class ConnectionManager {
                 connectResetRequest.setServerPort(split[1]);
             }
             try {
-                connection.sendRequestNoAck(connectResetRequest);
+                connection.request(connectResetRequest, buildMeta());
             } catch (ConnectionAlreadyClosedException e) {
                 unregister(connectionId);
             } catch (Exception e) {
@@ -297,7 +305,7 @@ public class ConnectionManager {
         for (Map.Entry<String, Connection> entry : connetions.entrySet()) {
             Connection client = entry.getValue();
             try {
-                client.sendRequestNoAck(new ConnectResetRequest());
+                client.request(new ConnectResetRequest(), buildMeta());
             } catch (Exception e) {
                 //Do Nothing.
             }
