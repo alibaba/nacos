@@ -92,10 +92,19 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     @Override
     public boolean processData(DistroData distroData) {
-        ClientSyncData clientSyncData = ApplicationUtils.getBean(Serializer.class)
-                .deserialize(distroData.getContent(), ClientSyncData.class);
-        handlerClientSyncData(clientSyncData);
-        return true;
+        switch (distroData.getType()) {
+            case ADD:
+            case CHANGE:
+                ClientSyncData clientSyncData = ApplicationUtils.getBean(Serializer.class)
+                        .deserialize(distroData.getContent(), ClientSyncData.class);
+                handlerClientSyncData(clientSyncData);
+                return true;
+            case DELETE:
+                clientManager.clientDisconnected(distroData.getDistroKey().getResourceKey());
+                return true;
+            default:
+                return false;
+        }
     }
     
     private void handlerClientSyncData(ClientSyncData clientSyncData) {

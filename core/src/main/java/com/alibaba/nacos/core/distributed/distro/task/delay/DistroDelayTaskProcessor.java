@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.core.distributed.distro.task.execute.DistroSyncChangeTask;
+import com.alibaba.nacos.core.distributed.distro.task.execute.DistroSyncDeleteTask;
 
 /**
  * Distro delay task processor.
@@ -53,7 +54,8 @@ public class DistroDelayTaskProcessor implements NacosTaskProcessor {
             distroTaskEngineHolder.getExecuteWorkersManager().dispatch(distroKey, syncChangeTask);
             return true;
         } else if (DataOperation.DELETE.equals(distroDelayTask.getAction())) {
-            // TODO do sync delete task
+            DistroSyncDeleteTask syncDeleteTask = new DistroSyncDeleteTask(distroKey, distroComponentHolder);
+            distroTaskEngineHolder.getExecuteWorkersManager().dispatch(distroKey, syncDeleteTask);
             return true;
         }
         return false;
