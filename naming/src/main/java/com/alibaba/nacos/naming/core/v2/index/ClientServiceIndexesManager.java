@@ -20,8 +20,10 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
+import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.springframework.stereotype.Component;
 
@@ -63,14 +65,32 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         result.add(ClientOperationEvent.ClientDeregisterServiceEvent.class);
         result.add(ClientOperationEvent.ClientSubscribeServiceEvent.class);
         result.add(ClientOperationEvent.ClientUnsubscribeServiceEvent.class);
+        result.add(ClientEvent.ClientDisconnectEvent.class);
         return result;
     }
     
     @Override
     public void onEvent(Event event) {
-        ClientOperationEvent serviceEvent = (ClientOperationEvent) event;
-        Service service = serviceEvent.getService();
-        String clientId = serviceEvent.getClientId();
+        if (event instanceof ClientEvent.ClientDisconnectEvent) {
+            handleClientDisconnect((ClientEvent.ClientDisconnectEvent) event);
+        } else {
+            handleClientOperation((ClientOperationEvent) event);
+        }
+    }
+    
+    private void handleClientDisconnect(ClientEvent.ClientDisconnectEvent event) {
+        Client client = event.getClient();
+        for (Service each : client.getAllSubscribeService()) {
+            removeSubscriberIndexes(each, client.getClientId());
+        }
+        for (Service each : client.getAllPublishedService()) {
+            removePublisherIndexes(each, client.getClientId());
+        }
+    }
+    
+    private void handleClientOperation(ClientOperationEvent event) {
+        Service service = event.getService();
+        String clientId = event.getClientId();
         if (event instanceof ClientOperationEvent.ClientRegisterServiceEvent) {
             addPublisherIndexes(service, clientId);
         } else if (event instanceof ClientOperationEvent.ClientDeregisterServiceEvent) {

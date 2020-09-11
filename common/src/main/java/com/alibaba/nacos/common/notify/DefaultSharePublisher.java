@@ -96,6 +96,9 @@ public class DefaultSharePublisher extends DefaultPublisher {
         
         // Get for Map, the algorithm is O(1).
         Set<Subscriber> subscribers = subMappings.get(slowEventType);
+        if (null == subscribers) {
+            LOGGER.warn("[NotifyCenter] No subscribers for event " + slowEventType.getSimpleName());
+        }
         
         // Notification single event subscriber
         for (Subscriber subscriber : subscribers) {

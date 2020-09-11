@@ -49,6 +49,10 @@ public class Service {
         lastUpdatedTime = System.currentTimeMillis();
     }
     
+    public static Service newService(String namespace, String group, String name) {
+        return newService(namespace, group, name, true);
+    }
+    
     public static Service newService(String namespace, String group, String name, boolean ephemeral) {
         return new Service(namespace, group, name, ephemeral);
     }
@@ -95,13 +99,12 @@ public class Service {
             return false;
         }
         Service service = (Service) o;
-        return ephemeral == service.ephemeral && namespace.equals(service.namespace) && group.equals(service.group)
-                && name.equals(service.name);
+        return namespace.equals(service.namespace) && group.equals(service.group) && name.equals(service.name);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespace, group, name, ephemeral);
+        return Objects.hash(namespace, group, name);
     }
     
     @Override

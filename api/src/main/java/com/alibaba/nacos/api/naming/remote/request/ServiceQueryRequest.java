@@ -32,8 +32,8 @@ public class ServiceQueryRequest extends AbstractNamingRequest {
     public ServiceQueryRequest() {
     }
     
-    public ServiceQueryRequest(String namespace, String serviceName) {
-        super(namespace, serviceName, null);
+    public ServiceQueryRequest(String namespace, String serviceName, String groupName) {
+        super(namespace, serviceName, groupName);
     }
     
     public String getCluster() {

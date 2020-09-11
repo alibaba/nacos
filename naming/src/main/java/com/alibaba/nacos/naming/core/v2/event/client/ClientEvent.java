@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.event.client;
 
 import com.alibaba.nacos.common.notify.SlowEvent;
+import com.alibaba.nacos.naming.core.v2.client.Client;
 
 /**
  * Client event.
@@ -27,14 +28,14 @@ public class ClientEvent extends SlowEvent {
     
     private static final long serialVersionUID = -8211818115593181708L;
     
-    private final String clientId;
+    private final Client client;
     
-    public ClientEvent(String clientId) {
-        this.clientId = clientId;
+    public ClientEvent(Client client) {
+        this.client = client;
     }
     
-    public String getClientId() {
-        return clientId;
+    public Client getClient() {
+        return client;
     }
     
     /**
@@ -44,8 +45,8 @@ public class ClientEvent extends SlowEvent {
     
         private static final long serialVersionUID = 6440402443724824673L;
     
-        public ClientChangedEvent(String clientId) {
-            super(clientId);
+        public ClientChangedEvent(Client client) {
+            super(client);
         }
     }
     
@@ -56,8 +57,8 @@ public class ClientEvent extends SlowEvent {
     
         private static final long serialVersionUID = 370348024867174101L;
     
-        public ClientDisconnectEvent(String clientId) {
-            super(clientId);
+        public ClientDisconnectEvent(Client client) {
+            super(client);
         }
     }
 }

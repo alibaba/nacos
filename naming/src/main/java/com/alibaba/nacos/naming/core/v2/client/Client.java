@@ -20,6 +20,8 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
+import java.util.Collection;
+
 /**
  * Nacos naming client.
  *
@@ -70,6 +72,13 @@ public interface Client {
     InstancePublishInfo getInstancePublishInfo(Service service);
     
     /**
+     * Get all published service of current client.
+     *
+     * @return published services
+     */
+    Collection<Service> getAllPublishedService();
+    
+    /**
      * Add a new subscriber for target service.
      *
      * @param service    subscribe service
@@ -93,4 +102,18 @@ public interface Client {
      * @return subscriber
      */
     Subscriber getSubscriber(Service service);
+    
+    /**
+     * Get all subscribe service of current client.
+     *
+     * @return subscribe services
+     */
+    Collection<Service> getAllSubscribeService();
+    
+    /**
+     * Generate sync data.
+     *
+     * @return sync data
+     */
+    ClientSyncData generateSyncData();
 }

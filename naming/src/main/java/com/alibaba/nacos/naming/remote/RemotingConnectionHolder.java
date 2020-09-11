@@ -26,7 +26,6 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.RemotePushService;
-import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.Map;
@@ -40,7 +39,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author xiweng.yy
  */
-@Component
 public class RemotingConnectionHolder extends ClientConnectionEventListener {
     
     private final ConcurrentMap<String, RemotingConnection> connectionCache = new ConcurrentHashMap<>();

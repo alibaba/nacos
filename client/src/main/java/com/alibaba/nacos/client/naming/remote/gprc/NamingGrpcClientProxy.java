@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.remote.gprc;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
@@ -46,7 +47,9 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -59,17 +62,23 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     
     private final String namespaceId;
     
+    private final String uuid;
+    
+    private final Long requestTimeout;
+    
     private final RpcClient rpcClient;
     
     private final NamingGrpcConnectionEventListener namingGrpcConnectionEventListener;
     
-    public NamingGrpcClientProxy(String namespaceId, ServerListFactory serverListFactory,
+    public NamingGrpcClientProxy(String namespaceId, ServerListFactory serverListFactory, Properties properties,
             ServiceInfoHolder serviceInfoHolder) throws NacosException {
         this.namespaceId = namespaceId;
+        this.uuid = UUID.randomUUID().toString();
+        this.requestTimeout = Long.parseLong(properties.getProperty(CommonParams.NAMING_REQUEST_TIMEOUT, "-1"));
         Map<String, String> labels = new HashMap<String, String>();
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
-        this.rpcClient = RpcClientFactory.createClient("naming", ConnectionType.GRPC, labels);
+        this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels);
         this.namingGrpcConnectionEventListener = new NamingGrpcConnectionEventListener(this);
         start(serverListFactory, serviceInfoHolder);
     }
@@ -110,8 +119,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     @Override
     public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
             boolean healthyOnly) throws NacosException {
-        ServiceQueryRequest request = new ServiceQueryRequest(namespaceId,
-                NamingUtils.getGroupedName(serviceName, groupName));
+        ServiceQueryRequest request = new ServiceQueryRequest(namespaceId, serviceName, groupName);
         request.setCluster(clusters);
         request.setHealthyOnly(healthyOnly);
         request.setUdpPort(udpPort);
@@ -185,7 +193,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
         try {
-            Response response = rpcClient.request(request);
+            Response response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }

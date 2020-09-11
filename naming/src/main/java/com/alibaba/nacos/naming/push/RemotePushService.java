@@ -87,7 +87,7 @@ public class RemotePushService extends SmartSubscriber {
     public Set<Subscriber> getSubscribes(String namespaceId, String serviceName) {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup, true);
+        Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup);
         return getSubscribes(service);
     }
     
@@ -108,7 +108,7 @@ public class RemotePushService extends SmartSubscriber {
     public void onEvent(Event event) {
         // TODO delay & merge push task, and dispatch push task to execute async
         ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
-        com.alibaba.nacos.naming.core.v2.pojo.Service service = serviceChangedEvent.getService();
+        Service service = serviceChangedEvent.getService();
         ServiceInfo serviceInfo = serviceStorage.getPushData(service);
         for (String each : indexesManager.getAllClientsSubscribeService(service)) {
             notifier.pushWithoutAck(each, NotifySubscriberRequest.buildSuccessResponse(serviceInfo));

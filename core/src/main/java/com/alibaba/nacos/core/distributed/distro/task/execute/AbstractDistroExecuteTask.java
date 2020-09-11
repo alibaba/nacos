@@ -17,7 +17,11 @@
 package com.alibaba.nacos.core.distributed.distro.task.execute;
 
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandler;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.utils.Loggers;
 
 /**
  * Abstract distro execute task.
@@ -28,11 +32,53 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask impl
     
     private final DistroKey distroKey;
     
-    protected AbstractDistroExecuteTask(DistroKey distroKey) {
+    private final DistroComponentHolder distroComponentHolder;
+    
+    protected AbstractDistroExecuteTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
         this.distroKey = distroKey;
+        this.distroComponentHolder = distroComponentHolder;
     }
     
     protected DistroKey getDistroKey() {
         return distroKey;
+    }
+    
+    protected DistroComponentHolder getDistroComponentHolder() {
+        return distroComponentHolder;
+    }
+    
+    @Override
+    public void run() {
+        Loggers.DISTRO.info("[DISTRO-START] {}", toString());
+        try {
+            boolean result = doExecute();
+            if (!result) {
+                handleFailedTask();
+            }
+            Loggers.DISTRO.info("[DISTRO-END] {} result: {}", toString(), result);
+        } catch (Exception e) {
+            Loggers.DISTRO.warn("[DISTRO] Sync data change failed.", e);
+            handleFailedTask();
+        }
+    }
+    
+    /**
+     * Do execute for different sub class.
+     *
+     * @return result of execute
+     */
+    protected abstract boolean doExecute();
+    
+    /**
+     * Handle failed task.
+     */
+    protected void handleFailedTask() {
+        String type = getDistroKey().getResourceType();
+        DistroFailedTaskHandler failedTaskHandler = distroComponentHolder.findFailedTaskHandler(type);
+        if (null == failedTaskHandler) {
+            Loggers.DISTRO.warn("[DISTRO] Can't find failed task for type {}, so discarded", type);
+            return;
+        }
+        failedTaskHandler.retry(getDistroKey(), DataOperation.CHANGE);
     }
 }
