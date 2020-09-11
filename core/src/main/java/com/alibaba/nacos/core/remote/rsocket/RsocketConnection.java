@@ -23,9 +23,7 @@ import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.RsocketUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -34,6 +32,7 @@ import io.rsocket.RSocket;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -58,14 +57,30 @@ public class RsocketConnection extends Connection {
         this.clientSocket = clientSocket;
     }
     
-    @Override
-    public Response sendRequest(Request request, long timeoutMills) throws NacosException {
+    private static <T> CompletableFuture<T> failAfter(final long timeouts) {
+        final CompletableFuture<T> promise = new CompletableFuture<T>();
+        RpcScheduledExecutor.TIMEOUT_SHEDULER.schedule(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                final TimeoutException ex = new TimeoutException("Timeout after " + timeouts);
+                return promise.completeExceptionally(ex);
+            }
+        }, timeouts, MILLISECONDS);
+        return promise;
+    }
     
+    @Override
+    public Response request(Request request, RequestMeta requestMeta) throws NacosException {
+        return request(request, requestMeta, 3000L);
+    }
+    
+    @Override
+    public Response request(Request request, RequestMeta requestMeta, long timeoutMills) throws NacosException {
         Loggers.RPC_DIGEST.debug(String.format("[%s] send request  : %s", "rsocket", request));
         
         try {
             Mono<Payload> payloadMono = clientSocket
-                    .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
+                    .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
             Payload block = payloadMono.block(Duration.ofMillis(timeoutMills));
             return RsocketUtils.parseResponseFromPayload(block);
         } catch (Exception e) {
@@ -74,23 +89,10 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public void sendRequestNoAck(Request request) throws NacosException {
-        Loggers.RPC_DIGEST.debug(String.format("[%s] send no ack request  : %s", "rsocket", request));
-        clientSocket.fireAndForget(RsocketUtils.convertRequestToPayload(request, buildMeta())).block();
-    }
-    
-    private RequestMeta buildMeta() {
-        RequestMeta meta = new RequestMeta();
-        meta.setClientVersion(VersionUtils.getFullClientVersion());
-        meta.setClientIp(NetUtils.localIP());
-        return meta;
-    }
-    
-    @Override
-    public RequestFuture sendRequestWithFuture(Request request) throws NacosException {
+    public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException {
         Loggers.RPC_DIGEST.debug(String.format("[%s] send future request  : %s", "rsocket", request));
         final Mono<Payload> payloadMono = clientSocket
-                .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
         final CompletableFuture<Payload> payloadCompletableFuture = payloadMono.toFuture();
         
         RequestFuture defaultPushFuture = new RequestFuture() {
@@ -116,14 +118,14 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public void sendRequestWithCallBack(Request request, RequestCallBack requestCallBack) throws NacosException {
-    
+    public void asyncRequest(Request request, RequestMeta requestMeta, RequestCallBack requestCallBack)
+            throws NacosException {
         Loggers.RPC_DIGEST.debug(String.format("[%s] send callback request  : %s", "rsocket", request));
         
         try {
             Mono<Payload> response = clientSocket
-                    .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
-    
+                    .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
+            
             response.toFuture().acceptEither(failAfter(requestCallBack.getTimeout()), new Consumer<Payload>() {
                 @Override
                 public void accept(Payload payload) {
@@ -139,20 +141,13 @@ public class RsocketConnection extends Connection {
         }
     }
     
-    private static <T> CompletableFuture<T> failAfter(final long timeouts) {
-        final CompletableFuture<T> promise = new CompletableFuture<T>();
-        RpcScheduledExecutor.TIMEOUT_SHEDULER.schedule(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                final TimeoutException ex = new TimeoutException("Timeout after " + timeouts);
-                return promise.completeExceptionally(ex);
-            }
-        }, timeouts, MILLISECONDS);
-        return promise;
+    @Override
+    public Map<String, String> getLabels() {
+        return null;
     }
     
     @Override
-    public void closeGrapcefully() {
+    public void close() {
         if (clientSocket != null && !clientSocket.isDisposed()) {
             clientSocket.dispose();
         }

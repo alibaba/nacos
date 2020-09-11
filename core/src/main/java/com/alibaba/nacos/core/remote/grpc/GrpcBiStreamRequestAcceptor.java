@@ -21,9 +21,12 @@ import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.GrpcUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -39,6 +42,7 @@ import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN
 
 /**
  * grpc bi stream request .
+ *
  * @author liuzunfei
  * @version $Id: GrpcBiStreamRequest.java, v 0.1 2020年09月01日 10:41 PM liuzunfei Exp $
  */
@@ -65,13 +69,13 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     String version = metadata.getClientVersion();
                     ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId, clientIp,
                             ConnectionType.GRPC.getType(), version, metadata.getLabelsMap());
-                    
+    
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     if (connectionManager.isOverLimit()) {
                         //Not register to the connection manager if current server is over limit.
                         try {
-                            connection.sendRequestNoAck(new ConnectResetRequest());
-                            connection.closeGrapcefully();
+                            connection.request(new ConnectResetRequest(), buildMeta());
+                            connection.close();
                         } catch (Exception e) {
                             //Do nothing.
                         }
@@ -100,4 +104,12 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
         
         return streamObserver;
     }
+    
+    private RequestMeta buildMeta() {
+        RequestMeta meta = new RequestMeta();
+        meta.setClientVersion(VersionUtils.getFullClientVersion());
+        meta.setClientIp(NetUtils.localIP());
+        return meta;
+    }
+    
 }
