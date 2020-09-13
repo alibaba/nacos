@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.manager;
+package com.alibaba.nacos.core.distributed.distro.component;
+
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 
 /**
- * Task processor.
+ * Distro failed task handler.
  *
- * @author Nacos
+ * @author xiweng.yy
  */
-public interface TaskProcessor {
+public interface DistroFailedTaskHandler {
     
     /**
-     * Process task.
+     * Build retry task when distro task execute failed.
      *
-     * @param taskType task type.
-     * @param task     task.
-     * @return process task result.
+     * @param distroKey distro key of failed task
+     * @param action action of task
      */
-    boolean process(String taskType, AbstractTask task);
+    void retry(DistroKey distroKey, DataOperation action);
 }
