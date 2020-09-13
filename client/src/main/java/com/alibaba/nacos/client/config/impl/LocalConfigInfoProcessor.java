@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.utils.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.config.utils.JvmUtil;
 import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
+import com.alibaba.nacos.client.utils.CacheDirUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -204,10 +205,10 @@ public class LocalConfigInfoProcessor {
     
     static {
         LOCAL_FILEROOT_PATH =
-                System.getProperty("JM.LOG.PATH", System.getProperty("user.home")) + File.separator + "nacos"
+                System.getProperty("JM.LOG.PATH", CacheDirUtils.getCacheDir()) + File.separator + "nacos"
                         + File.separator + "config";
         LOCAL_SNAPSHOT_PATH =
-                System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator + "nacos"
+                System.getProperty("JM.SNAPSHOT.PATH", CacheDirUtils.getCacheDir()) + File.separator + "nacos"
                         + File.separator + "config";
         LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }

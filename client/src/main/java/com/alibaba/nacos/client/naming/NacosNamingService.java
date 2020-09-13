@@ -35,10 +35,12 @@ import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.utils.CacheDirUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -153,7 +155,8 @@ public class NacosNamingService implements NamingService {
     private void initCacheDir() {
         cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
         if (StringUtils.isEmpty(cacheDir)) {
-            cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
+            cacheDir = CacheDirUtils.getCacheDir() + File.separator + "nacos" + File.separator 
+                    + "naming" + File.separator + namespace;
         }
     }
     

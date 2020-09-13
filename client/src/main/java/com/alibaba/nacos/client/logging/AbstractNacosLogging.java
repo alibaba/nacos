@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.client.logging;
 
+import com.alibaba.nacos.client.utils.CacheDirUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+
+import java.io.File;
 
 /**
  * Abstract nacos logging.
@@ -36,8 +39,9 @@ public abstract class AbstractNacosLogging {
     static {
         String loggingPath = System.getProperty(NACOS_LOGGING_PATH_PROPERTY);
         if (StringUtils.isBlank(loggingPath)) {
-            String userHome = System.getProperty("user.home");
-            System.setProperty(NACOS_LOGGING_PATH_PROPERTY, userHome + "/logs/nacos");
+            String cacheDir = CacheDirUtils.getCacheDir();
+            System.setProperty(NACOS_LOGGING_PATH_PROPERTY, cacheDir +  File.separator + "nacos" 
+                    + File.separator + "logs");
         }
     }
     
