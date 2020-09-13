@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency;
+package com.alibaba.nacos.consistency;
 
 /**
  * Apply action.
  *
  * @author nkorange
  */
-public enum ApplyAction {
+public enum DataOperation {
+    /**
+     * Data add.
+     */
+    ADD,
     /**
      * Data changed.
      */
@@ -29,5 +33,9 @@ public enum ApplyAction {
     /**
      * Data deleted.
      */
-    DELETE
+    DELETE,
+    /**
+     * Data verify.
+     */
+    VERIFY;
 }
