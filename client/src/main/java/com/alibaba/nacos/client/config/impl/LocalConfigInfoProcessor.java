@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.utils.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.config.utils.JvmUtil;
 import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
+import com.alibaba.nacos.client.utils.PathUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -203,12 +204,18 @@ public class LocalConfigInfoProcessor {
     public static final String LOCAL_SNAPSHOT_PATH;
     
     static {
-        LOCAL_FILEROOT_PATH =
-                System.getProperty("JM.LOG.PATH", System.getProperty("user.home")) + File.separator + "nacos"
-                        + File.separator + "config";
-        LOCAL_SNAPSHOT_PATH =
-                System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator + "nacos"
-                        + File.separator + "config";
+        String jmLogPath = System.getProperty("JM.LOG.PATH");
+        if (!StringUtils.isBlank(jmLogPath)) {
+            LOCAL_FILEROOT_PATH = jmLogPath + File.separator + "nacos" + File.separator + "config";
+        } else {
+            LOCAL_FILEROOT_PATH = PathUtils.defaultConfigDir();
+        }
+        String jmSnapshotPath = System.getProperty("JM.SNAPSHOT.PATH");
+        if (!StringUtils.isBlank(jmSnapshotPath)) {
+            LOCAL_SNAPSHOT_PATH = jmSnapshotPath + File.separator + "nacos" + File.separator + "config";
+        } else {
+            LOCAL_SNAPSHOT_PATH = PathUtils.defaultConfigDir();
+        }
         LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
     
