@@ -43,4 +43,21 @@ public class ReflectUtils {
         }
     }
     
+    /**
+     * get filed value of  obj.
+     *
+     * @param obj       obj.
+     * @param fieldName file name to get value.
+     * @return
+     */
+    public static Object getFieldValue(Object obj, String fieldName, Object defaultValue) {
+        try {
+            Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+    
 }

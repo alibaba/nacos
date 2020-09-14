@@ -56,7 +56,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
     private PersistService persistService;
     
     @Override
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, resource = "", parser = ConfigResourceParser.class)
     public ConfigPubishResponse handle(ConfigPublishRequest myRequest, RequestMeta meta) throws NacosException {
         
         try {

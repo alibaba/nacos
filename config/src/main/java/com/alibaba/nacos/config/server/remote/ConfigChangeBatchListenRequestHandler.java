@@ -20,6 +20,9 @@ import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.SingletonRepository;
@@ -43,6 +46,7 @@ public class ConfigChangeBatchListenRequestHandler
     ConfigChangeListenContext configChangeListenContext;
     
     @Override
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public ConfigChangeBatchListenResponse handle(ConfigBatchListenRequest request, RequestMeta requestMeta)
             throws NacosException {
         ConfigBatchListenRequest configChangeListenRequest = (ConfigBatchListenRequest) request;

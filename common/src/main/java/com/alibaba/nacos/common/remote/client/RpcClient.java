@@ -600,7 +600,7 @@ public abstract class RpcClient implements Closeable {
      *
      * @param serverRequestHandler serverRequestHandler
      */
-    public void registerServerPushResponseHandler(ServerRequestHandler serverRequestHandler) {
+    public synchronized void registerServerPushResponseHandler(ServerRequestHandler serverRequestHandler) {
         LoggerUtils.printIfInfoEnabled(LOGGER,
                 " Registry server push response  listener to current client, connectionEventListener={}",
                 serverRequestHandler.getClass().getName());

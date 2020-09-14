@@ -78,12 +78,12 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                         return;
                     }
                     connectionManager.refreshActiveTime(parseObj.getMetadata().getConnectionId());
-                    Response response = requestHandler.handle(request, parseObj.getMetadata());
+                    Response response = requestHandler.handleRequest(request, parseObj.getMetadata());
                     responseObserver.onNext(GrpcUtils.convert(response));
                     responseObserver.onCompleted();
                     return;
                 } catch (Exception e) {
-            
+    
                     Loggers.RPC_DIGEST.error(String
                             .format("[%s] fail to handle request ,error message :%s", "grpc", e.getMessage(), e));
                     responseObserver.onNext(GrpcUtils.convert(buildFailResponse("Error")));
@@ -102,8 +102,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     
     private Response buildFailResponse(String msg) {
         UnKnowResponse response = new UnKnowResponse();
-        response.setErrorCode(ResponseCode.FAIL.getCode());
-        response.setMessage(msg);
+        response.setErrorInfo(ResponseCode.FAIL.getCode(), msg);
         return response;
     }
     
