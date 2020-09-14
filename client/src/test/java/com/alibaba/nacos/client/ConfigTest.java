@@ -55,10 +55,15 @@ public class ConfigTest {
     public void before() throws Exception {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        properties.setProperty("-Dclientworker.use.http.switch", "Y");
+        
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848,11.160.144.148:8848,127.0.0.1:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
+        properties.setProperty(PropertyKeyConst.USERNAME, "nacos");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "nacos");
+    
         configService = NacosFactory.createConfigService(properties);
         //Thread.sleep(2000L);
     }
@@ -249,8 +254,7 @@ public class ConfigTest {
                     try {
                         String content1 = System.currentTimeMillis() + "";
                         //System.out.println("publish content:" + content1);
-                        configService.publishConfig(dataId, group, content1);
-                        
+                        boolean b = configService.publishConfig(dataId, group, content1);
                         times--;
                         Thread.sleep(1000L);
                     } catch (Exception e) {

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,14 +56,12 @@ public class ConfigQueryResponse extends Response {
      * Buid fail response.
      *
      * @param errorCode errorCode.
-     * @param message message.
+     * @param message   message.
      * @return
      */
     public static ConfigQueryResponse buildFailResponse(int errorCode, String message) {
         ConfigQueryResponse response = new ConfigQueryResponse();
-        response.setResultCode(ResponseCode.FAIL.getCode());
-        response.setErrorCode(errorCode);
-        response.setMessage(message);
+        response.setErrorInfo(errorCode, message);
         return response;
     }
     

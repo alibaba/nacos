@@ -184,7 +184,7 @@ public class RsocketRpcServer extends BaseRpcServer {
                     RequestMeta requestMeta = requestType.getMetadata();
                     requestMeta.setConnectionId(connectionId);
                     try {
-                        Response response = requestHandler.handle(requestType.getBody(), requestMeta);
+                        Response response = requestHandler.handleRequest(requestType.getBody(), requestMeta);
                         return Mono.just(RsocketUtils.convertResponseToPayload(response));
     
                     } catch (NacosException e) {

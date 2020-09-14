@@ -21,6 +21,9 @@ import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
@@ -64,6 +67,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     private PersistService persistService;
     
     @Override
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta requestMeta) throws NacosException {
         ConfigQueryRequest configQueryRequest = (ConfigQueryRequest) request;
         
@@ -160,9 +164,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
                                 // new Object[]{clientIp, groupKey});
-                                
-                                response.setErrorCode(ConfigQueryResponse.CONFIG_NOT_FOUND);
-                                response.setMessage("config data not exist");
+    
+                                response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                                 return response;
                             }
                         }
@@ -192,9 +195,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
                             // new Object[]{clientIp, groupKey});
-                            
-                            response.setErrorCode(ConfigQueryResponse.CONFIG_NOT_FOUND);
-                            response.setMessage("config data not exist");
+    
+                            response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                             return response;
                             
                         }
@@ -238,14 +240,12 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             ConfigTraceService
                     .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
                             clientIp);
-            
-            response.setErrorCode(ConfigQueryResponse.CONFIG_NOT_FOUND);
-            response.setMessage("config data not exist");
+            response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
             
         } else {
             PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
-            response.setErrorCode(ConfigQueryResponse.CONFIG_QUERY_CONFLICT);
-            response.setMessage("requested file is being modified, please try later.");
+            response.setErrorInfo(ConfigQueryResponse.CONFIG_QUERY_CONFLICT,
+                    "requested file is being modified, please try later.");
         }
         return response;
     }
