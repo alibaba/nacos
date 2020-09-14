@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.manager.AbstractTask;
-import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.core.cluster.Member;
@@ -39,14 +39,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Nacos
  */
-public class NotifyTaskProcessor implements TaskProcessor {
-
+public class NotifyTaskProcessor implements NacosTaskProcessor {
+    
     public NotifyTaskProcessor(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
 
     @Override
-    public boolean process(String taskType, AbstractTask task) {
+    public boolean process(AbstractDelayTask task) {
         NotifyTask notifyTask = (NotifyTask) task;
         String dataId = notifyTask.getDataId();
         String group = notifyTask.getGroup();

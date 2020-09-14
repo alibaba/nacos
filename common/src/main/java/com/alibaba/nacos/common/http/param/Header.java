@@ -45,15 +45,23 @@ public class Header {
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
         addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip");
-        addParam(HttpHeaderConsts.CONTENT_ENCODING, "gzip");
     }
     
     public static Header newInstance() {
         return new Header();
     }
-    
+
+    /**
+     * Add the key and value to the header.
+     *
+     * @param key the key
+     * @param value the value
+     * @return header
+     */
     public Header addParam(String key, String value) {
-        header.put(key, value);
+        if (StringUtils.isNotEmpty(key)) {
+            header.put(key, value);
+        }
         return this;
     }
     
@@ -107,7 +115,10 @@ public class Header {
             throw new IllegalArgumentException("list size must be a multiple of 2");
         }
         for (int i = 0; i < list.size(); ) {
-            header.put(list.get(i++), list.get(i++));
+            String key = list.get(i++);
+            if (StringUtils.isNotEmpty(key)) {
+                header.put(key, list.get(i++));
+            }
         }
         return this;
     }
