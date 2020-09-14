@@ -17,6 +17,8 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.DataOperation;
@@ -58,7 +60,7 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_SUFF
  */
 @Deprecated
 @Component
-public class RaftStore {
+public class RaftStore implements Closeable {
     
     private final Properties meta = new Properties();
     
@@ -363,5 +365,10 @@ public class RaftStore {
     
     private static String decodeDatumKey(String datumKey) {
         return datumKey.replace("#", ":");
+    }
+    
+    @Override
+    public void shutdown() throws NacosException {
+    
     }
 }

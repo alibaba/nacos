@@ -16,18 +16,21 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
-import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -83,7 +86,7 @@ import java.util.zip.GZIPOutputStream;
 @Deprecated
 @DependsOn("ProtocolManager")
 @Component
-public class RaftCore {
+public class RaftCore implements Closeable {
     
     public static final String API_VOTE = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/vote";
     
@@ -178,13 +181,11 @@ public class RaftCore {
         versionJudgement.registerObserver(isAllNewVersion -> {
             stopWork = isAllNewVersion;
             if (stopWork) {
-                Loggers.RAFT.warn("start to close old raft protocol!!!");
-                Loggers.RAFT.warn("stop old raft protocol task for notifier");
-                NotifyCenter.deregisterSubscriber(notifier);
-                Loggers.RAFT.warn("stop old raft protocol task for master task");
-                masterTask.cancel(true);
-                Loggers.RAFT.warn("stop old raft protocol task for heartbeat task");
-                heartbeatTask.cancel(true);
+                try {
+                    shutdown();
+                } catch (NacosException e) {
+                    throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+                }
             }
         }, 100);
     
@@ -442,6 +443,20 @@ public class RaftCore {
         
         Loggers.RAFT.info("data removed, key={}, term={}", datumKey, local.term);
         
+    }
+    
+    @Override
+    public void shutdown() throws NacosException {
+        this.stopWork = true;
+        this.raftStore.shutdown();
+        this.peers.shutdown();
+        Loggers.RAFT.warn("start to close old raft protocol!!!");
+        Loggers.RAFT.warn("stop old raft protocol task for notifier");
+        NotifyCenter.deregisterSubscriber(notifier);
+        Loggers.RAFT.warn("stop old raft protocol task for master task");
+        masterTask.cancel(true);
+        Loggers.RAFT.warn("stop old raft protocol task for heartbeat task");
+        heartbeatTask.cancel(true);
     }
     
     public class MasterElection implements Runnable {
