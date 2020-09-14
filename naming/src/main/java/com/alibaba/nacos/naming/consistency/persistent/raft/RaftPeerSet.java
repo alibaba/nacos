@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
@@ -55,7 +57,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Deprecated
 @Component
 @DependsOn("ProtocolManager")
-public class RaftPeerSet extends MemberChangeListener {
+public class RaftPeerSet extends MemberChangeListener implements Closeable {
     
     private final ServerMemberManager memberManager;
     
@@ -79,6 +81,16 @@ public class RaftPeerSet extends MemberChangeListener {
     public void init() {
         NotifyCenter.registerSubscriber(this);
         changePeers(memberManager.allMembers());
+    }
+    
+    @Override
+    public void shutdown() throws NacosException {
+        this.localTerm.set(-1);
+        this.leader = null;
+        this.peers.clear();
+        this.sites.clear();
+        this.ready = false;
+        this.oldMembers.clear();
     }
     
     public RaftPeer getLeader() {
@@ -353,4 +365,6 @@ public class RaftPeerSet extends MemberChangeListener {
         return "RaftPeerSet{" + "localTerm=" + localTerm + ", leader=" + leader + ", peers=" + peers + ", sites="
                 + sites + '}';
     }
+    
+
 }

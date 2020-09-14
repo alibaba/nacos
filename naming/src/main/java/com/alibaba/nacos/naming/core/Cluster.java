@@ -46,6 +46,8 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     
     private static final String CLUSTER_NAME_SYNTAX = "[0-9a-zA-Z-]+";
     
+    private static final long serialVersionUID = 8940123791150907510L;
+    
     /**
      * a addition for same site routing, can group multiple sites into a region, like Hangzhou, Shanghai, etc.
      */
