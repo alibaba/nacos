@@ -20,6 +20,9 @@ import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
@@ -47,6 +50,7 @@ public class ConfiRemoveRequestHandler extends RequestHandler<ConfigRemoveReques
     private PersistService persistService;
     
     @Override
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public ConfigRemoveResponse handle(ConfigRemoveRequest request, RequestMeta meta) throws NacosException {
         ConfigRemoveRequest myrequest = (ConfigRemoveRequest) request;
         // check tenant

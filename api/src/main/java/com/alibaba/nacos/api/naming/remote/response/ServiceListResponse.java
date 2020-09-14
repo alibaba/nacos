@@ -52,8 +52,7 @@ public class ServiceListResponse extends Response {
      */
     public static ServiceListResponse buildFailResponse(String message) {
         ServiceListResponse result = new ServiceListResponse();
-        result.setErrorCode(ResponseCode.FAIL.getCode());
-        result.setMessage(message);
+        result.setErrorInfo(ResponseCode.FAIL.getCode(), message);
         return result;
     }
     

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
@@ -96,6 +97,41 @@ public class NacosAuthManager implements AuthManager {
     }
     
     @Override
+    public User loginRemote(Object request) throws AccessException {
+        Request req = (Request) request;
+        String token = resolveToken(req);
+        if (StringUtils.isBlank(token)) {
+            throw new AccessException("user not found!");
+        }
+        
+        try {
+            tokenManager.validateToken(token);
+        } catch (ExpiredJwtException e) {
+            throw new AccessException("token expired!");
+        } catch (Exception e) {
+            throw new AccessException("token invalid!");
+        }
+        
+        Authentication authentication = tokenManager.getAuthentication(token);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        
+        String username = authentication.getName();
+        NacosUser user = new NacosUser();
+        user.setUserName(username);
+        user.setToken(token);
+        List<RoleInfo> roleInfoList = roleService.getRoles(username);
+        if (roleInfoList != null) {
+            for (RoleInfo roleInfo : roleInfoList) {
+                if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                    user.setGlobalAdmin(true);
+                    break;
+                }
+            }
+        }
+        return user;
+    }
+    
+    @Override
     public void auth(Permission permission, User user) throws AccessException {
         if (Loggers.AUTH.isDebugEnabled()) {
             Loggers.AUTH.debug("auth permission: {}, user: {}", permission, user);
@@ -118,6 +154,24 @@ public class NacosAuthManager implements AuthManager {
         if (StringUtils.isBlank(bearerToken)) {
             String userName = request.getParameter("username");
             String password = request.getParameter("password");
+            bearerToken = resolveTokenFromUser(userName, password);
+        }
+    
+        return bearerToken;
+    }
+    
+    /**
+     * Get token from header.
+     */
+    private String resolveToken(Request request) throws AccessException {
+        String bearerToken = request.getHeader(NacosAuthConfig.AUTHORIZATION_HEADER);
+        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
+            return bearerToken.substring(7);
+        }
+        bearerToken = request.getHeader(Constants.ACCESS_TOKEN);
+        if (StringUtils.isBlank(bearerToken)) {
+            String userName = request.getHeader("username");
+            String password = request.getHeader("password");
             bearerToken = resolveTokenFromUser(userName, password);
         }
         

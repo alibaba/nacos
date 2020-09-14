@@ -36,9 +36,30 @@ public abstract class RequestHandler<T extends Request, S extends Response> {
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
     
+    @Autowired
+    private RequestFilters requestFilters;
+    
     @PostConstruct
     public void init() {
         requestHandlerRegistry.registryHandler(this);
+    }
+    
+    /**
+     * Handler request.
+     *
+     * @param request request
+     * @param meta    request meta data
+     * @return response
+     * @throws NacosException nacos exception when handle request has problem.
+     */
+    public Response handleRequest(T request, RequestMeta meta) throws NacosException {
+        for (RequestFilter filter : requestFilters.filters) {
+            Response filterResult = filter.filter(request, meta, this.getClass());
+            if (filterResult != null && !filterResult.isSuccess()) {
+                return filterResult;
+            }
+        }
+        return handle(request, meta);
     }
     
     /**
