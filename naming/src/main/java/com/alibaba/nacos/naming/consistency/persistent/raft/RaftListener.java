@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
+import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.SmartApplicationListener;
 import org.springframework.stereotype.Component;
@@ -55,11 +56,12 @@ public class RaftListener implements SmartApplicationListener {
         this.versionJudgement.registerObserver(isAllNewVersion -> {
             stopUpdate = isAllNewVersion;
             if (stopUpdate) {
+                Loggers.RAFT.warn("start to move old raft protocol metadata");
                 Member self = memberManager.getSelf();
                 self.delExtendVal(GROUP);
                 memberManager.update(self);
             }
-        });
+        }, -2);
     }
     
     @Override

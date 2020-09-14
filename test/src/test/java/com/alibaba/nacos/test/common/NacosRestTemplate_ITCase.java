@@ -76,7 +76,7 @@ public class NacosRestTemplate_ITCase {
         param.put("group", "DEFAULT_GROUP");
         param.put("content", "aaa=b");
         HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), Query.EMPTY, param, String.class);
+                .postForm(url, Header.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
@@ -104,7 +104,7 @@ public class NacosRestTemplate_ITCase {
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
         HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), Query.newInstance(), param, String.class);
+                .postForm(url, Header.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
@@ -117,7 +117,7 @@ public class NacosRestTemplate_ITCase {
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
         HttpRestResult<String> restResult = nacosRestTemplate
-                .putForm(url, Header.newInstance(), Query.newInstance(), param, String.class);
+                .putForm(url, Header.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
@@ -137,7 +137,7 @@ public class NacosRestTemplate_ITCase {
         String url = IP + INSTANCE_PATH + "/instance/list";
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test");
-        HttpRestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), param, Map.class);
+        HttpRestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class);
         Assert.assertTrue(restResult.ok());
         Assert.assertEquals(restResult.getData().get("dom"), "app-test");
         System.out.println(restResult.getData());

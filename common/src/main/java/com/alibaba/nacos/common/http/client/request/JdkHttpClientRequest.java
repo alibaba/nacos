@@ -26,6 +26,9 @@ import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -43,6 +46,30 @@ public class JdkHttpClientRequest implements HttpClientRequest {
     
     public JdkHttpClientRequest(HttpClientConfig httpClientConfig) {
         this.httpClientConfig = httpClientConfig;
+    }
+    
+    /**
+     * Use specified {@link SSLContext}.
+     *
+     * @param sslContext ssl context
+     */
+    @SuppressWarnings("checkstyle:abbreviationaswordinname")
+    public void setSSLContext(SSLContext sslContext) {
+        if (sslContext != null) {
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+        }
+    }
+    
+    /**
+     * Replace the default HostnameVerifier.
+     *
+     * @param hostnameVerifier custom hostnameVerifier
+     */
+    @SuppressWarnings("checkstyle:abbreviationaswordinname")
+    public void replaceSSLHostnameVerifier(HostnameVerifier hostnameVerifier) {
+        if (hostnameVerifier != null) {
+            HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
+        }
     }
     
     @Override
