@@ -208,14 +208,11 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     private void publishValueChangeEvent(final Op op, final BatchWriteRequest request) {
         final List<byte[]> keys = request.getKeys();
         final List<byte[]> values = request.getKeys();
-        for (int i = 0; i < keys.size(); i ++) {
+        for (int i = 0; i < keys.size(); i++) {
             final String key = new String(keys.get(i));
             final Record value = serializer.deserialize(values.get(i));
-            final ValueChangeEvent event = ValueChangeEvent.builder()
-                    .key(key)
-                    .value(value)
-                    .action(Op.Delete.equals(op) ? DataOperation.DELETE : DataOperation.CHANGE)
-                    .build();
+            final ValueChangeEvent event = ValueChangeEvent.builder().key(key).value(value)
+                    .action(Op.Delete.equals(op) ? DataOperation.DELETE : DataOperation.CHANGE).build();
             NotifyCenter.publishEvent(event);
         }
     }
@@ -317,7 +314,8 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         try {
             Response resp = protocol.getData(req);
             if (resp.getSuccess()) {
-                BatchReadResponse response = serializer.deserialize(resp.getData().toByteArray(), BatchReadResponse.class);
+                BatchReadResponse response = serializer
+                        .deserialize(resp.getData().toByteArray(), BatchReadResponse.class);
                 final List<byte[]> rValues = response.getValues();
                 Record record = serializer.deserialize(rValues.get(0));
                 return Datum.createDatum(key, record);
