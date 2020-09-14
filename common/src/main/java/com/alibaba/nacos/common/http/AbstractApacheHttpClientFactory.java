@@ -35,6 +35,8 @@ public abstract class AbstractApacheHttpClientFactory extends AbstractHttpClient
         return new NacosRestTemplate(assignLogger(), new DefaultHttpClientRequest(
                 HttpClients.custom().setDefaultRequestConfig(requestConfig)
                         .setUserAgent(originalRequestConfig.getUserAgent())
+                        .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
+                        .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
                         .setConnectionTimeToLive(originalRequestConfig.getConnTimeToLive(),
                                 originalRequestConfig.getConnTimeToLiveTimeUnit()).build()));
     }
