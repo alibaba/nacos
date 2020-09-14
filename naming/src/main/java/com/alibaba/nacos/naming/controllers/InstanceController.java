@@ -27,6 +27,7 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.InstanceService;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
@@ -42,7 +44,6 @@ import com.alibaba.nacos.naming.web.DistroFilter;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -82,6 +83,9 @@ public class InstanceController {
     
     @Autowired
     private ServiceManager serviceManager;
+    
+    @Autowired
+    private InstanceService instanceService;
     
     private DataSource pushDataSource = new DataSource() {
         
@@ -123,7 +127,8 @@ public class InstanceController {
         
         final Instance instance = parseInstance(request);
         
-        serviceManager.registerInstance(namespaceId, serviceName, instance);
+        //        serviceManager.registerInstance(namespaceId, serviceName, instance);
+        instanceService.registerInstance(namespaceId, serviceName, instance);
         return "ok";
     }
     
@@ -143,13 +148,14 @@ public class InstanceController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         checkServiceNameFormat(serviceName);
         
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
-            return "ok";
-        }
+        //        Service service = serviceManager.getService(namespaceId, serviceName);
+        //        if (service == null) {
+        //            Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
+        //            return "ok";
+        //        }
+        //        serviceManager.removeInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
         
-        serviceManager.removeInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
+        instanceService.removeInstance(namespaceId, serviceName, instance);
         return "ok";
     }
     
@@ -244,7 +250,7 @@ public class InstanceController {
      */
     @GetMapping("/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public ObjectNode list(HttpServletRequest request) throws Exception {
+    public Object list(HttpServletRequest request) throws Exception {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -263,8 +269,12 @@ public class InstanceController {
         
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
         
-        return doSrvIpxt(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant,
-                healthyOnly);
+        Subscriber subscriber =
+                udpPort > 0 ? new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName)
+                        : null;
+        //        return doSrvIpxt(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant,
+        //                healthyOnly);
+        return instanceService.listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
     }
     
     /**

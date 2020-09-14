@@ -21,7 +21,8 @@ import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
-import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -40,12 +41,12 @@ public class DistroClientComponentRegistry {
     
     private final DistroComponentHolder componentHolder;
     
-    private final ConnectionBasedClientManager clientManager;
+    private final ClientManager clientManager;
     
     private final ClusterRpcClientProxy clusterRpcClientProxy;
     
     public DistroClientComponentRegistry(ServerMemberManager serverMemberManager, DistroProtocol distroProtocol,
-            DistroComponentHolder componentHolder, ConnectionBasedClientManager clientManager,
+            DistroComponentHolder componentHolder, ClientManagerDelegate clientManager,
             ClusterRpcClientProxy clusterRpcClientProxy) {
         this.serverMemberManager = serverMemberManager;
         this.distroProtocol = distroProtocol;
@@ -61,7 +62,8 @@ public class DistroClientComponentRegistry {
     @PostConstruct
     public void doRegister() {
         DistroClientDataProcessor dataProcessor = new DistroClientDataProcessor(clientManager, distroProtocol);
-        DistroTransportAgent transportAgent = new DistroClientTransportAgent(clusterRpcClientProxy, serverMemberManager);
+        DistroTransportAgent transportAgent = new DistroClientTransportAgent(clusterRpcClientProxy,
+                serverMemberManager);
         componentHolder.registerDataStorage(DistroClientDataProcessor.TYPE, dataProcessor);
         componentHolder.registerDataProcessor(dataProcessor);
         componentHolder.registerTransportAgent(DistroClientDataProcessor.TYPE, transportAgent);

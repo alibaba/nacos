@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -57,38 +58,7 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
         String cluster = null == request.getCluster() ? "" : request.getCluster();
         boolean healthyOnly = request.isHealthyOnly();
         ServiceInfo result = serviceStorage.getData(service);
-        result = filterInstance(result, cluster, healthyOnly);
+        result = ServiceUtil.filterInstances(result, cluster, healthyOnly);
         return QueryServiceResponse.buildSuccessResponse(result);
     }
-    
-    private ServiceInfo filterInstance(ServiceInfo serviceInfo, String cluster, boolean healthyOnly) {
-        ServiceInfo result = new ServiceInfo();
-        result.setName(serviceInfo.getName());
-        result.setGroupName(serviceInfo.getGroupName());
-        result.setCacheMillis(serviceInfo.getCacheMillis());
-        result.setLastRefTime(System.currentTimeMillis());
-        result.setClusters(cluster);
-        Set<String> clusterSets =
-                StringUtils.isNotBlank(cluster) ? new HashSet<>(Arrays.asList(cluster.split(","))) : new HashSet<>();
-        List<Instance> filteredInstance = new LinkedList<>();
-        for (Instance each : serviceInfo.getHosts()) {
-            if (checkCluster(clusterSets, each) && checkHealthy(healthyOnly, each)) {
-                filteredInstance.add(each);
-            }
-        }
-        result.setHosts(filteredInstance);
-        return result;
-    }
-    
-    private boolean checkCluster(Set<String> clusterSets, Instance instance) {
-        if (clusterSets.isEmpty()) {
-            return true;
-        }
-        return clusterSets.contains(instance.getClusterName());
-    }
-    
-    private boolean checkHealthy(boolean healthyOnly, Instance instance) {
-        return !healthyOnly || instance.isHealthy();
-    }
-    
 }

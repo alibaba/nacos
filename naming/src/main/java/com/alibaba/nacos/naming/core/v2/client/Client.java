@@ -47,6 +47,18 @@ public interface Client {
     boolean isEphemeral();
     
     /**
+     * Set the last time for updating current client as current time.
+     */
+    void setLastUpdatedTime();
+    
+    /**
+     * Get the last time for updating current client.
+     *
+     * @return last time for updating
+     */
+    long getLastUpdatedTime();
+    
+    /**
      * Add a new instance for service for current client.
      *
      * @param service             publish service

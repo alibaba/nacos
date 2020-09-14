@@ -22,7 +22,8 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -40,18 +41,19 @@ import org.springframework.stereotype.Component;
 @Component("ephemeralClientOperationService")
 public class EphemeralClientOperationServiceImpl implements ClientOperationService {
     
-    private final ConnectionBasedClientManager connectionBasedClientManager;
+    private final ClientManager clientManager;
     
-    public EphemeralClientOperationServiceImpl(ConnectionBasedClientManager connectionBasedClientManager) {
-        this.connectionBasedClientManager = connectionBasedClientManager;
+    public EphemeralClientOperationServiceImpl(ClientManagerDelegate clientManager) {
+        this.clientManager = clientManager;
     }
     
     @Override
     public void registerInstance(Service service, Instance instance, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
-        Client client = connectionBasedClientManager.getClient(clientId);
+        Client client = clientManager.getClient(clientId);
         InstancePublishInfo instancePublishInfo = getPublishInfo(instance);
         client.addServiceInstance(singleton, instancePublishInfo);
+        client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
     }
     
@@ -62,8 +64,9 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
             return;
         }
         Service singleton = ServiceManager.getInstance().getSingleton(service);
-        Client client = connectionBasedClientManager.getClient(clientId);
+        Client client = clientManager.getClient(clientId);
         client.removeServiceInstance(singleton);
+        client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
     }
     
@@ -79,16 +82,18 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     @Override
     public void subscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
-        Client client = connectionBasedClientManager.getClient(clientId);
+        Client client = clientManager.getClient(clientId);
         client.addServiceSubscriber(singleton, subscriber);
+        client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
     }
     
     @Override
     public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
-        Client client = connectionBasedClientManager.getClient(clientId);
+        Client client = clientManager.getClient(clientId);
         client.removeServiceSubscriber(singleton);
+        client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
     }
 }

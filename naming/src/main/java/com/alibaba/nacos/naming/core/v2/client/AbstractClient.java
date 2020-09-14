@@ -39,6 +39,22 @@ public abstract class AbstractClient implements Client {
     
     private final ConcurrentHashMap<Service, Subscriber> subscribers = new ConcurrentHashMap<>(16, 0.75f, 1);
     
+    protected volatile long lastUpdatedTime;
+    
+    public AbstractClient() {
+        lastUpdatedTime = System.currentTimeMillis();
+    }
+    
+    @Override
+    public void setLastUpdatedTime() {
+        this.lastUpdatedTime = System.currentTimeMillis();
+    }
+    
+    @Override
+    public long getLastUpdatedTime() {
+        return lastUpdatedTime;
+    }
+    
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         publishers.put(service, instancePublishInfo);

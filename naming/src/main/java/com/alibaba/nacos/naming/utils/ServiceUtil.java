@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.Instance;
@@ -25,10 +26,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Service util.
@@ -162,5 +167,43 @@ public class ServiceUtil {
             result.set(i, serviceName);
         }
         return result.subList(start, end);
+    }
+    
+    /**
+     * Filter instance of service info.
+     *
+     * @param serviceInfo original service info
+     * @param cluster     cluster of instances
+     * @param healthyOnly whether only filter instance which healthy
+     * @return new service info
+     */
+    public static ServiceInfo filterInstances(ServiceInfo serviceInfo, String cluster, boolean healthyOnly) {
+        ServiceInfo result = new ServiceInfo();
+        result.setName(serviceInfo.getName());
+        result.setGroupName(serviceInfo.getGroupName());
+        result.setCacheMillis(serviceInfo.getCacheMillis());
+        result.setLastRefTime(System.currentTimeMillis());
+        result.setClusters(cluster);
+        Set<String> clusterSets = com.alibaba.nacos.common.utils.StringUtils.isNotBlank(cluster) ? new HashSet<>(
+                Arrays.asList(cluster.split(","))) : new HashSet<>();
+        List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstance = new LinkedList<>();
+        for (com.alibaba.nacos.api.naming.pojo.Instance each : serviceInfo.getHosts()) {
+            if (checkCluster(clusterSets, each) && checkHealthy(healthyOnly, each)) {
+                filteredInstance.add(each);
+            }
+        }
+        result.setHosts(filteredInstance);
+        return result;
+    }
+    
+    private static boolean checkCluster(Set<String> clusterSets, com.alibaba.nacos.api.naming.pojo.Instance instance) {
+        if (clusterSets.isEmpty()) {
+            return true;
+        }
+        return clusterSets.contains(instance.getClusterName());
+    }
+    
+    private static boolean checkHealthy(boolean healthyOnly, com.alibaba.nacos.api.naming.pojo.Instance instance) {
+        return !healthyOnly || instance.isHealthy();
     }
 }
