@@ -31,7 +31,7 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
-import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -51,11 +51,11 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     public static final String TYPE = "Nacos:Naming:v2:ClientData";
     
-    private final ConnectionBasedClientManager clientManager;
+    private final ClientManager clientManager;
     
     private final DistroProtocol distroProtocol;
     
-    public DistroClientDataProcessor(ConnectionBasedClientManager clientManager, DistroProtocol distroProtocol) {
+    public DistroClientDataProcessor(ClientManager clientManager, DistroProtocol distroProtocol) {
         this.clientManager = clientManager;
         this.distroProtocol = distroProtocol;
         NotifyCenter.registerSubscriber(this);
