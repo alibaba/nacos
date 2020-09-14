@@ -21,13 +21,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * batch write request.
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class BatchWriteRequest implements Serializable {
+public class BatchReadResponse implements Serializable {
     
-    private static final long serialVersionUID = 5620748357962129879L;
+    private static final long serialVersionUID = 5639813122389207205L;
     
     private List<byte[]> keys = new ArrayList<>(16);
     

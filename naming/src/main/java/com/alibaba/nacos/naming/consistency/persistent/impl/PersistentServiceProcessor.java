@@ -1,18 +1,17 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.alibaba.nacos.naming.consistency.persistent.impl;
@@ -22,6 +21,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -36,6 +36,7 @@ import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KVStorageException;
 import com.alibaba.nacos.core.storage.StorageFactory;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
@@ -146,13 +147,17 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         this.protocol.protocolMetaData()
                 .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
                         (o, arg) -> hasLeader = StringUtils.isNotBlank(String.valueOf(arg)));
-        
-        this.versionJudgement.registerObserver(isNewVersion -> {
-            if (isNewVersion) {
-                loadFromOldData();
-                NotifyCenter.registerSubscriber(notifier);
-            }
-        }, 10);
+        // If you choose to use the new RAFT protocol directly, there will be no compatible logical execution
+        if (ApplicationUtils.getProperty("nacos.naming.use-new-raft.first", Boolean.class, false)) {
+            NotifyCenter.registerSubscriber(notifier);
+        } else {
+            this.versionJudgement.registerObserver(isNewVersion -> {
+                if (isNewVersion) {
+                    loadFromOldData();
+                    NotifyCenter.registerSubscriber(notifier);
+                }
+            }, 10);
+        }
     }
     
     @Override
@@ -162,7 +167,9 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         lock.lock();
         try {
             final Map<byte[], byte[]> result = kvStorage.batchGet(keys);
-            return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(result)))
+            final BatchReadResponse response = new BatchReadResponse();
+            result.forEach(response::append);
+            return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(response)))
                     .build();
         } catch (KVStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
@@ -189,11 +196,27 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                 default:
                     return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + op).build();
             }
+            publishValueChangeEvent(op, request);
             return Response.newBuilder().setSuccess(true).build();
         } catch (KVStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
         } finally {
             lock.unlock();
+        }
+    }
+    
+    private void publishValueChangeEvent(final Op op, final BatchWriteRequest request) {
+        final List<byte[]> keys = request.getKeys();
+        final List<byte[]> values = request.getKeys();
+        for (int i = 0; i < keys.size(); i ++) {
+            final String key = new String(keys.get(i));
+            final Record value = serializer.deserialize(values.get(i));
+            final ValueChangeEvent event = ValueChangeEvent.builder()
+                    .key(key)
+                    .value(value)
+                    .action(Op.Delete.equals(op) ? DataOperation.DELETE : DataOperation.CHANGE)
+                    .build();
+            NotifyCenter.publishEvent(event);
         }
     }
     
@@ -294,7 +317,10 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         try {
             Response resp = protocol.getData(req);
             if (resp.getSuccess()) {
-                return serializer.deserialize(resp.getData().toByteArray(), Datum.class);
+                BatchReadResponse response = serializer.deserialize(resp.getData().toByteArray(), BatchReadResponse.class);
+                final List<byte[]> rValues = response.getValues();
+                Record record = serializer.deserialize(rValues.get(0));
+                return Datum.createDatum(key, record);
             }
             throw new NacosException(ErrorCode.ProtoReadError.getCode(), resp.getErrMsg());
         } catch (Throwable e) {
