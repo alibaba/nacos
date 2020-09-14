@@ -35,18 +35,16 @@ public class ConnectionBasedClient extends AbstractClient {
      */
     private final boolean isNative;
     
-    private volatile long lastUpdatedTime;
-    
     /**
      * Only has meaning when {@code isNative} is false, which means that the last time verify from source server.
      */
     private volatile long lastRenewTime;
     
     public ConnectionBasedClient(String connectionId, boolean isNative) {
+        super();
         this.connectionId = connectionId;
         this.isNative = isNative;
-        lastUpdatedTime = System.currentTimeMillis();
-        lastRenewTime = lastUpdatedTime;
+        lastRenewTime = getLastUpdatedTime();
     }
     
     @Override
@@ -59,20 +57,8 @@ public class ConnectionBasedClient extends AbstractClient {
         return true;
     }
     
-    public String getConnectionId() {
-        return connectionId;
-    }
-    
     public boolean isNative() {
         return isNative;
-    }
-    
-    public long getLastUpdatedTime() {
-        return lastUpdatedTime;
-    }
-    
-    public void setLastUpdatedTime() {
-        this.lastUpdatedTime = System.currentTimeMillis();
     }
     
     public long getLastRenewTime() {

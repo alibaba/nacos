@@ -30,6 +30,7 @@ import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
 import com.alibaba.nacos.core.distributed.distro.task.load.DistroLoadDataTask;
 import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTask;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.stereotype.Component;
@@ -62,6 +63,9 @@ public class DistroProtocol {
     }
     
     private void startVerifyTask() {
+        if (ApplicationUtils.getStandaloneMode()) {
+            return;
+        }
         DistroCallback loadCallback = new DistroCallback() {
             @Override
             public void onSuccess() {
