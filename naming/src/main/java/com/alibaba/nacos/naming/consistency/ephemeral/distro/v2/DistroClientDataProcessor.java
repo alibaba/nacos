@@ -71,6 +71,9 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     @Override
     public void onEvent(Event event) {
+        if (ApplicationUtils.getStandaloneMode()) {
+            return;
+        }
         ClientEvent clientEvent = (ClientEvent) event;
         Client client = clientEvent.getClient();
         if (!clientManager.isResponsibleClient(client)) {
