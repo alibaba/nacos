@@ -65,7 +65,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     public <T> void get(String url, Header header, Query query, Type responseType, Callback<T> callback) {
         execute(url, HttpMethod.GET, new RequestHttpEntity(header, query), responseType, callback);
     }
-    
+
     /**
      * async get request, may be pulling a lot of data URL request params are expanded using the given query {@link
      * Query}, More request parameters can be set via body.
@@ -150,7 +150,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
                 new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), query, body), responseType,
                 callback);
     }
-    
+
     /**
      * async http put Json Create a new resource by PUTting the given body to http request, http header contentType
      * default 'application/json;charset=UTF-8'.
@@ -170,7 +170,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
         execute(url, HttpMethod.PUT, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), body),
                 responseType, callback);
     }
-    
+
     /**
      * async http put from Create a new resource by PUTting the given map {@code bodyValues} to http request, http
      * header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
@@ -217,7 +217,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
                 new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues),
                 responseType, callback);
     }
-    
+
     /**
      * async http post Create a new resource by POSTing the given object to the http request.
      *
@@ -263,7 +263,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
                 new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), query, body), responseType,
                 callback);
     }
-    
+
     /**
      * async http post Json Create a new resource by POSTing the given object to the http request, http header
      * contentType default 'application/json;charset=UTF-8'.
@@ -283,7 +283,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
         execute(url, HttpMethod.POST, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), body),
                 responseType, callback);
     }
-    
+
     /**
      * async http post from Create a new resource by PUTting the given map {@code bodyValues} to http request, http
      * header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
@@ -330,7 +330,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
                 new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues),
                 responseType, callback);
     }
-    
+
     @SuppressWarnings("unchecked")
     private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type type,
             Callback<T> callback) {
