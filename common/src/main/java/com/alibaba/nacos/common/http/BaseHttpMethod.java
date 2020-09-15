@@ -85,6 +85,16 @@ public enum BaseHttpMethod {
     },
     
     /**
+     * delete Large request.
+     */
+    DELETE_LARGE(HttpMethod.DELETE_LARGE) {
+        @Override
+        protected HttpRequestBase createRequest(String url) {
+            return new HttpDeleteWithEntity(url);
+        }
+    },
+    
+    /**
      * head request.
      */
     HEAD(HttpMethod.HEAD) {
@@ -155,12 +165,38 @@ public enum BaseHttpMethod {
     
     /**
      * get Large implemented.
+     * <p>
+     * Mainly used for GET request parameters are relatively large, can not be placed on the URL, so it needs to be
+     * placed in the body.
+     * </p>
      */
     public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
         
         public static final String METHOD_NAME = "GET";
         
         public HttpGetWithEntity(String url) {
+            super();
+            setURI(URI.create(url));
+        }
+        
+        @Override
+        public String getMethod() {
+            return METHOD_NAME;
+        }
+    }
+    
+    /**
+     * delete Large implemented.
+     * <p>
+     * Mainly used for DELETE request parameters are relatively large, can not be placed on the URL, so it needs to be
+     * placed in the body.
+     * </p>
+     */
+    public static class HttpDeleteWithEntity extends HttpEntityEnclosingRequestBase {
+        
+        public static final String METHOD_NAME = "DELETE";
+        
+        public HttpDeleteWithEntity(String url) {
             super();
             setURI(URI.create(url));
         }
