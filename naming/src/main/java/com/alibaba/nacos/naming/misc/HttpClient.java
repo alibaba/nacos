@@ -103,7 +103,9 @@ public class HttpClient {
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, ApplicationUtils.getLocalAddress());
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
-        
+        header.addParam(HttpHeaderConsts.CONTENT_TYPE,
+                MediaType.valueOf(MediaType.APPLICATION_FORM_URLENCODED, encoding).toString());
+    
         HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)
                 .setReadTimeOutMillis(readTimeout).build();
         Query query = Query.newInstance().initParams(paramValues);
@@ -177,7 +179,7 @@ public class HttpClient {
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
+        header.addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED);
         
         switch (method) {
             case HttpMethod.GET:
@@ -264,7 +266,8 @@ public class HttpClient {
             if (CollectionUtils.isNotEmpty(headers)) {
                 header.addAll(headers);
             }
-            header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
+            header.addParam(HttpHeaderConsts.CONTENT_TYPE,
+                    MediaType.valueOf(MediaType.APPLICATION_FORM_URLENCODED, encoding).toString());
             
             HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000).setReadTimeOutMillis(5000)
                     .setConnectionRequestTimeout(5000).setMaxRedirects(5).build();

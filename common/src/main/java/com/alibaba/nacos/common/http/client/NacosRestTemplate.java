@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.http.client;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.HttpUtils;
@@ -189,8 +190,10 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> putJson(String url, Header header, Query query, String body, Type responseType)
             throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
-                query, body);
+        header.setContentType(
+                replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE), MediaType.APPLICATION_JSON)
+                        .toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, query, body);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
     
@@ -208,8 +211,10 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      * @throws Exception ex
      */
     public <T> HttpRestResult<T> putJson(String url, Header header, String body, Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
-                body);
+        header.setContentType(
+                replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE), MediaType.APPLICATION_JSON)
+                        .toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, body);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
     
@@ -231,8 +236,9 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> putForm(String url, Header header, Query query, Map<String, String> bodyValues,
             Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+        header.setContentType(replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE),
+                MediaType.APPLICATION_FORM_URLENCODED).toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, query, bodyValues);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
     
@@ -251,8 +257,9 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> putForm(String url, Header header, Map<String, String> bodyValues, Type responseType)
             throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues);
+        header.setContentType(replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE),
+                MediaType.APPLICATION_FORM_URLENCODED).toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, bodyValues);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
     
@@ -274,8 +281,9 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> putForm(String url, HttpClientConfig config, Header header,
             Map<String, String> bodyValues, Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config,
-                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues);
+        header.setContentType(replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE),
+                MediaType.APPLICATION_FORM_URLENCODED).toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header, bodyValues);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
     
@@ -317,8 +325,10 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> postJson(String url, Header header, Query query, String body, Type responseType)
             throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
-                query, body);
+        header.setContentType(
+                replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE), MediaType.APPLICATION_JSON)
+                        .toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, query, body);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
     
@@ -336,8 +346,10 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      * @throws Exception ex
      */
     public <T> HttpRestResult<T> postJson(String url, Header header, String body, Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
-                body);
+        header.setContentType(
+                replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE), MediaType.APPLICATION_JSON)
+                        .toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, body);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
     
@@ -359,8 +371,9 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> postForm(String url, Header header, Query query, Map<String, String> bodyValues,
             Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+        header.setContentType(replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE),
+                MediaType.APPLICATION_FORM_URLENCODED).toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, query, bodyValues);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
     
@@ -379,8 +392,9 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> postForm(String url, Header header, Map<String, String> bodyValues, Type responseType)
             throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues);
+        header.setContentType(replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE),
+                MediaType.APPLICATION_FORM_URLENCODED).toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, bodyValues);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
     
@@ -402,8 +416,9 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> postForm(String url, HttpClientConfig config, Header header,
             Map<String, String> bodyValues, Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config,
-                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues);
+        header.setContentType(replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE),
+                MediaType.APPLICATION_FORM_URLENCODED).toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header, bodyValues);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
     
@@ -422,8 +437,9 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> exchangeForm(String url, Header header, Query query, Map<String, String> bodyValues,
             String httpMethod, Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+        header.setContentType(replaceDefaultContentType(header.getValue(HttpHeaderConsts.CONTENT_TYPE),
+                MediaType.APPLICATION_FORM_URLENCODED).toString());
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, query, bodyValues);
         return execute(url, httpMethod, requestHttpEntity, responseType);
     }
     
@@ -441,8 +457,8 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> exchange(String url, HttpClientConfig config, Header header, Query query,
-            Object body, String httpMethod, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> exchange(String url, HttpClientConfig config, Header header, Query query, Object body,
+            String httpMethod, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header, query, body);
         return execute(url, httpMethod, requestHttpEntity, responseType);
     }

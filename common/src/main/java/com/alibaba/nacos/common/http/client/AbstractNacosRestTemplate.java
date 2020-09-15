@@ -21,7 +21,9 @@ import com.alibaba.nacos.common.http.client.handler.BeanResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.RestResultResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.StringResponseHandler;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.databind.JavaType;
 import org.slf4j.Logger;
 
@@ -85,5 +87,27 @@ public abstract class AbstractNacosRestTemplate {
         }
         responseHandler.setResponseType(responseType);
         return responseHandler;
+    }
+    
+    /**
+     * Get ContentType for the specified request method, For example, putForm and putJson method.
+     *
+     * <p>
+     * It may exist that the putForm method is called, and the ContentType is set to application/json. To avoid this
+     * situation, the original ContentType will be replaced with the defaultContentType specified by the method.
+     * </p>
+     *
+     * @return MediaType
+     */
+    protected MediaType replaceDefaultContentType(String originalContentType, String defaultContentType) {
+        if (StringUtils.isEmpty(originalContentType)) {
+            return MediaType.valueOf(defaultContentType);
+        }
+        MediaType originalMediaType = MediaType.valueOf(originalContentType);
+        MediaType defaultMediaType = MediaType.valueOf(defaultContentType);
+        if (!originalMediaType.getType().equals(defaultMediaType.getType())) {
+            return MediaType.valueOf(defaultContentType, originalMediaType.getCharset());
+        }
+        return originalMediaType;
     }
 }

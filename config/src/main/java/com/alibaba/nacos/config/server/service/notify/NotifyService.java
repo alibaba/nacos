@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.CollectionUtils;
@@ -65,7 +66,8 @@ public class NotifyService {
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static RestResult<String> invokeURL(String url, List<String> headers, String encoding) throws Exception {
         Header header = Header.newInstance();
-        header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
+        header.addParam(HttpHeaderConsts.CONTENT_TYPE,
+                MediaType.valueOf(MediaType.APPLICATION_FORM_URLENCODED, encoding).toString());
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
