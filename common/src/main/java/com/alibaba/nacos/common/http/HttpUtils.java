@@ -51,11 +51,15 @@ public final class HttpUtils {
     
     private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
     
+    private static final String PLUS = "+";
+    
+    private static final String SPACE = " ";
+    
     /**
      * Init http header.
      *
      * @param requestBase requestBase {@link HttpRequestBase}
-     * @param header header
+     * @param header      header
      */
     public static void initRequestHeader(HttpRequestBase requestBase, Header header) {
         Iterator<Map.Entry<String, String>> iterator = header.iterator();
@@ -69,8 +73,8 @@ public final class HttpUtils {
      * Init http entity.
      *
      * @param requestBase requestBase {@link HttpRequestBase}
-     * @param body      body
-     * @param mediaType mediaType {@link ContentType}
+     * @param body        body
+     * @param mediaType   mediaType {@link ContentType}
      * @throws Exception exception
      */
     public static void initRequestEntity(HttpRequestBase requestBase, Object body, String mediaType) throws Exception {
@@ -89,11 +93,12 @@ public final class HttpUtils {
      * Init request from entity map.
      *
      * @param requestBase requestBase {@link HttpRequestBase}
-     * @param body    body map
-     * @param charset charset of entity
+     * @param body        body map
+     * @param charset     charset of entity
      * @throws Exception exception
      */
-    public static void initRequestFromEntity(HttpRequestBase requestBase, Map<String, String> body, String charset) throws Exception {
+    public static void initRequestFromEntity(HttpRequestBase requestBase, Map<String, String> body, String charset)
+            throws Exception {
         if (body == null || body.isEmpty()) {
             return;
         }
@@ -238,7 +243,10 @@ public final class HttpUtils {
     private static String innerDecode(String pre, String now, String encode) throws UnsupportedEncodingException {
         // Because the data may be encoded by the URL more than once,
         // it needs to be decoded recursively until it is fully successful
-        if (StringUtils.equals(pre, now)) {
+        
+        // But when data contain '+', recursion will replace all '+' to ' '.
+        // So if the pre.replace("+"," ") equals now then return pre.
+        if (StringUtils.isNotBlank(pre) && StringUtils.equals(pre.replace(PLUS, SPACE), now)) {
             return pre;
         }
         pre = now;
