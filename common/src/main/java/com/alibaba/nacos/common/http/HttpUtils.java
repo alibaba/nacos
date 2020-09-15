@@ -16,15 +16,17 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.common.http.handler.RequestHandler;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
@@ -70,17 +72,22 @@ public final class HttpUtils {
      *
      * @param requestBase requestBase {@link HttpRequestBase}
      * @param body      body
-     * @param mediaType mediaType {@link ContentType}
+     * @param header    request header
      * @throws Exception exception
      */
-    public static void initRequestEntity(HttpRequestBase requestBase, Object body, String mediaType) throws Exception {
+    public static void initRequestEntity(HttpRequestBase requestBase, Object body, Header header) throws Exception {
         if (body == null) {
             return;
         }
         if (requestBase instanceof HttpEntityEnclosingRequest) {
             HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
-            ContentType contentType = ContentType.create(mediaType);
-            StringEntity entity = new StringEntity(RequestHandler.parse(body), contentType);
+            ContentType contentType = ContentType.create(header.getValue(HttpHeaderConsts.CONTENT_TYPE), header.getCharset());
+            HttpEntity entity;
+            if (body instanceof byte[]) {
+                entity = new ByteArrayEntity((byte[]) body, contentType);
+            } else {
+                entity = new StringEntity(body instanceof String ? (String) body : JacksonUtils.toJson(body), contentType);
+            }
             request.setEntity(entity);
         }
     }
