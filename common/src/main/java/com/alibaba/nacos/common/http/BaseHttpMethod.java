@@ -130,14 +130,6 @@ public enum BaseHttpMethod {
         this.name = name;
     }
     
-    public HttpRequestBase init(String url) {
-        return createRequest(url);
-    }
-    
-    protected HttpRequestBase createRequest(String url) {
-        throw new UnsupportedOperationException();
-    }
-    
     /**
      * Value of {@link BaseHttpMethod}.
      *
@@ -151,6 +143,14 @@ public enum BaseHttpMethod {
             }
         }
         throw new IllegalArgumentException("Unsupported http method : " + name);
+    }
+    
+    public HttpRequestBase init(String url) {
+        return createRequest(url);
+    }
+    
+    protected HttpRequestBase createRequest(String url) {
+        throw new UnsupportedOperationException();
     }
     
     /**

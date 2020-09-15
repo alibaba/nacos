@@ -35,6 +35,10 @@ public class HttpClientConfig {
         this.maxRedirects = maxRedirects;
     }
     
+    public static HttpClientConfigBuilder builder() {
+        return new HttpClientConfigBuilder();
+    }
+    
     public int getConTimeOutMillis() {
         return conTimeOutMillis;
     }
@@ -45,10 +49,6 @@ public class HttpClientConfig {
     
     public int getMaxRedirects() {
         return maxRedirects;
-    }
-    
-    public static HttpClientConfigBuilder builder() {
-        return new HttpClientConfigBuilder();
     }
     
     public static final class HttpClientConfigBuilder {

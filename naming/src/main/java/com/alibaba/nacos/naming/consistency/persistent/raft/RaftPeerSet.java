@@ -282,18 +282,18 @@ public class RaftPeerSet extends MemberChangeListener {
     public void reset() {
         
         leader = null;
-        
+    
         for (RaftPeer peer : peers.values()) {
             peer.voteFor = null;
         }
     }
     
-    public void setTerm(long term) {
-        localTerm.set(term);
-    }
-    
     public long getTerm() {
         return localTerm.get();
+    }
+    
+    public void setTerm(long term) {
+        localTerm.set(term);
     }
     
     public boolean contains(RaftPeer remote) {
@@ -312,7 +312,7 @@ public class RaftPeerSet extends MemberChangeListener {
         if (!oldMembers.isEmpty()) {
             changePeers(members);
         }
-    
+        
         oldMembers.clear();
         oldMembers.addAll(members);
     }

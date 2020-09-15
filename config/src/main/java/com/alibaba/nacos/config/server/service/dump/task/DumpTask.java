@@ -25,6 +25,16 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
  */
 public class DumpTask extends AbstractDelayTask {
     
+    final String groupKey;
+    
+    final long lastModified;
+    
+    final String handleIp;
+    
+    final boolean isBeta;
+    
+    final String tag;
+    
     public DumpTask(String groupKey, long lastModified, String handleIp) {
         this.groupKey = groupKey;
         this.lastModified = lastModified;
@@ -58,16 +68,6 @@ public class DumpTask extends AbstractDelayTask {
     @Override
     public void merge(AbstractDelayTask task) {
     }
-    
-    final String groupKey;
-    
-    final long lastModified;
-    
-    final String handleIp;
-    
-    final boolean isBeta;
-    
-    final String tag;
     
     public String getGroupKey() {
         return groupKey;

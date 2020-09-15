@@ -37,6 +37,15 @@ import java.nio.charset.CharsetDecoder;
  */
 public class ConcurrentDiskUtil {
     
+    static final int RETRY_COUNT = 10;
+    
+    /**
+     * ms.
+     */
+    static final int SLEEP_BASETIME = 10;
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentDiskUtil.class);
+    
     /**
      * get file content.
      *
@@ -208,13 +217,4 @@ public class ConcurrentDiskUtil {
             LOGGER.warn("sleep wrong", e);
         }
     }
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentDiskUtil.class);
-    
-    static final int RETRY_COUNT = 10;
-    
-    /**
-     * ms.
-     */
-    static final int SLEEP_BASETIME = 10;
 }

@@ -26,7 +26,6 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -59,13 +58,6 @@ import java.util.Set;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class LabelSelector extends ExpressionSelector implements Selector {
     
-    /**
-     * The labels relevant to this the selector.
-     *
-     * @see com.alibaba.nacos.api.cmdb.pojo.Label
-     */
-    private Set<String> labels;
-    
     private static final Set<String> SUPPORTED_INNER_CONNCETORS = new HashSet<>();
     
     private static final Set<String> SUPPORTED_OUTER_CONNCETORS = new HashSet<>();
@@ -84,6 +76,21 @@ public class LabelSelector extends ExpressionSelector implements Selector {
         JacksonUtils.registerSubtype(LabelSelector.class, SelectorType.label.name());
     }
     
+    /**
+     * The labels relevant to this the selector.
+     *
+     * @see com.alibaba.nacos.api.cmdb.pojo.Label
+     */
+    private Set<String> labels;
+    
+    public LabelSelector() {
+        super();
+    }
+    
+    public static Set<String> parseExpression(String expression) throws NacosException {
+        return ExpressionInterpreter.parseExpression(expression);
+    }
+    
     public Set<String> getLabels() {
         return labels;
     }
@@ -92,16 +99,8 @@ public class LabelSelector extends ExpressionSelector implements Selector {
         this.labels = labels;
     }
     
-    public LabelSelector() {
-        super();
-    }
-    
     private CmdbReader getCmdbReader() {
         return ApplicationUtils.getBean(CmdbReader.class);
-    }
-    
-    public static Set<String> parseExpression(String expression) throws NacosException {
-        return ExpressionInterpreter.parseExpression(expression);
     }
     
     @Override

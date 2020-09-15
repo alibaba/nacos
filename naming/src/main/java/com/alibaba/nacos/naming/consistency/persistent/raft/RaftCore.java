@@ -19,10 +19,10 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
-import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -101,13 +101,15 @@ public class RaftCore {
     
     public static final String API_GET_PEER = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/peer";
     
+    public static final Lock OPERATE_LOCK = new ReentrantLock();
+    
+    public static final int PUBLISH_TERM_INCREASE_COUNT = 100;
+    
     private final ScheduledExecutorService executor = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.raft.notifier"));
     
-    public static final Lock OPERATE_LOCK = new ReentrantLock();
-    
-    public static final int PUBLISH_TERM_INCREASE_COUNT = 100;
+    public volatile Notifier notifier = new Notifier();
     
     private volatile ConcurrentMap<String, List<RecordListener>> listeners = new ConcurrentHashMap<>();
     
@@ -128,9 +130,21 @@ public class RaftCore {
     @Autowired
     private RaftStore raftStore;
     
-    public volatile Notifier notifier = new Notifier();
-    
     private boolean initialized = false;
+    
+    /**
+     * Build api url.
+     *
+     * @param ip  ip of api
+     * @param api api path
+     * @return api url
+     */
+    public static String buildUrl(String ip, String api) {
+        if (!ip.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        }
+        return "http://" + ip + ApplicationUtils.getContextPath() + api;
+    }
     
     /**
      * Init raft core.
@@ -413,76 +427,6 @@ public class RaftCore {
         
     }
     
-    public class MasterElection implements Runnable {
-        
-        @Override
-        public void run() {
-            try {
-                
-                if (!peers.isReady()) {
-                    return;
-                }
-                
-                RaftPeer local = peers.local();
-                local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
-                
-                if (local.leaderDueMs > 0) {
-                    return;
-                }
-                
-                // reset timeout
-                local.resetLeaderDue();
-                local.resetHeartbeatDue();
-                
-                sendVote();
-            } catch (Exception e) {
-                Loggers.RAFT.warn("[RAFT] error while master election {}", e);
-            }
-            
-        }
-        
-        private void sendVote() {
-            
-            RaftPeer local = peers.get(NetUtils.localServer());
-            Loggers.RAFT.info("leader timeout, start voting,leader: {}, term: {}", JacksonUtils.toJson(getLeader()),
-                    local.term);
-            
-            peers.reset();
-            
-            local.term.incrementAndGet();
-            local.voteFor = local.ip;
-            local.state = RaftPeer.State.CANDIDATE;
-            
-            Map<String, String> params = new HashMap<>(1);
-            params.put("vote", JacksonUtils.toJson(local));
-            for (final String server : peers.allServersWithoutMySelf()) {
-                final String url = buildUrl(server, API_VOTE);
-                try {
-                    HttpClient.asyncHttpPost(url, null, params, new AsyncCompletionHandler<Integer>() {
-                        @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT
-                                        .error("NACOS-RAFT vote failed: {}, url: {}", response.getResponseBody(), url);
-                                return 1;
-                            }
-                            
-                            RaftPeer peer = JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class);
-                            
-                            Loggers.RAFT.info("received approve from peer: {}", JacksonUtils.toJson(peer));
-                            
-                            peers.decideLeader(peer);
-                            
-                            return 0;
-                        }
-                    });
-                } catch (Exception e) {
-                    Loggers.RAFT.warn("error while sending vote to server: {}", server);
-                }
-            }
-        }
-    }
-    
     /**
      * Received vote.
      *
@@ -515,126 +459,6 @@ public class RaftCore {
         Loggers.RAFT.info("vote {} as leader, term: {}", remote.ip, remote.term);
         
         return local;
-    }
-    
-    public class HeartBeat implements Runnable {
-        
-        @Override
-        public void run() {
-            try {
-                
-                if (!peers.isReady()) {
-                    return;
-                }
-                
-                RaftPeer local = peers.local();
-                local.heartbeatDueMs -= GlobalExecutor.TICK_PERIOD_MS;
-                if (local.heartbeatDueMs > 0) {
-                    return;
-                }
-                
-                local.resetHeartbeatDue();
-                
-                sendBeat();
-            } catch (Exception e) {
-                Loggers.RAFT.warn("[RAFT] error while sending beat {}", e);
-            }
-            
-        }
-        
-        private void sendBeat() throws IOException, InterruptedException {
-            RaftPeer local = peers.local();
-            if (ApplicationUtils.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
-                return;
-            }
-            if (Loggers.RAFT.isDebugEnabled()) {
-                Loggers.RAFT.debug("[RAFT] send beat with {} keys.", datums.size());
-            }
-            
-            local.resetLeaderDue();
-            
-            // build data
-            ObjectNode packet = JacksonUtils.createEmptyJsonNode();
-            packet.replace("peer", JacksonUtils.transferToJsonNode(local));
-            
-            ArrayNode array = JacksonUtils.createEmptyArrayNode();
-            
-            if (switchDomain.isSendBeatOnly()) {
-                Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", String.valueOf(switchDomain.isSendBeatOnly()));
-            }
-            
-            if (!switchDomain.isSendBeatOnly()) {
-                for (Datum datum : datums.values()) {
-                    
-                    ObjectNode element = JacksonUtils.createEmptyJsonNode();
-                    
-                    if (KeyBuilder.matchServiceMetaKey(datum.key)) {
-                        element.put("key", KeyBuilder.briefServiceMetaKey(datum.key));
-                    } else if (KeyBuilder.matchInstanceListKey(datum.key)) {
-                        element.put("key", KeyBuilder.briefInstanceListkey(datum.key));
-                    }
-                    element.put("timestamp", datum.timestamp.get());
-                    
-                    array.add(element);
-                }
-            }
-            
-            packet.replace("datums", array);
-            // broadcast
-            Map<String, String> params = new HashMap<String, String>(1);
-            params.put("beat", JacksonUtils.toJson(packet));
-            
-            String content = JacksonUtils.toJson(params);
-            
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            GZIPOutputStream gzip = new GZIPOutputStream(out);
-            gzip.write(content.getBytes(StandardCharsets.UTF_8));
-            gzip.close();
-            
-            byte[] compressedBytes = out.toByteArray();
-            String compressedContent = new String(compressedBytes, StandardCharsets.UTF_8);
-            
-            if (Loggers.RAFT.isDebugEnabled()) {
-                Loggers.RAFT.debug("raw beat data size: {}, size of compressed data: {}", content.length(),
-                        compressedContent.length());
-            }
-            
-            for (final String server : peers.allServersWithoutMySelf()) {
-                try {
-                    final String url = buildUrl(server, API_BEAT);
-                    if (Loggers.RAFT.isDebugEnabled()) {
-                        Loggers.RAFT.debug("send beat to server " + server);
-                    }
-                    HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new AsyncCompletionHandler<Integer>() {
-                        @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", response.getResponseBody(),
-                                        server);
-                                MetricsMonitor.getLeaderSendBeatFailedException().increment();
-                                return 1;
-                            }
-                            
-                            peers.update(JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class));
-                            if (Loggers.RAFT.isDebugEnabled()) {
-                                Loggers.RAFT.debug("receive beat response from: {}", url);
-                            }
-                            return 0;
-                        }
-                        
-                        @Override
-                        public void onThrowable(Throwable t) {
-                            Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server, t);
-                            MetricsMonitor.getLeaderSendBeatFailedException().increment();
-                        }
-                    });
-                } catch (Exception e) {
-                    Loggers.RAFT.error("error while sending heart-beat to peer: {} {}", server, e);
-                    MetricsMonitor.getLeaderSendBeatFailedException().increment();
-                }
-            }
-            
-        }
     }
     
     /**
@@ -929,20 +753,6 @@ public class RaftCore {
         return peers.isLeader(NetUtils.localServer());
     }
     
-    /**
-     * Build api url.
-     *
-     * @param ip  ip of api
-     * @param api api path
-     * @return api url
-     */
-    public static String buildUrl(String ip, String api) {
-        if (!ip.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
-        }
-        return "http://" + ip + ApplicationUtils.getContextPath() + api;
-    }
-    
     public Datum<?> getDatum(String key) {
         return datums.get(key);
     }
@@ -1010,6 +820,196 @@ public class RaftCore {
     
     public int getNotifyTaskCount() {
         return notifier.getTaskSize();
+    }
+    
+    public class MasterElection implements Runnable {
+        
+        @Override
+        public void run() {
+            try {
+                
+                if (!peers.isReady()) {
+                    return;
+                }
+                
+                RaftPeer local = peers.local();
+                local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
+                
+                if (local.leaderDueMs > 0) {
+                    return;
+                }
+                
+                // reset timeout
+                local.resetLeaderDue();
+                local.resetHeartbeatDue();
+                
+                sendVote();
+            } catch (Exception e) {
+                Loggers.RAFT.warn("[RAFT] error while master election {}", e);
+            }
+            
+        }
+        
+        private void sendVote() {
+            
+            RaftPeer local = peers.get(NetUtils.localServer());
+            Loggers.RAFT.info("leader timeout, start voting,leader: {}, term: {}", JacksonUtils.toJson(getLeader()),
+                    local.term);
+            
+            peers.reset();
+            
+            local.term.incrementAndGet();
+            local.voteFor = local.ip;
+            local.state = RaftPeer.State.CANDIDATE;
+            
+            Map<String, String> params = new HashMap<>(1);
+            params.put("vote", JacksonUtils.toJson(local));
+            for (final String server : peers.allServersWithoutMySelf()) {
+                final String url = buildUrl(server, API_VOTE);
+                try {
+                    HttpClient.asyncHttpPost(url, null, params, new AsyncCompletionHandler<Integer>() {
+                        @Override
+                        public Integer onCompleted(Response response) throws Exception {
+                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                                Loggers.RAFT
+                                        .error("NACOS-RAFT vote failed: {}, url: {}", response.getResponseBody(), url);
+                                return 1;
+                            }
+                            
+                            RaftPeer peer = JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class);
+                            
+                            Loggers.RAFT.info("received approve from peer: {}", JacksonUtils.toJson(peer));
+                            
+                            peers.decideLeader(peer);
+                            
+                            return 0;
+                        }
+                    });
+                } catch (Exception e) {
+                    Loggers.RAFT.warn("error while sending vote to server: {}", server);
+                }
+            }
+        }
+    }
+    
+    public class HeartBeat implements Runnable {
+        
+        @Override
+        public void run() {
+            try {
+                
+                if (!peers.isReady()) {
+                    return;
+                }
+                
+                RaftPeer local = peers.local();
+                local.heartbeatDueMs -= GlobalExecutor.TICK_PERIOD_MS;
+                if (local.heartbeatDueMs > 0) {
+                    return;
+                }
+                
+                local.resetHeartbeatDue();
+                
+                sendBeat();
+            } catch (Exception e) {
+                Loggers.RAFT.warn("[RAFT] error while sending beat {}", e);
+            }
+            
+        }
+        
+        private void sendBeat() throws IOException, InterruptedException {
+            RaftPeer local = peers.local();
+            if (ApplicationUtils.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
+                return;
+            }
+            if (Loggers.RAFT.isDebugEnabled()) {
+                Loggers.RAFT.debug("[RAFT] send beat with {} keys.", datums.size());
+            }
+            
+            local.resetLeaderDue();
+            
+            // build data
+            ObjectNode packet = JacksonUtils.createEmptyJsonNode();
+            packet.replace("peer", JacksonUtils.transferToJsonNode(local));
+            
+            ArrayNode array = JacksonUtils.createEmptyArrayNode();
+            
+            if (switchDomain.isSendBeatOnly()) {
+                Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", String.valueOf(switchDomain.isSendBeatOnly()));
+            }
+            
+            if (!switchDomain.isSendBeatOnly()) {
+                for (Datum datum : datums.values()) {
+                    
+                    ObjectNode element = JacksonUtils.createEmptyJsonNode();
+                    
+                    if (KeyBuilder.matchServiceMetaKey(datum.key)) {
+                        element.put("key", KeyBuilder.briefServiceMetaKey(datum.key));
+                    } else if (KeyBuilder.matchInstanceListKey(datum.key)) {
+                        element.put("key", KeyBuilder.briefInstanceListkey(datum.key));
+                    }
+                    element.put("timestamp", datum.timestamp.get());
+                    
+                    array.add(element);
+                }
+            }
+            
+            packet.replace("datums", array);
+            // broadcast
+            Map<String, String> params = new HashMap<String, String>(1);
+            params.put("beat", JacksonUtils.toJson(packet));
+            
+            String content = JacksonUtils.toJson(params);
+            
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            GZIPOutputStream gzip = new GZIPOutputStream(out);
+            gzip.write(content.getBytes(StandardCharsets.UTF_8));
+            gzip.close();
+            
+            byte[] compressedBytes = out.toByteArray();
+            String compressedContent = new String(compressedBytes, StandardCharsets.UTF_8);
+            
+            if (Loggers.RAFT.isDebugEnabled()) {
+                Loggers.RAFT.debug("raw beat data size: {}, size of compressed data: {}", content.length(),
+                        compressedContent.length());
+            }
+            
+            for (final String server : peers.allServersWithoutMySelf()) {
+                try {
+                    final String url = buildUrl(server, API_BEAT);
+                    if (Loggers.RAFT.isDebugEnabled()) {
+                        Loggers.RAFT.debug("send beat to server " + server);
+                    }
+                    HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new AsyncCompletionHandler<Integer>() {
+                        @Override
+                        public Integer onCompleted(Response response) throws Exception {
+                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                                Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", response.getResponseBody(),
+                                        server);
+                                MetricsMonitor.getLeaderSendBeatFailedException().increment();
+                                return 1;
+                            }
+                            
+                            peers.update(JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class));
+                            if (Loggers.RAFT.isDebugEnabled()) {
+                                Loggers.RAFT.debug("receive beat response from: {}", url);
+                            }
+                            return 0;
+                        }
+                        
+                        @Override
+                        public void onThrowable(Throwable t) {
+                            Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server, t);
+                            MetricsMonitor.getLeaderSendBeatFailedException().increment();
+                        }
+                    });
+                } catch (Exception e) {
+                    Loggers.RAFT.error("error while sending heart-beat to peer: {} {}", server, e);
+                    MetricsMonitor.getLeaderSendBeatFailedException().increment();
+                }
+            }
+            
+        }
     }
     
     public class Notifier implements Runnable {

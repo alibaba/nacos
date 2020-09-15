@@ -50,21 +50,6 @@ public class RaftPeer {
         heartbeatDueMs = GlobalExecutor.HEARTBEAT_INTERVAL_MS;
     }
     
-    public enum State {
-        /**
-         * Leader of the cluster, only one leader stands in a cluster.
-         */
-        LEADER,
-        /**
-         * Follower of the cluster, report to and copy from leader.
-         */
-        FOLLOWER,
-        /**
-         * Candidate leader to be elected.
-         */
-        CANDIDATE
-    }
-    
     @Override
     public int hashCode() {
         return Objects.hash(ip);
@@ -79,9 +64,9 @@ public class RaftPeer {
         if (!(obj instanceof RaftPeer)) {
             return false;
         }
-        
+    
         RaftPeer other = (RaftPeer) obj;
-        
+    
         return StringUtils.equals(ip, other.ip);
     }
     
@@ -89,5 +74,20 @@ public class RaftPeer {
     public String toString() {
         return "RaftPeer{" + "ip='" + ip + '\'' + ", voteFor='" + voteFor + '\'' + ", term=" + term + ", leaderDueMs="
                 + leaderDueMs + ", heartbeatDueMs=" + heartbeatDueMs + ", state=" + state + '}';
+    }
+    
+    public enum State {
+        /**
+         * Leader of the cluster, only one leader stands in a cluster.
+         */
+        LEADER,
+        /**
+         * Follower of the cluster, report to and copy from leader.
+         */
+        FOLLOWER,
+        /**
+         * Candidate leader to be elected.
+         */
+        CANDIDATE
     }
 }

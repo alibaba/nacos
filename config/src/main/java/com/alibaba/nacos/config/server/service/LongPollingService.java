@@ -29,7 +29,6 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -62,6 +61,10 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 @Service
 public class LongPollingService {
     
+    public static final String LONG_POLLING_HEADER = "Long-Pulling-Timeout";
+    
+    public static final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
+    
     private static final int FIXED_POLLING_INTERVAL_MS = 10000;
     
     private static final int SAMPLE_PERIOD = 100;
@@ -70,7 +73,44 @@ public class LongPollingService {
     
     private static final String TRUE_STR = "true";
     
+    /**
+     * ClientLongPolling subscibers.
+     */
+    final Queue<ClientLongPolling> allSubs;
+    
     private Map<String, Long> retainIps = new ConcurrentHashMap<String, Long>();
+    
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
+    public LongPollingService() {
+        allSubs = new ConcurrentLinkedQueue<ClientLongPolling>();
+        
+        ConfigExecutor.scheduleLongPolling(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+        
+        // Register LocalDataChangeEvent to NotifyCenter.
+        NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
+        
+        // Register A Subscriber to subscribe LocalDataChangeEvent.
+        NotifyCenter.registerSubscriber(new Subscriber() {
+            
+            @Override
+            public void onEvent(Event event) {
+                if (isFixedPolling()) {
+                    // Ignore.
+                } else {
+                    if (event instanceof LocalDataChangeEvent) {
+                        LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
+                        ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
+                    }
+                }
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return LocalDataChangeEvent.class;
+            }
+        });
+        
+    }
     
     private static boolean isFixedPolling() {
         return SwitchService.getSwitchBoolean(SwitchService.FIXED_POLLING, false);
@@ -78,6 +118,10 @@ public class LongPollingService {
     
     private static int getFixedPollingInterval() {
         return SwitchService.getSwitchInteger(SwitchService.FIXED_POLLING_INTERVAL, FIXED_POLLING_INTERVAL_MS);
+    }
+    
+    public static boolean isSupportLongPolling(HttpServletRequest req) {
+        return null != req.getHeader(LONG_POLLING_HEADER);
     }
     
     public boolean isClientLongPolling(String clientIp) {
@@ -268,63 +312,65 @@ public class LongPollingService {
             }
         }
         String ip = RequestUtil.getRemoteIp(req);
-        
+    
         // Must be called by http thread, or send response.
         final AsyncContext asyncContext = req.startAsync();
-        
+    
         // AsyncContext.setTimeout() is incorrect, Control by oneself
         asyncContext.setTimeout(0L);
-        
+    
         ConfigExecutor.executeLongPolling(
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
     
-    public static boolean isSupportLongPolling(HttpServletRequest req) {
-        return null != req.getHeader(LONG_POLLING_HEADER);
+    void generateResponse(HttpServletRequest request, HttpServletResponse response, List<String> changedGroups) {
+        if (null == changedGroups) {
+            return;
+        }
+        
+        try {
+            final String respString = MD5Util.compareMd5ResultString(changedGroups);
+            // Disable cache.
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
+            response.setHeader("Cache-Control", "no-cache,no-store");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().println(respString);
+        } catch (Exception ex) {
+            PULL_LOG.error(ex.toString(), ex);
+        }
     }
     
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public LongPollingService() {
-        allSubs = new ConcurrentLinkedQueue<ClientLongPolling>();
-        
-        ConfigExecutor.scheduleLongPolling(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
-        
-        // Register LocalDataChangeEvent to NotifyCenter.
-        NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
-        
-        // Register A Subscriber to subscribe LocalDataChangeEvent.
-        NotifyCenter.registerSubscriber(new Subscriber() {
-            
-            @Override
-            public void onEvent(Event event) {
-                if (isFixedPolling()) {
-                    // Ignore.
-                } else {
-                    if (event instanceof LocalDataChangeEvent) {
-                        LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-                        ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
-                    }
-                }
-            }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return LocalDataChangeEvent.class;
-            }
-        });
-        
+    public Map<String, Long> getRetainIps() {
+        return retainIps;
     }
     
-    public static final String LONG_POLLING_HEADER = "Long-Pulling-Timeout";
-    
-    public static final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
-    
-    /**
-     * ClientLongPolling subscibers.
-     */
-    final Queue<ClientLongPolling> allSubs;
+    public void setRetainIps(Map<String, Long> retainIps) {
+        this.retainIps = retainIps;
+    }
     
     class DataChangeTask implements Runnable {
+        
+        final String groupKey;
+        
+        final long changeTime = System.currentTimeMillis();
+        
+        final boolean isBeta;
+        
+        final List<String> betaIps;
+        
+        final String tag;
+        
+        DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps) {
+            this(groupKey, isBeta, betaIps, null);
+        }
+        
+        DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps, String tag) {
+            this.groupKey = groupKey;
+            this.isBeta = isBeta;
+            this.betaIps = betaIps;
+            this.tag = tag;
+        }
         
         @Override
         public void run() {
@@ -357,27 +403,6 @@ public class LongPollingService {
                 LogUtil.DEFAULT_LOG.error("data change error: {}", ExceptionUtil.getStackTrace(t));
             }
         }
-        
-        DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps) {
-            this(groupKey, isBeta, betaIps, null);
-        }
-        
-        DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps, String tag) {
-            this.groupKey = groupKey;
-            this.isBeta = isBeta;
-            this.betaIps = betaIps;
-            this.tag = tag;
-        }
-        
-        final String groupKey;
-        
-        final long changeTime = System.currentTimeMillis();
-        
-        final boolean isBeta;
-        
-        final List<String> betaIps;
-        
-        final String tag;
     }
     
     class StatTask implements Runnable {
@@ -390,6 +415,36 @@ public class LongPollingService {
     }
     
     class ClientLongPolling implements Runnable {
+        
+        final AsyncContext asyncContext;
+        
+        final Map<String, String> clientMd5Map;
+        
+        final long createTime;
+        
+        final String ip;
+        
+        final String appName;
+        
+        final String tag;
+        
+        final int probeRequestSize;
+        
+        final long timeoutTime;
+        
+        Future<?> asyncTimeoutFuture;
+        
+        ClientLongPolling(AsyncContext ac, Map<String, String> clientMd5Map, String ip, int probeRequestSize,
+                long timeoutTime, String appName, String tag) {
+            this.asyncContext = ac;
+            this.clientMd5Map = clientMd5Map;
+            this.probeRequestSize = probeRequestSize;
+            this.createTime = System.currentTimeMillis();
+            this.ip = ip;
+            this.timeoutTime = timeoutTime;
+            this.appName = appName;
+            this.tag = tag;
+        }
         
         @Override
         public void run() {
@@ -468,67 +523,11 @@ public class LongPollingService {
             }
         }
         
-        ClientLongPolling(AsyncContext ac, Map<String, String> clientMd5Map, String ip, int probeRequestSize,
-                long timeoutTime, String appName, String tag) {
-            this.asyncContext = ac;
-            this.clientMd5Map = clientMd5Map;
-            this.probeRequestSize = probeRequestSize;
-            this.createTime = System.currentTimeMillis();
-            this.ip = ip;
-            this.timeoutTime = timeoutTime;
-            this.appName = appName;
-            this.tag = tag;
-        }
-        
-        final AsyncContext asyncContext;
-        
-        final Map<String, String> clientMd5Map;
-        
-        final long createTime;
-        
-        final String ip;
-        
-        final String appName;
-        
-        final String tag;
-        
-        final int probeRequestSize;
-        
-        final long timeoutTime;
-        
-        Future<?> asyncTimeoutFuture;
-        
         @Override
         public String toString() {
             return "ClientLongPolling{" + "clientMd5Map=" + clientMd5Map + ", createTime=" + createTime + ", ip='" + ip
                     + '\'' + ", appName='" + appName + '\'' + ", tag='" + tag + '\'' + ", probeRequestSize="
                     + probeRequestSize + ", timeoutTime=" + timeoutTime + '}';
         }
-    }
-    
-    void generateResponse(HttpServletRequest request, HttpServletResponse response, List<String> changedGroups) {
-        if (null == changedGroups) {
-            return;
-        }
-        
-        try {
-            final String respString = MD5Util.compareMd5ResultString(changedGroups);
-            // Disable cache.
-            response.setHeader("Pragma", "no-cache");
-            response.setDateHeader("Expires", 0);
-            response.setHeader("Cache-Control", "no-cache,no-store");
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.getWriter().println(respString);
-        } catch (Exception ex) {
-            PULL_LOG.error(ex.toString(), ex);
-        }
-    }
-    
-    public Map<String, Long> getRetainIps() {
-        return retainIps;
-    }
-    
-    public void setRetainIps(Map<String, Long> retainIps) {
-        this.retainIps = retainIps;
     }
 }

@@ -23,9 +23,6 @@ package com.alibaba.nacos.config.server.utils;
  */
 public class StatConstants {
     
-    private StatConstants() {
-    }
-    
     public static final String APP_NAME = "nacos";
     
     public static final String STAT_AVERAGE_HTTP_GET_OK = "AverageHttpGet_OK";
@@ -35,5 +32,8 @@ public class StatConstants {
     public static final String STAT_AVERAGE_HTTP_GET_OTHER = "AverageHttpGet_Other_Status";
     
     public static final String STAT_AVERAGE_HTTP_POST_CHECK = "AverageHttpPost_Check";
+    
+    private StatConstants() {
+    }
     
 }

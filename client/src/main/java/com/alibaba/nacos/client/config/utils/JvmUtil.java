@@ -26,20 +26,11 @@ import org.slf4j.Logger;
  */
 public class JvmUtil {
     
-    /**
-     * whether is multi instance.
-     *
-     * @return whether multi
-     */
-    public static Boolean isMultiInstance() {
-        return isMultiInstance;
-    }
-    
-    private static Boolean isMultiInstance = false;
-    
     private static final String TRUE = "true";
     
     private static final Logger LOGGER = LogUtils.logger(JvmUtil.class);
+    
+    private static Boolean isMultiInstance = false;
     
     static {
         String multiDeploy = System.getProperty("isMultiInstance", "false");
@@ -47,5 +38,14 @@ public class JvmUtil {
             isMultiInstance = true;
         }
         LOGGER.info("isMultiInstance:{}", isMultiInstance);
+    }
+    
+    /**
+     * whether is multi instance.
+     *
+     * @return whether multi
+     */
+    public static Boolean isMultiInstance() {
+        return isMultiInstance;
     }
 }

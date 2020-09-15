@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

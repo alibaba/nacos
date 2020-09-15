@@ -50,12 +50,12 @@ import java.util.regex.Pattern;
 @RequestMapping("/v1/console/namespaces")
 public class NamespaceController {
     
-    @Autowired
-    private PersistService persistService;
+    private static final int NAMESPACE_ID_MAX_LENGTH = 128;
     
     private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
     
-    private static final int NAMESPACE_ID_MAX_LENGTH = 128;
+    @Autowired
+    private PersistService persistService;
     
     /**
      * Get namespace list.

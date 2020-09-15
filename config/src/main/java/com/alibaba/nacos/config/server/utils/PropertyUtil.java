@@ -242,12 +242,12 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     // if use mysql, Reduce database read pressure
     // if use raft+derby, Reduce leader read pressure
     
-    public static boolean isDirectRead() {
-        return ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
-    }
-    
     public static void setEmbeddedStorage(boolean embeddedStorage) {
         PropertyUtil.embeddedStorage = embeddedStorage;
+    }
+    
+    public static boolean isDirectRead() {
+        return ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
     }
     
     private void loadSetting() {

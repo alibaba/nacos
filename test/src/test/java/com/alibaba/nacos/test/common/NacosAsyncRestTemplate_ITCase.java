@@ -51,49 +51,19 @@ import java.util.Map;
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class NacosAsyncRestTemplate_ITCase {
     
+    private final String CONFIG_INSTANCE_PATH = "/nacos/v1/ns";
+    
     @LocalServerPort
     private int port;
     
     private NacosAsyncRestTemplate nacosRestTemplate = HttpClientBeanHolder
             .getNacosAsyncRestTemplate(LoggerFactory.getLogger(NacosAsyncRestTemplate_ITCase.class));
     
-    private final String CONFIG_INSTANCE_PATH = "/nacos/v1/ns";
-    
     private String IP = null;
     
     @Before
     public void init() throws NacosException {
         IP = String.format("http://localhost:%d", port);
-    }
-    
-    private class CallbackMap<T> implements Callback<T> {
-        
-        private HttpRestResult<T> restResult;
-        
-        private Throwable throwable;
-        
-        @Override
-        public void onReceive(RestResult<T> result) {
-            restResult = (HttpRestResult<T>) result;
-        }
-        
-        @Override
-        public void onError(Throwable throwable) {
-            this.throwable = throwable;
-        }
-    
-        @Override
-        public void onCancel() {
-        
-        }
-        
-        public HttpRestResult<T> getRestResult() {
-            return restResult;
-        }
-        
-        public Throwable getThrowable() {
-            return throwable;
-        }
     }
     
     @Test
@@ -127,7 +97,6 @@ public class NacosAsyncRestTemplate_ITCase {
         System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
     }
-    
     
     @Test
     public void test_url_get() throws Exception {
@@ -170,6 +139,36 @@ public class NacosAsyncRestTemplate_ITCase {
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
+    }
+    
+    private class CallbackMap<T> implements Callback<T> {
+        
+        private HttpRestResult<T> restResult;
+        
+        private Throwable throwable;
+        
+        @Override
+        public void onReceive(RestResult<T> result) {
+            restResult = (HttpRestResult<T>) result;
+        }
+        
+        @Override
+        public void onError(Throwable throwable) {
+            this.throwable = throwable;
+        }
+        
+        @Override
+        public void onCancel() {
+            
+        }
+        
+        public HttpRestResult<T> getRestResult() {
+            return restResult;
+        }
+        
+        public Throwable getThrowable() {
+            return throwable;
+        }
     }
     
 }

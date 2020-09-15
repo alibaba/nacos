@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
@@ -21,13 +22,14 @@ import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
 /**
+ * ConfigInfoTagEntityMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface ConfigInfoTagEntityMapStruct {
-
+    
     ConfigInfoTagEntityMapStruct INSTANCE = Mappers.getMapper(ConfigInfoTagEntityMapStruct.class);
-
-
+    
     ConfigInfoBase convertConfigInfoBase(ConfigInfoTagEntity configInfoTag);
 }

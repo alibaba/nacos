@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
-import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
@@ -40,6 +40,12 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  * @date 2020/7/5 12:19 PM
  */
 public class DumpAllProcessor implements NacosTaskProcessor {
+    
+    static final int PAGE_SIZE = 1000;
+    
+    final DumpService dumpService;
+    
+    final PersistService persistService;
     
     public DumpAllProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
@@ -85,10 +91,4 @@ public class DumpAllProcessor implements NacosTaskProcessor {
         }
         return true;
     }
-    
-    static final int PAGE_SIZE = 1000;
-    
-    final DumpService dumpService;
-    
-    final PersistService persistService;
 }

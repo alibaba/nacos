@@ -30,9 +30,9 @@ import java.util.Set;
  */
 public class Query {
     
-    private boolean isEmpty = true;
-    
     public static final Query EMPTY = Query.newInstance();
+    
+    private boolean isEmpty = true;
     
     private Map<String, Object> params;
     

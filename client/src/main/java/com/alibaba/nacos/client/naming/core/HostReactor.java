@@ -375,18 +375,18 @@ public class HostReactor implements Closeable {
     }
     
     public class UpdateTask implements Runnable {
-        
-        long lastRefTime = Long.MAX_VALUE;
-        
+    
         private final String clusters;
-        
+    
         private final String serviceName;
-        
+    
+        long lastRefTime = Long.MAX_VALUE;
+    
         /**
          * the fail situation. 1:can't connect to server 2:serviceInfo's hosts is empty
          */
         private int failCount = 0;
-        
+    
         public UpdateTask(String serviceName, String clusters) {
             this.serviceName = serviceName;
             this.clusters = clusters;

@@ -39,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class PerformanceLoggerThread {
     
+    private static final long PERIOD = 5 * 60;
+    
     @Autowired
     private ServiceManager serviceManager;
     
@@ -47,8 +49,6 @@ public class PerformanceLoggerThread {
     
     @Autowired
     private RaftCore raftCore;
-    
-    private static final long PERIOD = 5 * 60;
     
     @PostConstruct
     public void init() {
@@ -101,26 +101,6 @@ public class PerformanceLoggerThread {
         }
     }
     
-    class PerformanceLogTask implements Runnable {
-        
-        @Override
-        public void run() {
-            try {
-                int serviceCount = serviceManager.getServiceCount();
-                int ipCount = serviceManager.getInstanceCount();
-                long maxPushCost = getMaxPushCost();
-                long avgPushCost = getAvgPushCost();
-                
-                Loggers.PERFORMANCE_LOG
-                        .info("PERFORMANCE:" + "|" + serviceCount + "|" + ipCount + "|" + maxPushCost + "|"
-                                + avgPushCost);
-            } catch (Exception e) {
-                Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
-            }
-            
-        }
-    }
-    
     private long getMaxPushCost() {
         long max = -1;
         
@@ -143,10 +123,30 @@ public class PerformanceLoggerThread {
             totalCost += entry.getValue();
         }
         PushService.pushCostMap.clear();
-        
+    
         if (size > 0 && totalCost > 0) {
             avgCost = totalCost / size;
         }
         return avgCost;
+    }
+    
+    class PerformanceLogTask implements Runnable {
+        
+        @Override
+        public void run() {
+            try {
+                int serviceCount = serviceManager.getServiceCount();
+                int ipCount = serviceManager.getInstanceCount();
+                long maxPushCost = getMaxPushCost();
+                long avgPushCost = getAvgPushCost();
+                
+                Loggers.PERFORMANCE_LOG
+                        .info("PERFORMANCE:" + "|" + serviceCount + "|" + ipCount + "|" + maxPushCost + "|"
+                                + avgPushCost);
+            } catch (Exception e) {
+                Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
+            }
+            
+        }
     }
 }

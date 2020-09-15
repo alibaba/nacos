@@ -127,7 +127,8 @@ public class TaskManagerTest {
     @Test
     public void testInit() throws Exception {
         taskManager.init();
-        ObjectName oName = new ObjectName(TaskManagerTest.class.getName() + ":type=" + TaskManager.class.getSimpleName());
+        ObjectName oName = new ObjectName(
+                TaskManagerTest.class.getName() + ":type=" + TaskManager.class.getSimpleName());
         assertTrue(ManagementFactory.getPlatformMBeanServer().isRegistered(oName));
     }
 }

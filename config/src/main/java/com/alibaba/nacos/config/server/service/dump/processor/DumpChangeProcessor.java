@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
-import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -38,6 +38,16 @@ import java.util.List;
  * @date 2020/7/5 12:19 PM
  */
 public class DumpChangeProcessor implements NacosTaskProcessor {
+    
+    final DumpService dumpService;
+    
+    final PersistService persistService;
+    
+    // =====================
+    
+    final Timestamp startTime;
+    
+    final Timestamp endTime;
     
     public DumpChangeProcessor(DumpService dumpService, Timestamp startTime, Timestamp endTime) {
         this.dumpService = dumpService;
@@ -91,14 +101,4 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
         LogUtil.DEFAULT_LOG.warn("changeConfig done,cost:{}", endChangeConfigTime - startChangeConfigTime);
         return true;
     }
-    
-    // =====================
-    
-    final DumpService dumpService;
-    
-    final PersistService persistService;
-    
-    final Timestamp startTime;
-    
-    final Timestamp endTime;
 }

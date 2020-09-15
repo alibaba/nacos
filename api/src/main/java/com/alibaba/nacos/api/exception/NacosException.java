@@ -27,82 +27,6 @@ import com.alibaba.nacos.api.utils.StringUtils;
 public class NacosException extends Exception {
     
     /**
-     * serialVersionUID.
-     */
-    private static final long serialVersionUID = -3913902031489277776L;
-    
-    private int errCode;
-    
-    private String errMsg;
-    
-    private Throwable causeThrowable;
-    
-    public NacosException() {
-    }
-    
-    public NacosException(final int errCode, final String errMsg) {
-        super(errMsg);
-        this.errCode = errCode;
-        this.errMsg = errMsg;
-    }
-    
-    public NacosException(final int errCode, final Throwable throwable) {
-        super(throwable);
-        this.errCode = errCode;
-        this.setCauseThrowable(throwable);
-    }
-    
-    public NacosException(final int errCode, final String errMsg, final Throwable throwable) {
-        super(errMsg, throwable);
-        this.errCode = errCode;
-        this.errMsg = errMsg;
-        this.setCauseThrowable(throwable);
-    }
-    
-    public int getErrCode() {
-        return this.errCode;
-    }
-    
-    public String getErrMsg() {
-        if (!StringUtils.isBlank(this.errMsg)) {
-            return this.errMsg;
-        }
-        if (this.causeThrowable != null) {
-            return this.causeThrowable.getMessage();
-        }
-        return Constants.NULL;
-    }
-    
-    public void setErrCode(final int errCode) {
-        this.errCode = errCode;
-    }
-    
-    public void setErrMsg(final String errMsg) {
-        this.errMsg = errMsg;
-    }
-    
-    public void setCauseThrowable(final Throwable throwable) {
-        this.causeThrowable = this.getCauseThrowable(throwable);
-    }
-    
-    private Throwable getCauseThrowable(final Throwable t) {
-        if (t.getCause() == null) {
-            return t;
-        }
-        return this.getCauseThrowable(t.getCause());
-    }
-    
-    @Override
-    public String toString() {
-        return "ErrCode:" + getErrCode() + ", ErrMsg:" + getErrMsg();
-    }
-    
-    /*
-     * client error code.
-     * -400 -503 throw exception to user.
-     */
-    
-    /**
      * invalid param（参数错误）.
      */
     public static final int CLIENT_INVALID_PARAM = -400;
@@ -111,12 +35,6 @@ public class NacosException extends Exception {
      * over client threshold（超过server端的限流阈值）.
      */
     public static final int CLIENT_OVER_THRESHOLD = -503;
-    
-    /*
-     * server error code.
-     * 400 403 throw exception to user
-     * 500 502 503 change ip and retry
-     */
     
     /**
      * invalid param（参数错误）.
@@ -156,8 +74,90 @@ public class NacosException extends Exception {
     public static final int RESOURCE_NOT_FOUND = -404;
     
     /**
-     * http client error code,
-     * ome exceptions that occurred when the use the Nacos RestTemplate and Nacos AsyncRestTemplate.
+     * http client error code, ome exceptions that occurred when the use the Nacos RestTemplate and Nacos
+     * AsyncRestTemplate.
      */
     public static final int HTTP_CLIENT_ERROR_CODE = -500;
+    
+    /**
+     * serialVersionUID.
+     */
+    private static final long serialVersionUID = -3913902031489277776L;
+    
+    private int errCode;
+    
+    private String errMsg;
+    
+    private Throwable causeThrowable;
+    
+    /*
+     * client error code.
+     * -400 -503 throw exception to user.
+     */
+    
+    public NacosException() {
+    }
+    
+    public NacosException(final int errCode, final String errMsg) {
+        super(errMsg);
+        this.errCode = errCode;
+        this.errMsg = errMsg;
+    }
+    
+    /*
+     * server error code.
+     * 400 403 throw exception to user
+     * 500 502 503 change ip and retry
+     */
+    
+    public NacosException(final int errCode, final Throwable throwable) {
+        super(throwable);
+        this.errCode = errCode;
+        this.setCauseThrowable(throwable);
+    }
+    
+    public NacosException(final int errCode, final String errMsg, final Throwable throwable) {
+        super(errMsg, throwable);
+        this.errCode = errCode;
+        this.errMsg = errMsg;
+        this.setCauseThrowable(throwable);
+    }
+    
+    public int getErrCode() {
+        return this.errCode;
+    }
+    
+    public void setErrCode(final int errCode) {
+        this.errCode = errCode;
+    }
+    
+    public String getErrMsg() {
+        if (!StringUtils.isBlank(this.errMsg)) {
+            return this.errMsg;
+        }
+        if (this.causeThrowable != null) {
+            return this.causeThrowable.getMessage();
+        }
+        return Constants.NULL;
+    }
+    
+    public void setErrMsg(final String errMsg) {
+        this.errMsg = errMsg;
+    }
+    
+    public void setCauseThrowable(final Throwable throwable) {
+        this.causeThrowable = this.getCauseThrowable(throwable);
+    }
+    
+    private Throwable getCauseThrowable(final Throwable t) {
+        if (t.getCause() == null) {
+            return t;
+        }
+        return this.getCauseThrowable(t.getCause());
+    }
+    
+    @Override
+    public String toString() {
+        return "ErrCode:" + getErrCode() + ", ErrMsg:" + getErrMsg();
+    }
 }

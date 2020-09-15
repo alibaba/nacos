@@ -53,9 +53,9 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
     /**
      * Execute add permission operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param resource resource string value.
-     * @param action action string value.
+     * @param action   action string value.
      */
     public void addPermission(String role, String resource, String action) {
     
@@ -65,9 +65,9 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
     /**
      * Execute delete permission operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param resource resource string value.
-     * @param action action string value.
+     * @param action   action string value.
      */
     public void deletePermission(String role, String resource, String action) {
     

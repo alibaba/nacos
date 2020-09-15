@@ -51,15 +51,15 @@ import java.util.Map;
 @FixMethodOrder(MethodSorters.JVM)
 public class NacosRestTemplate_ITCase {
     
+    private final String INSTANCE_PATH = "/nacos/v1/ns";
+    
+    private final String CONFIG_PATH = "/nacos/v1/cs";
+    
     @LocalServerPort
     private int port;
     
     private NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder
             .getNacosRestTemplate(LoggerFactory.getLogger(NacosRestTemplate_ITCase.class));
-    
-    private final String INSTANCE_PATH = "/nacos/v1/ns";
-    
-    private final String CONFIG_PATH = "/nacos/v1/cs";
     
     private String IP = null;
     
@@ -75,8 +75,7 @@ public class NacosRestTemplate_ITCase {
         param.put("dataId", "test-1");
         param.put("group", "DEFAULT_GROUP");
         param.put("content", "aaa=b");
-        HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), param, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
@@ -103,8 +102,7 @@ public class NacosRestTemplate_ITCase {
         param.put("serviceName", "app-test");
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
-        HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), param, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
@@ -116,8 +114,7 @@ public class NacosRestTemplate_ITCase {
         param.put("serviceName", "app-test-change");
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
-        HttpRestResult<String> restResult = nacosRestTemplate
-                .putForm(url, Header.newInstance(), param, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.putForm(url, Header.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
@@ -137,7 +134,8 @@ public class NacosRestTemplate_ITCase {
         String url = IP + INSTANCE_PATH + "/instance/list";
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test");
-        HttpRestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class);
+        HttpRestResult<Map> restResult = nacosRestTemplate
+                .get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class);
         Assert.assertTrue(restResult.ok());
         Assert.assertEquals(restResult.getData().get("dom"), "app-test");
         System.out.println(restResult.getData());

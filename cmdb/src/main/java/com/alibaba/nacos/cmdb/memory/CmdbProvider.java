@@ -50,12 +50,12 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class CmdbProvider implements CmdbReader, CmdbWriter {
     
+    private final ServiceLoader<CmdbService> serviceLoader = ServiceLoader.load(CmdbService.class);
+    
     @Autowired
     private SwitchAndOptions switches;
     
     private CmdbService cmdbService;
-    
-    private final ServiceLoader<CmdbService> serviceLoader = ServiceLoader.load(CmdbService.class);
     
     private Map<String, Map<String, Entity>> entityMap = new ConcurrentHashMap<>();
     

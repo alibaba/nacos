@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.modules.entity;
 
-
 import lombok.Data;
 
 import javax.persistence.Column;

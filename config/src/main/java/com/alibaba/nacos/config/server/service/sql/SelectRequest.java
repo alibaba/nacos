@@ -36,6 +36,10 @@ public class SelectRequest implements Serializable {
     
     private String className;
     
+    public static SelectRequestBuilder builder() {
+        return new SelectRequestBuilder();
+    }
+    
     public byte getQueryType() {
         return queryType;
     }
@@ -72,10 +76,6 @@ public class SelectRequest implements Serializable {
     public String toString() {
         return "SelectRequest{" + "queryType=" + queryType + ", sql='" + sql + '\'' + ", args=" + Arrays.toString(args)
                 + ", className='" + className + '\'' + '}';
-    }
-    
-    public static SelectRequestBuilder builder() {
-        return new SelectRequestBuilder();
     }
     
     public static final class SelectRequestBuilder {

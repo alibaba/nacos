@@ -102,6 +102,11 @@ public class SwitchDomain implements Record, Cloneable {
     
     private boolean defaultInstanceEphemeral = true;
     
+    private Set<String> healthCheckWhiteList = new HashSet<>();
+    
+    public SwitchDomain() {
+    }
+    
     public boolean isEnableAuthentication() {
         return enableAuthentication;
     }
@@ -118,8 +123,6 @@ public class SwitchDomain implements Record, Cloneable {
         this.healthCheckWhiteList = healthCheckWhiteList;
     }
     
-    private Set<String> healthCheckWhiteList = new HashSet<>();
-    
     public long getClientBeatInterval() {
         return clientBeatInterval;
     }
@@ -134,9 +137,6 @@ public class SwitchDomain implements Record, Cloneable {
     
     public void setEnableStandalone(boolean enableStandalone) {
         this.enableStandalone = enableStandalone;
-    }
-    
-    public SwitchDomain() {
     }
     
     public boolean isSendBeatOnly() {
@@ -423,108 +423,108 @@ public class SwitchDomain implements Record, Cloneable {
         public static final int MIN_MIN = 500;
         
         private int max = 5000;
-        
+    
         private int min = 500;
-        
+    
         private float factor = 0.85F;
-        
+    
         @Override
         public int getMax() {
             return max;
         }
-        
+    
+        public void setMax(int max) {
+            this.max = max;
+        }
+    
         @Override
         public int getMin() {
             return min;
         }
-        
+    
+        public void setMin(int min) {
+            this.min = min;
+        }
+    
         @Override
         public float getFactor() {
             return factor;
         }
-        
+    
         public void setFactor(float factor) {
             this.factor = factor;
-        }
-        
-        public void setMax(int max) {
-            this.max = max;
-        }
-        
-        public void setMin(int min) {
-            this.min = min;
         }
     }
     
     public static class MysqlHealthParams implements HealthParams {
         
         private int max = 3000;
-        
+    
         private int min = 2000;
-        
+    
         private float factor = 0.65F;
-        
+    
         @Override
         public int getMax() {
             return max;
         }
-        
+    
+        public void setMax(int max) {
+            this.max = max;
+        }
+    
         @Override
         public int getMin() {
             return min;
         }
-        
+    
+        public void setMin(int min) {
+            this.min = min;
+        }
+    
         @Override
         public float getFactor() {
             return factor;
         }
-        
+    
         public void setFactor(float factor) {
             this.factor = factor;
-        }
-        
-        public void setMax(int max) {
-            this.max = max;
-        }
-        
-        public void setMin(int min) {
-            this.min = min;
         }
     }
     
     public static class TcpHealthParams implements HealthParams {
         
         private int max = 5000;
-        
+    
         private int min = 1000;
-        
+    
         private float factor = 0.75F;
-        
+    
         @Override
         public int getMax() {
             return max;
         }
-        
+    
+        public void setMax(int max) {
+            this.max = max;
+        }
+    
         @Override
         public int getMin() {
             return min;
         }
-        
+    
+        public void setMin(int min) {
+            this.min = min;
+        }
+    
         @Override
         public float getFactor() {
             return factor;
         }
-        
+    
         public void setFactor(float factor) {
             this.factor = factor;
-        }
-        
-        public void setMax(int max) {
-            this.max = max;
-        }
-        
-        public void setMin(int min) {
-            this.min = min;
         }
     }
 }

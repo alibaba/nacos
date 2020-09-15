@@ -36,6 +36,10 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class ConcurrentDiskUtil {
     
+    private static final int RETRY_COUNT = 10;
+    
+    private static final int SLEEP_BASETIME = 10;
+    
     /**
      * get file content.
      *
@@ -205,8 +209,4 @@ public class ConcurrentDiskUtil {
             NAMING_LOGGER.warn("sleep wrong", e);
         }
     }
-    
-    private static final int RETRY_COUNT = 10;
-    
-    private static final int SLEEP_BASETIME = 10;
 }

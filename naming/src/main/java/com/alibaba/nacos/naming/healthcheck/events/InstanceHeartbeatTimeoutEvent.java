@@ -34,11 +34,11 @@ public class InstanceHeartbeatTimeoutEvent extends ApplicationEvent {
         this.instance = instance;
     }
     
-    public void setInstance(Instance instance) {
-        this.instance = instance;
-    }
-    
     public Instance getInstance() {
         return instance;
+    }
+    
+    public void setInstance(Instance instance) {
+        this.instance = instance;
     }
 }

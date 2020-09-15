@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.example;
 
-import java.util.Properties;
-import java.util.concurrent.Executor;
-
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+
+import java.util.Properties;
+import java.util.concurrent.Executor;
 
 /**
  * Config service example.
@@ -30,7 +30,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  * @author Nacos
  */
 public class ConfigExample {
-
+    
     public static void main(String[] args) throws NacosException, InterruptedException {
         String serverAddr = "localhost";
         String dataId = "test";
@@ -45,27 +45,27 @@ public class ConfigExample {
             public void receiveConfigInfo(String configInfo) {
                 System.out.println("receive:" + configInfo);
             }
-
+    
             @Override
             public Executor getExecutor() {
                 return null;
             }
         });
-
+        
         boolean isPublishOk = configService.publishConfig(dataId, group, "content");
         System.out.println(isPublishOk);
-
+        
         Thread.sleep(3000);
         content = configService.getConfig(dataId, group, 5000);
         System.out.println(content);
-
+        
         boolean isRemoveOk = configService.removeConfig(dataId, group);
         System.out.println(isRemoveOk);
         Thread.sleep(3000);
-
+        
         content = configService.getConfig(dataId, group, 5000);
         System.out.println(content);
         Thread.sleep(300000);
-
+        
     }
 }

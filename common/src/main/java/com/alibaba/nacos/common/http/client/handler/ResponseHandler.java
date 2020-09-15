@@ -22,8 +22,8 @@ import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import java.lang.reflect.Type;
 
 /**
- * Response Handler abstract interface,
- * the actual processing of the response conversion is done by a concrete implementation class.
+ * Response Handler abstract interface, the actual processing of the response conversion is done by a concrete
+ * implementation class.
  *
  * @author mai.jh
  */

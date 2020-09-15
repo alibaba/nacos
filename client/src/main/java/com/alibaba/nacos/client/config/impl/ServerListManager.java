@@ -54,11 +54,24 @@ import java.util.concurrent.TimeUnit;
  */
 public class ServerListManager implements Closeable {
     
+    public static final String DEFAULT_NAME = "default";
+    
+    public static final String CUSTOM_NAME = "custom";
+    
+    public static final String FIXED_NAME = "fixed";
+    
+    /**
+     * Connection timeout and socket timeout with other servers.
+     */
+    static final int TIMEOUT = 5000;
+    
     private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
     
     private static final String HTTPS = "https://";
     
     private static final String HTTP = "http://";
+    
+    final boolean isFixed;
     
     private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     
@@ -71,6 +84,39 @@ public class ServerListManager implements Closeable {
             return t;
         }
     });
+    
+    /**
+     * The name of the different environment.
+     */
+    private final String name;
+    
+    private final int initServerlistRetryTimes = 5;
+    
+    public String serverPort = ParamUtil.getDefaultServerPort();
+    
+    public String addressServerUrl;
+    
+    boolean isStarted = false;
+    
+    volatile List<String> serverUrls = new ArrayList<String>();
+    
+    private String namespace = "";
+    
+    private String tenant = "";
+    
+    private String endpoint;
+    
+    private int endpointPort = 8080;
+    
+    private String contentPath = ParamUtil.getDefaultContextPath();
+    
+    private String serverListName = ParamUtil.getDefaultNodesPath();
+    
+    private volatile String currentServerAddr;
+    
+    private Iterator<String> iterator;
+    
+    private String serverAddrsStr;
     
     public ServerListManager() {
         this.isFixed = false;
@@ -292,27 +338,6 @@ public class ServerListManager implements Closeable {
         LOGGER.info("{} do shutdown stop", className);
     }
     
-    class GetServerListTask implements Runnable {
-        
-        final String url;
-        
-        GetServerListTask(String url) {
-            this.url = url;
-        }
-        
-        @Override
-        public void run() {
-            /*
-             get serverlist from nameserver
-             */
-            try {
-                updateIfChanged(getApacheServerList(url, name));
-            } catch (Exception e) {
-                LOGGER.error("[" + name + "][update-serverlist] failed to update serverlist from address server!", e);
-            }
-        }
-    }
-    
     private void updateIfChanged(List<String> newList) {
         if (null == newList || newList.isEmpty()) {
             LOGGER.warn("[update-serverlist] current serverlist from address server is empty!!!");
@@ -440,55 +465,37 @@ public class ServerListManager implements Closeable {
     }
     
     /**
-     * The name of the different environment.
-     */
-    private final String name;
-    
-    private String namespace = "";
-    
-    private String tenant = "";
-    
-    public static final String DEFAULT_NAME = "default";
-    
-    public static final String CUSTOM_NAME = "custom";
-    
-    public static final String FIXED_NAME = "fixed";
-    
-    private final int initServerlistRetryTimes = 5;
-    
-    /**
-     * Connection timeout and socket timeout with other servers.
-     */
-    static final int TIMEOUT = 5000;
-    
-    final boolean isFixed;
-    
-    boolean isStarted = false;
-    
-    private String endpoint;
-    
-    private int endpointPort = 8080;
-    
-    private String contentPath = ParamUtil.getDefaultContextPath();
-    
-    private String serverListName = ParamUtil.getDefaultNodesPath();
-    
-    volatile List<String> serverUrls = new ArrayList<String>();
-    
-    private volatile String currentServerAddr;
-    
-    private Iterator<String> iterator;
-    
-    public String serverPort = ParamUtil.getDefaultServerPort();
-    
-    public String addressServerUrl;
-    
-    private String serverAddrsStr;
-    
-    /**
      * Sort the address list, with the same room priority.
      */
     private static class ServerAddressIterator implements Iterator<String> {
+        
+        final List<RandomizedServerAddress> sorted;
+        
+        final Iterator<RandomizedServerAddress> iter;
+        
+        public ServerAddressIterator(List<String> source) {
+            sorted = new ArrayList<RandomizedServerAddress>();
+            for (String address : source) {
+                sorted.add(new RandomizedServerAddress(address));
+            }
+            Collections.sort(sorted);
+            iter = sorted.iterator();
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return iter.hasNext();
+        }
+        
+        @Override
+        public String next() {
+            return iter.next().serverIp;
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
         
         static class RandomizedServerAddress implements Comparable<RandomizedServerAddress> {
             
@@ -521,33 +528,26 @@ public class ServerListManager implements Closeable {
                 }
             }
         }
+    }
+    
+    class GetServerListTask implements Runnable {
         
-        public ServerAddressIterator(List<String> source) {
-            sorted = new ArrayList<RandomizedServerAddress>();
-            for (String address : source) {
-                sorted.add(new RandomizedServerAddress(address));
+        final String url;
+        
+        GetServerListTask(String url) {
+            this.url = url;
+        }
+        
+        @Override
+        public void run() {
+            /*
+             get serverlist from nameserver
+             */
+            try {
+                updateIfChanged(getApacheServerList(url, name));
+            } catch (Exception e) {
+                LOGGER.error("[" + name + "][update-serverlist] failed to update serverlist from address server!", e);
             }
-            Collections.sort(sorted);
-            iter = sorted.iterator();
         }
-        
-        @Override
-        public boolean hasNext() {
-            return iter.hasNext();
-        }
-        
-        @Override
-        public String next() {
-            return iter.next().serverIp;
-        }
-        
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-        
-        final List<RandomizedServerAddress> sorted;
-        
-        final Iterator<RandomizedServerAddress> iter;
     }
 }

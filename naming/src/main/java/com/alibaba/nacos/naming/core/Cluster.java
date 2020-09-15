@@ -21,7 +21,6 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.Assert;
@@ -183,19 +182,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
     
     /**
-     * this method has been deprecated, the service name shouldn't be changed.
-     *
-     * @param serviceName the service name
-     * @author jifengnan  2019-04-26
-     * @since 1.0.1
-     */
-    @Deprecated
-    @Override
-    public void setServiceName(String serviceName) {
-        super.setServiceName(serviceName);
-    }
-    
-    /**
      * Get the service name of the current cluster.
      *
      * <p>Note that the returned service name is not the name which set by {@link #setServiceName(String)},
@@ -210,6 +196,19 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         } else {
             return super.getServiceName();
         }
+    }
+    
+    /**
+     * this method has been deprecated, the service name shouldn't be changed.
+     *
+     * @param serviceName the service name
+     * @author jifengnan  2019-04-26
+     * @since 1.0.1
+     */
+    @Deprecated
+    @Override
+    public void setServiceName(String serviceName) {
+        super.setServiceName(serviceName);
     }
     
     @Override

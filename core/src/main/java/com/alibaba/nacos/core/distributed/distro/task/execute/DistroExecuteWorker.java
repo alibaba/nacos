@@ -44,25 +44,25 @@ public final class DistroExecuteWorker implements Closeable {
     private final String name;
     
     private final AtomicBoolean closed;
-
+    
     public DistroExecuteWorker(final int mod, final int total) {
         name = getClass().getName() + "_" + mod + "%" + total;
         queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
         closed = new AtomicBoolean(false);
         new InnerWorker(name).start();
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     /**
      * Execute task without result.
      */
     public void execute(Runnable task) {
         putTask(task);
     }
-
+    
     /**
      * Execute task with a result.
      */
@@ -71,7 +71,7 @@ public final class DistroExecuteWorker implements Closeable {
         putTask(future);
         return future;
     }
-
+    
     private void putTask(Runnable task) {
         try {
             queue.put(task);
@@ -101,12 +101,12 @@ public final class DistroExecuteWorker implements Closeable {
      * Inner execute worker.
      */
     private class InnerWorker extends Thread {
-
+    
         InnerWorker(String name) {
             setDaemon(false);
             setName(name);
         }
-
+    
         @Override
         public void run() {
             while (!closed.get()) {

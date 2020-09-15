@@ -29,8 +29,6 @@ public class KeyBuilder {
     
     public static final String NAMESPACE_KEY_CONNECTOR = "##";
     
-    private static final String EPHEMERAL_KEY_PREFIX = "ephemeral.";
-    
     public static final String SERVICE_META_KEY_PREFIX = "com.alibaba.nacos.naming.domains.meta.";
     
     public static final String INSTANCE_LIST_KEY_PREFIX = "com.alibaba.nacos.naming.iplist.";
@@ -38,6 +36,8 @@ public class KeyBuilder {
     public static final String BRIEF_SERVICE_META_KEY_PREFIX = "meta.";
     
     public static final String BRIEF_INSTANCE_LIST_KEY_PREFIX = "iplist.";
+    
+    private static final String EPHEMERAL_KEY_PREFIX = "ephemeral.";
     
     private static String buildEphemeralInstanceListKey(String namespaceId, String serviceName) {
         return INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName;

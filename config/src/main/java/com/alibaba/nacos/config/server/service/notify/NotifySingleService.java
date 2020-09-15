@@ -40,6 +40,61 @@ import java.util.concurrent.TimeUnit;
  */
 public class NotifySingleService {
     
+    private static final Logger LOGGER = LogUtil.FATAL_LOG;
+    
+    private ServerMemberManager memberManager;
+    
+    private ConcurrentHashMap<String, Executor> executors = new ConcurrentHashMap<String, Executor>();
+    
+    @Autowired
+    public NotifySingleService(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
+        setupNotifyExecutors();
+    }
+    
+    /**
+     * When the system is started or when the cluster is expanded or offline: single-threaded setupNotifyExecutors
+     * executors use ConcurrentHashMap to ensure visibility.
+     */
+    private void setupNotifyExecutors() {
+        Collection<Member> clusterIps = memberManager.allMembers();
+        
+        for (Member member : clusterIps) {
+            
+            final String address = member.getAddress();
+            
+            /*
+             * Fixed number of threads, unbounded queue
+             * (based on assumption: thread pool throughput is good,
+             * there will be no continuous task accumulation,
+             * there is occasional instantaneous pressure)
+             */
+            Executor executor = ExecutorFactory.newSingleScheduledExecutorService(
+                    new NameThreadFactory("com.alibaba.nacos.config.NotifySingleServiceThread-" + address));
+            
+            if (null == executors.putIfAbsent(address, executor)) {
+                LOGGER.warn("[notify-thread-pool] setup thread target ip {} ok.", address);
+            }
+        }
+        
+        for (Map.Entry<String, Executor> entry : executors.entrySet()) {
+            String target = entry.getKey();
+            
+            // The cluster node goes offline
+            if (!clusterIps.contains(target)) {
+                ThreadPoolExecutor executor = (ThreadPoolExecutor) entry.getValue();
+                executor.shutdown();
+                executors.remove(target);
+                LOGGER.warn("[notify-thread-pool] tear down thread target ip {} ok.", target);
+            }
+        }
+        
+    }
+    
+    public ConcurrentHashMap<String, Executor> getExecutors() {
+        return executors;
+    }
+    
     static class NotifyTaskProcessorWrapper extends NotifyTaskProcessor {
         
         public NotifyTaskProcessorWrapper() {
@@ -99,60 +154,5 @@ public class NotifySingleService {
                 }
             }
         }
-    }
-    
-    @Autowired
-    public NotifySingleService(ServerMemberManager memberManager) {
-        this.memberManager = memberManager;
-        setupNotifyExecutors();
-    }
-    
-    /**
-     * When the system is started or when the cluster is expanded or offline: single-threaded setupNotifyExecutors
-     * executors use ConcurrentHashMap to ensure visibility.
-     */
-    private void setupNotifyExecutors() {
-        Collection<Member> clusterIps = memberManager.allMembers();
-        
-        for (Member member : clusterIps) {
-            
-            final String address = member.getAddress();
-            
-            /*
-             * Fixed number of threads, unbounded queue
-             * (based on assumption: thread pool throughput is good,
-             * there will be no continuous task accumulation,
-             * there is occasional instantaneous pressure)
-             */
-            Executor executor = ExecutorFactory.newSingleScheduledExecutorService(
-                    new NameThreadFactory("com.alibaba.nacos.config.NotifySingleServiceThread-" + address));
-            
-            if (null == executors.putIfAbsent(address, executor)) {
-                LOGGER.warn("[notify-thread-pool] setup thread target ip {} ok.", address);
-            }
-        }
-        
-        for (Map.Entry<String, Executor> entry : executors.entrySet()) {
-            String target = entry.getKey();
-            
-            // The cluster node goes offline
-            if (!clusterIps.contains(target)) {
-                ThreadPoolExecutor executor = (ThreadPoolExecutor) entry.getValue();
-                executor.shutdown();
-                executors.remove(target);
-                LOGGER.warn("[notify-thread-pool] tear down thread target ip {} ok.", target);
-            }
-        }
-        
-    }
-    
-    private static final Logger LOGGER = LogUtil.FATAL_LOG;
-    
-    private ServerMemberManager memberManager;
-    
-    private ConcurrentHashMap<String, Executor> executors = new ConcurrentHashMap<String, Executor>();
-    
-    public ConcurrentHashMap<String, Executor> getExecutors() {
-        return executors;
     }
 }

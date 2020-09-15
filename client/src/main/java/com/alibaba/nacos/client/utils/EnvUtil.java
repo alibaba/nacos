@@ -30,6 +30,18 @@ public class EnvUtil {
     
     public static final Logger LOGGER = LogUtils.logger(EnvUtil.class);
     
+    private static final String AMORY_TAG = "Amory-Tag";
+    
+    private static final String VIPSERVER_TAG = "Vipserver-Tag";
+    
+    private static final String LOCATION_TAG = "Location-Tag";
+    
+    private static String selfAmorayTag;
+    
+    private static String selfVipserverTag;
+    
+    private static String selfLocationTag;
+    
     public static void setSelfEnv(Map<String, List<String>> headers) {
         if (headers != null) {
             List<String> amorayTagTmp = headers.get(AMORY_TAG);
@@ -98,16 +110,4 @@ public class EnvUtil {
         }
         return result.toString().substring(0, result.length() - 1);
     }
-    
-    private static String selfAmorayTag;
-    
-    private static String selfVipserverTag;
-    
-    private static String selfLocationTag;
-    
-    private static final String AMORY_TAG = "Amory-Tag";
-    
-    private static final String VIPSERVER_TAG = "Vipserver-Tag";
-    
-    private static final String LOCATION_TAG = "Location-Tag";
 }

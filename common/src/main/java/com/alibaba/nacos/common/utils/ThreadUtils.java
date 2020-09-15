@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ThreadUtils {
     
+    private static final int THREAD_MULTIPLER = 2;
+    
     /**
      * Wait.
      *
@@ -136,7 +138,5 @@ public final class ThreadUtils {
     public static void addShutdownHook(Runnable runnable) {
         Runtime.getRuntime().addShutdownHook(new Thread(runnable));
     }
-    
-    private static final int THREAD_MULTIPLER = 2;
     
 }

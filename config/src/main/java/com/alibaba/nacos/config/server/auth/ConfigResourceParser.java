@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.config.server.auth;
 
-import javax.servlet.http.HttpServletRequest;
-
 import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import org.apache.commons.lang3.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Config resource parser.

@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -118,11 +118,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     private static final String RESOURCE_PERMISSIONS_ID = "permissions_id";
     
-    private DataSourceService dataSourceService;
-    
     private final DatabaseOperate databaseOperate;
     
     private final IdGeneratorManager idGeneratorManager;
+    
+    private DataSourceService dataSourceService;
     
     /**
      * The constructor sets the dependency injection order.

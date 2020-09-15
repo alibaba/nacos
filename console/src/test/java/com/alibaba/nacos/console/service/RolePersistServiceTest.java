@@ -45,13 +45,13 @@ public class RolePersistServiceTest extends BaseTest {
      */
     private RolesEntity roles;
     
+    @Autowired
+    private RolePersistService rolePersistService;
+    
     @Before
     public void before() {
         roles = JacksonUtils.toObj(TestData.ROLES_JSON, RolesEntity.class);
     }
-    
-    @Autowired
-    private RolePersistService rolePersistService;
     
     @Test
     public void getRolesTest() {

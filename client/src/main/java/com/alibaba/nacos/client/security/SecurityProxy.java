@@ -50,8 +50,6 @@ public class SecurityProxy {
     
     private final NacosRestTemplate nacosRestTemplate;
     
-    private String contextPath;
-    
     /**
      * User's name.
      */
@@ -61,6 +59,8 @@ public class SecurityProxy {
      * User's password.
      */
     private final String password;
+    
+    private String contextPath;
     
     /**
      * A token to take with when sending request to Nacos server.

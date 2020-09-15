@@ -25,11 +25,11 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
  */
 public class DynamicDataSource {
     
+    private static final DynamicDataSource INSTANCE = new DynamicDataSource();
+    
     private DataSourceService localDataSourceService = null;
     
     private DataSourceService basicDataSourceService = null;
-    
-    private static final DynamicDataSource INSTANCE = new DynamicDataSource();
     
     public static DynamicDataSource getInstance() {
         return INSTANCE;
@@ -37,10 +37,10 @@ public class DynamicDataSource {
     
     public synchronized DataSourceService getDataSource() {
         try {
-    
+            
             // Embedded storage is used by default in stand-alone mode
             // In cluster mode, external databases are used by default
-    
+            
             if (PropertyUtil.isEmbeddedStorage()) {
                 if (localDataSourceService == null) {
                     localDataSourceService = new LocalDataSourceServiceImpl();

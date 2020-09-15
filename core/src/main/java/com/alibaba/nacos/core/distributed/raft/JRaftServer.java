@@ -505,8 +505,7 @@ public class JRaftServer {
             // fix issue #3661  https://github.com/alibaba/nacos/issues/3661
             status = instance.refreshLeader(this.cliClientService, groupName, rpcRequestTimeoutMs);
             if (!status.isOk()) {
-                Loggers.RAFT
-                        .error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
+                Loggers.RAFT.error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
             }
         } catch (Exception e) {
             Loggers.RAFT.error("Fail to refresh raft metadata info for group : {}, error is : {}", groupName, e);

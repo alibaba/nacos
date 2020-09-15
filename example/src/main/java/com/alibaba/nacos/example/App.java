@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.example;
 
-import java.util.Properties;
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
+
+import java.util.Properties;
 
 /**
  * Hello world.
@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.naming.NamingService;
  * @author xxc
  */
 public class App {
+    
     public static void main(String[] args) throws NacosException {
         Properties properties = new Properties();
         properties.setProperty("serverAddr", "21.34.53.5:8848,21.34.53.6:8848");

@@ -26,12 +26,12 @@ import java.util.Properties;
  */
 public class VersionUtils {
     
-    public static String version;
-    
     /**
      * 获取当前version.
      */
     public static final String VERSION_PLACEHOLDER = "${project.version}";
+    
+    public static String version;
     
     static {
         InputStream in = null;

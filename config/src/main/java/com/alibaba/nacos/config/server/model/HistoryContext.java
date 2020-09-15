@@ -35,8 +35,6 @@ public class HistoryContext implements Serializable {
     
     public String tenant;
     
-    private String appName;
-    
     public boolean success;
     
     public int statusCode;
@@ -44,6 +42,8 @@ public class HistoryContext implements Serializable {
     public String statusMsg;
     
     public Page<ConfigHistoryInfo> configs;
+    
+    private String appName;
     
     public HistoryContext(String serverId, String dataId, String group, int statusCode, String statusMsg,
             Page<ConfigHistoryInfo> configs) {

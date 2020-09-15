@@ -48,22 +48,26 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Service
 public class MergeDatumService {
-
-    private PersistService persistService;
-
+    
     static final int INIT_THREAD_COUNT = 40;
-
+    
     static final AtomicInteger FINISHED = new AtomicInteger();
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(MergeDatumService.class);
+    
     static int total = 0;
-
+    
+    final TaskManager mergeTasks;
+    
+    private PersistService persistService;
+    
     @Autowired
     public MergeDatumService(PersistService persistService) {
         this.persistService = persistService;
         mergeTasks = new TaskManager("com.alibaba.nacos.MergeDatum");
         mergeTasks.setDefaultTaskProcessor(new MergeTaskProcessor(persistService, this));
     }
-
+    
     static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
         List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
         for (int i = 0; i < count; i++) {
@@ -75,7 +79,7 @@ public class MergeDatumService {
         }
         return result;
     }
-
+    
     /**
      * Called after data changes to add aggregation tasks.
      */
@@ -86,7 +90,7 @@ public class MergeDatumService {
         MergeDataTask task = new MergeDataTask(dataId, groupId, tenant, tag, clientIp);
         mergeTasks.addTask(task.getId(), task);
     }
-
+    
     /**
      * Called after data changes to add aggregation tasks.
      */
@@ -97,7 +101,7 @@ public class MergeDatumService {
         MergeDataTask task = new MergeDataTask(dataId, groupId, tenant, clientIp);
         mergeTasks.addTask(task.getId(), task);
     }
-
+    
     /**
      * Merge all.
      */
@@ -109,7 +113,7 @@ public class MergeDatumService {
             addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIp());
         }
     }
-
+    
     private boolean canExecute() {
         if (!PropertyUtil.isEmbeddedStorage()) {
             return true;
@@ -120,18 +124,18 @@ public class MergeDatumService {
         ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
         return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
     }
-
+    
     class MergeAllDataWorker extends Thread {
-
+        
         static final int PAGE_SIZE = 10000;
-
+        
         private List<ConfigInfoChanged> configInfoList;
-
+        
         public MergeAllDataWorker(List<ConfigInfoChanged> configInfoList) {
             super("MergeAllDataWorker");
             this.configInfoList = configInfoList;
         }
-
+        
         @Override
         public void run() {
             for (ConfigInfoChanged configInfo : configInfoList) {
@@ -144,30 +148,31 @@ public class MergeDatumService {
                     int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
                     for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
                         Page<ConfigInfoAggr> page = persistService
-                            .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
+                                .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
                         if (page != null) {
                             datumList.addAll(page.getPageItems());
                             LOGGER.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
-                                rowCount);
+                                    rowCount);
                         }
                     }
-
+    
                     final Timestamp time = TimeUtils.getCurrentTime();
-
+    
                     if (datumList.size() > 0) {
                         // merge
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
                         persistService.insertOrUpdate(null, null, cf, time, null, false);
                         LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
-                            datumList.size(), cf.getContent().length(), cf.getMd5(),
-                            ContentUtils.truncateContent(cf.getContent()));
+                                datumList.size(), cf.getContent().length(), cf.getMd5(),
+                                ContentUtils.truncateContent(cf.getContent()));
                     } else {
                         // remove
                         persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
-                        LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
-                            + group);
+                        LOGGER.warn(
+                                "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
+                                        + group);
                     }
-
+    
                 } catch (Exception e) {
                     LOGGER.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
                 }
@@ -179,9 +184,5 @@ public class MergeDatumService {
             LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
         }
     }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(MergeDatumService.class);
-
-    final TaskManager mergeTasks;
-
+    
 }

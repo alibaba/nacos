@@ -53,6 +53,8 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class HealthCheckCommon {
     
+    private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
+    
     @Autowired
     private DistroMapper distroMapper;
     
@@ -64,8 +66,6 @@ public class HealthCheckCommon {
     
     @Autowired
     private PushService pushService;
-    
-    private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
     
     /**
      * Init Health check.

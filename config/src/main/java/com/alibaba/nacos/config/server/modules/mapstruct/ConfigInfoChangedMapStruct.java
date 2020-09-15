@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
@@ -23,14 +24,15 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 /**
+ * ConfigInfoChangedMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface ConfigInfoChangedMapStruct {
-
+    
     ConfigInfoChangedMapStruct INSTANCE = Mappers.getMapper(ConfigInfoChangedMapStruct.class);
-
+    
     List<ConfigInfoChanged> convertConfigInfoChangedList(List<ConfigInfoAggrEntity> list);
-
-
+    
 }

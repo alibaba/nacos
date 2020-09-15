@@ -23,8 +23,8 @@
     <build>
         <extensions>
             <extension>
-                <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
+                <groupId>kr.motd.maven</groupId>
                 <version>1.5.0.Final</version>
             </extension>
         </extensions>
@@ -61,20 +61,20 @@
     
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>nacos-common</artifactId>
+            <groupId>${project.groupId}</groupId>
         </dependency>
         <dependency>
-            <groupId>org.javatuples</groupId>
             <artifactId>javatuples</artifactId>
+            <groupId>org.javatuples</groupId>
         </dependency>
         <dependency>
-            <groupId>com.caucho</groupId>
             <artifactId>hessian</artifactId>
+            <groupId>com.caucho</groupId>
         </dependency>
         <dependency>
-            <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
+            <groupId>com.google.protobuf</groupId>
         </dependency>
     </dependencies>
     <modelVersion>4.0.0</modelVersion>
@@ -82,8 +82,8 @@
     <name>nacos-consistency ${project.version}</name>
     <packaging>jar</packaging>
     <parent>
-        <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
+        <groupId>com.alibaba.nacos</groupId>
         <relativePath>../pom.xml</relativePath>
         <version>1.4.0-SNAPSHOT</version>
     </parent>

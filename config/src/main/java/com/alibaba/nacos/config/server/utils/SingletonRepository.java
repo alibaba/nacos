@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SingletonRepository<T> {
     
+    private final ConcurrentHashMap<T, T> shared;
+    
     public SingletonRepository() {
         // Initializing size 2^16, the container itself use about 50K of memory, avoiding constant expansion
         shared = new ConcurrentHashMap<T, T>(1 << 16);
@@ -46,17 +48,15 @@ public class SingletonRepository<T> {
         shared.remove(obj);
     }
     
-    private final ConcurrentHashMap<T, T> shared;
-    
     /**
      * Cache of DataId and Group.
      */
     public static class DataIdGroupIdCache {
         
+        static SingletonRepository<String> cache = new SingletonRepository<String>();
+        
         public static String getSingleton(String str) {
             return cache.getSingleton(str);
         }
-        
-        static SingletonRepository<String> cache = new SingletonRepository<String>();
     }
 }

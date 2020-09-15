@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class HealthCheckStatus {
     
+    private static ConcurrentMap<String, HealthCheckStatus> statusMap = new ConcurrentHashMap<>();
+    
     public AtomicBoolean isBeingChecked = new AtomicBoolean(false);
     
     public AtomicInteger checkFailCount = new AtomicInteger(0);
@@ -38,8 +40,6 @@ public class HealthCheckStatus {
     public AtomicInteger checkOkCount = new AtomicInteger(0);
     
     public long checkRt = -1L;
-    
-    private static ConcurrentMap<String, HealthCheckStatus> statusMap = new ConcurrentHashMap<>();
     
     public static void reset(Instance instance) {
         statusMap.put(buildKey(instance), new HealthCheckStatus());

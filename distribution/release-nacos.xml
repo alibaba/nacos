@@ -15,13 +15,6 @@
   ~ limitations under the License.
   -->
 <assembly>
-    <id>server-${project.version}</id>
-    <includeBaseDirectory>true</includeBaseDirectory>
-    <formats>
-        <format>dir</format>
-        <format>tar.gz</format>
-        <format>zip</format>
-    </formats>
     <fileSets>
 
         <fileSet>
@@ -37,34 +30,41 @@
         </fileSet>
 
         <fileSet>
+            <fileMode>0755</fileMode>
             <includes>
                 <include>bin/*</include>
             </includes>
-            <fileMode>0755</fileMode>
         </fileSet>
     </fileSets>
     <files>
         <file>
-            <source>LICENSE-BIN</source>
             <destName>LICENSE</destName>
+            <source>LICENSE-BIN</source>
         </file>
         <file>
-            <source>NOTICE-BIN</source>
             <destName>NOTICE</destName>
+            <source>NOTICE-BIN</source>
         </file>
         <file>
             <!--打好的jar包名称和放置目录-->
-            <source>../console/target/nacos-server.jar</source>
             <outputDirectory>target/</outputDirectory>
+            <source>../console/target/nacos-server.jar</source>
         </file>
     </files>
-
+    <formats>
+        <format>dir</format>
+        <format>tar.gz</format>
+        <format>zip</format>
+    </formats>
+    <id>server-${project.version}</id>
+    <includeBaseDirectory>true</includeBaseDirectory>
+    
     <moduleSets>
         <moduleSet>
-            <useAllReactorProjects>true</useAllReactorProjects>
             <includes>
                 <include>com.alibaba.nacos:nacos-console</include>
             </includes>
+            <useAllReactorProjects>true</useAllReactorProjects>
         </moduleSet>
     </moduleSets>
 </assembly>

@@ -34,11 +34,11 @@ public class StringUtils {
     
     public static final String DOT = ".";
     
-    private static final int INDEX_NOT_FOUND = -1;
-    
     public static final String COMMA = ",";
     
     public static final String EMPTY = "";
+    
+    private static final int INDEX_NOT_FOUND = -1;
     
     public static String newStringForUtf8(byte[] bytes) {
         return new String(bytes, Charset.forName(Constants.ENCODE));

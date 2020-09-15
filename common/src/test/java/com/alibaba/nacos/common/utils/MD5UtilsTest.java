@@ -17,11 +17,10 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.common.Constants;
-
-import java.security.NoSuchAlgorithmException;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.security.NoSuchAlgorithmException;
 
 public class MD5UtilsTest {
     

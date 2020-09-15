@@ -45,9 +45,9 @@ public class CredentialWatcher {
     
     private final String appName;
     
-    private String propertyPath;
-    
     private final TimerTask watcher;
+    
+    private String propertyPath;
     
     private boolean stopped;
     

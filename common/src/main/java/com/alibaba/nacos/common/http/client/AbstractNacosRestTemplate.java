@@ -37,9 +37,9 @@ import java.util.Map;
 @SuppressWarnings("all")
 public abstract class AbstractNacosRestTemplate {
     
-    private final Map<String, ResponseHandler> responseHandlerMap = new HashMap<String, ResponseHandler>();
-    
     protected final Logger logger;
+    
+    private final Map<String, ResponseHandler> responseHandlerMap = new HashMap<String, ResponseHandler>();
     
     public AbstractNacosRestTemplate(Logger logger) {
         this.logger = logger;

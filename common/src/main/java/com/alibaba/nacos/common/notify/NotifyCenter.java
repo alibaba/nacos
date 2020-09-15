@@ -18,8 +18,8 @@ package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.BiFunction;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.MapUtils;
@@ -27,10 +27,10 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.NoSuchElementException;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -46,24 +46,17 @@ public class NotifyCenter {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
     
+    private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
+    
+    private static final NotifyCenter INSTANCE = new NotifyCenter();
+    
     public static int ringBufferSize = 16384;
     
     public static int shareBufferSize = 1024;
     
-    private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
-    
     private static BiFunction<Class<? extends Event>, Integer, EventPublisher> publisherFactory = null;
     
-    private static final NotifyCenter INSTANCE = new NotifyCenter();
-    
-    private DefaultSharePublisher sharePublisher;
-    
     private static Class<? extends EventPublisher> clazz = null;
-    
-    /**
-     * Publisher management container.
-     */
-    private final Map<String, EventPublisher> publisherMap = new ConcurrentHashMap<String, EventPublisher>(16);
     
     static {
         // Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
@@ -116,6 +109,13 @@ public class NotifyCenter {
             }
         });
     }
+    
+    /**
+     * Publisher management container.
+     */
+    private final Map<String, EventPublisher> publisherMap = new ConcurrentHashMap<String, EventPublisher>(16);
+    
+    private DefaultSharePublisher sharePublisher;
     
     @JustForTest
     public static Map<String, EventPublisher> getPublisherMap() {

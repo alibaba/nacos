@@ -32,45 +32,43 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class JacksonUtils {
-
-	static ObjectMapper mapper = new ObjectMapper();
-
-	static {
-		mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-	}
-
-	public static String serializeObject(Object o) throws IOException {
-		return mapper.writeValueAsString(o);
-	}
-
-	public static Object deserializeObject(String s, Class<?> clazz) throws IOException {
-		return mapper.readValue(s, clazz);
-	}
-
-	public static <T> T deserializeObject(String s, TypeReference<T> typeReference)
-			throws IOException {
-		return mapper.readValue(s, typeReference);
-	}
-
-	public static <T> T deserializeObject(InputStream src, TypeReference<T> typeReference)
-			throws IOException {
-		return mapper.readValue(src, typeReference);
-	}
-
-	@Test
-	public void test_print() throws Exception {
-		Map<String, Map<String, Object>> map = new HashMap<>();
-		Map<String, Object> data = new HashMap<>();
-		data.put("test-1", LocalDateTime.now());
-		data.put("test_2", LocalDateTime.now());
-		map.put("global", data);
-
-		ProtocolMetaData metaData = new ProtocolMetaData();
-
-		metaData.load(map);
-
-		String json = serializeObject(metaData);
-		System.out.println(json);
-	}
-
+    
+    static ObjectMapper mapper = new ObjectMapper();
+    
+    static {
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
+    
+    public static String serializeObject(Object o) throws IOException {
+        return mapper.writeValueAsString(o);
+    }
+    
+    public static Object deserializeObject(String s, Class<?> clazz) throws IOException {
+        return mapper.readValue(s, clazz);
+    }
+    
+    public static <T> T deserializeObject(String s, TypeReference<T> typeReference) throws IOException {
+        return mapper.readValue(s, typeReference);
+    }
+    
+    public static <T> T deserializeObject(InputStream src, TypeReference<T> typeReference) throws IOException {
+        return mapper.readValue(src, typeReference);
+    }
+    
+    @Test
+    public void test_print() throws Exception {
+        Map<String, Map<String, Object>> map = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
+        data.put("test-1", LocalDateTime.now());
+        data.put("test_2", LocalDateTime.now());
+        map.put("global", data);
+        
+        ProtocolMetaData metaData = new ProtocolMetaData();
+        
+        metaData.load(map);
+        
+        String json = serializeObject(metaData);
+        System.out.println(json);
+    }
+    
 }

@@ -55,11 +55,19 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_SUFF
 @Component
 public class RaftStore {
     
-    private final Properties meta = new Properties();
-    
     private static final String META_FILE_NAME = DATA_BASE_DIR + File.separator + "meta.properties";
     
     private static final String CACHE_DIR = DATA_BASE_DIR + File.separator + "data";
+    
+    private final Properties meta = new Properties();
+    
+    private static String encodeDatumKey(String datumKey) {
+        return datumKey.replace(':', '#');
+    }
+    
+    private static String decodeDatumKey(String datumKey) {
+        return datumKey.replace("#", ":");
+    }
     
     /**
      * Load datum from cache file.
@@ -347,13 +355,5 @@ public class RaftStore {
             meta.setProperty("term", String.valueOf(term));
             meta.store(outStream, null);
         }
-    }
-    
-    private static String encodeDatumKey(String datumKey) {
-        return datumKey.replace(':', '#');
-    }
-    
-    private static String decodeDatumKey(String datumKey) {
-        return datumKey.replace("#", ":");
     }
 }

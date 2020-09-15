@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.utils.RegexParser;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +39,9 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 public class AggrWhitelist {
     
     public static final String AGGRIDS_METADATA = "com.alibaba.nacos.metadata.aggrIDs";
+    
+    static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST = new AtomicReference<List<Pattern>>(
+            new ArrayList<Pattern>());
     
     /**
      * Judge whether specified dataId includes aggregation white list.
@@ -95,7 +97,4 @@ public class AggrWhitelist {
     public static List<Pattern> getWhiteList() {
         return AGGR_DATAID_WHITELIST.get();
     }
-    
-    static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST = new AtomicReference<List<Pattern>>(
-            new ArrayList<Pattern>());
 }

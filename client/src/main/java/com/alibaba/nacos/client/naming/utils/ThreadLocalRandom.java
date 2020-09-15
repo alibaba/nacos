@@ -45,10 +45,50 @@ public class ThreadLocalRandom extends Random {
     
     private static final AtomicLong seedUniquifier = new AtomicLong();
     
+    // same constants as Random, but must be redeclared because private
+    private static final long multiplier = 0x5DEECE66DL;
+    
+    private static final long addend = 0xBL;
+    
+    private static final long mask = (1L << 48) - 1;
+    
+    /**
+     * The actual ThreadLocal
+     */
+    private static final ThreadLocal<ThreadLocalRandom> localRandom = new ThreadLocal<ThreadLocalRandom>() {
+        @Override
+        protected ThreadLocalRandom initialValue() {
+            return new ThreadLocalRandom();
+        }
+    };
+    
+    private static final long serialVersionUID = -5851777807851030925L;
+    
     private static volatile long initialSeedUniquifier;
     
-    public static void setInitialSeedUniquifier(long initialSeedUniquifier) {
-        ThreadLocalRandom.initialSeedUniquifier = initialSeedUniquifier;
+    /**
+     * Initialization flag to permit calls to setSeed to succeed only while executing the Random constructor. We can't
+     * allow others since it would cause setting seed in one part of a program to unintentionally impact other usages by
+     * the thread.
+     */
+    boolean initialized = false;
+    
+    /**
+     * The random seed. We can't use super.seed.
+     */
+    private long rnd;
+    
+    // Padding to help avoid memory contention among seed updates in
+    // different TLRs in the common case that they are located near
+    // each other.
+    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+    
+    /**
+     * Constructor called only by localRandom.initialValue.
+     */
+    ThreadLocalRandom() {
+        super(newSeed());
+        initialized = true;
     }
     
     public static synchronized long getInitialSeedUniquifier() {
@@ -98,6 +138,10 @@ public class ThreadLocalRandom extends Random {
         return initialSeedUniquifier;
     }
     
+    public static void setInitialSeedUniquifier(long initialSeedUniquifier) {
+        ThreadLocalRandom.initialSeedUniquifier = initialSeedUniquifier;
+    }
+    
     private static long newSeed() {
         for (; ; ) {
             final long current = seedUniquifier.get();
@@ -111,48 +155,6 @@ public class ThreadLocalRandom extends Random {
             }
         }
     }
-    
-    // same constants as Random, but must be redeclared because private
-    private static final long multiplier = 0x5DEECE66DL;
-    
-    private static final long addend = 0xBL;
-    
-    private static final long mask = (1L << 48) - 1;
-    
-    /**
-     * The random seed. We can't use super.seed.
-     */
-    private long rnd;
-    
-    /**
-     * Initialization flag to permit calls to setSeed to succeed only while executing the Random constructor. We can't
-     * allow others since it would cause setting seed in one part of a program to unintentionally impact other usages by
-     * the thread.
-     */
-    boolean initialized = false;
-    
-    // Padding to help avoid memory contention among seed updates in
-    // different TLRs in the common case that they are located near
-    // each other.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    
-    /**
-     * Constructor called only by localRandom.initialValue.
-     */
-    ThreadLocalRandom() {
-        super(newSeed());
-        initialized = true;
-    }
-    
-    /**
-     * The actual ThreadLocal
-     */
-    private static final ThreadLocal<ThreadLocalRandom> localRandom = new ThreadLocal<ThreadLocalRandom>() {
-        @Override
-        protected ThreadLocalRandom initialValue() {
-            return new ThreadLocalRandom();
-        }
-    };
     
     /**
      * Returns the current thread's {@code ThreadLocalRandom}.
@@ -274,6 +276,4 @@ public class ThreadLocalRandom extends Random {
         }
         return nextDouble() * (bound - least) + least;
     }
-    
-    private static final long serialVersionUID = -5851777807851030925L;
 }

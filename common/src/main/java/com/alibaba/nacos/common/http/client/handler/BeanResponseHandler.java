@@ -25,8 +25,7 @@ import java.io.InputStream;
 import java.lang.reflect.Type;
 
 /**
- * bean response handler,
- * Mainly converter response type as bean type.
+ * bean response handler, Mainly converter response type as bean type.
  *
  * @author mai.jh
  */

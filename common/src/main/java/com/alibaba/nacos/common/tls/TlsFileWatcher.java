@@ -48,19 +48,19 @@ public final class TlsFileWatcher {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(TlsFileWatcher.class);
     
-    private AtomicBoolean started = new AtomicBoolean(false);
+    private static TlsFileWatcher tlsFileWatcher = new TlsFileWatcher();
     
     private final int checkInterval = TlsSystemConfig.tlsFileCheckInterval;
-    
-    private Map<String, String> fileMd5Map = new HashMap<String, String>();
-    
-    private ConcurrentHashMap<String, FileChangeListener> watchFilesMap = new ConcurrentHashMap<String, FileChangeListener>();
     
     private final ScheduledExecutorService service = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(TlsFileWatcher.class),
                     new NameThreadFactory("com.alibaba.nacos.core.common.tls"));
     
-    private static TlsFileWatcher tlsFileWatcher = new TlsFileWatcher();
+    private AtomicBoolean started = new AtomicBoolean(false);
+    
+    private Map<String, String> fileMd5Map = new HashMap<String, String>();
+    
+    private ConcurrentHashMap<String, FileChangeListener> watchFilesMap = new ConcurrentHashMap<String, FileChangeListener>();
     
     private TlsFileWatcher() {
         start();

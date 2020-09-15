@@ -22,19 +22,19 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class nacosSmoke_ITCase {
-
+    
     private static Logger logger = Logger.getLogger(nacosSmoke_ITCase.class);
-
+    
     @Before
     public void setUp() {
         logger.info(String.format("nacosSmoke_ITCase: %s;", "setUp"));
     }
-
+    
     @After
     public void tearDown() {
         logger.info(String.format("nacosSmoke_ITCase: %s;", "tearDown"));
     }
-
+    
     @Test
     public void testSmoke() {
     }

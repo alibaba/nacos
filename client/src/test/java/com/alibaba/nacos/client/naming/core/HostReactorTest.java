@@ -41,6 +41,29 @@ public class HostReactorTest {
     
     private static final String CACHE_DIR = HostReactorTest.class.getResource("/").getPath() + "cache/";
     
+    private static final String EXAMPLE =
+            "{\n" + "\t\"name\": \"testName\",\n" + "\t\"clusters\": \"testClusters\",\n" + "\t\"cacheMillis\": 1000,\n"
+                    + "\t\"hosts\": [{\n" + "\t\t\"ip\": \"1.1.1.1\",\n" + "\t\t\"port\": 1234,\n"
+                    + "\t\t\"weight\": 1.0,\n" + "\t\t\"healthy\": true,\n" + "\t\t\"enabled\": true,\n"
+                    + "\t\t\"ephemeral\": true,\n" + "\t\t\"clusterName\": \"testClusters\",\n"
+                    + "\t\t\"serviceName\": \"testName\",\n" + "\t\t\"metadata\": {},\n"
+                    + "\t\t\"instanceHeartBeatInterval\": 5000,\n" + "\t\t\"instanceHeartBeatTimeOut\": 15000,\n"
+                    + "\t\t\"ipDeleteTimeout\": 30000,\n" + "\t\t\"instanceIdGenerator\": \"simple\"\n" + "\t}],\n"
+                    + "\t\"lastRefTime\": 0,\n" + "\t\"checksum\": \"\",\n" + "\t\"allIPs\": false,\n"
+                    + "\t\"valid\": true\n" + "}";
+    
+    //the weight changed from 1.0 to 2.0
+    private static final String CHANGE_DATA_EXAMPLE =
+            "{\n" + "\t\"name\": \"testName\",\n" + "\t\"clusters\": \"testClusters\",\n" + "\t\"cacheMillis\": 1000,\n"
+                    + "\t\"hosts\": [{\n" + "\t\t\"ip\": \"1.1.1.1\",\n" + "\t\t\"port\": 1234,\n"
+                    + "\t\t\"weight\": 2.0,\n" + "\t\t\"healthy\": true,\n" + "\t\t\"enabled\": true,\n"
+                    + "\t\t\"ephemeral\": true,\n" + "\t\t\"clusterName\": \"testClusters\",\n"
+                    + "\t\t\"serviceName\": \"testName\",\n" + "\t\t\"metadata\": {},\n"
+                    + "\t\t\"instanceHeartBeatInterval\": 5000,\n" + "\t\t\"instanceHeartBeatTimeOut\": 15000,\n"
+                    + "\t\t\"ipDeleteTimeout\": 30000,\n" + "\t\t\"instanceIdGenerator\": \"simple\"\n" + "\t}],\n"
+                    + "\t\"lastRefTime\": 0,\n" + "\t\"checksum\": \"\",\n" + "\t\"allIPs\": false,\n"
+                    + "\t\"valid\": true\n" + "}";
+    
     @Mock
     private NamingProxy namingProxy;
     
@@ -102,27 +125,4 @@ public class HostReactorTest {
         assertEquals("testName", actual.getServiceName());
         assertEquals(1234, actual.getPort());
     }
-    
-    private static final String EXAMPLE =
-            "{\n" + "\t\"name\": \"testName\",\n" + "\t\"clusters\": \"testClusters\",\n" + "\t\"cacheMillis\": 1000,\n"
-                    + "\t\"hosts\": [{\n" + "\t\t\"ip\": \"1.1.1.1\",\n" + "\t\t\"port\": 1234,\n"
-                    + "\t\t\"weight\": 1.0,\n" + "\t\t\"healthy\": true,\n" + "\t\t\"enabled\": true,\n"
-                    + "\t\t\"ephemeral\": true,\n" + "\t\t\"clusterName\": \"testClusters\",\n"
-                    + "\t\t\"serviceName\": \"testName\",\n" + "\t\t\"metadata\": {},\n"
-                    + "\t\t\"instanceHeartBeatInterval\": 5000,\n" + "\t\t\"instanceHeartBeatTimeOut\": 15000,\n"
-                    + "\t\t\"ipDeleteTimeout\": 30000,\n" + "\t\t\"instanceIdGenerator\": \"simple\"\n" + "\t}],\n"
-                    + "\t\"lastRefTime\": 0,\n" + "\t\"checksum\": \"\",\n" + "\t\"allIPs\": false,\n"
-                    + "\t\"valid\": true\n" + "}";
-    
-    //the weight changed from 1.0 to 2.0
-    private static final String CHANGE_DATA_EXAMPLE =
-            "{\n" + "\t\"name\": \"testName\",\n" + "\t\"clusters\": \"testClusters\",\n" + "\t\"cacheMillis\": 1000,\n"
-                    + "\t\"hosts\": [{\n" + "\t\t\"ip\": \"1.1.1.1\",\n" + "\t\t\"port\": 1234,\n"
-                    + "\t\t\"weight\": 2.0,\n" + "\t\t\"healthy\": true,\n" + "\t\t\"enabled\": true,\n"
-                    + "\t\t\"ephemeral\": true,\n" + "\t\t\"clusterName\": \"testClusters\",\n"
-                    + "\t\t\"serviceName\": \"testName\",\n" + "\t\t\"metadata\": {},\n"
-                    + "\t\t\"instanceHeartBeatInterval\": 5000,\n" + "\t\t\"instanceHeartBeatTimeOut\": 15000,\n"
-                    + "\t\t\"ipDeleteTimeout\": 30000,\n" + "\t\t\"instanceIdGenerator\": \"simple\"\n" + "\t}],\n"
-                    + "\t\"lastRefTime\": 0,\n" + "\t\"checksum\": \"\",\n" + "\t\"allIPs\": false,\n"
-                    + "\t\"valid\": true\n" + "}";
 }

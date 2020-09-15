@@ -26,16 +26,16 @@ public class TestChecker extends AbstractHealthChecker {
     
     private String testValue;
     
+    public TestChecker() {
+        super(TYPE);
+    }
+    
     public String getTestValue() {
         return testValue;
     }
     
     public void setTestValue(String testValue) {
         this.testValue = testValue;
-    }
-    
-    public TestChecker() {
-        super(TYPE);
     }
     
     @Override

@@ -49,11 +49,6 @@ public class StsConfig {
      */
     private boolean cacheSecurityCredentials = true;
     
-    private static class Singleton {
-        
-        private static final StsConfig INSTANCE = new StsConfig();
-    }
-    
     private StsConfig() {
         String ramRoleName = System.getProperty("ram.role.name");
         if (!StringUtils.isBlank(ramRoleName)) {
@@ -130,5 +125,10 @@ public class StsConfig {
     
     public void setCacheSecurityCredentials(boolean cacheSecurityCredentials) {
         this.cacheSecurityCredentials = cacheSecurityCredentials;
+    }
+    
+    private static class Singleton {
+        
+        private static final StsConfig INSTANCE = new StsConfig();
     }
 }

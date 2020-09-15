@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.modules.mapstruct;
 
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.modules.entity.TenantInfoEntity;
@@ -24,15 +24,17 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 /**
+ * TenantInfoMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface TenantInfoMapStruct {
-
+    
     TenantInfoMapStruct INSTANCE = Mappers.getMapper(TenantInfoMapStruct.class);
-
+    
     List<TenantInfo> convertTenantInfoList(List<TenantInfoEntity> list);
-
+    
     TenantInfo convertTenantInfo(TenantInfoEntity tenantInfoEntity);
-
+    
 }

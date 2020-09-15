@@ -17,9 +17,9 @@
 package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,22 +42,22 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     protected static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
     
+    protected final ConcurrentHashSet<Subscriber> subscribers = new ConcurrentHashSet<Subscriber>();
+    
+    private final AtomicReferenceFieldUpdater<DefaultPublisher, Long> updater = AtomicReferenceFieldUpdater
+            .newUpdater(DefaultPublisher.class, Long.class, "lastEventSequence");
+    
+    protected volatile Long lastEventSequence = -1L;
+    
     private volatile boolean initialized = false;
     
     private volatile boolean shutdown = false;
     
     private Class<? extends Event> eventType;
     
-    protected final ConcurrentHashSet<Subscriber> subscribers = new ConcurrentHashSet<Subscriber>();
-    
     private int queueMaxSize = -1;
     
     private BlockingQueue<Event> queue;
-    
-    protected volatile Long lastEventSequence = -1L;
-    
-    private final AtomicReferenceFieldUpdater<DefaultPublisher, Long> updater = AtomicReferenceFieldUpdater
-            .newUpdater(DefaultPublisher.class, Long.class, "lastEventSequence");
     
     @Override
     public void init(Class<? extends Event> type, int bufferSize) {

@@ -23,7 +23,6 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,6 +37,12 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CatalogControllerTest {
+    
+    private static final String TEST_CLUSTER_NAME = "test-cluster";
+    
+    private static final String TEST_SERVICE_NAME = "test-service";
+    
+    private static final String TEST_GROUP_NAME = "test-group-name";
     
     @Mock
     private ServiceManager serviceManager;
@@ -90,12 +95,6 @@ public class CatalogControllerTest {
     public void testServiceDetailNotFound() throws Exception {
         catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME);
     }
-    
-    private static final String TEST_CLUSTER_NAME = "test-cluster";
-    
-    private static final String TEST_SERVICE_NAME = "test-service";
-    
-    private static final String TEST_GROUP_NAME = "test-group-name";
     
     @Test
     public void testInstanceList() throws NacosException {

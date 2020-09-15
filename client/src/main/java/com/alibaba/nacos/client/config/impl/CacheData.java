@@ -43,6 +43,73 @@ public class CacheData {
     
     private static final Logger LOGGER = LogUtils.logger(CacheData.class);
     
+    public final String dataId;
+    
+    public final String group;
+    
+    public final String tenant;
+    
+    private final String name;
+    
+    private final ConfigFilterChainManager configFilterChainManager;
+    
+    private final CopyOnWriteArrayList<ManagerListenerWrap> listeners;
+    
+    private volatile String md5;
+    
+    /**
+     * whether use local config.
+     */
+    private volatile boolean isUseLocalConfig = false;
+    
+    /**
+     * last modify time.
+     */
+    private volatile long localConfigLastModified;
+    
+    private volatile String content;
+    
+    private int taskId;
+    
+    private volatile boolean isInitializing = true;
+    
+    private String type;
+    
+    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {
+        if (null == dataId || null == group) {
+            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
+        }
+        this.name = name;
+        this.configFilterChainManager = configFilterChainManager;
+        this.dataId = dataId;
+        this.group = group;
+        this.tenant = TenantUtil.getUserTenantForAcm();
+        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
+        this.isInitializing = true;
+        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
+        this.md5 = getMd5String(content);
+    }
+    
+    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group,
+            String tenant) {
+        if (null == dataId || null == group) {
+            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
+        }
+        this.name = name;
+        this.configFilterChainManager = configFilterChainManager;
+        this.dataId = dataId;
+        this.group = group;
+        this.tenant = tenant;
+        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
+        this.isInitializing = true;
+        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
+        this.md5 = getMd5String(content);
+    }
+    
+    public static String getMd5String(String config) {
+        return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
+    }
+    
     public boolean isInitializing() {
         return isInitializing;
     }
@@ -110,6 +177,8 @@ public class CacheData {
                     listeners.size());
         }
     }
+    
+    // ==================
     
     /**
      * 返回监听器列表上的迭代器，只读。保证不返回NULL.
@@ -249,80 +318,11 @@ public class CacheData {
                 name, (finishNotify - startNotify), dataId, group, md5, listener);
     }
     
-    public static String getMd5String(String config) {
-        return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
-    }
-    
     private String loadCacheContentFromDiskLocal(String name, String dataId, String group, String tenant) {
         String content = LocalConfigInfoProcessor.getFailover(name, dataId, group, tenant);
         content = (null != content) ? content : LocalConfigInfoProcessor.getSnapshot(name, dataId, group, tenant);
         return content;
     }
-    
-    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {
-        if (null == dataId || null == group) {
-            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
-        }
-        this.name = name;
-        this.configFilterChainManager = configFilterChainManager;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = TenantUtil.getUserTenantForAcm();
-        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
-        this.isInitializing = true;
-        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-        this.md5 = getMd5String(content);
-    }
-    
-    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group,
-            String tenant) {
-        if (null == dataId || null == group) {
-            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
-        }
-        this.name = name;
-        this.configFilterChainManager = configFilterChainManager;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = tenant;
-        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
-        this.isInitializing = true;
-        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-        this.md5 = getMd5String(content);
-    }
-    
-    // ==================
-    
-    private final String name;
-    
-    private final ConfigFilterChainManager configFilterChainManager;
-    
-    public final String dataId;
-    
-    public final String group;
-    
-    public final String tenant;
-    
-    private final CopyOnWriteArrayList<ManagerListenerWrap> listeners;
-    
-    private volatile String md5;
-    
-    /**
-     * whether use local config.
-     */
-    private volatile boolean isUseLocalConfig = false;
-    
-    /**
-     * last modify time.
-     */
-    private volatile long localConfigLastModified;
-    
-    private volatile String content;
-    
-    private int taskId;
-    
-    private volatile boolean isInitializing = true;
-    
-    private String type;
     
     private static class ManagerListenerWrap {
         

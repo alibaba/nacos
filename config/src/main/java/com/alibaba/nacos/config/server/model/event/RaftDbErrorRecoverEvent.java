@@ -26,5 +26,5 @@ import com.alibaba.nacos.common.notify.Event;
  */
 @JustForTest
 public class RaftDbErrorRecoverEvent extends Event {
-
+    
 }

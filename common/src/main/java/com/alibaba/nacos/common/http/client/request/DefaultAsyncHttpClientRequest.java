@@ -46,8 +46,8 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
     }
     
     @Override
-    public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final ResponseHandler<T> responseHandler,
-            final Callback<T> callback) throws Exception {
+    public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity,
+            final ResponseHandler<T> responseHandler, final Callback<T> callback) throws Exception {
         HttpRequestBase httpRequestBase = DefaultHttpClientRequest.build(uri, httpMethod, requestHttpEntity);
         asyncClient.execute(httpRequestBase, new FutureCallback<HttpResponse>() {
             @Override

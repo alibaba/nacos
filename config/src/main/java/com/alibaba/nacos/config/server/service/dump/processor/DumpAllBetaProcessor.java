@@ -37,6 +37,12 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  */
 public class DumpAllBetaProcessor implements NacosTaskProcessor {
     
+    static final int PAGE_SIZE = 1000;
+    
+    final DumpService dumpService;
+    
+    final PersistService persistService;
+    
     public DumpAllBetaProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
         this.persistService = dumpService.getPersistService();
@@ -66,10 +72,4 @@ public class DumpAllBetaProcessor implements NacosTaskProcessor {
         }
         return true;
     }
-    
-    static final int PAGE_SIZE = 1000;
-    
-    final DumpService dumpService;
-    
-    final PersistService persistService;
 }

@@ -58,12 +58,12 @@ public class ControllerMethodsCache {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ControllerMethodsCache.class);
     
+    private final ConcurrentMap<String, List<RequestMappingInfo>> urlLookup = new ConcurrentHashMap<>();
+    
     @Value("${server.servlet.contextPath:/nacos}")
     private String contextPath;
     
     private ConcurrentMap<RequestMappingInfo, Method> methods = new ConcurrentHashMap<>();
-    
-    private final ConcurrentMap<String, List<RequestMappingInfo>> urlLookup = new ConcurrentHashMap<>();
     
     public Method getMethod(HttpServletRequest request) {
         String path = getPath(request);

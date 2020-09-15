@@ -33,10 +33,7 @@ import java.util.ServiceLoader;
  */
 public class ConfigChangeHandler {
     
-    private static class ConfigChangeHandlerHolder {
-        
-        private static final ConfigChangeHandler INSTANCE = new ConfigChangeHandler();
-    }
+    private final List<ConfigChangeParser> parserList;
     
     private ConfigChangeHandler() {
         this.parserList = new LinkedList<ConfigChangeParser>();
@@ -70,10 +67,13 @@ public class ConfigChangeHandler {
                 return changeParser.doParse(oldContent, newContent, type);
             }
         }
-        
+    
         return Collections.emptyMap();
     }
     
-    private final List<ConfigChangeParser> parserList;
+    private static class ConfigChangeHandlerHolder {
+        
+        private static final ConfigChangeHandler INSTANCE = new ConfigChangeHandler();
+    }
     
 }

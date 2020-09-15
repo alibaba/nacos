@@ -48,14 +48,6 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         this.client = client;
     }
     
-    @Override
-    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
-            throws Exception {
-        HttpRequestBase request = build(uri, httpMethod, requestHttpEntity);
-        CloseableHttpResponse response = client.execute(request);
-        return new DefaultClientHttpResponse(response);
-    }
-    
     static HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
         final Header headers = requestHttpEntity.getHeaders();
         final BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
@@ -63,9 +55,11 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         HttpUtils.initRequestHeader(httpRequestBase, headers);
         if (MediaType.APPLICATION_FORM_URLENCODED.equals(headers.getValue(HttpHeaderConsts.CONTENT_TYPE))
                 && requestHttpEntity.getBody() instanceof Map) {
-            HttpUtils.initRequestFromEntity(httpRequestBase, (Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
+            HttpUtils.initRequestFromEntity(httpRequestBase, (Map<String, String>) requestHttpEntity.getBody(),
+                    headers.getCharset());
         } else {
-            HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
+            HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(),
+                    headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
         }
         replaceDefaultConfig(httpRequestBase, requestHttpEntity.getHttpClientConfig());
         return httpRequestBase;
@@ -81,9 +75,16 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         if (httpClientConfig == null) {
             return;
         }
-        requestBase.setConfig(RequestConfig.custom()
-                .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
+        requestBase.setConfig(RequestConfig.custom().setConnectTimeout(httpClientConfig.getConTimeOutMillis())
                 .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
+    }
+    
+    @Override
+    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
+            throws Exception {
+        HttpRequestBase request = build(uri, httpMethod, requestHttpEntity);
+        CloseableHttpResponse response = client.execute(request);
+        return new DefaultClientHttpResponse(response);
     }
     
     @Override

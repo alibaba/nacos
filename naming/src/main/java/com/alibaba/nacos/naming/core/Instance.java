@@ -25,7 +25,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Set;
@@ -47,6 +46,13 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     
     private static final double MIN_WEIGHT_VALUE = 0.00D;
     
+    private static final Pattern IP_PATTERN = Pattern
+            .compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
+    
+    private static final Pattern ONLY_DIGIT_AND_DOT = Pattern.compile("(\\d|\\.)+");
+    
+    private static final String SPLITER = "_";
+    
     private volatile long lastBeat = System.currentTimeMillis();
     
     @JsonIgnore
@@ -58,30 +64,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     
     private String app;
     
-    private static final Pattern IP_PATTERN = Pattern
-            .compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
-    
-    private static final Pattern ONLY_DIGIT_AND_DOT = Pattern.compile("(\\d|\\.)+");
-    
-    private static final String SPLITER = "_";
-    
     public Instance() {
-    }
-    
-    public boolean isMockValid() {
-        return mockValid;
-    }
-    
-    public void setMockValid(boolean mockValid) {
-        this.mockValid = mockValid;
-    }
-    
-    public long getLastBeat() {
-        return lastBeat;
-    }
-    
-    public void setLastBeat(long lastBeat) {
-        this.lastBeat = lastBeat;
     }
     
     public Instance(String ip, int port) {
@@ -175,25 +158,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         return instance;
     }
     
-    public String toIpAddr() {
-        return getIp() + ":" + getPort();
-    }
-    
-    @Override
-    public String toString() {
-        return getDatumKey() + SPLITER + getWeight() + SPLITER + isHealthy() + SPLITER + marked + SPLITER
-                + getClusterName();
-    }
-    
-    /**
-     * Serialize to Json.
-     *
-     * @return json string
-     */
-    public String toJson() {
-        return JacksonUtils.toJson(this);
-    }
-    
     /**
      * Create {@link Instance} from json string.
      *
@@ -222,14 +186,49 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         } else if (ip.getWeight() < MIN_WEIGHT_VALUE) {
             ip.setWeight(0.0D);
         }
-        
+    
         try {
             ip.validate();
         } catch (NacosException e) {
             throw new IllegalArgumentException("malformed ip config: " + json);
         }
-        
+    
         return ip;
+    }
+    
+    public boolean isMockValid() {
+        return mockValid;
+    }
+    
+    public void setMockValid(boolean mockValid) {
+        this.mockValid = mockValid;
+    }
+    
+    public long getLastBeat() {
+        return lastBeat;
+    }
+    
+    public void setLastBeat(long lastBeat) {
+        this.lastBeat = lastBeat;
+    }
+    
+    public String toIpAddr() {
+        return getIp() + ":" + getPort();
+    }
+    
+    @Override
+    public String toString() {
+        return getDatumKey() + SPLITER + getWeight() + SPLITER + isHealthy() + SPLITER + marked + SPLITER
+                + getClusterName();
+    }
+    
+    /**
+     * Serialize to Json.
+     *
+     * @return json string
+     */
+    public String toJson() {
+        return JacksonUtils.toJson(this);
     }
     
     @Override
@@ -284,6 +283,11 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     }
     
     @JsonIgnore
+    public void setCheckRt(long checkRt) {
+        HealthCheckStatus.get(this).checkRt = checkRt;
+    }
+    
+    @JsonIgnore
     public AtomicInteger getOkCount() {
         return HealthCheckStatus.get(this).checkOkCount;
     }
@@ -291,11 +295,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     @JsonIgnore
     public AtomicInteger getFailCount() {
         return HealthCheckStatus.get(this).checkFailCount;
-    }
-    
-    @JsonIgnore
-    public void setCheckRt(long checkRt) {
-        HealthCheckStatus.get(this).checkRt = checkRt;
     }
     
     public boolean isMarked() {

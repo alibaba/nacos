@@ -14,54 +14,9 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>nacos-all</artifactId>
-        <groupId>com.alibaba.nacos</groupId>
-        <version>1.4.0-SNAPSHOT</version>
-    </parent>
-    
-    <modelVersion>4.0.0</modelVersion>
     <artifactId>nacos-address</artifactId>
-    <packaging>jar</packaging>
-    
-    <name>nacos-address ${project.version}</name>
-    <url>http://nacos.io</url>
-    
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
-    
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-naming</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>nacos-cmdb</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
     
     <build>
         <resources>
@@ -70,19 +25,46 @@
             </resource>
         </resources>
     </build>
+    <dependencies>
+        <dependency>
+            <artifactId>junit</artifactId>
+            <groupId>junit</groupId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <artifactId>nacos-naming</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>nacos-cmdb</artifactId>
+                    <groupId>${project.groupId}</groupId>
+                </exclusion>
+            </exclusions>
+            <groupId>${project.groupId}</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>mockito-all</artifactId>
+            <groupId>org.mockito</groupId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <artifactId>hamcrest-all</artifactId>
+            <groupId>org.hamcrest</groupId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <modelVersion>4.0.0</modelVersion>
     
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </reporting>
+    <name>nacos-address ${project.version}</name>
+    <packaging>jar</packaging>
+    
+    <parent>
+        <artifactId>nacos-all</artifactId>
+        <groupId>com.alibaba.nacos</groupId>
+        <version>1.4.0-SNAPSHOT</version>
+    </parent>
     
     <profiles>
         <profile>
-            <id>release-address</id>
             <build>
                 <finalName>nacos-address</finalName>
                 <plugins>
@@ -98,7 +80,6 @@
                         </configuration>
                     </plugin>
                     <plugin>
-                        <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
                         <configuration>
                             <mainClass>com.alibaba.nacos.address.AddressServer</mainClass>
@@ -110,9 +91,28 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <groupId>org.springframework.boot</groupId>
                     </plugin>
                 </plugins>
             </build>
+            <id>release-address</id>
         </profile>
     </profiles>
+    
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    
+    <reporting>
+        <plugins>
+            <plugin>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+            </plugin>
+        </plugins>
+    </reporting>
+    
+    <url>http://nacos.io</url>
 </project>

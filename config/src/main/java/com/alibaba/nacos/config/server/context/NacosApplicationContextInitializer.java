@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.context;
 
 import com.alibaba.nacos.config.server.configuration.datasource.DataSourceType;
@@ -29,34 +30,36 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
+ * NacosApplicationContextInitializer.
+ *
  * @author zhangshun
  * @date: 2020/1/18 17:32
  */
-public class NacosApplicationContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-
+public class NacosApplicationContextInitializer
+        implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+    
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-        MutablePropertySources mutablePropertySources = configurableApplicationContext
-            .getEnvironment().getPropertySources();
+        MutablePropertySources mutablePropertySources = configurableApplicationContext.getEnvironment()
+                .getPropertySources();
         String dataSourceType = getDatasourceType(mutablePropertySources);
         Map<String, Object> source = buildSource(dataSourceType);
         MapPropertySource propertiesPropertySource = new MapPropertySource("jpaOrMongoDbSwitch", source);
         mutablePropertySources.addLast(propertiesPropertySource);
     }
-
+    
     private Map<String, Object> buildSource(String dataSourceType) {
         Map<String, Object> source = new HashMap<>(8);
         DataSourceType dataSourceTypeEnum = Optional.ofNullable(DataSourceType.resolve(dataSourceType))
-            .orElseThrow(() -> new RuntimeException());
-        if (dataSourceTypeEnum.equals(DataSourceType.MYSQL)
-            || dataSourceTypeEnum.equals(DataSourceType.ORACLE)
-            || dataSourceTypeEnum.equals(DataSourceType.POSTGRESQL)
-            || dataSourceTypeEnum.equals(DataSourceType.EMBEDDED)) {
+                .orElseThrow(() -> new RuntimeException());
+        if (dataSourceTypeEnum.equals(DataSourceType.MYSQL) || dataSourceTypeEnum.equals(DataSourceType.ORACLE)
+                || dataSourceTypeEnum.equals(DataSourceType.POSTGRESQL) || dataSourceTypeEnum
+                .equals(DataSourceType.EMBEDDED)) {
             source.put("spring.data.mongodb.repositories.type", "NONE");
         }
         return source;
     }
-
+    
     private String getDatasourceType(MutablePropertySources mutablePropertySources) {
         Iterator<PropertySource<?>> iterable = mutablePropertySources.iterator();
         while (iterable.hasNext()) {
@@ -68,5 +71,5 @@ public class NacosApplicationContextInitializer implements ApplicationContextIni
         }
         throw new RuntimeException("没有获取到datasourceType");
     }
-
+    
 }

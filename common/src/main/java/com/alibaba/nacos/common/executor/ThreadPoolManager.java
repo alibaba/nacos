@@ -41,10 +41,6 @@ public final class ThreadPoolManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ThreadPoolManager.class);
     
-    private Map<String, Map<String, Set<ExecutorService>>> resourcesManager;
-    
-    private Map<String, Object> lockers = new ConcurrentHashMap<String, Object>(8);
-    
     private static final ThreadPoolManager INSTANCE = new ThreadPoolManager();
     
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
@@ -61,11 +57,28 @@ public final class ThreadPoolManager {
         }));
     }
     
+    private Map<String, Map<String, Set<ExecutorService>>> resourcesManager;
+    
+    private Map<String, Object> lockers = new ConcurrentHashMap<String, Object>(8);
+    
+    private ThreadPoolManager() {
+    }
+    
     public static ThreadPoolManager getInstance() {
         return INSTANCE;
     }
     
-    private ThreadPoolManager() {
+    /**
+     * Shutdown thread pool manager.
+     */
+    public static void shutdown() {
+        if (!CLOSED.compareAndSet(false, true)) {
+            return;
+        }
+        Set<String> namespaces = INSTANCE.resourcesManager.keySet();
+        for (String namespace : namespaces) {
+            INSTANCE.destroy(namespace);
+        }
     }
     
     private void init() {
@@ -182,19 +195,6 @@ public final class ThreadPoolManager {
                 ThreadUtils.shutdownThreadPool(executor);
             }
             resourcesManager.get(namespace).remove(group);
-        }
-    }
-    
-    /**
-     * Shutdown thread pool manager.
-     */
-    public static void shutdown() {
-        if (!CLOSED.compareAndSet(false, true)) {
-            return;
-        }
-        Set<String> namespaces = INSTANCE.resourcesManager.keySet();
-        for (String namespace : namespaces) {
-            INSTANCE.destroy(namespace);
         }
     }
     

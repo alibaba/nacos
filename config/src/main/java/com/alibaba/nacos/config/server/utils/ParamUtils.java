@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import java.util.Map;
-
 import com.alibaba.nacos.api.exception.NacosException;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Map;
 
 /**
  * Parameter validity check util.
@@ -28,11 +28,11 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class ParamUtils {
     
-    private static char[] validChars = new char[] {'_', '-', '.', ':'};
-    
     private static final int TAG_MAX_LEN = 16;
     
     private static final int TANANT_MAX_LEN = 128;
+    
+    private static char[] validChars = new char[] {'_', '-', '.', ':'};
     
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and

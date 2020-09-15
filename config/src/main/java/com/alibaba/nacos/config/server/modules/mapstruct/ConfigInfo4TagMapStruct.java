@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
@@ -23,17 +24,16 @@ import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
 
 /**
+ * ConfigInfo4TagMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface ConfigInfo4TagMapStruct {
-
+    
     ConfigInfo4TagMapStruct INSTANCE = Mappers.getMapper(ConfigInfo4TagMapStruct.class);
-
-    @Mappings({
-        @Mapping(source = "tenantId", target = "tenant"),
-        @Mapping(source = "groupId", target = "group")
-    })
+    
+    @Mappings({@Mapping(source = "tenantId", target = "tenant"), @Mapping(source = "groupId", target = "group")})
     ConfigInfo4Tag convertConfigInfo4Tag(ConfigInfoTagEntity configInfoTagEntity);
-
+    
 }

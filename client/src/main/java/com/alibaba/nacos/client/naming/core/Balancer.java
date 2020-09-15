@@ -34,42 +34,6 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class Balancer {
     
-    public static class RandomByWeight {
-    
-        /**
-         * Select all instance.
-         *
-         * @param serviceInfo service information
-         * @return all instance of services
-         */
-        public static List<Instance> selectAll(ServiceInfo serviceInfo) {
-            List<Instance> hosts = serviceInfo.getHosts();
-            
-            if (CollectionUtils.isEmpty(hosts)) {
-                throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
-            }
-            
-            return hosts;
-        }
-    
-        /**
-         * Random select one instance from service.
-         *
-         * @param dom service
-         * @return random instance
-         */
-        public static Instance selectHost(ServiceInfo dom) {
-            
-            List<Instance> hosts = selectAll(dom);
-            
-            if (CollectionUtils.isEmpty(hosts)) {
-                throw new IllegalStateException("no host to srv for service: " + dom.getName());
-            }
-            
-            return getHostByRandomWeight(hosts);
-        }
-    }
-    
     /**
      * Return one host from the host list by random-weight.
      *
@@ -94,5 +58,41 @@ public class Balancer {
         vipChooser.refresh(hostsWithWeight);
         NAMING_LOGGER.debug("vipChooser.refresh");
         return vipChooser.randomWithWeight();
+    }
+    
+    public static class RandomByWeight {
+        
+        /**
+         * Select all instance.
+         *
+         * @param serviceInfo service information
+         * @return all instance of services
+         */
+        public static List<Instance> selectAll(ServiceInfo serviceInfo) {
+            List<Instance> hosts = serviceInfo.getHosts();
+            
+            if (CollectionUtils.isEmpty(hosts)) {
+                throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
+            }
+            
+            return hosts;
+        }
+        
+        /**
+         * Random select one instance from service.
+         *
+         * @param dom service
+         * @return random instance
+         */
+        public static Instance selectHost(ServiceInfo dom) {
+            
+            List<Instance> hosts = selectAll(dom);
+            
+            if (CollectionUtils.isEmpty(hosts)) {
+                throw new IllegalStateException("no host to srv for service: " + dom.getName());
+            }
+            
+            return getHostByRandomWeight(hosts);
+        }
     }
 }

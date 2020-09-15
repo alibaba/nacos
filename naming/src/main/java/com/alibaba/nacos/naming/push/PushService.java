@@ -62,22 +62,17 @@ import java.util.zip.GZIPOutputStream;
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class PushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
     
-    @Autowired
-    private SwitchDomain switchDomain;
-    
-    private ApplicationContext applicationContext;
-    
     private static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
     
     private static final int MAX_RETRY_TIMES = 1;
+    
+    public static volatile ConcurrentMap<String, Long> pushCostMap = new ConcurrentHashMap<>();
     
     private static volatile ConcurrentMap<String, Receiver.AckEntry> ackMap = new ConcurrentHashMap<>();
     
     private static ConcurrentMap<String, ConcurrentMap<String, PushClient>> clientMap = new ConcurrentHashMap<>();
     
     private static volatile ConcurrentMap<String, Long> udpSendTimeMap = new ConcurrentHashMap<>();
-    
-    public static volatile ConcurrentMap<String, Long> pushCostMap = new ConcurrentHashMap<>();
     
     private static int totalPush = 0;
     
@@ -105,10 +100,170 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     Loggers.PUSH.warn("[NACOS-PUSH] failed to remove client zombie");
                 }
             }, 0, 20, TimeUnit.SECONDS);
-            
+    
         } catch (SocketException e) {
             Loggers.SRV_LOG.error("[NACOS-PUSH] failed to init push service");
         }
+    }
+    
+    @Autowired
+    private SwitchDomain switchDomain;
+    
+    private ApplicationContext applicationContext;
+    
+    private static void removeClientIfZombie() {
+        
+        int size = 0;
+        for (Map.Entry<String, ConcurrentMap<String, PushClient>> entry : clientMap.entrySet()) {
+            ConcurrentMap<String, PushClient> clientConcurrentMap = entry.getValue();
+            for (Map.Entry<String, PushClient> entry1 : clientConcurrentMap.entrySet()) {
+                PushClient client = entry1.getValue();
+                if (client.zombie()) {
+                    clientConcurrentMap.remove(entry1.getKey());
+                }
+            }
+            
+            size += clientConcurrentMap.size();
+        }
+        
+        if (Loggers.PUSH.isDebugEnabled()) {
+            Loggers.PUSH.debug("[NACOS-PUSH] clientMap size: {}", size);
+        }
+        
+    }
+    
+    private static Receiver.AckEntry prepareAckEntry(PushClient client, Map<String, Object> data, long lastRefTime) {
+        if (MapUtils.isEmpty(data)) {
+            Loggers.PUSH.error("[NACOS-PUSH] pushing empty data for client is not allowed: {}", client);
+            return null;
+        }
+        
+        data.put("lastRefTime", lastRefTime);
+        
+        // we apply lastRefTime as sequence num for further ack
+        String key = getAckKey(client.getSocketAddr().getAddress().getHostAddress(), client.getSocketAddr().getPort(),
+                lastRefTime);
+        
+        String dataStr = JacksonUtils.toJson(data);
+        
+        try {
+            byte[] dataBytes = dataStr.getBytes(StandardCharsets.UTF_8);
+            dataBytes = compressIfNecessary(dataBytes);
+            
+            DatagramPacket packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
+            
+            // we must store the key be fore send, otherwise there will be a chance the
+            // ack returns before we put in
+            Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
+            ackEntry.data = data;
+            
+            return ackEntry;
+        } catch (Exception e) {
+            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data,
+                    client.getSocketAddr(), e);
+            return null;
+        }
+    }
+    
+    private static Receiver.AckEntry prepareAckEntry(PushClient client, byte[] dataBytes, Map<String, Object> data,
+            long lastRefTime) {
+        String key = getAckKey(client.getSocketAddr().getAddress().getHostAddress(), client.getSocketAddr().getPort(),
+                lastRefTime);
+        DatagramPacket packet = null;
+        try {
+            packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
+            Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
+            // we must store the key be fore send, otherwise there will be a chance the
+            // ack returns before we put in
+            ackEntry.data = data;
+            
+            return ackEntry;
+        } catch (Exception e) {
+            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data,
+                    client.getSocketAddr(), e);
+        }
+        
+        return null;
+    }
+    
+    public static String getPushCacheKey(String serviceName, String clientIP, String agent) {
+        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
+    }
+    
+    public static List<Receiver.AckEntry> getFailedPushes() {
+        return new ArrayList<Receiver.AckEntry>(ackMap.values());
+    }
+    
+    public static void resetPushState() {
+        ackMap.clear();
+    }
+    
+    private static byte[] compressIfNecessary(byte[] dataBytes) throws IOException {
+        // enable compression when data is larger than 1KB
+        int maxDataSizeUncompress = 1024;
+        if (dataBytes.length < maxDataSizeUncompress) {
+            return dataBytes;
+        }
+        
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        GZIPOutputStream gzip = new GZIPOutputStream(out);
+        gzip.write(dataBytes);
+        gzip.close();
+        
+        return out.toByteArray();
+    }
+    
+    private static Map<String, Object> prepareHostsData(PushClient client) throws Exception {
+        Map<String, Object> cmd = new HashMap<String, Object>(2);
+        cmd.put("type", "dom");
+        cmd.put("data", client.getDataSource().getData(client));
+        
+        return cmd;
+    }
+    
+    private static Receiver.AckEntry udpPush(Receiver.AckEntry ackEntry) {
+        if (ackEntry == null) {
+            Loggers.PUSH.error("[NACOS-PUSH] ackEntry is null.");
+            return null;
+        }
+        
+        if (ackEntry.getRetryTimes() > MAX_RETRY_TIMES) {
+            Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.retryTimes, ackEntry.key);
+            ackMap.remove(ackEntry.key);
+            udpSendTimeMap.remove(ackEntry.key);
+            failedPush += 1;
+            return ackEntry;
+        }
+        
+        try {
+            if (!ackMap.containsKey(ackEntry.key)) {
+                totalPush++;
+            }
+            ackMap.put(ackEntry.key, ackEntry);
+            udpSendTimeMap.put(ackEntry.key, System.currentTimeMillis());
+            
+            Loggers.PUSH.info("send udp packet: " + ackEntry.key);
+            udpSocket.send(ackEntry.origin);
+            
+            ackEntry.increaseRetryTime();
+            
+            GlobalExecutor.scheduleRetransmitter(new Retransmitter(ackEntry),
+                    TimeUnit.NANOSECONDS.toMillis(ACK_TIMEOUT_NANOS), TimeUnit.MILLISECONDS);
+            
+            return ackEntry;
+        } catch (Exception e) {
+            Loggers.PUSH.error("[NACOS-PUSH] failed to push data: {} to client: {}, error: {}", ackEntry.data,
+                    ackEntry.origin.getAddress().getHostAddress(), e);
+            ackMap.remove(ackEntry.key);
+            udpSendTimeMap.remove(ackEntry.key);
+            failedPush += 1;
+            
+            return null;
+        }
+    }
+    
+    private static String getAckKey(String host, int port, long lastRefTime) {
+        return StringUtils.strip(host) + "," + port + "," + lastRefTime;
     }
     
     @Override
@@ -286,85 +441,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         return clients;
     }
     
-    private static void removeClientIfZombie() {
-        
-        int size = 0;
-        for (Map.Entry<String, ConcurrentMap<String, PushClient>> entry : clientMap.entrySet()) {
-            ConcurrentMap<String, PushClient> clientConcurrentMap = entry.getValue();
-            for (Map.Entry<String, PushClient> entry1 : clientConcurrentMap.entrySet()) {
-                PushClient client = entry1.getValue();
-                if (client.zombie()) {
-                    clientConcurrentMap.remove(entry1.getKey());
-                }
-            }
-            
-            size += clientConcurrentMap.size();
-        }
-        
-        if (Loggers.PUSH.isDebugEnabled()) {
-            Loggers.PUSH.debug("[NACOS-PUSH] clientMap size: {}", size);
-        }
-        
-    }
-    
-    private static Receiver.AckEntry prepareAckEntry(PushClient client, Map<String, Object> data, long lastRefTime) {
-        if (MapUtils.isEmpty(data)) {
-            Loggers.PUSH.error("[NACOS-PUSH] pushing empty data for client is not allowed: {}", client);
-            return null;
-        }
-        
-        data.put("lastRefTime", lastRefTime);
-        
-        // we apply lastRefTime as sequence num for further ack
-        String key = getAckKey(client.getSocketAddr().getAddress().getHostAddress(), client.getSocketAddr().getPort(),
-                lastRefTime);
-        
-        String dataStr = JacksonUtils.toJson(data);
-        
-        try {
-            byte[] dataBytes = dataStr.getBytes(StandardCharsets.UTF_8);
-            dataBytes = compressIfNecessary(dataBytes);
-            
-            DatagramPacket packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
-            
-            // we must store the key be fore send, otherwise there will be a chance the
-            // ack returns before we put in
-            Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
-            ackEntry.data = data;
-            
-            return ackEntry;
-        } catch (Exception e) {
-            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data,
-                    client.getSocketAddr(), e);
-            return null;
-        }
-    }
-    
-    private static Receiver.AckEntry prepareAckEntry(PushClient client, byte[] dataBytes, Map<String, Object> data,
-            long lastRefTime) {
-        String key = getAckKey(client.getSocketAddr().getAddress().getHostAddress(), client.getSocketAddr().getPort(),
-                lastRefTime);
-        DatagramPacket packet = null;
-        try {
-            packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
-            Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
-            // we must store the key be fore send, otherwise there will be a chance the
-            // ack returns before we put in
-            ackEntry.data = data;
-            
-            return ackEntry;
-        } catch (Exception e) {
-            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data,
-                    client.getSocketAddr(), e);
-        }
-        
-        return null;
-    }
-    
-    public static String getPushCacheKey(String serviceName, String clientIP, String agent) {
-        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
-    }
-    
     /**
      * Service changed.
      *
@@ -411,10 +487,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         return false;
     }
     
-    public static List<Receiver.AckEntry> getFailedPushes() {
-        return new ArrayList<Receiver.AckEntry>(ackMap.values());
-    }
-    
     public int getFailedPushCount() {
         return ackMap.size() + failedPush;
     }
@@ -423,11 +495,105 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         PushService.failedPush = failedPush;
     }
     
-    public static void resetPushState() {
-        ackMap.clear();
+    public static class Retransmitter implements Runnable {
+        
+        Receiver.AckEntry ackEntry;
+        
+        public Retransmitter(Receiver.AckEntry ackEntry) {
+            this.ackEntry = ackEntry;
+        }
+        
+        @Override
+        public void run() {
+            if (ackMap.containsKey(ackEntry.key)) {
+                Loggers.PUSH.info("retry to push data, key: " + ackEntry.key);
+                udpPush(ackEntry);
+            }
+        }
+    }
+    
+    public static class Receiver implements Runnable {
+        
+        @Override
+        public void run() {
+            while (true) {
+                byte[] buffer = new byte[1024 * 64];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                
+                try {
+                    udpSocket.receive(packet);
+                    
+                    String json = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
+                    AckPacket ackPacket = JacksonUtils.toObj(json, AckPacket.class);
+                    
+                    InetSocketAddress socketAddress = (InetSocketAddress) packet.getSocketAddress();
+                    String ip = socketAddress.getAddress().getHostAddress();
+                    int port = socketAddress.getPort();
+                    
+                    if (System.nanoTime() - ackPacket.lastRefTime > ACK_TIMEOUT_NANOS) {
+                        Loggers.PUSH.warn("ack takes too long from {} ack json: {}", packet.getSocketAddress(), json);
+                    }
+                    
+                    String ackKey = getAckKey(ip, port, ackPacket.lastRefTime);
+                    AckEntry ackEntry = ackMap.remove(ackKey);
+                    if (ackEntry == null) {
+                        throw new IllegalStateException(
+                                "unable to find ackEntry for key: " + ackKey + ", ack json: " + json);
+                    }
+                    
+                    long pushCost = System.currentTimeMillis() - udpSendTimeMap.get(ackKey);
+                    
+                    Loggers.PUSH
+                            .info("received ack: {} from: {}:{}, cost: {} ms, unacked: {}, total push: {}", json, ip,
+                                    port, pushCost, ackMap.size(), totalPush);
+                    
+                    pushCostMap.put(ackKey, pushCost);
+                    
+                    udpSendTimeMap.remove(ackKey);
+                    
+                } catch (Throwable e) {
+                    Loggers.PUSH.error("[NACOS-PUSH] error while receiving ack data", e);
+                }
+            }
+        }
+        
+        public static class AckEntry {
+            
+            public String key;
+            
+            public DatagramPacket origin;
+            
+            public Map<String, Object> data;
+            
+            private AtomicInteger retryTimes = new AtomicInteger(0);
+            
+            public AckEntry(String key, DatagramPacket packet) {
+                this.key = key;
+                this.origin = packet;
+            }
+            
+            public void increaseRetryTime() {
+                retryTimes.incrementAndGet();
+            }
+            
+            public int getRetryTimes() {
+                return retryTimes.get();
+            }
+        }
+        
+        public static class AckPacket {
+            
+            public String type;
+            
+            public long lastRefTime;
+            
+            public String data;
+        }
     }
     
     public class PushClient {
+        
+        public long lastRefTime = System.currentTimeMillis();
         
         private String namespaceId;
         
@@ -447,16 +613,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         
         private Map<String, String[]> params;
         
-        public Map<String, String[]> getParams() {
-            return params;
-        }
-        
-        public void setParams(Map<String, String[]> params) {
-            this.params = params;
-        }
-        
-        public long lastRefTime = System.currentTimeMillis();
-        
         public PushClient(String namespaceId, String serviceName, String clusters, String agent,
                 InetSocketAddress socketAddr, DataSource dataSource, String tenant, String app) {
             this.namespaceId = namespaceId;
@@ -467,6 +623,14 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             this.dataSource = dataSource;
             this.tenant = tenant;
             this.app = app;
+        }
+        
+        public Map<String, String[]> getParams() {
+            return params;
+        }
+        
+        public void setParams(Map<String, String[]> params) {
+            this.params = params;
         }
         
         public DataSource getDataSource() {
@@ -562,170 +726,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             lastRefTime = System.currentTimeMillis();
         }
         
-    }
-    
-    private static byte[] compressIfNecessary(byte[] dataBytes) throws IOException {
-        // enable compression when data is larger than 1KB
-        int maxDataSizeUncompress = 1024;
-        if (dataBytes.length < maxDataSizeUncompress) {
-            return dataBytes;
-        }
-        
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GZIPOutputStream gzip = new GZIPOutputStream(out);
-        gzip.write(dataBytes);
-        gzip.close();
-        
-        return out.toByteArray();
-    }
-    
-    private static Map<String, Object> prepareHostsData(PushClient client) throws Exception {
-        Map<String, Object> cmd = new HashMap<String, Object>(2);
-        cmd.put("type", "dom");
-        cmd.put("data", client.getDataSource().getData(client));
-        
-        return cmd;
-    }
-    
-    private static Receiver.AckEntry udpPush(Receiver.AckEntry ackEntry) {
-        if (ackEntry == null) {
-            Loggers.PUSH.error("[NACOS-PUSH] ackEntry is null.");
-            return null;
-        }
-        
-        if (ackEntry.getRetryTimes() > MAX_RETRY_TIMES) {
-            Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.retryTimes, ackEntry.key);
-            ackMap.remove(ackEntry.key);
-            udpSendTimeMap.remove(ackEntry.key);
-            failedPush += 1;
-            return ackEntry;
-        }
-        
-        try {
-            if (!ackMap.containsKey(ackEntry.key)) {
-                totalPush++;
-            }
-            ackMap.put(ackEntry.key, ackEntry);
-            udpSendTimeMap.put(ackEntry.key, System.currentTimeMillis());
-            
-            Loggers.PUSH.info("send udp packet: " + ackEntry.key);
-            udpSocket.send(ackEntry.origin);
-            
-            ackEntry.increaseRetryTime();
-            
-            GlobalExecutor.scheduleRetransmitter(new Retransmitter(ackEntry),
-                    TimeUnit.NANOSECONDS.toMillis(ACK_TIMEOUT_NANOS), TimeUnit.MILLISECONDS);
-            
-            return ackEntry;
-        } catch (Exception e) {
-            Loggers.PUSH.error("[NACOS-PUSH] failed to push data: {} to client: {}, error: {}", ackEntry.data,
-                    ackEntry.origin.getAddress().getHostAddress(), e);
-            ackMap.remove(ackEntry.key);
-            udpSendTimeMap.remove(ackEntry.key);
-            failedPush += 1;
-            
-            return null;
-        }
-    }
-    
-    private static String getAckKey(String host, int port, long lastRefTime) {
-        return StringUtils.strip(host) + "," + port + "," + lastRefTime;
-    }
-    
-    public static class Retransmitter implements Runnable {
-        
-        Receiver.AckEntry ackEntry;
-        
-        public Retransmitter(Receiver.AckEntry ackEntry) {
-            this.ackEntry = ackEntry;
-        }
-        
-        @Override
-        public void run() {
-            if (ackMap.containsKey(ackEntry.key)) {
-                Loggers.PUSH.info("retry to push data, key: " + ackEntry.key);
-                udpPush(ackEntry);
-            }
-        }
-    }
-    
-    public static class Receiver implements Runnable {
-        
-        @Override
-        public void run() {
-            while (true) {
-                byte[] buffer = new byte[1024 * 64];
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                
-                try {
-                    udpSocket.receive(packet);
-                    
-                    String json = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
-                    AckPacket ackPacket = JacksonUtils.toObj(json, AckPacket.class);
-                    
-                    InetSocketAddress socketAddress = (InetSocketAddress) packet.getSocketAddress();
-                    String ip = socketAddress.getAddress().getHostAddress();
-                    int port = socketAddress.getPort();
-                    
-                    if (System.nanoTime() - ackPacket.lastRefTime > ACK_TIMEOUT_NANOS) {
-                        Loggers.PUSH.warn("ack takes too long from {} ack json: {}", packet.getSocketAddress(), json);
-                    }
-                    
-                    String ackKey = getAckKey(ip, port, ackPacket.lastRefTime);
-                    AckEntry ackEntry = ackMap.remove(ackKey);
-                    if (ackEntry == null) {
-                        throw new IllegalStateException(
-                                "unable to find ackEntry for key: " + ackKey + ", ack json: " + json);
-                    }
-                    
-                    long pushCost = System.currentTimeMillis() - udpSendTimeMap.get(ackKey);
-                    
-                    Loggers.PUSH
-                            .info("received ack: {} from: {}:{}, cost: {} ms, unacked: {}, total push: {}", json, ip,
-                                    port, pushCost, ackMap.size(), totalPush);
-                    
-                    pushCostMap.put(ackKey, pushCost);
-                    
-                    udpSendTimeMap.remove(ackKey);
-                    
-                } catch (Throwable e) {
-                    Loggers.PUSH.error("[NACOS-PUSH] error while receiving ack data", e);
-                }
-            }
-        }
-        
-        public static class AckEntry {
-            
-            public AckEntry(String key, DatagramPacket packet) {
-                this.key = key;
-                this.origin = packet;
-            }
-            
-            public void increaseRetryTime() {
-                retryTimes.incrementAndGet();
-            }
-            
-            public int getRetryTimes() {
-                return retryTimes.get();
-            }
-            
-            public String key;
-            
-            public DatagramPacket origin;
-            
-            private AtomicInteger retryTimes = new AtomicInteger(0);
-            
-            public Map<String, Object> data;
-        }
-        
-        public static class AckPacket {
-            
-            public String type;
-            
-            public long lastRefTime;
-            
-            public String data;
-        }
     }
     
 }

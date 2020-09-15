@@ -42,15 +42,6 @@ public class SimpleIpFlowData {
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
                     new NameThreadFactory("com.alibaba.nacos.config.flow.control.ip"));
     
-    class DefaultIpFlowDataManagerTask implements Runnable {
-        
-        @Override
-        public void run() {
-            rotateSlot();
-        }
-        
-    }
-    
     public SimpleIpFlowData(int slotCount, int interval) {
         if (slotCount <= 0) {
             this.slotCount = 1;
@@ -103,5 +94,14 @@ public class SimpleIpFlowData {
     
     public int getAverageCount() {
         return this.averageCount;
+    }
+    
+    class DefaultIpFlowDataManagerTask implements Runnable {
+        
+        @Override
+        public void run() {
+            rotateSlot();
+        }
+        
     }
 }

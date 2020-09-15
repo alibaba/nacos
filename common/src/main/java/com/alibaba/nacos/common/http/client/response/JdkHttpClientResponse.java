@@ -32,13 +32,13 @@ import java.net.HttpURLConnection;
  */
 public class JdkHttpClientResponse implements HttpClientResponse {
     
+    private static final String CONTENT_ENCODING = "gzip";
+    
     private final HttpURLConnection conn;
     
     private InputStream responseStream;
     
     private Header responseHeader;
-    
-    private static final String CONTENT_ENCODING = "gzip";
     
     public JdkHttpClientResponse(HttpURLConnection conn) {
         this.conn = conn;

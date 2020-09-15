@@ -49,6 +49,10 @@ public class ConfigDumpEvent extends Event {
     
     private long lastModifiedTs;
     
+    public static ConfigDumpEventBuilder builder() {
+        return new ConfigDumpEventBuilder();
+    }
+    
     public boolean isRemove() {
         return remove;
     }
@@ -135,10 +139,6 @@ public class ConfigDumpEvent extends Event {
     
     public void setLastModifiedTs(long lastModifiedTs) {
         this.lastModifiedTs = lastModifiedTs;
-    }
-    
-    public static ConfigDumpEventBuilder builder() {
-        return new ConfigDumpEventBuilder();
     }
     
     public static final class ConfigDumpEventBuilder {

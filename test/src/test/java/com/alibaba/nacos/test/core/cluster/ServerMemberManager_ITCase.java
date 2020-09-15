@@ -20,8 +20,8 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -145,7 +145,8 @@ public class ServerMemberManager_ITCase {
             @Override
             public void onEvent(MembersChangeEvent event) {
                 System.out.println(event);
-                healthMembers.set(MemberUtils.selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
+                healthMembers.set(MemberUtils
+                        .selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
                 if (first.getCount() == 1) {
                     first.countDown();
                     return;

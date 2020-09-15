@@ -122,6 +122,10 @@ public class PushReceiver implements Runnable, Closeable {
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
     
+    public int getUdpPort() {
+        return this.udpSocket.getLocalPort();
+    }
+    
     public static class PushPacket {
         
         public String type;
@@ -129,9 +133,5 @@ public class PushReceiver implements Runnable, Closeable {
         public long lastRefTime;
         
         public String data;
-    }
-    
-    public int getUdpPort() {
-        return this.udpSocket.getLocalPort();
     }
 }

@@ -50,11 +50,11 @@ public class Header {
     public static Header newInstance() {
         return new Header();
     }
-
+    
     /**
      * Add the key and value to the header.
      *
-     * @param key the key
+     * @param key   the key
      * @param value the value
      * @return header
      */
@@ -135,6 +135,17 @@ public class Header {
     }
     
     /**
+     * get original format response header.
+     *
+     * <p>Currently only corresponds to the response header of JDK.
+     *
+     * @return Map original response header
+     */
+    public Map<String, List<String>> getOriginalResponseHeader() {
+        return this.originalResponseHeader;
+    }
+    
+    /**
      * set original format response header.
      *
      * <p>Currently only corresponds to the response header of JDK.
@@ -146,17 +157,6 @@ public class Header {
         for (Map.Entry<String, List<String>> entry : this.originalResponseHeader.entrySet()) {
             addParam(entry.getKey(), entry.getValue().get(0));
         }
-    }
-    
-    /**
-     * get original format response header.
-     *
-     * <p>Currently only corresponds to the response header of JDK.
-     *
-     * @return Map original response header
-     */
-    public Map<String, List<String>> getOriginalResponseHeader() {
-        return this.originalResponseHeader;
     }
     
     public String getCharset() {

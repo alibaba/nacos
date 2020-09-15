@@ -31,6 +31,17 @@ public class Chooser<K, T> {
     
     private volatile Ref<T> ref;
     
+    public Chooser(K uniqueKey) {
+        this(uniqueKey, new ArrayList<Pair<T>>());
+    }
+    
+    public Chooser(K uniqueKey, List<Pair<T>> pairs) {
+        Ref<T> ref = new Ref<T>(pairs);
+        ref.refresh();
+        this.uniqueKey = uniqueKey;
+        this.ref = ref;
+    }
+    
     /**
      * Random get one item.
      *
@@ -74,17 +85,6 @@ public class Chooser<K, T> {
         return ref.items.get(ref.items.size() - 1);
     }
     
-    public Chooser(K uniqueKey) {
-        this(uniqueKey, new ArrayList<Pair<T>>());
-    }
-    
-    public Chooser(K uniqueKey, List<Pair<T>> pairs) {
-        Ref<T> ref = new Ref<T>(pairs);
-        ref.refresh();
-        this.uniqueKey = uniqueKey;
-        this.ref = ref;
-    }
-    
     public K getUniqueKey() {
         return uniqueKey;
     }
@@ -105,11 +105,53 @@ public class Chooser<K, T> {
         this.ref = newRef;
     }
     
+    @Override
+    public int hashCode() {
+        return uniqueKey.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (getClass() != other.getClass()) {
+            return false;
+        }
+        
+        Chooser otherChooser = (Chooser) other;
+        if (this.uniqueKey == null) {
+            if (otherChooser.getUniqueKey() != null) {
+                return false;
+            }
+        } else {
+            if (otherChooser.getUniqueKey() == null) {
+                return false;
+            } else if (!this.uniqueKey.equals(otherChooser.getUniqueKey())) {
+                return false;
+            }
+            
+        }
+        
+        if (this.ref == null) {
+            return otherChooser.getRef() == null;
+        } else {
+            if (otherChooser.getRef() == null) {
+                return false;
+            } else {
+                return this.ref.equals(otherChooser.getRef());
+            }
+        }
+    }
+    
     public class Ref<T> {
         
-        private List<Pair<T>> itemsWithWeight = new ArrayList<Pair<T>>();
-        
         private final List<T> items = new ArrayList<T>();
+        
+        private List<Pair<T>> itemsWithWeight = new ArrayList<Pair<T>>();
         
         private Poller<T> poller = new GenericPoller<T>(items);
         
@@ -118,7 +160,7 @@ public class Chooser<K, T> {
         public Ref(List<Pair<T>> itemsWithWeight) {
             this.itemsWithWeight = itemsWithWeight;
         }
-    
+        
         /**
          * Refresh.
          */
@@ -199,48 +241,6 @@ public class Chooser<K, T> {
                 } else {
                     return this.itemsWithWeight.equals(otherRef.itemsWithWeight);
                 }
-            }
-        }
-    }
-    
-    @Override
-    public int hashCode() {
-        return uniqueKey.hashCode();
-    }
-    
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (other == null) {
-            return false;
-        }
-        if (getClass() != other.getClass()) {
-            return false;
-        }
-        
-        Chooser otherChooser = (Chooser) other;
-        if (this.uniqueKey == null) {
-            if (otherChooser.getUniqueKey() != null) {
-                return false;
-            }
-        } else {
-            if (otherChooser.getUniqueKey() == null) {
-                return false;
-            } else if (!this.uniqueKey.equals(otherChooser.getUniqueKey())) {
-                return false;
-            }
-            
-        }
-        
-        if (this.ref == null) {
-            return otherChooser.getRef() == null;
-        } else {
-            if (otherChooser.getRef() == null) {
-                return false;
-            } else {
-                return this.ref.equals(otherChooser.getRef());
             }
         }
     }

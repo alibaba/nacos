@@ -33,7 +33,7 @@ public class ConfigInfo extends ConfigInfoBase {
     private String appName;
     
     private String type;
-
+    
     private Date gmtCreate;
     
     public ConfigInfo() {
@@ -53,15 +53,15 @@ public class ConfigInfo extends ConfigInfoBase {
         this.tenant = tenant;
         this.appName = appName;
     }
-
+    
     public Date getGmtCreate() {
         return gmtCreate;
     }
-
+    
     public void setGmtCreate(Date gmtCreate) {
         this.gmtCreate = gmtCreate;
     }
-
+    
     public String getTenant() {
         return tenant;
     }

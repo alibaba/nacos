@@ -36,22 +36,6 @@ public class Namespace {
      */
     private int type;
     
-    public String getNamespaceShowName() {
-        return namespaceShowName;
-    }
-    
-    public void setNamespaceShowName(String namespaceShowName) {
-        this.namespaceShowName = namespaceShowName;
-    }
-    
-    public String getNamespace() {
-        return namespace;
-    }
-    
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-    
     public Namespace() {
     }
     
@@ -66,6 +50,22 @@ public class Namespace {
         this.quota = quota;
         this.configCount = configCount;
         this.type = type;
+    }
+    
+    public String getNamespaceShowName() {
+        return namespaceShowName;
+    }
+    
+    public void setNamespaceShowName(String namespaceShowName) {
+        this.namespaceShowName = namespaceShowName;
+    }
+    
+    public String getNamespace() {
+        return namespace;
+    }
+    
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
     
     public int getQuota() {

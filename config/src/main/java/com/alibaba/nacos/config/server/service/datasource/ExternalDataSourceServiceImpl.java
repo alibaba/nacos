@@ -52,14 +52,16 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
     
+    private static final int TRANSACTION_QUERY_TIMEOUT = 5;
+    
+    private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
+    
+    private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+    
     /**
      * JDBC execute timeout value, unit:second.
      */
     private int queryTimeout = 3;
-    
-    private static final int TRANSACTION_QUERY_TIMEOUT = 5;
-    
-    private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
     
     private List<HikariDataSource> dataSourceList = new ArrayList<>();
     
@@ -79,7 +81,9 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private volatile int masterIndex;
     
-    private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+    static String defaultIfNull(String value, String defaultValue) {
+        return null == value ? defaultValue : value;
+    }
     
     @Override
     public void init() {
@@ -205,10 +209,6 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         }
         
         return "";
-    }
-    
-    static String defaultIfNull(String value, String defaultValue) {
-        return null == value ? defaultValue : value;
     }
     
     class SelectMasterTask implements Runnable {

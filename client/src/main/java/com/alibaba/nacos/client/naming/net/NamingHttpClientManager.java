@@ -47,11 +47,6 @@ public class NamingHttpClientManager implements Closeable {
     
     private static final HttpClientFactory HTTP_CLIENT_FACTORY = new NamingHttpClientFactory();
     
-    private static class NamingHttpClientManagerInstance {
-        
-        private static final NamingHttpClientManager INSTANCE = new NamingHttpClientManager();
-    }
-    
     public static NamingHttpClientManager getInstance() {
         return NamingHttpClientManagerInstance.INSTANCE;
     }
@@ -77,6 +72,11 @@ public class NamingHttpClientManager implements Closeable {
                     ExceptionUtil.getStackTrace(ex));
         }
         NAMING_LOGGER.warn("[NamingHttpClientManager] Destruction of the end");
+    }
+    
+    private static class NamingHttpClientManagerInstance {
+        
+        private static final NamingHttpClientManager INSTANCE = new NamingHttpClientManager();
     }
     
     private static class NamingHttpClientFactory extends AbstractHttpClientFactory {

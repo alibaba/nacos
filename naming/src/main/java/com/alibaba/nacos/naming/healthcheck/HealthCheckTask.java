@@ -22,7 +22,6 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.apache.commons.lang3.RandomUtils;
 
 /**
@@ -31,6 +30,15 @@ import org.apache.commons.lang3.RandomUtils;
  * @author nacos
  */
 public class HealthCheckTask implements Runnable {
+    
+    @JsonIgnore
+    private final DistroMapper distroMapper;
+    
+    @JsonIgnore
+    private final SwitchDomain switchDomain;
+    
+    @JsonIgnore
+    private final HealthCheckProcessor healthCheckProcessor;
     
     private Cluster cluster;
     
@@ -47,15 +55,6 @@ public class HealthCheckTask implements Runnable {
     private long startTime;
     
     private volatile boolean cancelled = false;
-    
-    @JsonIgnore
-    private final DistroMapper distroMapper;
-    
-    @JsonIgnore
-    private final SwitchDomain switchDomain;
-    
-    @JsonIgnore
-    private final HealthCheckProcessor healthCheckProcessor;
     
     public HealthCheckTask(Cluster cluster) {
         this.cluster = cluster;
@@ -127,8 +126,16 @@ public class HealthCheckTask implements Runnable {
         return checkRtNormalized;
     }
     
+    public void setCheckRtNormalized(long checkRtNormalized) {
+        this.checkRtNormalized = checkRtNormalized;
+    }
+    
     public long getCheckRtBest() {
         return checkRtBest;
+    }
+    
+    public void setCheckRtBest(long checkRtBest) {
+        this.checkRtBest = checkRtBest;
     }
     
     public long getCheckRtWorst() {
@@ -137,14 +144,6 @@ public class HealthCheckTask implements Runnable {
     
     public void setCheckRtWorst(long checkRtWorst) {
         this.checkRtWorst = checkRtWorst;
-    }
-    
-    public void setCheckRtBest(long checkRtBest) {
-        this.checkRtBest = checkRtBest;
-    }
-    
-    public void setCheckRtNormalized(long checkRtNormalized) {
-        this.checkRtNormalized = checkRtNormalized;
     }
     
     public boolean isCancelled() {

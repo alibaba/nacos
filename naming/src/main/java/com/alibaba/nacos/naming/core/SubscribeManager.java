@@ -59,6 +59,11 @@ public class SubscribeManager {
     @Autowired
     private ServerMemberManager memberManager;
     
+    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>(128);
+        return object -> seen.putIfAbsent(keyExtractor.apply(object), Boolean.TRUE) == null;
+    }
+    
     private List<Subscriber> getSubscribersFuzzy(String serviceName, String namespaceId) {
         return pushService.getClientsFuzzy(serviceName, namespaceId);
     }
@@ -113,10 +118,5 @@ public class SubscribeManager {
             // local server
             return getSubscribersFuzzy(serviceName, namespaceId);
         }
-    }
-    
-    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
-        Map<Object, Boolean> seen = new ConcurrentHashMap<>(128);
-        return object -> seen.putIfAbsent(keyExtractor.apply(object), Boolean.TRUE) == null;
     }
 }

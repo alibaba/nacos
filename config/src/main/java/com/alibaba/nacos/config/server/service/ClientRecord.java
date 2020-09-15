@@ -28,11 +28,11 @@ public class ClientRecord {
     
     private final String ip;
     
-    private volatile long lastTime;
-    
     private final ConcurrentMap<String, String> groupKey2md5Map;
     
     private final ConcurrentMap<String, Long> groupKey2pollingTsMap;
+    
+    private volatile long lastTime;
     
     public ClientRecord(final String clientIp) {
         this.ip = clientIp;

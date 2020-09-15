@@ -113,7 +113,7 @@ public class WebUtils {
      *
      * @param request HttpServletRequest
      * @return the value of the request header "user-agent", or the value of the request header "client-version" if the
-     *         request does not have a header of "user-agent".
+     * request does not have a header of "user-agent".
      */
     public static String getUserAgent(HttpServletRequest request) {
         String userAgent = request.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
@@ -143,8 +143,8 @@ public class WebUtils {
      * Handle file upload operations.
      *
      * @param multipartFile file
-     * @param consumer post processor
-     * @param response {@link DeferredResult}
+     * @param consumer      post processor
+     * @param response      {@link DeferredResult}
      */
     public static void onFileUpload(MultipartFile multipartFile, Consumer<File> consumer,
             DeferredResult<RestResult<String>> response) {

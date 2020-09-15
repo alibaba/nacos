@@ -41,13 +41,13 @@ import java.util.concurrent.TimeUnit;
  * @date 2019-06-07 22:24
  **/
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7004"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
+        "server.port=7004"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigLongPoll_CITCase {
-
+    
     @LocalServerPort
     private int port;
-
+    
     private ConfigService configService;
     
     @BeforeClass
@@ -55,7 +55,7 @@ public class ConfigLongPoll_CITCase {
     public static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
-
+    
     @Before
     public void init() throws NacosException {
         Properties properties = new Properties();
@@ -65,44 +65,44 @@ public class ConfigLongPoll_CITCase {
         properties.put(PropertyKeyConst.MAX_RETRY, "5");
         configService = NacosFactory.createConfigService(properties);
     }
-
+    
     @After
-    public void destroy(){
+    public void destroy() {
         try {
             configService.shutDown();
-        }catch (NacosException ex) {
+        } catch (NacosException ex) {
         }
     }
-
+    
     @Test
     public void test() throws InterruptedException, NacosException {
-
+        
         configService.addListener("test", "DEFAULT_GROUP", new Listener() {
             @Override
             public Executor getExecutor() {
                 return null;
             }
-
+            
             @Override
             public void receiveConfigInfo(String configInfo) {
                 System.out.println(configInfo);
             }
         });
-
+        
         configService.addListener("test-1", "DEFAULT_GROUP", new Listener() {
             @Override
             public Executor getExecutor() {
                 return null;
             }
-
+            
             @Override
             public void receiveConfigInfo(String configInfo) {
                 System.out.println(configInfo);
             }
         });
-
+        
         TimeUnit.SECONDS.sleep(10);
-
+        
     }
-
+    
 }

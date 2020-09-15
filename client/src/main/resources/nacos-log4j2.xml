@@ -17,48 +17,50 @@
 
 <Configuration status="WARN">
     <Appenders>
-        <RollingFile name="CONFIG_LOG_FILE" fileName="${sys:nacos.logging.path}/config.log"
-            filePattern="${sys:nacos.logging.path}/config.log.%d{yyyy-MM-dd}.%i">
-            <PatternLayout>
-                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
-            </PatternLayout>
-            
-            <Policies>
-                <TimeBasedTriggeringPolicy/>
-                <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
-            </Policies>
-            
+        <RollingFile fileName="${sys:nacos.logging.path}/config.log"
+            filePattern="${sys:nacos.logging.path}/config.log.%d{yyyy-MM-dd}.%i"
+            name="CONFIG_LOG_FILE">
             <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
-        </RollingFile>
         
-        <RollingFile name="NAMING_LOG_FILE" fileName="${sys:nacos.logging.path}/naming.log"
-            filePattern="${sys:nacos.logging.path}/naming.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>
-            
+        
             <Policies>
-                <TimeBasedTriggeringPolicy/>
                 <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
+                <TimeBasedTriggeringPolicy/>
             </Policies>
-            
+        </RollingFile>
+    
+        <RollingFile fileName="${sys:nacos.logging.path}/naming.log"
+            filePattern="${sys:nacos.logging.path}/naming.log.%d{yyyy-MM-dd}.%i"
+            name="NAMING_LOG_FILE">
             <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+        
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+        
+            <Policies>
+                <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
         </RollingFile>
     </Appenders>
     
     <Loggers>
-        <Logger name="com.alibaba.nacos.client" level="${sys:com.alibaba.nacos.config.log.level:-info}"
-            additivity="false">
+        <Logger additivity="false" level="${sys:com.alibaba.nacos.config.log.level:-info}"
+            name="com.alibaba.nacos.client">
             <AppenderRef ref="CONFIG_LOG_FILE"/>
         </Logger>
         
-        <Logger name="com.alibaba.nacos.client.config" level="${sys:com.alibaba.nacos.config.log.level:-info}"
-            additivity="false">
+        <Logger additivity="false" level="${sys:com.alibaba.nacos.config.log.level:-info}"
+            name="com.alibaba.nacos.client.config">
             <AppenderRef ref="CONFIG_LOG_FILE"/>
         </Logger>
         
-        <Logger name="com.alibaba.nacos.client.naming" level="${sys:com.alibaba.nacos.naming.log.level:-info}"
-            additivity="false">
+        <Logger additivity="false" level="${sys:com.alibaba.nacos.naming.log.level:-info}"
+            name="com.alibaba.nacos.client.naming">
             <AppenderRef ref="NAMING_LOG_FILE"/>
         </Logger>
         <Root level="INFO">

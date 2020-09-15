@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.modules.mapstruct;
 
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
@@ -24,12 +24,14 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 /**
+ * PermissionsMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface PermissionsMapStruct {
-
+    
     PermissionsMapStruct INSTANCE = Mappers.getMapper(PermissionsMapStruct.class);
-
+    
     List<PermissionInfo> convertPermissionInfoList(List<PermissionsEntity> list);
 }

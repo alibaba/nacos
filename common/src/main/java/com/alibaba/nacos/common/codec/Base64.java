@@ -40,6 +40,15 @@ import java.nio.charset.Charset;
 public class Base64 {
     
     /**
+     * Chunk separator per RFC 2045 section 2.1.
+     *
+     * <p>N.B. The next major release may break compatibility and make this field private. </p>
+     *
+     * @see <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045 section 2.1</a>
+     */
+    static final byte[] CHUNK_SEPARATOR = {'\r', '\n'};
+    
+    /**
      * BASE32 characters are 6 bits in length. They are formed by taking a block of 3 octets to form a 24-bit string,
      * which is converted into 4 BASE64 characters.
      */
@@ -48,15 +57,6 @@ public class Base64 {
     private static final int BYTES_PER_UNENCODED_BLOCK = 3;
     
     private static final int BYTES_PER_ENCODED_BLOCK = 4;
-    
-    /**
-     * Chunk separator per RFC 2045 section 2.1.
-     *
-     * <p>N.B. The next major release may break compatibility and make this field private. </p>
-     *
-     * @see <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045 section 2.1</a>
-     */
-    static final byte[] CHUNK_SEPARATOR = {'\r', '\n'};
     
     /**
      * This array is a lookup table that translates 6-bit positive integer index values into their "Base64 Alphabet"
@@ -108,6 +108,36 @@ public class Base64 {
     // some state be preserved between calls of encode() and decode().
     
     /**
+     * MIME chunk size per RFC 2045 section 6.8.
+     *
+     * <p> The {@value} character limit does not count the trailing CRLF, but counts all other characters, including
+     * any equal signs. </p>
+     *
+     * @see <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045 section 6.8</a>
+     */
+    private static final int MIME_CHUNK_SIZE = 76;
+    
+    private static final int DEFAULT_BUFFER_RESIZE_FACTOR = 2;
+    
+    /**
+     * Defines the default buffer size - currently {@value} - must be large enough for at least one encoded
+     * block+separator.
+     */
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+    
+    /**
+     * Mask used to extract 8 bits, used in decoding bytes.
+     */
+    private static final int MASK_8BITS = 0xff;
+    
+    /**
+     * Byte used to pad output.
+     */
+    private static final byte PAD_DEFAULT = '=';
+    
+    private static final byte PAD = PAD_DEFAULT;
+    
+    /**
      * Encode table to use: either STANDARD or URL_SAFE. Note: the DECODE_TABLE above remains static because it is able
      * to decode both STANDARD and URL_SAFE streams, but the encodeTable must be a member variable so we can switch
      * between the two modes.
@@ -137,10 +167,64 @@ public class Base64 {
     private final int encodeSize;
     
     /**
+     * Number of bytes in each full block of unencoded data, e.g. 4 for Base64 and 5 for Base32
+     */
+    private final int unencodedBlockSize;
+    
+    /**
+     * Number of bytes in each full block of encoded data, e.g. 3 for Base64 and 8 for Base32
+     */
+    private final int encodedBlockSize;
+    
+    /**
+     * Chunksize for encoding. Not used when decoding. A value of zero or less implies no chunking of the encoded data.
+     * Rounded down to nearest multiple of encodedBlockSize.
+     */
+    private final int lineLength;
+    
+    /**
+     * Size of chunk separator. Not used unless {@link #lineLength} > 0.
+     */
+    private final int chunkSeparatorLength;
+    
+    /**
      * Place holder for the bytes we're dealing with for our based logic. Bitwise operations store and extract the
      * encoding or decoding from this variable.
      */
     private int bitWorkArea;
+    
+    /**
+     * Buffer for streaming.
+     */
+    private byte[] buffer;
+    
+    /**
+     * Position where next character should be written in the buffer.
+     */
+    private int pos;
+    
+    /**
+     * Position where next character should be read from the buffer.
+     */
+    private int readPos;
+    
+    /**
+     * Boolean flag to indicate the EOF has been reached. Once EOF has been reached, this object becomes useless, and
+     * must be thrown away.
+     */
+    private boolean eof;
+    
+    /**
+     * Variable tracks how many characters have been written to the current line. Only used when encoding. We use it to
+     * make sure each encoded line never goes beyond lineLength (if lineLength > 0).
+     */
+    private int currentLinePos;
+    
+    /**
+     * Writes to the buffer only occur after every 3/5 reads when encoding, and every 4/8 reads when decoding. This
+     * variable helps track that.
+     */
+    private int modulus;
     
     /**
      * Creates a Base64 codec used for decoding (all modes) and encoding in URL-unsafe mode. <p> When encoding the line
@@ -196,6 +280,56 @@ public class Base64 {
         }
         this.decodeSize = this.encodeSize - 1;
         this.encodeTable = urlSafe ? URL_SAFE_ENCODE_TABLE : STANDARD_ENCODE_TABLE;
+    }
+    
+    /**
+     * Encodes binary data using the base64 algorithm but does not chunk the output.
+     *
+     * @param binaryData binary data to encode
+     * @return byte[] containing Base64 characters in their UTF-8 representation.
+     */
+    public static byte[] encodeBase64(byte[] binaryData) {
+        return encodeBase64(binaryData, false, false, Integer.MAX_VALUE);
+    }
+    
+    /**
+     * Encodes binary data using the base64 algorithm, optionally chunking the output into 76 character blocks.
+     *
+     * @param binaryData    Array containing binary data to encode.
+     * @param isChunked     if <code>true</code> this encoder will chunk the base64 output into 76 character blocks
+     * @param urlSafe       if <code>true</code> this encoder will emit - and _ instead of the usual + and /
+     *                      characters.
+     * @param maxResultSize The maximum result size to accept.
+     * @return Base64-encoded data.
+     * @throws IllegalArgumentException Thrown when the input array needs an output array bigger than maxResultSize
+     * @since 1.4
+     */
+    public static byte[] encodeBase64(byte[] binaryData, boolean isChunked, boolean urlSafe, int maxResultSize) {
+        if (binaryData == null || binaryData.length == 0) {
+            return binaryData;
+        }
+        
+        // Create this so can use the super-class method
+        // Also ensures that the same roundings are performed by the ctor and the code
+        Base64 b64 = isChunked ? new Base64(MIME_CHUNK_SIZE, CHUNK_SEPARATOR, urlSafe)
+                : new Base64(0, CHUNK_SEPARATOR, urlSafe);
+        long len = b64.getEncodedLength(binaryData);
+        if (len > maxResultSize) {
+            throw new IllegalArgumentException("Input array too big, the output array would be bigger (" + len
+                    + ") than the specified maximum size of " + maxResultSize);
+        }
+        
+        return b64.encode(binaryData);
+    }
+    
+    /**
+     * Decodes Base64 data into octets.
+     *
+     * @param base64Data Byte array containing Base64 data
+     * @return Array containing decoded data.
+     */
+    public static byte[] decodeBase64(byte[] base64Data) {
+        return new Base64().decode(base64Data);
     }
     
     /**
@@ -382,56 +516,6 @@ public class Base64 {
     }
     
     /**
-     * Encodes binary data using the base64 algorithm but does not chunk the output.
-     *
-     * @param binaryData binary data to encode
-     * @return byte[] containing Base64 characters in their UTF-8 representation.
-     */
-    public static byte[] encodeBase64(byte[] binaryData) {
-        return encodeBase64(binaryData, false, false, Integer.MAX_VALUE);
-    }
-    
-    /**
-     * Encodes binary data using the base64 algorithm, optionally chunking the output into 76 character blocks.
-     *
-     * @param binaryData    Array containing binary data to encode.
-     * @param isChunked     if <code>true</code> this encoder will chunk the base64 output into 76 character blocks
-     * @param urlSafe       if <code>true</code> this encoder will emit - and _ instead of the usual + and /
-     *                      characters.
-     * @param maxResultSize The maximum result size to accept.
-     * @return Base64-encoded data.
-     * @throws IllegalArgumentException Thrown when the input array needs an output array bigger than maxResultSize
-     * @since 1.4
-     */
-    public static byte[] encodeBase64(byte[] binaryData, boolean isChunked, boolean urlSafe, int maxResultSize) {
-        if (binaryData == null || binaryData.length == 0) {
-            return binaryData;
-        }
-        
-        // Create this so can use the super-class method
-        // Also ensures that the same roundings are performed by the ctor and the code
-        Base64 b64 = isChunked ? new Base64(MIME_CHUNK_SIZE, CHUNK_SEPARATOR, urlSafe)
-                : new Base64(0, CHUNK_SEPARATOR, urlSafe);
-        long len = b64.getEncodedLength(binaryData);
-        if (len > maxResultSize) {
-            throw new IllegalArgumentException("Input array too big, the output array would be bigger (" + len
-                    + ") than the specified maximum size of " + maxResultSize);
-        }
-        
-        return b64.encode(binaryData);
-    }
-    
-    /**
-     * Decodes Base64 data into octets.
-     *
-     * @param base64Data Byte array containing Base64 data
-     * @return Array containing decoded data.
-     */
-    public static byte[] decodeBase64(byte[] base64Data) {
-        return new Base64().decode(base64Data);
-    }
-    
-    /**
      * Returns whether or not the <code>octet</code> is in the Base32 alphabet.
      *
      * @param octet The value to test
@@ -440,90 +524,6 @@ public class Base64 {
     protected boolean isInAlphabet(byte octet) {
         return octet >= 0 && octet < decodeTable.length && decodeTable[octet] != -1;
     }
-    
-    /**
-     * MIME chunk size per RFC 2045 section 6.8.
-     *
-     * <p> The {@value} character limit does not count the trailing CRLF, but counts all other characters, including
-     * any equal signs. </p>
-     *
-     * @see <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045 section 6.8</a>
-     */
-    private static final int MIME_CHUNK_SIZE = 76;
-    
-    private static final int DEFAULT_BUFFER_RESIZE_FACTOR = 2;
-    
-    /**
-     * Defines the default buffer size - currently {@value} - must be large enough for at least one encoded
-     * block+separator.
-     */
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
-    
-    /**
-     * Mask used to extract 8 bits, used in decoding bytes.
-     */
-    private static final int MASK_8BITS = 0xff;
-    
-    /**
-     * Byte used to pad output.
-     */
-    private static final byte PAD_DEFAULT = '=';
-    
-    private static final byte PAD = PAD_DEFAULT;
-    
-    /**
-     * Number of bytes in each full block of unencoded data, e.g. 4 for Base64 and 5 for Base32
-     */
-    private final int unencodedBlockSize;
-    
-    /**
-     * Number of bytes in each full block of encoded data, e.g. 3 for Base64 and 8 for Base32
-     */
-    private final int encodedBlockSize;
-    
-    /**
-     * Chunksize for encoding. Not used when decoding. A value of zero or less implies no chunking of the encoded data.
-     * Rounded down to nearest multiple of encodedBlockSize.
-     */
-    private final int lineLength;
-    
-    /**
-     * Size of chunk separator. Not used unless {@link #lineLength} > 0.
-     */
-    private final int chunkSeparatorLength;
-    
-    /**
-     * Buffer for streaming.
-     */
-    private byte[] buffer;
-    
-    /**
-     * Position where next character should be written in the buffer.
-     */
-    private int pos;
-    
-    /**
-     * Position where next character should be read from the buffer.
-     */
-    private int readPos;
-    
-    /**
-     * Boolean flag to indicate the EOF has been reached. Once EOF has been reached, this object becomes useless, and
-     * must be thrown away.
-     */
-    private boolean eof;
-    
-    /**
-     * Variable tracks how many characters have been written to the current line. Only used when encoding. We use it to
-     * make sure each encoded line never goes beyond lineLength (if lineLength > 0).
-     */
-    private int currentLinePos;
-    
-    /**
-     * Writes to the buffer only occur after every 3/5 reads when encoding, and every 4/8 reads when decoding. This
-     * variable helps track that.
-     */
-    private int modulus;
     
     /**
      * Ensure that the buffer has room for <code>size</code> bytes.

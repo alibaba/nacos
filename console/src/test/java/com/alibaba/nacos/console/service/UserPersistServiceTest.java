@@ -45,16 +45,16 @@ public class UserPersistServiceTest extends BaseTest {
     
     private UsersEntity users;
     
-    @Before
-    public void before() {
-        users = JacksonUtils.toObj(TestData.USERS_JSON, UsersEntity.class);
-    }
-    
     @Autowired
     private UserPersistService userPersistService;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Before
+    public void before() {
+        users = JacksonUtils.toObj(TestData.USERS_JSON, UsersEntity.class);
+    }
     
     @Test
     public void createUser() {

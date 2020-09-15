@@ -17,8 +17,8 @@
 package com.alibaba.nacos.config.server.model;
 
 /**
- * ConfigInfoBaseEx.
- * And can't add field, to compatible with old interface(If adding a field, then it will occour compatibility problems).
+ * ConfigInfoBaseEx. And can't add field, to compatible with old interface(If adding a field, then it will occour
+ * compatibility problems).
  *
  * @author Nacos
  */
@@ -27,8 +27,8 @@ public class ConfigInfoBaseEx extends ConfigInfoBase {
     private static final long serialVersionUID = -1L;
     
     /**
-     * Single message status code, when querying for batch.
-     * And details of message status code, you can see Constants.java.
+     * Single message status code, when querying for batch. And details of message status code, you can see
+     * Constants.java.
      */
     private int status;
     

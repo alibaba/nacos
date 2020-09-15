@@ -78,7 +78,13 @@ import java.util.concurrent.ConcurrentSkipListMap;
 @Component(value = "serverMemberManager")
 public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent> {
     
-    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CORE);
+    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder
+            .getNacosAsyncRestTemplate(Loggers.CORE);
+    
+    /**
+     * Broadcast this node element information task.
+     */
+    private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
     
     /**
      * Cluster node list.
@@ -114,11 +120,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      * here is always the node information of the "UP" state.
      */
     private volatile Set<String> memberAddressInfos = new ConcurrentHashSet<>();
-    
-    /**
-     * Broadcast this node element information task.
-     */
-    private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
     
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap<>();
@@ -402,13 +403,13 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     }
     
     @JustForTest
-    public void updateMember(Member member) {
-        serverList.put(member.getAddress(), member);
+    public void setMemberAddressInfos(Set<String> memberAddressInfos) {
+        this.memberAddressInfos = memberAddressInfos;
     }
     
     @JustForTest
-    public void setMemberAddressInfos(Set<String> memberAddressInfos) {
-        this.memberAddressInfos = memberAddressInfos;
+    public void updateMember(Member member) {
+        serverList.put(member.getAddress(), member);
     }
     
     @JustForTest

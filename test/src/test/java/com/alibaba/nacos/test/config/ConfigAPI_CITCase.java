@@ -59,11 +59,11 @@ public class ConfigAPI_CITCase {
     
     public static final long TIME_OUT = 5000;
     
+    static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
+    
     static ConfigService iconfig = null;
     
     static HttpAgent agent = null;
-    
-    static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
     
     String SPECIAL_CHARACTERS = "!@#$%^&*()_+-=_|/'?.";
     
@@ -73,6 +73,12 @@ public class ConfigAPI_CITCase {
     
     @LocalServerPort
     private int port;
+    
+    @BeforeClass
+    @AfterClass
+    public static void cleanClientCache() throws Exception {
+        ConfigCleanUtils.cleanClientCache();
+    }
     
     @Before
     public void setUp() throws Exception {
@@ -100,12 +106,6 @@ public class ConfigAPI_CITCase {
             e.printStackTrace();
             Assert.fail();
         }
-    }
-
-    @BeforeClass
-    @AfterClass
-    public static void cleanClientCache() throws Exception {
-        ConfigCleanUtils.cleanClientCache();
     }
     
     /**
@@ -404,7 +404,7 @@ public class ConfigAPI_CITCase {
         final String newContent = "nacos_addListener_3-" + System.currentTimeMillis();
         boolean result = iconfig.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
-
+    
         // Maximum assurance level notification has been performed
         ThreadUtils.sleep(5000);
         

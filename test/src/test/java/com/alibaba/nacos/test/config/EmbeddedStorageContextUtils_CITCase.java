@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.test.config;
 
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,31 +30,31 @@ import java.util.concurrent.Executors;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class EmbeddedStorageContextUtils_CITCase {
-
-	@Test
-	public void test_multi_thread_sql_contexts() throws Exception {
-		CountDownLatch latch = new CountDownLatch(3);
-
-		ExecutorService service = Executors.newFixedThreadPool(3);
-		for (int i = 1; i < 4; i ++) {
-			final int j = i;
-			service.submit(() -> {
-				try {
-					EmbeddedStorageContextUtils.addSqlContext("test_" + j, j);
-					EmbeddedStorageContextUtils.addSqlContext("test_" + j * 10, j);
-
-					List<ModifyRequest> list = EmbeddedStorageContextUtils.getCurrentSqlContext();
-					System.out.println(list);
-					Assert.assertEquals("test_" + j, list.get(0).getSql());
-					Assert.assertEquals("test_" + j * 10, list.get(0).getSql());
-				} finally {
-					latch.countDown();
-				}
-			});
-		}
-
-		latch.await();
-
-	}
-
+    
+    @Test
+    public void test_multi_thread_sql_contexts() throws Exception {
+        CountDownLatch latch = new CountDownLatch(3);
+        
+        ExecutorService service = Executors.newFixedThreadPool(3);
+        for (int i = 1; i < 4; i++) {
+            final int j = i;
+            service.submit(() -> {
+                try {
+                    EmbeddedStorageContextUtils.addSqlContext("test_" + j, j);
+                    EmbeddedStorageContextUtils.addSqlContext("test_" + j * 10, j);
+                    
+                    List<ModifyRequest> list = EmbeddedStorageContextUtils.getCurrentSqlContext();
+                    System.out.println(list);
+                    Assert.assertEquals("test_" + j, list.get(0).getSql());
+                    Assert.assertEquals("test_" + j * 10, list.get(0).getSql());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        
+        latch.await();
+        
+    }
+    
 }

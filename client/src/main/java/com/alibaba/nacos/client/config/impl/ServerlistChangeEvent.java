@@ -24,4 +24,5 @@ import com.alibaba.nacos.common.notify.SlowEvent;
  * @author zongtanghu
  */
 public class ServerlistChangeEvent extends SlowEvent {
+
 }

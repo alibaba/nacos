@@ -44,7 +44,8 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
             String type = getDistroKey().getResourceType();
             DistroData distroData = distroComponentHolder.findDataStorage(type).getDistroData(getDistroKey());
             distroData.setType(DataOperation.CHANGE);
-            boolean result = distroComponentHolder.findTransportAgent(type).syncData(distroData, getDistroKey().getTargetServer());
+            boolean result = distroComponentHolder.findTransportAgent(type)
+                    .syncData(distroData, getDistroKey().getTargetServer());
             if (!result) {
                 handleFailedTask();
             }

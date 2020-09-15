@@ -27,14 +27,6 @@ public class UtilAndComs {
     
     public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.version;
     
-    public static String webContext = "/nacos";
-    
-    public static String nacosUrlBase = webContext + "/v1/ns";
-    
-    public static String nacosUrlInstance = nacosUrlBase + "/instance";
-    
-    public static String nacosUrlService = nacosUrlBase + "/service";
-    
     public static final String ENCODING = "UTF-8";
     
     public static final String ENV_LIST_KEY = "envList";
@@ -62,5 +54,13 @@ public class UtilAndComs {
     public static final String HTTP = "http://";
     
     public static final String HTTPS = "https://";
+    
+    public static String webContext = "/nacos";
+    
+    public static String nacosUrlBase = webContext + "/v1/ns";
+    
+    public static String nacosUrlInstance = nacosUrlBase + "/instance";
+    
+    public static String nacosUrlService = nacosUrlBase + "/service";
     
 }

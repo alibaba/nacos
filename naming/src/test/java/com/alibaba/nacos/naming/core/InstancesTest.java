@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -29,22 +31,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-
 import static org.junit.Assert.assertEquals;
 
 public class InstancesTest {
-    
-    private static MessageDigest messageDigest;
-    
-    static {
-        try {
-            messageDigest = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            messageDigest = null;
-        }
-    }
     
     private static final ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = new ThreadLocal<MessageDigest>() {
         @Override
@@ -56,6 +45,16 @@ public class InstancesTest {
             }
         }
     };
+    
+    private static MessageDigest messageDigest;
+    
+    static {
+        try {
+            messageDigest = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            messageDigest = null;
+        }
+    }
     
     @Test
     public void checkSumNotThreadSafe() throws Exception {

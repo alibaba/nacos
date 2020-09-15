@@ -16,163 +16,181 @@
   -->
 
 <configuration>
-
-    <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${user.home}/nacos/logs"/>
-    <property name="LOG_HOME" value="${logPath}"/>
-
-    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-
-    <include resource="META-INF/logback/nacos-included.xml"/>
-    <include optional="true" resource="META-INF/logback/config-included.xml"/>
-    <include optional="true" resource="META-INF/logback/naming-included.xml"/>
-    <include optional="true" resource="META-INF/logback/.xml"/>
-
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    
+    <appender class="ch.qos.logback.core.ConsoleAppender" name="CONSOLE">
         <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
             <charset>UTF-8</charset>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
         </encoder>
     </appender>
-
-    <appender name="rootFile"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/nacos.log</file>
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender"
+        name="rootFile">
         <append>true</append>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <file>${LOG_HOME}/nacos.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
             <fileNamePattern>${LOG_HOME}/nacos.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
             <maxHistory>15</maxHistory>
             <totalSizeCap>512MB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
+    </appender>
+    
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender"
+        name="core-auth">
+        <append>true</append>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
             <charset>UTF-8</charset>
         </encoder>
-    </appender>
-
-    <appender name="core-auth"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/core-auth.log</file>
-        <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
             <fileNamePattern>${LOG_HOME}/core-auth.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
             <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
+    </appender>
+    
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender"
+        name="protocol-raft">
+        <append>true</append>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
             <charset>UTF-8</charset>
         </encoder>
-    </appender>
-
-    <appender name="protocol-raft"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/protocol-raft.log</file>
-        <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
             <fileNamePattern>${LOG_HOME}/protocol-raft.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
             <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
+    </appender>
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender"
+        name="protocol-distro">
+        <append>true</append>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
             <charset>UTF-8</charset>
         </encoder>
-    </appender>
-
-    <appender name="protocol-distro"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/protocol-distro.log</file>
-        <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
             <fileNamePattern>${LOG_HOME}/protocol-distro.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
             <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
+    </appender>
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender"
+        name="nacos-cluster">
+        <append>true</append>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
             <charset>UTF-8</charset>
         </encoder>
-    </appender>
-
-    <appender name="nacos-cluster"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/nacos-cluster.log</file>
-        <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
             <fileNamePattern>${LOG_HOME}/nacos-cluster.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
             <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
+    </appender>
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender"
+        name="alipay-jraft">
+        <append>true</append>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
             <charset>UTF-8</charset>
         </encoder>
-    </appender>
-
-    <appender name="alipay-jraft"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/alipay-jraft.log</file>
-        <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
             <fileNamePattern>${LOG_HOME}/alipay-jraft.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
             <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>UTF-8</charset>
-        </encoder>
     </appender>
-
-    <root>
-        <level value="INFO"/>
-        <appender-ref ref="rootFile"/>
-    </root>
-
-    <logger name="com.alibaba.nacos.core.auth" additivity="false">
-        <level value="DEBUG"/>
+    
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    
+    <include resource="META-INF/logback/nacos-included.xml"/>
+    
+    <include optional="true" resource="META-INF/logback/config-included.xml"/>
+    
+    <include optional="true" resource="META-INF/logback/naming-included.xml"/>
+    
+    <include optional="true" resource="META-INF/logback/.xml"/>
+    
+    <logger additivity="false" name="com.alibaba.nacos.core.auth">
         <appender-ref ref="core-auth"/>
+        <level value="DEBUG"/>
     </logger>
-
-    <logger name="com.alibaba.nacos.core.protocol.raft" additivity="false">
-        <level value="INFO"/>
+    
+    <logger additivity="false" name="com.alibaba.nacos.core.protocol.raft">
         <appender-ref ref="protocol-raft"/>
-    </logger>
-
-    <logger name="com.alipay.sofa.jraft" additivity="false">
         <level value="INFO"/>
+    </logger>
+    
+    <logger additivity="false" name="com.alipay.sofa.jraft">
         <appender-ref ref="alipay-jraft"/>
-    </logger>
-
-    <logger name="com.alibaba.nacos.core.protocol.distro" additivity="false">
         <level value="INFO"/>
+    </logger>
+    
+    <logger additivity="false" name="com.alibaba.nacos.core.protocol.distro">
         <appender-ref ref="protocol-distro"/>
-    </logger>
-
-    <logger name="com.alibaba.nacos.core.cluster" additivity="false">
         <level value="INFO"/>
-        <appender-ref ref="nacos-cluster"/>
     </logger>
-
+    
+    <logger additivity="false" name="com.alibaba.nacos.core.cluster">
+        <appender-ref ref="nacos-cluster"/>
+        <level value="INFO"/>
+    </logger>
+    
+    <logger name="com.alibaba.nacos.core.code.StartingSpringApplicationRunListener">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
+    
+    <logger name="com.alibaba.nacos.common.notify.NotifyCenter">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
+    
+    <logger name="com.alibaba.nacos.core.file.WatchFileCenter">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
+    
+    <logger name="com.alibaba.nacos.common.executor.ThreadPoolManager">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
+    
+    <property name="LOG_HOME" value="${logPath}"/>
+    
+    <root>
+        <appender-ref ref="rootFile"/>
+        <level value="INFO"/>
+    </root>
+    
     <springProfile name="standalone">
-
+        
         <logger name="org.springframework">
             <appender-ref ref="CONSOLE"/>
             <level value="INFO"/>
         </logger>
-
+        
         <logger name="org.apache.catalina.startup.DigesterFactory">
             <appender-ref ref="CONSOLE"/>
             <level value="INFO"/>
@@ -194,24 +212,6 @@
         </logger>
 
     </springProfile>
-
-    <logger name="com.alibaba.nacos.core.code.StartingSpringApplicationRunListener">
-        <appender-ref ref="CONSOLE"/>
-        <level value="INFO"/>
-    </logger>
-
-    <logger name="com.alibaba.nacos.common.notify.NotifyCenter">
-        <appender-ref ref="CONSOLE"/>
-        <level value="INFO"/>
-    </logger>
-
-    <logger name="com.alibaba.nacos.core.file.WatchFileCenter">
-        <appender-ref ref="CONSOLE"/>
-        <level value="INFO"/>
-    </logger>
-
-    <logger name="com.alibaba.nacos.common.executor.ThreadPoolManager">
-        <appender-ref ref="CONSOLE"/>
-        <level value="INFO"/>
-    </logger>
+    
+    <springProperty defaultValue="${user.home}/nacos/logs" name="logPath" scope="context" source="nacos.logs.path"/>
 </configuration>

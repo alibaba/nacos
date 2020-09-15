@@ -66,11 +66,11 @@ public class NacosConfigService implements ConfigService {
      */
     private final ClientWorker worker;
     
-    private String namespace;
-    
     private final String encode;
     
     private final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
+    
+    private String namespace;
     
     public NacosConfigService(Properties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);

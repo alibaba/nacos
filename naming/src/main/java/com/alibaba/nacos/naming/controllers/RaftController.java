@@ -36,7 +36,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -73,6 +72,12 @@ public class RaftController {
     
     @Autowired
     private RaftCore raftCore;
+    
+    public static String getAcceptEncoding(HttpServletRequest req) {
+        String encode = StringUtils.defaultIfEmpty(req.getHeader("Accept-Charset"), "UTF-8");
+        encode = encode.contains(",") ? encode.substring(0, encode.indexOf(",")) : encode;
+        return encode.contains(";") ? encode.substring(0, encode.indexOf(";")) : encode;
+    }
     
     /**
      * Raft vote api.
@@ -361,11 +366,5 @@ public class RaftController {
         result.replace("listeners", listenerArray);
         
         return result;
-    }
-    
-    public static String getAcceptEncoding(HttpServletRequest req) {
-        String encode = StringUtils.defaultIfEmpty(req.getHeader("Accept-Charset"), "UTF-8");
-        encode = encode.contains(",") ? encode.substring(0, encode.indexOf(",")) : encode;
-        return encode.contains(";") ? encode.substring(0, encode.indexOf(";")) : encode;
     }
 }

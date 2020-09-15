@@ -45,6 +45,10 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Util {
     
+    static final char WORD_SEPARATOR_CHAR = (char) 2;
+    
+    static final char LINE_SEPARATOR_CHAR = (char) 1;
+    
     /**
      * Compare Md5.
      */
@@ -187,10 +191,6 @@ public class MD5Util {
         }
         return count;
     }
-    
-    static final char WORD_SEPARATOR_CHAR = (char) 2;
-    
-    static final char LINE_SEPARATOR_CHAR = (char) 1;
     
 }
 

@@ -42,28 +42,28 @@ public class SubInfo implements Serializable {
         return appName;
     }
     
-    public String getDataId() {
-        return dataId;
-    }
-    
-    public String getGroup() {
-        return group;
-    }
-    
-    public Timestamp getDate() {
-        return new Timestamp(date.getTime());
-    }
-    
     public void setAppName(String appName) {
         this.appName = appName;
+    }
+    
+    public String getDataId() {
+        return dataId;
     }
     
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
     
+    public String getGroup() {
+        return group;
+    }
+    
     public void setGroup(String group) {
         this.group = group;
+    }
+    
+    public Timestamp getDate() {
+        return new Timestamp(date.getTime());
     }
     
     public void setDate(Timestamp date) {

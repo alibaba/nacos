@@ -14,78 +14,74 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>com.alibaba.nacos</groupId>
-        <artifactId>nacos-all</artifactId>
-        <version>1.4.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    
-    <modelVersion>4.0.0</modelVersion>
-    
     <artifactId>nacos-client</artifactId>
-    <packaging>jar</packaging>
     
-    <name>nacos-client ${project.version}</name>
-    <url>http://nacos.io</url>
-    
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>7</source>
+                    <target>7</target>
+                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+            </plugin>
+        </plugins>
+    </build>
     
     <dependencies>
         
         <dependency>
-            <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <groupId>org.slf4j</groupId>
             <optional>true</optional>
         </dependency>
         
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <optional>true</optional>
-        </dependency>
-        
-        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
             <optional>true</optional>
         </dependency>
 
         <dependency>
+            <artifactId>log4j-api</artifactId>
             <groupId>org.apache.logging.log4j</groupId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
             <artifactId>log4j-slf4j-impl</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
             <optional>true</optional>
         </dependency>
-        
+
         <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>nacos-common</artifactId>
-        </dependency>
-        
-        <dependency>
             <groupId>${project.groupId}</groupId>
+        </dependency>
+
+        <dependency>
             <artifactId>nacos-api</artifactId>
+            <groupId>${project.groupId}</groupId>
         </dependency>
-        
+
         <dependency>
-            <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <optional>true</optional>
-        </dependency>
-        
-        <dependency>
             <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
             <optional>true</optional>
         </dependency>
-        
+
         <dependency>
-            <groupId>com.google.guava</groupId>
+            <artifactId>logback-core</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
             <artifactId>guava</artifactId>
+            <groupId>com.google.guava</groupId>
         </dependency>
         
         <dependency>
@@ -94,53 +90,57 @@
         </dependency>
         
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-        </dependency>
-        
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
         </dependency>
         
         <dependency>
-            <groupId>net.jcip</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+        </dependency>
+        
+        <dependency>
             <artifactId>jcip-annotations</artifactId>
+            <groupId>net.jcip</groupId>
             <optional>true</optional>
         </dependency>
         
         <dependency>
-            <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <groupId>junit</groupId>
             <scope>test</scope>
         </dependency>
         
         <dependency>
-            <groupId>io.prometheus</groupId>
             <artifactId>simpleclient</artifactId>
+            <groupId>io.prometheus</groupId>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <groupId>org.mockito</groupId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+            <groupId>org.yaml</groupId>
         </dependency>
     
     </dependencies>
+    <modelVersion>4.0.0</modelVersion>
     
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>7</source>
-                    <target>7</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <name>nacos-client ${project.version}</name>
+    <packaging>jar</packaging>
+    
+    <parent>
+        <artifactId>nacos-all</artifactId>
+        <groupId>com.alibaba.nacos</groupId>
+        <relativePath>../pom.xml</relativePath>
+        <version>1.4.0-SNAPSHOT</version>
+    </parent>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    
+    <url>http://nacos.io</url>
 </project>

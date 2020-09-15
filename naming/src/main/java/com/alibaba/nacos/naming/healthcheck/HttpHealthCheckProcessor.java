@@ -50,15 +50,9 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
     
     public static final String TYPE = "HTTP";
     
-    @Autowired
-    private SwitchDomain switchDomain;
-    
-    @Autowired
-    private HealthCheckCommon healthCheckCommon;
+    private static final int CONNECT_TIMEOUT_MS = 500;
     
     private static AsyncHttpClient asyncHttpClient;
-    
-    private static final int CONNECT_TIMEOUT_MS = 500;
     
     static {
         try {
@@ -79,6 +73,12 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
             SRV_LOG.error("[HEALTH-CHECK] Error while constructing HTTP asynchronous client", e);
         }
     }
+    
+    @Autowired
+    private SwitchDomain switchDomain;
+    
+    @Autowired
+    private HealthCheckCommon healthCheckCommon;
     
     @Override
     public String getType() {

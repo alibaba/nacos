@@ -34,11 +34,13 @@ import java.util.regex.Pattern;
  */
 public class ParamUtil {
     
-    private static final Logger LOGGER = LogUtils.logger(ParamUtil.class);
-    
     public static final boolean USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = true;
     
+    private static final Logger LOGGER = LogUtils.logger(ParamUtil.class);
+    
     private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
+    
+    private static final String DEFAULT_SERVER_PORT;
     
     private static String defaultContextPath;
     
@@ -47,8 +49,6 @@ public class ParamUtil {
     private static String appKey;
     
     private static String appName;
-    
-    private static final String DEFAULT_SERVER_PORT;
     
     private static String clientVersion = "unknown";
     

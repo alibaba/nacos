@@ -26,9 +26,9 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
  */
 public class DumpAllTask extends AbstractDelayTask {
     
+    public static final String TASK_ID = "dumpAllConfigTask";
+    
     @Override
     public void merge(AbstractDelayTask task) {
     }
-    
-    public static final String TASK_ID = "dumpAllConfigTask";
 }

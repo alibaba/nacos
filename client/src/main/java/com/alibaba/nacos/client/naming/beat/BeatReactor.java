@@ -46,13 +46,13 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class BeatReactor implements Closeable {
     
+    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
+    
     private final ScheduledExecutorService executorService;
     
     private final NamingProxy serverProxy;
     
     private boolean lightBeatEnabled = false;
-    
-    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
     
     public BeatReactor(NamingProxy serverProxy) {
         this(serverProxy, UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
@@ -121,7 +121,7 @@ public class BeatReactor implements Closeable {
      * Build new beat information.
      *
      * @param groupedServiceName service name with group name, format: ${groupName}@@${serviceName}
-     * @param instance instance
+     * @param instance           instance
      * @return new beat information
      */
     public BeatInfo buildBeatInfo(String groupedServiceName, Instance instance) {

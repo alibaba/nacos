@@ -35,10 +35,14 @@ import java.util.List;
 @JsonInclude(Include.NON_NULL)
 public class ServiceInfo {
     
+    public static final String SPLITER = "@@";
+    
+    private static final String EMPTY = "";
+    
+    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
+    
     @JsonIgnore
     private String jsonFromServer = EMPTY;
-    
-    public static final String SPLITER = "@@";
     
     private String name;
     
@@ -59,14 +63,6 @@ public class ServiceInfo {
     public ServiceInfo() {
     }
     
-    public boolean isAllIPs() {
-        return allIPs;
-    }
-    
-    public void setAllIPs(boolean allIPs) {
-        this.allIPs = allIPs;
-    }
-    
     public ServiceInfo(String key) {
         
         int maxIndex = 2;
@@ -78,7 +74,7 @@ public class ServiceInfo {
             this.name = keys[serviceNameIndex];
             this.clusters = keys[clusterIndex];
         }
-        
+    
         this.name = keys[0];
     }
     
@@ -87,16 +83,68 @@ public class ServiceInfo {
         this.clusters = clusters;
     }
     
+    @JsonIgnore
+    public static String getKey(String name, String clusters) {
+        
+        if (!isEmpty(clusters)) {
+            return name + Constants.SERVICE_INFO_SPLITER + clusters;
+        }
+        
+        return name;
+    }
+    
+    @JsonIgnore
+    public String getKey() {
+        return getKey(name, clusters);
+    }
+    
+    /**
+     * Get {@link ServiceInfo} from key.
+     *
+     * @param key key of service info
+     * @return new service info
+     */
+    public static ServiceInfo fromKey(String key) {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        int maxSegCount = 3;
+        String[] segs = key.split(Constants.SERVICE_INFO_SPLITER);
+        if (segs.length == maxSegCount - 1) {
+            serviceInfo.setGroupName(segs[0]);
+            serviceInfo.setName(segs[1]);
+        } else if (segs.length == maxSegCount) {
+            serviceInfo.setGroupName(segs[0]);
+            serviceInfo.setName(segs[1]);
+            serviceInfo.setClusters(segs[2]);
+        }
+        return serviceInfo;
+    }
+    
+    private static boolean isEmpty(String str) {
+        return str == null || str.length() == 0;
+    }
+    
+    private static boolean isEmpty(Collection coll) {
+        return (coll == null || coll.isEmpty());
+    }
+    
+    private static boolean strEquals(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equals(str2);
+    }
+    
+    public boolean isAllIPs() {
+        return allIPs;
+    }
+    
+    public void setAllIPs(boolean allIPs) {
+        this.allIPs = allIPs;
+    }
+    
     public int ipCount() {
         return hosts.size();
     }
     
     public boolean expired() {
         return System.currentTimeMillis() - lastRefTime > cacheMillis;
-    }
-    
-    public void setHosts(List<Instance> hosts) {
-        this.hosts = hosts;
     }
     
     public boolean isValid() {
@@ -119,12 +167,12 @@ public class ServiceInfo {
         this.groupName = groupName;
     }
     
-    public void setLastRefTime(long lastRefTime) {
-        this.lastRefTime = lastRefTime;
-    }
-    
     public long getLastRefTime() {
         return lastRefTime;
+    }
+    
+    public void setLastRefTime(long lastRefTime) {
+        this.lastRefTime = lastRefTime;
     }
     
     public String getClusters() {
@@ -145,6 +193,10 @@ public class ServiceInfo {
     
     public List<Instance> getHosts() {
         return new ArrayList<Instance>(hosts);
+    }
+    
+    public void setHosts(List<Instance> hosts) {
+        this.hosts = hosts;
     }
     
     /**
@@ -181,48 +233,12 @@ public class ServiceInfo {
     }
     
     @JsonIgnore
-    public String getKey() {
-        return getKey(name, clusters);
-    }
-    
-    @JsonIgnore
-    public static String getKey(String name, String clusters) {
-        
-        if (!isEmpty(clusters)) {
-            return name + Constants.SERVICE_INFO_SPLITER + clusters;
-        }
-        
-        return name;
-    }
-    
-    @JsonIgnore
     public String getKeyEncoded() {
         try {
             return getKey(URLEncoder.encode(name, "UTF-8"), clusters);
         } catch (UnsupportedEncodingException e) {
             return getKey();
         }
-    }
-    
-    /**
-     * Get {@link ServiceInfo} from key.
-     *
-     * @param key key of service info
-     * @return new service info
-     */
-    public static ServiceInfo fromKey(String key) {
-        ServiceInfo serviceInfo = new ServiceInfo();
-        int maxSegCount = 3;
-        String[] segs = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (segs.length == maxSegCount - 1) {
-            serviceInfo.setGroupName(segs[0]);
-            serviceInfo.setName(segs[1]);
-        } else if (segs.length == maxSegCount) {
-            serviceInfo.setGroupName(segs[0]);
-            serviceInfo.setName(segs[1]);
-            serviceInfo.setClusters(segs[2]);
-        }
-        return serviceInfo;
     }
     
     @Override
@@ -237,20 +253,4 @@ public class ServiceInfo {
     public void setChecksum(String checksum) {
         this.checksum = checksum;
     }
-    
-    private static boolean isEmpty(String str) {
-        return str == null || str.length() == 0;
-    }
-    
-    private static boolean isEmpty(Collection coll) {
-        return (coll == null || coll.isEmpty());
-    }
-    
-    private static boolean strEquals(String str1, String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
-    }
-    
-    private static final String EMPTY = "";
-    
-    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
 }

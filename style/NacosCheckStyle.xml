@@ -19,10 +19,6 @@
     "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <module name="Checker">
-    <property name="charset" value="UTF-8"/>
-    <property name="severity" value="error"/>
-    <property name="fileExtensions" value="java, properties, xml"/>
-    
     <module name="FileTabCharacter">
         <property name="eachLine" value="true"/>
     </module>
@@ -33,17 +29,16 @@
             value="^implements.*|^extends.*|^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
     <module name="SuppressWarningsFilter"/>
-    
     <module name="TreeWalker">
         <module name="SuppressionCommentFilter"/>
-        <module name="SuppressWarningsHolder" />
-        
+        <module name="SuppressWarningsHolder"/>
+    
         <!-- Name Checker -->
         <module name="OuterTypeFilename"/>
         <module name="PackageName">
-            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
             <message key="name.invalidPattern"
                 value="Package name ''{0}'' must match pattern ''{1}''."/>
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
         </module>
         <module name="TypeName"/>
         <module name="MemberName"/>
@@ -61,12 +56,12 @@
             <property name="ignoreFinal" value="false"/>
             <property name="allowedAbbreviationLength" value="1"/>
         </module>
-        
+
         <!-- Import Checker -->
         <module name="AvoidStarImport"/>
         <module name="UnusedImports"/>
         <module name="RedundantImport"/>
-        
+    
         <!-- Block Checker -->
         <module name="EmptyBlock">
             <property name="option" value="TEXT"/>
@@ -79,7 +74,7 @@
         <module name="LeftCurly"/>
         <module name="RightCurly"/>
         <module name="NeedBraces"/>
-        
+    
         <!-- Javadoc Checker -->
         <module name="JavadocMethod">
             <property name="scope" value="public"/>
@@ -107,7 +102,7 @@
         </module>
         <module name="JavadocParagraph"/>
         <module name="NonEmptyAtclauseDescription"/>
-        
+    
         <!-- Coding Checker -->
         <module name="IllegalTokenText">
             <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
@@ -126,7 +121,7 @@
         <module name="AtclauseOrder">
             <property name="tagOrder" value="@param, @return, @throws, @deprecated"/>
         </module>
-        
+    
         <!-- Miscellaneous Checker -->
         <module name="AvoidEscapedUnicodeCharacters">
             <property name="allowEscapesForControlCharacters" value="true"/>
@@ -142,10 +137,10 @@
         </module>
         <module name="ArrayTypeStyle"/>
         <module name="UpperEll"/>
-        
+    
         <!-- Design Checker -->
         <module name="OneTopLevelClass"/>
-        
+    
         <!-- Whitespace -->
         <module name="NoLineWrap"/>
         <module name="WhitespaceAfter"/>
@@ -200,10 +195,10 @@
                 value="BAND, BOR, BSR, BXOR, DIV, EQUAL, GE, GT, LAND, LE, LITERAL_INSTANCEOF, LOR,
                     LT, MINUS, MOD, NOT_EQUAL, PLUS, QUESTION, SL, SR, STAR, METHOD_REF "/>
         </module>
-        
+    
         <!-- Modifier Checker -->
         <module name="ModifierOrder"/>
-        
+    
         <!-- Annotation Checker -->
         <module name="AnnotationLocation">
             <property name="id" value="AnnotationLocationMostCases"/>
@@ -216,4 +211,8 @@
             <property name="allowSamelineMultipleAnnotations" value="true"/>
         </module>
     </module>
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java, properties, xml"/>
+    
+    <property name="charset" value="UTF-8"/>
 </module>

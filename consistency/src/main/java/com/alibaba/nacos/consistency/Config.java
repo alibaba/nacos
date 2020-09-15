@@ -22,11 +22,11 @@ import java.util.Set;
 /**
  * Consistent protocol related configuration objects.
  *
- * <p>{@link LogProcessor} : The consistency protocol provides services for all businesses, but each business only cares
- * about the transaction information belonging to that business, and the transaction processing between the various
- * services should not block each other. Therefore, the LogProcessor is abstracted to implement the parallel processing
- * of transactions of different services. Corresponding LogProcessor sub-interface: LogProcessor4AP or LogProcessor4CP,
- * different consistency protocols will actively discover the corresponding LogProcessor
+ * <p>{@link LogProcessor} : The consistency protocol provides services for all businesses, but each business only
+ * cares about the transaction information belonging to that business, and the transaction processing between the
+ * various services should not block each other. Therefore, the LogProcessor is abstracted to implement the parallel
+ * processing of transactions of different services. Corresponding LogProcessor sub-interface: LogProcessor4AP or
+ * LogProcessor4CP, different consistency protocols will actively discover the corresponding LogProcessor
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

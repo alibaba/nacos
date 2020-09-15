@@ -26,5 +26,5 @@ import com.alibaba.nacos.consistency.ConsistencyProtocol;
  */
 @SuppressWarnings("all")
 public interface APProtocol<C extends Config, P extends LogProcessor4AP> extends ConsistencyProtocol<C, P> {
-
+    
 }

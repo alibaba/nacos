@@ -55,7 +55,7 @@ public final class HttpUtils {
      * Init http header.
      *
      * @param requestBase requestBase {@link HttpRequestBase}
-     * @param header header
+     * @param header      header
      */
     public static void initRequestHeader(HttpRequestBase requestBase, Header header) {
         Iterator<Map.Entry<String, String>> iterator = header.iterator();
@@ -69,8 +69,8 @@ public final class HttpUtils {
      * Init http entity.
      *
      * @param requestBase requestBase {@link HttpRequestBase}
-     * @param body      body
-     * @param mediaType mediaType {@link ContentType}
+     * @param body        body
+     * @param mediaType   mediaType {@link ContentType}
      * @throws Exception exception
      */
     public static void initRequestEntity(HttpRequestBase requestBase, Object body, String mediaType) throws Exception {
@@ -89,11 +89,12 @@ public final class HttpUtils {
      * Init request from entity map.
      *
      * @param requestBase requestBase {@link HttpRequestBase}
-     * @param body    body map
-     * @param charset charset of entity
+     * @param body        body map
+     * @param charset     charset of entity
      * @throws Exception exception
      */
-    public static void initRequestFromEntity(HttpRequestBase requestBase, Map<String, String> body, String charset) throws Exception {
+    public static void initRequestFromEntity(HttpRequestBase requestBase, Map<String, String> body, String charset)
+            throws Exception {
         if (body == null || body.isEmpty()) {
             return;
         }

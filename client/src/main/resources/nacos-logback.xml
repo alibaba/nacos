@@ -15,10 +15,12 @@
   ~ limitations under the License.
   -->
 
-<configuration debug="false" scan="true" scanPeriod="30 seconds" packagingData="true">
-    <contextName>nacos</contextName>
-    
-    <appender name="CONFIG_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+<configuration debug="false" packagingData="true" scan="true" scanPeriod="30 seconds">
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender" name="CONFIG_LOG_FILE">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
+        </encoder>
+        
         <file>${nacos.logging.path}/config.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
@@ -29,13 +31,13 @@
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
             <maxFileSize>${JM.LOG.FILE.SIZE:-10MB}</maxFileSize>
         </triggeringPolicy>
-        
+    </appender>
+    
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender" name="NAMING_LOG_FILE">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
         </encoder>
-    </appender>
-    
-    <appender name="NAMING_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        
         <file>${nacos.logging.path}/naming.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
@@ -46,25 +48,23 @@
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
             <maxFileSize>${JM.LOG.FILE.SIZE:-10MB}</maxFileSize>
         </triggeringPolicy>
-        
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
-        </encoder>
     </appender>
     
+    <contextName>nacos</contextName>
     
-    <logger name="com.alibaba.nacos.client" level="${com.alibaba.nacos.config.log.level:-info}"
-        additivity="false">
+    
+    <logger additivity="false" level="${com.alibaba.nacos.config.log.level:-info}"
+        name="com.alibaba.nacos.client">
         <appender-ref ref="CONFIG_LOG_FILE"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.client.config" level="${com.alibaba.nacos.config.log.level:-info}"
-        additivity="false">
+    <logger additivity="false" level="${com.alibaba.nacos.config.log.level:-info}"
+        name="com.alibaba.nacos.client.config">
         <appender-ref ref="CONFIG_LOG_FILE"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.client.naming" level="${com.alibaba.nacos.naming.log.level:-info}"
-        additivity="false">
+    <logger additivity="false" level="${com.alibaba.nacos.naming.log.level:-info}"
+        name="com.alibaba.nacos.client.naming">
         <appender-ref ref="NAMING_LOG_FILE"/>
     </logger>
 

@@ -48,8 +48,6 @@ import java.util.List;
 @Component
 public class JwtTokenUtils {
     
-    private final Logger log = LoggerFactory.getLogger(JwtTokenUtils.class);
-    
     private static final String AUTHORITIES_KEY = "auth";
     
     /**
@@ -61,6 +59,8 @@ public class JwtTokenUtils {
      * default SHA_256 secretKey flag.
      */
     private static final String DEFAULT_SECRET_FLAG = "default";
+    
+    private final Logger log = LoggerFactory.getLogger(JwtTokenUtils.class);
     
     /**
      * custom SHA_256 secretKey from config property.
@@ -111,9 +111,9 @@ public class JwtTokenUtils {
      * @return token
      */
     public String createToken(Authentication authentication) {
-
+    
         long now = System.currentTimeMillis();
-
+    
         Date validity = new Date(now + this.tokenValidityInMilliseconds);
         
         return Jwts.builder().setSubject(authentication.getName()).claim(AUTHORITIES_KEY, "").setExpiration(validity)

@@ -24,7 +24,7 @@ package com.alibaba.nacos.core.distributed.distro.task.execute;
 public final class DistroExecuteWorkersManager {
     
     private final DistroExecuteWorker[] connectionWorkers;
-
+    
     public DistroExecuteWorkersManager() {
         int workerCount = findWorkerCount();
         connectionWorkers = new DistroExecuteWorker[workerCount];
@@ -67,9 +67,9 @@ public final class DistroExecuteWorkersManager {
         }
         return sb.toString();
     }
-
+    
     public int workersCount() {
         return connectionWorkers.length;
     }
-
+    
 }

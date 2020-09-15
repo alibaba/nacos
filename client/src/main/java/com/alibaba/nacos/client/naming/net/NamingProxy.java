@@ -79,15 +79,21 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class NamingProxy implements Closeable {
     
-    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
-    
     private static final int DEFAULT_SERVER_PORT = 8848;
     
-    private int serverPort = DEFAULT_SERVER_PORT;
+    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
     
     private final String namespaceId;
     
     private final String endpoint;
+    
+    private final SecurityProxy securityProxy;
+    
+    private final long vipSrvRefInterMillis = TimeUnit.SECONDS.toMillis(30);
+    
+    private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
+    
+    private int serverPort = DEFAULT_SERVER_PORT;
     
     private String nacosDomain;
     
@@ -95,13 +101,7 @@ public class NamingProxy implements Closeable {
     
     private List<String> serversFromEndpoint = new ArrayList<String>();
     
-    private final SecurityProxy securityProxy;
-    
     private long lastSrvRefTime = 0L;
-    
-    private final long vipSrvRefInterMillis = TimeUnit.SECONDS.toMillis(30);
-    
-    private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
     
     private Properties properties;
     
@@ -121,6 +121,11 @@ public class NamingProxy implements Closeable {
             }
         }
         this.initRefreshTask();
+    }
+    
+    private static String getSignData(String serviceName) {
+        return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + "@@" + serviceName
+                : String.valueOf(System.currentTimeMillis());
     }
     
     private void initRefreshTask() {
@@ -653,11 +658,6 @@ public class NamingProxy implements Closeable {
         header.addParam(HttpHeaderConsts.REQUEST_ID, UuidUtils.generateUuid());
         header.addParam(HttpHeaderConsts.REQUEST_MODULE, "Naming");
         return header;
-    }
-    
-    private static String getSignData(String serviceName) {
-        return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + "@@" + serviceName
-                : String.valueOf(System.currentTimeMillis());
     }
     
     public String getAccessKey() {

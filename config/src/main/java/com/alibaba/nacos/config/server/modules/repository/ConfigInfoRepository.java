@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.repository;
 
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfoEntity;
@@ -24,15 +25,16 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import java.util.List;
 
 /**
+ * ConfigInfoRepository.
+ *
  * @author Nacos
  */
-public interface ConfigInfoRepository extends PagingAndSortingRepository<ConfigInfoEntity, Long>,
-    JpaSpecificationExecutor<ConfigInfoEntity>,
-    QuerydslPredicateExecutor<ConfigInfoEntity> {
-
+public interface ConfigInfoRepository
+        extends PagingAndSortingRepository<ConfigInfoEntity, Long>, JpaSpecificationExecutor<ConfigInfoEntity>, QuerydslPredicateExecutor<ConfigInfoEntity> {
+    
     List<ConfigInfoEntity> findByDataIdAndGroupIdAndTenantId(String dataId, String groupId, String tenantId);
-
+    
     @Query(value = "SELECT max(id) FROM config_info", nativeQuery = true)
     Long findConfigMaxId();
-
+    
 }

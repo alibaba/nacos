@@ -45,13 +45,13 @@ import java.util.concurrent.locks.ReentrantLock;
 @Component
 public class SwitchManager implements RecordListener<SwitchDomain> {
     
+    ReentrantLock lock = new ReentrantLock();
+    
     @Autowired
     private SwitchDomain switchDomain;
     
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
-    
-    ReentrantLock lock = new ReentrantLock();
     
     /**
      * Init switch manager.

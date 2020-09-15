@@ -37,7 +37,21 @@ import java.io.InputStream;
  */
 public class LocalConfigInfoProcessor {
     
+    public static final String LOCAL_FILEROOT_PATH;
+    
+    public static final String LOCAL_SNAPSHOT_PATH;
+    
     private static final Logger LOGGER = LogUtils.logger(LocalConfigInfoProcessor.class);
+    
+    static {
+        LOCAL_FILEROOT_PATH =
+                System.getProperty("JM.LOG.PATH", System.getProperty("user.home")) + File.separator + "nacos"
+                        + File.separator + "config";
+        LOCAL_SNAPSHOT_PATH =
+                System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator + "nacos"
+                        + File.separator + "config";
+        LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
+    }
     
     public static String getFailover(String serverName, String dataId, String group, String tenant) {
         File localPath = getFailoverFile(serverName, dataId, group, tenant);
@@ -196,20 +210,6 @@ public class LocalConfigInfoProcessor {
         }
         
         return new File(new File(tmp, group), dataId);
-    }
-    
-    public static final String LOCAL_FILEROOT_PATH;
-    
-    public static final String LOCAL_SNAPSHOT_PATH;
-    
-    static {
-        LOCAL_FILEROOT_PATH =
-                System.getProperty("JM.LOG.PATH", System.getProperty("user.home")) + File.separator + "nacos"
-                        + File.separator + "config";
-        LOCAL_SNAPSHOT_PATH =
-                System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator + "nacos"
-                        + File.separator + "config";
-        LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
     
 }

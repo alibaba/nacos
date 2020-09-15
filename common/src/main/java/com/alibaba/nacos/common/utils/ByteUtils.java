@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.common.utils;
 
-import java.nio.charset.Charset;
-
 import com.alibaba.nacos.api.common.Constants;
+
+import java.nio.charset.Charset;
 
 /**
  * ByteUtils.

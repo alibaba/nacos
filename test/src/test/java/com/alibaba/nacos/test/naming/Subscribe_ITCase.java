@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.Nacos;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.databind.JsonNode;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,14 +47,17 @@ import java.util.concurrent.TimeUnit;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class Subscribe_ITCase extends RestAPI_ITCase {
-
+    
     private NamingService naming;
+    
     @LocalServerPort
     private int port;
-
+    
+    private volatile List<Instance> instances = Collections.emptyList();
+    
     @Before
     public void init() throws Exception {
         NamingBase.prepareServer(port);
@@ -71,9 +74,7 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
             break;
         }
     }
-
-    private volatile List<Instance> instances = Collections.emptyList();
-
+    
     /**
      * 添加IP，收到通知
      *
@@ -82,7 +83,7 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
     @Test
     public void subscribeAdd() throws Exception {
         String serviceName = randomDomainName();
-
+    
         naming.subscribe(serviceName, new EventListener() {
             @Override
             public void onEvent(Event event) {
@@ -91,16 +92,16 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
-
+    
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-
+    
         while (instances.isEmpty()) {
             Thread.sleep(1000L);
         }
-
+    
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
-
+    
     /**
      * 删除IP，收到通知
      *
@@ -111,12 +112,12 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c1");
-
+    
         TimeUnit.SECONDS.sleep(3);
-
+    
         naming.subscribe(serviceName, new EventListener() {
             int index = 0;
-
+        
             @Override
             public void onEvent(Event event) {
                 if (index == 0) {
@@ -128,16 +129,16 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
-
+    
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-
+    
         while (instances.isEmpty()) {
             Thread.sleep(1000L);
         }
-
+    
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
-
+    
     /**
      * 添加不可用IP，收到通知
      *
@@ -146,7 +147,7 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
     @Test
     public void subscribeUnhealthy() throws Exception {
         String serviceName = randomDomainName();
-
+    
         naming.subscribe(serviceName, new EventListener() {
             @Override
             public void onEvent(Event event) {
@@ -155,21 +156,21 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
-
+    
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
-
+    
         while (instances.isEmpty()) {
             Thread.sleep(1000L);
         }
-
+    
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
-
-    @Test(timeout = 20*TIME_OUT)
+    
+    @Test(timeout = 20 * TIME_OUT)
     public void subscribeEmpty() throws Exception {
-
+        
         String serviceName = randomDomainName();
-
+        
         naming.subscribe(serviceName, new EventListener() {
             @Override
             public void onEvent(Event event) {
@@ -178,32 +179,32 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
-
+        
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
-
+        
         while (instances.isEmpty()) {
             Thread.sleep(1000L);
         }
-
+        
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
-
+        
         naming.deregisterInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
-
+        
         while (!instances.isEmpty()) {
             Thread.sleep(1000L);
         }
-
+        
         Assert.assertEquals(0, instances.size());
         Assert.assertEquals(0, naming.getAllInstances(serviceName).size());
     }
-
+    
     @Test
     public void querySubscribers() throws Exception {
-
+        
         String serviceName = randomDomainName();
-
+        
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
-
+        
         EventListener listener = new EventListener() {
             @Override
             public void onEvent(Event event) {
@@ -212,27 +213,22 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         };
-
+        
         naming.subscribe(serviceName, listener);
-
+        
         TimeUnit.SECONDS.sleep(3);
-
+        
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/subscribers",
-            Params.newParams()
-                .appendParam("serviceName", serviceName)
-                .appendParam("pageNo", "1")
-                .appendParam("pageSize", "10")
-                .done(),
-            String.class,
-            HttpMethod.GET);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("pageNo", "1")
+                        .appendParam("pageSize", "10").done(), String.class, HttpMethod.GET);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
+        
         JsonNode body = JacksonUtils.toObj(response.getBody());
-
+        
         Assert.assertEquals(1, body.get("subscribers").size());
-
+        
         NamingService naming2 = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-
+        
         naming2.subscribe(serviceName, new EventListener() {
             @Override
             public void onEvent(Event event) {
@@ -241,22 +237,17 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
-
+        
         TimeUnit.SECONDS.sleep(3);
-
+        
         response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/subscribers",
-            Params.newParams()
-                .appendParam("serviceName", serviceName)
-                .appendParam("pageNo", "1")
-                .appendParam("pageSize", "10")
-                .done(),
-            String.class,
-            HttpMethod.GET);
+                Params.newParams().appendParam("serviceName", serviceName).appendParam("pageNo", "1")
+                        .appendParam("pageSize", "10").done(), String.class, HttpMethod.GET);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
+        
         body = JacksonUtils.toObj(response.getBody());
-
+        
         Assert.assertEquals(2, body.get("subscribers").size());
     }
-
+    
 }

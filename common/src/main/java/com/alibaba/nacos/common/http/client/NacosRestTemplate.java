@@ -428,6 +428,15 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     }
     
     /**
+     * Return the request interceptors that this accessor uses.
+     *
+     * <p>The returned {@link List} is active and may get appended to.
+     */
+    public List<HttpClientRequestInterceptor> getInterceptors() {
+        return interceptors;
+    }
+    
+    /**
      * Set the request interceptors that this accessor should use.
      *
      * @param interceptors {@link HttpClientRequestInterceptor}
@@ -437,15 +446,6 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
             this.interceptors.clear();
             this.interceptors.addAll(interceptors);
         }
-    }
-    
-    /**
-     * Return the request interceptors that this accessor uses.
-     *
-     * <p>The returned {@link List} is active and may get appended to.
-     */
-    public List<HttpClientRequestInterceptor> getInterceptors() {
-        return interceptors;
     }
     
     @SuppressWarnings("unchecked")

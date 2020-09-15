@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.repository;
 
 import com.alibaba.nacos.config.server.modules.entity.UsersEntity;
@@ -20,9 +21,11 @@ import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
+ * UsersRepository.
+ *
  * @author Nacos
  */
-public interface UsersRepository extends PagingAndSortingRepository<UsersEntity, String>,
-    QuerydslPredicateExecutor<UsersEntity> {
-
+public interface UsersRepository
+        extends PagingAndSortingRepository<UsersEntity, String>, QuerydslPredicateExecutor<UsersEntity> {
+    
 }

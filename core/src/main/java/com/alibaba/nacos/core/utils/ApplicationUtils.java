@@ -97,6 +97,8 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory
             .getOperatingSystemMXBean();
     
+    private static String nacosTmpDir;
+    
     public static String getId() {
         return applicationContext.getId();
     }
@@ -392,8 +394,6 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
         }
         return functionModeType;
     }
-    
-    private static String nacosTmpDir;
     
     public static String getNacosTmpDir() {
         if (StringUtils.isBlank(nacosTmpDir)) {

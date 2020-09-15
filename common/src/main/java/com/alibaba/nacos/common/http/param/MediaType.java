@@ -23,9 +23,6 @@ package com.alibaba.nacos.common.http.param;
  */
 public final class MediaType {
     
-    private MediaType() {
-    }
-    
     public static final String APPLICATION_ATOM_XML = "application/atom+xml";
     
     public static final String APPLICATION_FORM_URLENCODED = "application/x-www-form-urlencoded";
@@ -45,5 +42,8 @@ public final class MediaType {
     public static final String TEXT_HTML = "text/html";
     
     public static final String TEXT_PLAIN = "text/plain";
+    
+    private MediaType() {
+    }
     
 }

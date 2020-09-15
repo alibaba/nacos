@@ -34,6 +34,8 @@ import java.util.concurrent.TimeUnit;
  */
 public final class RaftExecutor {
     
+    private static final String OWNER = ClassUtils.getCanonicalName(JRaftServer.class);
+    
     private static ExecutorService raftCoreExecutor;
     
     private static ExecutorService raftCliServiceExecutor;
@@ -41,8 +43,6 @@ public final class RaftExecutor {
     private static ScheduledExecutorService raftCommonExecutor;
     
     private static ExecutorService raftSnapshotExecutor;
-    
-    private static final String OWNER = ClassUtils.getCanonicalName(JRaftServer.class);
     
     private RaftExecutor() {
     }
@@ -69,9 +69,9 @@ public final class RaftExecutor {
         
         int snapshotNum = raftCoreThreadNum / 2;
         snapshotNum = snapshotNum == 0 ? raftCoreThreadNum : snapshotNum;
-        
+    
         raftSnapshotExecutor = ExecutorFactory.Managed.newFixedExecutorService(OWNER, snapshotNum,
-                        new NameThreadFactory("com.alibaba.naocs.core.raft-snapshot"));
+                new NameThreadFactory("com.alibaba.naocs.core.raft-snapshot"));
         
     }
     

@@ -38,15 +38,15 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implements NacosTaskExecuteEngine<T> {
     
+    protected final ConcurrentHashMap<Object, T> tasks;
+    
+    protected final ReentrantLock lock = new ReentrantLock();
+    
     private final Logger log;
     
     private final ScheduledExecutorService processingExecutor;
     
     private final ConcurrentHashMap<Object, NacosTaskProcessor> taskProcessors = new ConcurrentHashMap<Object, NacosTaskProcessor>();
-    
-    protected final ConcurrentHashMap<Object, T> tasks;
-    
-    protected final ReentrantLock lock = new ReentrantLock();
     
     private NacosTaskProcessor defaultTaskProcessor;
     
@@ -70,7 +70,8 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
         this.log = null != logger ? logger : LoggerFactory.getLogger(AbstractNacosTaskExecuteEngine.class.getName());
         tasks = new ConcurrentHashMap<Object, T>(initCapacity);
         processingExecutor = ExecutorFactory.newSingleScheduledExecutorService(new NameThreadFactory(name));
-        processingExecutor.scheduleWithFixedDelay(new ProcessRunnable(), processInterval, processInterval, TimeUnit.MILLISECONDS);
+        processingExecutor
+                .scheduleWithFixedDelay(new ProcessRunnable(), processInterval, processInterval, TimeUnit.MILLISECONDS);
     }
     
     @Override

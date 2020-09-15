@@ -69,13 +69,90 @@ public class ServerHttpAgent implements HttpAgent {
     private static final NacosRestTemplate NACOS_RESTTEMPLATE = ConfigHttpClientManager.getInstance()
             .getNacosRestTemplate();
     
+    final ServerListManager serverListMgr;
+    
+    private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
+    
     private SecurityProxy securityProxy;
     
     private String namespaceId;
     
-    private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
-    
     private ScheduledExecutorService executorService;
+    
+    private String accessKey;
+    
+    private String secretKey;
+    
+    private String encode;
+    
+    private int maxRetry = 3;
+    
+    private volatile StsCredential stsCredential;
+    
+    public ServerHttpAgent(ServerListManager mgr) {
+        this.serverListMgr = mgr;
+    }
+    
+    public ServerHttpAgent(ServerListManager mgr, Properties properties) {
+        this.serverListMgr = mgr;
+        init(properties);
+    }
+    
+    public ServerHttpAgent(Properties properties) throws NacosException {
+        this.serverListMgr = new ServerListManager(properties);
+        this.securityProxy = new SecurityProxy(properties, NACOS_RESTTEMPLATE);
+        this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        init(properties);
+        this.securityProxy.login(this.serverListMgr.getServerUrls());
+        
+        // init executorService
+        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.config.security.updater");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+        
+        this.executorService.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                securityProxy.login(serverListMgr.getServerUrls());
+            }
+        }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+        
+    }
+    
+    public static String getAppname() {
+        return ParamUtil.getAppName();
+    }
+    
+    private static String getStsResponse() throws Exception {
+        String securityCredentials = StsConfig.getInstance().getSecurityCredentials();
+        if (securityCredentials != null) {
+            return securityCredentials;
+        }
+        String securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
+        try {
+            HttpRestResult<String> result = NACOS_RESTTEMPLATE
+                    .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
+            
+            if (!result.ok()) {
+                LOGGER.error(
+                        "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
+                        securityCredentialsUrl, result.getCode(), result.getMessage());
+                throw new NacosException(NacosException.SERVER_ERROR,
+                        "can not get security credentials, responseCode: " + result.getCode() + ", response: " + result
+                                .getMessage());
+            }
+            return result.getData();
+        } catch (Exception e) {
+            LOGGER.error("can not get security credentials", e);
+            throw e;
+        }
+    }
     
     @Override
     public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
@@ -223,8 +300,7 @@ public class ServerHttpAgent implements HttpAgent {
                 LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}",
                         serverListMgr.getCurrentServerAddr(), ExceptionUtil.getStackTrace(stoe));
             } catch (Exception ex) {
-                LOGGER.error(
-                        "[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
+                LOGGER.error("[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
                         ex);
                 throw ex;
             }
@@ -256,46 +332,6 @@ public class ServerHttpAgent implements HttpAgent {
         return result.getCode() == HttpURLConnection.HTTP_INTERNAL_ERROR
                 || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
                 || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE;
-    }
-    
-    public static String getAppname() {
-        return ParamUtil.getAppName();
-    }
-    
-    public ServerHttpAgent(ServerListManager mgr) {
-        this.serverListMgr = mgr;
-    }
-    
-    public ServerHttpAgent(ServerListManager mgr, Properties properties) {
-        this.serverListMgr = mgr;
-        init(properties);
-    }
-    
-    public ServerHttpAgent(Properties properties) throws NacosException {
-        this.serverListMgr = new ServerListManager(properties);
-        this.securityProxy = new SecurityProxy(properties, NACOS_RESTTEMPLATE);
-        this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        init(properties);
-        this.securityProxy.login(this.serverListMgr.getServerUrls());
-        
-        // init executorService
-        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.config.security.updater");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-        
-        this.executorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                securityProxy.login(serverListMgr.getServerUrls());
-            }
-        }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-        
     }
     
     private void injectSecurityInfo(Map<String, String> params) {
@@ -403,31 +439,6 @@ public class ServerHttpAgent implements HttpAgent {
         return stsCredential;
     }
     
-    private static String getStsResponse() throws Exception {
-        String securityCredentials = StsConfig.getInstance().getSecurityCredentials();
-        if (securityCredentials != null) {
-            return securityCredentials;
-        }
-        String securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
-        try {
-            HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                    .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
-            
-            if (!result.ok()) {
-                LOGGER.error(
-                        "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
-                        securityCredentialsUrl, result.getCode(), result.getMessage());
-                throw new NacosException(NacosException.SERVER_ERROR,
-                        "can not get security credentials, responseCode: " + result.getCode() + ", response: " + result
-                                .getMessage());
-            }
-            return result.getData();
-        } catch (Exception e) {
-            LOGGER.error("can not get security credentials", e);
-            throw e;
-        }
-    }
-    
     @Override
     public String getName() {
         return serverListMgr.getName();
@@ -500,17 +511,5 @@ public class ServerHttpAgent implements HttpAgent {
                     + ", lastUpdated=" + lastUpdated + ", code='" + code + '\'' + '}';
         }
     }
-    
-    private String accessKey;
-    
-    private String secretKey;
-    
-    private String encode;
-    
-    private int maxRetry = 3;
-    
-    private volatile StsCredential stsCredential;
-    
-    final ServerListManager serverListMgr;
     
 }

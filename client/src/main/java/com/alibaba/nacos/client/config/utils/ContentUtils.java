@@ -27,6 +27,8 @@ import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
  */
 public class ContentUtils {
     
+    private static final int SHOW_CONTENT_SIZE = 100;
+    
     /**
      * Verify increment pub content.
      *
@@ -80,6 +82,4 @@ public class ContentUtils {
             return content.substring(0, SHOW_CONTENT_SIZE) + "...";
         }
     }
-    
-    private static final int SHOW_CONTENT_SIZE = 100;
 }

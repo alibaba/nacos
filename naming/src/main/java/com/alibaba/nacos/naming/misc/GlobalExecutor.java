@@ -46,10 +46,14 @@ public class GlobalExecutor {
     
     public static final long TICK_PERIOD_MS = TimeUnit.MILLISECONDS.toMillis(500L);
     
-    private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
-    
     public static final int DEFAULT_THREAD_COUNT =
             Runtime.getRuntime().availableProcessors() <= 1 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
+    
+    public static final ScheduledExecutorService SERVICE_UPDATE_MANAGER_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.service.update.processor"));
+    
+    private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
     
     private static final ScheduledExecutorService NAMING_TIMER_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
@@ -63,10 +67,6 @@ public class GlobalExecutor {
     private static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.service.worker"));
-    
-    public static final ScheduledExecutorService SERVICE_UPDATE_MANAGER_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.naming.service.update.processor"));
     
     /**
      * thread pool that processes getting service detail from other server asynchronously.

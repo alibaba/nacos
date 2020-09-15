@@ -27,21 +27,20 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 /**
+ * ConfigInfoMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface ConfigInfoMapStruct {
-
+    
     ConfigInfoMapStruct INSTANCE = Mappers.getMapper(ConfigInfoMapStruct.class);
-
-    @Mappings({
-        @Mapping(target = "group", source = "groupId"),
-        @Mapping(target = "tenant", source = "tenantId")
-    })
+    
+    @Mappings({@Mapping(target = "group", source = "groupId"), @Mapping(target = "tenant", source = "tenantId")})
     ConfigInfo convertConfigInfo(ConfigInfoEntity configInfoEntity);
-
+    
     List<ConfigInfo> convertConfigInfoList2(List<ConfigInfoEntity> list);
-
+    
     List<ConfigInfo> convertConfigInfoList(List<HisConfigInfoEntity> list);
-
+    
 }

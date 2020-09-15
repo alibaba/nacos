@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
@@ -23,19 +24,17 @@ import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
 
 /**
+ * ConfigAdvanceInfoMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface ConfigAdvanceInfoMapStruct {
-
+    
     ConfigAdvanceInfoMapStruct INSTANCE = Mappers.getMapper(ConfigAdvanceInfoMapStruct.class);
-
-    @Mappings({
-        @Mapping(target = "createUser", source = "srcUser"),
-        @Mapping(target = "createIp", source = "srcIp"),
-        @Mapping(target = "desc", source = "CDesc"),
-        @Mapping(target = "use", source = "CUse"),
-        @Mapping(target = "schema", source = "CSchema")
-    })
+    
+    @Mappings({@Mapping(target = "createUser", source = "srcUser"), @Mapping(target = "createIp", source = "srcIp"),
+            @Mapping(target = "desc", source = "CDesc"), @Mapping(target = "use", source = "CUse"),
+            @Mapping(target = "schema", source = "CSchema")})
     ConfigAdvanceInfo convertConfigAdvanceInfo(ConfigInfoEntity configInfoEntity);
 }

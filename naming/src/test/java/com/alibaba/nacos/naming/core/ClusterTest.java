@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchDomain.TcpHealthParams;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

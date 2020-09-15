@@ -23,9 +23,9 @@ package com.alibaba.nacos.api.exception.runtime;
  */
 public class NacosRuntimeException extends RuntimeException {
     
-    private static final long serialVersionUID = 3513491993982293262L;
-    
     public static final String ERROR_MESSAGE_FORMAT = "errCode: %d, errMsg: %s ";
+    
+    private static final long serialVersionUID = 3513491993982293262L;
     
     private int errCode;
     

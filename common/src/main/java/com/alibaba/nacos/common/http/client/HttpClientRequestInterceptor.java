@@ -32,16 +32,16 @@ public interface HttpClientRequestInterceptor {
     /**
      * is intercept.
      *
-     * @param uri uri
-     * @param httpMethod http method
+     * @param uri               uri
+     * @param httpMethod        http method
      * @param requestHttpEntity request entity
      * @return boolean
      */
     boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity);
     
     /**
-     * if isIntercept method is true Intercept the given request, and return a response Otherwise,
-     * the {@link HttpClientRequest} will be used for execution.
+     * if isIntercept method is true Intercept the given request, and return a response Otherwise, the {@link
+     * HttpClientRequest} will be used for execution.
      *
      * @return HttpClientResponse
      */

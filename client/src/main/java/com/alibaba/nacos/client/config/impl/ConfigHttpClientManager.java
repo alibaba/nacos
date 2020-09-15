@@ -64,11 +64,6 @@ public class ConfigHttpClientManager implements Closeable {
         NACOS_REST_TEMPLATE.getInterceptors().add(new LimiterHttpClientRequestInterceptor());
     }
     
-    private static class ConfigHttpClientManagerInstance {
-        
-        private static final ConfigHttpClientManager INSTANCE = new ConfigHttpClientManager();
-    }
-    
     public static ConfigHttpClientManager getInstance() {
         return ConfigHttpClientManagerInstance.INSTANCE;
     }
@@ -104,6 +99,11 @@ public class ConfigHttpClientManager implements Closeable {
         return NACOS_REST_TEMPLATE;
     }
     
+    private static class ConfigHttpClientManagerInstance {
+        
+        private static final ConfigHttpClientManager INSTANCE = new ConfigHttpClientManager();
+    }
+    
     /**
      * ConfigHttpClientFactory.
      */
@@ -128,7 +128,8 @@ public class ConfigHttpClientManager implements Closeable {
         
         @Override
         public boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) {
-            final String body = requestHttpEntity.getBody() == null ? "" : JacksonUtils.toJson(requestHttpEntity.getBody());
+            final String body =
+                    requestHttpEntity.getBody() == null ? "" : JacksonUtils.toJson(requestHttpEntity.getBody());
             return Limiter.isLimit(MD5Utils.md5Hex(uri + body, Constants.ENCODE));
         }
         

@@ -31,9 +31,9 @@ import java.util.Enumeration;
  */
 public class SystemConfig {
     
-    public static final String LOCAL_IP = getHostAddress();
-    
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemConfig.class);
+    
+    public static final String LOCAL_IP = getHostAddress();
     
     private static String getHostAddress() {
         String address = System.getProperty("nacos.server.ip");

@@ -25,8 +25,8 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 
 /**
- * ConfigInfoBase.
- * And can't add field, to compatible with old interface(If adding a field, then it will occour compatibility problems).
+ * ConfigInfoBase. And can't add field, to compatible with old interface(If adding a field, then it will occour
+ * compatibility problems).
  *
  * @author Nacos
  */

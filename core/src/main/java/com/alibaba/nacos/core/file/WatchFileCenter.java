@@ -64,6 +64,12 @@ public class WatchFileCenter {
     
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
     
+    /**
+     * The number of directories that are currently monitored.
+     */
+    @SuppressWarnings("checkstyle:StaticVariableName")
+    private static int NOW_WATCH_JOB_CNT = 0;
+    
     static {
         ThreadUtils.addShutdownHook(new Runnable() {
             @Override
@@ -72,12 +78,6 @@ public class WatchFileCenter {
             }
         });
     }
-    
-    /**
-     * The number of directories that are currently monitored.
-     */
-    @SuppressWarnings("checkstyle:StaticVariableName")
-    private static int NOW_WATCH_JOB_CNT = 0;
     
     /**
      * Register {@link FileWatcher} in this directory.
@@ -155,11 +155,17 @@ public class WatchFileCenter {
         return false;
     }
     
+    private static void checkState() {
+        if (CLOSED.get()) {
+            throw new IllegalStateException("WatchFileCenter already shutdown");
+        }
+    }
+    
     private static class WatchDirJob extends Thread {
         
-        private ExecutorService callBackExecutor;
-        
         private final String paths;
+        
+        private ExecutorService callBackExecutor;
         
         private WatchService watchService;
         
@@ -269,11 +275,5 @@ public class WatchFileCenter {
             }
         }
         
-    }
-    
-    private static void checkState() {
-        if (CLOSED.get()) {
-            throw new IllegalStateException("WatchFileCenter already shutdown");
-        }
     }
 }

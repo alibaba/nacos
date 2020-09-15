@@ -38,6 +38,14 @@ public class DistroHttpCombinedKey extends DistroKey {
         super(DistroHttpCombinedKey.getSequenceKey(), resourceType, targetServer);
     }
     
+    public static String getSequenceKey() {
+        return DistroHttpCombinedKey.class.getSimpleName() + "-" + SEQUENCE.get();
+    }
+    
+    public static void incrementSequence() {
+        SEQUENCE.incrementAndGet();
+    }
+    
     public List<String> getActualResourceTypes() {
         return actualResourceTypes;
     }
@@ -54,10 +62,10 @@ public class DistroHttpCombinedKey extends DistroKey {
             return false;
         }
         DistroHttpCombinedKey that = (DistroHttpCombinedKey) o;
-        return Objects.equals(getResourceKey(), that.getResourceKey())
-                && Objects.equals(getResourceType(), that.getResourceType())
-                && Objects.equals(getTargetServer(), that.getTargetServer())
-                && Objects.equals(actualResourceTypes, that.actualResourceTypes);
+        return Objects.equals(getResourceKey(), that.getResourceKey()) && Objects
+                .equals(getResourceType(), that.getResourceType()) && Objects
+                .equals(getTargetServer(), that.getTargetServer()) && Objects
+                .equals(actualResourceTypes, that.actualResourceTypes);
     }
     
     @Override
@@ -68,13 +76,5 @@ public class DistroHttpCombinedKey extends DistroKey {
     @Override
     public String toString() {
         return getResourceKey() + "{" + "actualResourceTypes=" + actualResourceTypes + "} to " + getTargetServer();
-    }
-    
-    public static String getSequenceKey() {
-        return DistroHttpCombinedKey.class.getSimpleName() + "-" + SEQUENCE.get();
-    }
-    
-    public static void incrementSequence() {
-        SEQUENCE.incrementAndGet();
     }
 }

@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class MemoryMonitor {
     
+    private static final long DELAY_SECONDS = 10;
+    
     @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
         
@@ -45,8 +47,6 @@ public class MemoryMonitor {
                         TimeUnit.SECONDS);
         
     }
-    
-    private static final long DELAY_SECONDS = 10;
     
     @Scheduled(cron = "0 0 0 * * ?")
     public void clear() {

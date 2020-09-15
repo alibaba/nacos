@@ -52,12 +52,6 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
     
     public static final String TYPE = "MYSQL";
     
-    @Autowired
-    private HealthCheckCommon healthCheckCommon;
-    
-    @Autowired
-    private SwitchDomain switchDomain;
-    
     public static final int CONNECT_TIMEOUT_MS = 500;
     
     private static final String CHECK_MYSQL_MASTER_SQL = "show global variables where variable_name='read_only'";
@@ -65,6 +59,12 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
     private static final String MYSQL_SLAVE_READONLY = "ON";
     
     private static final ConcurrentMap<String, Connection> CONNECTION_POOL = new ConcurrentHashMap<String, Connection>();
+    
+    @Autowired
+    private HealthCheckCommon healthCheckCommon;
+    
+    @Autowired
+    private SwitchDomain switchDomain;
     
     public MysqlHealthCheckProcessor() {
     }

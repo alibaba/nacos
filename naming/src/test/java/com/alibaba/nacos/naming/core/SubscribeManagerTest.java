@@ -73,7 +73,7 @@ public class SubscribeManagerTest extends BaseTest {
             Assert.assertEquals(1, list.size());
             Assert.assertEquals("public", list.get(0).getNamespaceId());
         } catch (Exception ignored) {
-        
+    
         }
     }
     
@@ -93,7 +93,7 @@ public class SubscribeManagerTest extends BaseTest {
             Assert.assertEquals(1, list.size());
             Assert.assertEquals("testGroupName@@test_subscriber", list.get(0).getServiceName());
         } catch (Exception ignored) {
-        
+    
         }
     }
     
@@ -129,7 +129,7 @@ public class SubscribeManagerTest extends BaseTest {
             Assert.assertEquals(2, list.size());
             Assert.assertEquals("public", list.get(0).getNamespaceId());
         } catch (Exception ignored) {
-        
+    
         }
     }
 }

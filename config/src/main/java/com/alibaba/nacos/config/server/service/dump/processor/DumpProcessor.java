@@ -39,6 +39,8 @@ import java.util.Objects;
  */
 public class DumpProcessor implements NacosTaskProcessor {
     
+    final DumpService dumpService;
+    
     public DumpProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
     }
@@ -88,6 +90,4 @@ public class DumpProcessor implements NacosTaskProcessor {
             }
         }
     }
-    
-    final DumpService dumpService;
 }

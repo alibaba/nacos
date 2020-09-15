@@ -52,6 +52,10 @@ public class RestResult<T> implements Serializable {
         this.setMessage(message);
     }
     
+    public static <T> ResResultBuilder<T> builder() {
+        return new ResResultBuilder<T>();
+    }
+    
     public int getCode() {
         return code;
     }
@@ -83,10 +87,6 @@ public class RestResult<T> implements Serializable {
     @Override
     public String toString() {
         return "RestResult{" + "code=" + code + ", message='" + message + '\'' + ", data=" + data + '}';
-    }
-    
-    public static <T> ResResultBuilder<T> builder() {
-        return new ResResultBuilder<T>();
     }
     
     public static final class ResResultBuilder<T> {

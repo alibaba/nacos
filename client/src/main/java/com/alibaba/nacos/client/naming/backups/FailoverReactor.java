@@ -52,11 +52,17 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class FailoverReactor implements Closeable {
     
+    private static final long DAY_PERIOD_MINUTES = 24 * 60;
+    
     private final String failoverDir;
     
     private final HostReactor hostReactor;
     
     private final ScheduledExecutorService executorService;
+    
+    private final Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
+    
+    private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
     
     public FailoverReactor(HostReactor hostReactor, String cacheDir) {
         this.hostReactor = hostReactor;
@@ -73,12 +79,6 @@ public class FailoverReactor implements Closeable {
         });
         this.init();
     }
-    
-    private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
-    
-    private final Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
-    
-    private static final long DAY_PERIOD_MINUTES = 24 * 60;
     
     /**
      * Init.
@@ -132,6 +132,21 @@ public class FailoverReactor implements Closeable {
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
+    
+    public boolean isFailoverSwitch() {
+        return Boolean.parseBoolean(switchParams.get("failover-mode"));
+    }
+    
+    public ServiceInfo getService(String key) {
+        ServiceInfo serviceInfo = serviceMap.get(key);
+        
+        if (serviceInfo == null) {
+            serviceInfo = new ServiceInfo();
+            serviceInfo.setName(key);
+        }
+        
+        return serviceInfo;
     }
     
     class SwitchRefresher implements Runnable {
@@ -266,20 +281,5 @@ public class FailoverReactor implements Closeable {
                 DiskCache.write(serviceInfo, failoverDir);
             }
         }
-    }
-    
-    public boolean isFailoverSwitch() {
-        return Boolean.parseBoolean(switchParams.get("failover-mode"));
-    }
-    
-    public ServiceInfo getService(String key) {
-        ServiceInfo serviceInfo = serviceMap.get(key);
-        
-        if (serviceInfo == null) {
-            serviceInfo = new ServiceInfo();
-            serviceInfo.setName(key);
-        }
-        
-        return serviceInfo;
     }
 }

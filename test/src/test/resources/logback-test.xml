@@ -16,17 +16,17 @@
   -->
 
 <configuration>
-
+    
     <!--<appender name="DefaultAppender" class="ch.qos.logback.core.ConsoleAppender">-->
-        <!--<append>true</append>-->
-        <!--<encoder>-->
-            <!--<pattern>%d{yyy-MM-dd HH\:mm\:ss,GMT+8} %p %t - %m%n</pattern>-->
-            <!--<charset class="java.nio.charset.Charset">UTF-8</charset>-->
-        <!--</encoder>-->
+    <!--<append>true</append>-->
+    <!--<encoder>-->
+    <!--<pattern>%d{yyy-MM-dd HH\:mm\:ss,GMT+8} %p %t - %m%n</pattern>-->
+    <!--<charset class="java.nio.charset.Charset">UTF-8</charset>-->
+    <!--</encoder>-->
     <!--</appender>-->
-
+    
     <!--<root>-->
-        <!--<level value="OFF"/>-->
-        <!--<appender-ref ref="DefaultAppender"/>-->
+    <!--<level value="OFF"/>-->
+    <!--<appender-ref ref="DefaultAppender"/>-->
     <!--</root>-->
 </configuration>

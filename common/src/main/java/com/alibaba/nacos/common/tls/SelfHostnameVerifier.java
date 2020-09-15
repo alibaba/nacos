@@ -34,25 +34,14 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SelfHostnameVerifier.class);
     
-    private final HostnameVerifier hv;
+    private static final String[] LOCALHOST_HOSTNAME = new String[] {"localhost", "127.0.0.1"};
     
     private static ConcurrentHashMap<String, Boolean> hosts = new ConcurrentHashMap<String, Boolean>();
     
-    private static final String[] LOCALHOST_HOSTNAME = new String[] {"localhost", "127.0.0.1"};
+    private final HostnameVerifier hv;
     
     public SelfHostnameVerifier(HostnameVerifier hv) {
         this.hv = hv;
-    }
-    
-    @Override
-    public boolean verify(String hostname, SSLSession session) {
-        if (LOCALHOST_HOSTNAME[0].equalsIgnoreCase(hostname) || LOCALHOST_HOSTNAME[1].equals(hostname)) {
-            return true;
-        }
-        if (isIpv4(hostname)) {
-            return true;
-        }
-        return hv.verify(hostname, session);
     }
     
     private static boolean isIpv4(String host) {
@@ -67,5 +56,16 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
         boolean isIp = IpUtils.isIpv4(host);
         hosts.putIfAbsent(host, isIp);
         return isIp;
+    }
+    
+    @Override
+    public boolean verify(String hostname, SSLSession session) {
+        if (LOCALHOST_HOSTNAME[0].equalsIgnoreCase(hostname) || LOCALHOST_HOSTNAME[1].equals(hostname)) {
+            return true;
+        }
+        if (isIpv4(hostname)) {
+            return true;
+        }
+        return hv.verify(hostname, session);
     }
 }

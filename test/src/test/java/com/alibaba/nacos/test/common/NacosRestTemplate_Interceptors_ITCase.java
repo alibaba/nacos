@@ -55,15 +55,35 @@ import java.util.Map;
 @FixMethodOrder(MethodSorters.JVM)
 public class NacosRestTemplate_Interceptors_ITCase {
     
+    private final String CONFIG_PATH = "/nacos/v1/cs";
+    
     @LocalServerPort
     private int port;
     
     private NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder
             .getNacosRestTemplate(LoggerFactory.getLogger(NacosRestTemplate_Interceptors_ITCase.class));
     
-    private final String CONFIG_PATH = "/nacos/v1/cs";
-    
     private String IP = null;
+    
+    @Before
+    public void init() throws NacosException {
+        nacosRestTemplate.setInterceptors(Arrays.asList(new TerminationInterceptor()));
+        IP = String.format("http://localhost:%d", port);
+    }
+    
+    @Test
+    public void test_url_post_config() throws Exception {
+        String url = IP + CONFIG_PATH + "/configs";
+        Map<String, String> param = new HashMap<>();
+        param.put("dataId", "test-1");
+        param.put("group", "DEFAULT_GROUP");
+        param.put("content", "aaa=b");
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.newInstance(), param, String.class);
+        Assert.assertEquals(500, restResult.getCode());
+        Assert.assertEquals("Stop request", restResult.getData());
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
+    }
     
     private class TerminationInterceptor implements HttpClientRequestInterceptor {
         
@@ -92,7 +112,7 @@ public class NacosRestTemplate_Interceptors_ITCase {
                 
                 @Override
                 public void close() throws IOException {
-                
+    
                 }
             };
         }
@@ -102,26 +122,5 @@ public class NacosRestTemplate_Interceptors_ITCase {
             return true;
         }
         
-    }
-    
-    @Before
-    public void init() throws NacosException {
-        nacosRestTemplate.setInterceptors(Arrays.asList(new TerminationInterceptor()));
-        IP = String.format("http://localhost:%d", port);
-    }
-    
-    @Test
-    public void test_url_post_config() throws Exception {
-        String url = IP + CONFIG_PATH + "/configs";
-        Map<String, String> param = new HashMap<>();
-        param.put("dataId", "test-1");
-        param.put("group", "DEFAULT_GROUP");
-        param.put("content", "aaa=b");
-        HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), param, String.class);
-        Assert.assertEquals(500, restResult.getCode());
-        Assert.assertEquals("Stop request", restResult.getData());
-        System.out.println(restResult.getData());
-        System.out.println(restResult.getHeader());
     }
 }

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.configuration.datasource.DynamicDataSource;
-import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -27,27 +27,28 @@ import org.springframework.context.annotation.Primary;
 import javax.sql.DataSource;
 
 /**
+ * RelationalDataSourceConfiguration.
+ *
  * @author Nacos
  */
-@ConditionalOnExpression("T(com.alibaba.nacos.config.server.configuration.datasource.DataSourceType).MYSQL.matches('${nacos.datasource.type}')" +
-    " || T(com.alibaba.nacos.config.server.configuration.datasource.DataSourceType).ORACLE.matches('${nacos.datasource.type}')" +
-    " || T(com.alibaba.nacos.config.server.configuration.datasource.DataSourceType).POSTGRESQL.matches('${nacos.datasource.type}')")
+@ConditionalOnExpression(
+        "T(com.alibaba.nacos.config.server.configuration.datasource.DataSourceType).MYSQL.matches('${nacos.datasource.type}')"
+                + " || T(com.alibaba.nacos.config.server.configuration.datasource.DataSourceType).ORACLE.matches('${nacos.datasource.type}')"
+                + " || T(com.alibaba.nacos.config.server.configuration.datasource.DataSourceType).POSTGRESQL.matches('${nacos.datasource.type}')")
 @Configuration
 public class RelationalDataSourceConfiguration {
-
+    
     @Bean("nacos-db-properties")
     @ConfigurationProperties("nacos.datasource.relational")
     public DataSourceProperties dataSourceProperties() {
         return new DataSourceProperties();
     }
-
-
+    
     @Primary
     @Bean
-    public DataSource dataSource(NacosMultipleDataSourceProperties multipleDataSourceProperties, DataSourceProperties properties) {
+    public DataSource dataSource(NacosMultipleDataSourceProperties multipleDataSourceProperties,
+            DataSourceProperties properties) {
         return new DynamicDataSource(multipleDataSourceProperties, properties);
     }
-
-
-
+    
 }

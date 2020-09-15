@@ -23,11 +23,8 @@ import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.DiskUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +33,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -48,37 +44,6 @@ import java.util.concurrent.CompletableFuture;
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
         "server.port=7006"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigDerbyImport_CITCase {
-    
-    @Autowired
-    private ApplicationContext context;
-    
-    @Test()
-    public void testDerbyImport() throws Throwable {
-        DatabaseOperate operate = context.getBean(DatabaseOperate.class);
-        File file = DiskUtils.createTmpFile("derby_import" + System.currentTimeMillis(), ".tmp");
-        DiskUtils.writeFile(file, ByteUtils.toBytes(SQL_SCRIPT_CONTEXT), false);
-        try {
-            CompletableFuture<RestResult<String>> future = operate.dataImport(file);
-            RestResult<String> result = future.join();
-            System.out.println(result);
-            Assert.assertTrue(result.ok());
-    
-            final String queryDataId = "people";
-            final String queryGroup = "DEFAULT_GROUP";
-            final String expectContent = "people.enable=true";
-    
-            PersistService persistService = context.getBean(PersistService.class);
-            ConfigInfo configInfo = persistService.findConfigInfo(queryDataId, queryGroup, "");
-            System.out.println(configInfo);
-            Assert.assertNotNull(configInfo);
-            Assert.assertEquals(queryDataId, configInfo.getDataId());
-            Assert.assertEquals(queryGroup, configInfo.getGroup());
-            Assert.assertEquals("", configInfo.getTenant());
-            Assert.assertEquals(expectContent, configInfo.getContent());
-        } finally {
-            DiskUtils.deleteQuietly(file);
-        }
-    }
     
     private static String SQL_SCRIPT_CONTEXT =
             "INSERT INTO `config_info` (`id`, `data_id`, `group_id`, `content`, `md5`, `gmt_create`, `gmt_modified`, `src_user`, `src_ip`, `app_name`, `tenant_id`, `c_desc`, `c_use`, `effect`, `type`, `c_schema`) VALUES (1,'boot-test','ALIBABA','dept:123123123\\ngroup:123123123','2ca50d002a7dabf81497f666a7967e15','2020-04-13 13:44:43','2020-04-30 10:45:21',NULL,'127.0.0.1','','',NULL,NULL,NULL,NULL,NULL);\n"
@@ -99,5 +64,36 @@ public class ConfigDerbyImport_CITCase {
                     + "INSERT INTO `config_info` (`id`, `data_id`, `group_id`, `content`, `md5`, `gmt_create`, `gmt_modified`, `src_user`, `src_ip`, `app_name`, `tenant_id`, `c_desc`, `c_use`, `effect`, `type`, `c_schema`) VALUES (17,'develop_test','DEFAULT_GROUP','develop_test=develop_testdevelop_testdevelop_testdevelop_test','cc4ffd21bdd54362b84d629fd243e050','2020-04-13 13:51:48','2020-04-13 13:51:48',NULL,'127.0.0.1','','188c49ac-d06f-4abe-9d05-7bb87185ac34',NULL,NULL,NULL,'properties',NULL);\n"
                     + "INSERT INTO `config_info` (`id`, `data_id`, `group_id`, `content`, `md5`, `gmt_create`, `gmt_modified`, `src_user`, `src_ip`, `app_name`, `tenant_id`, `c_desc`, `c_use`, `effect`, `type`, `c_schema`) VALUES (33,'application.properties','DEFAULT_GROUP','name=liaochuntao is man','17581188a1cdc684721dde500c693c07','2020-04-30 10:45:21','2020-04-30 10:45:21',NULL,'127.0.0.1','','',NULL,NULL,NULL,'properties',NULL);\n"
                     + "\n";
+    
+    @Autowired
+    private ApplicationContext context;
+    
+    @Test()
+    public void testDerbyImport() throws Throwable {
+        DatabaseOperate operate = context.getBean(DatabaseOperate.class);
+        File file = DiskUtils.createTmpFile("derby_import" + System.currentTimeMillis(), ".tmp");
+        DiskUtils.writeFile(file, ByteUtils.toBytes(SQL_SCRIPT_CONTEXT), false);
+        try {
+            CompletableFuture<RestResult<String>> future = operate.dataImport(file);
+            RestResult<String> result = future.join();
+            System.out.println(result);
+            Assert.assertTrue(result.ok());
+            
+            final String queryDataId = "people";
+            final String queryGroup = "DEFAULT_GROUP";
+            final String expectContent = "people.enable=true";
+            
+            PersistService persistService = context.getBean(PersistService.class);
+            ConfigInfo configInfo = persistService.findConfigInfo(queryDataId, queryGroup, "");
+            System.out.println(configInfo);
+            Assert.assertNotNull(configInfo);
+            Assert.assertEquals(queryDataId, configInfo.getDataId());
+            Assert.assertEquals(queryGroup, configInfo.getGroup());
+            Assert.assertEquals("", configInfo.getTenant());
+            Assert.assertEquals(expectContent, configInfo.getContent());
+        } finally {
+            DiskUtils.deleteQuietly(file);
+        }
+    }
     
 }

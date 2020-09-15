@@ -139,10 +139,10 @@ public interface DatabaseOperate {
     /**
      * data modify transaction The SqlContext to be executed in the current thread will be executed and automatically
      * cleared.
-     * @author klw(213539@qq.com)
-     * 2020/8/24 18:16
+     *
      * @param consumer the consumer
      * @return java.lang.Boolean
+     * @author klw(213539 @ qq.com) 2020/8/24 18:16
      */
     default Boolean blockUpdate(BiConsumer<Boolean, Throwable> consumer) {
         try {

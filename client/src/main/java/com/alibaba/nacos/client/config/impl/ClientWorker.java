@@ -68,6 +68,73 @@ public class ClientWorker implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
+    final ScheduledExecutorService executor;
+    
+    final ScheduledExecutorService executorService;
+    
+    /**
+     * groupKey -> cacheData.
+     */
+    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
+            new HashMap<String, CacheData>());
+    
+    private final HttpAgent agent;
+    
+    private final ConfigFilterChainManager configFilterChainManager;
+    
+    private boolean isHealthServer = true;
+    
+    private long timeout;
+    
+    private double currentLongingTaskCount = 0;
+    
+    private int taskPenaltyTime;
+    
+    private boolean enableRemoteSyncConfig = false;
+    
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager,
+            final Properties properties) {
+        this.agent = agent;
+        this.configFilterChainManager = configFilterChainManager;
+        
+        // Initialize the timeout parameter
+        
+        init(properties);
+        
+        this.executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
+                t.setDaemon(true);
+                return t;
+            }
+        });
+        
+        this.executorService = Executors
+                .newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread t = new Thread(r);
+                        t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
+                        t.setDaemon(true);
+                        return t;
+                    }
+                });
+        
+        this.executor.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    checkConfigInfo();
+                } catch (Throwable e) {
+                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
+                }
+            }
+        }, 1L, 10L, TimeUnit.MILLISECONDS);
+    }
+    
     /**
      * Add listeners for data.
      *
@@ -523,49 +590,6 @@ public class ClientWorker implements Closeable {
         return updateList;
     }
     
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager,
-            final Properties properties) {
-        this.agent = agent;
-        this.configFilterChainManager = configFilterChainManager;
-        
-        // Initialize the timeout parameter
-        
-        init(properties);
-        
-        this.executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
-        
-        this.executorService = Executors
-                .newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread t = new Thread(r);
-                        t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
-                        t.setDaemon(true);
-                        return t;
-                    }
-                });
-        
-        this.executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkConfigInfo();
-                } catch (Throwable e) {
-                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-                }
-            }
-        }, 1L, 10L, TimeUnit.MILLISECONDS);
-    }
-    
     private void init(Properties properties) {
         
         timeout = Math.max(ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
@@ -585,6 +609,14 @@ public class ClientWorker implements Closeable {
         ThreadUtils.shutdownThreadPool(executorService, LOGGER);
         ThreadUtils.shutdownThreadPool(executor, LOGGER);
         LOGGER.info("{} do shutdown stop", className);
+    }
+    
+    public boolean isHealthServer() {
+        return isHealthServer;
+    }
+    
+    private void setHealthServer(boolean isHealthServer) {
+        this.isHealthServer = isHealthServer;
     }
     
     class LongPollingRunnable implements Runnable {
@@ -666,36 +698,4 @@ public class ClientWorker implements Closeable {
             }
         }
     }
-    
-    public boolean isHealthServer() {
-        return isHealthServer;
-    }
-    
-    private void setHealthServer(boolean isHealthServer) {
-        this.isHealthServer = isHealthServer;
-    }
-    
-    final ScheduledExecutorService executor;
-    
-    final ScheduledExecutorService executorService;
-    
-    /**
-     * groupKey -> cacheData.
-     */
-    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
-            new HashMap<String, CacheData>());
-    
-    private final HttpAgent agent;
-    
-    private final ConfigFilterChainManager configFilterChainManager;
-    
-    private boolean isHealthServer = true;
-    
-    private long timeout;
-    
-    private double currentLongingTaskCount = 0;
-    
-    private int taskPenaltyTime;
-    
-    private boolean enableRemoteSyncConfig = false;
 }

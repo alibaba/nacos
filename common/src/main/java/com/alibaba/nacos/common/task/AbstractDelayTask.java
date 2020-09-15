@@ -41,20 +41,20 @@ public abstract class AbstractDelayTask implements NacosTask {
      */
     public abstract void merge(AbstractDelayTask task);
     
-    public void setTaskInterval(long interval) {
-        this.taskInterval = interval;
-    }
-    
     public long getTaskInterval() {
         return this.taskInterval;
     }
     
-    public void setLastProcessTime(long lastProcessTime) {
-        this.lastProcessTime = lastProcessTime;
+    public void setTaskInterval(long interval) {
+        this.taskInterval = interval;
     }
     
     public long getLastProcessTime() {
         return this.lastProcessTime;
+    }
+    
+    public void setLastProcessTime(long lastProcessTime) {
+        this.lastProcessTime = lastProcessTime;
     }
     
     @Override

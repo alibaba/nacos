@@ -29,24 +29,6 @@ import java.util.Map;
 
 public class SimpleHttpTestUtils {
     
-    private static final String REQUEST_METHOD_DELETE = "DELETE";
-    
-    private static final String REQUEST_METHOD_PUT = "PUT";
-    
-    private static final String REQUEST_METHOD_POST = "POST";
-    
-    private static final String REQUEST_METHOD_GET = "GET";
-    
-    /**
-     * 连接超时.
-     */
-    private static final int CONNECT_TIME_OUT = 2000;
-    
-    /**
-     * 读取数据超时.
-     */
-    private static final int READ_TIME_OUT = 2000;
-    
     /**
      * 请求编码.
      */
@@ -64,6 +46,24 @@ public class SimpleHttpTestUtils {
     public static final short INTERNAL_SERVER_ERROR = 500;
     
     public static final short PARAM_ERROR_NO_ANALYSESOR = 1000;
+    
+    private static final String REQUEST_METHOD_DELETE = "DELETE";
+    
+    private static final String REQUEST_METHOD_PUT = "PUT";
+    
+    private static final String REQUEST_METHOD_POST = "POST";
+    
+    private static final String REQUEST_METHOD_GET = "GET";
+    
+    /**
+     * 连接超时.
+     */
+    private static final int CONNECT_TIME_OUT = 2000;
+    
+    /**
+     * 读取数据超时.
+     */
+    private static final int READ_TIME_OUT = 2000;
     
     /**
      * 发送带参数的GET的HTTP请求.

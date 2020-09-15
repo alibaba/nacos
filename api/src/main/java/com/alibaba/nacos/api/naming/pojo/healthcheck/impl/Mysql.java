@@ -43,8 +43,16 @@ public class Mysql extends AbstractHealthChecker {
         return this.cmd;
     }
     
+    public void setCmd(final String cmd) {
+        this.cmd = cmd;
+    }
+    
     public String getPwd() {
         return this.pwd;
+    }
+    
+    public void setPwd(final String pwd) {
+        this.pwd = pwd;
     }
     
     public String getUser() {
@@ -53,14 +61,6 @@ public class Mysql extends AbstractHealthChecker {
     
     public void setUser(final String user) {
         this.user = user;
-    }
-    
-    public void setCmd(final String cmd) {
-        this.cmd = cmd;
-    }
-    
-    public void setPwd(final String pwd) {
-        this.pwd = pwd;
     }
     
     @Override

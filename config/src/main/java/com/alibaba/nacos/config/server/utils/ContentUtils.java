@@ -27,6 +27,8 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
  */
 public class ContentUtils {
     
+    private static final int LIMIT_CONTENT_SIZE = 100;
+    
     /**
      * verify the pub config content.
      *
@@ -78,6 +80,4 @@ public class ContentUtils {
             return content.substring(0, 100) + "...";
         }
     }
-    
-    private static final int LIMIT_CONTENT_SIZE = 100;
 }

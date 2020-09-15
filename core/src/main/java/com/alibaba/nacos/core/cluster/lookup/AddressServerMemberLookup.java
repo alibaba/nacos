@@ -46,6 +46,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     private final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
     };
     
+    private final NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(Loggers.CORE);
+    
     public String domainName;
     
     public String addressPort;
@@ -61,8 +63,6 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     private int addressServerFailCount = 0;
     
     private int maxFailCount = 12;
-    
-    private final NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(Loggers.CORE);
     
     private volatile boolean shutdown = false;
     
@@ -90,7 +90,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
         }
         String envAddressUrl = System.getenv("address_server_url");
         if (StringUtils.isBlank(envAddressUrl)) {
-            addressUrl = ApplicationUtils.getProperty("address.server.url", ApplicationUtils.getContextPath() + "/" + "serverlist");
+            addressUrl = ApplicationUtils
+                    .getProperty("address.server.url", ApplicationUtils.getContextPath() + "/" + "serverlist");
         } else {
             addressUrl = envAddressUrl;
         }

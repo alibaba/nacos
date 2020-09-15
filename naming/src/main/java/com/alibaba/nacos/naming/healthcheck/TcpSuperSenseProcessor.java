@@ -58,17 +58,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     
     public static final String TYPE = "TCP";
     
-    @Autowired
-    private HealthCheckCommon healthCheckCommon;
-    
-    @Autowired
-    private SwitchDomain switchDomain;
-    
     public static final int CONNECT_TIMEOUT_MS = 500;
-    
-    private Map<String, BeatKey> keyMap = new ConcurrentHashMap<>();
-    
-    private BlockingQueue<Beat> taskQueue = new LinkedBlockingQueue<Beat>();
     
     /**
      * this value has been carefully tuned, do not modify unless you're confident.
@@ -80,6 +70,16 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
      * because some hosts doesn't support keep-alive connections, disabled temporarily.
      */
     private static final long TCP_KEEP_ALIVE_MILLIS = 0;
+    
+    @Autowired
+    private HealthCheckCommon healthCheckCommon;
+    
+    @Autowired
+    private SwitchDomain switchDomain;
+    
+    private Map<String, BeatKey> keyMap = new ConcurrentHashMap<>();
+    
+    private BlockingQueue<Beat> taskQueue = new LinkedBlockingQueue<Beat>();
     
     private Selector selector;
     
@@ -162,11 +162,61 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
                 while (iter.hasNext()) {
                     SelectionKey key = iter.next();
                     iter.remove();
-                    
+    
                     GlobalExecutor.executeTcpSuperSense(new PostProcessor(key));
                 }
             } catch (Throwable e) {
                 SRV_LOG.error("[HEALTH-CHECK] error while processing NIO task", e);
+            }
+        }
+    }
+    
+    @Override
+    public String getType() {
+        return TYPE;
+    }
+    
+    private static class BeatKey {
+        
+        public SelectionKey key;
+        
+        public long birthTime;
+        
+        public BeatKey(SelectionKey key) {
+            this.key = key;
+            this.birthTime = System.currentTimeMillis();
+        }
+    }
+    
+    private static class TimeOutTask implements Runnable {
+        
+        SelectionKey key;
+        
+        public TimeOutTask(SelectionKey key) {
+            this.key = key;
+        }
+        
+        @Override
+        public void run() {
+            if (key != null && key.isValid()) {
+                SocketChannel channel = (SocketChannel) key.channel();
+                Beat beat = (Beat) key.attachment();
+                
+                if (channel.isConnected()) {
+                    return;
+                }
+                
+                try {
+                    channel.finishConnect();
+                } catch (Exception ignore) {
+                }
+                
+                try {
+                    beat.finishCheck(false, false, beat.getTask().getCheckRtNormalized() * 2, "tcp:timeout");
+                    key.cancel();
+                    key.channel().close();
+                } catch (Exception ignore) {
+                }
             }
         }
     }
@@ -230,28 +280,28 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     private class Beat {
         
         Instance ip;
-        
+    
         HealthCheckTask task;
-        
+    
         long startTime = System.currentTimeMillis();
-        
+    
         Beat(Instance ip, HealthCheckTask task) {
             this.ip = ip;
             this.task = task;
         }
-        
-        public void setStartTime(long time) {
-            startTime = time;
-        }
-        
+    
         public long getStartTime() {
             return startTime;
         }
-        
+    
+        public void setStartTime(long time) {
+            startTime = time;
+        }
+    
         public Instance getIp() {
             return ip;
         }
-        
+    
         public HealthCheckTask getTask() {
             return task;
         }
@@ -303,51 +353,6 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             }
             
             return this.toString().equals(obj.toString());
-        }
-    }
-    
-    private static class BeatKey {
-        
-        public SelectionKey key;
-        
-        public long birthTime;
-        
-        public BeatKey(SelectionKey key) {
-            this.key = key;
-            this.birthTime = System.currentTimeMillis();
-        }
-    }
-    
-    private static class TimeOutTask implements Runnable {
-        
-        SelectionKey key;
-        
-        public TimeOutTask(SelectionKey key) {
-            this.key = key;
-        }
-        
-        @Override
-        public void run() {
-            if (key != null && key.isValid()) {
-                SocketChannel channel = (SocketChannel) key.channel();
-                Beat beat = (Beat) key.attachment();
-                
-                if (channel.isConnected()) {
-                    return;
-                }
-                
-                try {
-                    channel.finishConnect();
-                } catch (Exception ignore) {
-                }
-                
-                try {
-                    beat.finishCheck(false, false, beat.getTask().getCheckRtNormalized() * 2, "tcp:timeout");
-                    key.cancel();
-                    key.channel().close();
-                } catch (Exception ignore) {
-                }
-            }
         }
     }
     
@@ -417,10 +422,5 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             
             return null;
         }
-    }
-    
-    @Override
-    public String getType() {
-        return TYPE;
     }
 }

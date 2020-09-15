@@ -14,80 +14,10 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://maven.apache.org/POM/4.0.0"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>com.alibaba.nacos</groupId>
-        <artifactId>nacos-all</artifactId>
-        <version>1.4.0-SNAPSHOT</version>
-    </parent>
     <artifactId>nacos-console</artifactId>
-    <packaging>jar</packaging>
-    <name>nacos-console ${project.version}</name>
-    <url>http://nacos.io</url>
-    <properties>
-        <!--        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>-->
-        <!-- 文件拷贝时的编码 -->
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <!-- 编译时的编码 -->
-        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
-    </properties>
-    
-    <dependencies>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-jasper</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-naming</artifactId>
-        </dependency>
-        
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-istio</artifactId>
-        </dependency>
-        
-        <!-- log -->
-        <!-- log4j通过slf4j来代理 -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>log4j-over-slf4j</artifactId>
-        </dependency>
-        <!-- apache commons logging通过slf4j来代理 -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-        </dependency>
-        <!-- java.util.logging 通过slf4j来代理 -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-        </dependency>
-        <!-- log -->
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-    </dependencies>
-    
     <build>
         <resources>
             <resource>
@@ -98,19 +28,68 @@
             </resource>
         </resources>
     </build>
-    
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </reporting>
+    <dependencies>
+        <dependency>
+            <artifactId>h2</artifactId>
+            <groupId>com.h2database</groupId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <artifactId>nacos-config</artifactId>
+            <groupId>${project.groupId}</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>tomcat-embed-jasper</artifactId>
+            <groupId>org.apache.tomcat.embed</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>nacos-naming</artifactId>
+            <groupId>${project.groupId}</groupId>
+        </dependency>
+
+        <dependency>
+            <artifactId>nacos-istio</artifactId>
+            <groupId>${project.groupId}</groupId>
+        </dependency>
+
+        <!-- log -->
+        <!-- log4j通过slf4j来代理 -->
+        <dependency>
+            <artifactId>log4j-over-slf4j</artifactId>
+            <groupId>org.slf4j</groupId>
+        </dependency>
+        <!-- apache commons logging通过slf4j来代理 -->
+        <dependency>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <groupId>org.slf4j</groupId>
+        </dependency>
+        <!-- java.util.logging 通过slf4j来代理 -->
+        <dependency>
+            <artifactId>jul-to-slf4j</artifactId>
+            <groupId>org.slf4j</groupId>
+        </dependency>
+        <!-- log -->
+        <dependency>
+            <artifactId>mockito-core</artifactId>
+            <groupId>org.mockito</groupId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <artifactId>spring-boot-starter-security</artifactId>
+            <groupId>org.springframework.boot</groupId>
+        </dependency>
+    </dependencies>
+    <modelVersion>4.0.0</modelVersion>
+    <name>nacos-console ${project.version}</name>
+    <packaging>jar</packaging>
+    <parent>
+        <artifactId>nacos-all</artifactId>
+        <groupId>com.alibaba.nacos</groupId>
+        <version>1.4.0-SNAPSHOT</version>
+    </parent>
     
     <profiles>
         <profile>
-            <id>release-nacos</id>
             <build>
                 <finalName>nacos-server</finalName>
                 <plugins>
@@ -126,11 +105,10 @@
                         </configuration>
                     </plugin>
                     <plugin>
-                        <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>com.alibaba.nacos.Nacos</mainClass>
                             <layout>ZIP</layout>
+                            <mainClass>com.alibaba.nacos.Nacos</mainClass>
                         </configuration>
                         <executions>
                             <execution>
@@ -139,9 +117,31 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <groupId>org.springframework.boot</groupId>
                     </plugin>
                 </plugins>
             </build>
+            <id>release-nacos</id>
         </profile>
     </profiles>
+    
+    <properties>
+        <!--        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>-->
+        <!-- 文件拷贝时的编码 -->
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- 编译时的编码 -->
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+    
+    <reporting>
+        <plugins>
+            <plugin>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+            </plugin>
+        </plugins>
+    </reporting>
+    
+    <url>http://nacos.io</url>
 </project>

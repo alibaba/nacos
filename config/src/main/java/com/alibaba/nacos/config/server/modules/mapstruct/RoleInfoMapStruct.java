@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
-
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
 import org.mapstruct.Mapper;
@@ -25,6 +24,8 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 /**
+ * RoleInfoMapStruct.
+ *
  * @author Nacos
  */
 @Mapper

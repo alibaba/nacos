@@ -34,17 +34,9 @@ import java.util.concurrent.atomic.AtomicLong;
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
 public class NotifyCenterTest {
     
-    private static class TestSlowEvent extends SlowEvent {
+    static CountDownLatch latch = new CountDownLatch(3);
     
-    }
-    
-    private static class TestEvent extends Event {
-        
-        @Override
-        public long sequence() {
-            return System.currentTimeMillis();
-        }
-    }
+    static CountDownLatch latch2 = new CountDownLatch(3);
     
     static {
         System.setProperty("nacos.core.notify.share-buffer-size", "8");
@@ -101,21 +93,6 @@ public class NotifyCenterTest {
         Assert.assertEquals(2, count.get());
     }
     
-    static CountDownLatch latch = new CountDownLatch(3);
-    
-    static class ExpireEvent extends Event {
-        
-        static AtomicLong sequence = new AtomicLong(3);
-        
-        private long no = sequence.getAndDecrement();
-        
-        @Override
-        public long sequence() {
-            latch.countDown();
-            return no;
-        }
-    }
-    
     @Test
     public void testCanIgnoreExpireEvent() throws Exception {
         NotifyCenter.registerToPublisher(ExpireEvent.class, 16);
@@ -146,20 +123,6 @@ public class NotifyCenterTest {
         Assert.assertEquals(1, count.get());
     }
     
-    static CountDownLatch latch2 = new CountDownLatch(3);
-    
-    static class NoExpireEvent extends Event {
-        
-        static AtomicLong sequence = new AtomicLong(3);
-        
-        private long no = sequence.getAndDecrement();
-        
-        @Override
-        public long sequence() {
-            return no;
-        }
-    }
-    
     @Test
     public void testNoIgnoreExpireEvent() throws Exception {
         NotifyCenter.registerToPublisher(NoExpireEvent.class, 16);
@@ -184,34 +147,6 @@ public class NotifyCenterTest {
         
         latch2.await(10000L, TimeUnit.MILLISECONDS);
         Assert.assertEquals(3, count.get());
-    }
-    
-    private static class SlowE1 extends SlowEvent {
-        
-        private String info = "SlowE1";
-        
-        public String getInfo() {
-            return info;
-        }
-        
-        public void setInfo(String info) {
-            this.info = info;
-        }
-        
-    }
-    
-    private static class SlowE2 extends SlowEvent {
-        
-        private String info = "SlowE2";
-        
-        public String getInfo() {
-            return info;
-        }
-        
-        public void setInfo(String info) {
-            this.info = info;
-        }
-        
     }
     
     @Test
@@ -265,22 +200,6 @@ public class NotifyCenterTest {
         
     }
     
-    static class SmartEvent1 extends Event {
-        
-        @Override
-        public long sequence() {
-            return System.currentTimeMillis();
-        }
-    }
-    
-    static class SmartEvent2 extends Event {
-        
-        @Override
-        public long sequence() {
-            return System.currentTimeMillis();
-        }
-    }
-    
     @Test
     public void testSeveralEventsPublishedBySinglePublisher() throws Exception {
         
@@ -328,14 +247,6 @@ public class NotifyCenterTest {
         Assert.assertEquals(3, count1.get());
         Assert.assertEquals(3, count2.get());
         
-    }
-    
-    private static class TestSlowEvent1 extends SlowEvent {
-    
-    }
-    
-    private static class TestSlowEvent2 extends SlowEvent {
-    
     }
     
     @Test
@@ -392,14 +303,6 @@ public class NotifyCenterTest {
         
     }
     
-    private static class TestSlowEvent3 extends SlowEvent {
-    
-    }
-    
-    private static class TestSlowEvent4 extends SlowEvent {
-    
-    }
-    
     @Test
     public void testMutipleSlowEventsListenedBySmartsubscriber() throws Exception {
         
@@ -451,14 +354,6 @@ public class NotifyCenterTest {
         
     }
     
-    private static class TestSlowEvent5 extends SlowEvent {
-    
-    }
-    
-    private static class TestEvent6 extends Event {
-    
-    }
-    
     @Test
     public void testMutipleKindsEventsCanListenBySmartsubscriber() throws Exception {
         
@@ -507,10 +402,6 @@ public class NotifyCenterTest {
         
         Assert.assertEquals(3, count1.get());
         Assert.assertEquals(3, count2.get());
-        
-    }
-    
-    private static class TestEvent7 extends Event {
     
     }
     
@@ -520,5 +411,114 @@ public class NotifyCenterTest {
         for (int i = 0; i < 3; i++) {
             Assert.assertFalse(NotifyCenter.publishEvent(new TestEvent7()));
         }
+    }
+    
+    private static class TestSlowEvent extends SlowEvent {
+    
+    }
+    
+    private static class TestEvent extends Event {
+        
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
+        }
+    }
+    
+    static class ExpireEvent extends Event {
+        
+        static AtomicLong sequence = new AtomicLong(3);
+        
+        private long no = sequence.getAndDecrement();
+        
+        @Override
+        public long sequence() {
+            latch.countDown();
+            return no;
+        }
+    }
+    
+    static class NoExpireEvent extends Event {
+        
+        static AtomicLong sequence = new AtomicLong(3);
+        
+        private long no = sequence.getAndDecrement();
+        
+        @Override
+        public long sequence() {
+            return no;
+        }
+    }
+    
+    private static class SlowE1 extends SlowEvent {
+        
+        private String info = "SlowE1";
+        
+        public String getInfo() {
+            return info;
+        }
+        
+        public void setInfo(String info) {
+            this.info = info;
+        }
+        
+    }
+    
+    private static class SlowE2 extends SlowEvent {
+        
+        private String info = "SlowE2";
+        
+        public String getInfo() {
+            return info;
+        }
+        
+        public void setInfo(String info) {
+            this.info = info;
+        }
+        
+    }
+    
+    static class SmartEvent1 extends Event {
+        
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
+        }
+    }
+    
+    static class SmartEvent2 extends Event {
+        
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
+        }
+    }
+    
+    private static class TestSlowEvent1 extends SlowEvent {
+    
+    }
+    
+    private static class TestSlowEvent2 extends SlowEvent {
+    
+    }
+    
+    private static class TestSlowEvent3 extends SlowEvent {
+    
+    }
+    
+    private static class TestSlowEvent4 extends SlowEvent {
+    
+    }
+    
+    private static class TestSlowEvent5 extends SlowEvent {
+    
+    }
+    
+    private static class TestEvent6 extends Event {
+    
+    }
+    
+    private static class TestEvent7 extends Event {
+    
     }
 }

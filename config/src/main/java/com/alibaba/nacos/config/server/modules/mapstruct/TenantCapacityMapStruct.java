@@ -22,6 +22,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
 /**
+ * TenantCapacityMapStruct.
+ *
  * @author Nacos
  */
 @Mapper

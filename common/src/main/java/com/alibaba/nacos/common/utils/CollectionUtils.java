@@ -236,7 +236,7 @@ public final class CollectionUtils {
      * @param defaultValue default value
      * @param <T>          General Type
      * @return the value to which the specified index , or {@code defaultValue} if this collection contains no value for
-     *     the index.
+     * the index.
      */
     public static <T> T getOrDefault(Collection<T> coll, int index, T defaultValue) {
         try {

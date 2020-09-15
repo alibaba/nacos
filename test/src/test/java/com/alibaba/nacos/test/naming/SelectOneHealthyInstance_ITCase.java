@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +32,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.test.naming.NamingBase.*;
+import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT;
+import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
+import static com.alibaba.nacos.test.naming.NamingBase.verifyInstance;
 
 /**
  * Created by wangtong.wt on 2018/6/20.
@@ -41,19 +43,21 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SelectOneHealthyInstance_ITCase {
-
+    
     private NamingService naming;
+    
     @LocalServerPort
     private int port;
+    
     @Before
-    public void init() throws Exception{
+    public void init() throws Exception {
         NamingBase.prepareServer(port);
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
         while (true) {
             if (!"UP".equals(naming.getServerStatus())) {
@@ -63,10 +67,11 @@ public class SelectOneHealthyInstance_ITCase {
             break;
         }
     }
-
-
+    
+    
     /**
      * 获取一个健康的Instance
+     *
      * @throws Exception
      */
     @Test
@@ -74,26 +79,26 @@ public class SelectOneHealthyInstance_ITCase {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
         naming.registerInstance(serviceName, "127.0.0.1", 60000);
-
+    
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName);
-
+    
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
-
+    
         for (Instance instance1 : instancesGet) {
-            if (instance1.getIp().equals(instance.getIp())&&
-                instance1.getPort() == instance.getPort()) {
+            if (instance1.getIp().equals(instance.getIp()) && instance1.getPort() == instance.getPort()) {
                 Assert.assertTrue(instance.isHealthy());
                 Assert.assertTrue(verifyInstance(instance1, instance));
                 return;
             }
         }
-
+    
         Assert.fail();
     }
-
+    
     /**
      * 获取指定单个cluster中一个健康的Instance
+     *
      * @throws Exception
      */
     @Test
@@ -104,29 +109,29 @@ public class SelectOneHealthyInstance_ITCase {
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.1", 60001, "c1");
         naming.registerInstance(serviceName, "127.0.0.1", 60002, "c2");
-
+    
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
-
+    
         Assert.assertNotSame("1.1.1.1", instance.getIp());
         Assert.assertTrue(instance.getPort() != 60002);
-
+    
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
-
+    
         for (Instance instance1 : instancesGet) {
-            if (instance1.getIp().equals(instance.getIp())&&
-                instance1.getPort() == instance.getPort()) {
+            if (instance1.getIp().equals(instance.getIp()) && instance1.getPort() == instance.getPort()) {
                 Assert.assertTrue(instance.isHealthy());
                 Assert.assertTrue(verifyInstance(instance1, instance));
                 return;
             }
         }
-
+    
         Assert.fail();
     }
-
+    
     /**
      * 获取指定多个cluster中一个健康的Instance
+     *
      * @throws Exception
      */
     @Test
@@ -136,22 +141,21 @@ public class SelectOneHealthyInstance_ITCase {
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.1", 60000, "c1");
         naming.registerInstance(serviceName, "127.0.0.1", 60001, "c2");
-
+    
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1", "c2"));
         Assert.assertNotSame("1.1.1.1", instance.getIp());
-
+    
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
-
+    
         for (Instance instance1 : instancesGet) {
-            if (instance1.getIp().equals(instance.getIp()) &&
-                instance1.getPort() == instance.getPort()) {
+            if (instance1.getIp().equals(instance.getIp()) && instance1.getPort() == instance.getPort()) {
                 Assert.assertTrue(instance.isHealthy());
                 Assert.assertTrue(verifyInstance(instance1, instance));
                 return;
             }
         }
-
+    
         Assert.fail();
     }
 }

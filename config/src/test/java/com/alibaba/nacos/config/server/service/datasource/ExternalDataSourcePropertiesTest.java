@@ -97,7 +97,7 @@ public class ExternalDataSourcePropertiesTest {
         }));
         Assert.assertEquals(dataSources.size(), 2);
     }
-
+    
     @Test
     public void externalDatasourceToAssertMinIdle() {
         MockEnvironment environment = new MockEnvironment();

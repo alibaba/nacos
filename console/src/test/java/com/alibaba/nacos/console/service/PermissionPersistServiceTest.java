@@ -47,6 +47,12 @@ public class PermissionPersistServiceTest extends BaseTest {
      */
     private PermissionsEntity permissionsEntity;
     
+    @Autowired
+    private PermissionPersistService permissionPersistService;
+    
+    @Autowired
+    private PermissionsRepository permissionsRepository;
+    
     /**
      * before.
      */
@@ -54,12 +60,6 @@ public class PermissionPersistServiceTest extends BaseTest {
     public void before() {
         permissionsEntity = JacksonUtils.toObj(TestData.PERMISSIONS_JSON, PermissionsEntity.class);
     }
-    
-    @Autowired
-    private PermissionPersistService permissionPersistService;
-    
-    @Autowired
-    private PermissionsRepository permissionsRepository;
     
     /**
      * getPermissionsTest.
@@ -72,7 +72,7 @@ public class PermissionPersistServiceTest extends BaseTest {
         if (result == null) {
             addPermissionTest();
         }
-    
+        
         Page<PermissionInfo> page = permissionPersistService.getPermissions(permissionsEntity.getRole(), 0, 10);
         Assert.assertNotNull(page.getPageItems());
         Assert.assertTrue(page.getPageItems().size() > 0);
@@ -83,9 +83,8 @@ public class PermissionPersistServiceTest extends BaseTest {
      */
     @Test
     public void addPermissionTest() {
-        permissionPersistService
-                .addPermission(permissionsEntity.getRole(), permissionsEntity.getResource(),
-                        permissionsEntity.getAction());
+        permissionPersistService.addPermission(permissionsEntity.getRole(), permissionsEntity.getResource(),
+                permissionsEntity.getAction());
     }
     
     /**
@@ -93,8 +92,7 @@ public class PermissionPersistServiceTest extends BaseTest {
      */
     @Test
     public void deletePermissionTest() {
-        permissionPersistService
-                .deletePermission(permissionsEntity.getRole(), permissionsEntity.getResource(),
-                        permissionsEntity.getAction());
+        permissionPersistService.deletePermission(permissionsEntity.getRole(), permissionsEntity.getResource(),
+                permissionsEntity.getAction());
     }
 }

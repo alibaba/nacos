@@ -35,9 +35,9 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private final String appName;
     
-    private Credentials credentials = new Credentials();
-    
     private final CredentialWatcher watcher;
+    
+    private Credentials credentials = new Credentials();
     
     private CredentialListener listener;
     
@@ -127,23 +127,23 @@ public final class CredentialService implements SpasCredentialLoader {
     }
     
     @Deprecated
-    public void setAccessKey(String accessKey) {
-        credentials.setAccessKey(accessKey);
-    }
-    
-    @Deprecated
-    public void setSecretKey(String secretKey) {
-        credentials.setSecretKey(secretKey);
-    }
-    
-    @Deprecated
     public String getAccessKey() {
         return credentials.getAccessKey();
     }
     
     @Deprecated
+    public void setAccessKey(String accessKey) {
+        credentials.setAccessKey(accessKey);
+    }
+    
+    @Deprecated
     public String getSecretKey() {
         return credentials.getSecretKey();
+    }
+    
+    @Deprecated
+    public void setSecretKey(String secretKey) {
+        credentials.setSecretKey(secretKey);
     }
     
 }

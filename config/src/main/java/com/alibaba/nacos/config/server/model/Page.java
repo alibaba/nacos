@@ -50,18 +50,6 @@ public class Page<E> implements Serializable {
      */
     private List<E> pageItems = new ArrayList<E>();
     
-    public void setPageNumber(int pageNumber) {
-        this.pageNumber = pageNumber;
-    }
-    
-    public void setPagesAvailable(int pagesAvailable) {
-        this.pagesAvailable = pagesAvailable;
-    }
-    
-    public void setPageItems(List<E> pageItems) {
-        this.pageItems = pageItems;
-    }
-    
     public int getTotalCount() {
         return totalCount;
     }
@@ -74,11 +62,23 @@ public class Page<E> implements Serializable {
         return pageNumber;
     }
     
+    public void setPageNumber(int pageNumber) {
+        this.pageNumber = pageNumber;
+    }
+    
     public int getPagesAvailable() {
         return pagesAvailable;
     }
     
+    public void setPagesAvailable(int pagesAvailable) {
+        this.pagesAvailable = pagesAvailable;
+    }
+    
     public List<E> getPageItems() {
         return pageItems;
+    }
+    
+    public void setPageItems(List<E> pageItems) {
+        this.pageItems = pageItems;
     }
 }

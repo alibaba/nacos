@@ -18,9 +18,9 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
+import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,9 +73,9 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     /**
      * Execute ddd user permission operation.
      *
-     * @param role role info string value.
+     * @param role     role info string value.
      * @param resource resource info string value.
-     * @param action action info string value.
+     * @param action   action info string value.
      */
     public void addPermission(String role, String resource, String action) {
         String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
@@ -86,9 +86,9 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     /**
      * Execute delete user permission operation.
      *
-     * @param role role info string value.
+     * @param role     role info string value.
      * @param resource resource info string value.
-     * @param action action info string value.
+     * @param action   action info string value.
      */
     public void deletePermission(String role, String resource, String action) {
         String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
