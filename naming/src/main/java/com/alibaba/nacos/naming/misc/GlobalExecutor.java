@@ -115,7 +115,7 @@ public class GlobalExecutor {
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.nacos-server-performance"));
     
-    private static final ScheduledExecutorService REMOTE_CONNECTION_EXECUTOR = ExecutorFactory.Managed
+    private static final ScheduledExecutorService EXPIRED_CLIENT_CLEANER_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.remote-connection-manager"));
     
@@ -213,8 +213,7 @@ public class GlobalExecutor {
         SERVER_PERFORMANCE_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
     }
     
-    public static void scheduleRemoteConnectionManager(Runnable runnable, long initialDelay, long delay,
-            TimeUnit unit) {
-        REMOTE_CONNECTION_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
+    public static void scheduleExpiredClientCleaner(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
+        EXPIRED_CLIENT_CLEANER_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
     }
 }
