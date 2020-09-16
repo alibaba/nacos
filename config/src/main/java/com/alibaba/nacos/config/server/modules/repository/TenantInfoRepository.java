@@ -30,8 +30,21 @@ import java.util.List;
 public interface TenantInfoRepository
         extends PagingAndSortingRepository<TenantInfoEntity, Long>, QuerydslPredicateExecutor<TenantInfoEntity> {
     
+    /**
+     * findByKp.
+     *
+     * @param kp
+     * @return
+     */
     List<TenantInfoEntity> findByKp(String kp);
     
+    /**
+     * findByKpAndTenantId.
+     *
+     * @param kp
+     * @param tenantId
+     * @return
+     */
     TenantInfoEntity findByKpAndTenantId(String kp, String tenantId);
     
 }

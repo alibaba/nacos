@@ -29,7 +29,6 @@ import com.alibaba.nacos.config.server.modules.entity.ConfigInfoBetaEntity;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfoEntity;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfoTagEntity;
 import com.alibaba.nacos.config.server.modules.entity.ConfigTagsRelationEntity;
-import com.alibaba.nacos.config.server.modules.entity.QConfigInfoBetaEntity;
 import com.alibaba.nacos.config.server.modules.entity.QConfigInfoEntity;
 import com.alibaba.nacos.config.server.modules.entity.QConfigInfoTagEntity;
 import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoMapStruct;
@@ -171,16 +170,10 @@ public class PersistServiceTest extends BaseTest {
     
     @Test
     public void updateConfigInfo4Beta() {
-        QConfigInfoBetaEntity qConfigInfoBeta = QConfigInfoBetaEntity.configInfoBetaEntity;
-        ConfigInfoBetaEntity result = configInfoBetaRepository.findOne(
-                qConfigInfoBeta.dataId.eq(configInfoBetaEntity.getDataId())
-                        .and(qConfigInfoBeta.groupId.eq(configInfoBetaEntity.getGroupId()))
-                        .and(qConfigInfoBeta.tenantId.eq(configInfoBetaEntity.getTenantId()))).orElse(null);
-        if (result == null) {
-            result = new ConfigInfoBetaEntity();
-            configInfoBetaRepository.save(configInfoBetaEntity);
-            BeanUtils.copyProperties(result, configInfoBetaEntity);
-        }
+        configInfoBetaRepository.deleteAll();
+        ConfigInfoBetaEntity result = new ConfigInfoBetaEntity();
+        configInfoBetaRepository.save(configInfoBetaEntity);
+        BeanUtils.copyProperties(result, configInfoBetaEntity);
         result.setGmtModified(new Date());
         persistService
                 .updateConfigInfo4Beta(configInfo, null, configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser(),
@@ -204,15 +197,7 @@ public class PersistServiceTest extends BaseTest {
     
     @Test
     public void addConfigInfo4BetaTest() {
-        
-        QConfigInfoBetaEntity qConfigInfoBeta = QConfigInfoBetaEntity.configInfoBetaEntity;
-        ConfigInfoBetaEntity result = configInfoBetaRepository.findOne(
-                qConfigInfoBeta.dataId.eq(configInfoBetaEntity.getDataId())
-                        .and(qConfigInfoBeta.groupId.eq(configInfoBetaEntity.getGroupId()))
-                        .and(qConfigInfoBeta.tenantId.eq(configInfoBetaEntity.getTenantId()))).orElse(null);
-        if (result != null) {
-            configInfoBetaRepository.delete(result);
-        }
+        configInfoBetaRepository.deleteAll();
         persistService
                 .addConfigInfo4Beta(configInfo, configInfoBetaEntity.getBetaIps(), configInfoBetaEntity.getSrcIp(),
                         configInfoBetaEntity.getSrcUser(), Timestamp.from(Instant.now()), true);
@@ -260,6 +245,8 @@ public class PersistServiceTest extends BaseTest {
     
     @Test
     public void findConfigInfo4BetaTest() {
+        configInfoBetaRepository.deleteAll();
+        configInfoBetaRepository.save(configInfoBetaEntity);
         ConfigInfo4Beta result = persistService
                 .findConfigInfo4Beta(configInfoBetaEntity.getDataId(), configInfoBetaEntity.getGroupId(),
                         configInfoBetaEntity.getTenantId());

@@ -284,6 +284,9 @@
                         <exclude>**/istio/model/mcp/*.java</exclude>
                         <exclude>**/istio/model/naming/*.java</exclude>
                         <exclude>**/istio/model/*.java</exclude>
+                        <exclude>**/com/alibaba/nacos/config/server/modules/entity/*.java</exclude>
+                        <exclude>**/com/alibaba/nacos/config/server/modules/mapstruct/*.java</exclude>
+                        <exclude>**/com/alibaba/nacos/config/server/configuration/datasource/DynamicDataSource.java</exclude>
                     </excludes>
                 </configuration>
                 <executions>

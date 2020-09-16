@@ -46,7 +46,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
         
         org.springframework.data.domain.Page<RolesEntity> sPage = rolesRepository
-                .findAll(null, PageRequest.of(pageNo, pageSize));
+                .findAll(PageRequest.of(pageNo, pageSize));
         Page<RoleInfo> page = new Page<>();
         page.setPageNumber(sPage.getNumber());
         page.setPagesAvailable(sPage.getTotalPages());

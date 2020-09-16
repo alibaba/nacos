@@ -91,7 +91,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     
     public Page<User> getUsers(int pageNo, int pageSize) {
         org.springframework.data.domain.Page<UsersEntity> sPage = usersRepository
-                .findAll(null, PageRequest.of(pageNo, pageSize));
+                .findAll(PageRequest.of(pageNo, pageSize));
         Page<User> page = new Page<>();
         page.setPageNumber(sPage.getNumber());
         page.setPagesAvailable(sPage.getTotalPages());

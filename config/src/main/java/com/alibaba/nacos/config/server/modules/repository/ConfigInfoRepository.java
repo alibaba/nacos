@@ -32,8 +32,21 @@ import java.util.List;
 public interface ConfigInfoRepository
         extends PagingAndSortingRepository<ConfigInfoEntity, Long>, JpaSpecificationExecutor<ConfigInfoEntity>, QuerydslPredicateExecutor<ConfigInfoEntity> {
     
+    /**
+     * findByDataIdAndGroupIdAndTenantId.
+     *
+     * @param dataId
+     * @param groupId
+     * @param tenantId
+     * @return
+     */
     List<ConfigInfoEntity> findByDataIdAndGroupIdAndTenantId(String dataId, String groupId, String tenantId);
     
+    /**
+     * findConfigMaxId.
+     *
+     * @return
+     */
     @Query(value = "SELECT max(id) FROM config_info", nativeQuery = true)
     Long findConfigMaxId();
     
