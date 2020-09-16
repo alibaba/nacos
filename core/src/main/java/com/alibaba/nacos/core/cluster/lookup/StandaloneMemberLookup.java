@@ -16,15 +16,8 @@
 
 package com.alibaba.nacos.core.cluster.lookup;
 
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
-import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
 
-import java.util.Collection;
 import java.util.Collections;
 
 /**

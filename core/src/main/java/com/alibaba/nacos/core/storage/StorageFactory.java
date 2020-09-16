@@ -16,24 +16,34 @@
 
 package com.alibaba.nacos.core.storage;
 
-import com.alibaba.nacos.core.storage.kv.FileKVStorage;
+import com.alibaba.nacos.core.storage.kv.FileKvStorage;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
-import com.alibaba.nacos.core.storage.kv.MemoryKVStorage;
-import com.alibaba.nacos.core.storage.kv.RocksStorage;
+import com.alibaba.nacos.core.storage.kv.MemoryKvStorage;
 
 /**
+ * Ket-value Storage factory.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class StorageFactory {
     
-    public static KvStorage createKVStorage(KvStorage.KVType type, final String label, final String baseDir) throws Exception {
+    /**
+     * Create {@link KvStorage} implementation.
+     *
+     * @param type    type of {@link KvStorage}
+     * @param label   label for {@code RocksStorage}
+     * @param baseDir base dir of storage file.
+     * @return implementation of {@link KvStorage}
+     * @throws Exception exception during creating {@link KvStorage}
+     */
+    public static KvStorage createKvStorage(KvStorage.KvType type, final String label, final String baseDir)
+            throws Exception {
         switch (type) {
             case File:
-                return new FileKVStorage(baseDir);
+                return new FileKvStorage(baseDir);
             case Memory:
-                return new MemoryKVStorage();
+                return new MemoryKvStorage();
             case RocksDB:
-                return RocksStorage.createDefault(label, baseDir);
             default:
                 throw new IllegalArgumentException("this kv type : [" + type.name() + "] not support");
         }
