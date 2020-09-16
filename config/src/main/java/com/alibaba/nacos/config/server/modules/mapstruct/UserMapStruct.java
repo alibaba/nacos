@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.modules.mapstruct;
 
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.modules.entity.UsersEntity;
@@ -24,15 +24,17 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 /**
+ * UserMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface UserMapStruct {
-
+    
     UserMapStruct INSTANCE = Mappers.getMapper(UserMapStruct.class);
-
+    
     User convertUser(UsersEntity usersEntity);
-
+    
     List<User> convertUserList(List<UsersEntity> list);
-
+    
 }

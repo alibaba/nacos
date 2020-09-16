@@ -17,9 +17,9 @@
 package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.core.cluster.Member;
@@ -44,7 +44,7 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
     public NotifyTaskProcessor(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
-
+    
     @Override
     public boolean process(AbstractDelayTask task) {
         NotifyTask notifyTask = (NotifyTask) task;
@@ -52,15 +52,15 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
         String group = notifyTask.getGroup();
         String tenant = notifyTask.getTenant();
         long lastModified = notifyTask.getLastModified();
-
+        
         boolean isok = true;
-
+        
         for (Member ip : memberManager.allMembers()) {
             isok = notifyToDump(dataId, group, tenant, lastModified, ip.getAddress()) && isok;
         }
         return isok;
     }
-
+    
     /**
      * Notify other servers.
      */
@@ -72,25 +72,25 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
              the new lastModifed parameter is passed through the Http header
              */
             List<String> headers = Arrays
-                .asList(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
-                    NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIp());
+                    .asList(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
+                            NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIp());
             String urlString = MessageFormat
-                .format(URL_PATTERN, serverIp, ApplicationUtils.getContextPath(), dataId, group);
-
+                    .format(URL_PATTERN, serverIp, ApplicationUtils.getContextPath(), dataId, group);
+            
             RestResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
             if (result.ok()) {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
-                    ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
-
+                        ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
+                
                 MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
-
+                
                 return true;
             } else {
                 MetricsMonitor.getConfigNotifyException().increment();
                 LOGGER.error("[notify-error] {}, {}, to {}, result {}",
-                    new Object[]{dataId, group, serverIp, result.getCode()});
+                        new Object[] {dataId, group, serverIp, result.getCode()});
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
-                    ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
+                        ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
             }
         } catch (Exception e) {
@@ -102,11 +102,11 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
             return false;
         }
     }
-
+    
     static final Logger LOGGER = LoggerFactory.getLogger(NotifyTaskProcessor.class);
-
+    
     static final String URL_PATTERN =
             "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
-
+    
     final ServerMemberManager memberManager;
 }

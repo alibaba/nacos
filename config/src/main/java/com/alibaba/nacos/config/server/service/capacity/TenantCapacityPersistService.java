@@ -50,7 +50,6 @@ public class TenantCapacityPersistService {
     @Autowired
     private ConfigInfoRepository configInfoRepository;
     
-    
     public TenantCapacity getTenantCapacity(String tenantId) {
         TenantCapacityEntity tenantCapacityEntity = tenantCapacityRepository
                 .findOne(QTenantCapacityEntity.tenantCapacityEntity.tenantId.eq(tenantId)).orElse(null);
@@ -71,7 +70,7 @@ public class TenantCapacityPersistService {
                 .convertTenantCapacityEntity(tenantCapacity);
         tenantCapacityRepository.save(tenantCapacityEntity);
         return true;
-    
+        
     }
     
     /**

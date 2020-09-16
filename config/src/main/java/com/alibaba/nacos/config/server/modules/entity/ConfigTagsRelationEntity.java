@@ -38,7 +38,6 @@ import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_TAGS_REL
 @Data
 public class ConfigTagsRelationEntity implements Serializable {
     
-    
     @Id
     @Column(name = "nid")
     @GeneratedValue(strategy = GenerationType.IDENTITY)

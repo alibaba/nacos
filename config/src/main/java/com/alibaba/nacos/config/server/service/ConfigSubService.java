@@ -31,8 +31,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Config sub service.
@@ -41,19 +53,19 @@ import java.util.concurrent.*;
  */
 @Service
 public class ConfigSubService {
-
+    
     private ServerMemberManager memberManager;
-
+    
     @Autowired
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public ConfigSubService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
-
+    
     protected ConfigSubService() {
-
+    
     }
-
+    
     /**
      * Get and return called url string value.
      *
@@ -64,10 +76,10 @@ public class ConfigSubService {
     private String getUrl(String ip, String relativePath) {
         return "http://" + ip + ApplicationUtils.getContextPath() + relativePath;
     }
-
+    
     private List<SampleResult> runCollectionJob(String url, Map<String, String> params,
             CompletionService<SampleResult> completionService, List<SampleResult> resultList) {
-
+        
         Collection<Member> ipList = memberManager.allMembers();
         List<SampleResult> collectionResult = new ArrayList<SampleResult>(ipList.size());
         // Submit query task.
@@ -107,7 +119,7 @@ public class ConfigSubService {
         }
         return collectionResult;
     }
-
+    
     /**
      * Merge SampleResult.
      *
@@ -124,7 +136,7 @@ public class ConfigSubService {
         } else {
             lisentersGroupkeyStatus = sampleCollectResult.getLisentersGroupkeyStatus();
         }
-
+        
         for (SampleResult sampleResult : sampleResults) {
             Map<String, String> lisentersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
             for (Map.Entry<String, String> entry : lisentersGroupkeyStatusTmp.entrySet()) {
@@ -134,44 +146,44 @@ public class ConfigSubService {
         mergeResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
         return mergeResult;
     }
-
+    
     /**
      * Query subsrciber's task from every nacos server nodes.
      *
      * @author Nacos
      */
     class Job implements Callable<SampleResult> {
-
+        
         private String ip;
-
+        
         private String url;
-
+        
         private Map<String, String> params;
-
+        
         public Job(String ip, String url, Map<String, String> params) {
             this.ip = ip;
             this.url = url;
             this.params = params;
         }
-
+        
         @Override
         public SampleResult call() throws Exception {
-
+            
             try {
                 StringBuilder paramUrl = new StringBuilder();
                 for (Map.Entry<String, String> param : params.entrySet()) {
                     paramUrl.append("&").append(param.getKey()).append("=")
-                        .append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
+                            .append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
                 }
-
+                
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
                 RestResult<String> result = NotifyService.invokeURL(urlAll, null, Constants.ENCODE);
-
+                
                 // Http code 200
                 if (result.ok()) {
                     return JacksonUtils.toObj(result.getData(), SampleResult.class);
                 } else {
-
+                    
                     LogUtil.DEFAULT_LOG.info("Can not get clientInfo from {} with {}", ip, result.getData());
                     return null;
                 }
@@ -181,7 +193,7 @@ public class ConfigSubService {
             }
         }
     }
-
+    
     public SampleResult getCollectSampleResult(String dataId, String group, String tenant, int sampleTime)
             throws Exception {
         List<SampleResult> resultList = new ArrayList<SampleResult>();
@@ -196,7 +208,7 @@ public class ConfigSubService {
                 memberManager.getServerList().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(
                 ConfigExecutor.getConfigSubServiceExecutor(), queue);
-
+        
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
             List<SampleResult> sampleResults = runCollectionJob(url, params, completionService, resultList);
@@ -206,7 +218,7 @@ public class ConfigSubService {
         }
         return sampleCollectResult;
     }
-
+    
     public SampleResult getCollectSampleResultByIp(String ip, int sampleTime) throws Exception {
         List<SampleResult> resultList = new ArrayList<SampleResult>(10);
         String url = Constants.COMMUNICATION_CONTROLLER_PATH + "/watcherConfigs";
@@ -216,7 +228,7 @@ public class ConfigSubService {
                 memberManager.getServerList().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(
                 ConfigExecutor.getConfigSubServiceExecutor(), queue);
-
+        
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
             List<SampleResult> sampleResults = runCollectionJob(url, params, completionService, resultList);
@@ -226,5 +238,5 @@ public class ConfigSubService {
         }
         return sampleCollectResult;
     }
-
+    
 }

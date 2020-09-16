@@ -39,12 +39,12 @@ import java.util.stream.Collectors;
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
 public class ExternalRolePersistServiceImpl implements RolePersistService {
-
+    
     @Autowired
     private RolesRepository rolesRepository;
-
+    
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-
+        
         org.springframework.data.domain.Page<RolesEntity> sPage = rolesRepository
                 .findAll(null, PageRequest.of(pageNo, pageSize));
         Page<RoleInfo> page = new Page<>();
@@ -54,9 +54,9 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         page.setTotalCount((int) sPage.getTotalElements());
         return page;
     }
-
+    
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
-
+        
         org.springframework.data.domain.Page<RolesEntity> sPage = rolesRepository
                 .findAll(QRolesEntity.rolesEntity.username.eq(username), PageRequest.of(pageNo, pageSize));
         Page<RoleInfo> page = new Page<>();
@@ -66,18 +66,18 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         page.setTotalCount((int) sPage.getTotalElements());
         return page;
     }
-
+    
     /**
      * Execute add role operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param userName username string value.
      */
     public void addRole(String role, String userName) {
-
+        
         rolesRepository.save(new RolesEntity(userName, role));
     }
-
+    
     /**
      * Execute delete role operation.
      *
@@ -87,25 +87,24 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         Iterable<RolesEntity> iterable = rolesRepository.findAll(QRolesEntity.rolesEntity.role.eq(role));
         rolesRepository.deleteAll(iterable);
     }
-
+    
     /**
      * Execute delete role operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param username username string value.
      */
     public void deleteRole(String role, String username) {
         QRolesEntity qRoles = QRolesEntity.rolesEntity;
         rolesRepository.findOne(qRoles.role.eq(role).and(qRoles.username.eq(username)))
-            .ifPresent(s -> rolesRepository.delete(s));
+                .ifPresent(s -> rolesRepository.delete(s));
     }
-
-
+    
     @Override
     public List<String> findRolesLikeRoleName(String role) {
-        List<RolesEntity> rolesEntities = (List<RolesEntity>) rolesRepository.findAll(QRolesEntity.rolesEntity.role.like(role));
+        List<RolesEntity> rolesEntities = (List<RolesEntity>) rolesRepository
+                .findAll(QRolesEntity.rolesEntity.role.like(role));
         return rolesEntities.stream().map(s -> s.getRole()).collect(Collectors.toList());
     }
-
-
+    
 }

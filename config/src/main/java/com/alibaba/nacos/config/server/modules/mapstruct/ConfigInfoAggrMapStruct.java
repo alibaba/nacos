@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.modules.mapstruct;
 
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggrEntity;
@@ -25,16 +25,17 @@ import java.util.List;
 
 
 /**
+ * ConfigInfoAggrMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface ConfigInfoAggrMapStruct {
-
+    
     ConfigInfoAggrMapStruct INSTANCE = Mappers.getMapper(ConfigInfoAggrMapStruct.class);
-
+    
     ConfigInfoAggr convertConfigInfoAggr(ConfigInfoAggrEntity aggrEntity);
-
+    
     List<ConfigInfoAggr> convertConfigInfoAggrList(List<ConfigInfoAggrEntity> list);
-
-
+    
 }

@@ -40,10 +40,10 @@ import java.util.stream.Collectors;
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
 public class ExternalUserPersistServiceImpl implements UserPersistService {
-
+    
     @Autowired
     private UsersRepository usersRepository;
-
+    
     /**
      * Execute create user operation.
      *
@@ -53,7 +53,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     public void createUser(String username, String password) {
         usersRepository.save(new UsersEntity(username, password, 1));
     }
-
+    
     /**
      * Execute delete user operation.
      *
@@ -63,7 +63,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         usersRepository.findOne(QUsersEntity.usersEntity.password.eq(username))
                 .ifPresent(u -> usersRepository.delete(u));
     }
-
+    
     /**
      * Execute update user password operation.
      *
@@ -76,7 +76,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             usersRepository.save(u);
         });
     }
-
+    
     /**
      * Execute find user by username operation.
      *
@@ -88,10 +88,10 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
                 .orElseThrow(() -> new RuntimeException(username + " not exist"));
         return UserMapStruct.INSTANCE.convertUser(usersEntity);
     }
-
+    
     public Page<User> getUsers(int pageNo, int pageSize) {
         org.springframework.data.domain.Page<UsersEntity> sPage = usersRepository
-            .findAll(null, PageRequest.of(pageNo, pageSize));
+                .findAll(null, PageRequest.of(pageNo, pageSize));
         Page<User> page = new Page<>();
         page.setPageNumber(sPage.getNumber());
         page.setPagesAvailable(sPage.getTotalPages());
@@ -99,11 +99,11 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         page.setTotalCount((int) sPage.getTotalElements());
         return page;
     }
-
+    
     @Override
     public List<String> findUserLikeUsername(String username) {
         List<UsersEntity> usersEntities = (List<UsersEntity>) usersRepository
-            .findAll(QUsersEntity.usersEntity.username.like(username));
+                .findAll(QUsersEntity.usersEntity.username.like(username));
         return usersEntities.stream().map(s -> s.getUsername()).collect(Collectors.toList());
     }
 }

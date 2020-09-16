@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.repository;
 
 import com.alibaba.nacos.config.server.modules.entity.TenantInfoEntity;
@@ -22,13 +23,15 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import java.util.List;
 
 /**
+ * TenantInfoRepository.
+ *
  * @author Nacos
  */
-public interface TenantInfoRepository extends PagingAndSortingRepository<TenantInfoEntity, Long>,
-    QuerydslPredicateExecutor<TenantInfoEntity> {
-
+public interface TenantInfoRepository
+        extends PagingAndSortingRepository<TenantInfoEntity, Long>, QuerydslPredicateExecutor<TenantInfoEntity> {
+    
     List<TenantInfoEntity> findByKp(String kp);
-
+    
     TenantInfoEntity findByKpAndTenantId(String kp, String tenantId);
-
+    
 }

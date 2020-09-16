@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
@@ -23,14 +24,15 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 /**
+ * ConfigInfoBetaWrapperMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface ConfigInfoBetaWrapperMapStruct {
-
+    
     ConfigInfoBetaWrapperMapStruct INSTANCE = Mappers.getMapper(ConfigInfoBetaWrapperMapStruct.class);
-
-
+    
     List<ConfigInfoBetaWrapper> convertConfigInfoBetaWrapperList(List<ConfigInfoBetaEntity> list);
-
+    
 }

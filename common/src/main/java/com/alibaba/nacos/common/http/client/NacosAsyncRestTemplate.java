@@ -40,14 +40,14 @@ import java.util.Map;
  * @see HttpClientResponse
  */
 public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
-
+    
     private final AsyncHttpClientRequest clientRequest;
-
+    
     public NacosAsyncRestTemplate(Logger logger, AsyncHttpClientRequest clientRequest) {
         super(logger);
         this.clientRequest = clientRequest;
     }
-
+    
     /**
      * async http get URL request params are expanded using the given query {@link Query}.
      *
@@ -83,10 +83,10 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     public <T> void getLarge(String url, Header header, Query query, Object body, Type responseType,
-                             Callback<T> callback) {
+            Callback<T> callback) {
         execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseType, callback);
     }
-
+    
     /**
      * async http delete URL request params are expanded using the given query {@link Query},
      *
@@ -104,7 +104,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     public <T> void delete(String url, Header header, Query query, Type responseType, Callback<T> callback) {
         execute(url, HttpMethod.DELETE, new RequestHttpEntity(header, query), responseType, callback);
     }
-
+    
     /**
      * async http put Create a new resource by PUTting the given body to http request.
      *
@@ -125,7 +125,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     public <T> void put(String url, Header header, Query query, Object body, Type responseType, Callback<T> callback) {
         execute(url, HttpMethod.PUT, new RequestHttpEntity(header, query, body), responseType, callback);
     }
-
+    
     /**
      * async http put Json Create a new resource by PUTting the given body to http request, http header contentType
      * default 'application/json;charset=UTF-8'.
@@ -190,12 +190,12 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     public <T> void putForm(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType,
-                            Callback<T> callback) {
+            Callback<T> callback) {
         execute(url, HttpMethod.PUT,
-            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
-            responseType, callback);
+                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
+                responseType, callback);
     }
-
+    
     /**
      * async http put from Create a new resource by PUTting the given map {@code bodyValues} to http request, http
      * header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
@@ -238,7 +238,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     public <T> void post(String url, Header header, Query query, Object body, Type responseType, Callback<T> callback) {
         execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body), responseType, callback);
     }
-
+    
     /**
      * async http post Json Create a new resource by POSTing the given object to the http request, http header
      * contentType default 'application/json;charset=UTF-8'.
@@ -303,12 +303,12 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     public <T> void postForm(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType,
-                             Callback<T> callback) {
+            Callback<T> callback) {
         execute(url, HttpMethod.POST,
-            new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
-            responseType, callback);
+                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
+                responseType, callback);
     }
-
+    
     /**
      * async http post from Create a new resource by PUTting the given map {@code bodyValues} to http request, http
      * header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
@@ -346,7 +346,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
             callback.onError(e);
         }
     }
-
+    
     /**
      * close request client.
      */

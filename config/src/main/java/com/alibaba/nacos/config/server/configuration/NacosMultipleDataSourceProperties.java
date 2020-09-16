@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.configuration.datasource.DataSourceType;
@@ -24,21 +25,24 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
+ * NacosMultipleDataSourceProperties.
+ *
  * @author Nacos
  */
 @Component
 @Data
 @ConfigurationProperties(prefix = "nacos.datasource")
 public class NacosMultipleDataSourceProperties {
-
+    
     private DataSourceType type;
+    
     private RelationalDataSource relational;
-
+    
     @Data
     public static class RelationalDataSource {
-
+        
         private List<DataSourceProperties> dsList;
-
+        
     }
-
+    
 }

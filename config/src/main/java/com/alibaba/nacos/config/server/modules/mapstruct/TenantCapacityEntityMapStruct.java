@@ -22,6 +22,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
 /**
+ * TenantCapacityEntityMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
@@ -29,8 +31,6 @@ public interface TenantCapacityEntityMapStruct {
     
     TenantCapacityEntityMapStruct INSTANCE = Mappers.getMapper(TenantCapacityEntityMapStruct.class);
     
-    
     TenantCapacityEntity convertTenantCapacityEntity(TenantCapacity tenantCapacity);
-    
     
 }

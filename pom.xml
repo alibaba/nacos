@@ -311,7 +311,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <excludes>**/istio/model/**,**/nacos/test/**</excludes>
+                    <excludes>**/istio/model/**,**/nacos/test/**,**/com/alibaba/nacos/config/server/modules/**</excludes>
                 </configuration>
                 <executions>
                     <execution>

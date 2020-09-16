@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.modules.mapstruct;
 
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.modules.entity.HisConfigInfoEntity;
@@ -24,15 +24,17 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 /**
+ * ConfigHistoryInfoMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface ConfigHistoryInfoMapStruct {
-
+    
     ConfigHistoryInfoMapStruct INSTANCE = Mappers.getMapper(ConfigHistoryInfoMapStruct.class);
-
+    
     ConfigHistoryInfo convertConfigHistoryInfo(HisConfigInfoEntity hisConfigInfoEntity);
-
+    
     List<ConfigHistoryInfo> convertConfigHistoryInfoList(List<HisConfigInfoEntity> list);
-
+    
 }

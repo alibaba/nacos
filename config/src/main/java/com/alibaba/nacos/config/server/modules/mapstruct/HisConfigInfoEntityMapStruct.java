@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -23,21 +24,18 @@ import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
 
 /**
+ * HisConfigInfoEntityMapStruct.
+ *
  * @author Nacos
  */
 @Mapper
 public interface HisConfigInfoEntityMapStruct {
-
-
+    
     HisConfigInfoEntityMapStruct INSTANCE = Mappers.getMapper(HisConfigInfoEntityMapStruct.class);
-
-
-    @Mappings({
-        @Mapping(source="groupId", target="group"),
-        @Mapping(source="tenantId", target="tenant"),
-        @Mapping(source="gmtCreate", target="createdTime"),
-        @Mapping(source="gmtModified", target="lastModifiedTime")
-    })
+    
+    @Mappings({@Mapping(source = "groupId", target = "group"), @Mapping(source = "tenantId", target = "tenant"),
+            @Mapping(source = "gmtCreate", target = "createdTime"),
+            @Mapping(source = "gmtModified", target = "lastModifiedTime")})
     ConfigHistoryInfo convertConfigHistoryInfo(HisConfigInfoEntity hisConfigInfo);
-
+    
 }
