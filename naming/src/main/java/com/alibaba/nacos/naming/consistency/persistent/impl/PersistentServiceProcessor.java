@@ -33,7 +33,7 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.exception.ErrorCode;
-import com.alibaba.nacos.core.exception.KVStorageException;
+import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.core.storage.StorageFactory;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -127,13 +127,13 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         this.protocol = protocolManager.getCpProtocol();
         this.oldStore = oldStore;
         this.versionJudgement = versionJudgement;
-        this.kvStorage = StorageFactory.createKVStorage(KvStorage.KVType.File, "naming-persistent",
+        this.kvStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, "naming-persistent",
                 Paths.get(UtilsAndCommons.DATA_BASE_DIR, "persistent").toString());
         this.notifier = new PersistentNotifier(key -> {
             try {
                 byte[] data = kvStorage.get(ByteUtils.toBytes(key));
                 return serializer.deserialize(data);
-            } catch (KVStorageException ex) {
+            } catch (KvStorageException ex) {
                 throw new NacosRuntimeException(ex.getErrCode(), ex.getErrMsg());
             }
         });
@@ -148,7 +148,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                 .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
                         (o, arg) -> hasLeader = StringUtils.isNotBlank(String.valueOf(arg)));
         // If you choose to use the new RAFT protocol directly, there will be no compatible logical execution
-        if (ApplicationUtils.getProperty("nacos.naming.use-new-raft.first", Boolean.class, false)) {
+        if (ApplicationUtils.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
             NotifyCenter.registerSubscriber(notifier);
         } else {
             this.versionJudgement.registerObserver(isNewVersion -> {
@@ -171,7 +171,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
             result.forEach(response::append);
             return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(response)))
                     .build();
-        } catch (KVStorageException e) {
+        } catch (KvStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
         } finally {
             lock.unlock();
@@ -198,7 +198,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
             }
             publishValueChangeEvent(op, request);
             return Response.newBuilder().setSuccess(true).build();
-        } catch (KVStorageException e) {
+        } catch (KvStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
         } finally {
             lock.unlock();

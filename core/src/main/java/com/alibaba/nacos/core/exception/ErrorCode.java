@@ -78,7 +78,7 @@ public enum ErrorCode {
     IOMakeDirError(40201),
     
     /**
-     * copy directory has error
+     * copy directory has error.
      */
     IOCopyDirError(40202),
     

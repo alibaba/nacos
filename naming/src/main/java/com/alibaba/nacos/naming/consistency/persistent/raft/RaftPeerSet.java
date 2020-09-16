@@ -365,6 +365,4 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
         return "RaftPeerSet{" + "localTerm=" + localTerm + ", leader=" + leader + ", peers=" + peers + ", sites="
                 + sites + '}';
     }
-    
-
 }
