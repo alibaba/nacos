@@ -90,7 +90,7 @@ public class WebUtils {
             encoding = StandardCharsets.UTF_8.name();
         }
         try {
-            value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
+            value = HttpUtils.decode(new String(value.getBytes(encoding), encoding), encoding);
         } catch (UnsupportedEncodingException ignore) {
         }
         return value.trim();
