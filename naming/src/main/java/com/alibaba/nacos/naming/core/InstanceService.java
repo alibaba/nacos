@@ -60,9 +60,7 @@ public class InstanceService {
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) {
         String clientId = instance.toInetAddr();
-        if (!ipPortBasedClientManager.allClientId().contains(clientId)) {
-            ipPortBasedClientManager.clientConnected(new IpPortBasedClient(clientId, instance.isEphemeral()));
-        }
+        createIpPortClientIfAbsent(clientId, instance.isEphemeral());
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped, instance.isEphemeral());
@@ -104,9 +102,16 @@ public class InstanceService {
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped, true);
         if (null != subscriber) {
+            createIpPortClientIfAbsent(subscriber.getAddrStr(), true);
             clientOperationService.subscribeService(service, subscriber, subscriber.getAddrStr());
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         return ServiceUtil.filterInstances(serviceInfo, cluster, healthOnly);
+    }
+    
+    private void createIpPortClientIfAbsent(String clientId, boolean ephemeral) {
+        if (!ipPortBasedClientManager.allClientId().contains(clientId)) {
+            ipPortBasedClientManager.clientConnected(new IpPortBasedClient(clientId, ephemeral));
+        }
     }
 }

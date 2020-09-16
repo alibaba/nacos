@@ -16,18 +16,21 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The manager of {@code IpPortBasedClient} and ephemeral.
@@ -43,6 +46,8 @@ public class IpPortBasedClientManager implements ClientManager {
     
     public IpPortBasedClientManager(DistroMapper distroMapper) {
         this.distroMapper = distroMapper;
+        GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0,
+                Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
     }
     
     @Override
@@ -84,5 +89,30 @@ public class IpPortBasedClientManager implements ClientManager {
     public void verifyClient(String clientId) {
         IpPortBasedClient client = clients.get(clientId);
         // TODO check whether client is newest by updated time
+    }
+    
+    private static class ExpiredClientCleaner implements Runnable {
+        
+        private final IpPortBasedClientManager clientManager;
+        
+        public ExpiredClientCleaner(IpPortBasedClientManager clientManager) {
+            this.clientManager = clientManager;
+        }
+        
+        @Override
+        public void run() {
+            long currentTime = System.currentTimeMillis();
+            for (String each : clientManager.allClientId()) {
+                IpPortBasedClient client = (IpPortBasedClient) clientManager.getClient(each);
+                if (null != client && isExpireClient(currentTime, client)) {
+                    clientManager.clientDisconnected(each);
+                }
+            }
+        }
+        
+        private boolean isExpireClient(long currentTime, IpPortBasedClient client) {
+            return client.isEphemeral() && client.getAllPublishedService().isEmpty()
+                    && currentTime - client.getLastUpdatedTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
+        }
     }
 }

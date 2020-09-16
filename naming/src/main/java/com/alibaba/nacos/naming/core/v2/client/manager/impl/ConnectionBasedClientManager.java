@@ -45,7 +45,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     private final ConcurrentMap<String, ConnectionBasedClient> clients = new ConcurrentHashMap<>();
     
     public ConnectionBasedClientManager() {
-        GlobalExecutor.scheduleRemoteConnectionManager(new ConnectionBasedClientManager.ExpiredClientCleaner(this), 0,
+        GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0,
                 Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
     }
     

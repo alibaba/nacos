@@ -27,7 +27,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.Subscribers;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.naming.push.RemotePushService;
+import com.alibaba.nacos.naming.push.ClientPushService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -59,7 +59,7 @@ public class SubscribeManager {
     private PushService pushService;
     
     @Autowired
-    private RemotePushService remotePushService;
+    private ClientPushService clientPushService;
     
     @Autowired
     private ServerMemberManager memberManager;
@@ -67,7 +67,7 @@ public class SubscribeManager {
     private List<Subscriber> getSubscribersFuzzy(String serviceName, String namespaceId) {
         List<Subscriber> result = new LinkedList<>();
         result.addAll(pushService.getClientsFuzzy(serviceName, namespaceId));
-        result.addAll(remotePushService.getSubscribes(namespaceId, serviceName));
+        result.addAll(clientPushService.getSubscribes(namespaceId, serviceName));
         return result;
     }
     
