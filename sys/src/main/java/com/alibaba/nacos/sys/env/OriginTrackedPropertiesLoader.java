@@ -31,13 +31,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
+ * copy from springboot to load properties file.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class OriginTrackedPropertiesLoader {
+    
     private final Resource resource;
     
     /**
-     * Create a new {@link NacosAutoRefreshPropertySourceLoader.OriginTrackedPropertiesLoader} instance.
+     * Create a new {@link OriginTrackedPropertiesLoader} instance.
      *
      * @param resource the resource of the {@code .properties} data
      */
@@ -47,8 +51,7 @@ public class OriginTrackedPropertiesLoader {
     }
     
     /**
-     * Load {@code .properties} data and return a map of {@code String} ->
-     * {@link OriginTrackedValue}.
+     * Load {@code .properties} data and return a map of {@code String} -> {@link OriginTrackedValue}.
      *
      * @return the loaded properties
      * @throws IOException on read error
@@ -58,15 +61,14 @@ public class OriginTrackedPropertiesLoader {
     }
     
     /**
-     * Load {@code .properties} data and return a map of {@code String} ->
-     * {@link OriginTrackedValue}.
+     * Load {@code .properties} data and return a map of {@code String} -> {@link OriginTrackedValue}.
      *
      * @param expandLists if list {@code name[]=a,b,c} shortcuts should be expanded
      * @return the loaded properties
      * @throws IOException on read error
      */
     public Map<String, OriginTrackedValue> load(boolean expandLists) throws IOException {
-        try (OriginTrackedPropertiesLoader.CharacterReader reader = new OriginTrackedPropertiesLoader.CharacterReader(this.resource)) {
+        try (OriginTrackedPropertiesLoader.CharacterReader reader = new CharacterReader(this.resource)) {
             Map<String, OriginTrackedValue> result = new LinkedHashMap<>();
             StringBuilder buffer = new StringBuilder();
             while (reader.read()) {
@@ -80,8 +82,7 @@ public class OriginTrackedPropertiesLoader {
                         if (!reader.isEndOfLine()) {
                             reader.read();
                         }
-                    }
-                    while (!reader.isEndOfLine());
+                    } while (!reader.isEndOfLine());
                 } else {
                     OriginTrackedValue value = loadValue(buffer, reader, false);
                     put(result, key, value);
@@ -91,8 +92,7 @@ public class OriginTrackedPropertiesLoader {
         }
     }
     
-    private void put(Map<String, OriginTrackedValue> result, String key,
-            OriginTrackedValue value) {
+    private void put(Map<String, OriginTrackedValue> result, String key, OriginTrackedValue value) {
         if (!key.isEmpty()) {
             result.put(key, value);
         }
@@ -133,12 +133,12 @@ public class OriginTrackedPropertiesLoader {
     }
     
     /**
-     * Reads characters from the source resource, taking care of skipping comments,
-     * handling multi-line values and tracking {@code '\'} escapes.
+     * Reads characters from the source resource, taking care of skipping comments, handling multi-line values and
+     * tracking {@code '\'} escapes.
      */
-    private class CharacterReader implements Closeable {
+    private static class CharacterReader implements Closeable {
         
-        private final String[] ESCAPES = {"trnf", "\t\r\n\f"};
+        private final String[] escapes = {"trnf", "\t\r\n\f"};
         
         private final LineNumberReader reader;
         
@@ -149,8 +149,8 @@ public class OriginTrackedPropertiesLoader {
         private int character;
         
         CharacterReader(Resource resource) throws IOException {
-            this.reader = new LineNumberReader(new InputStreamReader(
-                    resource.getInputStream(), StandardCharsets.ISO_8859_1));
+            this.reader = new LineNumberReader(
+                    new InputStreamReader(resource.getInputStream(), StandardCharsets.ISO_8859_1));
         }
         
         @Override
@@ -200,9 +200,9 @@ public class OriginTrackedPropertiesLoader {
         
         private void readEscaped() throws IOException {
             this.character = this.reader.read();
-            int escapeIndex = ESCAPES[0].indexOf(this.character);
+            int escapeIndex = escapes[0].indexOf(this.character);
             if (escapeIndex != -1) {
-                this.character = ESCAPES[1].charAt(escapeIndex);
+                this.character = escapes[1].charAt(escapeIndex);
             } else if (this.character == '\n') {
                 this.columnNumber = -1;
                 read(true);
@@ -228,8 +228,7 @@ public class OriginTrackedPropertiesLoader {
         }
         
         public boolean isWhiteSpace() {
-            return !this.escaped && (this.character == ' ' || this.character == '\t'
-                    || this.character == '\f');
+            return !this.escaped && (this.character == ' ' || this.character == '\t' || this.character == '\f');
         }
         
         public boolean isEndOfFile() {

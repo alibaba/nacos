@@ -30,7 +30,6 @@ import java.util.Random;
 import static com.alibaba.nacos.sys.env.Constants.PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME;
 import static com.alibaba.nacos.sys.env.Constants.STANDALONE_MODE_PROPERTY_NAME;
 
-
 /**
  * {@link ApplicationUtils} Test.
  *

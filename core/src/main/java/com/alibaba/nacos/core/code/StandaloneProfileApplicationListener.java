@@ -30,7 +30,6 @@ import java.util.Arrays;
 import static com.alibaba.nacos.sys.env.Constants.STANDALONE_MODE_PROPERTY_NAME;
 import static com.alibaba.nacos.sys.env.Constants.STANDALONE_SPRING_PROFILE;
 
-
 /**
  * Standalone {@link Profile} {@link ApplicationListener} for {@link ApplicationEnvironmentPreparedEvent}.
  *
