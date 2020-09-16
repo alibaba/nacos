@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;

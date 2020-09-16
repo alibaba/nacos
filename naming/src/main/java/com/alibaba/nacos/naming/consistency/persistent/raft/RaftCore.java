@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.consistency.DataOperation;

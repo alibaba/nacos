@@ -34,8 +34,6 @@ import org.springframework.core.io.support.ResourcePropertySource;
 
 import java.io.IOException;
 
-import static org.springframework.core.io.support.ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX;
-
 /**
  * A lowest precedence {@link EnvironmentPostProcessor} implementation to append Nacos default {@link PropertySource}
  * with lowest order in {@link Environment}.

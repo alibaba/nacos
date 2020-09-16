@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

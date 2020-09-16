@@ -30,8 +30,8 @@ import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.service.repository.embedded.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 
 import org.junit.AfterClass;
