@@ -23,7 +23,7 @@ import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

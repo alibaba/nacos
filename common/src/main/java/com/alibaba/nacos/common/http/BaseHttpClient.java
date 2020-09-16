@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -103,7 +102,7 @@ public abstract class BaseHttpClient {
         final BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
         final HttpRequestBase httpRequestBase = httpMethod.init(url);
         HttpUtils.initRequestHeader(httpRequestBase, header);
-        HttpUtils.initRequestEntity(httpRequestBase, body, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        HttpUtils.initRequestEntity(httpRequestBase, body, header);
         return httpRequestBase;
     }
     

@@ -28,7 +28,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.alibaba.nacos.core.utils.Constants.NACOS_SERVER_IP;
+import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
+
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
