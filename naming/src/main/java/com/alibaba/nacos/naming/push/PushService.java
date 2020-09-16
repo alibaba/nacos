@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.push;
 
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.Service;
@@ -185,6 +186,37 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         
     }
     
+    /**
+     * Push Data.
+     *
+     * @param subscriber  subscriber
+     * @param serviceInfo service info
+     */
+    public void pushData(Subscriber subscriber, ServiceInfo serviceInfo) {
+        String serviceName = subscriber.getServiceName();
+        String namespaceId = subscriber.getNamespaceId();
+        if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName))) {
+            return;
+        }
+        int port = Integer.parseInt(subscriber.getAddrStr().split(":")[1]);
+        InetSocketAddress socketAddress = new InetSocketAddress(subscriber.getIp(), port);
+        Future future = GlobalExecutor.scheduleUdpSender(() -> {
+            try {
+                Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
+                long lastRefTime = System.nanoTime();
+                Receiver.AckEntry ackEntry = prepareAckEntry(socketAddress, prepareHostsData(JacksonUtils.toJson(serviceInfo)), lastRefTime);
+                Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}", serviceInfo,
+                        subscriber.getAddrStr(), subscriber.getAgent(), (ackEntry == null ? null : ackEntry.key));
+                udpPush(ackEntry);
+            } catch (Exception e) {
+                Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
+            } finally {
+                futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+            }
+        }, 1000L, TimeUnit.MILLISECONDS);
+        futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName), future);
+    }
+    
     public int getTotalPush() {
         return totalPush;
     }
@@ -311,56 +343,47 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     }
     
     private static Receiver.AckEntry prepareAckEntry(PushClient client, Map<String, Object> data, long lastRefTime) {
+        return prepareAckEntry(client.socketAddr, data, lastRefTime);
+    }
+    
+    private static Receiver.AckEntry prepareAckEntry(InetSocketAddress socketAddress, Map<String, Object> data,
+            long lastRefTime) {
         if (MapUtils.isEmpty(data)) {
-            Loggers.PUSH.error("[NACOS-PUSH] pushing empty data for client is not allowed: {}", client);
+            Loggers.PUSH.error("[NACOS-PUSH] pushing empty data for client is not allowed: {}", socketAddress);
             return null;
         }
-        
         data.put("lastRefTime", lastRefTime);
-        
-        // we apply lastRefTime as sequence num for further ack
-        String key = getAckKey(client.getSocketAddr().getAddress().getHostAddress(), client.getSocketAddr().getPort(),
-                lastRefTime);
-        
         String dataStr = JacksonUtils.toJson(data);
-        
         try {
             byte[] dataBytes = dataStr.getBytes(StandardCharsets.UTF_8);
             dataBytes = compressIfNecessary(dataBytes);
-            
-            DatagramPacket packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
-            
-            // we must store the key be fore send, otherwise there will be a chance the
-            // ack returns before we put in
-            Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
-            ackEntry.data = data;
-            
-            return ackEntry;
+            return prepareAckEntry(socketAddress, dataBytes, data, lastRefTime);
         } catch (Exception e) {
-            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data,
-                    client.getSocketAddr(), e);
+            Loggers.PUSH
+                    .error("[NACOS-PUSH] failed to compress data: {} to client: {}, error: {}", data, socketAddress, e);
             return null;
         }
     }
     
     private static Receiver.AckEntry prepareAckEntry(PushClient client, byte[] dataBytes, Map<String, Object> data,
             long lastRefTime) {
-        String key = getAckKey(client.getSocketAddr().getAddress().getHostAddress(), client.getSocketAddr().getPort(),
-                lastRefTime);
-        DatagramPacket packet = null;
+        return prepareAckEntry(client.socketAddr, dataBytes, data, lastRefTime);
+    }
+    
+    private static Receiver.AckEntry prepareAckEntry(InetSocketAddress socketAddress, byte[] dataBytes,
+            Map<String, Object> data, long lastRefTime) {
+        String key = getAckKey(socketAddress.getAddress().getHostAddress(), socketAddress.getPort(), lastRefTime);
         try {
-            packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
+            DatagramPacket packet = new DatagramPacket(dataBytes, dataBytes.length, socketAddress);
             Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
             // we must store the key be fore send, otherwise there will be a chance the
             // ack returns before we put in
             ackEntry.data = data;
-            
             return ackEntry;
         } catch (Exception e) {
-            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data,
-                    client.getSocketAddr(), e);
+            Loggers.PUSH
+                    .error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data, socketAddress, e);
         }
-        
         return null;
     }
     
@@ -577,11 +600,14 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     }
     
     private static Map<String, Object> prepareHostsData(PushClient client) throws Exception {
-        Map<String, Object> cmd = new HashMap<String, Object>(2);
-        cmd.put("type", "dom");
-        cmd.put("data", client.getDataSource().getData(client));
-        
-        return cmd;
+        return prepareHostsData(client.getDataSource().getData(client));
+    }
+    
+    private static Map<String, Object> prepareHostsData(String dataContent) {
+        Map<String, Object> result = new HashMap<String, Object>(2);
+        result.put("type", "dom");
+        result.put("data", dataContent);
+        return result;
     }
     
     private static Receiver.AckEntry udpPush(Receiver.AckEntry ackEntry) {
