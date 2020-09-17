@@ -19,8 +19,6 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.api.naming.NamingResponseCode;
-import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
@@ -365,48 +363,52 @@ public class InstanceController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         checkServiceNameFormat(serviceName);
         Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
-        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clusterName, ip, port);
         
-        if (instance == null) {
-            if (clientBeat == null) {
-                result.put(CommonParams.CODE, NamingResponseCode.RESOURCE_NOT_FOUND);
-                return result;
-            }
-            
-            Loggers.SRV_LOG.warn("[CLIENT-BEAT] The instance has been removed for health mechanism, "
-                    + "perform data compensation operations, beat: {}, serviceName: {}", clientBeat, serviceName);
-            
-            instance = new Instance();
-            instance.setPort(clientBeat.getPort());
-            instance.setIp(clientBeat.getIp());
-            instance.setWeight(clientBeat.getWeight());
-            instance.setMetadata(clientBeat.getMetadata());
-            instance.setClusterName(clusterName);
-            instance.setServiceName(serviceName);
-            instance.setInstanceId(instance.getInstanceId());
-            instance.setEphemeral(clientBeat.isEphemeral());
-            
-            serviceManager.registerInstance(namespaceId, serviceName, instance);
-        }
-        
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        
-        if (service == null) {
-            throw new NacosException(NacosException.SERVER_ERROR,
-                    "service not found: " + serviceName + "@" + namespaceId);
-        }
-        if (clientBeat == null) {
-            clientBeat = new RsInfo();
-            clientBeat.setIp(ip);
-            clientBeat.setPort(port);
-            clientBeat.setCluster(clusterName);
-        }
-        service.processClientBeat(clientBeat);
-        
-        result.put(CommonParams.CODE, NamingResponseCode.OK);
-        if (instance.containsMetadata(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
-            result.put(SwitchEntry.CLIENT_BEAT_INTERVAL, instance.getInstanceHeartBeatInterval());
-        }
+        //        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clusterName, ip, port);
+        //
+        //        if (instance == null) {
+        //            if (clientBeat == null) {
+        //                result.put(CommonParams.CODE, NamingResponseCode.RESOURCE_NOT_FOUND);
+        //                return result;
+        //            }
+        //
+        //            Loggers.SRV_LOG.warn("[CLIENT-BEAT] The instance has been removed for health mechanism, "
+        //                    + "perform data compensation operations, beat: {}, serviceName: {}", clientBeat, serviceName);
+        //
+        //            instance = new Instance();
+        //            instance.setPort(clientBeat.getPort());
+        //            instance.setIp(clientBeat.getIp());
+        //            instance.setWeight(clientBeat.getWeight());
+        //            instance.setMetadata(clientBeat.getMetadata());
+        //            instance.setClusterName(clusterName);
+        //            instance.setServiceName(serviceName);
+        //            instance.setInstanceId(instance.getInstanceId());
+        //            instance.setEphemeral(clientBeat.isEphemeral());
+        //
+        //            serviceManager.registerInstance(namespaceId, serviceName, instance);
+        //        }
+        //
+        //        Service service = serviceManager.getService(namespaceId, serviceName);
+        //
+        //        if (service == null) {
+        //            throw new NacosException(NacosException.SERVER_ERROR,
+        //                    "service not found: " + serviceName + "@" + namespaceId);
+        //        }
+        //        if (clientBeat == null) {
+        //            clientBeat = new RsInfo();
+        //            clientBeat.setIp(ip);
+        //            clientBeat.setPort(port);
+        //            clientBeat.setCluster(clusterName);
+        //        }
+        //        service.processClientBeat(clientBeat);
+        //        result.put(CommonParams.CODE, NamingResponseCode.OK);
+        //        if (instance.containsMetadata(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
+        //            result.put(SwitchEntry.CLIENT_BEAT_INTERVAL, instance.getInstanceHeartBeatInterval());
+        //        }
+        int resultCode = instanceService.handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat);
+        result.put(CommonParams.CODE, resultCode);
+        result.put(SwitchEntry.CLIENT_BEAT_INTERVAL,
+                instanceService.getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));
         result.put(SwitchEntry.LIGHT_BEAT_ENABLED, switchDomain.isLightBeatEnabled());
         return result;
     }

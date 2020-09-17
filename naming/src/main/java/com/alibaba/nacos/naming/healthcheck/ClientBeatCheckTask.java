@@ -38,11 +38,11 @@ import java.net.HttpURLConnection;
 import java.util.List;
 
 /**
- * Check and update statues of ephemeral instances, remove them if they have been expired.
+ * Client beat check task of service for version 1.x.
  *
  * @author nkorange
  */
-public class ClientBeatCheckTask implements Runnable {
+public class ClientBeatCheckTask implements BeatCheckTask {
     
     private Service service;
     
@@ -68,6 +68,7 @@ public class ClientBeatCheckTask implements Runnable {
         return ApplicationUtils.getBean(SwitchDomain.class);
     }
     
+    @Override
     public String taskKey() {
         return KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName());
     }
