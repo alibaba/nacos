@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
@@ -43,8 +45,6 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
-import com.alibaba.nacos.core.auth.ActionTypes;
-import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -134,6 +134,7 @@ public class ConfigController {
         
         final String srcIp = RequestUtil.getRemoteIp(request);
         final String requestIpApp = RequestUtil.getAppName(request);
+        srcUser = RequestUtil.getSrcUserName(request);
         // check tenant
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -183,8 +184,8 @@ public class ConfigController {
      * Get configure board infomation fail.
      *
      * @throws ServletException ServletException.
-     * @throws IOException IOException.
-     * @throws NacosException NacosException.
+     * @throws IOException      IOException.
+     * @throws NacosException   NacosException.
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -239,10 +240,11 @@ public class ConfigController {
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParam(tag);
         String clientIp = RequestUtil.getRemoteIp(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
         if (StringUtils.isBlank(tag)) {
-            persistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
+            persistService.removeConfigInfo(dataId, group, tenant, clientIp, srcUser);
         } else {
-            persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
+            persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, srcUser);
         }
         final Timestamp time = TimeUtils.getCurrentTime();
         ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,
@@ -394,7 +396,7 @@ public class ConfigController {
      * Execute to remove beta operation.
      *
      * @param dataId dataId string value.
-     * @param group group string value.
+     * @param group  group string value.
      * @param tenant tenant string value.
      * @return Execute to operate result.
      */
@@ -425,7 +427,7 @@ public class ConfigController {
      * Execute to query beta operation.
      *
      * @param dataId dataId string value.
-     * @param group group string value.
+     * @param group  group string value.
      * @param tenant tenant string value.
      * @return RestResult for ConfigInfo4Beta.
      */
@@ -452,11 +454,11 @@ public class ConfigController {
     /**
      * Execute export config operation.
      *
-     * @param dataId dataId string value.
-     * @param group group string value.
+     * @param dataId  dataId string value.
+     * @param group   group string value.
      * @param appName appName string value.
-     * @param tenant tenant string value.
-     * @param ids id list value.
+     * @param tenant  tenant string value.
+     * @param ids     id list value.
      * @return ResponseEntity.
      */
     @GetMapping(params = "export=true")
@@ -504,11 +506,11 @@ public class ConfigController {
     /**
      * Execute import and publish config operation.
      *
-     * @param request http servlet request .
-     * @param srcUser src user string value.
+     * @param request   http servlet request .
+     * @param srcUser   src user string value.
      * @param namespace namespace string value.
-     * @param policy policy model.
-     * @param file MultipartFile.
+     * @param policy    policy model.
+     * @param file      MultipartFile.
      * @return RestResult Map.
      * @throws NacosException NacosException.
      */
@@ -605,11 +607,11 @@ public class ConfigController {
     /**
      * Execute clone config operation.
      *
-     * @param request http servlet request .
-     * @param srcUser src user string value.
-     * @param namespace namespace string value.
+     * @param request         http servlet request .
+     * @param srcUser         src user string value.
+     * @param namespace       namespace string value.
      * @param configBeansList config beans list.
-     * @param policy config policy model.
+     * @param policy          config policy model.
      * @return RestResult for map.
      * @throws NacosException NacosException.
      */

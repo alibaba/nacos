@@ -19,6 +19,7 @@ package com.alibaba.nacos.common.http.client.request;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.BaseHttpMethod;
 import com.alibaba.nacos.common.http.HttpClientConfig;
+import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.client.response.DefaultClientHttpResponse;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
@@ -56,19 +57,18 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
     
     static HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
-        Header headers = requestHttpEntity.getHeaders();
-        BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
-        httpMethod.init(uri.toString());
-        httpMethod.initHeader(headers);
+        final Header headers = requestHttpEntity.getHeaders();
+        final BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
+        final HttpRequestBase httpRequestBase = httpMethod.init(uri.toString());
+        HttpUtils.initRequestHeader(httpRequestBase, headers);
         if (MediaType.APPLICATION_FORM_URLENCODED.equals(headers.getValue(HttpHeaderConsts.CONTENT_TYPE))
                 && requestHttpEntity.getBody() instanceof Map) {
-            httpMethod.initFromEntity((Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
+            HttpUtils.initRequestFromEntity(httpRequestBase, (Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
         } else {
-            httpMethod.initEntity(requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
+            HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(), headers);
         }
-        HttpRequestBase requestBase = httpMethod.getRequestBase();
-        replaceDefaultConfig(requestBase, requestHttpEntity.getHttpClientConfig());
-        return requestBase;
+        replaceDefaultConfig(httpRequestBase, requestHttpEntity.getHttpClientConfig());
+        return httpRequestBase;
     }
     
     /**

@@ -19,9 +19,9 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpUtils;
-import com.alibaba.nacos.common.http.NAsyncHttpClient;
+import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
@@ -78,7 +78,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 @Component(value = "serverMemberManager")
 public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent> {
     
-    private final NAsyncHttpClient asyncHttpClient = HttpClientManager.getAsyncHttpClient();
+    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CORE);
     
     /**
      * Cluster node list.
@@ -452,7 +452,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                             "/cluster/report");
             
             try {
-                asyncHttpClient
+                asyncRestTemplate
                         .post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version),
                                 Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
                                     @Override

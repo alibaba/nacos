@@ -38,7 +38,9 @@ import java.net.URI;
  * Base http client.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @deprecated Refer to the new {@link com.alibaba.nacos.common.http.client.request.HttpClientRequest}
  */
+@Deprecated
 public abstract class BaseHttpClient {
     
     protected <T> RestResult<T> execute(CloseableHttpClient httpClient, final Type type, HttpUriRequest request)
@@ -97,19 +99,11 @@ public abstract class BaseHttpClient {
     
     protected HttpRequestBase build(String url, Header header, Object body, String method) throws Exception {
         
-        BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
-        httpMethod.init(url);
-        httpMethod.initHeader(header);
-        httpMethod.initEntity(body, header.getValue("Content-Type"));
-        return httpMethod.getRequestBase();
-    }
-    
-    private Header convertHeader(org.apache.http.Header[] headers) {
-        final Header nHeader = Header.newInstance();
-        for (org.apache.http.Header header : headers) {
-            nHeader.addParam(header.getName(), header.getValue());
-        }
-        return nHeader;
+        final BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
+        final HttpRequestBase httpRequestBase = httpMethod.init(url);
+        HttpUtils.initRequestHeader(httpRequestBase, header);
+        HttpUtils.initRequestEntity(httpRequestBase, body, header);
+        return httpRequestBase;
     }
     
     public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {

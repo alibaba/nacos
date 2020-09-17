@@ -346,7 +346,7 @@ public class ServerListManager implements Closeable {
     private List<String> getApacheServerList(String url, String name) {
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.get(url, Header.EMPTY, Query.EMPTY, String.class);
-
+            
             if (httpResult.ok()) {
                 if (DEFAULT_NAME.equals(name)) {
                     EnvUtil.setSelfEnv(httpResult.getHeader().getOriginalResponseHeader());
@@ -367,7 +367,7 @@ public class ServerListManager implements Closeable {
                 return result;
             } else {
                 LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}", addressServerUrl,
-                    httpResult.getCode());
+                        httpResult.getCode());
                 return null;
             }
         } catch (Exception e) {
