@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
-
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.alibaba.nacos.naming.healthcheck;
 
 /**
- * filters of request.
+ * Thread to update ephemeral instance triggered by client beat.
  *
- * @author liuzunfei
- * @version $Id: RequestFilters.java, v 0.1 2020年09月14日 12:00 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-@Service
-public class RequestFilters {
-    
-    List<AbstractRequestFilter> filters = new ArrayList<AbstractRequestFilter>();
-    
-    public void registerFilter(AbstractRequestFilter requestFilter) {
-        filters.add(requestFilter);
-    }
+public interface BeatProcessor extends Runnable {
+
 }

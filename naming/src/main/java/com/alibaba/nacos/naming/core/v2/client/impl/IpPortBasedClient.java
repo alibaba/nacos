@@ -17,6 +17,13 @@
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
 import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
+import com.alibaba.nacos.naming.core.v2.metadata.MetadataConstants;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTaskV2;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+
+import java.util.Collection;
 
 /**
  * Nacos naming client based ip and port.
@@ -32,9 +39,17 @@ public class IpPortBasedClient extends AbstractClient {
     
     private final boolean ephemeral;
     
+    private final ClientBeatCheckTaskV2 beatCheckTask;
+    
     public IpPortBasedClient(String clientId, boolean ephemeral) {
         this.ephemeral = ephemeral;
         this.clientId = clientId;
+        beatCheckTask = new ClientBeatCheckTaskV2(this);
+        scheduleCheckTask();
+    }
+    
+    private void scheduleCheckTask() {
+        HealthCheckReactor.scheduleCheck(beatCheckTask);
     }
     
     @Override
@@ -45,5 +60,19 @@ public class IpPortBasedClient extends AbstractClient {
     @Override
     public boolean isEphemeral() {
         return ephemeral;
+    }
+    
+    @Override
+    public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
+        instancePublishInfo.getExtendDatum().put(MetadataConstants.LAST_BEAT_TIME, System.currentTimeMillis());
+        return super.addServiceInstance(service, instancePublishInfo);
+    }
+    
+    public Collection<InstancePublishInfo> getAllInstancePublishInfo() {
+        return publishers.values();
+    }
+    
+    public void destroy() {
+        HealthCheckReactor.cancelCheck(beatCheckTask);
     }
 }
