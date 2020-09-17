@@ -29,11 +29,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Thread to update ephemeral instance triggered by client beat.
+ * Thread to update ephemeral instance triggered by client beat for v1.x.
  *
  * @author nkorange
  */
-public class ClientBeatProcessor implements Runnable {
+public class ClientBeatProcessor implements BeatProcessor {
     
     public static final long CLIENT_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
     

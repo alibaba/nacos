@@ -16,14 +16,20 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.IpPortBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
+import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessorV2;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
@@ -107,6 +113,63 @@ public class InstanceService {
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         return ServiceUtil.filterInstances(serviceInfo, cluster, healthOnly);
+    }
+    
+    /**
+     * Handle beat request.
+     *
+     * @param namespaceId namespace
+     * @param serviceName service name
+     * @param ip          ip of instance
+     * @param port        port of instance
+     * @param cluster     cluster of instance
+     * @param clientBeat  client beat info
+     * @return result code
+     * @throws NacosException nacos exception when service non-exist and client beat info is null
+     */
+    public int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster,
+            RsInfo clientBeat) throws NacosException {
+        String groupName = NamingUtils.getGroupName(serviceName);
+        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
+        String clientId = ip + ":" + port;
+        IpPortBasedClient client = (IpPortBasedClient) ipPortBasedClientManager.getClient(clientId);
+        if (null == client) {
+            if (null == clientBeat) {
+                return NamingResponseCode.RESOURCE_NOT_FOUND;
+            }
+            Instance instance = new Instance();
+            instance.setPort(clientBeat.getPort());
+            instance.setIp(clientBeat.getIp());
+            instance.setWeight(clientBeat.getWeight());
+            instance.setMetadata(clientBeat.getMetadata());
+            instance.setClusterName(clientBeat.getCluster());
+            instance.setServiceName(serviceName);
+            instance.setInstanceId(instance.getInstanceId());
+            instance.setEphemeral(clientBeat.isEphemeral());
+            registerInstance(namespaceId, serviceName, instance);
+            client = (IpPortBasedClient) ipPortBasedClientManager.getClient(clientId);
+        }
+        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
+        if (!ServiceManager.getInstance().containSingleton(service)) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "service not found: " + serviceName + "@" + namespaceId);
+        }
+        if (null == clientBeat) {
+            clientBeat = new RsInfo();
+            clientBeat.setIp(ip);
+            clientBeat.setPort(port);
+            clientBeat.setCluster(cluster);
+            clientBeat.setServiceName(serviceName);
+        }
+        ClientBeatProcessorV2 beatProcessor = new ClientBeatProcessorV2(namespaceId, clientBeat, client);
+        HealthCheckReactor.scheduleNow(beatProcessor);
+        client.setLastUpdatedTime();
+        return NamingResponseCode.OK;
+    }
+    
+    public long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster) {
+        // TODO Get heart beat interval from CP metadata
+        return 5000L;
     }
     
     private void createIpPortClientIfAbsent(String clientId, boolean ephemeral) {

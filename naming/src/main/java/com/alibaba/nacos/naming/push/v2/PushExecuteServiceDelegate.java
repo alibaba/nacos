@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
  *
  * @author xiweng.yy
  */
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Component
 public class PushExecuteServiceDelegate implements PushExecuteService {
     

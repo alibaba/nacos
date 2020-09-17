@@ -28,7 +28,7 @@ import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.core.remote.RequestFilter;
+import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +46,7 @@ import java.lang.reflect.Type;
  * @version $Id: RemoteRequestAuthFilter.java, v 0.1 2020年09月14日 12:38 PM liuzunfei Exp $
  */
 @Component
-public class RemoteRequestAuthFilter extends RequestFilter {
+public class RemoteRequestAuthFilter extends AbstractRequestFilter {
     
     @Autowired
     private AuthConfigs authConfigs;
