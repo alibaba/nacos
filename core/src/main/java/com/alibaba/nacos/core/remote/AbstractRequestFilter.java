@@ -29,12 +29,12 @@ import javax.annotation.PostConstruct;
  * @author liuzunfei
  * @version $Id: RequestFilter.java, v 0.1 2020年09月14日 11:46 AM liuzunfei Exp $
  */
-public abstract class RequestFilter {
+public abstract class AbstractRequestFilter {
     
     @Autowired
     private RequestFilters requestFilters;
     
-    public RequestFilter() {
+    public AbstractRequestFilter() {
     }
     
     @PostConstruct
@@ -45,8 +45,9 @@ public abstract class RequestFilter {
     /**
      * filter request.
      *
-     * @param request request.
-     * @param meta    request meta.
+     * @param request      request
+     * @param meta         request meta
+     * @param handlerClazz handler class
      * @return response
      */
     protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz);

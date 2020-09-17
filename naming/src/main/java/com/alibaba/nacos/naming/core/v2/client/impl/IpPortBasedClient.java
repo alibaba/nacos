@@ -22,7 +22,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
-import com.alibaba.nacos.naming.healthcheck.RsInfo;
 
 import java.util.Collection;
 

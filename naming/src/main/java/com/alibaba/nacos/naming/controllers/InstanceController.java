@@ -71,6 +71,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
+@SuppressWarnings("PMD.RemoveCommentedCodeRule")
 public class InstanceController {
     
     @Autowired
