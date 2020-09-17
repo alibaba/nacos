@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -81,7 +82,8 @@ public final class HttpUtils {
         }
         if (requestBase instanceof HttpEntityEnclosingRequest) {
             HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
-            ContentType contentType = ContentType.create(header.getValue(HttpHeaderConsts.CONTENT_TYPE), header.getCharset());
+            MediaType mediaType = MediaType.valueOf(header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+            ContentType contentType = ContentType.create(mediaType.getType(), mediaType.getCharset());
             HttpEntity entity;
             if (body instanceof byte[]) {
                 entity = new ByteArrayEntity((byte[]) body, contentType);
