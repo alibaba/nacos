@@ -67,6 +67,11 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     }
     
     @Override
+    public boolean syncClientConnected(String clientId) {
+        return clientConnected(new ConnectionBasedClient(clientId, false));
+    }
+    
+    @Override
     public void clientDisConnected(Connection connect) {
         clientDisconnected(connect.getConnectionId());
     }
