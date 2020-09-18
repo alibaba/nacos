@@ -34,15 +34,18 @@ public class Subscriber implements Serializable {
     
     private String ip;
     
+    private int port;
+    
     private String namespaceId;
     
     private String serviceName;
     
-    public Subscriber(String addrStr, String agent, String app, String ip, String namespaceId, String serviceName) {
+    public Subscriber(String addrStr, String agent, String app, String ip, String namespaceId, String serviceName, int port) {
         this.addrStr = addrStr;
         this.agent = agent;
         this.app = app;
         this.ip = ip;
+        this.port = port;
         this.namespaceId = namespaceId;
         this.serviceName = serviceName;
     }
@@ -93,6 +96,14 @@ public class Subscriber implements Serializable {
     
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+    
+    public int getPort() {
+        return port;
+    }
+    
+    public void setPort(int port) {
+        this.port = port;
     }
     
     @Override

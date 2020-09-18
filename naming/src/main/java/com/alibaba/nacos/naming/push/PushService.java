@@ -198,7 +198,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName))) {
             return;
         }
-        int port = Integer.parseInt(subscriber.getAddrStr().split(":")[1]);
+        int port = subscriber.getPort();
         InetSocketAddress socketAddress = new InetSocketAddress(subscriber.getIp(), port);
         Future future = GlobalExecutor.scheduleUdpSender(() -> {
             try {
@@ -288,7 +288,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         clientConcurrentMap.forEach((key, client) -> {
             clients.add(
                     new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId,
-                            serviceName));
+                            serviceName, client.getPort()));
         });
         return clients;
     }
@@ -314,7 +314,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     && groupName.indexOf(NamingUtils.getGroupName(serviceName)) >= 0) {
                 clientConcurrentMap.forEach((key, client) -> {
                     clients.add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(),
-                            namespaceId, serviceFullName));
+                            namespaceId, serviceFullName, client.getPort()));
                 });
             }
         });
@@ -515,6 +515,10 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         
         public String getIp() {
             return socketAddr.getAddress().getHostAddress();
+        }
+        
+        public int getPort() {
+            return socketAddr.getPort();
         }
         
         @Override
