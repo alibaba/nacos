@@ -26,7 +26,6 @@ import java.util.Map;
  * Represents an HTTP request , consisting of headers and body.
  *
  * @author mai.jh
- * @date 2020/5/23
  */
 public class RequestHttpEntity {
     
@@ -36,7 +35,7 @@ public class RequestHttpEntity {
     
     private final Query query;
     
-    private Object body;
+    private final Object body;
     
     public RequestHttpEntity(Header header, Query query) {
         this(null, header, query);
