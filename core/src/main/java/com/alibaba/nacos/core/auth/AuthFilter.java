@@ -24,7 +24,7 @@ import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.core.utils.Constants;
+import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
 import org.apache.commons.lang3.StringUtils;

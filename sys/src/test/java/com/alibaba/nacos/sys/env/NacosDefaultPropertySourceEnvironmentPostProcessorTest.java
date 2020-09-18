@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.env;
+package com.alibaba.nacos.sys.env;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,8 +29,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashSet;
 
-import static com.alibaba.nacos.core.env.NacosDefaultPropertySourceEnvironmentPostProcessor.PROPERTY_SOURCE_NAME;
-import static com.alibaba.nacos.core.env.NacosDefaultPropertySourceEnvironmentPostProcessor.RESOURCE_LOCATION_PATTERN;
+import static com.alibaba.nacos.sys.env.NacosDefaultPropertySourceEnvironmentPostProcessor.PROPERTY_SOURCE_NAME;
+import static com.alibaba.nacos.sys.env.NacosDefaultPropertySourceEnvironmentPostProcessor.RESOURCE_LOCATION_PATTERN;
 import static java.util.Arrays.asList;
 
 /**

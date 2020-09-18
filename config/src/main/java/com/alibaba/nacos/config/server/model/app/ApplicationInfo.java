@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.model.app;
 
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 
 /**
  * ApplicationInfo.

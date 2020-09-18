@@ -51,7 +51,11 @@ public final class ConvertUtils {
         if (StringUtils.isBlank(val)) {
             return defaultValue;
         }
-        return Integer.parseInt(val);
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException exception) {
+            return defaultValue;
+        }
     }
     
     /**
@@ -77,7 +81,11 @@ public final class ConvertUtils {
         if (StringUtils.isBlank(val)) {
             return defaultValue;
         }
-        return Long.parseLong(val);
+        try {
+            return Long.parseLong(val);
+        } catch (NumberFormatException exception) {
+            return defaultValue;
+        }
     }
     
     /**
@@ -92,7 +100,11 @@ public final class ConvertUtils {
         if (StringUtils.isBlank(val)) {
             return defaultValue;
         }
-        return Boolean.parseBoolean(val);
+        try {
+            return Boolean.parseBoolean(val);
+        } catch (NumberFormatException exception) {
+            return defaultValue;
+        }
     }
     
     //   The following utility functions are extracted from <link>org.apache.commons.lang3</link>

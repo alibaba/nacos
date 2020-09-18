@@ -45,7 +45,7 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;

@@ -18,8 +18,8 @@ package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 
 import java.util.Collections;
 
