@@ -40,7 +40,7 @@ import com.alibaba.nacos.naming.utils.ServiceUtil;
  * @author xiweng.yy
  */
 @org.springframework.stereotype.Service
-public class InstanceService {
+public class InstanceOperatorClientImpl implements InstanceOperator {
     
     private final IpPortBasedClientManager ipPortBasedClientManager;
     
@@ -48,7 +48,7 @@ public class InstanceService {
     
     private final ServiceStorage serviceStorage;
     
-    public InstanceService(IpPortBasedClientManager ipPortBasedClientManager,
+    public InstanceOperatorClientImpl(IpPortBasedClientManager ipPortBasedClientManager,
             ClientOperationService clientOperationService, ServiceStorage serviceStorage) {
         this.ipPortBasedClientManager = ipPortBasedClientManager;
         this.clientOperationService = clientOperationService;
@@ -56,14 +56,9 @@ public class InstanceService {
     }
     
     /**
-     * Register an instance to a service in AP mode.
-     *
-     * <p>This method creates {@code IpPortBasedClient} if it don't exist.
-     *
-     * @param namespaceId id of namespace
-     * @param serviceName service name
-     * @param instance    instance to register
+     * This method creates {@code IpPortBasedClient} if it don't exist.
      */
+    @Override
     public void registerInstance(String namespaceId, String serviceName, Instance instance) {
         String clientId = instance.toInetAddr();
         createIpPortClientIfAbsent(clientId, instance.isEphemeral());
@@ -73,13 +68,7 @@ public class InstanceService {
         clientOperationService.registerInstance(service, instance, clientId);
     }
     
-    /**
-     * Remove instance from service.
-     *
-     * @param namespaceId namespace
-     * @param serviceName service name
-     * @param instance    instance
-     */
+    @Override
     public void removeInstance(String namespaceId, String serviceName, Instance instance) {
         String clientId = instance.toInetAddr();
         if (!ipPortBasedClientManager.allClientId().contains(clientId)) {
@@ -92,21 +81,12 @@ public class InstanceService {
         clientOperationService.deregisterInstance(service, instance, clientId);
     }
     
-    /**
-     * Get all instance of input service.
-     *
-     * @param namespaceId namespace
-     * @param serviceName service name
-     * @param subscriber  subscriber info
-     * @param cluster     cluster of instances
-     * @param healthOnly  whether only return health instances
-     * @return service info
-     */
+    @Override
     public ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
             boolean healthOnly) {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped, true);
+        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
         if (null != subscriber) {
             createIpPortClientIfAbsent(subscriber.getAddrStr(), true);
             clientOperationService.subscribeService(service, subscriber, subscriber.getAddrStr());
@@ -115,18 +95,7 @@ public class InstanceService {
         return ServiceUtil.filterInstances(serviceInfo, cluster, healthOnly);
     }
     
-    /**
-     * Handle beat request.
-     *
-     * @param namespaceId namespace
-     * @param serviceName service name
-     * @param ip          ip of instance
-     * @param port        port of instance
-     * @param cluster     cluster of instance
-     * @param clientBeat  client beat info
-     * @return result code
-     * @throws NacosException nacos exception when service non-exist and client beat info is null
-     */
+    @Override
     public int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster,
             RsInfo clientBeat) throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
@@ -167,6 +136,7 @@ public class InstanceService {
         return NamingResponseCode.OK;
     }
     
+    @Override
     public long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster) {
         // TODO Get heart beat interval from CP metadata
         return 5000L;

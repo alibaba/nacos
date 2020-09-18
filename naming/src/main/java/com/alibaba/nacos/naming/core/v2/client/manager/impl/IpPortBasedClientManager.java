@@ -60,6 +60,11 @@ public class IpPortBasedClientManager implements ClientManager {
     }
     
     @Override
+    public boolean syncClientConnected(String clientId) {
+        return clientConnected(new IpPortBasedClient(clientId, true));
+    }
+    
+    @Override
     public boolean clientDisconnected(String clientId) {
         Loggers.SRV_LOG.info("Client connection {} disconnect, remove instances and subscribers", clientId);
         IpPortBasedClient client = clients.remove(clientId);

@@ -58,7 +58,7 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup, true);
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), "unknown",
-                meta.getClientIp(), namespaceId, serviceName);
+                meta.getClientIp(), namespaceId, serviceName, 0);
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
         } else {

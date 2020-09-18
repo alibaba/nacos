@@ -48,6 +48,11 @@ public class ClientManagerDelegate implements ClientManager {
     }
     
     @Override
+    public boolean syncClientConnected(String clientId) {
+        return getClientManagerById(clientId).syncClientConnected(clientId);
+    }
+    
+    @Override
     public boolean clientDisconnected(String clientId) {
         return getClientManagerById(clientId).clientDisconnected(clientId);
     }

@@ -65,7 +65,7 @@ public class SubscribeManagerTest extends BaseTest {
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
-                    serviceName);
+                    serviceName, 0);
             clients.add(subscriber);
             Mockito.when(pushService.getClients(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
@@ -85,7 +85,7 @@ public class SubscribeManagerTest extends BaseTest {
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
-                    "testGroupName@@test_subscriber");
+                    "testGroupName@@test_subscriber", 0);
             clients.add(subscriber);
             Mockito.when(pushService.getClientsFuzzy(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
@@ -105,7 +105,7 @@ public class SubscribeManagerTest extends BaseTest {
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
-                    serviceName);
+                    serviceName, 0);
             clients.add(subscriber);
             
             List<Member> healthyServers = new ArrayList<>();
