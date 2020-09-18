@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.file;
+package com.alibaba.nacos.sys.file;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
@@ -176,7 +176,7 @@ public class WatchFileCenter {
             }
             
             this.callBackExecutor = ExecutorFactory
-                    .newSingleExecutorService(new NameThreadFactory("com.alibaba.nacos.core.file.watch-" + paths));
+                    .newSingleExecutorService(new NameThreadFactory("com.alibaba.nacos.sys.file.watch-" + paths));
             
             try {
                 WatchService service = FILE_SYSTEM.newWatchService();

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.core;
 
 import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.core.env.StandardEnvironment;

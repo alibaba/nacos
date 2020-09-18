@@ -20,11 +20,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.file.FileChangeEvent;
-import com.alibaba.nacos.core.file.FileWatcher;
-import com.alibaba.nacos.core.file.WatchFileCenter;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.file.FileChangeEvent;
+import com.alibaba.nacos.sys.file.FileWatcher;
+import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
