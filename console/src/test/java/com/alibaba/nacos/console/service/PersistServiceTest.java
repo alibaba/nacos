@@ -131,7 +131,8 @@ public class PersistServiceTest extends BaseTest {
     
     @Test
     public void insertOrUpdateTest() {
-        
+        configInfoRepository.deleteAll();
+        configInfoBetaRepository.deleteAll();
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         configInfoRepository.findOne(qConfigInfo.dataId.eq(configInfoEntity.getDataId())
                 .and(qConfigInfo.groupId.eq(configInfoEntity.getGroupId()))
