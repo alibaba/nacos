@@ -234,8 +234,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
     
     public static boolean isEmbeddedStorage() {
-        //        return embeddedStorage;
-        return false;
+        return embeddedStorage;
     }
     
     // Determines whether to read the data directly
