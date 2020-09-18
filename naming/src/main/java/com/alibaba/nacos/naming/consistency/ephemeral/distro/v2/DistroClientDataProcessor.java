@@ -111,9 +111,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     private void handlerClientSyncData(ClientSyncData clientSyncData) {
-        if (!clientManager.allClientId().contains(clientSyncData.getClientId())) {
-            clientManager.clientConnected(new ConnectionBasedClient(clientSyncData.getClientId(), false));
-        }
+        clientManager.syncClientConnected(clientSyncData.getClientId());
         Client client = clientManager.getClient(clientSyncData.getClientId());
         upgradeClient(client, clientSyncData);
     }
