@@ -428,6 +428,26 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     }
     
     /**
+     * Execute the HTTP method to the given URI template, writing the given request entity to the request, and returns
+     * the response as {@link HttpRestResult}.
+     *
+     * @param url          url
+     * @param config       HttpClientConfig
+     * @param header       http header param
+     * @param query        http query param
+     * @param body         http body param
+     * @param httpMethod   http method
+     * @param responseType return type
+     * @return {@link HttpRestResult}
+     * @throws Exception ex
+     */
+    public <T> HttpRestResult<T> exchange(String url, HttpClientConfig config, Header header, Query query,
+            Object body, String httpMethod, Type responseType) throws Exception {
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header, query, body);
+        return execute(url, httpMethod, requestHttpEntity, responseType);
+    }
+    
+    /**
      * Set the request interceptors that this accessor should use.
      *
      * @param interceptors {@link HttpClientRequestInterceptor}

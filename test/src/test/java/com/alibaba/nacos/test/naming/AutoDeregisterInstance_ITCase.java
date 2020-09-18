@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.test.utils.NamingTestUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -119,7 +119,6 @@ public class AutoDeregisterInstance_ITCase {
         Assert.assertEquals(0, instances.size());
     }
     
-    
     /**
      * 客户端停止上报实例心跳，服务端自动注销实例
      *
@@ -197,7 +196,6 @@ public class AutoDeregisterInstance_ITCase {
         
         Assert.assertEquals(2, instances.size());
     }
-    
     
     /**
      * 指定cluster中（单个、多个）实例,客户端停止上报实例心跳，服务端自动注销实例,恢复心跳，服务端自动注册实例
