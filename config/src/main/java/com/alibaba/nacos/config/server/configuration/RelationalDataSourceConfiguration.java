@@ -23,6 +23,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import javax.sql.DataSource;
 
@@ -35,6 +36,7 @@ import javax.sql.DataSource;
         "T(com.alibaba.nacos.config.server.configuration.datasource.DataSourceType).MYSQL.matches('${nacos.datasource.type}')"
                 + " || T(com.alibaba.nacos.config.server.configuration.datasource.DataSourceType).ORACLE.matches('${nacos.datasource.type}')"
                 + " || T(com.alibaba.nacos.config.server.configuration.datasource.DataSourceType).POSTGRESQL.matches('${nacos.datasource.type}')")
+@EnableJpaRepositories(basePackages = "com.alibaba.nacos.config.server.modules.repository")
 @Configuration
 public class RelationalDataSourceConfiguration {
     
