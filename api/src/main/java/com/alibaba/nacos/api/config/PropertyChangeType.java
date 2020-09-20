@@ -1,7 +1,7 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
- * Licensed under the Apache License, Version 2.0  = the "License"");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config;
 
 /**
- * Property Change Type
+ * Property Change Type.
  *
  * @author rushsky518
  */
 public enum PropertyChangeType {
-    /** add */
+    /**
+     * add.
+     */
     ADDED,
-    /** modified */
+    /**
+     * modified.
+     */
     MODIFIED,
-    /** deleted */
+    /**
+     * deleted.
+     */
     DELETED
 }

@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -51,6 +54,8 @@ class ConfigDetail extends React.Component {
     this.tenant = getParams('namespace') || '';
     this.searchDataId = getParams('searchDataId') || '';
     this.searchGroup = getParams('searchGroup') || '';
+    this.pageSize = getParams('pageSize');
+    this.pageNo = getParams('pageNo');
     // this.params = window.location.hash.split('?')[1]||'';
   }
 
@@ -129,6 +134,8 @@ class ConfigDetail extends React.Component {
           self.field.setValue('config_tags', data.configTags);
           self.field.setValue('desc', data.desc);
           self.field.setValue('md5', data.md5);
+          self.field.setValue('type', data.type);
+          self.initMoacoEditor(data.type, data.content);
         } else {
           Dialog.alert({ title: locale.error, content: result.message });
         }
@@ -146,8 +153,39 @@ class ConfigDetail extends React.Component {
         group: this.searchGroup,
         dataId: this.searchDataId,
         namespace: this.tenant,
+        pageNo: this.pageNo,
+        pageSize: this.pageSize,
       })
     );
+  }
+
+  initMoacoEditor(language, value) {
+    const container = document.getElementById('container');
+    container.innerHTML = '';
+    this.monacoEditor = null;
+    const options = {
+      value,
+      language,
+      codeLens: true,
+      selectOnLineNumbers: true,
+      roundedSelection: false,
+      readOnly: true,
+      lineNumbersMinChars: true,
+      theme: 'vs-dark',
+      wordWrapColumn: 120,
+      folding: false,
+      showFoldingControls: 'always',
+      wordWrap: 'wordWrapColumn',
+      cursorStyle: 'line',
+      automaticLayout: true,
+    };
+    if (!window.monaco) {
+      window.importEditor(() => {
+        this.monacoEditor = window.monaco.editor.create(container, options);
+      });
+    } else {
+      this.monacoEditor = window.monaco.editor.create(container, options);
+    }
   }
 
   render() {
@@ -236,7 +274,7 @@ class ConfigDetail extends React.Component {
               <Input htmlType={'text'} readOnly {...init('md5')} />
             </FormItem>
             <FormItem label={locale.configuration} required {...formItemLayout}>
-              <Input.TextArea htmlType={'text'} multiple rows={15} readOnly {...init('content')} />
+              <div style={{ clear: 'both', height: 300 }} id="container" />
             </FormItem>
             <FormItem label={' '} {...formItemLayout}>
               <Button type={'primary'} onClick={this.goList.bind(this)}>

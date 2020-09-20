@@ -13,27 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 import org.apache.commons.lang3.CharUtils;
 
 /**
- * 用于ConfigCenter可支持的通配字符通配判定以及标准正则转换的通用类
+ * Generic classes for wildcard characters, decisions, and standard canonical transformations that can be supported by
+ * ConfigCenter.
  *
  * @author tianhu E-mail:
- * @version 创建时间：2008-12-30 下午07:09:52 类说明
  */
 public class RegexParser {
-
-    private final static char QUESTION_MARK = '?';
-
+    
+    private static final char QUESTION_MARK = '?';
+    
     /**
-     * 替换输入字符串中非正则特殊字符为标准正则表达式字符串; <br> '*'替换为 ‘.*’ '?'替换为'{n}'，n为连续?的个数; <br> 其他非字母或数字的特殊字符前均添加'\'.
+     * Replace input string non-regular special characters with standard regular expression strings; Replace '*' with
+     * '.* '? 'is replaced by '{n}', n is the number of consecutive ?; Other special characters that are not alphabetic
+     * or numeric are preceded by '\'.
      *
-     * @param regex
+     * @param regex  The expression to be formatted
      * @return
      */
-    static public String regexFormat(String regex) {
+    public static String regexFormat(String regex) {
         if (regex == null) {
             throw new NullPointerException("regex string can't be null");
         }
@@ -65,9 +68,9 @@ public class RegexParser {
         result.append("$");
         return result.toString();
     }
-
-    static public boolean containsWildcard(String regex) {
+    
+    public static boolean containsWildcard(String regex) {
         return (regex.contains("?") || regex.contains("*"));
     }
-
+    
 }

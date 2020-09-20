@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.logging;
 
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
+ * Abstract nacos logging.
+ *
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
  * @since 0.9.0
  */
 public abstract class AbstractNacosLogging {
-
+    
     private static final String NACOS_LOGGING_CONFIG_PROPERTY = "nacos.logging.config";
-
+    
     private static final String NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY = "nacos.logging.default.config.enabled";
-
+    
     private static final String NACOS_LOGGING_PATH_PROPERTY = "nacos.logging.path";
-
+    
     static {
         String loggingPath = System.getProperty(NACOS_LOGGING_PATH_PROPERTY);
         if (StringUtils.isBlank(loggingPath)) {
@@ -37,7 +40,7 @@ public abstract class AbstractNacosLogging {
             System.setProperty(NACOS_LOGGING_PATH_PROPERTY, userHome + "/logs/nacos");
         }
     }
-
+    
     protected String getLocation(String defaultLocation) {
         String location = System.getProperty(NACOS_LOGGING_CONFIG_PROPERTY);
         if (StringUtils.isBlank(location)) {
@@ -48,15 +51,15 @@ public abstract class AbstractNacosLogging {
         }
         return location;
     }
-
+    
     private boolean isDefaultConfigEnabled() {
         String property = System.getProperty(NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY);
         // The default value is true.
-        return property == null || BooleanUtils.toBoolean(property);
+        return property == null || ConvertUtils.toBoolean(property);
     }
-
+    
     /**
-     * Load logging configuration
+     * Load logging configuration.
      */
     public abstract void loadConfiguration();
 }

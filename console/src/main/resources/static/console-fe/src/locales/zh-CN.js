@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -91,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: '命名空间名称',
     namespaceNumber: '命名空间ID',
     namespaceOperation: '操作',
+    refresh: '刷新',
   },
   ServiceList: {
     serviceList: '服务列表',
@@ -134,10 +138,7 @@ const I18N_CONF = {
     query: '查询',
     pubNoData: '没有数据',
     nodeState: '节点状态',
-    clusterTerm: '集群任期',
-    leaderDueMs: 'Leader止时(ms)',
-    heartbeatDueMs: '心跳止时(ms)',
-    voteFor: '投票对象',
+    extendInfo: '节点元数据',
   },
   EditClusterDialog: {
     updateCluster: '更新集群',
@@ -222,6 +223,7 @@ const I18N_CONF = {
     queryResult: '查询结果：共查询到',
     articleMeet: '条满足要求的配置。',
     lastUpdateTime: '最后更新时间',
+    operator: '操作人',
     operation: '操作',
   },
   HistoryDetail: {
@@ -234,6 +236,7 @@ const I18N_CONF = {
     home: '归属应用:',
     actionType: '操作类型:',
     configureContent: '配置内容:',
+    operator: '操作人:',
     back: '返回',
   },
   DashboardCard: {
@@ -304,6 +307,7 @@ const I18N_CONF = {
     cloneSuccEnd: '项配置',
     cloneFail: '克隆失败',
     getNamespaceFailed: '获取命名空间失败',
+    getNamespace403: '没有 ${namespaceName} 命名空间的访问权限！',
     startCloning: '开始克隆',
     cloningConfiguration: '克隆配置',
     source: '源空间：',
@@ -317,6 +321,7 @@ const I18N_CONF = {
     delSelectedAlertContent: '请选择要删除的配置',
     delSuccessMsg: '删除成功',
     cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
+    authFail: '权限认证失败',
   },
   NewConfig: {
     newListingMain: '新建配置',
@@ -516,6 +521,7 @@ const I18N_CONF = {
     username: '用户名',
     password: '密码',
     operation: '操作',
+    refresh: '刷新',
   },
   NewUser: {
     createUser: '创建用户',
@@ -549,6 +555,7 @@ const I18N_CONF = {
     operation: '操作',
     deleteRole: '删除',
     deleteRoleTip: '是否要删除该角色？',
+    refresh: '刷新',
   },
   NewRole: {
     bindingRoles: '绑定角色',
@@ -571,6 +578,7 @@ const I18N_CONF = {
     readOnly: '只读',
     writeOnly: '只写',
     readWrite: '读写',
+    refresh: '刷新',
   },
   NewPermissions: {
     addPermission: '添加权限',

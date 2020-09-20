@@ -13,26 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.naming.utils;
 
 import com.alibaba.nacos.api.common.Constants;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.api.utils.StringUtils;
 
 /**
+ * NamingUtils.
+ *
  * @author nkorange
  * @since 1.0.0
  */
 public class NamingUtils {
-
-    public static String getGroupedName(String serviceName, String groupName) {
-        StringBuilder resultGroupedName = new StringBuilder()
-            .append(groupName)
-            .append(Constants.SERVICE_INFO_SPLITER)
-            .append(serviceName);
-        return resultGroupedName.toString().intern();
+    
+    public static String getGroupedName(final String serviceName, final String groupName) {
+        if (StringUtils.isBlank(serviceName)) {
+            throw new IllegalArgumentException("Param 'serviceName' is illegal, serviceName is blank");
+        }
+        final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+        return resultGroupedName.intern();
     }
-
-    public static String getServiceName(String serviceNameWithGroup) {
+    
+    public static String getServiceName(final String serviceNameWithGroup) {
         if (StringUtils.isBlank(serviceNameWithGroup)) {
             return StringUtils.EMPTY;
         }
@@ -41,8 +44,8 @@ public class NamingUtils {
         }
         return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[1];
     }
-
-    public static String getGroupName(String serviceNameWithGroup) {
+    
+    public static String getGroupName(final String serviceNameWithGroup) {
         if (StringUtils.isBlank(serviceNameWithGroup)) {
             return StringUtils.EMPTY;
         }

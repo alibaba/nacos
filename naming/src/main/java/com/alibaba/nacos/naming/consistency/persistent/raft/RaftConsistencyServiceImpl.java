@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -25,6 +26,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 /**
@@ -33,28 +35,30 @@ import org.springframework.stereotype.Service;
  * @author nkorange
  * @since 1.0.0
  */
+@DependsOn("ProtocolManager")
 @Service
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
-
+    
     @Autowired
     private RaftCore raftCore;
-
+    
     @Autowired
     private RaftPeerSet peers;
-
+    
     @Autowired
     private SwitchDomain switchDomain;
-
+    
     @Override
     public void put(String key, Record value) throws NacosException {
         try {
             raftCore.signalPublish(key, value);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft put failed.", e);
-            throw new NacosException(NacosException.SERVER_ERROR, "Raft put failed, key:" + key + ", value:" + value, e);
+            throw new NacosException(NacosException.SERVER_ERROR, "Raft put failed, key:" + key + ", value:" + value,
+                    e);
         }
     }
-
+    
     @Override
     public void remove(String key) throws NacosException {
         try {
@@ -72,42 +76,58 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
             throw new NacosException(NacosException.SERVER_ERROR, "Raft remove failed, key:" + key, e);
         }
     }
-
+    
     @Override
     public Datum get(String key) throws NacosException {
         return raftCore.getDatum(key);
     }
-
+    
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
         raftCore.listen(key, listener);
     }
-
+    
     @Override
-    public void unlisten(String key, RecordListener listener) throws NacosException {
-        raftCore.unlisten(key, listener);
+    public void unListen(String key, RecordListener listener) throws NacosException {
+        raftCore.unListen(key, listener);
     }
-
+    
     @Override
     public boolean isAvailable() {
         return raftCore.isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
     }
-
+    
+    /**
+     * Put a new datum from other server.
+     *
+     * @param datum  datum
+     * @param source source server
+     * @throws NacosException nacos exception
+     */
     public void onPut(Datum datum, RaftPeer source) throws NacosException {
         try {
             raftCore.onPublish(datum, source);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft onPut failed.", e);
-            throw new NacosException(NacosException.SERVER_ERROR, "Raft onPut failed, datum:" + datum + ", source: " + source, e);
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "Raft onPut failed, datum:" + datum + ", source: " + source, e);
         }
     }
-
+    
+    /**
+     * Remove a new datum from other server.
+     *
+     * @param datum  datum
+     * @param source source server
+     * @throws NacosException nacos exception
+     */
     public void onRemove(Datum datum, RaftPeer source) throws NacosException {
         try {
             raftCore.onDelete(datum.key, source);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft onRemove failed.", e);
-            throw new NacosException(NacosException.SERVER_ERROR, "Raft onRemove failed, datum:" + datum + ", source: " + source, e);
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "Raft onRemove failed, datum:" + datum + ", source: " + source, e);
         }
     }
 }

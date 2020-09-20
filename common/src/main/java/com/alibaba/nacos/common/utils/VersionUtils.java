@@ -13,34 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.utils;
 
 import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * @author xingxuechao
- * on:2019/2/27 12:32 PM
+ * Version utils.
+ *
+ * @author xingxuechao on:2019/2/27 12:32 PM
  */
 public class VersionUtils {
-
-    public static String VERSION;
+    
+    public static String version;
+    
     /**
-     * 获取当前version
+     * 获取当前version.
      */
-    public static final String VERSION_DEFAULT = "${project.version}";
-
-
+    public static final String VERSION_PLACEHOLDER = "${project.version}";
+    
     static {
         InputStream in = null;
         try {
-            in = VersionUtils.class.getClassLoader()
-                .getResourceAsStream("nacos-version.txt");
+            in = VersionUtils.class.getClassLoader().getResourceAsStream("nacos-version.txt");
             Properties props = new Properties();
             props.load(in);
             String val = props.getProperty("version");
-            if (val != null && !VERSION_DEFAULT.equals(val)) {
-                VERSION = val;
+            if (val != null && !VERSION_PLACEHOLDER.equals(val)) {
+                version = val;
             }
         } catch (Exception e) {
             e.printStackTrace();

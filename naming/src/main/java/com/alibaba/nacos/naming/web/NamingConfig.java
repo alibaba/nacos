@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.web;
 
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -20,11 +21,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * Naming spring configuration.
+ *
  * @author nkorange
  */
 @Configuration
 public class NamingConfig {
-
+    
     @Bean
     public FilterRegistrationBean distroFilterRegistration() {
         FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
@@ -32,10 +35,9 @@ public class NamingConfig {
         registration.addUrlPatterns("/v1/ns/*");
         registration.setName("distroFilter");
         registration.setOrder(6);
-
         return registration;
     }
-
+    
     @Bean
     public FilterRegistrationBean trafficReviseFilterRegistration() {
         FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
@@ -43,18 +45,17 @@ public class NamingConfig {
         registration.addUrlPatterns("/v1/ns/*");
         registration.setName("trafficReviseFilter");
         registration.setOrder(1);
-
         return registration;
     }
-
+    
     @Bean
     public DistroFilter distroFilter() {
         return new DistroFilter();
     }
-
+    
     @Bean
     public TrafficReviseFilter trafficReviseFilter() {
         return new TrafficReviseFilter();
     }
-
+    
 }

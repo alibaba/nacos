@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.push;
 
 /**
+ * Data source for naming push.
+ *
  * @author nacos
  */
 public interface DataSource {
+    
     /**
-     * Get push data for a specified client
+     * Get push data for a specified client.
      *
      * @param client target client
      * @return data to push
-     * @throws Exception
+     * @throws Exception exception
      */
     String getData(PushService.PushClient client) throws Exception;
 }

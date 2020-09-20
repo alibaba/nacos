@@ -13,65 +13,75 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
 import java.io.Serializable;
 
 /**
- * group info
+ * GroupInfo.
  *
  * @author Nacos
  */
 public class GroupInfo implements Serializable {
+    
     static final long serialVersionUID = -1L;
+    
+    @JsonSerialize(using = ToStringSerializer.class)
     private long id;
+    
     private String address;
+    
     private String group;
+    
     private String dataId;
-
+    
     public GroupInfo() {
-
+    
     }
-
+    
     public GroupInfo(String address, String dataId, String group) {
         super();
         this.address = address;
         this.group = group;
         this.dataId = dataId;
     }
-
+    
     public long getId() {
         return id;
     }
-
+    
     public void setId(long id) {
         this.id = id;
     }
-
+    
     public String getAddress() {
         return address;
     }
-
+    
     public void setAddress(String address) {
         this.address = address;
     }
-
+    
     public String getGroup() {
         return group;
     }
-
+    
     public void setGroup(String group) {
         this.group = group;
     }
-
+    
     public String getDataId() {
         return dataId;
     }
-
+    
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-
+    
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -81,7 +91,7 @@ public class GroupInfo implements Serializable {
         result = prime * result + ((group == null) ? 0 : group.hashCode());
         return result;
     }
-
+    
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -93,7 +103,7 @@ public class GroupInfo implements Serializable {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        GroupInfo other = (GroupInfo)obj;
+        GroupInfo other = (GroupInfo) obj;
         if (address == null) {
             if (other.address != null) {
                 return false;
@@ -117,5 +127,5 @@ public class GroupInfo implements Serializable {
         }
         return true;
     }
-
+    
 }

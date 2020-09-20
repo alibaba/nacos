@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,6 +37,7 @@ import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
 
 import './ServiceList.scss';
+import { GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
 
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
@@ -91,12 +95,14 @@ class ServiceList extends React.Component {
       `serviceNameParam=${search.serviceName}`,
       `groupNameParam=${search.groupName}`,
     ];
+    this.openLoading();
     request({
       url: `v1/ns/catalog/services?${parameter.join('&')}`,
       success: ({ count = 0, serviceList = [] } = {}) => {
         this.setState({
           dataSource: serviceList,
           total: count,
+          loading: false,
         });
       },
       error: () =>
@@ -104,6 +110,7 @@ class ServiceList extends React.Component {
           dataSource: [],
           total: 0,
           currentPage: 0,
+          loading: false,
         }),
     });
   }
@@ -124,6 +131,10 @@ class ServiceList extends React.Component {
    */
   showSampleCode(record) {
     this.showcode.current.getInstance().openDialog(record);
+  }
+
+  handlePageSizeChange(pageSize) {
+    this.setState({ pageSize }, () => this.queryServiceList());
   }
 
   deleteService(service) {
@@ -184,156 +195,143 @@ class ServiceList extends React.Component {
 
     return (
       <div className="main-container service-management">
-        <Loading
-          shape="flower"
+        <div style={{ marginTop: -15 }}>
+          <RegionGroup
+            setNowNameSpace={this.setNowNameSpace}
+            namespaceCallBack={this.getQueryLater}
+          />
+        </div>
+        <h3 className="page-title">
+          <span className="title-item">{serviceList}</span>
+          <span className="title-item">|</span>
+          <span className="title-item">{nowNamespaceName}</span>
+          <span className="title-item">{nowNamespaceId}</span>
+        </h3>
+        <Row
+          className="demo-row"
           style={{
-            position: 'relative',
-            width: '100%',
+            marginBottom: 10,
+            padding: 0,
           }}
-          visible={this.state.loading}
-          tip="Loading..."
-          color="#333"
         >
-          <div style={{ marginTop: -15 }}>
-            <RegionGroup
-              setNowNameSpace={this.setNowNameSpace}
-              namespaceCallBack={this.getQueryLater}
-            />
-          </div>
-          <h3 className="page-title">
-            <span className="title-item">{serviceList}</span>
-            <span className="title-item">|</span>
-            <span className="title-item">{nowNamespaceName}</span>
-            <span className="title-item">{nowNamespaceId}</span>
-          </h3>
-          <Row
-            className="demo-row"
-            style={{
-              marginBottom: 10,
-              padding: 0,
-            }}
-          >
-            <Col span="24">
-              <Form inline field={this.field}>
-                <FormItem label={serviceName}>
-                  <Input
-                    placeholder={serviceNamePlaceholder}
-                    style={{ width: 200 }}
-                    value={search.serviceName}
-                    onChange={serviceName => this.setState({ search: { ...search, serviceName } })}
-                    onPressEnter={() =>
-                      this.setState({ currentPage: 1 }, () => this.queryServiceList())
-                    }
-                  />
-                </FormItem>
-                <FormItem label={groupName}>
-                  <Input
-                    placeholder={groupNamePlaceholder}
-                    style={{ width: 200 }}
-                    value={search.groupName}
-                    onChange={groupName => this.setState({ search: { ...search, groupName } })}
-                    onPressEnter={() =>
-                      this.setState({ currentPage: 1 }, () => this.queryServiceList())
-                    }
-                  />
-                </FormItem>
-                <Form.Item label={`${hiddenEmptyService}:`}>
-                  <Switch
-                    checked={hasIpCount}
-                    onChange={hasIpCount =>
-                      this.setState({ hasIpCount, currentPage: 1 }, () => {
-                        localStorage.setItem('hasIpCount', hasIpCount);
-                        this.queryServiceList();
-                      })
-                    }
-                  />
-                </Form.Item>
-                <FormItem label="">
-                  <Button
-                    type="primary"
-                    onClick={() => this.setState({ currentPage: 1 }, () => this.queryServiceList())}
-                    style={{ marginRight: 10 }}
-                  >
-                    {query}
-                  </Button>
-                </FormItem>
-                <FormItem label="" style={{ float: 'right' }}>
-                  <Button type="secondary" onClick={() => this.openEditServiceDialog()}>
-                    {create}
-                  </Button>
-                </FormItem>
-              </Form>
-            </Col>
-          </Row>
-          <Row style={{ padding: 0 }}>
-            <Col span="24" style={{ padding: 0 }}>
-              <Table
-                dataSource={this.state.dataSource}
-                locale={{ empty: pubNoData }}
-                getRowProps={row => this.rowColor(row)}
-              >
-                <Column title={locale.columnServiceName} dataIndex="name" />
-                <Column title={locale.groupName} dataIndex="groupName" />
-                <Column title={locale.columnClusterCount} dataIndex="clusterCount" />
-                <Column title={locale.columnIpCount} dataIndex="ipCount" />
-                <Column
-                  title={locale.columnHealthyInstanceCount}
-                  dataIndex="healthyInstanceCount"
+          <Col span="24">
+            <Form inline field={this.field}>
+              <FormItem label={serviceName}>
+                <Input
+                  placeholder={serviceNamePlaceholder}
+                  style={{ width: 200 }}
+                  value={search.serviceName}
+                  onChange={serviceName => this.setState({ search: { ...search, serviceName } })}
+                  onPressEnter={() =>
+                    this.setState({ currentPage: 1 }, () => this.queryServiceList())
+                  }
                 />
-                <Column title={locale.columnTriggerFlag} dataIndex="triggerFlag" />
-                <Column
-                  title={operation}
-                  align="center"
-                  cell={(value, index, record) => (
-                    // @author yongchao9  #2019年05月18日 下午5:46:28
-                    /* Add a link to view "sample code"
+              </FormItem>
+              <FormItem label={groupName}>
+                <Input
+                  placeholder={groupNamePlaceholder}
+                  style={{ width: 200 }}
+                  value={search.groupName}
+                  onChange={groupName => this.setState({ search: { ...search, groupName } })}
+                  onPressEnter={() =>
+                    this.setState({ currentPage: 1 }, () => this.queryServiceList())
+                  }
+                />
+              </FormItem>
+              <Form.Item label={`${hiddenEmptyService}:`}>
+                <Switch
+                  checked={hasIpCount}
+                  onChange={hasIpCount =>
+                    this.setState({ hasIpCount, currentPage: 1 }, () => {
+                      localStorage.setItem('hasIpCount', hasIpCount);
+                      this.queryServiceList();
+                    })
+                  }
+                />
+              </Form.Item>
+              <FormItem label="">
+                <Button
+                  type="primary"
+                  onClick={() => this.setState({ currentPage: 1 }, () => this.queryServiceList())}
+                  style={{ marginRight: 10 }}
+                >
+                  {query}
+                </Button>
+              </FormItem>
+              <FormItem label="" style={{ float: 'right' }}>
+                <Button type="secondary" onClick={() => this.openEditServiceDialog()}>
+                  {create}
+                </Button>
+              </FormItem>
+            </Form>
+          </Col>
+        </Row>
+        <Row style={{ padding: 0 }}>
+          <Col span="24" style={{ padding: 0 }}>
+            <Table
+              dataSource={this.state.dataSource}
+              locale={{ empty: pubNoData }}
+              getRowProps={row => this.rowColor(row)}
+              loading={this.state.loading}
+            >
+              <Column title={locale.columnServiceName} dataIndex="name" />
+              <Column title={locale.groupName} dataIndex="groupName" />
+              <Column title={locale.columnClusterCount} dataIndex="clusterCount" />
+              <Column title={locale.columnIpCount} dataIndex="ipCount" />
+              <Column title={locale.columnHealthyInstanceCount} dataIndex="healthyInstanceCount" />
+              <Column title={locale.columnTriggerFlag} dataIndex="triggerFlag" />
+              <Column
+                title={operation}
+                align="center"
+                cell={(value, index, record) => (
+                  // @author yongchao9  #2019年05月18日 下午5:46:28
+                  /* Add a link to view "sample code"
                      replace the original button with a label,
                      which is consistent with the operation style in configuration management.
                      */
-                    <div>
-                      <a
-                        onClick={() => {
-                          const { name, groupName } = record;
-                          this.props.history.push(
-                            generateUrl('/serviceDetail', { name, groupName })
-                          );
-                        }}
-                        style={{ marginRight: 5 }}
-                      >
-                        {detail}
-                      </a>
-                      <span style={{ marginRight: 5 }}>|</span>
-                      <a style={{ marginRight: 5 }} onClick={() => this.showSampleCode(record)}>
-                        {sampleCode}
-                      </a>
-                      <span style={{ marginRight: 5 }}>|</span>
-                      <a onClick={() => this.deleteService(record)} style={{ marginRight: 5 }}>
-                        {deleteAction}
-                      </a>
-                    </div>
-                  )}
-                />
-              </Table>
-            </Col>
-          </Row>
-          {this.state.total > this.state.pageSize && (
-            <div
-              style={{
-                marginTop: 10,
-                textAlign: 'right',
-              }}
-            >
-              <Pagination
-                current={this.state.currentPage}
-                total={this.state.total}
-                pageSize={this.state.pageSize}
-                onChange={currentPage =>
-                  this.setState({ currentPage }, () => this.queryServiceList())
-                }
+                  <div>
+                    <a
+                      onClick={() => {
+                        const { name, groupName } = record;
+                        this.props.history.push(generateUrl('/serviceDetail', { name, groupName }));
+                      }}
+                      style={{ marginRight: 5 }}
+                    >
+                      {detail}
+                    </a>
+                    <span style={{ marginRight: 5 }}>|</span>
+                    <a style={{ marginRight: 5 }} onClick={() => this.showSampleCode(record)}>
+                      {sampleCode}
+                    </a>
+                    <span style={{ marginRight: 5 }}>|</span>
+                    <a onClick={() => this.deleteService(record)} style={{ marginRight: 5 }}>
+                      {deleteAction}
+                    </a>
+                  </div>
+                )}
               />
-            </div>
-          )}
-        </Loading>
+            </Table>
+          </Col>
+        </Row>
+        <div
+          style={{
+            marginTop: 10,
+            textAlign: 'right',
+          }}
+        >
+          <Pagination
+            current={this.state.currentPage}
+            pageSizeList={GLOBAL_PAGE_SIZE_LIST}
+            pageSizePosition="start"
+            pageSizeSelector="dropdown"
+            popupProps={{ align: 'bl tl' }}
+            total={this.state.total}
+            pageSize={this.state.pageSize}
+            onPageSizeChange={pageSize => this.handlePageSizeChange(pageSize)}
+            onChange={currentPage => this.setState({ currentPage }, () => this.queryServiceList())}
+          />
+        </div>
+
         <ShowServiceCodeing ref={this.showcode} />
         <EditServiceDialog
           ref={this.editServiceDialog}

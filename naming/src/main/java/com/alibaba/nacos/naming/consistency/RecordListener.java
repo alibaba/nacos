@@ -13,47 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.naming.pojo.Record;
 
 /**
- * Data listener public interface
+ * Data listener public interface.
  *
  * @author nacos
  */
 public interface RecordListener<T extends Record> {
-
+    
     /**
-     * Determine if the listener was registered with this key
+     * Determine if the listener was registered with this key.
      *
      * @param key candidate key
      * @return true if the listener was registered with this key
      */
     boolean interests(String key);
-
+    
     /**
-     * Determine if the listener is to be removed by matching the 'key'
+     * Determine if the listener is to be removed by matching the 'key'.
      *
      * @param key key to match
      * @return true if match success
      */
     boolean matchUnlistenKey(String key);
-
+    
     /**
-     * Action to do if data of target key has changed
+     * Action to do if data of target key has changed.
      *
      * @param key   target key
      * @param value data of the key
-     * @throws Exception
+     * @throws Exception exception
      */
     void onChange(String key, T value) throws Exception;
-
+    
     /**
-     * Action to do if data of target key has been removed
+     * Action to do if data of target key has been removed.
      *
      * @param key target key
-     * @throws Exception
+     * @throws Exception exception
      */
     void onDelete(String key) throws Exception;
 }

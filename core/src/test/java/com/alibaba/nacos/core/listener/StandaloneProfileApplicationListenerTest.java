@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.listener;
 
+import com.alibaba.nacos.core.code.StandaloneProfileApplicationListener;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,31 +27,29 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static com.alibaba.nacos.core.utils.Constants.STANDALONE_SPRING_PROFILE;
+import static com.alibaba.nacos.sys.env.Constants.STANDALONE_SPRING_PROFILE;
 
 /**
- * {@link StandaloneProfileApplicationListener} Test
+ * {@link StandaloneProfileApplicationListener} Test.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(
-        classes = StandaloneProfileApplicationListenerTest.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(classes = StandaloneProfileApplicationListenerTest.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class StandaloneProfileApplicationListenerTest {
-
+    
+    @Autowired
+    private Environment environment;
+    
     @BeforeClass
     public static void init() {
         System.setProperty("nacos.standalone", "true");
     }
-
-    @Autowired
-    private Environment environment;
-
+    
     @Test
     public void testProfile() {
         Assert.assertTrue(ArrayUtils.contains(environment.getActiveProfiles(), STANDALONE_SPRING_PROFILE));
     }
-
+    
 }

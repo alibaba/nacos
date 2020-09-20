@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.listener;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
@@ -21,25 +22,28 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * ConfigChangeParser
+ * ConfigChangeParser.
  *
  * @author rushsky518
  */
 public interface ConfigChangeParser {
+    
     /**
-     * judge type
-     * @param type
-     * @return
+     * Judge type.
+     *
+     * @param type data type
+     * @return true if is responsible type, otherwise false
      */
     boolean isResponsibleFor(String type);
-
+    
     /**
-     * compare old and new data
-     * @param oldContent
-     * @param newContent
-     * @param type
-     * @return
-     * @throws IOException
+     * Compare old and new data.
+     *
+     * @param oldContent old content
+     * @param newContent new content
+     * @param type       data type
+     * @return key and change item map
+     * @throws IOException io exception
      */
     Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type) throws IOException;
 }

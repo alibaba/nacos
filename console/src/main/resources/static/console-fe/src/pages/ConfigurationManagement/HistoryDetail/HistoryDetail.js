@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -71,6 +74,7 @@ class HistoryDetail extends React.Component {
           self.field.setValue('content', data.content);
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
           self.field.setValue('envs', self.serverId);
+          self.field.setValue('srcUser', self.srcUser);
           self.field.setValue('opType', typeMap[data.opType.trim()]);
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
@@ -116,6 +120,9 @@ class HistoryDetail extends React.Component {
               <Input htmlType="text" readOnly {...init('appName')} />
             </Form.Item>
           </div>
+          <Form.Item label={locale.operator} required {...formItemLayout}>
+            <Input htmlType="text" readOnly {...init('srcUser')} />
+          </Form.Item>
           <Form.Item label={locale.actionType} required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('opType')} />
           </Form.Item>
