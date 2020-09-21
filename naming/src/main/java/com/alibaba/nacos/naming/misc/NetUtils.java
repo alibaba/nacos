@@ -17,8 +17,8 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.utils.IPUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 
 /**
  * Net Utils.

@@ -19,11 +19,13 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
-import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -42,8 +44,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.javatuples.Pair;
@@ -56,7 +56,6 @@ import javax.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -224,25 +223,28 @@ public class RaftCore {
                     continue;
                 }
                 final String url = buildUrl(server, API_ON_PUB);
-                HttpClient.asyncHttpPostLarge(url, Arrays.asList("key=" + key), content,
-                        new AsyncCompletionHandler<Integer>() {
-                            @Override
-                            public Integer onCompleted(Response response) throws Exception {
-                                if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                    Loggers.RAFT
-                                            .warn("[RAFT] failed to publish data to peer, datumId={}, peer={}, http code={}",
-                                                    datum.key, server, response.getStatusCode());
-                                    return 1;
-                                }
-                                latch.countDown();
-                                return 0;
-                            }
-                            
-                            @Override
-                            public STATE onContentWriteCompleted() {
-                                return STATE.CONTINUE;
-                            }
-                        });
+                HttpClient.asyncHttpPostLarge(url, Arrays.asList("key", key), content, new Callback<String>() {
+                    @Override
+                    public void onReceive(RestResult<String> result) {
+                        if (!result.ok()) {
+                            Loggers.RAFT
+                                    .warn("[RAFT] failed to publish data to peer, datumId={}, peer={}, http code={}",
+                                            datum.key, server, result.getCode());
+                            return;
+                        }
+                        latch.countDown();
+                    }
+                    
+                    @Override
+                    public void onError(Throwable throwable) {
+                        Loggers.RAFT.error("[RAFT] failed to publish data to peer", throwable);
+                    }
+                    
+                    @Override
+                    public void onCancel() {
+                    
+                    }
+                });
                 
             }
             
@@ -288,21 +290,29 @@ public class RaftCore {
             
             for (final String server : peers.allServersWithoutMySelf()) {
                 String url = buildUrl(server, API_ON_DEL);
-                HttpClient.asyncHttpDeleteLarge(url, null, json.toString(), new AsyncCompletionHandler<Integer>() {
+                HttpClient.asyncHttpDeleteLarge(url, null, json.toString(), new Callback<String>() {
                     @Override
-                    public Integer onCompleted(Response response) throws Exception {
-                        if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                    public void onReceive(RestResult<String> result) {
+                        if (!result.ok()) {
                             Loggers.RAFT
                                     .warn("[RAFT] failed to delete data from peer, datumId={}, peer={}, http code={}",
-                                            key, server, response.getStatusCode());
-                            return 1;
+                                            key, server, result.getCode());
+                            return;
                         }
                         
                         RaftPeer local = peers.local();
                         
                         local.resetLeaderDue();
-                        
-                        return 0;
+                    }
+                    
+                    @Override
+                    public void onError(Throwable throwable) {
+                        Loggers.RAFT.error("[RAFT] failed to delete data from peer", throwable);
+                    }
+                    
+                    @Override
+                    public void onCancel() {
+                    
                     }
                 });
             }
@@ -459,22 +469,30 @@ public class RaftCore {
             for (final String server : peers.allServersWithoutMySelf()) {
                 final String url = buildUrl(server, API_VOTE);
                 try {
-                    HttpClient.asyncHttpPost(url, null, params, new AsyncCompletionHandler<Integer>() {
+                    HttpClient.asyncHttpPost(url, null, params, new Callback<String>() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT
-                                        .error("NACOS-RAFT vote failed: {}, url: {}", response.getResponseBody(), url);
-                                return 1;
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
+                                Loggers.RAFT.error("NACOS-RAFT vote failed: {}, url: {}", result.getCode(), url);
+                                return;
                             }
                             
-                            RaftPeer peer = JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class);
+                            RaftPeer peer = JacksonUtils.toObj(result.getData(), RaftPeer.class);
                             
                             Loggers.RAFT.info("received approve from peer: {}", JacksonUtils.toJson(peer));
                             
                             peers.decideLeader(peer);
                             
-                            return 0;
+                        }
+                        
+                        @Override
+                        public void onError(Throwable throwable) {
+                            Loggers.RAFT.error("error while sending vote to server: {}", server, throwable);
+                        }
+                        
+                        @Override
+                        public void onCancel() {
+                        
                         }
                     });
                 } catch (Exception e) {
@@ -606,27 +624,31 @@ public class RaftCore {
                     if (Loggers.RAFT.isDebugEnabled()) {
                         Loggers.RAFT.debug("send beat to server " + server);
                     }
-                    HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new AsyncCompletionHandler<Integer>() {
+                    HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new Callback<String>() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", response.getResponseBody(),
-                                        server);
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
+                                Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", result.getCode(), server);
                                 MetricsMonitor.getLeaderSendBeatFailedException().increment();
-                                return 1;
+                                return;
                             }
                             
-                            peers.update(JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class));
+                            peers.update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
                             if (Loggers.RAFT.isDebugEnabled()) {
                                 Loggers.RAFT.debug("receive beat response from: {}", url);
                             }
-                            return 0;
                         }
                         
                         @Override
-                        public void onThrowable(Throwable t) {
-                            Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server, t);
+                        public void onError(Throwable throwable) {
+                            Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server,
+                                    throwable);
                             MetricsMonitor.getLeaderSendBeatFailedException().increment();
+                        }
+                        
+                        @Override
+                        public void onCancel() {
+                        
                         }
                     });
                 } catch (Exception e) {
@@ -747,15 +769,15 @@ public class RaftCore {
                     
                     // update datum entry
                     String url = buildUrl(remote.ip, API_GET) + "?keys=" + URLEncoder.encode(keys, "UTF-8");
-                    HttpClient.asyncHttpGet(url, null, null, new AsyncCompletionHandler<Integer>() {
+                    HttpClient.asyncHttpGet(url, null, null, new Callback<String>() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                return 1;
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
+                                return;
                             }
                             
                             List<JsonNode> datumList = JacksonUtils
-                                    .toObj(response.getResponseBody(), new TypeReference<List<JsonNode>>() {
+                                    .toObj(result.getData(), new TypeReference<List<JsonNode>>() {
                                     });
                             
                             for (JsonNode datumJson : datumList) {
@@ -824,9 +846,24 @@ public class RaftCore {
                                     OPERATE_LOCK.unlock();
                                 }
                             }
-                            TimeUnit.MILLISECONDS.sleep(200);
-                            return 0;
+                            try {
+                                TimeUnit.MILLISECONDS.sleep(200);
+                            } catch (InterruptedException e) {
+                                Loggers.RAFT.error("[RAFT-BEAT] Interrupted error ", e);
+                            }
+                            return;
                         }
+                        
+                        @Override
+                        public void onError(Throwable throwable) {
+                            Loggers.RAFT.error("[RAFT-BEAT] failed to sync datum from leader", throwable);
+                        }
+                        
+                        @Override
+                        public void onCancel() {
+                        
+                        }
+                        
                     });
                     
                     batch.clear();
