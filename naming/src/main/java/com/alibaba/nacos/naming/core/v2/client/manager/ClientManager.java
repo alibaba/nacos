@@ -78,6 +78,7 @@ public interface ClientManager {
      * verify client.
      *
      * @param clientId client id
+     * @return true if client is valid, otherwise is false.
      */
-    void verifyClient(String clientId);
+    boolean verifyClient(String clientId);
 }
