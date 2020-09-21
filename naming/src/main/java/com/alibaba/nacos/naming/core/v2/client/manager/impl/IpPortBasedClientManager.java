@@ -23,6 +23,8 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.core.v2.metadata.MetadataConstants;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
@@ -92,9 +94,18 @@ public class IpPortBasedClientManager implements ClientManager {
     }
     
     @Override
-    public void verifyClient(String clientId) {
+    public boolean verifyClient(String clientId) {
         IpPortBasedClient client = clients.get(clientId);
-        // TODO check whether client is newest by updated time
+        // TODO renew beat time async
+        long currentTime = System.currentTimeMillis();
+        if (null != client) {
+            for (InstancePublishInfo each : client.getAllInstancePublishInfo()) {
+                each.getExtendDatum().put(MetadataConstants.LAST_BEAT_TIME, currentTime);
+            }
+            client.setLastUpdatedTime();
+            return true;
+        }
+        return false;
     }
     
     private static class ExpiredClientCleaner implements Runnable {

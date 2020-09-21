@@ -103,13 +103,13 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     }
     
     @Override
-    public void verifyClient(String clientId) {
+    public boolean verifyClient(String clientId) {
         ConnectionBasedClient client = clients.get(clientId);
         if (null != client) {
             client.setLastRenewTime();
-        } else {
-            // TODO get client from source
+            return true;
         }
+        return false;
     }
     
     private static class ExpiredClientCleaner implements Runnable {
