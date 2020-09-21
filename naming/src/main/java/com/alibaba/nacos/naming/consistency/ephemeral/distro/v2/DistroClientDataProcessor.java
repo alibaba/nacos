@@ -29,6 +29,7 @@ import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
@@ -153,9 +154,9 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     @Override
     public boolean processSnapshot(DistroData distroData) {
-        List<ClientSyncData> snapshot = ApplicationUtils.getBean(Serializer.class)
-                .deserialize(distroData.getContent(), List.class);
-        for (ClientSyncData each : snapshot) {
+        ClientSyncDatumSnapshot snapshot = ApplicationUtils.getBean(Serializer.class)
+                .deserialize(distroData.getContent(), ClientSyncDatumSnapshot.class);
+        for (ClientSyncData each : snapshot.getClientSyncDataList()) {
             handlerClientSyncData(each);
         }
         return true;
@@ -173,14 +174,16 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     @Override
     public DistroData getDatumSnapshot() {
-        List<ClientSyncData> snapshot = new LinkedList<>();
+        List<ClientSyncData> datum = new LinkedList<>();
         for (String each : clientManager.allClientId()) {
             Client client = clientManager.getClient(each);
             if (null == client) {
                 continue;
             }
-            snapshot.add(client.generateSyncData());
+            datum.add(client.generateSyncData());
         }
+        ClientSyncDatumSnapshot snapshot = new ClientSyncDatumSnapshot();
+        snapshot.setClientSyncDataList(datum);
         byte[] data = ApplicationUtils.getBean(Serializer.class).serialize(snapshot);
         return new DistroData(new DistroKey(DataOperation.SNAPSHOT.name(), TYPE), data);
     }

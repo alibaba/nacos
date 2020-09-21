@@ -76,8 +76,8 @@ public class ClientManagerDelegate implements ClientManager {
     }
     
     @Override
-    public void verifyClient(String clientId) {
-        getClientManagerById(clientId).verifyClient(clientId);
+    public boolean verifyClient(String clientId) {
+        return getClientManagerById(clientId).verifyClient(clientId);
     }
     
     private ClientManager getClientManagerById(String clientId) {
