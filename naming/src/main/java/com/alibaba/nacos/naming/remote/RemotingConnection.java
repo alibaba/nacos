@@ -48,7 +48,7 @@ public class RemotingConnection {
     }
     
     public String getConnectionId() {
-        return connection.getConnectionId();
+        return connection.getMetaInfo().getConnectionId();
     }
     
     /**

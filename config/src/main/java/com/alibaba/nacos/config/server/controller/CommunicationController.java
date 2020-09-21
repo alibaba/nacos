@@ -127,7 +127,8 @@ public class CommunicationController {
         SampleResult result = longPollingService.getCollectSubscribleInfoByIp(ip);
         Connection connectionByIp = connectionManager.getConnectionByIp(ip);
         if (connectionByIp != null) {
-            Set<GroupKeyContext> listenKeys = configChangeListenContext.getListenKeys(connectionByIp.getConnectionId());
+            Set<GroupKeyContext> listenKeys = configChangeListenContext
+                    .getListenKeys(connectionByIp.getMetaInfo().getConnectionId());
             Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenKeys.size(), 1);
             for (GroupKeyContext listenKey : listenKeys) {
                 lisentersGroupkeyStatus.put(listenKey.getGroupkey(), listenKey.getMd5());

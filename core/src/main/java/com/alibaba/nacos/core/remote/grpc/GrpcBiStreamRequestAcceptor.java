@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
-import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
@@ -25,20 +24,22 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.GrpcUtils;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
-import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CHANNEL;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_IP;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_PORT;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_LOCAL_PORT;
 
 /**
  * grpc bi stream request .
@@ -58,17 +59,22 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
-                String connectionId = CONTEXT_KEY_CONN_ID.get();
     
+                String connectionId = CONTEXT_KEY_CONN_ID.get();
+                Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
+                String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+                int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
+                
                 GrpcUtils.PlainRequest plainRequest = GrpcUtils.parse(payload);
+                plainRequest.getMetadata().setClientIp(clientIp);
+                plainRequest.getMetadata().setClientPort(clientPort);
+                plainRequest.getMetadata().setConnectionId(connectionId);
                 if (plainRequest.getBody() instanceof ConnectionSetupRequest) {
                     ConnectionSetupRequest setupRequest = (ConnectionSetupRequest) plainRequest.getBody();
-                    Context current = Context.current();
-                    Metadata metadata = payload.getMetadata();
-                    String clientIp = metadata.getClientIp();
-                    String version = metadata.getClientVersion();
-                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId, clientIp,
-                            ConnectionType.GRPC.getType(), version, metadata.getLabelsMap());
+                    RequestMeta metadata = plainRequest.getMetadata();
+                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(metadata.getConnectionId(),
+                            metadata.getClientIp(), metadata.getClientPort(), localPort, ConnectionType.GRPC.getType(),
+                            metadata.getClientVersion(), metadata.getLabels());
     
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     if (connectionManager.isOverLimit()) {
@@ -93,7 +99,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             @Override
             public void onError(Throwable t) {
-            
+                t.printStackTrace();
             }
             
             @Override

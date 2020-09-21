@@ -24,7 +24,8 @@ import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.RsocketUtils;
+import com.alibaba.nacos.common.remote.client.rsocket.RsocketUtils;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.Connection;
@@ -32,11 +33,13 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import io.rsocket.DuplexConnection;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import io.rsocket.core.RSocketServer;
+import io.rsocket.fragmentation.ReassemblyDuplexConnection;
+import io.rsocket.transport.netty.TcpDuplexConnection;
 import io.rsocket.transport.netty.server.CloseableChannel;
 import io.rsocket.transport.netty.server.TcpServerTransport;
 import io.rsocket.util.RSocketProxy;
@@ -46,6 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.net.InetSocketAddress;
 import java.util.UUID;
 
 /**
@@ -86,91 +90,117 @@ public class RsocketRpcServer extends BaseRpcServer {
                         .format("[%s] error to parse new connection request :%s, error message: %s ", "rsocket",
                                 setup.getDataUtf8(), e.getMessage(), e));
             }
+            reactor.netty.Connection privateConnection = getPrivateConnection(sendingSocket);
+            InetSocketAddress remoteAddress = (InetSocketAddress) privateConnection.channel().remoteAddress();
     
+            InetSocketAddress localAddress = (InetSocketAddress) privateConnection.channel().localAddress();
+            
             if (palinrequest == null || !(palinrequest.getBody() instanceof ConnectionSetupRequest)) {
                 Loggers.RPC.info(String.format("[%s] invalid connection setup request, request info : %s", "rsocket",
                         palinrequest.toString()));
                 sendingSocket.dispose();
                 return Mono.just(sendingSocket);
             } else {
-        
+    
                 String connectionid = UUID.randomUUID().toString();
-                Loggers.RPC.info(String
-                        .format("[%s] new connection receive, connection id : %s, clientMeta :%s", "rsocket",
-                                connectionid, palinrequest.getMetadata()));
-        
+    
                 ConnectionSetupRequest connectionSetupRequest = (ConnectionSetupRequest) palinrequest.getBody();
-                ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionid,
-                        palinrequest.getMetadata().getClientIp(), ConnectionType.RSOCKET.getType(),
+                ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionid, remoteAddress.getHostName(),
+                        remoteAddress.getPort(), localAddress.getPort(), ConnectionType.RSOCKET.getType(),
                         palinrequest.getMetadata().getClientVersion(), palinrequest.getMetadata().getLabels());
                 Connection connection = new RsocketConnection(metaInfo, sendingSocket);
-        
+    
                 if (connectionManager.isOverLimit()) {
                     //Not register to the connection manager if current server is over limit.
                     try {
-                        connection.request(new ConnectResetRequest(), buildMeta());
+                        connection.request(new ConnectResetRequest(), buildRequestMeta());
                         connection.close();
                     } catch (Exception e) {
                         //Do nothing.
                     }
-            
+        
                 } else {
-                    connectionManager.register(connection.getConnectionId(), connection);
+                    connectionManager.register(connection.getMetaInfo().getConnectionId(), connection);
                 }
-                
-                sendingSocket.onClose().subscribe(new Subscriber<Void>() {
-                    String connectionId;
-                    
-                    @Override
-                    public void onSubscribe(Subscription subscription) {
-                        connectionId = connection.getConnectionId();
-                    }
-                    
-                    @Override
-                    public void onNext(Void aVoid) {
-                    }
-                    
-                    @Override
-                    public void onError(Throwable throwable) {
     
-                        Loggers.RPC.error(String
-                                .format("[%s] error on  connection, connection id : %s, error message :%s", "rsocket",
-                                        connectionid, throwable.getMessage(), throwable));
-                        throwable.printStackTrace();
-                        connectionManager.unregister(connectionId);
-                    }
-                    
-                    @Override
-                    public void onComplete() {
+                fireOnCloseEvent(sendingSocket, connection);
+                RSocketProxy rSocketProxy = new NacosRsocket(sendingSocket, connectionid,
+                        remoteAddress.getAddress().getHostAddress(), remoteAddress.getPort());
     
-                        Loggers.RPC.info(String
-                                .format("[%s]  connection finished ,connection id  %s", "rsocket", connectionid));
-                        connectionManager.unregister(connectionId);
-                    }
-                });
-        
-                RSocketProxy rSocketProxy = new NacosRsocket(sendingSocket, connectionid);
-        
                 return Mono.just(rSocketProxy);
             }
     
-        })).bind(TcpServerTransport.create("0.0.0.0", (ApplicationUtils.getPort() + PORT_OFFSET))).block();
+        })).bind(TcpServerTransport.create("0.0.0.0", getServicePort())).block();
     
         rSocketServer = rSocketServerInner;
     
     }
     
+    private void fireOnCloseEvent(RSocket rSocket, Connection connection) {
+        
+        rSocket.onClose().subscribe(new Subscriber<Void>() {
+            String connectionId;
+            
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                connectionId = connection.getMetaInfo().getConnectionId();
+            }
+            
+            @Override
+            public void onNext(Void aVoid) {
+            }
+            
+            @Override
+            public void onError(Throwable throwable) {
+                
+                Loggers.RPC.error(String
+                        .format("[%s] error on  connection, connection id : %s, error message :%s", "rsocket",
+                                connectionId, throwable.getMessage(), throwable));
+                throwable.printStackTrace();
+                connectionManager.unregister(connectionId);
+            }
+            
+            @Override
+            public void onComplete() {
+                
+                Loggers.RPC
+                        .info(String.format("[%s]  connection finished ,connection id  %s", "rsocket", connectionId));
+                connectionManager.unregister(connectionId);
+            }
+        });
+    }
+    
+    private reactor.netty.Connection getPrivateConnection(RSocket rSocket) {
+        try {
+            DuplexConnection internalDuplexConnection = (DuplexConnection) ReflectUtils
+                    .getFieldValue(rSocket, "connection");
+            ReassemblyDuplexConnection source = (ReassemblyDuplexConnection) ReflectUtils
+                    .getFieldValue(internalDuplexConnection, "source");
+            TcpDuplexConnection tcpDuplexConnection = (TcpDuplexConnection) ReflectUtils
+                    .getFieldValue(source, "delegate");
+            return (reactor.netty.Connection) ReflectUtils.getFieldValue(tcpDuplexConnection, "connection");
+        } catch (Exception e) {
+            throw new IllegalStateException("Can't access connection details!", e);
+        }
+    }
+    
     class NacosRsocket extends RSocketProxy {
         
         String connectionId;
+    
+        String clientIp;
+    
+        int clientPort;
         
         public NacosRsocket(RSocket source) {
             super(source);
         }
-        
-        public NacosRsocket(RSocket source, String connectionId) {
+    
+        public NacosRsocket(RSocket source, String connectionId, String clientIp, int clientPort) {
             super(source);
             this.connectionId = connectionId;
+            this.clientIp = clientIp;
+            this.clientPort = clientPort;
         }
         
         @Override
@@ -183,6 +213,8 @@ public class RsocketRpcServer extends BaseRpcServer {
                 if (requestHandler != null) {
                     RequestMeta requestMeta = requestType.getMetadata();
                     requestMeta.setConnectionId(connectionId);
+                    requestMeta.setClientIp(clientIp);
+                    requestMeta.setClientPort(clientPort);
                     try {
                         Response response = requestHandler.handleRequest(requestType.getBody(), requestMeta);
                         return Mono.just(RsocketUtils.convertResponseToPayload(response));
@@ -221,10 +253,11 @@ public class RsocketRpcServer extends BaseRpcServer {
         }
     }
     
-    private RequestMeta buildMeta() {
+    private RequestMeta buildRequestMeta() {
         RequestMeta meta = new RequestMeta();
         meta.setClientVersion(VersionUtils.getFullClientVersion());
         meta.setClientIp(NetUtils.localIP());
+        meta.setClientPort(getServicePort());
         return meta;
     }
 }

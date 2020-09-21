@@ -23,11 +23,11 @@ import com.alibaba.nacos.common.utils.UuidUtils;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.Attributes;
 import io.grpc.Context;
 import io.grpc.Contexts;
+import io.grpc.Grpc;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Server;
@@ -44,6 +44,8 @@ import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
 import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.net.InetSocketAddress;
 
 /**
  * Grpc implementation as  a rpc server.
@@ -75,8 +77,6 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
     
-    int grpcServerPort = ApplicationUtils.getPort() + rpcPortOffset();
-    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
@@ -92,7 +92,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
             public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
                     ServerCallHandler<T, S> next) {
                 Context ctx = Context.current()
-                        .withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID));
+                        .withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID))
+                        .withValue(CONTEXT_KEY_CONN_CLIENT_IP, call.getAttributes().get(TRANS_KEY_CLIENT_IP))
+                        .withValue(CONTEXT_KEY_CONN_CLIENT_PORT, call.getAttributes().get(TRANS_KEY_CLIENT_PORT))
+                        .withValue(CONTEXT_KEY_CONN_LOCAL_PORT, call.getAttributes().get(TRANS_KEY_LOCAL_PORT));
                 if (REQUEST_BI_STREAM_SERVICE_NAME.equals(call.getMethodDescriptor().getServiceName())) {
                     Channel internalChannel = getInternalChannel(call);
                     ctx = ctx.withValue(CONTEXT_KEY_CHANNEL, internalChannel);
@@ -102,13 +105,22 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         };
     
         addServices(handlerRegistry, serverInterceptor);
-        server = ServerBuilder.forPort(grpcServerPort).fallbackHandlerRegistry(handlerRegistry)
+        server = ServerBuilder.forPort(getServicePort()).fallbackHandlerRegistry(handlerRegistry)
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
-                        Attributes test = transportAttrs.toBuilder().set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid())
-                                .build();
-                        return test;
+                        InetSocketAddress remoteAddress = (InetSocketAddress) transportAttrs
+                                .get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
+                        InetSocketAddress localAddress = (InetSocketAddress) transportAttrs
+                                .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
+                        String remoteIp = remoteAddress.getAddress().getHostAddress().toString();
+                        int remotePort = remoteAddress.getPort();
+                        int localPort = localAddress.getPort();
+    
+                        Attributes attrWraper = transportAttrs.toBuilder()
+                                .set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid()).set(TRANS_KEY_CLIENT_IP, remoteIp)
+                                .set(TRANS_KEY_CLIENT_PORT, remotePort).set(TRANS_KEY_LOCAL_PORT, localPort).build();
+                        return attrWraper;
                     }
     
                     @Override
@@ -139,7 +151,8 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
                 .asyncUnaryCall((request, responseObserver) -> {
                     com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
-                            .setConnectionId(CONTEXT_KEY_CONN_ID.get()).build();
+                            .setConnectionId(CONTEXT_KEY_CONN_ID.get()).setClientIp(CONTEXT_KEY_CONN_CLIENT_IP.get())
+                            .setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get()).build();
                     Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
                     grpcCommonRequestAcceptor.request(requestNew, responseObserver);
                 });
@@ -161,8 +174,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
     
         final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
-                .builder(REQUEST_BI_STREAM_SERVICE_NAME)
-                .addMethod(biStreamMethod, biStreamHandler).build();
+                .builder(REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
         
     }
@@ -176,7 +188,19 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     
     static final Attributes.Key<String> TRANS_KEY_CONN_ID = Attributes.Key.create("conn_id");
     
+    static final Attributes.Key<String> TRANS_KEY_CLIENT_IP = Attributes.Key.create("client_ip");
+    
+    static final Attributes.Key<Integer> TRANS_KEY_CLIENT_PORT = Attributes.Key.create("client_port");
+    
+    static final Attributes.Key<Integer> TRANS_KEY_LOCAL_PORT = Attributes.Key.create("local_port");
+    
     static final Context.Key<String> CONTEXT_KEY_CONN_ID = Context.key("conn_id");
+    
+    static final Context.Key<String> CONTEXT_KEY_CONN_CLIENT_IP = Context.key("client_ip");
+    
+    static final Context.Key<Integer> CONTEXT_KEY_CONN_CLIENT_PORT = Context.key("client_port");
+    
+    static final Context.Key<Integer> CONTEXT_KEY_CONN_LOCAL_PORT = Context.key("local_port");
     
     static final Context.Key<Channel> CONTEXT_KEY_CHANNEL = Context.key("ctx_channel");
     

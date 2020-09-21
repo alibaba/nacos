@@ -53,7 +53,7 @@ public abstract class RequestHandler<T extends Request, S extends Response> {
      * @throws NacosException nacos exception when handle request has problem.
      */
     public Response handleRequest(T request, RequestMeta meta) throws NacosException {
-        for (RequestFilter filter : requestFilters.filters) {
+        for (AbstractRequestFilter filter : requestFilters.filters) {
             Response filterResult = filter.filter(request, meta, this.getClass());
             if (filterResult != null && !filterResult.isSuccess()) {
                 return filterResult;

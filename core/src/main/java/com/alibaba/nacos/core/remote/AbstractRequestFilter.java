@@ -27,14 +27,14 @@ import javax.annotation.PostConstruct;
  * interceptor fo request.
  *
  * @author liuzunfei
- * @version $Id: RequestFilter.java, v 0.1 2020年09月14日 11:46 AM liuzunfei Exp $
+ * @version $Id: AbstractRequestFilter.java, v 0.1 2020年09月14日 11:46 AM liuzunfei Exp $
  */
-public abstract class RequestFilter {
+public abstract class AbstractRequestFilter {
     
     @Autowired
     private RequestFilters requestFilters;
     
-    public RequestFilter() {
+    public AbstractRequestFilter() {
     }
     
     @PostConstruct
@@ -47,6 +47,7 @@ public abstract class RequestFilter {
      *
      * @param request request.
      * @param meta    request meta.
+     * @param handlerClazz  request handler clazz.
      * @return response
      */
     protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz);

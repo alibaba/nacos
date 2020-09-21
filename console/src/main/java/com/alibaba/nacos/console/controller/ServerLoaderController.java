@@ -21,8 +21,11 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -78,6 +81,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.WRITE)
     @GetMapping("/max")
     public ResponseEntity updateMaxClients(@RequestParam Integer count) {
         Map<String, String> responseMap = new HashMap<>(3);
@@ -90,6 +94,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.WRITE)
     @GetMapping("/reload")
     public ResponseEntity reloadCount(@RequestParam Integer count,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
@@ -103,6 +108,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadsingle")
     public ResponseEntity reloadSingle(@RequestParam String connectionId,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
@@ -116,6 +122,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.READ)
     @GetMapping("/current")
     public ResponseEntity currentClients() {
         Map<String, String> responseMap = new HashMap<>(3);
@@ -129,6 +136,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.READ)
     @GetMapping("/clustermetric")
     public ResponseEntity clusterLoader() {
         
