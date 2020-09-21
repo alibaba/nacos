@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
-import com.alibaba.nacos.common.remote.GrpcUtils;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
@@ -58,13 +58,24 @@ public class GrpcConnection extends Connection {
     
     private void sendRequestNoAck(Request request, RequestMeta meta) throws NacosException {
         try {
-            streamObserver.onNext(GrpcUtils.convert(request, meta));
+            streamObserver.onNext(GrpcUtils.convert(request, wrapMeta(meta)));
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
                 throw new ConnectionAlreadyClosedException(e);
             }
             throw e;
         }
+    }
+    
+    private RequestMeta wrapMeta(RequestMeta meta) {
+        if (meta == null) {
+            meta = new RequestMeta();
+        }
+        meta.setClientVersion(VersionUtils.getFullClientVersion());
+        meta.setConnectionId(getMetaInfo().getConnectionId());
+        meta.setClientPort(getMetaInfo().getLocalPort());
+        meta.setClientIp(NetUtils.localIP());
+        return meta;
     }
     
     Metadata buildMeta(String type) {
@@ -79,14 +90,15 @@ public class GrpcConnection extends Connection {
         String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
         sendRequestNoAck(request, meta);
-        DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(this.getConnectionId(), requestId, callBack,
+        DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(getMetaInfo().getConnectionId(), requestId,
+                callBack,
                 new DefaultRequestFuture.TimeoutInnerTrigger() {
                     @Override
                     public void triggerOnTimeout() {
-                        RpcAckCallbackSynchronizer.clearFuture(getConnectionId(), requestId);
+                        RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), requestId);
                     }
                 });
-        RpcAckCallbackSynchronizer.syncCallback(getConnectionId(), requestId, defaultPushFuture);
+        RpcAckCallbackSynchronizer.syncCallback(getMetaInfo().getConnectionId(), requestId, defaultPushFuture);
         return defaultPushFuture;
     }
     
@@ -103,7 +115,7 @@ public class GrpcConnection extends Connection {
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         } finally {
-            RpcAckCallbackSynchronizer.clearFuture(getConnectionId(), pushFuture.getRequestId());
+            RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), pushFuture.getRequestId());
         }
     }
     

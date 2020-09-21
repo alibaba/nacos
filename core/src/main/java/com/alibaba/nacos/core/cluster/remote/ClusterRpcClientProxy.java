@@ -94,7 +94,8 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         //shutdown and remove old members.
         Set<Map.Entry<String, RpcClient>> allClientEntrys = RpcClientFactory.getAllClientEntrys();
         Iterator<Map.Entry<String, RpcClient>> iterator = allClientEntrys.iterator();
-        List<String> newMemberKeys = members.stream().map(a -> memberClientKey(a)).collect(Collectors.toList());
+        List<String> newMemberKeys = members.stream().filter(a -> MemberUtils.isSupportedLongCon(a))
+                .map(a -> memberClientKey(a)).collect(Collectors.toList());
         while (iterator.hasNext()) {
             Map.Entry<String, RpcClient> next1 = iterator.next();
             if (next1.getKey().startsWith("Cluster-") && !newMemberKeys.contains(next1.getKey())) {

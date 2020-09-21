@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.UnKnowResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.RsocketUtils;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
@@ -87,7 +86,8 @@ public class RsocketRpcClient extends RpcClient {
                                 final RsocketUtils.PlainRequest plainRequest = RsocketUtils
                                         .parsePlainRequestFromPayload(payload);
                                 try {
-                                    Response response = handleServerRequest(plainRequest.getBody());
+                                    Response response = handleServerRequest(plainRequest.getBody(),
+                                            plainRequest.metadata);
                                     response.setRequestId(plainRequest.getBody().getRequestId());
                                     return Mono.just(RsocketUtils.convertResponseToPayload(response));
                                 } catch (Exception e) {
@@ -111,7 +111,7 @@ public class RsocketRpcClient extends RpcClient {
                         public Mono<Void> fireAndForget(Payload payload) {
                             final RsocketUtils.PlainRequest plainRequest = RsocketUtils
                                     .parsePlainRequestFromPayload(payload);
-                            handleServerRequest(plainRequest.getBody());
+                            handleServerRequest(plainRequest.getBody(), plainRequest.metadata);
                             return Mono.empty();
                         }
                     };
@@ -151,14 +151,14 @@ public class RsocketRpcClient extends RpcClient {
             public void onError(Throwable throwable) {
                 if (isRunning() && !connectionInner.isAbandon()) {
                     System.out.println("onError ,switch server " + this + new Date().toString());
-        
+    
                     if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
                         switchServerAsync();
                     }
                 } else {
                     System.out.println(
                             "client is not running status ,ignore error event , " + this + new Date().toString());
-        
+    
                 }
             }
             

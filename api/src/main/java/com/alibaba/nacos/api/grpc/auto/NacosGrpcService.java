@@ -56,20 +56,21 @@ public final class NacosGrpcService {
     static {
         java.lang.String[] descriptorData = {
                 "\n\030nacos_grpc_service.proto\032\031google/proto" + "buf/any.proto\032\037google/protobuf/timestamp"
-                        + ".proto\"\211\002\n\010Metadata\022\014\n\004type\030\002 \001(\t\022\021\n\tcli"
-                        + "ent_ip\030\003 \001(\t\022\025\n\rconnection_id\030\004 \001(\t\022\026\n\016c"
-                        + "lient_version\030\005 \001(\t\022%\n\006labels\030\006 \003(\0132\025.Me"
-                        + "tadata.LabelsEntry\022\'\n\007headers\030\007 \003(\0132\026.Me"
-                        + "tadata.HeadersEntry\032-\n\013LabelsEntry\022\013\n\003ke"
-                        + "y\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\032.\n\014HeadersEnt"
-                        + "ry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"J\n\007Pa"
-                        + "yload\022\033\n\010metadata\030\002 \001(\0132\t.Metadata\022\"\n\004bo",
-                "dy\030\003 \001(\0132\024.google.protobuf.Any28\n\rReques"
-                        + "tStream\022\'\n\rrequestStream\022\010.Payload\032\010.Pay"
-                        + "load\"\0000\0012*\n\007Request\022\037\n\007request\022\010.Payload"
-                        + "\032\010.Payload\"\0002>\n\017BiRequestStream\022+\n\017reque"
-                        + "stBiStream\022\010.Payload\032\010.Payload\"\000(\0010\001B#\n\037"
-                        + "com.alibaba.nacos.api.grpc.autoP\001b\006proto" + "3"};
+                        + ".proto\"\236\002\n\010Metadata\022\021\n\tclient_ip\030\001 \001(\t\022\023"
+                        + "\n\013client_port\030\002 \001(\005\022\014\n\004type\030\003 \001(\t\022\025\n\rcon"
+                        + "nection_id\030\004 \001(\t\022\026\n\016client_version\030\005 \001(\t"
+                        + "\022%\n\006labels\030\006 \003(\0132\025.Metadata.LabelsEntry\022"
+                        + "\'\n\007headers\030\007 \003(\0132\026.Metadata.HeadersEntry"
+                        + "\032-\n\013LabelsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 "
+                        + "\001(\t:\0028\001\032.\n\014HeadersEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005"
+                        + "value\030\002 \001(\t:\0028\001\"J\n\007Payload\022\033\n\010metadata\030\002",
+                " \001(\0132\t.Metadata\022\"\n\004body\030\003 \001(\0132\024.google.p"
+                        + "rotobuf.Any28\n\rRequestStream\022\'\n\rrequestS"
+                        + "tream\022\010.Payload\032\010.Payload\"\0000\0012*\n\007Request"
+                        + "\022\037\n\007request\022\010.Payload\032\010.Payload\"\0002>\n\017BiR"
+                        + "equestStream\022+\n\017requestBiStream\022\010.Payloa"
+                        + "d\032\010.Payload\"\000(\0010\001B#\n\037com.alibaba.nacos.a"
+                        + "pi.grpc.autoP\001b\006proto3"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(
                     com.google.protobuf.Descriptors.FileDescriptor root) {
@@ -83,7 +84,8 @@ public final class NacosGrpcService {
         internal_static_Metadata_descriptor = getDescriptor().getMessageTypes().get(0);
         internal_static_Metadata_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                 internal_static_Metadata_descriptor,
-                new java.lang.String[] {"Type", "ClientIp", "ConnectionId", "ClientVersion", "Labels", "Headers",});
+                new java.lang.String[] {"ClientIp", "ClientPort", "Type", "ConnectionId", "ClientVersion", "Labels",
+                        "Headers",});
         internal_static_Metadata_LabelsEntry_descriptor = internal_static_Metadata_descriptor.getNestedTypes().get(0);
         internal_static_Metadata_LabelsEntry_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                 internal_static_Metadata_LabelsEntry_descriptor, new java.lang.String[] {"Key", "Value",});

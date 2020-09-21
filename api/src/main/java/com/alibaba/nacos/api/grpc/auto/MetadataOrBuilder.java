@@ -24,24 +24,29 @@ public interface MetadataOrBuilder extends
         com.google.protobuf.MessageOrBuilder {
     
     /**
-     * <code>string type = 2;</code>
-     */
-    java.lang.String getType();
-    
-    /**
-     * <code>string type = 2;</code>
-     */
-    com.google.protobuf.ByteString getTypeBytes();
-    
-    /**
-     * <code>string client_ip = 3;</code>
+     * <code>string client_ip = 1;</code>
      */
     java.lang.String getClientIp();
     
     /**
-     * <code>string client_ip = 3;</code>
+     * <code>string client_ip = 1;</code>
      */
     com.google.protobuf.ByteString getClientIpBytes();
+    
+    /**
+     * <code>int32 client_port = 2;</code>
+     */
+    int getClientPort();
+    
+    /**
+     * <code>string type = 3;</code>
+     */
+    java.lang.String getType();
+    
+    /**
+     * <code>string type = 3;</code>
+     */
+    com.google.protobuf.ByteString getTypeBytes();
     
     /**
      * <code>string connection_id = 4;</code>

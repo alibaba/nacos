@@ -83,7 +83,8 @@ public class ConnectionManager {
         Connection connectionInner = connetions.put(connectionId, connection);
         if (connectionInner == null) {
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
-            Loggers.RPC.info("new connection registered successfully, connectionid = {} ", connectionId);
+            Loggers.RPC.info("new connection registered successfully, connectionid = {},connection={} ", connectionId,
+                    connection);
         }
     }
     
@@ -171,8 +172,8 @@ public class ConnectionManager {
                     List<String> expelClient = new LinkedList<String>();
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
-                        if (client.isSdkSource() && expelCount > 0) {
-                            expelClient.add(client.getConnectionId());
+                        if (client.getMetaInfo().isSdkSource() && expelCount > 0) {
+                            expelClient.add(client.getMetaInfo().getConnectionId());
                             expelCount--;
                         }
                     }

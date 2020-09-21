@@ -115,7 +115,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
             return ConfigPubishResponse.buildSuccessResponse();
         } catch (Exception e) {
-            Loggers.RPC_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", myRequest);
+            Loggers.RPC_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", myRequest, e);
             return ConfigPubishResponse.buildFailResponse(e.getMessage());
         }
     }

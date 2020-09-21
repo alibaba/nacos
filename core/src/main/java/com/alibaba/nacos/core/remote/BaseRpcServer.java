@@ -78,6 +78,7 @@ public abstract class BaseRpcServer {
     
     /**
      * Start sever.
+     *
      * @throws Exception excetpion throw if start server fail.
      */
     public abstract void startServer() throws Exception;
@@ -90,7 +91,17 @@ public abstract class BaseRpcServer {
     public abstract int rpcPortOffset();
     
     /**
+     * get service port.
+     *
+     * @return
+     */
+    public int getServicePort() {
+        return ApplicationUtils.getPort() + rpcPortOffset();
+    }
+    
+    /**
      * Stop Server.
+     *
      * @throws excetpion throw if stop server fail.
      */
     public final void stopServer() throws Exception {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote;
+package com.alibaba.nacos.common.remote.client.rsocket;
 
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
@@ -108,6 +108,8 @@ public class RsocketUtils {
      */
     public static Payload convertRequestToPayload(Request request, RequestMeta meta) {
         JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("clientPort", meta.getClientPort());
+        jsonObject.addProperty("connectionId", meta.getConnectionId());
         jsonObject.addProperty("clientIp", meta.getClientIp());
         jsonObject.addProperty("clientVersion", meta.getClientVersion());
         jsonObject.addProperty("labels", toJson(meta.getLabels()));
@@ -163,13 +165,16 @@ public class RsocketUtils {
         //parse meta
         String metaString = payload.getMetadataUtf8();
         JsonNode metaJsonNode = toObj(metaString);
-        String clientIp = metaJsonNode.get("clientIp").textValue();
-        String clientVersion = metaJsonNode.get("clientVersion").textValue();
         String type = metaJsonNode.get("type").textValue();
         Map<String, String> labels = (Map<String, String>) toObj(metaJsonNode.get("labels").textValue(), Map.class);
         RequestMeta requestMeta = new RequestMeta();
-        requestMeta.setClientIp(clientIp);
-        requestMeta.setClientVersion(clientVersion);
+    
+        requestMeta.setClientVersion(
+                metaJsonNode.has("clientVersion") ? metaJsonNode.get("clientVersion").textValue() : "");
+        requestMeta
+                .setConnectionId(metaJsonNode.has("connectionId") ? metaJsonNode.get("connectionId").textValue() : "");
+        requestMeta.setClientPort(metaJsonNode.has("clientPort") ? metaJsonNode.get("clientPort").intValue() : 0);
+        requestMeta.setClientIp(metaJsonNode.has("clientIp") ? metaJsonNode.get("clientIp").textValue() : "");
         requestMeta.setLabels(labels);
     
         String bodyString = getPayloadString(payload);
