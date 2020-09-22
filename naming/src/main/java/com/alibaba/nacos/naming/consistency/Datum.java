@@ -36,6 +36,14 @@ public class Datum<T extends Record> implements Serializable {
     
     public AtomicLong timestamp = new AtomicLong(0L);
     
+    /**
+     * Create datum.
+     *
+     * @param key   key of datum
+     * @param value value of datum
+     * @param <T>   Types of value
+     * @return new datum
+     */
     public static <T extends Record> Datum createDatum(final String key, final T value) {
         Datum datum = new Datum();
         datum.key = key;

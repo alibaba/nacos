@@ -16,94 +16,103 @@
 
 package com.alibaba.nacos.core.storage.kv;
 
-import com.alibaba.nacos.core.exception.KVStorageException;
+import com.alibaba.nacos.core.exception.KvStorageException;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * Universal KV storage interface
+ * Universal KV storage interface.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface KvStorage {
     
-    enum KVType {
+    enum KvType {
+        /**
+         * Local file storage.
+         */
         File,
-        
+    
+        /**
+         * Local memory storage.
+         */
         Memory,
-        
+    
+        /**
+         * RocksDB storage.
+         */
         RocksDB,
     }
     
     
     /**
-     * get data by key
+     * get data by key.
      *
      * @param key byte[]
      * @return byte[]
-     * @throws KVStorageException KVStorageException
+     * @throws KvStorageException KVStorageException
      */
-    byte[] get(byte[] key) throws KVStorageException;
+    byte[] get(byte[] key) throws KvStorageException;
     
     /**
      * batch get by List byte[].
      *
      * @param keys List byte[]
      * @return Map byte[], byte[]
-     * @throws KVStorageException RocksStorageException
+     * @throws KvStorageException RocksStorageException
      */
-    Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KVStorageException;
+    Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KvStorageException;
     
     /**
      * write data.
      *
      * @param key   byte[]
      * @param value byte[]
-     * @throws KVStorageException RocksStorageException
+     * @throws KvStorageException RocksStorageException
      */
-    void put(byte[] key, byte[] value) throws KVStorageException;
+    void put(byte[] key, byte[] value) throws KvStorageException;
     
     /**
      * batch write.
      *
      * @param key    List byte[]
      * @param values List byte[]
-     * @throws KVStorageException RocksStorageException
+     * @throws KvStorageException RocksStorageException
      */
-    void batchPut(List<byte[]> key, List<byte[]> values) throws KVStorageException;
+    void batchPut(List<byte[]> key, List<byte[]> values) throws KvStorageException;
     
     /**
      * delete with key.
      *
      * @param key byte[]
-     * @throws KVStorageException RocksStorageException
+     * @throws KvStorageException RocksStorageException
      */
-    void delete(byte[] key) throws KVStorageException;
+    void delete(byte[] key) throws KvStorageException;
     
     /**
      * batch delete with keys.
      *
      * @param key List byte[]
-     * @throws KVStorageException RocksStorageException
+     * @throws KvStorageException RocksStorageException
      */
-    void batchDelete(List<byte[]> key) throws KVStorageException;
+    void batchDelete(List<byte[]> key) throws KvStorageException;
     
     /**
      * do snapshot.
      *
      * @param backupPath snapshot file save path
-     * @throws KVStorageException KVStorageException
+     * @throws KvStorageException KVStorageException
      */
-    void doSnapshot(final String backupPath) throws KVStorageException;
+    void doSnapshot(final String backupPath) throws KvStorageException;
     
     /**
      * load snapshot.
      *
      * @param path The path to the snapshot file
-     * @throws KVStorageException KVStorageException
+     * @throws KvStorageException KVStorageException
      */
-    void snapshotLoad(String path) throws KVStorageException;
+    void snapshotLoad(String path) throws KvStorageException;
     
     /**
      * shutdown.
