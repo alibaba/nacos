@@ -34,6 +34,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.util.List;
 
@@ -42,7 +43,9 @@ import java.util.List;
  *
  * @author nkorange
  */
-public class ClientBeatCheckTask implements Runnable {
+public class ClientBeatCheckTask implements Runnable, Serializable {
+    
+    private static final long serialVersionUID = 1518045401492647614L;
     
     private Service service;
     
