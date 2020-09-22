@@ -158,11 +158,14 @@ public class FileKvStorage implements KvStorage {
     public void snapshotLoad(String path) throws KvStorageException {
         writeLock.lock();
         try {
-            // First clean up the local file information, before the file copy
-            DiskUtils.deleteDirThenMkdir(baseDir);
             File srcDir = Paths.get(path).toFile();
-            File descDir = Paths.get(baseDir).toFile();
-            DiskUtils.copyDirectory(srcDir, descDir);
+            // If snapshot path is non-exist, means snapshot is empty
+            if (srcDir.exists()) {
+                // First clean up the local file information, before the file copy
+                DiskUtils.deleteDirThenMkdir(baseDir);
+                File descDir = Paths.get(baseDir).toFile();
+                DiskUtils.copyDirectory(srcDir, descDir);
+            }
         } catch (IOException e) {
             throw new KvStorageException(ErrorCode.IOCopyDirError, e);
         } finally {

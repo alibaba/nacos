@@ -25,6 +25,7 @@ import com.caucho.hessian.io.SerializerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 /**
  * hessian serializer.
@@ -41,29 +42,24 @@ public class HessianSerializer implements Serializer {
     
     @Override
     public <T> T deserialize(byte[] data) {
-        if (ByteUtils.isEmpty(data)) {
-            return null;
-        }
-    
-        Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));
-        input.setSerializerFactory(serializerFactory);
-        Object resultObject;
-        try {
-            resultObject = input.readObject();
-            input.close();
-        } catch (IOException e) {
-            throw new RuntimeException("IOException occurred when Hessian serializer decode!", e);
-        }
-        return (T) resultObject;
+        return deserialize(data);
     }
     
     @Override
-    public <T> T deserialize(byte[] data, Class cls) {
-        
+    public <T> T deserialize(byte[] data, Class<T> cls) {
+        return deserialize(data);
+    }
+    
+    @Override
+    public <T> T deserialize(byte[] data, Type type) {
+        return deserialize(data);
+    }
+    
+    private <T> T deseiralize(byte[] data) {
         if (ByteUtils.isEmpty(data)) {
             return null;
         }
-        
+    
         Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));
         input.setSerializerFactory(serializerFactory);
         Object resultObject;

@@ -38,6 +38,7 @@ import com.alibaba.nacos.core.storage.StorageFactory;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
@@ -49,6 +50,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.utils.Constants;
 import com.google.protobuf.ByteString;
+import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Paths;
@@ -101,7 +103,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     
     private final ClusterVersionJudgement versionJudgement;
     
-    private final Serializer serializer = SerializeFactory.getDefault();
+    private final Serializer serializer;
     
     /**
      * During snapshot processing, the processing of other requests needs to be paused.
@@ -129,10 +131,11 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         this.versionJudgement = versionJudgement;
         this.kvStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, "naming-persistent",
                 Paths.get(UtilsAndCommons.DATA_BASE_DIR, "persistent").toString());
+        this.serializer = SerializeFactory.getSerializer("JSON");
         this.notifier = new PersistentNotifier(key -> {
             try {
                 byte[] data = kvStorage.get(ByteUtils.toBytes(key));
-                return serializer.deserialize(data);
+                return serializer.deserialize(data, getClassForDeserialize(key));
             } catch (KvStorageException ex) {
                 throw new NacosRuntimeException(ex.getErrCode(), ex.getErrMsg());
             }
@@ -162,7 +165,8 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     
     @Override
     public Response onRequest(GetRequest request) {
-        final List<byte[]> keys = serializer.deserialize(request.getData().toByteArray(), List.class);
+        final List<byte[]> keys = serializer
+                .deserialize(request.getData().toByteArray(), TypeUtils.parameterize(List.class, byte[].class));
         final Lock lock = readLock;
         lock.lock();
         try {
@@ -207,10 +211,10 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     
     private void publishValueChangeEvent(final Op op, final BatchWriteRequest request) {
         final List<byte[]> keys = request.getKeys();
-        final List<byte[]> values = request.getKeys();
+        final List<byte[]> values = request.getValues();
         for (int i = 0; i < keys.size(); i++) {
             final String key = new String(keys.get(i));
-            final Record value = serializer.deserialize(values.get(i));
+            final Record value = serializer.deserialize(values.get(i), getClassForDeserialize(key));
             final ValueChangeEvent event = ValueChangeEvent.builder().key(key).value(value)
                     .action(Op.Delete.equals(op) ? DataOperation.DELETE : DataOperation.CHANGE).build();
             NotifyCenter.publishEvent(event);
@@ -317,7 +321,8 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                 BatchReadResponse response = serializer
                         .deserialize(resp.getData().toByteArray(), BatchReadResponse.class);
                 final List<byte[]> rValues = response.getValues();
-                Record record = serializer.deserialize(rValues.get(0));
+                Record record =
+                        rValues.isEmpty() ? null : serializer.deserialize(rValues.get(0), getClassForDeserialize(key));
                 return Datum.createDatum(key, record);
             }
             throw new NacosException(ErrorCode.ProtoReadError.getCode(), resp.getErrMsg());
@@ -345,5 +350,16 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     @Override
     public boolean isAvailable() {
         return hasLeader && !hasError;
+    }
+    
+    private Class<? extends Record> getClassForDeserialize(String key) {
+        if (KeyBuilder.matchSwitchKey(key)) {
+            return com.alibaba.nacos.naming.misc.SwitchDomain.class;
+        } else if (KeyBuilder.matchServiceMetaKey(key)) {
+            return com.alibaba.nacos.naming.core.Service.class;
+        } else if (KeyBuilder.matchInstanceListKey(key)) {
+            return com.alibaba.nacos.naming.core.Instances.class;
+        }
+        return Record.class;
     }
 }
