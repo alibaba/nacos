@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
+import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -48,11 +53,23 @@ public class RequestLogAspect {
                     + "(request,response,dataId,group,tenant,content,..)";
     
     /**
+     * Publish config.
+     */
+    private static final String CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG_RPC =
+            "execution(* com.alibaba.nacos.config.server.remote.ConfigPublishRequestHandler.handle(..)) && args"
+                    + "(request,meta)";
+    
+    /**
      * Get config.
      */
     private static final String CLIENT_INTERFACE_GET_CONFIG =
             "execution(* com.alibaba.nacos.config.server.controller.ConfigController.getConfig(..)) && args(request,"
                     + "response,dataId,group,tenant,..)";
+    
+    /**
+     * Get config.
+     */
+    private static final String CLIENT_INTERFACE_GET_CONFIG_RPC = "execution(* com.alibaba.nacos.config.server.remote.ConfigQueryRequestHandler.handle(..)) && args(request,requestMeta)";
     
     /**
      * Remove config.
@@ -61,6 +78,24 @@ public class RequestLogAspect {
             "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args(request,"
                     + "response,dataId,group,tenant,..)";
     
+    /**
+     * Remove config.
+     */
+    private static final String CLIENT_INTERFACE_REMOVE_ALL_CONFIG_RPC = "execution(* com.alibaba.nacos.config.server.remote.ConfiRemoveRequestHandler.handle(..)) && args(request,meta)";
+    
+    /**
+     * PublishSingle.
+     */
+    @Around(CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG_RPC)
+    public Object interfacePublishSingleRpc(ProceedingJoinPoint pjp, ConfigPublishRequest request, RequestMeta meta)
+            throws Throwable {
+        final String md5 =
+                request.getContent() == null ? null : MD5Utils.md5Hex(request.getContent(), Constants.ENCODE);
+        System.out.println(1);
+        MetricsMonitor.getPublishMonitor().incrementAndGet();
+        return logClientRequestRpc("publish", pjp, request, meta, request.getDataId(), request.getGroup(),
+                request.getTenant(), md5);
+    }
     
     /**
      * PublishSingle.
@@ -83,6 +118,16 @@ public class RequestLogAspect {
     }
     
     /**
+     * RemoveAll.
+     */
+    @Around(CLIENT_INTERFACE_REMOVE_ALL_CONFIG_RPC)
+    public Object interfaceRemoveAllRpc(ProceedingJoinPoint pjp, ConfigRemoveRequest request, RequestMeta meta)
+            throws Throwable {
+        return logClientRequestRpc("remove", pjp, request, meta, request.getDataId(), request.getGroup(),
+                request.getTenant(), null);
+    }
+    
+    /**
      * GetConfig.
      */
     @Around(CLIENT_INTERFACE_GET_CONFIG)
@@ -95,11 +140,42 @@ public class RequestLogAspect {
     }
     
     /**
+     * GetConfig.
+     */
+    @Around(CLIENT_INTERFACE_GET_CONFIG_RPC)
+    public Object interfaceGetConfigRpc(ProceedingJoinPoint pjp, ConfigQueryRequest request, RequestMeta requestMeta)
+            throws Throwable {
+        final String groupKey = GroupKey2.getKey(request.getDataId(), request.getGroup(), request.getTenant());
+        final String md5 = ConfigCacheService.getContentMd5(groupKey);
+        MetricsMonitor.getConfigMonitor().incrementAndGet();
+        return logClientRequestRpc("get", pjp, request, requestMeta, request.getDataId(), request.getGroup(),
+                request.getTenant(), md5);
+    }
+    
+    /**
      * Client api request log rt | status | requestIp | opType | dataId | group | datumId | md5.
      */
     private Object logClientRequest(String requestType, ProceedingJoinPoint pjp, HttpServletRequest request,
             HttpServletResponse response, String dataId, String group, String tenant, String md5) throws Throwable {
         final String requestIp = RequestUtil.getRemoteIp(request);
+        String appName = request.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
+        final long st = System.currentTimeMillis();
+        Object retVal = pjp.proceed();
+        final long rt = System.currentTimeMillis() - st;
+        // rt | status | requestIp | opType | dataId | group | datumId | md5 |
+        // appName
+        LogUtil.CLIENT_LOG
+                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}", rt, retVal, requestIp, requestType, dataId, group, tenant, md5,
+                        appName);
+        return retVal;
+    }
+    
+    /**
+     * Client api request log rt | status | requestIp | opType | dataId | group | datumId | md5.
+     */
+    private Object logClientRequestRpc(String requestType, ProceedingJoinPoint pjp, Request request, RequestMeta meta,
+            String dataId, String group, String tenant, String md5) throws Throwable {
+        final String requestIp = meta.getClientIp();
         String appName = request.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         final long st = System.currentTimeMillis();
         Object retVal = pjp.proceed();
