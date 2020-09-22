@@ -35,6 +35,7 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.HashSet;
@@ -146,8 +147,18 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     public boolean processVerifyData(DistroData distroData) {
         List<String> verifyData = ApplicationUtils.getBean(Serializer.class)
                 .deserialize(distroData.getContent(), List.class);
+        List<String> invalidData = new LinkedList<>();
         for (String each : verifyData) {
-            clientManager.verifyClient(each);
+            if (!clientManager.verifyClient(each)) {
+                invalidData.add(each);
+            }
+        }
+        String sourceServer = distroData.getDistroKey().getTargetServer();
+        for (String each : invalidData) {
+            Loggers.DISTRO.info("client {} is invalid, get new client from {}", each, sourceServer);
+            DistroData data = distroProtocol.queryFromRemote(new DistroKey(each, TYPE, sourceServer));
+            data.setType(DataOperation.ADD);
+            processData(data);
         }
         return true;
     }

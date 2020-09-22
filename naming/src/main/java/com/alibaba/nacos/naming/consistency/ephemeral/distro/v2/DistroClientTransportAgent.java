@@ -74,6 +74,8 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
     
     @Override
     public boolean syncVerifyData(DistroData verifyData, String targetServer) {
+        // replace target server as self server so that can callback.
+        verifyData.getDistroKey().setTargetServer(serverMemberManager.getSelf().getAddress());
         DistroDataRequest request = new DistroDataRequest(verifyData, DataOperation.VERIFY);
         Member member = serverMemberManager.find(targetServer);
         if (checkTargetServerStatusUnhealthy(member)) {
@@ -96,7 +98,29 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
     
     @Override
     public DistroData getData(DistroKey key, String targetServer) {
-        return null;
+        Member member = serverMemberManager.find(targetServer);
+        if (checkTargetServerStatusUnhealthy(member)) {
+            throw new DistroException(
+                    String.format("[DISTRO] Cancel get snapshot caused by target server %s unhealthy", targetServer));
+        }
+        DistroDataRequest request = new DistroDataRequest();
+        DistroData distroData = new DistroData();
+        distroData.setDistroKey(key);
+        distroData.setType(DataOperation.QUERY);
+        request.setDistroData(distroData);
+        request.setDataOperation(DataOperation.QUERY);
+        try {
+            Response response = clusterRpcClientProxy.sendRequest(member, request);
+            if (checkResponse(response)) {
+                return ((DistroDataResponse) response).getDistroData();
+            } else {
+                throw new DistroException(
+                        String.format("[DISTRO-FAILED] Get data request to %s failed, code: %d, message: %s",
+                                targetServer, response.getErrorCode(), response.getMessage()));
+            }
+        } catch (NacosException e) {
+            throw new DistroException("[DISTRO-FAILED] Get distro data failed! ", e);
+        }
     }
     
     @Override
