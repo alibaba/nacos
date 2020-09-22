@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -57,7 +58,7 @@ public class RequestLogAspect {
      */
     private static final String CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG_RPC =
             "execution(* com.alibaba.nacos.config.server.remote.ConfigPublishRequestHandler.handle(..)) && args"
-                    + "(request,meta)";
+                    + "(request,meta,..)";
     
     /**
      * Get config.
@@ -91,7 +92,6 @@ public class RequestLogAspect {
             throws Throwable {
         final String md5 =
                 request.getContent() == null ? null : MD5Utils.md5Hex(request.getContent(), Constants.ENCODE);
-        System.out.println(1);
         MetricsMonitor.getPublishMonitor().incrementAndGet();
         return logClientRequestRpc("publish", pjp, request, meta, request.getDataId(), request.getGroup(),
                 request.getTenant(), md5);
@@ -178,13 +178,13 @@ public class RequestLogAspect {
         final String requestIp = meta.getClientIp();
         String appName = request.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         final long st = System.currentTimeMillis();
-        Object retVal = pjp.proceed();
+        Response retVal = (Response) pjp.proceed();
         final long rt = System.currentTimeMillis() - st;
         // rt | status | requestIp | opType | dataId | group | datumId | md5 |
         // appName
-        LogUtil.CLIENT_LOG
-                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}", rt, retVal, requestIp, requestType, dataId, group, tenant, md5,
-                        appName);
+        LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}", rt,
+                retVal.isSuccess() ? retVal.getResultCode() : retVal.getErrorCode(), requestIp, requestType, dataId,
+                group, tenant, md5, appName);
         return retVal;
     }
     

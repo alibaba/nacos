@@ -56,7 +56,7 @@ public class ConfigTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
     
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848");
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.67.159:8849");
         
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848,11.160.144.148:8848,127.0.0.1:8848");
