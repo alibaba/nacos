@@ -66,6 +66,7 @@ public class HealthCheckReactor {
         }
         try {
             scheduledFuture.cancel(true);
+            futureMap.remove(task.taskKey());
         } catch (Exception e) {
             Loggers.EVT_LOG.error("[CANCEL-CHECK] cancel failed!", e);
         }
