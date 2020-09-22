@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -32,12 +32,12 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttp
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpDelayTaskProcessor;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroDataStorageImpl;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroHttpAgent;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -126,7 +126,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         onPut(key, value);
-        distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), ApplyAction.CHANGE,
+        distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE,
                 globalConfig.getTaskDispatchPeriod() / 2);
     }
     
@@ -161,7 +161,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
         
-        notifier.addTask(key, ApplyAction.CHANGE);
+        notifier.addTask(key, DataOperation.CHANGE);
     }
     
     /**
@@ -177,7 +177,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
         
-        notifier.addTask(key, ApplyAction.DELETE);
+        notifier.addTask(key, DataOperation.DELETE);
     }
     
     /**
@@ -379,7 +379,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         
         private ConcurrentHashMap<String, String> services = new ConcurrentHashMap<>(10 * 1024);
         
-        private BlockingQueue<Pair<String, ApplyAction>> tasks = new ArrayBlockingQueue<>(1024 * 1024);
+        private BlockingQueue<Pair<String, DataOperation>> tasks = new ArrayBlockingQueue<>(1024 * 1024);
         
         /**
          * Add new notify task to queue.
@@ -387,12 +387,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
          * @param datumKey data key
          * @param action   action for data
          */
-        public void addTask(String datumKey, ApplyAction action) {
+        public void addTask(String datumKey, DataOperation action) {
             
-            if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
+            if (services.containsKey(datumKey) && action == DataOperation.CHANGE) {
                 return;
             }
-            if (action == ApplyAction.CHANGE) {
+            if (action == DataOperation.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
             tasks.offer(Pair.with(datumKey, action));
@@ -408,7 +408,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             
             for (; ; ) {
                 try {
-                    Pair<String, ApplyAction> pair = tasks.take();
+                    Pair<String, DataOperation> pair = tasks.take();
                     handle(pair);
                 } catch (Throwable e) {
                     Loggers.DISTRO.error("[NACOS-DISTRO] Error while handling notifying task", e);
@@ -416,10 +416,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
         }
         
-        private void handle(Pair<String, ApplyAction> pair) {
+        private void handle(Pair<String, DataOperation> pair) {
             try {
                 String datumKey = pair.getValue0();
-                ApplyAction action = pair.getValue1();
+                DataOperation action = pair.getValue1();
                 
                 services.remove(datumKey);
                 
@@ -434,12 +434,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     count++;
                     
                     try {
-                        if (action == ApplyAction.CHANGE) {
+                        if (action == DataOperation.CHANGE) {
                             listener.onChange(datumKey, dataStore.get(datumKey).value);
                             continue;
                         }
                         
-                        if (action == ApplyAction.DELETE) {
+                        if (action == DataOperation.DELETE) {
                             listener.onDelete(datumKey);
                             continue;
                         }

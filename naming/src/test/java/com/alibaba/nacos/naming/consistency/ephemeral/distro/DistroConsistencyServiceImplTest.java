@@ -17,24 +17,22 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Map;
@@ -46,6 +44,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DistroConsistencyServiceImplTest extends BaseTest {
     
@@ -61,9 +60,6 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     private DistroProtocol distroProtocol;
     
     @Mock
-    private ServerMemberManager serverMemberManager;
-    
-    @Spy
     private GlobalConfig globalConfig;
     
     @Mock
@@ -86,6 +82,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     public void setUp() throws Exception {
         doReturn(distroComponentHolder).when(context).getBean(DistroComponentHolder.class);
         doReturn(distroTaskEngineHolder).when(context).getBean(DistroTaskEngineHolder.class);
+        when(globalConfig.getTaskDispatchPeriod()).thenReturn(2000);
         distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, serializer, switchDomain,
                 globalConfig, distroProtocol);
         ReflectionTestUtils.setField(distroConsistencyService, "notifier", notifier);
@@ -105,8 +102,8 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
         String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         distroConsistencyService.listen(key, recordListener);
         distroConsistencyService.put(key, instances);
-        verify(distroProtocol).sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), ApplyAction.CHANGE, 1000L);
-        verify(notifier).addTask(key, ApplyAction.CHANGE);
+        verify(distroProtocol).sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE, 1000L);
+        verify(notifier).addTask(key, DataOperation.CHANGE);
         verify(dataStore).put(eq(key), any(Datum.class));
     }
     
@@ -114,8 +111,8 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     public void testPutWithoutListener() throws NacosException {
         String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         distroConsistencyService.put(key, instances);
-        verify(distroProtocol).sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), ApplyAction.CHANGE, 1000L);
-        verify(notifier, never()).addTask(key, ApplyAction.CHANGE);
+        verify(distroProtocol).sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE, 1000L);
+        verify(notifier, never()).addTask(key, DataOperation.CHANGE);
         verify(dataStore).put(eq(key), any(Datum.class));
     }
     
@@ -125,7 +122,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
         distroConsistencyService.listen(key, recordListener);
         distroConsistencyService.remove(key);
         verify(dataStore).remove(key);
-        verify(notifier).addTask(key, ApplyAction.DELETE);
+        verify(notifier).addTask(key, DataOperation.DELETE);
         assertTrue(listeners.isEmpty());
     }
     
@@ -134,7 +131,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
         String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         distroConsistencyService.remove(key);
         verify(dataStore).remove(key);
-        verify(notifier, never()).addTask(key, ApplyAction.DELETE);
+        verify(notifier, never()).addTask(key, DataOperation.DELETE);
         assertTrue(listeners.isEmpty());
     }
 }

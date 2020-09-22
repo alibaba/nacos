@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskExecuteEngine;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTaskExecuteEngine;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.Loggers;
 
@@ -39,11 +39,11 @@ public class DistroHttpCombinedKeyExecuteTask implements Runnable {
     
     private final DistroKey singleDistroKey;
     
-    private final ApplyAction taskAction;
+    private final DataOperation taskAction;
     
     public DistroHttpCombinedKeyExecuteTask(GlobalConfig globalConfig,
             DistroDelayTaskExecuteEngine distroDelayTaskExecuteEngine, DistroKey singleDistroKey,
-            ApplyAction taskAction) {
+            DataOperation taskAction) {
         this.globalConfig = globalConfig;
         this.distroDelayTaskExecuteEngine = distroDelayTaskExecuteEngine;
         this.singleDistroKey = singleDistroKey;
