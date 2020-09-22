@@ -34,9 +34,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- */
 public class ClusterVersionJudgementTest {
     
     private ServerMemberManager manager;

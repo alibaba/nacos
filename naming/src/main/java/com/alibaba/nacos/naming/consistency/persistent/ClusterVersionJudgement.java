@@ -34,8 +34,8 @@ import java.util.function.Consumer;
 /**
  * An automated task that determines whether all nodes in the current cluster meet the requirements of a particular
  * version.
- * <p>
- * This will be removed in a future release, just to smooth the transition
+ *
+ * <p>This will be removed in a future release, just to smooth the transition.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -46,7 +46,7 @@ public class ClusterVersionJudgement {
     
     private final ServerMemberManager memberManager;
     
-    private final List<consumerWithPriority> observers = new CopyOnWriteArrayList<>();
+    private final List<ConsumerWithPriority> observers = new CopyOnWriteArrayList<>();
     
     public ClusterVersionJudgement(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -54,13 +54,13 @@ public class ClusterVersionJudgement {
     }
     
     /**
-     * register member version watcher
+     * register member version watcher.
      *
      * @param observer Listens for the latest version of all current nodes
      * @param priority The higher the priority, the first to be notified
      */
     public void registerObserver(Consumer<Boolean> observer, int priority) {
-        observers.add(new consumerWithPriority(observer, priority));
+        observers.add(new ConsumerWithPriority(observer, priority));
     }
     
     protected void runVersionListener() {
@@ -85,7 +85,7 @@ public class ClusterVersionJudgement {
         if (allMemberIsNewVersion && !this.allMemberIsNewVersion) {
             this.allMemberIsNewVersion = true;
             Collections.sort(observers);
-            for (consumerWithPriority consumer : observers) {
+            for (ConsumerWithPriority consumer : observers) {
                 consumer.consumer.accept(true);
             }
             observers.clear();
@@ -96,18 +96,19 @@ public class ClusterVersionJudgement {
         return allMemberIsNewVersion;
     }
     
-    private static class consumerWithPriority implements Comparable<consumerWithPriority> {
+    private static class ConsumerWithPriority implements Comparable<ConsumerWithPriority> {
         
         private final Consumer<Boolean> consumer;
+        
         private final int priority;
-    
-        public consumerWithPriority(Consumer<Boolean> consumer, int priority) {
+        
+        public ConsumerWithPriority(Consumer<Boolean> consumer, int priority) {
             this.consumer = consumer;
             this.priority = priority;
         }
-    
+        
         @Override
-        public int compareTo(consumerWithPriority o) {
+        public int compareTo(ConsumerWithPriority o) {
             return o.priority - this.priority;
         }
     }
