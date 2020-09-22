@@ -20,13 +20,14 @@ import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
-import com.alibaba.nacos.core.storage.kv.RocksStorage;
+import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.nio.file.Paths;
@@ -42,7 +43,8 @@ public class NamingSnapshotOperationTest {
         ApplicationUtils.injectEnvironment(new MockEnvironment());
     }
     
-    private RocksStorage storage;
+    @Mock
+    private KvStorage storage;
     
     private final String tmpDir = Paths.get(ApplicationUtils.getNacosTmpDir(), "rocks_test").toString();
     
@@ -53,7 +55,6 @@ public class NamingSnapshotOperationTest {
     @Before
     public void init() {
         DiskUtils.deleteQuietly(Paths.get(ApplicationUtils.getNacosTmpDir()));
-        storage = RocksStorage.createDefault("test", tmpDir);
     }
     
     @After
