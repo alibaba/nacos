@@ -78,7 +78,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                         return;
                     }
                     connectionManager.refreshActiveTime(parseObj.getMetadata().getConnectionId());
-                    Response response = requestHandler.handleRequest(request, parseObj.getMetadata());
+                    Response response = requestHandler.handle(request, parseObj.getMetadata());
                     responseObserver.onNext(GrpcUtils.convert(response));
                     responseObserver.onCompleted();
                     return;
