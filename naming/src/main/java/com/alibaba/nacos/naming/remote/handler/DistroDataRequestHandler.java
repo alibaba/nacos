@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest;
 import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
@@ -54,6 +55,8 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
                 case CHANGE:
                 case DELETE:
                     return handleSyncData(request.getDistroData());
+                case QUERY:
+                    return handleQueryData(request.getDistroData());
                 default:
                     return new DistroDataResponse();
             }
@@ -88,6 +91,14 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
             result.setErrorCode(ResponseCode.FAIL.getCode());
             result.setMessage("[DISTRO-FAILED] distro data handle failed");
         }
+        return result;
+    }
+    
+    private DistroDataResponse handleQueryData(DistroData distroData) {
+        DistroDataResponse result = new DistroDataResponse();
+        DistroKey distroKey = distroData.getDistroKey();
+        DistroData queryData = distroProtocol.onQuery(distroKey);
+        result.setDistroData(queryData);
         return result;
     }
 }
