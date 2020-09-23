@@ -711,18 +711,12 @@ public class ServiceManager implements RecordListener<Service> {
                 }
             }
         }
-        Map map = serviceMap.get(service.getNamespaceId());
-        synchronized (map) {
-            if (map.get(service.getName()) == null) {
-                service.init();
-            }
-            map.put(service.getName(), service);
-        }
-        
+        serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }
     
     private void putServiceAndInit(Service service) throws NacosException {
         putService(service);
+        service.init();
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
         consistencyService
