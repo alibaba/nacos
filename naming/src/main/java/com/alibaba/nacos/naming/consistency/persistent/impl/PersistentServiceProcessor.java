@@ -263,7 +263,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                                         .setData(ByteString.copyFrom(serializer.serialize(request))).build())
                                 .whenComplete(((response, throwable) -> {
                                     if (throwable == null) {
-                                        Loggers.RAFT.error("submit old raft data result : {}", response);
+                                        Loggers.RAFT.info("submit old raft data result : {}", response);
                                     } else {
                                         Loggers.RAFT.error("submit old raft data occur exception : {}", throwable);
                                     }
