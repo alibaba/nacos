@@ -71,7 +71,7 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
     
     private volatile boolean ready = false;
     
-    private Set<Member> oldMembers;
+    private Set<Member> oldMembers = new HashSet<>();
     
     public RaftPeerSet(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -317,7 +317,7 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
     @Override
     public void onEvent(MembersChangeEvent event) {
         Collection<Member> members = event.getMembers();
-        if (oldMembers == null) {
+        if (oldMembers.isEmpty()) {
             oldMembers = new HashSet<>(members);
         } else {
             oldMembers.removeAll(members);
