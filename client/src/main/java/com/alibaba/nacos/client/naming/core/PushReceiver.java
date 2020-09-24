@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.nio.charset.Charset;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -107,6 +108,9 @@ public class PushReceiver implements Runnable, Closeable {
                 udpSocket.send(new DatagramPacket(ack.getBytes(UTF_8), ack.getBytes(UTF_8).length,
                         packet.getSocketAddress()));
             } catch (Exception e) {
+                if (closed && e instanceof SocketException) {
+                    return;
+                }
                 NAMING_LOGGER.error("[NA] error while receiving push data", e);
             }
         }
