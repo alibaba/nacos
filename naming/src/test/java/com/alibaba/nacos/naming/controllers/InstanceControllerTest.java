@@ -156,4 +156,11 @@ public class InstanceControllerTest extends BaseTest {
         JsonNode hosts = result.get("hosts");
         Assert.assertEquals(hosts.size(), 0);
     }
+    
+    @Test
+    public void updateMetaData() throws Exception {
+        
+        registerInstance();
+        
+    }
 }

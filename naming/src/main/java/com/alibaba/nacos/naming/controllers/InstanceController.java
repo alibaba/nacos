@@ -38,7 +38,6 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.naming.web.DistroFilter;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -119,7 +118,7 @@ public class InstanceController {
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        checkServiceNameFormat(serviceName);
+        NamingUtils.checkServiceNameFormat(serviceName);
         
         final Instance instance = parseInstance(request);
         
@@ -141,7 +140,7 @@ public class InstanceController {
         Instance instance = getIpAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        checkServiceNameFormat(serviceName);
+        NamingUtils.checkServiceNameFormat(serviceName);
         
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -167,7 +166,7 @@ public class InstanceController {
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        checkServiceNameFormat(serviceName);
+        NamingUtils.checkServiceNameFormat(serviceName);
         final Instance instance = parseInstance(request);
         
         String agent = WebUtils.getUserAgent(request);
@@ -196,7 +195,7 @@ public class InstanceController {
     public String patch(HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        checkServiceNameFormat(serviceName);
+        NamingUtils.checkServiceNameFormat(serviceName);
         String ip = WebUtils.required(request, "ip");
         String port = WebUtils.required(request, "port");
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
@@ -248,7 +247,7 @@ public class InstanceController {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        checkServiceNameFormat(serviceName);
+        NamingUtils.checkServiceNameFormat(serviceName);
         
         String agent = WebUtils.getUserAgent(request);
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
@@ -280,7 +279,7 @@ public class InstanceController {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        checkServiceNameFormat(serviceName);
+        NamingUtils.checkServiceNameFormat(serviceName);
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
@@ -353,7 +352,7 @@ public class InstanceController {
         }
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        checkServiceNameFormat(serviceName);
+        NamingUtils.checkServiceNameFormat(serviceName);
         Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, clusterName, ip, port);
         
@@ -421,7 +420,7 @@ public class InstanceController {
             namespaceId = Constants.DEFAULT_NAMESPACE_ID;
             serviceName = key;
         }
-        checkServiceNameFormat(serviceName);
+        NamingUtils.checkServiceNameFormat(serviceName);
         Service service = serviceManager.getService(namespaceId, serviceName);
         
         if (service == null) {
@@ -439,26 +438,6 @@ public class InstanceController {
         
         result.replace("ips", ipArray);
         return result;
-    }
-    
-    /**
-     * check combineServiceName format. the serviceName can't be blank. some relational logic in {@link
-     * DistroFilter#doFilter}, it will handle combineServiceName in some case, you should know it.
-     * <pre>
-     * serviceName = "@@"; the length = 0; illegal
-     * serviceName = "group@@"; the length = 1; illegal
-     * serviceName = "@@serviceName"; the length = 2; legal
-     * serviceName = "group@@serviceName"; the length = 2; legal
-     * </pre>
-     *
-     * @param combineServiceName such as: groupName@@serviceName
-     */
-    private void checkServiceNameFormat(String combineServiceName) {
-        String[] split = combineServiceName.split(Constants.SERVICE_INFO_SPLITER);
-        if (split.length <= 1) {
-            throw new IllegalArgumentException(
-                    "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName");
-        }
     }
     
     private Instance parseInstance(HttpServletRequest request) throws Exception {

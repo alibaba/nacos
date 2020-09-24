@@ -17,17 +17,20 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -36,11 +39,15 @@ import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.web.CanDistro;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +59,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
 
 /**
  * Operation for operators.
@@ -284,4 +294,75 @@ public class OperatorController {
     public JsonNode getClusterStates() {
         return JacksonUtils.transferToJsonNode(serviceManager.getMySelfClusterState());
     }
+    
+    /**
+     * Update instance's metadata. old key exist = update, old key not exist = add.
+     *
+     * @param request http request
+     * @return 'ok' if success
+     * @throws Exception any error during update
+     */
+    @CanDistro
+    @PutMapping(value = "/instance/metadata")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    public String updateInstanceMatadata(HttpServletRequest request) throws Exception {
+        final String namespaceId = WebUtils
+                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        NamingUtils.checkServiceNameFormat(serviceName);
+        
+        Instance instance = parseMetaInstance(request);
+        
+        serviceManager.updateMetadata(namespaceId, serviceName, instance, UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
+        return "ok";
+    }
+    
+    
+    /**
+     * delete instance's metadata. old key exist = delete, old key not exist = not operate
+     *
+     * @param request http request
+     * @return 'ok' if success
+     * @throws Exception any error during update
+     */
+    @CanDistro
+    @DeleteMapping("/instance/metadata")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    public String deleteInstanceMatadata(HttpServletRequest request) throws Exception {
+        final String namespaceId = WebUtils
+                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        NamingUtils.checkServiceNameFormat(serviceName);
+        
+        Instance instance = parseMetaInstance(request);
+        
+        serviceManager.updateMetadata(namespaceId, serviceName, instance, UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
+        return "ok";
+    }
+    
+    private Instance parseMetaInstance(HttpServletRequest request) throws Exception {
+        
+        final String ip = WebUtils.required(request, "ip");
+        final String port = WebUtils.required(request, "port");
+        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
+        if (StringUtils.isBlank(cluster)) {
+            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
+        boolean ephemeral = BooleanUtils.toBoolean(
+                WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
+        Instance instance = new Instance();
+        instance.setPort(Integer.parseInt(port));
+        instance.setIp(ip);
+        instance.setEphemeral(ephemeral);
+        instance.setClusterName(cluster);
+        
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        instance.setServiceName(serviceName);
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+        if (StringUtils.isNotEmpty(metadata)) {
+            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
+        }
+        return instance;
+    }
+    
 }

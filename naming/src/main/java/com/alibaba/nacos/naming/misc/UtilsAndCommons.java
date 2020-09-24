@@ -115,6 +115,10 @@ public class UtilsAndCommons {
     
     public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
     
+    public static final String UPDATE_INSTANCE_METADATA_ACTION_UPDATE = "update";
+    
+    public static final String UPDATE_INSTANCE_METADATA_ACTION_REMOVE = "remove";
+    
     public static final String DATA_BASE_DIR =
             ApplicationUtils.getNacosHome() + File.separator + "data" + File.separator + "naming";
     

@@ -64,6 +64,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
+
 /**
  * Core manager storing all services in Nacos.
  *
@@ -522,6 +525,60 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
+    }
+    
+    /**
+     * Update instance's metadata.
+     *
+     * @param namespaceId namespace
+     * @param serviceName service name
+     * @param instance    instance
+     * @throws NacosException nacos exception
+     */
+    public void updateMetadata(String namespaceId, String serviceName, Instance instance, String action)
+            throws NacosException {
+        
+        Service service = getService(namespaceId, serviceName);
+        
+        if (service == null) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "service not found, namespace: " + namespaceId + ", service: " + serviceName);
+        }
+        
+        //need the newest data,
+        Datum datum = consistencyService.get(KeyBuilder
+                .buildInstanceListKey(service.getNamespaceId(), service.getName(), instance.isEphemeral()));
+        Instance oldInstance = locateInstance(((Instances) datum.value).getInstanceList(), instance);
+        
+        if (oldInstance == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "instance not exist: " + instance);
+        }
+        
+        if (UPDATE_INSTANCE_METADATA_ACTION_UPDATE.equals(action)) {
+            oldInstance.getMetadata().putAll(instance.getMetadata());
+        } else if (UPDATE_INSTANCE_METADATA_ACTION_REMOVE.equals(action)) {
+            Set<String> keys = instance.getMetadata().keySet();
+            for (String key : keys) {
+                oldInstance.getMetadata().remove(key);
+            }
+        }
+        
+        addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
+    }
+    
+    private Instance locateInstance(List<Instance> instances, Instance instance) {
+        int target = 0;
+        while (target >= 0) {
+            target = instances.indexOf(instance);
+            if (target > 0) {
+                Instance result = instances.get(target);
+                if (result.getClusterName().equals(instance.getClusterName())) {
+                    return result;
+                }
+                instances.remove(target);
+            }
+        }
+        return null;
     }
     
     /**
