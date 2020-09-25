@@ -25,7 +25,6 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketException;
 import java.nio.charset.Charset;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
