@@ -129,7 +129,7 @@ public class ConfigController {
             @RequestParam(value = "desc", required = false) String desc,
             @RequestParam(value = "use", required = false) String use,
             @RequestParam(value = "effect", required = false) String effect,
-            @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "type", required = false, defaultValue = "text") String type,
             @RequestParam(value = "schema", required = false) String schema) throws NacosException {
         
         final String srcIp = RequestUtil.getRemoteIp(request);
