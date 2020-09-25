@@ -87,7 +87,7 @@ public class InetUtils {
                     nacosIp = ApplicationUtils.getProperty(IP_ADDRESS);
                 }
                 
-                if (!StringUtils.isBlank(nacosIp) && !isIP(nacosIp)) {
+                if (!StringUtils.isBlank(nacosIp) && !(isIP(nacosIp) || isDomain(nacosIp))) {
                     throw new RuntimeException("nacos address " + nacosIp + " is not ip");
                 }
                 String tmpSelfIp = nacosIp;
@@ -217,6 +217,26 @@ public class InetUtils {
     public static boolean isIP(String str) {
         Matcher matcher = IP_PATTERN.matcher(str);
         return matcher.matches();
+    }
+    
+    /**
+     * juege str is right domain.
+     *
+     * @param str nacosIp
+     * @return nacosIp is domain
+     */
+    public static boolean isDomain(String str) {
+        try {
+            String[] split = str.split(":");
+            if (split.length != 2) {
+                return false;
+            }
+            Integer.parseInt(split[1]);
+            InetAddress address = InetAddress.getByName(split[0]);
+            return address.isReachable(100);
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     /**
