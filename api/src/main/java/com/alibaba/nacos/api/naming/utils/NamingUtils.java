@@ -56,8 +56,8 @@ public class NamingUtils {
     }
     
     /**
-     * check combineServiceName format. the serviceName can't be blank. some relational logic in
-     * com.alibaba.nacos.naming.web.DistroFilter#doFilter, it will handle combineServiceName in some case, you should
+     * check combineServiceName format. the serviceName can't be blank. some relational logic in {@link
+     * com.alibaba.nacos.naming.web.DistroFilter#doFilter}, it will handle combineServiceName in some case, you should
      * know it.
      * <pre>
      * serviceName = "@@"; the length = 0; illegal
