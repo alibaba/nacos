@@ -268,8 +268,6 @@ public class ServiceManagerTest extends BaseTest {
         assertEquals(instance.getMetadata().get("key1"), "new-value1");
         assertNull(instance.getMetadata().get("key2"));
         assertNull(instance.getMetadata().get("key3"));
-        
-        
     }
     
     @Test
