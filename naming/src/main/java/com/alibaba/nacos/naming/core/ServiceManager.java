@@ -545,32 +545,32 @@ public class ServiceManager implements RecordListener<Service> {
                     "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
         
-        //need the newest data,
+        //need the newest data from consistencyService
         Datum datum = consistencyService.get(KeyBuilder
                 .buildInstanceListKey(service.getNamespaceId(), service.getName(), instance.isEphemeral()));
-        Instance oldInstance = locateInstance(((Instances) datum.value).getInstanceList(), instance);
+        Instance updateInstance = locateInstance(((Instances) datum.value).getInstanceList(), instance);
         
-        if (oldInstance == null) {
+        if (updateInstance == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "instance not exist: " + instance);
         }
         
         if (UPDATE_INSTANCE_METADATA_ACTION_UPDATE.equals(action)) {
-            oldInstance.getMetadata().putAll(instance.getMetadata());
+            updateInstance.getMetadata().putAll(instance.getMetadata());
         } else if (UPDATE_INSTANCE_METADATA_ACTION_REMOVE.equals(action)) {
             Set<String> keys = instance.getMetadata().keySet();
             for (String key : keys) {
-                oldInstance.getMetadata().remove(key);
+                updateInstance.getMetadata().remove(key);
             }
         }
         
-        addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
+        addInstance(namespaceId, serviceName, instance.isEphemeral(), updateInstance);
     }
     
     private Instance locateInstance(List<Instance> instances, Instance instance) {
         int target = 0;
         while (target >= 0) {
             target = instances.indexOf(instance);
-            if (target > 0) {
+            if (target >= 0) {
                 Instance result = instances.get(target);
                 if (result.getClusterName().equals(instance.getClusterName())) {
                     return result;
