@@ -331,7 +331,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     }
     
     private void notifierDatumIfAbsent(String key, RecordListener listener) throws NacosException {
-        if (key.equals(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
+        if (KeyBuilder.SERVICE_META_KEY_PREFIX.equals(key)) {
             notifierAllServiceMeta(listener);
         } else {
             Datum datum = get(key);

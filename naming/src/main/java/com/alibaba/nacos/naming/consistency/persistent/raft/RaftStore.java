@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DATA_BASE_DIR;
-import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_PREFIX;
 
 /**
  * Raft store.
@@ -146,12 +145,8 @@ public class RaftStore implements Closeable {
         return null;
     }
     
-    private boolean isDatumCacheFile(String fileName) {
-        return fileName.startsWith(RAFT_CACHE_FILE_PREFIX);
-    }
-    
     private synchronized Datum readDatum(File file, String namespaceId) throws IOException {
-        if (!isDatumCacheFile(file.getName())) {
+        if (!KeyBuilder.isDatumCacheFile(file.getName())) {
             return null;
         }
         ByteBuffer buffer;
