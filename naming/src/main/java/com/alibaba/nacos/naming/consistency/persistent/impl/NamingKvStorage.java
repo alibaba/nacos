@@ -56,10 +56,15 @@ public class NamingKvStorage extends MemoryKvStorage {
     public byte[] get(byte[] key) throws KvStorageException {
         byte[] result = super.get(key);
         if (null == result) {
-            KvStorage storage = getActualStorage(key);
-            result = null == storage ? null : storage.get(key);
-            if (null != result) {
-                super.put(key, result);
+            try {
+                KvStorage storage = createActualStorageIfAbsent(key);
+                result = null == storage ? null : storage.get(key);
+                if (null != result) {
+                    super.put(key, result);
+                }
+            } catch (Exception e) {
+                throw new KvStorageException(ErrorCode.KVStorageWriteError.getCode(),
+                        "Get data failed, key: " + new String(key), e);
             }
         }
         return result;
@@ -105,7 +110,7 @@ public class NamingKvStorage extends MemoryKvStorage {
     @Override
     public void delete(byte[] key) throws KvStorageException {
         try {
-            KvStorage storage = getActualStorage(key);
+            KvStorage storage = createActualStorageIfAbsent(key);
             if (null != storage) {
                 storage.delete(key);
             }
@@ -183,12 +188,6 @@ public class NamingKvStorage extends MemoryKvStorage {
         }
         namespaceKvStorage.clear();
         super.shutdown();
-    }
-    
-    private KvStorage getActualStorage(byte[] key) {
-        String keyString = new String(key);
-        String namespace = KeyBuilder.getNamespace(keyString);
-        return StringUtils.isBlank(namespace) ? baseDirStorage : namespaceKvStorage.get(namespace);
     }
     
     private KvStorage createActualStorageIfAbsent(byte[] key) throws Exception {

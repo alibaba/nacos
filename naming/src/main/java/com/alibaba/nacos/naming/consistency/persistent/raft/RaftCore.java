@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -68,7 +69,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -187,8 +187,8 @@ public class RaftCore implements Closeable {
                 GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
     
-    public Map<String, List<RecordListener>> getListeners() {
-        return listeners;
+    public Map<String, ConcurrentHashSet<RecordListener>> getListeners() {
+        return notifier.getListeners();
     }
     
     /**
@@ -916,21 +916,9 @@ public class RaftCore implements Closeable {
      * @param listener new listener
      */
     public void listen(String key, RecordListener listener) {
-        
-        List<RecordListener> listenerList = listeners.get(key);
-        if (listenerList != null && listenerList.contains(listener)) {
-            return;
-        }
-        
-        if (listenerList == null) {
-            listenerList = new CopyOnWriteArrayList<>();
-            listeners.put(key, listenerList);
-        }
+        notifier.registerListener(key, listener);
         
         Loggers.RAFT.info("add listener: {}", key);
-        
-        listenerList.add(listener);
-        
         // if data present, notify immediately
         for (Datum datum : datums.values()) {
             if (!listener.interests(datum.key)) {
@@ -952,22 +940,11 @@ public class RaftCore implements Closeable {
      * @param listener listener
      */
     public void unListen(String key, RecordListener listener) {
-        
-        if (!listeners.containsKey(key)) {
-            return;
-        }
-        
-        for (RecordListener dl : listeners.get(key)) {
-            // TODO maybe use equal:
-            if (dl == listener) {
-                listeners.get(key).remove(listener);
-                break;
-            }
-        }
+        notifier.deregisterListener(key, listener);
     }
     
     public void unlistenAll(String key) {
-        listeners.remove(key);
+        notifier.deregisterAllListener(key);
     }
     
     public void setTerm(long term) {
