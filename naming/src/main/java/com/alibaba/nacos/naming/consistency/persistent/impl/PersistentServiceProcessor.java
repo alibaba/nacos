@@ -231,6 +231,10 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
             final ValueChangeEvent event = ValueChangeEvent.builder().key(key).value(value)
                     .action(Op.Delete.equals(op) ? DataOperation.DELETE : DataOperation.CHANGE).build();
             NotifyCenter.publishEvent(event);
+            // remove listeners of key to avoid mem leak
+            if (Op.Delete.equals(op)) {
+                notifier.deregisterAllListener(key);
+            }
         }
     }
     
