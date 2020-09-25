@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -80,8 +79,8 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Raft core code.
  *
- * @deprecated will remove in 1.4.x
  * @author nacos
+ * @deprecated will remove in 1.4.x
  */
 @Deprecated
 @DependsOn("ProtocolManager")
@@ -164,20 +163,13 @@ public class RaftCore implements Closeable {
         
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
         
-        while (true) {
-            if (publisher.currentEventSize() <= 0) {
-                break;
-            }
-            ThreadUtils.sleep(1000L);
-        }
-        
         initialized = true;
         
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
         
         masterTask = GlobalExecutor.registerMasterElection(new MasterElection());
         heartbeatTask = GlobalExecutor.registerHeartbeat(new HeartBeat());
-    
+        
         versionJudgement.registerObserver(isAllNewVersion -> {
             stopWork = isAllNewVersion;
             if (stopWork) {
@@ -188,9 +180,9 @@ public class RaftCore implements Closeable {
                 }
             }
         }, 100);
-    
+        
         NotifyCenter.registerSubscriber(notifier);
-    
+        
         Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
                 GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
@@ -222,7 +214,7 @@ public class RaftCore implements Closeable {
             raftProxy.proxyPostLarge(leader.ip, API_PUB, params.toString(), parameters);
             return;
         }
-    
+        
         OPERATE_LOCK.lock();
         try {
             final long start = System.currentTimeMillis();
@@ -457,6 +449,8 @@ public class RaftCore implements Closeable {
         masterTask.cancel(true);
         Loggers.RAFT.warn("stop old raft protocol task for heartbeat task");
         heartbeatTask.cancel(true);
+        Loggers.RAFT.warn("clean old cache datum for old raft");
+        datums.clear();
     }
     
     public class MasterElection implements Runnable {
@@ -470,18 +464,18 @@ public class RaftCore implements Closeable {
                 if (!peers.isReady()) {
                     return;
                 }
-    
+                
                 RaftPeer local = peers.local();
                 local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
-    
+                
                 if (local.leaderDueMs > 0) {
                     return;
                 }
-    
+                
                 // reset timeout
                 local.resetLeaderDue();
                 local.resetHeartbeatDue();
-    
+                
                 sendVote();
             } catch (Exception e) {
                 Loggers.RAFT.warn("[RAFT] error while master election {}", e);
@@ -855,8 +849,10 @@ public class RaftCore implements Closeable {
                                     raftStore.write(newDatum);
                                     
                                     datums.put(newDatum.key, newDatum);
-
-                                    NotifyCenter.publishEvent(ValueChangeEvent.builder().key(newDatum.key).action(DataOperation.CHANGE).build());
+                                    
+                                    NotifyCenter.publishEvent(
+                                            ValueChangeEvent.builder().key(newDatum.key).action(DataOperation.CHANGE)
+                                                    .build());
                                     
                                     local.resetLeaderDue();
                                     
@@ -1055,7 +1051,9 @@ public class RaftCore implements Closeable {
                 raftStore.delete(deleted);
                 Loggers.RAFT.info("datum deleted, key: {}", key);
             }
-            NotifyCenter.publishEvent(ValueChangeEvent.builder().key(URLDecoder.decode(key, "UTF-8")).action(DataOperation.DELETE).build());
+            NotifyCenter.publishEvent(
+                    ValueChangeEvent.builder().key(URLDecoder.decode(key, "UTF-8")).action(DataOperation.DELETE)
+                            .build());
         } catch (UnsupportedEncodingException e) {
             Loggers.RAFT.warn("datum key decode failed: {}", key);
         }
