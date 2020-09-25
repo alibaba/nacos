@@ -22,6 +22,7 @@ import com.alipay.sofa.jraft.util.BytesUtil;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -92,11 +93,20 @@ public class MemoryKvStorage implements KvStorage {
     }
     
     @Override
+    public List<byte[]> allKeys() throws KvStorageException {
+        List<byte[]> result = new LinkedList<>();
+        for (Key each : storage.keySet()) {
+            result.add(each.origin);
+        }
+        return result;
+    }
+    
+    @Override
     public void shutdown() {
         storage.clear();
     }
     
-    private static class Key implements Comparable<byte[]> {
+    private static class Key implements Comparable<Key> {
         
         private final byte[] origin;
         
@@ -105,8 +115,8 @@ public class MemoryKvStorage implements KvStorage {
         }
         
         @Override
-        public int compareTo(byte[] o) {
-            return BytesUtil.compare(origin, o);
+        public int compareTo(Key o) {
+            return BytesUtil.compare(origin, o.origin);
         }
         
         @Override

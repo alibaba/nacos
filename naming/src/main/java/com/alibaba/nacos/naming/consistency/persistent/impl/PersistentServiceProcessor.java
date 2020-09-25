@@ -34,7 +34,6 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KvStorageException;
-import com.alibaba.nacos.core.storage.StorageFactory;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -44,6 +43,7 @@ import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.utils.Constants;
@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -119,12 +120,16 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
      */
     private volatile boolean hasError = false;
     
+    /**
+     * If use old raft, should not notify listener even new listener add.
+     */
+    private volatile boolean startNotify = false;
+    
     public PersistentServiceProcessor(final ProtocolManager protocolManager,
             final ClusterVersionJudgement versionJudgement) throws Exception {
         this.protocol = protocolManager.getCpProtocol();
         this.versionJudgement = versionJudgement;
-        this.kvStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, "naming-persistent",
-                Paths.get(UtilsAndCommons.DATA_BASE_DIR, "data").toString());
+        this.kvStorage = new NamingKvStorage(Paths.get(UtilsAndCommons.DATA_BASE_DIR, "data").toString());
         this.serializer = SerializeFactory.getSerializer("JSON");
         this.notifier = new PersistentNotifier(key -> {
             try {
@@ -148,12 +153,25 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         // If you choose to use the new RAFT protocol directly, there will be no compatible logical execution
         if (ApplicationUtils.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
             NotifyCenter.registerSubscriber(notifier);
+            waitLeader();
+            startNotify = true;
         } else {
             this.versionJudgement.registerObserver(isNewVersion -> {
                 if (isNewVersion) {
                     NotifyCenter.registerSubscriber(notifier);
+                    startNotify = true;
                 }
             }, 10);
+        }
+    }
+    
+    private void waitLeader() {
+        while (!hasLeader && !hasError) {
+            Loggers.RAFT.info("Waiting Jraft leader vote ...");
+            try {
+                TimeUnit.MILLISECONDS.sleep(500);
+            } catch (InterruptedException ignored) {
+            }
         }
     }
     
@@ -276,6 +294,9 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
         notifier.registerListener(key, listener);
+        if (startNotify) {
+            notifierDatumIfAbsent(key, listener);
+        }
     }
     
     @Override
@@ -307,5 +328,39 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
             return com.alibaba.nacos.naming.core.Instances.class;
         }
         return Record.class;
+    }
+    
+    private void notifierDatumIfAbsent(String key, RecordListener listener) throws NacosException {
+        if (key.equals(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
+            notifierAllServiceMeta(listener);
+        } else {
+            Datum datum = get(key);
+            if (null != datum) {
+                notifierDatum(key, datum, listener);
+            }
+        }
+    }
+    
+    /**
+     * This notify should only notify once during startup. See {@link com.alibaba.nacos.naming.core.ServiceManager#init()}
+     */
+    private void notifierAllServiceMeta(RecordListener listener) throws NacosException {
+        for (byte[] each : kvStorage.allKeys()) {
+            String key = new String(each);
+            if (listener.interests(key)) {
+                Datum datum = get(key);
+                if (null != datum) {
+                    notifierDatum(key, datum, listener);
+                }
+            }
+        }
+    }
+    
+    private void notifierDatum(String key, Datum datum, RecordListener listener) {
+        try {
+            listener.onChange(key, datum.value);
+        } catch (Exception e) {
+            Loggers.RAFT.error("NACOS-RAFT failed to notify listener", e);
+        }
     }
 }
