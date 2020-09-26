@@ -64,6 +64,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
+
 /**
  * Instance operation controller.
  *
@@ -179,6 +182,78 @@ public class InstanceController {
         } else {
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
+        return "ok";
+    }
+    
+    /**
+     * Update instance's metadata. old key exist = update, old key not exist = add.
+     *
+     * @param request http request
+     * @return 'ok' if success
+     * @throws Exception any error during update
+     */
+    @CanDistro
+    @PutMapping(value = "/metadata")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    public String updateInstanceMatadata(HttpServletRequest request) throws Exception {
+        final String namespaceId = WebUtils
+                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        NamingUtils.checkServiceNameFormat(serviceName);
+        
+        Instance instance = parseMetaInstance(request);
+        
+        serviceManager.updateMetadata(namespaceId, serviceName, instance, UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
+        return "ok";
+    }
+    
+    /**
+     * Batch update instance's metadata. old key exist = update, old key not exist = add.
+     *
+     * @param request http request
+     * @return 'ok' if success
+     * @throws Exception any error during update
+     */
+    @CanDistro
+    @PutMapping(value = "/metadata/batch")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    public String batchUpdateInstanceMatadata(HttpServletRequest request) throws Exception {
+        return "ok";
+    }
+    
+    /**
+     * Delete instance's metadata. old key exist = delete, old key not exist = not operate
+     *
+     * @param request http request
+     * @return 'ok' if success
+     * @throws Exception any error during update
+     */
+    @CanDistro
+    @DeleteMapping("/metadata")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    public String deleteInstanceMatadata(HttpServletRequest request) throws Exception {
+        final String namespaceId = WebUtils
+                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        NamingUtils.checkServiceNameFormat(serviceName);
+        
+        Instance instance = parseMetaInstance(request);
+        
+        serviceManager.updateMetadata(namespaceId, serviceName, instance, UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
+        return "ok";
+    }
+    
+    /**
+     * Batch delete instance's metadata. old key exist = delete, old key not exist = not operate
+     *
+     * @param request http request
+     * @return 'ok' if success
+     * @throws Exception any error during update
+     */
+    @CanDistro
+    @DeleteMapping("/metadata/batch")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    public String batchDeleteInstanceMatadata(HttpServletRequest request) throws Exception {
         return "ok";
     }
     
@@ -440,6 +515,20 @@ public class InstanceController {
         return result;
     }
     
+    private Instance parseMetaInstance(HttpServletRequest request) throws Exception {
+        
+        Instance basicInstance = getBasicIpAddress(request);
+        
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        basicInstance.setServiceName(serviceName);
+        
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+        if (StringUtils.isNotEmpty(metadata)) {
+            basicInstance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
+        }
+        return basicInstance;
+    }
+    
     private Instance parseInstance(HttpServletRequest request) throws Exception {
         
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -461,13 +550,28 @@ public class InstanceController {
         return instance;
     }
     
-    private Instance getIpAddress(HttpServletRequest request) {
+    private Instance getBasicIpAddress(HttpServletRequest request) {
+        
         final String ip = WebUtils.required(request, "ip");
         final String port = WebUtils.required(request, "port");
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
         if (StringUtils.isBlank(cluster)) {
             cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
+        boolean ephemeral = BooleanUtils.toBoolean(
+                WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
+        
+        Instance instance = new Instance();
+        instance.setPort(Integer.parseInt(port));
+        instance.setIp(ip);
+        instance.setEphemeral(ephemeral);
+        instance.setClusterName(cluster);
+        
+        return instance;
+    }
+    
+    private Instance getIpAddress(HttpServletRequest request) {
+        
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         boolean enabled;
         if (StringUtils.isBlank(enabledString)) {
@@ -476,20 +580,13 @@ public class InstanceController {
             enabled = BooleanUtils.toBoolean(enabledString);
         }
         
-        boolean ephemeral = BooleanUtils.toBoolean(
-                WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
-        
         String weight = WebUtils.optional(request, "weight", "1");
         boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
         
-        Instance instance = new Instance();
-        instance.setPort(Integer.parseInt(port));
-        instance.setIp(ip);
+        Instance instance = getBasicIpAddress(request);
         instance.setWeight(Double.parseDouble(weight));
-        instance.setClusterName(cluster);
         instance.setHealthy(healthy);
         instance.setEnabled(enabled);
-        instance.setEphemeral(ephemeral);
         
         return instance;
     }
