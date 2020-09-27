@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.OperationInfo;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
@@ -213,15 +214,6 @@ public class InstanceController {
         return "ok";
     }
     
-    private List<Instance> parseInstances(List<Map> instances) {
-        List<Instance> instanceList = new ArrayList<>();
-        for (Map map : instances) {
-            Instance basicIpAddress = getBasicIpAddress(map);
-            instanceList.add(basicIpAddress);
-        }
-        return instanceList;
-    }
-    
     /**
      * parse batch instance str, it should be as '[{"serviceName":"xxxx@@xxxx","instances":[{"ip":"127.0.0.1","port":
      * 8080,"ephemeral":"true","clusterName":"xxx-cluster"}], "all":"false"}]'.
@@ -265,110 +257,62 @@ public class InstanceController {
         return "ok";
     }
     
-    static class OperateDTO {
-        
-        private String namespace;
-        
-        private String serviceName;
-        
-        private Boolean ephemeral;
-        
-        private List<Instance> instances;
-    }
-    
-    private void batchOperateMetadata(String namespace, List<Map> services, Map<String, String> metadata) {
-        Consumer<OperateDTO> updateAllEphemeral = dto -> {
-            try {
-                serviceManager.updateMetadata(namespace, dto.serviceName, dto.ephemeral,
-                        UPDATE_INSTANCE_METADATA_ACTION_UPDATE, true, dto.instances, metadata);
-            } catch (NacosException e) {
-                //ignore
-            }
-        };
-        batchOperate(namespace, services, );
-    }
-    
-    
-    private void batchOperate(String namespace, List<Map> services, Consumer<OperateDTO> consumer) {
-        for (Map service : services) {
-            try {
-                String serviceName = (String) service.get("serviceName");
-                NamingUtils.checkServiceNameFormat(serviceName);
-                // type: */ephemeral/persist
-                String type = (String) service.get("all");
-                OperateDTO operateDTO = new OperateDTO();
-                operateDTO.serviceName = serviceName;
-                if (type != null) {
-                    if ("*".equals(type)) {
-                        operateDTO.ephemeral = true;
-                        consumer.accept(operateDTO);
-                        operateDTO.ephemeral = false;
-                        consumer.accept(operateDTO);
-                    } else if ("ephemeral".equals(type)) {
-                        operateDTO.ephemeral = true;
-                        consumer.accept(operateDTO);
-                    } else if ("persist".equals(type)) {
-                        operateDTO.ephemeral = false;
-                        consumer.accept(operateDTO);
-                    } else {
-                        Loggers.SRV_LOG.warn("UPDATE-METADATA: services.all value is illegal, ignore the service '"
-                                + serviceName + "'");
-                    }
-                } else {
-                    List<Instance> instances = parseInstances((List<Map>) service.get("instances"));
-                    //ephemeral:instances
-                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
-                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
-                    
-                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
-                        serviceManager.updateMetadata(namespace, serviceName, entry.getKey(),
-                                UPDATE_INSTANCE_METADATA_ACTION_REMOVE, false, entry.getValue(), metadata);
-                    }
-                }
-            } catch (NacosException e) {
-                Loggers.SRV_LOG.warn("");
-            }
-        }
-    }
-    
-    
     private void batchOperateMetadata(String namespace, List<Map> services, Map<String, String> metadata,
             String action) {
-        for (Map service : services) {
+        Consumer<OperationInfo> consumer = operationInfo -> {
             try {
-                String serviceName = (String) service.get("serviceName");
-                NamingUtils.checkServiceNameFormat(serviceName);
-                // type: */ephemeral/persist
-                String type = (String) service.get("all");
-                if (type != null) {
-                    if ("*".equals(type)) {
-                        serviceManager.updateMetadata(namespace, serviceName, true, action, true, new ArrayList<>(),
-                                metadata);
-                        serviceManager.updateMetadata(namespace, serviceName, false, action, true, new ArrayList<>(),
-                                metadata);
-                    } else if ("ephemeral".equals(type)) {
-                        serviceManager.updateMetadata(namespace, serviceName, true, action, true, new ArrayList<>(),
-                                metadata);
-                    } else if ("persist".equals(type)) {
-                        serviceManager.updateMetadata(namespace, serviceName, false, action, true, new ArrayList<>(),
-                                metadata);
-                    } else {
-                        Loggers.SRV_LOG.warn("UPDATE-METADATA: services.all value is illegal, ignore the service '"
-                                + serviceName + "'");
-                    }
-                } else {
-                    List<Instance> instances = parseInstances((List<Map>) service.get("instances"));
-                    //ephemeral:instances
-                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
-                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
-                    
-                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
-                        serviceManager.updateMetadata(namespace, serviceName, entry.getKey(),
-                                UPDATE_INSTANCE_METADATA_ACTION_REMOVE, false, entry.getValue(), metadata);
-                    }
-                }
+                serviceManager.updateMetadata(operationInfo.getNamespace(), operationInfo.getServiceName(),
+                        operationInfo.getEphemeral(), action, operationInfo.getAll(), operationInfo.getInstances(),
+                        metadata);
             } catch (NacosException e) {
-                Loggers.SRV_LOG.warn("");
+                Loggers.SRV_LOG.warn("UPDATE-METADATA: updateMetadata failed", e);
+            }
+        };
+        batchOperate(namespace, services, consumer);
+    }
+    
+    private void batchOperate(String namespace, List<Map> services, Consumer<OperationInfo> consumer) {
+        for (Map service : services) {
+            String serviceName = (String) service.get("serviceName");
+            NamingUtils.checkServiceNameFormat(serviceName);
+            // type: */ephemeral/persist
+            String type = (String) service.get("all");
+            OperationInfo operateDto = new OperationInfo();
+            operateDto.setNamespace(namespace);
+            operateDto.setServiceName(serviceName);
+            if (type != null) {
+                if ("*".equals(type)) {
+                    operateDto.setAll(true);
+                    operateDto.setEphemeral(true);
+                    consumer.accept(operateDto);
+                    
+                    operateDto.setEphemeral(false);
+                    consumer.accept(operateDto);
+                } else if ("ephemeral".equals(type)) {
+                    operateDto.setAll(true);
+                    operateDto.setEphemeral(true);
+                    consumer.accept(operateDto);
+                } else if ("persist".equals(type)) {
+                    operateDto.setAll(true);
+                    operateDto.setEphemeral(false);
+                    consumer.accept(operateDto);
+                } else {
+                    Loggers.SRV_LOG
+                            .warn("UPDATE-METADATA: services.all value is illegal, ignore the service '" + serviceName
+                                    + "'");
+                }
+            } else {
+                List<Instance> instances = parseInstances((List<Map>) service.get("instances"));
+                //ephemeral:instances
+                Map<Boolean, List<Instance>> instanceMap = instances.stream()
+                        .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
+                
+                for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
+                    operateDto.setAll(false);
+                    operateDto.setEphemeral(entry.getKey());
+                    operateDto.setInstances(entry.getValue());
+                    consumer.accept(operateDto);
+                }
             }
         }
     }
@@ -631,20 +575,6 @@ public class InstanceController {
         return result;
     }
     
-    private Instance parseMetaInstance(HttpServletRequest request) throws Exception {
-        
-        Instance basicInstance = getBasicIpAddress(request);
-        
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        basicInstance.setServiceName(serviceName);
-        
-        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        if (StringUtils.isNotEmpty(metadata)) {
-            basicInstance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
-        }
-        return basicInstance;
-    }
-    
     private Instance parseInstance(HttpServletRequest request) throws Exception {
         
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -664,6 +594,15 @@ public class InstanceController {
         instance.validate();
         
         return instance;
+    }
+    
+    private List<Instance> parseInstances(List<Map> instances) {
+        List<Instance> instanceList = new ArrayList<>();
+        for (Map map : instances) {
+            Instance basicIpAddress = getBasicIpAddress(map);
+            instanceList.add(basicIpAddress);
+        }
+        return instanceList;
     }
     
     private Instance getIpAddress(Map<String, String> param) {

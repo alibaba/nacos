@@ -561,7 +561,10 @@ public class ServiceManager implements RecordListener<Service> {
                 locatedInstance.forEach(ele -> ele.getMetadata().remove(removeKey));
             }
         }
-        addInstance(namespaceId, serviceName, isEphemeral, (Instance[]) locatedInstance.toArray());
+        Instance[] instances = new Instance[locatedInstance.size()];
+        locatedInstance.toArray(instances);
+        
+        addInstance(namespaceId, serviceName, isEphemeral, instances);
     }
     
     /**
@@ -585,27 +588,32 @@ public class ServiceManager implements RecordListener<Service> {
         if (all) {
             locatedInstance = ((Instances) datum.value).getInstanceList();
         } else {
-            locatedInstance = waitLocateInstance.stream()
-                    .filter(ele -> locateInstance(((Instances) datum.value).getInstanceList(), ele))
-                    .collect(Collectors.toList());
+            locatedInstance = new ArrayList<>();
+            for (Instance instance : waitLocateInstance) {
+                Instance located = locateInstance(((Instances) datum.value).getInstanceList(), instance);
+                if (located == null) {
+                    continue;
+                }
+                locatedInstance.add(located);
+            }
         }
         
         return locatedInstance;
     }
     
-    private boolean locateInstance(List<Instance> instances, Instance instance) {
+    private Instance locateInstance(List<Instance> instances, Instance instance) {
         int target = 0;
         while (target >= 0) {
             target = instances.indexOf(instance);
             if (target >= 0) {
                 Instance result = instances.get(target);
                 if (result.getClusterName().equals(instance.getClusterName())) {
-                    return true;
+                    return result;
                 }
                 instances.remove(target);
             }
         }
-        return false;
+        return null;
     }
     
     /**

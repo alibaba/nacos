@@ -232,6 +232,7 @@ public class ServiceManagerTest extends BaseTest {
         datam.key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         Instances instances = new Instances();
         instanceList.add(instance);
+        instanceList.add(instance2);
         instances.setInstanceList(instanceList);
         datam.value = instances;
         when(consistencyService.get(KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true)))
@@ -248,12 +249,21 @@ public class ServiceManagerTest extends BaseTest {
         updateMetadata.put("key2", "value2");
         updateMetadataInstance.setMetadata(updateMetadata);
         
+        //all=false, update input instances
         serviceManager
                 .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_UPDATE, false,
                         Lists.newArrayList(updateMetadataInstance), updateMetadata);
         
         assertEquals(instance.getMetadata().get("key1"), "new-value1");
         assertEquals(instance.getMetadata().get("key2"), "value2");
+        
+        //all=true, update all instances
+        serviceManager
+                .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_UPDATE, true,
+                        null, updateMetadata);
+        
+        assertEquals(instance2.getMetadata().get("key1"), "new-value1");
+        assertEquals(instance2.getMetadata().get("key2"), "value2");
         
         Instance deleteMetadataInstance = new Instance();
         deleteMetadataInstance.setIp(instance.getIp());
@@ -265,12 +275,21 @@ public class ServiceManagerTest extends BaseTest {
         deleteMetadata.put("key3", null);
         updateMetadataInstance.setMetadata(deleteMetadata);
         
-        //        serviceManager.updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, updateMetadataInstance,
-        //                UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
+        serviceManager
+                .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_REMOVE, false,
+                        Lists.newArrayList(deleteMetadataInstance), deleteMetadata);
         
         assertEquals(instance.getMetadata().get("key1"), "new-value1");
         assertNull(instance.getMetadata().get("key2"));
         assertNull(instance.getMetadata().get("key3"));
+        
+        serviceManager
+                .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_REMOVE, true,
+                        null, deleteMetadata);
+        
+        assertEquals(instance2.getMetadata().get("key1"), "new-value1");
+        assertNull(instance2.getMetadata().get("key2"));
+        assertNull(instance2.getMetadata().get("key3"));
     }
     
     @Test
