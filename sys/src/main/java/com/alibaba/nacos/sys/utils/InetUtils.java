@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -226,17 +227,8 @@ public class InetUtils {
      * @return nacosIp is domain
      */
     public static boolean isDomain(String str) {
-        try {
-            String[] split = str.split(":");
-            if (split.length != 2) {
-                return false;
-            }
-            Integer.parseInt(split[1]);
-            InetAddress address = InetAddress.getByName(split[0]);
-            return address.isReachable(100);
-        } catch (Exception e) {
-            return false;
-        }
+        InetSocketAddress address = new InetSocketAddress(str, 0);
+        return !address.isUnresolved();
     }
     
     /**
