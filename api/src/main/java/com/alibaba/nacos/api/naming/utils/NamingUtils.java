@@ -19,6 +19,8 @@ package com.alibaba.nacos.api.naming.utils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.Map;
+
 /**
  * NamingUtils.
  *
@@ -72,7 +74,39 @@ public class NamingUtils {
         String[] split = combineServiceName.split(Constants.SERVICE_INFO_SPLITER);
         if (split.length <= 1) {
             throw new IllegalArgumentException(
-                    "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName");
+                    "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
         }
     }
+    
+    /**
+     * get target value from param, if not found will throw {@link IllegalArgumentException}.
+     *
+     * @param param param
+     * @param key   key
+     * @return value
+     */
+    public static String required(final Map<String, String> param, final String key) {
+        String value = param.get(key);
+        if (StringUtils.isEmpty(value)) {
+            throw new IllegalArgumentException("Param '" + key + "' is required.");
+        }
+        return value;
+    }
+    
+    /**
+     * get target value from param, if not found will return default value.
+     *
+     * @param param        param
+     * @param key          key
+     * @param defaultValue default value
+     * @return value
+     */
+    public static String optional(final Map<String, String> param, final String key, final String defaultValue) {
+        String value = param.get(key);
+        if (StringUtils.isBlank(value)) {
+            return defaultValue;
+        }
+        return value;
+    }
+    
 }

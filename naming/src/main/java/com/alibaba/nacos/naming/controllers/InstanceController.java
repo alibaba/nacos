@@ -39,9 +39,9 @@ import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -63,6 +63,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
@@ -186,28 +188,6 @@ public class InstanceController {
     }
     
     /**
-     * Update instance's metadata. old key exist = update, old key not exist = add.
-     *
-     * @param request http request
-     * @return 'ok' if success
-     * @throws Exception any error during update
-     */
-    @CanDistro
-    @PutMapping(value = "/metadata")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String updateInstanceMatadata(HttpServletRequest request) throws Exception {
-        final String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        NamingUtils.checkServiceNameFormat(serviceName);
-        
-        Instance instance = parseMetaInstance(request);
-        
-        serviceManager.updateMetadata(namespaceId, serviceName, instance, UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
-        return "ok";
-    }
-    
-    /**
      * Batch update instance's metadata. old key exist = update, old key not exist = add.
      *
      * @param request http request
@@ -218,29 +198,45 @@ public class InstanceController {
     @PutMapping(value = "/metadata/batch")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String batchUpdateInstanceMatadata(HttpServletRequest request) throws Exception {
+        final String namespaceId = WebUtils
+                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        
+        String targetInstances = WebUtils.required(request, "target");
+        
+        List<Map> services = parseBatchInstances(targetInstances);
+        
+        String metadata = WebUtils.required(request, "metadata");
+        Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
+        
+        batchOperateMetadata(namespaceId, services, targetMetadata, UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
+        
         return "ok";
     }
     
+    private List<Instance> parseInstances(List<Map> instances) {
+        List<Instance> instanceList = new ArrayList<>();
+        for (Map map : instances) {
+            Instance basicIpAddress = getBasicIpAddress(map);
+            instanceList.add(basicIpAddress);
+        }
+        return instanceList;
+    }
+    
     /**
-     * Delete instance's metadata. old key exist = delete, old key not exist = not operate
+     * parse batch instance str, it should be as '[{"serviceName":"xxxx@@xxxx","instances":[{"ip":"127.0.0.1","port":
+     * 8080,"ephemeral":"true","clusterName":"xxx-cluster"}], "all":"false"}]'.
      *
-     * @param request http request
-     * @return 'ok' if success
-     * @throws Exception any error during update
+     * @param instances instances str
+     * @return instances as List
      */
-    @CanDistro
-    @DeleteMapping("/metadata")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String deleteInstanceMatadata(HttpServletRequest request) throws Exception {
-        final String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        NamingUtils.checkServiceNameFormat(serviceName);
-        
-        Instance instance = parseMetaInstance(request);
-        
-        serviceManager.updateMetadata(namespaceId, serviceName, instance, UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
-        return "ok";
+    private List<Map> parseBatchInstances(String instances) {
+        try {
+            return JacksonUtils.toObj(instances, new TypeReference<List<Map>>() {
+            });
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'target' is illegal");
+        }
+        return new ArrayList<>();
     }
     
     /**
@@ -254,7 +250,127 @@ public class InstanceController {
     @DeleteMapping("/metadata/batch")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String batchDeleteInstanceMatadata(HttpServletRequest request) throws Exception {
+        final String namespaceId = WebUtils
+                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        
+        String targetInstances = WebUtils.required(request, "target");
+        
+        List<Map> services = parseBatchInstances(targetInstances);
+        
+        String metadata = WebUtils.required(request, "metadata");
+        Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
+        
+        batchOperateMetadata(namespaceId, services, targetMetadata, UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
+        
         return "ok";
+    }
+    
+    static class OperateDTO {
+        
+        private String namespace;
+        
+        private String serviceName;
+        
+        private Boolean ephemeral;
+        
+        private List<Instance> instances;
+    }
+    
+    private void batchOperateMetadata(String namespace, List<Map> services, Map<String, String> metadata) {
+        Consumer<OperateDTO> updateAllEphemeral = dto -> {
+            try {
+                serviceManager.updateMetadata(namespace, dto.serviceName, dto.ephemeral,
+                        UPDATE_INSTANCE_METADATA_ACTION_UPDATE, true, dto.instances, metadata);
+            } catch (NacosException e) {
+                //ignore
+            }
+        };
+        batchOperate(namespace, services, );
+    }
+    
+    
+    private void batchOperate(String namespace, List<Map> services, Consumer<OperateDTO> consumer) {
+        for (Map service : services) {
+            try {
+                String serviceName = (String) service.get("serviceName");
+                NamingUtils.checkServiceNameFormat(serviceName);
+                // type: */ephemeral/persist
+                String type = (String) service.get("all");
+                OperateDTO operateDTO = new OperateDTO();
+                operateDTO.serviceName = serviceName;
+                if (type != null) {
+                    if ("*".equals(type)) {
+                        operateDTO.ephemeral = true;
+                        consumer.accept(operateDTO);
+                        operateDTO.ephemeral = false;
+                        consumer.accept(operateDTO);
+                    } else if ("ephemeral".equals(type)) {
+                        operateDTO.ephemeral = true;
+                        consumer.accept(operateDTO);
+                    } else if ("persist".equals(type)) {
+                        operateDTO.ephemeral = false;
+                        consumer.accept(operateDTO);
+                    } else {
+                        Loggers.SRV_LOG.warn("UPDATE-METADATA: services.all value is illegal, ignore the service '"
+                                + serviceName + "'");
+                    }
+                } else {
+                    List<Instance> instances = parseInstances((List<Map>) service.get("instances"));
+                    //ephemeral:instances
+                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
+                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
+                    
+                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
+                        serviceManager.updateMetadata(namespace, serviceName, entry.getKey(),
+                                UPDATE_INSTANCE_METADATA_ACTION_REMOVE, false, entry.getValue(), metadata);
+                    }
+                }
+            } catch (NacosException e) {
+                Loggers.SRV_LOG.warn("");
+            }
+        }
+    }
+    
+    
+    private void batchOperateMetadata(String namespace, List<Map> services, Map<String, String> metadata,
+            String action) {
+        for (Map service : services) {
+            try {
+                String serviceName = (String) service.get("serviceName");
+                NamingUtils.checkServiceNameFormat(serviceName);
+                // type: */ephemeral/persist
+                String type = (String) service.get("all");
+                if (type != null) {
+                    if ("*".equals(type)) {
+                        serviceManager.updateMetadata(namespace, serviceName, true, action, true, new ArrayList<>(),
+                                metadata);
+                        serviceManager.updateMetadata(namespace, serviceName, false, action, true, new ArrayList<>(),
+                                metadata);
+                    } else if ("ephemeral".equals(type)) {
+                        serviceManager.updateMetadata(namespace, serviceName, true, action, true, new ArrayList<>(),
+                                metadata);
+                    } else if ("persist".equals(type)) {
+                        serviceManager.updateMetadata(namespace, serviceName, false, action, true, new ArrayList<>(),
+                                metadata);
+                    } else {
+                        Loggers.SRV_LOG.warn("UPDATE-METADATA: services.all value is illegal, ignore the service '"
+                                + serviceName + "'");
+                    }
+                } else {
+                    List<Instance> instances = parseInstances((List<Map>) service.get("instances"));
+                    //ephemeral:instances
+                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
+                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
+                    
+                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
+                        serviceManager.updateMetadata(namespace, serviceName, entry.getKey(),
+                                UPDATE_INSTANCE_METADATA_ACTION_REMOVE, false, entry.getValue(), metadata);
+                    }
+                }
+            } catch (NacosException e) {
+                Loggers.SRV_LOG.warn("");
+            }
+        }
     }
     
     /**
@@ -550,22 +666,23 @@ public class InstanceController {
         return instance;
     }
     
-    private Instance getBasicIpAddress(HttpServletRequest request) {
+    private Instance getIpAddress(Map<String, String> param) {
         
-        final String ip = WebUtils.required(request, "ip");
-        final String port = WebUtils.required(request, "port");
-        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
-        if (StringUtils.isBlank(cluster)) {
-            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String enabledString = NamingUtils.optional(param, "enabled", StringUtils.EMPTY);
+        boolean enabled;
+        if (StringUtils.isBlank(enabledString)) {
+            enabled = BooleanUtils.toBoolean(NamingUtils.optional(param, "enable", "true"));
+        } else {
+            enabled = BooleanUtils.toBoolean(enabledString);
         }
-        boolean ephemeral = BooleanUtils.toBoolean(
-                WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
         
-        Instance instance = new Instance();
-        instance.setPort(Integer.parseInt(port));
-        instance.setIp(ip);
-        instance.setEphemeral(ephemeral);
-        instance.setClusterName(cluster);
+        String weight = NamingUtils.optional(param, "weight", "1");
+        boolean healthy = BooleanUtils.toBoolean(NamingUtils.optional(param, "healthy", "true"));
+        
+        Instance instance = getBasicIpAddress(param);
+        instance.setWeight(Double.parseDouble(weight));
+        instance.setHealthy(healthy);
+        instance.setEnabled(enabled);
         
         return instance;
     }
@@ -587,6 +704,46 @@ public class InstanceController {
         instance.setWeight(Double.parseDouble(weight));
         instance.setHealthy(healthy);
         instance.setEnabled(enabled);
+        
+        return instance;
+    }
+    
+    private Instance getBasicIpAddress(Map<String, String> param) {
+        
+        final String ip = NamingUtils.required(param, "ip");
+        final String port = NamingUtils.required(param, "port");
+        String cluster = NamingUtils.optional(param, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
+        if (StringUtils.isBlank(cluster)) {
+            cluster = NamingUtils.optional(param, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
+        boolean ephemeral = BooleanUtils.toBoolean(
+                NamingUtils.optional(param, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
+        
+        Instance instance = new Instance();
+        instance.setPort(Integer.parseInt(port));
+        instance.setIp(ip);
+        instance.setEphemeral(ephemeral);
+        instance.setClusterName(cluster);
+        
+        return instance;
+    }
+    
+    private Instance getBasicIpAddress(HttpServletRequest request) {
+        
+        final String ip = WebUtils.required(request, "ip");
+        final String port = WebUtils.required(request, "port");
+        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
+        if (StringUtils.isBlank(cluster)) {
+            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
+        boolean ephemeral = BooleanUtils.toBoolean(
+                WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
+        
+        Instance instance = new Instance();
+        instance.setPort(Integer.parseInt(port));
+        instance.setIp(ip);
+        instance.setEphemeral(ephemeral);
+        instance.setClusterName(cluster);
         
         return instance;
     }

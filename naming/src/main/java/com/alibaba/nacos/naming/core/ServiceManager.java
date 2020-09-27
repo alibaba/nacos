@@ -532,11 +532,13 @@ public class ServiceManager implements RecordListener<Service> {
      *
      * @param namespaceId namespace
      * @param serviceName service name
-     * @param instance    instance
+     * @param action      update or remove
+     * @param ips         need update instances
+     * @param metadata    target metadata
      * @throws NacosException nacos exception
      */
-    public void updateMetadata(String namespaceId, String serviceName, Instance instance, String action)
-            throws NacosException {
+    public void updateMetadata(String namespaceId, String serviceName, boolean isEphemeral, String action, boolean all,
+            List<Instance> ips, Map<String, String> metadata) throws NacosException {
         
         Service service = getService(namespaceId, serviceName);
         
@@ -545,40 +547,65 @@ public class ServiceManager implements RecordListener<Service> {
                     "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
         
-        //need the newest data from consistencyService
-        Datum datum = consistencyService.get(KeyBuilder
-                .buildInstanceListKey(service.getNamespaceId(), service.getName(), instance.isEphemeral()));
-        Instance updateInstance = locateInstance(((Instances) datum.value).getInstanceList(), instance);
+        List<Instance> locatedInstance = getLocatedInstance(namespaceId, serviceName, isEphemeral, all, ips);
         
-        if (updateInstance == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instance not exist: " + instance);
+        if (CollectionUtils.isEmpty(locatedInstance)) {
+            throw new NacosException(NacosException.INVALID_PARAM, "instances not exist");
         }
         
         if (UPDATE_INSTANCE_METADATA_ACTION_UPDATE.equals(action)) {
-            updateInstance.getMetadata().putAll(instance.getMetadata());
+            locatedInstance.forEach(ele -> ele.getMetadata().putAll(metadata));
         } else if (UPDATE_INSTANCE_METADATA_ACTION_REMOVE.equals(action)) {
-            Set<String> keys = instance.getMetadata().keySet();
-            for (String key : keys) {
-                updateInstance.getMetadata().remove(key);
+            Set<String> removeKeys = metadata.keySet();
+            for (String removeKey : removeKeys) {
+                locatedInstance.forEach(ele -> ele.getMetadata().remove(removeKey));
             }
         }
-        
-        addInstance(namespaceId, serviceName, instance.isEphemeral(), updateInstance);
+        addInstance(namespaceId, serviceName, isEphemeral, (Instance[]) locatedInstance.toArray());
     }
     
-    private Instance locateInstance(List<Instance> instances, Instance instance) {
+    /**
+     * locate consistency's datum by all or instances provided.
+     *
+     * @param namespaceId        namespace
+     * @param serviceName        serviceName
+     * @param isEphemeral        isEphemeral
+     * @param all                get from consistencyService directly
+     * @param waitLocateInstance instances provided
+     * @return located instances
+     * @throws NacosException nacos exception
+     */
+    public List<Instance> getLocatedInstance(String namespaceId, String serviceName, boolean isEphemeral, boolean all,
+            List<Instance> waitLocateInstance) throws NacosException {
+        List<Instance> locatedInstance;
+        
+        //need the newest data from consistencyService
+        Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(namespaceId, serviceName, isEphemeral));
+        
+        if (all) {
+            locatedInstance = ((Instances) datum.value).getInstanceList();
+        } else {
+            locatedInstance = waitLocateInstance.stream()
+                    .filter(ele -> locateInstance(((Instances) datum.value).getInstanceList(), ele))
+                    .collect(Collectors.toList());
+        }
+        
+        return locatedInstance;
+    }
+    
+    private boolean locateInstance(List<Instance> instances, Instance instance) {
         int target = 0;
         while (target >= 0) {
             target = instances.indexOf(instance);
             if (target >= 0) {
                 Instance result = instances.get(target);
                 if (result.getClusterName().equals(instance.getClusterName())) {
-                    return result;
+                    return true;
                 }
                 instances.remove(target);
             }
         }
-        return null;
+        return false;
     }
     
     /**
