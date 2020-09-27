@@ -88,7 +88,8 @@ public class InetUtils {
                     nacosIp = ApplicationUtils.getProperty(IP_ADDRESS);
                 }
                 
-                if (!StringUtils.isBlank(nacosIp) && !(isIP(nacosIp) || isDomain(nacosIp))) {
+                boolean illegalIp = !StringUtils.isBlank(nacosIp) && !(isIP(nacosIp) || isDomain(nacosIp));
+                if (illegalIp) {
                     throw new RuntimeException("nacos address " + nacosIp + " is not ip");
                 }
                 String tmpSelfIp = nacosIp;
