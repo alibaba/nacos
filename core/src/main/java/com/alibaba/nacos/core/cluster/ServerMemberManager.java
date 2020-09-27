@@ -30,6 +30,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.ObjectEqual;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.utils.Commons;
@@ -198,18 +199,27 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      * @return update is success
      */
     public boolean update(Member newMember) {
+        return update(newMember, new ObjectEqual<Member>() {
+            @Override
+            public boolean equals(Member obj1, Member obj2) {
+                return MemberUtils.fullEquals(obj1, obj2);
+            }
+        });
+    }
+    
+    public boolean update(Member newMember, ObjectEqual<Member> objEqual) {
         Loggers.CLUSTER.debug("member information update : {}", newMember);
-        
+    
         String address = newMember.getAddress();
         if (!serverList.containsKey(address)) {
             return false;
         }
-        
+    
         serverList.computeIfPresent(address, (s, member) -> {
             if (NodeState.DOWN.equals(newMember.getState())) {
                 memberAddressInfos.remove(newMember.getAddress());
             }
-            if (!MemberUtils.fullEquals(newMember, member)) {
+            if (!objEqual.equals(newMember, member)) {
                 newMember.setExtendVal(MemberMetaDataConstants.LAST_REFRESH_TIME, System.currentTimeMillis());
                 MemberUtils.copy(newMember, member);
                 // member data changes and all listeners need to be notified
@@ -217,7 +227,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             }
             return member;
         });
-        
+    
         return true;
     }
     

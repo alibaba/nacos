@@ -20,8 +20,10 @@ import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.ObjectEqual;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
+import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -68,6 +70,10 @@ public class RaftPeerSet extends MemberChangeListener {
     
     private Set<Member> oldMembers;
     
+    private static final String META_NAMING = "naming";
+    
+    private static final String RAFT_STATE = "state";
+    
     public RaftPeerSet(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
@@ -112,6 +118,28 @@ public class RaftPeerSet extends MemberChangeListener {
      */
     public RaftPeer update(RaftPeer peer) {
         peers.put(peer.ip, peer);
+        
+        // update member if peer state changed
+        Member member = memberManager.getServerList().get(peer.ip);
+        if (null == member || null == member.getExtendVal(META_NAMING)) {
+            return peer;
+        }
+        Map map = (Map)member.getExtendVal(META_NAMING);
+        // raft state no change
+        if (map.get(RAFT_STATE).equals(peer.state)) {
+            return peer;
+        }
+        
+        Member newMember = new Member();
+        MemberUtils.copy(member, newMember);
+        newMember.setAddress(member.getAddress());
+        newMember.setExtendVal(META_NAMING, JacksonUtils.toObj(JacksonUtils.toJson(peer), HashMap.class));
+        memberManager.update(newMember, new ObjectEqual<Member>() {
+            @Override
+            public boolean equals(Member obj1, Member obj2) {
+                return false;
+            }
+        });
         return peer;
     }
     
