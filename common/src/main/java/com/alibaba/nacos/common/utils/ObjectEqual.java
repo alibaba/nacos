@@ -17,14 +17,14 @@
 package com.alibaba.nacos.common.utils;
 
 /**
- * Object equal check
+ * Object equal check.
  *
  * @author lijinyang
  */
 public interface ObjectEqual<T> {
     
     /**
-     * equals
+     * object equals.
      *
      * @param obj1 object param
      * @param obj2 object param

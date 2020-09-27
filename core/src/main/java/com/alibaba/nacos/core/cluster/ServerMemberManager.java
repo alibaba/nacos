@@ -207,6 +207,13 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         });
     }
     
+    /**
+     * member information update accord objEqual.
+     *
+     * @param newMember need update
+     * @param objEqual condition equal
+     * @return
+     */
     public boolean update(Member newMember, ObjectEqual<Member> objEqual) {
         Loggers.CLUSTER.debug("member information update : {}", newMember);
     
