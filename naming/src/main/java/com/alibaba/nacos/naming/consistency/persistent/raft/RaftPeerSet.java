@@ -124,7 +124,7 @@ public class RaftPeerSet extends MemberChangeListener {
         if (null == member || null == member.getExtendVal(META_NAMING)) {
             return peer;
         }
-        Map map = (Map)member.getExtendVal(META_NAMING);
+        Map map = (Map) member.getExtendVal(META_NAMING);
         // raft state no change
         if (map.get(RAFT_STATE).equals(peer.state)) {
             return peer;
