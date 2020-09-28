@@ -419,7 +419,7 @@ public abstract class DumpService {
                         }
                     } else {
                         // remove config info
-                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
+                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
                         LOGGER.warn(
                                 "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                                         + group);

@@ -57,11 +57,11 @@ public class InetUtils {
     
     private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
     
-    private static String selfIp;
+    private static String selfIP;
     
     private static boolean useOnlySiteLocalInterface = false;
     
-    private static boolean preferHostnameOverIp = false;
+    private static boolean preferHostnameOverIP = false;
     
     private static final List<String> PREFERRED_NETWORKS = new ArrayList<String>();
     
@@ -83,56 +83,56 @@ public class InetUtils {
         Runnable ipAutoRefresh = new Runnable() {
             @Override
             public void run() {
-                String nacosIp = System.getProperty(NACOS_SERVER_IP);
-                if (StringUtils.isBlank(nacosIp)) {
-                    nacosIp = ApplicationUtils.getProperty(IP_ADDRESS);
+                String nacosIP = System.getProperty(NACOS_SERVER_IP);
+                if (StringUtils.isBlank(nacosIP)) {
+                    nacosIP = ApplicationUtils.getProperty(IP_ADDRESS);
                 }
                 
-                boolean illegalIp = !StringUtils.isBlank(nacosIp) && !(isIP(nacosIp) || isDomain(nacosIp));
-                if (illegalIp) {
-                    throw new RuntimeException("nacos address " + nacosIp + " is not ip");
+                boolean illegalIP = !StringUtils.isBlank(nacosIP) && !(isIP(nacosIP) || isDomain(nacosIP));
+                if (illegalIP) {
+                    throw new RuntimeException("nacos address " + nacosIP + " is not ip");
                 }
-                String tmpSelfIp = nacosIp;
-                if (StringUtils.isBlank(tmpSelfIp)) {
-                    preferHostnameOverIp = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
+                String tmpSelfIP = nacosIP;
+                if (StringUtils.isBlank(tmpSelfIP)) {
+                    preferHostnameOverIP = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
                     
-                    if (!preferHostnameOverIp) {
-                        preferHostnameOverIp = Boolean
+                    if (!preferHostnameOverIP) {
+                        preferHostnameOverIP = Boolean
                                 .parseBoolean(ApplicationUtils.getProperty(PREFER_HOSTNAME_OVER_IP));
                     }
                     
-                    if (preferHostnameOverIp) {
+                    if (preferHostnameOverIP) {
                         InetAddress inetAddress;
                         try {
                             inetAddress = InetAddress.getLocalHost();
                             if (inetAddress.getHostName().equals(inetAddress.getCanonicalHostName())) {
-                                tmpSelfIp = inetAddress.getHostName();
+                                tmpSelfIP = inetAddress.getHostName();
                             } else {
-                                tmpSelfIp = inetAddress.getCanonicalHostName();
+                                tmpSelfIP = inetAddress.getCanonicalHostName();
                             }
                         } catch (UnknownHostException ignore) {
                             LOG.warn("Unable to retrieve localhost");
                         }
                     } else {
-                        tmpSelfIp = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
+                        tmpSelfIP = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
                     }
                 }
                 
-                if (!Objects.equals(selfIp, tmpSelfIp) && Objects.nonNull(selfIp)) {
+                if (!Objects.equals(selfIP, tmpSelfIP) && Objects.nonNull(selfIP)) {
                     IPChangeEvent event = new IPChangeEvent();
-                    event.setOldIp(selfIp);
-                    event.setNewIp(tmpSelfIp);
+                    event.setOldIP(selfIP);
+                    event.setNewIP(tmpSelfIP);
                     NotifyCenter.publishEvent(event);
                 }
-                selfIp = tmpSelfIp;
+                selfIP = tmpSelfIP;
             }
         };
         
         ipAutoRefresh.run();
     }
     
-    public static String getSelfIp() {
-        return selfIp;
+    public static String getSelfIP() {
+        return selfIP;
     }
     
     /**
@@ -224,8 +224,8 @@ public class InetUtils {
     /**
      * juege str is right domain.
      *
-     * @param str nacosIp
-     * @return nacosIp is domain
+     * @param str nacosIP
+     * @return nacosIP is domain
      */
     public static boolean isDomain(String str) {
         InetSocketAddress address = new InetSocketAddress(str, 0);
@@ -238,29 +238,29 @@ public class InetUtils {
     @SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
     public static class IPChangeEvent extends SlowEvent {
         
-        private String oldIp;
+        private String oldIP;
         
-        private String newIp;
+        private String newIP;
         
-        public String getOldIp() {
-            return oldIp;
+        public String getOldIP() {
+            return oldIP;
         }
         
-        public void setOldIp(String oldIp) {
-            this.oldIp = oldIp;
+        public void setOldIP(String oldIP) {
+            this.oldIP = oldIP;
         }
         
-        public String getNewIp() {
-            return newIp;
+        public String getNewIP() {
+            return newIP;
         }
         
-        public void setNewIp(String newIp) {
-            this.newIp = newIp;
+        public void setNewIP(String newIP) {
+            this.newIP = newIP;
         }
         
         @Override
         public String toString() {
-            return "IPChangeEvent{" + "oldIp='" + oldIp + '\'' + ", newIp='" + newIp + '\'' + '}';
+            return "IPChangeEvent{" + "oldIP='" + oldIP + '\'' + ", newIP='" + newIP + '\'' + '}';
         }
     }
     

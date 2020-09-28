@@ -175,7 +175,7 @@ public class ConfigController {
                     .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
         }
         ConfigTraceService
-                .logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(), InetUtils.getSelfIp(),
+                .logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                         ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
         return true;
     }
@@ -598,7 +598,7 @@ public class ConfigController {
                             configInfo.getTenant(), time.getTime()));
             ConfigTraceService
                     .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            requestIpApp, time.getTime(), InetUtils.getSelfIp(),
+                            requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         return ResultBuilder.buildSuccessResult("导入成功", saveResult);
@@ -684,7 +684,7 @@ public class ConfigController {
                             configInfo.getTenant(), time.getTime()));
             ConfigTraceService
                     .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            requestIpApp, time.getTime(), InetUtils.getSelfIp(),
+                            requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         return ResultBuilder.buildSuccessResult("Clone Completed Successfully", saveResult);

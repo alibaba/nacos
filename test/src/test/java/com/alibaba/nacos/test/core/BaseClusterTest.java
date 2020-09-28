@@ -90,7 +90,7 @@ public class BaseClusterTest extends HttpClient4Test {
     static {
         System.getProperties().setProperty("nacos.core.auth.enabled", "false");
         System.getProperties().setProperty("embeddedStorage", "true");
-        String ip = InetUtils.getSelfIp();
+        String ip = InetUtils.getSelfIP();
         clusterInfo = "nacos.member.list=" + ip + ":8847," + ip + ":8848," + ip + ":8849";
         
         NotifyCenter.registerSubscriber(new Subscriber<RaftDbErrorEvent>() {

@@ -86,7 +86,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
             System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, ApplicationUtils.FUNCTION_MODE_NAMING);
         }
         
-        System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIp());
+        System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIP());
     }
     
     @Override
