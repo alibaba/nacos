@@ -130,6 +130,7 @@ public class ConfigController {
             @RequestParam(value = "use", required = false) String use,
             @RequestParam(value = "effect", required = false) String effect,
             @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "md5", required = false) String md5,
             @RequestParam(value = "schema", required = false) String schema) throws NacosException {
         
         final String srcIp = RequestUtil.getRemoteIp(request);
@@ -160,6 +161,10 @@ public class ConfigController {
         configInfo.setType(type);
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
+                ConfigInfo dbConfigInfo = persistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
+                if (dbConfigInfo != null && !Objects.isNull(dbConfigInfo.getMd5()) && !dbConfigInfo.getMd5().equals(md5)) {
+                    throw new NacosException(NacosException.CONFLICT, "somebody has changed data, refresh page");
+                }
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
                 ConfigChangePublisher
                         .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
