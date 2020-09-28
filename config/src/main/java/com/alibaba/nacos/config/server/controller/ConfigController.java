@@ -150,7 +150,7 @@ public class ConfigController {
         ParamUtils.checkParam(configAdvanceInfo);
         
         if (AggrWhitelist.isAggrDataId(dataId)) {
-            LOGGER.warn("[aggr-conflict] {} attemp to publish single data, {}, {}", RequestUtil.getRemoteIp(request),
+            LOGGER.warn("[aggr-conflict] {} attemp to publish single datas, {}, {}", RequestUtil.getRemoteIp(request),
                     dataId, group);
             throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
         }
