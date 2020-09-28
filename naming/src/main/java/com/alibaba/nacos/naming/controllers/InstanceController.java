@@ -277,25 +277,25 @@ public class InstanceController {
             NamingUtils.checkServiceNameFormat(serviceName);
             // type: */ephemeral/persist
             String type = (String) service.get("all");
-            OperationInfo operateDto = new OperationInfo();
-            operateDto.setNamespace(namespace);
-            operateDto.setServiceName(serviceName);
+            OperationInfo operationInfo = new OperationInfo();
+            operationInfo.setNamespace(namespace);
+            operationInfo.setServiceName(serviceName);
             if (type != null) {
                 if ("*".equals(type)) {
-                    operateDto.setAll(true);
-                    operateDto.setEphemeral(true);
-                    consumer.accept(operateDto);
+                    operationInfo.setAll(true);
+                    operationInfo.setEphemeral(true);
+                    consumer.accept(operationInfo);
                     
-                    operateDto.setEphemeral(false);
-                    consumer.accept(operateDto);
+                    operationInfo.setEphemeral(false);
+                    consumer.accept(operationInfo);
                 } else if ("ephemeral".equals(type)) {
-                    operateDto.setAll(true);
-                    operateDto.setEphemeral(true);
-                    consumer.accept(operateDto);
+                    operationInfo.setAll(true);
+                    operationInfo.setEphemeral(true);
+                    consumer.accept(operationInfo);
                 } else if ("persist".equals(type)) {
-                    operateDto.setAll(true);
-                    operateDto.setEphemeral(false);
-                    consumer.accept(operateDto);
+                    operationInfo.setAll(true);
+                    operationInfo.setEphemeral(false);
+                    consumer.accept(operationInfo);
                 } else {
                     Loggers.SRV_LOG
                             .warn("UPDATE-METADATA: services.all value is illegal, ignore the service '" + serviceName
@@ -308,10 +308,10 @@ public class InstanceController {
                         .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
                 
                 for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
-                    operateDto.setAll(false);
-                    operateDto.setEphemeral(entry.getKey());
-                    operateDto.setInstances(entry.getValue());
-                    consumer.accept(operateDto);
+                    operationInfo.setAll(false);
+                    operationInfo.setEphemeral(entry.getKey());
+                    operationInfo.setInstances(entry.getValue());
+                    consumer.accept(operationInfo);
                 }
             }
         }
