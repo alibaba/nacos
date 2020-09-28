@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -34,7 +35,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.OperationContext;
+import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
@@ -216,7 +217,7 @@ public class InstanceController {
     
     /**
      * parse batch instance str, it should be as '[{"serviceName":"xxxx@@xxxx","instances":[{"ip":"127.0.0.1","port":
-     * 8080,"ephemeral":"true","clusterName":"xxx-cluster"}], "all":"false"}]'.
+     * 8080,"ephemeral":"true","clusterName":"xxx-cluster"}], "all":"ephemeral"}]'.
      *
      * @param instances instances str
      * @return instances as List
@@ -259,10 +260,11 @@ public class InstanceController {
     
     private void batchOperateMetadata(String namespace, List<Map> services, Map<String, String> metadata,
             String action) {
-        Consumer<OperationContext> consumer = operationContext -> {
+        Consumer<InstanceOperationContext> consumer = instanceOperationContext -> {
             try {
-                serviceManager.updateMetadata(operationContext.getNamespace(), operationContext.getServiceName(),
-                        operationContext.getEphemeral(), action, operationContext.getAll(), operationContext.getInstances(),
+                serviceManager.updateMetadata(instanceOperationContext.getNamespace(), instanceOperationContext.getServiceName(),
+                        instanceOperationContext.getEphemeral(), action, instanceOperationContext.getAll(), instanceOperationContext
+                                .getInstances(),
                         metadata);
             } catch (NacosException e) {
                 Loggers.SRV_LOG.warn("UPDATE-METADATA: updateMetadata failed", e);
@@ -271,14 +273,14 @@ public class InstanceController {
         batchOperate(namespace, services, consumer);
     }
     
-    private void batchOperate(String namespace, List<Map> services, Consumer<OperationContext> consumer) {
+    private void batchOperate(String namespace, List<Map> services, Consumer<InstanceOperationContext> consumer) {
         for (Map service : services) {
             try {
                 String serviceName = (String) service.get("serviceName");
                 NamingUtils.checkServiceNameFormat(serviceName);
                 // type: */ephemeral/persist
                 String type = (String) service.get("all");
-                OperationContext operationContext = new OperationContext();
+                InstanceOperationContext operationContext = new InstanceOperationContext();
                 operationContext.setNamespace(namespace);
                 operationContext.setServiceName(serviceName);
                 if (type != null) {
@@ -612,16 +614,16 @@ public class InstanceController {
     
     private Instance getIpAddress(Map<String, String> param) {
         
-        String enabledString = NamingUtils.optional(param, "enabled", StringUtils.EMPTY);
+        String enabledString = MapUtils.optional(param, "enabled", StringUtils.EMPTY);
         boolean enabled;
         if (StringUtils.isBlank(enabledString)) {
-            enabled = BooleanUtils.toBoolean(NamingUtils.optional(param, "enable", "true"));
+            enabled = BooleanUtils.toBoolean(MapUtils.optional(param, "enable", "true"));
         } else {
             enabled = BooleanUtils.toBoolean(enabledString);
         }
         
-        String weight = NamingUtils.optional(param, "weight", "1");
-        boolean healthy = BooleanUtils.toBoolean(NamingUtils.optional(param, "healthy", "true"));
+        String weight = MapUtils.optional(param, "weight", "1");
+        boolean healthy = BooleanUtils.toBoolean(MapUtils.optional(param, "healthy", "true"));
         
         Instance instance = getBasicIpAddress(param);
         instance.setWeight(Double.parseDouble(weight));
@@ -654,14 +656,14 @@ public class InstanceController {
     
     private Instance getBasicIpAddress(Map<String, String> param) {
         
-        final String ip = NamingUtils.required(param, "ip");
-        final String port = NamingUtils.required(param, "port");
-        String cluster = NamingUtils.optional(param, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
+        final String ip = MapUtils.required(param, "ip");
+        final String port = MapUtils.required(param, "port");
+        String cluster = MapUtils.optional(param, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
         if (StringUtils.isBlank(cluster)) {
-            cluster = NamingUtils.optional(param, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+            cluster = MapUtils.optional(param, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
         boolean ephemeral = BooleanUtils.toBoolean(
-                NamingUtils.optional(param, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
+                MapUtils.optional(param, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
         
         Instance instance = new Instance();
         instance.setPort(Integer.parseInt(port));

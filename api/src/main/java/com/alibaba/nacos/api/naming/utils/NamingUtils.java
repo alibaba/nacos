@@ -77,36 +77,4 @@ public class NamingUtils {
                     "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
         }
     }
-    
-    /**
-     * get target value from param, if not found will throw {@link IllegalArgumentException}.
-     *
-     * @param param param
-     * @param key   key
-     * @return value
-     */
-    public static String required(final Map<String, String> param, final String key) {
-        String value = param.get(key);
-        if (StringUtils.isEmpty(value)) {
-            throw new IllegalArgumentException("Param '" + key + "' is required.");
-        }
-        return value;
-    }
-    
-    /**
-     * get target value from param, if not found will return default value.
-     *
-     * @param param        param
-     * @param key          key
-     * @param defaultValue default value
-     * @return value
-     */
-    public static String optional(final Map<String, String> param, final String key, final String defaultValue) {
-        String value = param.get(key);
-        if (StringUtils.isBlank(value)) {
-            return defaultValue;
-        }
-        return value;
-    }
-    
 }
