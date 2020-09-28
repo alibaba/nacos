@@ -584,6 +584,9 @@ public class ServiceManager implements RecordListener<Service> {
         
         //need the newest data from consistencyService
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(namespaceId, serviceName, isEphemeral));
+        if (datum == null) {
+            return null;
+        }
         
         if (all) {
             locatedInstance = ((Instances) datum.value).getInstanceList();
