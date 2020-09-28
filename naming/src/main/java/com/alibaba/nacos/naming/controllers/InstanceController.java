@@ -34,7 +34,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.OperationInfo;
+import com.alibaba.nacos.naming.pojo.OperationContext;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
@@ -259,10 +259,10 @@ public class InstanceController {
     
     private void batchOperateMetadata(String namespace, List<Map> services, Map<String, String> metadata,
             String action) {
-        Consumer<OperationInfo> consumer = operationInfo -> {
+        Consumer<OperationContext> consumer = operationContext -> {
             try {
-                serviceManager.updateMetadata(operationInfo.getNamespace(), operationInfo.getServiceName(),
-                        operationInfo.getEphemeral(), action, operationInfo.getAll(), operationInfo.getInstances(),
+                serviceManager.updateMetadata(operationContext.getNamespace(), operationContext.getServiceName(),
+                        operationContext.getEphemeral(), action, operationContext.getAll(), operationContext.getInstances(),
                         metadata);
             } catch (NacosException e) {
                 Loggers.SRV_LOG.warn("UPDATE-METADATA: updateMetadata failed", e);
@@ -271,32 +271,32 @@ public class InstanceController {
         batchOperate(namespace, services, consumer);
     }
     
-    private void batchOperate(String namespace, List<Map> services, Consumer<OperationInfo> consumer) {
+    private void batchOperate(String namespace, List<Map> services, Consumer<OperationContext> consumer) {
         for (Map service : services) {
             try {
                 String serviceName = (String) service.get("serviceName");
                 NamingUtils.checkServiceNameFormat(serviceName);
                 // type: */ephemeral/persist
                 String type = (String) service.get("all");
-                OperationInfo operationInfo = new OperationInfo();
-                operationInfo.setNamespace(namespace);
-                operationInfo.setServiceName(serviceName);
+                OperationContext operationContext = new OperationContext();
+                operationContext.setNamespace(namespace);
+                operationContext.setServiceName(serviceName);
                 if (type != null) {
                     if ("*".equals(type)) {
-                        operationInfo.setAll(true);
-                        operationInfo.setEphemeral(true);
-                        consumer.accept(operationInfo);
+                        operationContext.setAll(true);
+                        operationContext.setEphemeral(true);
+                        consumer.accept(operationContext);
                         
-                        operationInfo.setEphemeral(false);
-                        consumer.accept(operationInfo);
+                        operationContext.setEphemeral(false);
+                        consumer.accept(operationContext);
                     } else if ("ephemeral".equals(type)) {
-                        operationInfo.setAll(true);
-                        operationInfo.setEphemeral(true);
-                        consumer.accept(operationInfo);
+                        operationContext.setAll(true);
+                        operationContext.setEphemeral(true);
+                        consumer.accept(operationContext);
                     } else if ("persist".equals(type)) {
-                        operationInfo.setAll(true);
-                        operationInfo.setEphemeral(false);
-                        consumer.accept(operationInfo);
+                        operationContext.setAll(true);
+                        operationContext.setEphemeral(false);
+                        consumer.accept(operationContext);
                     } else {
                         Loggers.SRV_LOG
                                 .warn("UPDATE-METADATA: services.all value is illegal, it should be */ephemeral/persist. ignore the service '"
@@ -309,10 +309,10 @@ public class InstanceController {
                             .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
                     
                     for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
-                        operationInfo.setAll(false);
-                        operationInfo.setEphemeral(entry.getKey());
-                        operationInfo.setInstances(entry.getValue());
-                        consumer.accept(operationInfo);
+                        operationContext.setAll(false);
+                        operationContext.setEphemeral(entry.getKey());
+                        operationContext.setInstances(entry.getValue());
+                        consumer.accept(operationContext);
                     }
                 }
             } catch (Exception e) {

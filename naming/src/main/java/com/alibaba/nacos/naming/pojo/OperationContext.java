@@ -21,11 +21,11 @@ import com.alibaba.nacos.naming.core.Instance;
 import java.util.List;
 
 /**
- * OperationInfo. used in batch operation's consumer.
+ * OperationContext. used in batch operation's consumer.
  *
  * @author horizonzy
  */
-public class OperationInfo {
+public class OperationContext {
     
     private String namespace;
     
