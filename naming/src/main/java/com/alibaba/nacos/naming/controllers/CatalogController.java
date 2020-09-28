@@ -37,7 +37,6 @@ import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +52,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Catalog controller.
@@ -127,8 +127,8 @@ public class CatalogController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     @RequestMapping(value = "/instances")
     public ObjectNode instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam String clusterName, @RequestParam(name = "pageNo") int page,
-            @RequestParam int pageSize) throws NacosException {
+            @RequestParam String serviceName, @RequestParam String clusterName, @RequestParam(required = false) String metadata,
+            @RequestParam(name = "pageNo") int page, @RequestParam int pageSize) throws NacosException {
         
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -139,7 +139,14 @@ public class CatalogController {
             throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
         }
         
+        Map<String, String> matadataFilter = null;
+        if (StringUtils.isNotEmpty(metadata)) {
+            matadataFilter = UtilsAndCommons.parseMetadata(metadata);
+        }
+        
         List<Instance> instances = service.getClusterMap().get(clusterName).allIPs();
+        
+        instances = filterInstance(instances, matadataFilter);
         
         int start = (page - 1) * pageSize;
         int end = page * pageSize;
@@ -213,7 +220,8 @@ public class CatalogController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
         List<Service> services = new ArrayList<>();
-        final int total = serviceManager.getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
+        final int total = serviceManager
+                .getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
         if (CollectionUtils.isEmpty(services)) {
             result.replace("serviceList", JacksonUtils.transferToJsonNode(Collections.emptyList()));
             result.put("count", 0);
@@ -306,4 +314,18 @@ public class CatalogController {
         return ipAddressInfos;
     }
     
+    private List<Instance> filterInstance(List<Instance> instances, Map<String, String> metadata) {
+        if (metadata == null) {
+            return instances;
+        }
+        return instances.stream().filter(instance -> {
+            for (Map.Entry<String, String> entry : metadata.entrySet()) {
+                if (!instance.getMetadata().containsKey(entry.getKey()) || !instance.getMetadata().get(entry.getKey())
+                        .equals(entry.getValue())) {
+                    return false;
+                }
+            }
+            return true;
+        }).collect(Collectors.toList());
+    }
 }

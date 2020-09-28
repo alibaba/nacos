@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
+import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,8 +31,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -93,6 +95,8 @@ public class CatalogControllerTest {
     
     private static final String TEST_CLUSTER_NAME = "test-cluster";
     
+    private static final String TEST_CLUSTER_NAME_TWO = "test-cluster2";
+    
     private static final String TEST_SERVICE_NAME = "test-service";
     
     private static final String TEST_GROUP_NAME = "test-group-name";
@@ -100,15 +104,53 @@ public class CatalogControllerTest {
     @Test
     public void testInstanceList() throws NacosException {
         Instance instance = new Instance("1.1.1.1", 1234, TEST_CLUSTER_NAME);
-        cluster.updateIps(Collections.singletonList(instance), false);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("xxx", "xxx");
+        metadata.put("yyy", "yyy");
+        instance.setMetadata(metadata);
+        
+        Instance instance2 = new Instance("2.2.2.2", 5678, TEST_CLUSTER_NAME_TWO);
+        Map<String, String> metadata2 = new HashMap<>();
+        metadata2.put("xxx", "xxx");
+        metadata2.put("zzz", "zzz");
+        instance2.setMetadata(metadata2);
+        
+        cluster.updateIps(Lists.newArrayList(instance, instance2), false);
         ObjectNode result = catalogController.instanceList(Constants.DEFAULT_NAMESPACE_ID,
-                TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME, TEST_CLUSTER_NAME, 1, 10);
+                TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME, TEST_CLUSTER_NAME, "xxx=xxx", 1,
+                10);
+        
         String actual = result.toString();
-        assertTrue(actual.contains("\"count\":1"));
+        assertTrue(actual.contains("\"count\":2"));
         assertTrue(actual.contains("\"list\":["));
+        
         assertTrue(actual.contains("\"clusterName\":\"test-cluster\""));
         assertTrue(actual.contains("\"ip\":\"1.1.1.1\""));
         assertTrue(actual.contains("\"port\":1234"));
+        assertTrue(actual.contains("\"metadata\":{\"yyy\":\"yyy\",\"xxx\":\"xxx\"}"));
+        
+        assertTrue(actual.contains("\"clusterName\":\"test-cluster2\""));
+        assertTrue(actual.contains("\"ip\":\"2.2.2.2\""));
+        assertTrue(actual.contains("\"port\":5678"));
+        assertTrue(actual.contains("\"metadata\":{\"xxx\":\"xxx\",\"zzz\":\"zzz\"}"));
+        
+        ObjectNode result2 = catalogController.instanceList(Constants.DEFAULT_NAMESPACE_ID,
+                TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME, TEST_CLUSTER_NAME,
+                "xxx=xxx,yyy=yyy", 1, 10);
+        String actual2 = result2.toString();
+        
+        assertTrue(actual2.contains("\"count\":1"));
+        assertTrue(actual2.contains("\"list\":["));
+        
+        assertTrue(actual2.contains("\"clusterName\":\"test-cluster\""));
+        assertTrue(actual2.contains("\"ip\":\"1.1.1.1\""));
+        assertTrue(actual2.contains("\"port\":1234"));
+        assertTrue(actual2.contains("\"metadata\":{\"yyy\":\"yyy\",\"xxx\":\"xxx\"}"));
+        
+        assertFalse(actual2.contains("\"clusterName\":\"test-cluster2\""));
+        assertFalse(actual2.contains("\"ip\":\"2.2.2.2\""));
+        assertFalse(actual2.contains("\"port\":5678"));
+        assertFalse(actual2.contains("\"metadata\":{\"xxx\":\"xxx\",\"zzz\":\"zzz\"}"));
     }
     
     @Test
