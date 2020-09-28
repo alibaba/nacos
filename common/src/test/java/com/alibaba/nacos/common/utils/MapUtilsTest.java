@@ -61,10 +61,6 @@ public class MapUtilsTest {
         
         MapUtils.putIfValNoEmpty(map, "key-map", map1);
         Assert.assertTrue(map.containsKey("key-map"));
-        
-        Assert.assertEquals("123", MapUtils.required(map1, "1123"));
-        
-        Assert.assertEquals("456", MapUtils.optional(map1, "456", "456"));
     }
     
 }

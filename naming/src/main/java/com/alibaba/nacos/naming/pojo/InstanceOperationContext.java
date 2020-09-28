@@ -76,4 +76,32 @@ public class InstanceOperationContext {
     public void setInstances(List<Instance> instances) {
         this.instances = instances;
     }
+    
+    /**
+     * to operate all ephemeral instances from consitencyService.
+     */
+    public void allEphemeralOperate() {
+        this.all = true;
+        this.ephemeral = true;
+    }
+    
+    /**
+     * to operate all persist instances from consitencyService.
+     */
+    public void allPersistOperate() {
+        this.all = true;
+        this.ephemeral = false;
+    }
+    
+    /**
+     * to operate locate instances from consistencySercice judged by ephemeral.
+     *
+     * @param ephemeral ephemeral
+     * @param instances need located instances.
+     */
+    public void locateInstanceOperate(Boolean ephemeral, List<Instance> instances) {
+        this.all = false;
+        this.ephemeral = ephemeral;
+        this.instances = instances;
+    }
 }

@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -36,6 +35,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
+import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
@@ -66,7 +66,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
@@ -205,31 +204,14 @@ public class InstanceController {
         
         String targetInstances = WebUtils.required(request, "target");
         
-        List<Map> services = parseBatchInstances(targetInstances);
+        List<InstanceOperationInfo> operationInfos = parseBatchInstances(targetInstances);
         
         String metadata = WebUtils.required(request, "metadata");
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
         
-        batchOperateMetadata(namespaceId, services, targetMetadata, UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
+        batchOperateMetadata(namespaceId, operationInfos, targetMetadata, UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
         
         return "ok";
-    }
-    
-    /**
-     * parse batch instance str, it should be as '[{"serviceName":"xxxx@@xxxx","instances":[{"ip":"127.0.0.1","port":
-     * 8080,"ephemeral":"true","clusterName":"xxx-cluster"}], "all":"ephemeral"}]'.
-     *
-     * @param instances instances str
-     * @return instances as List
-     */
-    private List<Map> parseBatchInstances(String instances) {
-        try {
-            return JacksonUtils.toObj(instances, new TypeReference<List<Map>>() {
-            });
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'target' is illegal, ignore this operation", e);
-        }
-        return new ArrayList<>();
     }
     
     /**
@@ -248,80 +230,38 @@ public class InstanceController {
         
         String targetInstances = WebUtils.required(request, "target");
         
-        List<Map> services = parseBatchInstances(targetInstances);
+        List<InstanceOperationInfo> operationInfos = parseBatchInstances(targetInstances);
         
         String metadata = WebUtils.required(request, "metadata");
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
         
-        batchOperateMetadata(namespaceId, services, targetMetadata, UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
+        batchOperateMetadata(namespaceId, operationInfos, targetMetadata, UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
         
         return "ok";
     }
     
-    private void batchOperateMetadata(String namespace, List<Map> services, Map<String, String> metadata,
-            String action) {
-        Consumer<InstanceOperationContext> consumer = instanceOperationContext -> {
+    private List<InstanceOperationInfo> parseBatchInstances(String instances) {
+        try {
+            return JacksonUtils.toObj(instances, new TypeReference<List<InstanceOperationInfo>>() {
+            });
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'target' is illegal, ignore this operation", e);
+        }
+        return new ArrayList<>();
+    }
+    
+    private void batchOperateMetadata(String namespace, List<InstanceOperationInfo> operationInfos,
+            Map<String, String> metadata, String action) {
+        Consumer<InstanceOperationContext> operateConsumer = instanceOperationContext -> {
             try {
-                serviceManager.updateMetadata(instanceOperationContext.getNamespace(), instanceOperationContext.getServiceName(),
-                        instanceOperationContext.getEphemeral(), action, instanceOperationContext.getAll(), instanceOperationContext
-                                .getInstances(),
-                        metadata);
+                serviceManager.updateMetadata(instanceOperationContext.getNamespace(),
+                        instanceOperationContext.getServiceName(), instanceOperationContext.getEphemeral(), action,
+                        instanceOperationContext.getAll(), instanceOperationContext.getInstances(), metadata);
             } catch (NacosException e) {
                 Loggers.SRV_LOG.warn("UPDATE-METADATA: updateMetadata failed", e);
             }
         };
-        batchOperate(namespace, services, consumer);
-    }
-    
-    private void batchOperate(String namespace, List<Map> services, Consumer<InstanceOperationContext> consumer) {
-        for (Map service : services) {
-            try {
-                String serviceName = (String) service.get("serviceName");
-                NamingUtils.checkServiceNameFormat(serviceName);
-                // type: */ephemeral/persist
-                String type = (String) service.get("all");
-                InstanceOperationContext operationContext = new InstanceOperationContext();
-                operationContext.setNamespace(namespace);
-                operationContext.setServiceName(serviceName);
-                if (type != null) {
-                    if ("*".equals(type)) {
-                        operationContext.setAll(true);
-                        operationContext.setEphemeral(true);
-                        consumer.accept(operationContext);
-                        
-                        operationContext.setEphemeral(false);
-                        consumer.accept(operationContext);
-                    } else if ("ephemeral".equals(type)) {
-                        operationContext.setAll(true);
-                        operationContext.setEphemeral(true);
-                        consumer.accept(operationContext);
-                    } else if ("persist".equals(type)) {
-                        operationContext.setAll(true);
-                        operationContext.setEphemeral(false);
-                        consumer.accept(operationContext);
-                    } else {
-                        Loggers.SRV_LOG
-                                .warn("UPDATE-METADATA: services.all value is illegal, it should be */ephemeral/persist. ignore the service '"
-                                        + serviceName + "'");
-                    }
-                } else {
-                    List<Instance> instances = parseInstances((List<Map>) service.get("instances"));
-                    //ephemeral:instances
-                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
-                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
-                    
-                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
-                        operationContext.setAll(false);
-                        operationContext.setEphemeral(entry.getKey());
-                        operationContext.setInstances(entry.getValue());
-                        consumer.accept(operationContext);
-                    }
-                }
-            } catch (Exception e) {
-                Loggers.SRV_LOG.warn("UPDATE-METADATA: update metadata failed, ignore the service '" + service
-                        .get("serviceName") + "'", e);
-            }
-        }
+        serviceManager.batchOperate(namespace, operationInfos, operateConsumer);
     }
     
     /**
@@ -603,36 +543,6 @@ public class InstanceController {
         return instance;
     }
     
-    private List<Instance> parseInstances(List<Map> instances) {
-        List<Instance> instanceList = new ArrayList<>();
-        for (Map map : instances) {
-            Instance basicIpAddress = getBasicIpAddress(map);
-            instanceList.add(basicIpAddress);
-        }
-        return instanceList;
-    }
-    
-    private Instance getIpAddress(Map<String, String> param) {
-        
-        String enabledString = MapUtils.optional(param, "enabled", StringUtils.EMPTY);
-        boolean enabled;
-        if (StringUtils.isBlank(enabledString)) {
-            enabled = BooleanUtils.toBoolean(MapUtils.optional(param, "enable", "true"));
-        } else {
-            enabled = BooleanUtils.toBoolean(enabledString);
-        }
-        
-        String weight = MapUtils.optional(param, "weight", "1");
-        boolean healthy = BooleanUtils.toBoolean(MapUtils.optional(param, "healthy", "true"));
-        
-        Instance instance = getBasicIpAddress(param);
-        instance.setWeight(Double.parseDouble(weight));
-        instance.setHealthy(healthy);
-        instance.setEnabled(enabled);
-        
-        return instance;
-    }
-    
     private Instance getIpAddress(HttpServletRequest request) {
         
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
@@ -650,26 +560,6 @@ public class InstanceController {
         instance.setWeight(Double.parseDouble(weight));
         instance.setHealthy(healthy);
         instance.setEnabled(enabled);
-        
-        return instance;
-    }
-    
-    private Instance getBasicIpAddress(Map<String, String> param) {
-        
-        final String ip = MapUtils.required(param, "ip");
-        final String port = MapUtils.required(param, "port");
-        String cluster = MapUtils.optional(param, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
-        if (StringUtils.isBlank(cluster)) {
-            cluster = MapUtils.optional(param, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        }
-        boolean ephemeral = BooleanUtils.toBoolean(
-                MapUtils.optional(param, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
-        
-        Instance instance = new Instance();
-        instance.setPort(Integer.parseInt(port));
-        instance.setIp(ip);
-        instance.setEphemeral(ephemeral);
-        instance.setClusterName(cluster);
         
         return instance;
     }

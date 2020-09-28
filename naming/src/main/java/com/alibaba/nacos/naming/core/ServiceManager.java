@@ -36,6 +36,8 @@ import com.alibaba.nacos.naming.misc.ServiceStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
+import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.push.PushService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -61,6 +63,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -550,7 +553,7 @@ public class ServiceManager implements RecordListener<Service> {
         List<Instance> locatedInstance = getLocatedInstance(namespaceId, serviceName, isEphemeral, all, ips);
         
         if (CollectionUtils.isEmpty(locatedInstance)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instances not exist");
+            throw new NacosException(NacosException.INVALID_PARAM, "not locate instances, input instances: " + ips);
         }
         
         if (UPDATE_INSTANCE_METADATA_ACTION_UPDATE.equals(action)) {
@@ -585,7 +588,9 @@ public class ServiceManager implements RecordListener<Service> {
         //need the newest data from consistencyService
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(namespaceId, serviceName, isEphemeral));
         if (datum == null) {
-            return null;
+            throw new NacosException(NacosException.NOT_FOUND,
+                    "instances from consistencyService not exist, namespace: " + namespaceId + ", service: "
+                            + serviceName + ", ephemeral: " + isEphemeral);
         }
         
         if (all) {
@@ -697,6 +702,65 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         return null;
+    }
+    
+    /**
+     * batch operate kinds of resources.
+     *
+     * @param namespace         namespace.
+     * @param operationInfoList operation resources description.
+     * @param consumer          some operation defined by kinds of situation.
+     */
+    public void batchOperate(String namespace, List<InstanceOperationInfo> operationInfoList,
+            Consumer<InstanceOperationContext> consumer) {
+        for (InstanceOperationInfo operationInfo : operationInfoList) {
+            try {
+                String serviceName = operationInfo.getServiceName();
+                NamingUtils.checkServiceNameFormat(serviceName);
+                // type: */ephemeral/persist
+                String type = operationInfo.getAll();
+                InstanceOperationContext operationContext = new InstanceOperationContext();
+                operationContext.setNamespace(namespace);
+                operationContext.setServiceName(serviceName);
+                if (type != null) {
+                    switch (type) {
+                        case UtilsAndCommons.UNION:
+                            operationContext.allEphemeralOperate();
+                            consumer.accept(operationContext);
+                            
+                            operationContext.allPersistOperate();
+                            consumer.accept(operationContext);
+                            break;
+                        case UtilsAndCommons.EPHEMERAL:
+                            operationContext.allEphemeralOperate();
+                            consumer.accept(operationContext);
+                            break;
+                        case UtilsAndCommons.PERSIST:
+                            operationContext.allPersistOperate();
+                            consumer.accept(operationContext);
+                            break;
+                        default:
+                            Loggers.SRV_LOG
+                                    .warn("UPDATE-METADATA: services.all value is illegal, it should be */ephemeral/persist. ignore the service '"
+                                            + serviceName + "'");
+                            break;
+                    }
+                } else {
+                    List<Instance> instances = operationInfo.getInstances();
+                    //ephemeral:instances
+                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
+                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
+                    
+                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
+                        operationContext.locateInstanceOperate(entry.getKey(), entry.getValue());
+                        consumer.accept(operationContext);
+                    }
+                }
+            } catch (Exception e) {
+                Loggers.SRV_LOG.warn("UPDATE-METADATA: update metadata failed, ignore the service '" + operationInfo
+                        .getServiceName() + "'", e);
+            }
+        }
     }
     
     /**

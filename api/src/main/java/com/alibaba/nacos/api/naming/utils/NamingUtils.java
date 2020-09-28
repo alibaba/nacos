@@ -19,8 +19,6 @@ package com.alibaba.nacos.api.naming.utils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.utils.StringUtils;
 
-import java.util.Map;
-
 /**
  * NamingUtils.
  *
