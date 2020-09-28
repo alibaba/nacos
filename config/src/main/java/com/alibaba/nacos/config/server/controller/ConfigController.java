@@ -163,7 +163,7 @@ public class ConfigController {
             if (StringUtils.isBlank(tag)) {
                 ConfigInfo dbConfigInfo = persistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
                 if (dbConfigInfo != null && !Objects.isNull(dbConfigInfo.getMd5()) && !dbConfigInfo.getMd5().equals(md5)) {
-                    throw new NacosException(NacosException.CONFLICT, "somebody has changed data, refresh page");
+                    throw new NacosException(NacosException.CONFLICT, "somebody has changed datas, refresh page");
                 }
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
                 ConfigChangePublisher
