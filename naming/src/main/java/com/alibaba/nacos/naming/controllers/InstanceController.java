@@ -226,7 +226,7 @@ public class InstanceController {
             return JacksonUtils.toObj(instances, new TypeReference<List<Map>>() {
             });
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'target' is illegal");
+            Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'target' is illegal, ignore this operation", e);
         }
         return new ArrayList<>();
     }
@@ -273,46 +273,51 @@ public class InstanceController {
     
     private void batchOperate(String namespace, List<Map> services, Consumer<OperationInfo> consumer) {
         for (Map service : services) {
-            String serviceName = (String) service.get("serviceName");
-            NamingUtils.checkServiceNameFormat(serviceName);
-            // type: */ephemeral/persist
-            String type = (String) service.get("all");
-            OperationInfo operationInfo = new OperationInfo();
-            operationInfo.setNamespace(namespace);
-            operationInfo.setServiceName(serviceName);
-            if (type != null) {
-                if ("*".equals(type)) {
-                    operationInfo.setAll(true);
-                    operationInfo.setEphemeral(true);
-                    consumer.accept(operationInfo);
-                    
-                    operationInfo.setEphemeral(false);
-                    consumer.accept(operationInfo);
-                } else if ("ephemeral".equals(type)) {
-                    operationInfo.setAll(true);
-                    operationInfo.setEphemeral(true);
-                    consumer.accept(operationInfo);
-                } else if ("persist".equals(type)) {
-                    operationInfo.setAll(true);
-                    operationInfo.setEphemeral(false);
-                    consumer.accept(operationInfo);
+            try {
+                String serviceName = (String) service.get("serviceName");
+                NamingUtils.checkServiceNameFormat(serviceName);
+                // type: */ephemeral/persist
+                String type = (String) service.get("all");
+                OperationInfo operationInfo = new OperationInfo();
+                operationInfo.setNamespace(namespace);
+                operationInfo.setServiceName(serviceName);
+                if (type != null) {
+                    if ("*".equals(type)) {
+                        operationInfo.setAll(true);
+                        operationInfo.setEphemeral(true);
+                        consumer.accept(operationInfo);
+                        
+                        operationInfo.setEphemeral(false);
+                        consumer.accept(operationInfo);
+                    } else if ("ephemeral".equals(type)) {
+                        operationInfo.setAll(true);
+                        operationInfo.setEphemeral(true);
+                        consumer.accept(operationInfo);
+                    } else if ("persist".equals(type)) {
+                        operationInfo.setAll(true);
+                        operationInfo.setEphemeral(false);
+                        consumer.accept(operationInfo);
+                    } else {
+                        Loggers.SRV_LOG
+                                .warn("UPDATE-METADATA: services.all value is illegal, it should be */ephemeral/persist. ignore the service '"
+                                        + serviceName + "'");
+                    }
                 } else {
-                    Loggers.SRV_LOG
-                            .warn("UPDATE-METADATA: services.all value is illegal, ignore the service '" + serviceName
-                                    + "'");
+                    List<Instance> instances = parseInstances((List<Map>) service.get("instances"));
+                    //ephemeral:instances
+                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
+                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
+                    
+                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
+                        operationInfo.setAll(false);
+                        operationInfo.setEphemeral(entry.getKey());
+                        operationInfo.setInstances(entry.getValue());
+                        consumer.accept(operationInfo);
+                    }
                 }
-            } else {
-                List<Instance> instances = parseInstances((List<Map>) service.get("instances"));
-                //ephemeral:instances
-                Map<Boolean, List<Instance>> instanceMap = instances.stream()
-                        .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
-                
-                for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
-                    operationInfo.setAll(false);
-                    operationInfo.setEphemeral(entry.getKey());
-                    operationInfo.setInstances(entry.getValue());
-                    consumer.accept(operationInfo);
-                }
+            } catch (Exception e) {
+                Loggers.SRV_LOG.warn("UPDATE-METADATA: update metadata failed, ignore the service '" + service
+                        .get("serviceName") + "'", e);
             }
         }
     }
