@@ -273,9 +273,11 @@ public class InstanceController {
     
     private InstanceOperationInfo buildOperationInfo(String serviceName, String consistencyType,
             List<Instance> instances) {
-        for (Instance instance : instances) {
-            if (StringUtils.isBlank(instance.getClusterName())) {
-                instance.setClusterName(DEFAULT_CLUSTER_NAME);
+        if (!CollectionUtils.isEmpty(instances)) {
+            for (Instance instance : instances) {
+                if (StringUtils.isBlank(instance.getClusterName())) {
+                    instance.setClusterName(DEFAULT_CLUSTER_NAME);
+                }
             }
         }
         return new InstanceOperationInfo(serviceName, consistencyType, instances);
