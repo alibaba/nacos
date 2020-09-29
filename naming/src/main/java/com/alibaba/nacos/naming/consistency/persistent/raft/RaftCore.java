@@ -21,8 +21,8 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -69,7 +69,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -80,8 +79,8 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Raft core code.
  *
- * @deprecated will remove in 1.4.x
  * @author nacos
+ * @deprecated will remove in 1.4.x
  */
 @Deprecated
 @DependsOn("ProtocolManager")
@@ -164,20 +163,13 @@ public class RaftCore implements Closeable {
         
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
         
-        while (true) {
-            if (publisher.currentEventSize() <= 0) {
-                break;
-            }
-            ThreadUtils.sleep(1000L);
-        }
-        
         initialized = true;
         
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
         
         masterTask = GlobalExecutor.registerMasterElection(new MasterElection());
         heartbeatTask = GlobalExecutor.registerHeartbeat(new HeartBeat());
-    
+        
         versionJudgement.registerObserver(isAllNewVersion -> {
             stopWork = isAllNewVersion;
             if (stopWork) {
@@ -188,15 +180,15 @@ public class RaftCore implements Closeable {
                 }
             }
         }, 100);
-    
+        
         NotifyCenter.registerSubscriber(notifier);
-    
+        
         Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
                 GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
     
-    public Map<String, List<RecordListener>> getListeners() {
-        return listeners;
+    public Map<String, ConcurrentHashSet<RecordListener>> getListeners() {
+        return notifier.getListeners();
     }
     
     /**
@@ -222,7 +214,7 @@ public class RaftCore implements Closeable {
             raftProxy.proxyPostLarge(leader.ip, API_PUB, params.toString(), parameters);
             return;
         }
-    
+        
         OPERATE_LOCK.lock();
         try {
             final long start = System.currentTimeMillis();
@@ -457,6 +449,8 @@ public class RaftCore implements Closeable {
         masterTask.cancel(true);
         Loggers.RAFT.warn("stop old raft protocol task for heartbeat task");
         heartbeatTask.cancel(true);
+        Loggers.RAFT.warn("clean old cache datum for old raft");
+        datums.clear();
     }
     
     public class MasterElection implements Runnable {
@@ -470,18 +464,18 @@ public class RaftCore implements Closeable {
                 if (!peers.isReady()) {
                     return;
                 }
-    
+                
                 RaftPeer local = peers.local();
                 local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
-    
+                
                 if (local.leaderDueMs > 0) {
                     return;
                 }
-    
+                
                 // reset timeout
                 local.resetLeaderDue();
                 local.resetHeartbeatDue();
-    
+                
                 sendVote();
             } catch (Exception e) {
                 Loggers.RAFT.warn("[RAFT] error while master election {}", e);
@@ -855,8 +849,10 @@ public class RaftCore implements Closeable {
                                     raftStore.write(newDatum);
                                     
                                     datums.put(newDatum.key, newDatum);
-
-                                    NotifyCenter.publishEvent(ValueChangeEvent.builder().key(newDatum.key).action(DataOperation.CHANGE).build());
+                                    
+                                    NotifyCenter.publishEvent(
+                                            ValueChangeEvent.builder().key(newDatum.key).action(DataOperation.CHANGE)
+                                                    .build());
                                     
                                     local.resetLeaderDue();
                                     
@@ -920,21 +916,9 @@ public class RaftCore implements Closeable {
      * @param listener new listener
      */
     public void listen(String key, RecordListener listener) {
-        
-        List<RecordListener> listenerList = listeners.get(key);
-        if (listenerList != null && listenerList.contains(listener)) {
-            return;
-        }
-        
-        if (listenerList == null) {
-            listenerList = new CopyOnWriteArrayList<>();
-            listeners.put(key, listenerList);
-        }
+        notifier.registerListener(key, listener);
         
         Loggers.RAFT.info("add listener: {}", key);
-        
-        listenerList.add(listener);
-        
         // if data present, notify immediately
         for (Datum datum : datums.values()) {
             if (!listener.interests(datum.key)) {
@@ -956,22 +940,11 @@ public class RaftCore implements Closeable {
      * @param listener listener
      */
     public void unListen(String key, RecordListener listener) {
-        
-        if (!listeners.containsKey(key)) {
-            return;
-        }
-        
-        for (RecordListener dl : listeners.get(key)) {
-            // TODO maybe use equal:
-            if (dl == listener) {
-                listeners.get(key).remove(listener);
-                break;
-            }
-        }
+        notifier.deregisterListener(key, listener);
     }
     
     public void unlistenAll(String key) {
-        listeners.remove(key);
+        notifier.deregisterAllListener(key);
     }
     
     public void setTerm(long term) {
@@ -1055,7 +1028,9 @@ public class RaftCore implements Closeable {
                 raftStore.delete(deleted);
                 Loggers.RAFT.info("datum deleted, key: {}", key);
             }
-            NotifyCenter.publishEvent(ValueChangeEvent.builder().key(URLDecoder.decode(key, "UTF-8")).action(DataOperation.DELETE).build());
+            NotifyCenter.publishEvent(
+                    ValueChangeEvent.builder().key(URLDecoder.decode(key, "UTF-8")).action(DataOperation.DELETE)
+                            .build());
         } catch (UnsupportedEncodingException e) {
             Loggers.RAFT.warn("datum key decode failed: {}", key);
         }

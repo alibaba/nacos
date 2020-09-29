@@ -17,11 +17,12 @@
 package com.alibaba.nacos.core.storage.kv;
 
 import com.alibaba.nacos.core.exception.ErrorCode;
-import com.alibaba.nacos.core.exception.KVStorageException;
+import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alipay.sofa.jraft.util.BytesUtil;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -31,17 +32,17 @@ import java.util.concurrent.ConcurrentSkipListMap;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MemoryKVStorage implements KvStorage {
+public class MemoryKvStorage implements KvStorage {
     
     private final Map<Key, byte[]> storage = new ConcurrentSkipListMap<>();
     
     @Override
-    public byte[] get(byte[] key) throws KVStorageException {
+    public byte[] get(byte[] key) throws KvStorageException {
         return storage.get(new Key(key));
     }
     
     @Override
-    public Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KVStorageException {
+    public Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KvStorageException {
         Map<byte[], byte[]> result = new HashMap<>(keys.size());
         for (byte[] key : keys) {
             byte[] val = storage.get(new Key(key));
@@ -53,14 +54,14 @@ public class MemoryKVStorage implements KvStorage {
     }
     
     @Override
-    public void put(byte[] key, byte[] value) throws KVStorageException {
+    public void put(byte[] key, byte[] value) throws KvStorageException {
         storage.put(new Key(key), value);
     }
     
     @Override
-    public void batchPut(List<byte[]> keys, List<byte[]> values) throws KVStorageException {
+    public void batchPut(List<byte[]> keys, List<byte[]> values) throws KvStorageException {
         if (keys.size() != values.size()) {
-            throw new KVStorageException(ErrorCode.KVStorageBatchWriteError.getCode(),
+            throw new KvStorageException(ErrorCode.KVStorageBatchWriteError.getCode(),
                     "key's size must be equal to value's size");
         }
         int size = keys.size();
@@ -70,25 +71,34 @@ public class MemoryKVStorage implements KvStorage {
     }
     
     @Override
-    public void delete(byte[] key) throws KVStorageException {
+    public void delete(byte[] key) throws KvStorageException {
         storage.remove(new Key(key));
     }
     
     @Override
-    public void batchDelete(List<byte[]> keys) throws KVStorageException {
+    public void batchDelete(List<byte[]> keys) throws KvStorageException {
         for (byte[] key : keys) {
             storage.remove(new Key(key));
         }
     }
     
     @Override
-    public void doSnapshot(String backupPath) throws KVStorageException {
+    public void doSnapshot(String backupPath) throws KvStorageException {
         throw new UnsupportedOperationException();
     }
     
     @Override
-    public void snapshotLoad(String path) throws KVStorageException {
+    public void snapshotLoad(String path) throws KvStorageException {
         throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public List<byte[]> allKeys() throws KvStorageException {
+        List<byte[]> result = new LinkedList<>();
+        for (Key each : storage.keySet()) {
+            result.add(each.origin);
+        }
+        return result;
     }
     
     @Override
@@ -96,7 +106,7 @@ public class MemoryKVStorage implements KvStorage {
         storage.clear();
     }
     
-    private static class Key implements Comparable<byte[]> {
+    private static class Key implements Comparable<Key> {
         
         private final byte[] origin;
         
@@ -105,8 +115,8 @@ public class MemoryKVStorage implements KvStorage {
         }
         
         @Override
-        public int compareTo(byte[] o) {
-            return BytesUtil.compare(origin, o);
+        public int compareTo(Key o) {
+            return BytesUtil.compare(origin, o.origin);
         }
         
         @Override

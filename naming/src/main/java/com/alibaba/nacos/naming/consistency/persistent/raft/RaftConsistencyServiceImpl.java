@@ -28,6 +28,7 @@ import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyServ
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
+import com.alibaba.nacos.naming.utils.Constants;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
@@ -36,9 +37,9 @@ import javax.annotation.PostConstruct;
 /**
  * Use simplified Raft protocol to maintain the consistency status of Nacos cluster.
  *
- * @deprecated will remove in 1.4.x
  * @author nkorange
  * @since 1.0.0
+ * @deprecated will remove in 1.4.x
  */
 @Deprecated
 @DependsOn("ProtocolManager")
@@ -53,7 +54,8 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     private volatile boolean stopWork = false;
     
-    public RaftConsistencyServiceImpl(ClusterVersionJudgement versionJudgement, RaftCore raftCore, SwitchDomain switchDomain) {
+    public RaftConsistencyServiceImpl(ClusterVersionJudgement versionJudgement, RaftCore raftCore,
+            SwitchDomain switchDomain) {
         this.raftCore = raftCore;
         this.peers = raftCore.getPeerSet();
         this.switchDomain = switchDomain;
@@ -71,7 +73,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @PostConstruct
     protected void init() throws Exception {
-        if (ApplicationUtils.getProperty("nacos.naming.use-new-raft.first", Boolean.class, false)) {
+        if (ApplicationUtils.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
             this.raftCore.shutdown();
         }
     }
@@ -115,7 +117,6 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
-        checkIsStopWork();
         raftCore.listen(key, listener);
     }
     
