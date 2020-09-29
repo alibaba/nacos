@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster.lookup;
+package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
+import com.alibaba.nacos.consistency.serialize.HessianSerializer;
+import com.alibaba.nacos.naming.core.Service;
+import org.junit.Test;
 
-import java.util.Collections;
-
-/**
- * Member node addressing mode in stand-alone mode.
- *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- */
-public class StandaloneMemberLookup extends AbstractMemberLookup {
+public class JraftTest {
     
-    @Override
-    public void start() {
-        if (start.compareAndSet(false, true)) {
-            afterLookup(Collections.singletonList(memberManager.getSelf()));
-        }
+    @Test
+    public void test() {
+        HessianSerializer serializer = new HessianSerializer();
+        Service service = new Service();
+        byte[] result = serializer.serialize(service);
+        Service service1 = serializer.deserialize(result, Service.class);
     }
 }
