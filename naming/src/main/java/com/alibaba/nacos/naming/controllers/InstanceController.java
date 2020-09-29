@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.EPHEMERAL;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.PERSIST;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
@@ -272,6 +273,11 @@ public class InstanceController {
     
     private InstanceOperationInfo buildOperationInfo(String serviceName, String consistencyType,
             List<Instance> instances) {
+        for (Instance instance : instances) {
+            if (StringUtils.isBlank(instance.getClusterName())) {
+                instance.setClusterName(DEFAULT_CLUSTER_NAME);
+            }
+        }
         return new InstanceOperationInfo(serviceName, consistencyType, instances);
     }
     

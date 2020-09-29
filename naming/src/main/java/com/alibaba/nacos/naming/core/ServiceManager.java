@@ -750,13 +750,15 @@ public class ServiceManager implements RecordListener<Service> {
                 }
             } else {
                 List<Instance> instances = operationInfo.getInstances();
-                //ephemeral:instances
-                Map<Boolean, List<Instance>> instanceMap = instances.stream()
-                        .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
-                
-                for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
-                    operationContext.locateInstanceOperate(entry.getKey(), entry.getValue());
-                    operatedInstances.addAll(operateFunction.apply(operationContext));
+                if (!CollectionUtils.isEmpty(instances)) {
+                    //ephemeral:instances or persist:instances
+                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
+                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
+                    
+                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
+                        operationContext.locateInstanceOperate(entry.getKey(), entry.getValue());
+                        operatedInstances.addAll(operateFunction.apply(operationContext));
+                    }
                 }
             }
         } catch (Exception e) {
