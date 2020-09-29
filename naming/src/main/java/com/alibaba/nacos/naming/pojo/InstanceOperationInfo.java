@@ -27,15 +27,19 @@ import java.util.List;
  */
 public class InstanceOperationInfo {
     
+    public InstanceOperationInfo() {
+    }
+    
+    public InstanceOperationInfo(String serviceName, String consistencyType, List<Instance> instances) {
+        this.serviceName = serviceName;
+        this.consistencyType = consistencyType;
+        this.instances = instances;
+    }
+    
     /**
      * serverName.
      */
     private String serviceName;
-    
-    /**
-     * instanceList which need operate.
-     */
-    private List<Instance> instances;
     
     /**
      * ephemeral/persist/*.
@@ -43,7 +47,12 @@ public class InstanceOperationInfo {
      * persist = all persist instances in {@link com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl}
      * * = persist union ephemeral</p>
      */
-    private String all;
+    private String consistencyType;
+    
+    /**
+     * instances which need operate.
+     */
+    private List<Instance> instances;
     
     public String getServiceName() {
         return serviceName;
@@ -51,6 +60,14 @@ public class InstanceOperationInfo {
     
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+    
+    public String getConsistencyType() {
+        return consistencyType;
+    }
+    
+    public void setConsistencyType(String consistencyType) {
+        this.consistencyType = consistencyType;
     }
     
     public List<Instance> getInstances() {
@@ -61,11 +78,4 @@ public class InstanceOperationInfo {
         this.instances = instances;
     }
     
-    public String getAll() {
-        return all;
-    }
-    
-    public void setAll(String all) {
-        this.all = all;
-    }
 }

@@ -65,8 +65,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.EPHEMERAL;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.PERSIST;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
 
@@ -198,20 +200,34 @@ public class InstanceController {
     @CanDistro
     @PutMapping(value = "/metadata/batch")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String batchUpdateInstanceMatadata(HttpServletRequest request) throws Exception {
+    public ObjectNode batchUpdateInstanceMatadata(HttpServletRequest request) throws Exception {
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         
-        String targetInstances = WebUtils.required(request, "target");
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         
-        List<InstanceOperationInfo> operationInfos = parseBatchInstances(targetInstances);
+        String consistencyType = WebUtils.optional(request, "consistencyType", StringUtils.EMPTY);
+        
+        String instances = WebUtils.optional(request, "instances", StringUtils.EMPTY);
+        
+        List<Instance> targetInstances = parseBatchInstances(instances);
         
         String metadata = WebUtils.required(request, "metadata");
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
         
-        batchOperateMetadata(namespaceId, operationInfos, targetMetadata, UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
+        List<Instance> operatedInstances = batchOperateMetadata(namespaceId,
+                buildOperationInfo(serviceName, consistencyType, targetInstances), targetMetadata,
+                UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
         
-        return "ok";
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
+        
+        for (Instance ip : operatedInstances) {
+            ipArray.add(ip.getDatumKey() + ":" + (ip.isEphemeral() ? EPHEMERAL : PERSIST));
+        }
+        
+        result.replace("updated", ipArray);
+        return result;
     }
     
     /**
@@ -224,44 +240,64 @@ public class InstanceController {
     @CanDistro
     @DeleteMapping("/metadata/batch")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String batchDeleteInstanceMatadata(HttpServletRequest request) throws Exception {
+    public ObjectNode batchDeleteInstanceMatadata(HttpServletRequest request) throws Exception {
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         
-        String targetInstances = WebUtils.required(request, "target");
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         
-        List<InstanceOperationInfo> operationInfos = parseBatchInstances(targetInstances);
+        String consistencyType = WebUtils.optional(request, "consistencyType", StringUtils.EMPTY);
+        
+        String instances = WebUtils.optional(request, "instances", StringUtils.EMPTY);
+        
+        List<Instance> targetInstances = parseBatchInstances(instances);
         
         String metadata = WebUtils.required(request, "metadata");
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
         
-        batchOperateMetadata(namespaceId, operationInfos, targetMetadata, UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
+        List<Instance> operatedInstances = batchOperateMetadata(namespaceId,
+                buildOperationInfo(serviceName, consistencyType, targetInstances), targetMetadata,
+                UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
         
-        return "ok";
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
+        
+        for (Instance ip : operatedInstances) {
+            ipArray.add(ip.getDatumKey() + ":" + (ip.isEphemeral() ? EPHEMERAL : PERSIST));
+        }
+        
+        result.replace("updated", ipArray);
+        return result;
     }
     
-    private List<InstanceOperationInfo> parseBatchInstances(String instances) {
+    private InstanceOperationInfo buildOperationInfo(String serviceName, String consistencyType,
+            List<Instance> instances) {
+        return new InstanceOperationInfo(serviceName, consistencyType, instances);
+    }
+    
+    private List<Instance> parseBatchInstances(String instances) {
         try {
-            return JacksonUtils.toObj(instances, new TypeReference<List<InstanceOperationInfo>>() {
+            return JacksonUtils.toObj(instances, new TypeReference<List<Instance>>() {
             });
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'target' is illegal, ignore this operation", e);
         }
-        return new ArrayList<>();
+        return null;
     }
     
-    private void batchOperateMetadata(String namespace, List<InstanceOperationInfo> operationInfos,
+    private List<Instance> batchOperateMetadata(String namespace, InstanceOperationInfo instanceOperationInfo,
             Map<String, String> metadata, String action) {
-        Consumer<InstanceOperationContext> operateConsumer = instanceOperationContext -> {
+        Function<InstanceOperationContext, List<Instance>> operateFunction = instanceOperationContext -> {
             try {
-                serviceManager.updateMetadata(instanceOperationContext.getNamespace(),
+                return serviceManager.updateMetadata(instanceOperationContext.getNamespace(),
                         instanceOperationContext.getServiceName(), instanceOperationContext.getEphemeral(), action,
                         instanceOperationContext.getAll(), instanceOperationContext.getInstances(), metadata);
             } catch (NacosException e) {
                 Loggers.SRV_LOG.warn("UPDATE-METADATA: updateMetadata failed", e);
             }
+            return new ArrayList<>();
         };
-        serviceManager.batchOperate(namespace, operationInfos, operateConsumer);
+        return serviceManager.batchOperate(namespace, instanceOperationInfo, operateFunction);
     }
     
     /**
