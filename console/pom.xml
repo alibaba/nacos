@@ -98,6 +98,7 @@
                 <directory>src/main/resources</directory>
                 <excludes>
                     <exclude>static/console-fe/.vscode/**</exclude>
+					<exclude>static/console-fe/node_modules/**</exclude>
                 </excludes>
             </resource>
         </resources>
