@@ -23,9 +23,9 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
-import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.util.CRC64;
 
 import java.nio.file.Paths;

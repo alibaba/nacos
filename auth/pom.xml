@@ -40,6 +40,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-sys</artifactId>
+        </dependency>
     
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -16,21 +16,18 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.common.lifecycle.Closeable;
-import com.alibaba.nacos.common.notify.EventPublisher;
-import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.consistency.DataOperation;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.ClassUtils;
+import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
-import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
-import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -46,10 +43,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.javatuples.Pair;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -58,7 +55,6 @@ import javax.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -67,10 +63,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -80,12 +79,10 @@ import java.util.zip.GZIPOutputStream;
  * Raft core code.
  *
  * @author nacos
- * @deprecated will remove in 1.4.x
  */
-@Deprecated
 @DependsOn("ProtocolManager")
 @Component
-public class RaftCore implements Closeable {
+public class RaftCore {
     
     public static final String API_VOTE = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/vote";
     
@@ -103,6 +100,10 @@ public class RaftCore implements Closeable {
     
     public static final String API_GET_PEER = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/peer";
     
+    private final ScheduledExecutorService executor = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.raft.notifier"));
+    
     public static final Lock OPERATE_LOCK = new ReentrantLock();
     
     public static final int PUBLISH_TERM_INCREASE_COUNT = 100;
@@ -111,41 +112,24 @@ public class RaftCore implements Closeable {
     
     private volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<>();
     
+    @Autowired
     private RaftPeerSet peers;
     
-    private final SwitchDomain switchDomain;
+    @Autowired
+    private SwitchDomain switchDomain;
     
-    private final GlobalConfig globalConfig;
+    @Autowired
+    private GlobalConfig globalConfig;
     
-    private final RaftProxy raftProxy;
+    @Autowired
+    private RaftProxy raftProxy;
     
-    private final RaftStore raftStore;
+    @Autowired
+    private RaftStore raftStore;
     
-    private final ClusterVersionJudgement versionJudgement;
-    
-    public final PersistentNotifier notifier;
-    
-    private final EventPublisher publisher;
+    public volatile Notifier notifier = new Notifier();
     
     private boolean initialized = false;
-    
-    private volatile boolean stopWork = false;
-    
-    private ScheduledFuture masterTask = null;
-    
-    private ScheduledFuture heartbeatTask = null;
-    
-    public RaftCore(RaftPeerSet peers, SwitchDomain switchDomain, GlobalConfig globalConfig, RaftProxy raftProxy,
-            RaftStore raftStore, ClusterVersionJudgement versionJudgement) {
-        this.peers = peers;
-        this.switchDomain = switchDomain;
-        this.globalConfig = globalConfig;
-        this.raftProxy = raftProxy;
-        this.raftStore = raftStore;
-        this.versionJudgement = versionJudgement;
-        this.notifier = new PersistentNotifier(key -> getDatum(key).value);
-        this.publisher = NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
-    }
     
     /**
      * Init raft core.
@@ -154,7 +138,11 @@ public class RaftCore implements Closeable {
      */
     @PostConstruct
     public void init() throws Exception {
+        
         Loggers.RAFT.info("initializing Raft sub-system");
+        
+        executor.submit(notifier);
+        
         final long start = System.currentTimeMillis();
         
         raftStore.loadDatums(notifier, datums);
@@ -163,32 +151,26 @@ public class RaftCore implements Closeable {
         
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
         
+        while (true) {
+            if (notifier.tasks.size() <= 0) {
+                break;
+            }
+            Thread.sleep(1000L);
+        }
+        
         initialized = true;
         
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
         
-        masterTask = GlobalExecutor.registerMasterElection(new MasterElection());
-        heartbeatTask = GlobalExecutor.registerHeartbeat(new HeartBeat());
-        
-        versionJudgement.registerObserver(isAllNewVersion -> {
-            stopWork = isAllNewVersion;
-            if (stopWork) {
-                try {
-                    shutdown();
-                } catch (NacosException e) {
-                    throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
-                }
-            }
-        }, 100);
-        
-        NotifyCenter.registerSubscriber(notifier);
+        GlobalExecutor.registerMasterElection(new MasterElection());
+        GlobalExecutor.registerHeartbeat(new HeartBeat());
         
         Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
                 GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
     
-    public Map<String, ConcurrentHashSet<RecordListener>> getListeners() {
-        return notifier.getListeners();
+    public Map<String, List<RecordListener>> getListeners() {
+        return listeners;
     }
     
     /**
@@ -199,9 +181,7 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during publish
      */
     public void signalPublish(String key, Record value) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
+        
         if (!isLeader()) {
             ObjectNode params = JacksonUtils.createEmptyJsonNode();
             params.put("key", key);
@@ -215,8 +195,8 @@ public class RaftCore implements Closeable {
             return;
         }
         
-        OPERATE_LOCK.lock();
         try {
+            OPERATE_LOCK.lock();
             final long start = System.currentTimeMillis();
             final Datum datum = new Datum();
             datum.key = key;
@@ -242,25 +222,28 @@ public class RaftCore implements Closeable {
                     continue;
                 }
                 final String url = buildUrl(server, API_ON_PUB);
-                HttpClient.asyncHttpPostLarge(url, Arrays.asList("key=" + key), content,
-                        new AsyncCompletionHandler<Integer>() {
-                            @Override
-                            public Integer onCompleted(Response response) throws Exception {
-                                if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                    Loggers.RAFT
-                                            .warn("[RAFT] failed to publish data to peer, datumId={}, peer={}, http code={}",
-                                                    datum.key, server, response.getStatusCode());
-                                    return 1;
-                                }
-                                latch.countDown();
-                                return 0;
-                            }
-                            
-                            @Override
-                            public STATE onContentWriteCompleted() {
-                                return STATE.CONTINUE;
-                            }
-                        });
+                HttpClient.asyncHttpPostLarge(url, Arrays.asList("key", key), content, new Callback<String>() {
+                    @Override
+                    public void onReceive(RestResult<String> result) {
+                        if (!result.ok()) {
+                            Loggers.RAFT
+                                    .warn("[RAFT] failed to publish data to peer, datumId={}, peer={}, http code={}",
+                                            datum.key, server, result.getCode());
+                            return;
+                        }
+                        latch.countDown();
+                    }
+                    
+                    @Override
+                    public void onError(Throwable throwable) {
+                        Loggers.RAFT.error("[RAFT] failed to publish data to peer", throwable);
+                    }
+                    
+                    @Override
+                    public void onCancel() {
+                    
+                    }
+                });
                 
             }
             
@@ -284,9 +267,7 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during delete
      */
     public void signalDelete(final String key) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
+        
         OPERATE_LOCK.lock();
         try {
             
@@ -308,21 +289,29 @@ public class RaftCore implements Closeable {
             
             for (final String server : peers.allServersWithoutMySelf()) {
                 String url = buildUrl(server, API_ON_DEL);
-                HttpClient.asyncHttpDeleteLarge(url, null, json.toString(), new AsyncCompletionHandler<Integer>() {
+                HttpClient.asyncHttpDeleteLarge(url, null, json.toString(), new Callback<String>() {
                     @Override
-                    public Integer onCompleted(Response response) throws Exception {
-                        if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                    public void onReceive(RestResult<String> result) {
+                        if (!result.ok()) {
                             Loggers.RAFT
                                     .warn("[RAFT] failed to delete data from peer, datumId={}, peer={}, http code={}",
-                                            key, server, response.getStatusCode());
-                            return 1;
+                                            key, server, result.getCode());
+                            return;
                         }
                         
                         RaftPeer local = peers.local();
                         
                         local.resetLeaderDue();
-                        
-                        return 0;
+                    }
+                    
+                    @Override
+                    public void onError(Throwable throwable) {
+                        Loggers.RAFT.error("[RAFT] failed to delete data from peer", throwable);
+                    }
+                    
+                    @Override
+                    public void onCancel() {
+                    
                     }
                 });
             }
@@ -339,9 +328,6 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during publish
      */
     public void onPublish(Datum datum, RaftPeer source) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
         RaftPeer local = peers.local();
         if (datum.value == null) {
             Loggers.RAFT.warn("received empty datum");
@@ -383,7 +369,9 @@ public class RaftCore implements Closeable {
             }
         }
         raftStore.updateTerm(local.term.get());
-        NotifyCenter.publishEvent(ValueChangeEvent.builder().key(datum.key).action(DataOperation.CHANGE).build());
+        
+        notifier.addTask(datum.key, DataOperation.CHANGE);
+        
         Loggers.RAFT.info("data added/updated, key={}, term={}", datum.key, local.term);
     }
     
@@ -395,9 +383,7 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during delete
      */
     public void onDelete(String datumKey, RaftPeer source) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
+        
         RaftPeer local = peers.local();
         
         if (!peers.isLeader(source.ip)) {
@@ -437,30 +423,12 @@ public class RaftCore implements Closeable {
         
     }
     
-    @Override
-    public void shutdown() throws NacosException {
-        this.stopWork = true;
-        this.raftStore.shutdown();
-        this.peers.shutdown();
-        Loggers.RAFT.warn("start to close old raft protocol!!!");
-        Loggers.RAFT.warn("stop old raft protocol task for notifier");
-        NotifyCenter.deregisterSubscriber(notifier);
-        Loggers.RAFT.warn("stop old raft protocol task for master task");
-        masterTask.cancel(true);
-        Loggers.RAFT.warn("stop old raft protocol task for heartbeat task");
-        heartbeatTask.cancel(true);
-        Loggers.RAFT.warn("clean old cache datum for old raft");
-        datums.clear();
-    }
-    
     public class MasterElection implements Runnable {
         
         @Override
         public void run() {
             try {
-                if (stopWork) {
-                    return;
-                }
+                
                 if (!peers.isReady()) {
                     return;
                 }
@@ -500,22 +468,30 @@ public class RaftCore implements Closeable {
             for (final String server : peers.allServersWithoutMySelf()) {
                 final String url = buildUrl(server, API_VOTE);
                 try {
-                    HttpClient.asyncHttpPost(url, null, params, new AsyncCompletionHandler<Integer>() {
+                    HttpClient.asyncHttpPost(url, null, params, new Callback<String>() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT
-                                        .error("NACOS-RAFT vote failed: {}, url: {}", response.getResponseBody(), url);
-                                return 1;
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
+                                Loggers.RAFT.error("NACOS-RAFT vote failed: {}, url: {}", result.getCode(), url);
+                                return;
                             }
                             
-                            RaftPeer peer = JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class);
+                            RaftPeer peer = JacksonUtils.toObj(result.getData(), RaftPeer.class);
                             
                             Loggers.RAFT.info("received approve from peer: {}", JacksonUtils.toJson(peer));
                             
                             peers.decideLeader(peer);
                             
-                            return 0;
+                        }
+                        
+                        @Override
+                        public void onError(Throwable throwable) {
+                            Loggers.RAFT.error("error while sending vote to server: {}", server, throwable);
+                        }
+                        
+                        @Override
+                        public void onCancel() {
+                        
                         }
                     });
                 } catch (Exception e) {
@@ -532,9 +508,6 @@ public class RaftCore implements Closeable {
      * @return self-peer information
      */
     public synchronized RaftPeer receivedVote(RaftPeer remote) {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
         if (!peers.contains(remote)) {
             throw new IllegalStateException("can not find peer: " + remote.ip);
         }
@@ -567,9 +540,7 @@ public class RaftCore implements Closeable {
         @Override
         public void run() {
             try {
-                if (stopWork) {
-                    return;
-                }
+                
                 if (!peers.isReady()) {
                     return;
                 }
@@ -607,7 +578,7 @@ public class RaftCore implements Closeable {
             ArrayNode array = JacksonUtils.createEmptyArrayNode();
             
             if (switchDomain.isSendBeatOnly()) {
-                Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", switchDomain.isSendBeatOnly());
+                Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", String.valueOf(switchDomain.isSendBeatOnly()));
             }
             
             if (!switchDomain.isSendBeatOnly()) {
@@ -652,27 +623,31 @@ public class RaftCore implements Closeable {
                     if (Loggers.RAFT.isDebugEnabled()) {
                         Loggers.RAFT.debug("send beat to server " + server);
                     }
-                    HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new AsyncCompletionHandler<Integer>() {
+                    HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new Callback<String>() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", response.getResponseBody(),
-                                        server);
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
+                                Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", result.getCode(), server);
                                 MetricsMonitor.getLeaderSendBeatFailedException().increment();
-                                return 1;
+                                return;
                             }
                             
-                            peers.update(JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class));
+                            peers.update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
                             if (Loggers.RAFT.isDebugEnabled()) {
                                 Loggers.RAFT.debug("receive beat response from: {}", url);
                             }
-                            return 0;
                         }
                         
                         @Override
-                        public void onThrowable(Throwable t) {
-                            Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server, t);
+                        public void onError(Throwable throwable) {
+                            Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server,
+                                    throwable);
                             MetricsMonitor.getLeaderSendBeatFailedException().increment();
+                        }
+                        
+                        @Override
+                        public void onCancel() {
+                        
                         }
                     });
                 } catch (Exception e) {
@@ -692,9 +667,6 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during handle
      */
     public RaftPeer receivedBeat(JsonNode beat) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
         final RaftPeer local = peers.local();
         final RaftPeer remote = new RaftPeer();
         JsonNode peer = beat.get("peer");
@@ -796,15 +768,15 @@ public class RaftCore implements Closeable {
                     
                     // update datum entry
                     String url = buildUrl(remote.ip, API_GET) + "?keys=" + URLEncoder.encode(keys, "UTF-8");
-                    HttpClient.asyncHttpGet(url, null, null, new AsyncCompletionHandler<Integer>() {
+                    HttpClient.asyncHttpGet(url, null, null, new Callback<String>() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                return 1;
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
+                                return;
                             }
                             
                             List<JsonNode> datumList = JacksonUtils
-                                    .toObj(response.getResponseBody(), new TypeReference<List<JsonNode>>() {
+                                    .toObj(result.getData(), new TypeReference<List<JsonNode>>() {
                                     });
                             
                             for (JsonNode datumJson : datumList) {
@@ -849,10 +821,7 @@ public class RaftCore implements Closeable {
                                     raftStore.write(newDatum);
                                     
                                     datums.put(newDatum.key, newDatum);
-                                    
-                                    NotifyCenter.publishEvent(
-                                            ValueChangeEvent.builder().key(newDatum.key).action(DataOperation.CHANGE)
-                                                    .build());
+                                    notifier.addTask(newDatum.key, DataOperation.CHANGE);
                                     
                                     local.resetLeaderDue();
                                     
@@ -876,9 +845,24 @@ public class RaftCore implements Closeable {
                                     OPERATE_LOCK.unlock();
                                 }
                             }
-                            TimeUnit.MILLISECONDS.sleep(200);
-                            return 0;
+                            try {
+                                TimeUnit.MILLISECONDS.sleep(200);
+                            } catch (InterruptedException e) {
+                                Loggers.RAFT.error("[RAFT-BEAT] Interrupted error ", e);
+                            }
+                            return;
                         }
+                        
+                        @Override
+                        public void onError(Throwable throwable) {
+                            Loggers.RAFT.error("[RAFT-BEAT] failed to sync datum from leader", throwable);
+                        }
+                        
+                        @Override
+                        public void onCancel() {
+                        
+                        }
+                        
                     });
                     
                     batch.clear();
@@ -916,9 +900,21 @@ public class RaftCore implements Closeable {
      * @param listener new listener
      */
     public void listen(String key, RecordListener listener) {
-        notifier.registerListener(key, listener);
+        
+        List<RecordListener> listenerList = listeners.get(key);
+        if (listenerList != null && listenerList.contains(listener)) {
+            return;
+        }
+        
+        if (listenerList == null) {
+            listenerList = new CopyOnWriteArrayList<>();
+            listeners.put(key, listenerList);
+        }
         
         Loggers.RAFT.info("add listener: {}", key);
+        
+        listenerList.add(listener);
+        
         // if data present, notify immediately
         for (Datum datum : datums.values()) {
             if (!listener.interests(datum.key)) {
@@ -940,11 +936,22 @@ public class RaftCore implements Closeable {
      * @param listener listener
      */
     public void unListen(String key, RecordListener listener) {
-        notifier.deregisterListener(key, listener);
+        
+        if (!listeners.containsKey(key)) {
+            return;
+        }
+        
+        for (RecordListener dl : listeners.get(key)) {
+            // TODO maybe use equal:
+            if (dl == listener) {
+                listeners.get(key).remove(listener);
+                break;
+            }
+        }
     }
     
     public void unlistenAll(String key) {
-        notifier.deregisterAllListener(key);
+        listeners.remove(key);
     }
     
     public void setTerm(long term) {
@@ -999,7 +1006,7 @@ public class RaftCore implements Closeable {
     
     public void addDatum(Datum datum) {
         datums.put(datum.key, datum);
-        NotifyCenter.publishEvent(ValueChangeEvent.builder().key(datum.key).action(DataOperation.CHANGE).build());
+        notifier.addTask(datum.key, DataOperation.CHANGE);
     }
     
     /**
@@ -1028,9 +1035,7 @@ public class RaftCore implements Closeable {
                 raftStore.delete(deleted);
                 Loggers.RAFT.info("datum deleted, key: {}", key);
             }
-            NotifyCenter.publishEvent(
-                    ValueChangeEvent.builder().key(URLDecoder.decode(key, "UTF-8")).action(DataOperation.DELETE)
-                            .build());
+            notifier.addTask(URLDecoder.decode(key, "UTF-8"), DataOperation.DELETE);
         } catch (UnsupportedEncodingException e) {
             Loggers.RAFT.warn("datum key decode failed: {}", key);
         }
@@ -1040,9 +1045,115 @@ public class RaftCore implements Closeable {
         return initialized || !globalConfig.isDataWarmup();
     }
     
-    @Deprecated
     public int getNotifyTaskCount() {
-        return (int) publisher.currentEventSize();
+        return notifier.getTaskSize();
     }
     
+    public class Notifier implements Runnable {
+        
+        private ConcurrentHashMap<String, String> services = new ConcurrentHashMap<>(10 * 1024);
+        
+        private BlockingQueue<Pair> tasks = new LinkedBlockingQueue<>(1024 * 1024);
+        
+        /**
+         * Add notify task.
+         *
+         * @param datumKey datum key
+         * @param action   action of datum
+         */
+        public void addTask(String datumKey, DataOperation action) {
+            
+            if (services.containsKey(datumKey) && action == DataOperation.CHANGE) {
+                return;
+            }
+            if (action == DataOperation.CHANGE) {
+                services.put(datumKey, StringUtils.EMPTY);
+            }
+            
+            Loggers.RAFT.info("add task {}", datumKey);
+            
+            tasks.add(Pair.with(datumKey, action));
+        }
+        
+        public int getTaskSize() {
+            return tasks.size();
+        }
+        
+        @Override
+        public void run() {
+            Loggers.RAFT.info("raft notifier started");
+            
+            while (true) {
+                try {
+                    
+                    Pair pair = tasks.take();
+                    
+                    if (pair == null) {
+                        continue;
+                    }
+                    
+                    String datumKey = (String) pair.getValue0();
+                    DataOperation action = (DataOperation) pair.getValue1();
+                    
+                    services.remove(datumKey);
+                    
+                    Loggers.RAFT.info("remove task {}", datumKey);
+                    
+                    int count = 0;
+                    
+                    if (listeners.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
+                        
+                        if (KeyBuilder.matchServiceMetaKey(datumKey) && !KeyBuilder.matchSwitchKey(datumKey)) {
+                            
+                            for (RecordListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
+                                try {
+                                    if (action == DataOperation.CHANGE) {
+                                        listener.onChange(datumKey, getDatum(datumKey).value);
+                                    }
+                                    
+                                    if (action == DataOperation.DELETE) {
+                                        listener.onDelete(datumKey);
+                                    }
+                                } catch (Throwable e) {
+                                    Loggers.RAFT
+                                            .error("[NACOS-RAFT] error while notifying listener of key: {}", datumKey,
+                                                    e);
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (!listeners.containsKey(datumKey)) {
+                        continue;
+                    }
+                    
+                    for (RecordListener listener : listeners.get(datumKey)) {
+                        
+                        count++;
+                        
+                        try {
+                            if (action == DataOperation.CHANGE) {
+                                listener.onChange(datumKey, getDatum(datumKey).value);
+                                continue;
+                            }
+                            
+                            if (action == DataOperation.DELETE) {
+                                listener.onDelete(datumKey);
+                                continue;
+                            }
+                        } catch (Throwable e) {
+                            Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", datumKey, e);
+                        }
+                    }
+                    
+                    if (Loggers.RAFT.isDebugEnabled()) {
+                        Loggers.RAFT.debug("[NACOS-RAFT] datum change notified, key: {}, listener count: {}", datumKey,
+                                count);
+                    }
+                } catch (Throwable e) {
+                    Loggers.RAFT.error("[NACOS-RAFT] Error while handling notifying task", e);
+                }
+            }
+        }
+    }
 }

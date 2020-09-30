@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.utils;
+package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.utils.BiFunction;
 import com.alibaba.nacos.common.utils.ByteUtils;
@@ -92,75 +92,48 @@ public final class DiskUtils {
     }
     
     /**
-     * Creates a new empty file in the specified directory, using the given
-     * prefix and suffix strings to generate its name. The resulting
-     * {@code Path} is associated with the same {@code FileSystem} as the given
-     * directory.
+     * Creates a new empty file in the specified directory, using the given prefix and suffix strings to generate its
+     * name. The resulting {@code Path} is associated with the same {@code FileSystem} as the given directory.
      *
      * <p>The details as to how the name of the file is constructed is
-     * implementation dependent and therefore not specified. Where possible
-     * the {@code prefix} and {@code suffix} are used to construct candidate
-     * names in the same manner as the {@link
-     * java.io.File#createTempFile(String,String,File)} method.
+     * implementation dependent and therefore not specified. Where possible the {@code prefix} and {@code suffix} are
+     * used to construct candidate names in the same manner as the {@link java.io.File#createTempFile(String, String, File)}
+     * method.
      *
-     *
-     * @param   dir
-     *          the path to directory in which to create the file
-     * @param   prefix
-     *          the prefix string to be used in generating the file's name;
-     *          may be {@code null}
-     * @param   suffix
-     *          the suffix string to be used in generating the file's name;
-     *          may be {@code null}, in which case "{@code .tmp}" is used
-     *
-     * @return  the path to the newly created file that did not exist before
-     *          this method was invoked
-     *
-     * @throws  IllegalArgumentException
-     *          if the prefix or suffix parameters cannot be used to generate
-     *          a candidate file name
-     * @throws  UnsupportedOperationException
-     *          if the array contains an attribute that cannot be set atomically
-     *          when creating the directory
-     * @throws  IOException
-     *          if an I/O error occurs or {@code dir} does not exist
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file.
+     * @param dir    the path to directory in which to create the file
+     * @param prefix the prefix string to be used in generating the file's name; may be {@code null}
+     * @param suffix the suffix string to be used in generating the file's name; may be {@code null}, in which case
+     *               "{@code .tmp}" is used
+     * @return the path to the newly created file that did not exist before this method was invoked
+     * @throws IllegalArgumentException      if the prefix or suffix parameters cannot be used to generate a candidate
+     *                                       file name
+     * @throws UnsupportedOperationException if the array contains an attribute that cannot be set atomically when
+     *                                       creating the directory
+     * @throws IOException                   if an I/O error occurs or {@code dir} does not exist
+     * @throws SecurityException             In the case of the default provider, and a security manager is installed,
+     *                                       the {@link SecurityManager#checkWrite(String) checkWrite} method is invoked
+     *                                       to check write access to the file.
      */
     public static File createTmpFile(String dir, String prefix, String suffix) throws IOException {
         return Files.createTempFile(Paths.get(dir), prefix, suffix).toFile();
     }
     
     /**
-     * Creates an empty file in the default temporary-file directory, using
-     * the given prefix and suffix to generate its name. The resulting {@code
-     * Path} is associated with the default {@code FileSystem}.
+     * Creates an empty file in the default temporary-file directory, using the given prefix and suffix to generate its
+     * name. The resulting {@code Path} is associated with the default {@code FileSystem}.
      *
-     * @param   prefix
-     *          the prefix string to be used in generating the file's name;
-     *          may be {@code null}
-     * @param   suffix
-     *          the suffix string to be used in generating the file's name;
-     *          may be {@code null}, in which case "{@code .tmp}" is used
-     *
-     * @return  the path to the newly created file that did not exist before
-     *          this method was invoked
-     *
-     * @throws  IllegalArgumentException
-     *          if the prefix or suffix parameters cannot be used to generate
-     *          a candidate file name
-     * @throws  UnsupportedOperationException
-     *          if the array contains an attribute that cannot be set atomically
-     *          when creating the directory
-     * @throws  IOException
-     *          if an I/O error occurs or the temporary-file directory does not
-     *          exist
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file.
+     * @param prefix the prefix string to be used in generating the file's name; may be {@code null}
+     * @param suffix the suffix string to be used in generating the file's name; may be {@code null}, in which case
+     *               "{@code .tmp}" is used
+     * @return the path to the newly created file that did not exist before this method was invoked
+     * @throws IllegalArgumentException      if the prefix or suffix parameters cannot be used to generate a candidate
+     *                                       file name
+     * @throws UnsupportedOperationException if the array contains an attribute that cannot be set atomically when
+     *                                       creating the directory
+     * @throws IOException                   if an I/O error occurs or the temporary-file directory does not exist
+     * @throws SecurityException             In the case of the default provider, and a security manager is installed,
+     *                                       the {@link SecurityManager#checkWrite(String) checkWrite} method is invoked
+     *                                       to check write access to the file.
      */
     public static File createTmpFile(String prefix, String suffix) throws IOException {
         return Files.createTempFile(prefix, suffix).toFile();
@@ -401,8 +374,8 @@ public final class DiskUtils {
      */
     public static void compress(final String rootDir, final String sourceDir, final String outputFile,
             final Checksum checksum) throws IOException {
-        try (final FileOutputStream fos = new FileOutputStream(
-                outputFile); final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
+        try (final FileOutputStream fos = new FileOutputStream(outputFile);
+                final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
                 final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(cos))) {
             compressDirectoryToZipFile(rootDir, sourceDir, zos);
             zos.flush();
@@ -422,8 +395,8 @@ public final class DiskUtils {
                 compressDirectoryToZipFile(rootDir, child, zos);
             } else {
                 zos.putNextEntry(new ZipEntry(child));
-                try (final FileInputStream fis = new FileInputStream(
-                        file); final BufferedInputStream bis = new BufferedInputStream(fis)) {
+                try (final FileInputStream fis = new FileInputStream(file);
+                        final BufferedInputStream bis = new BufferedInputStream(fis)) {
                     IOUtils.copy(bis, zos);
                 }
             }
@@ -442,16 +415,16 @@ public final class DiskUtils {
      */
     public static void decompress(final String sourceFile, final String outputDir, final Checksum checksum)
             throws IOException {
-        try (final FileInputStream fis = new FileInputStream(
-                sourceFile); final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
+        try (final FileInputStream fis = new FileInputStream(sourceFile);
+                final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
                 final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 final String fileName = entry.getName();
                 final File entryFile = new File(Paths.get(outputDir, fileName).toString());
                 FileUtils.forceMkdir(entryFile.getParentFile());
-                try (final FileOutputStream fos = new FileOutputStream(
-                        entryFile); final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                try (final FileOutputStream fos = new FileOutputStream(entryFile);
+                        final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
                     IOUtils.copy(zis, bos);
                     bos.flush();
                     fos.getFD().sync();
@@ -468,11 +441,10 @@ public final class DiskUtils {
     /**
      * Returns an Iterator for the lines in a <code>File</code>.
      * <p>
-     * This method opens an <code>InputStream</code> for the file.
-     * When you have finished with the iterator you should close the stream
-     * to free internal resources. This can be done by calling the
-     * {@link org.apache.commons.io.LineIterator#close()} or
-     * {@link org.apache.commons.io.LineIterator#closeQuietly(org.apache.commons.io.LineIterator)} method.
+     * This method opens an <code>InputStream</code> for the file. When you have finished with the iterator you should
+     * close the stream to free internal resources. This can be done by calling the {@link
+     * org.apache.commons.io.LineIterator#close()} or {@link org.apache.commons.io.LineIterator#closeQuietly(org.apache.commons.io.LineIterator)}
+     * method.
      * </p>
      * The recommended usage pattern is:
      * <pre>
@@ -487,12 +459,11 @@ public final class DiskUtils {
      * }
      * </pre>
      * <p>
-     * If an exception occurs during the creation of the iterator, the
-     * underlying stream is closed.
+     * If an exception occurs during the creation of the iterator, the underlying stream is closed.
      * </p>
      *
-     * @param file  the file to open for input, must not be <code>null</code>
-     * @param encoding  the encoding to use, <code>null</code> means platform default
+     * @param file     the file to open for input, must not be <code>null</code>
+     * @param encoding the encoding to use, <code>null</code> means platform default
      * @return an Iterator of the lines in the file, never <code>null</code>
      * @throws IOException in case of an I/O error (file closed)
      * @since 1.2
@@ -504,20 +475,20 @@ public final class DiskUtils {
     /**
      * Returns an Iterator for the lines in a <code>File</code> using the default encoding for the VM.
      *
-     * @param file  the file to open for input, must not be <code>null</code>
+     * @param file the file to open for input, must not be <code>null</code>
      * @return an Iterator of the lines in the file, never <code>null</code>
      * @throws IOException in case of an I/O error (file closed)
-     * @since 1.3
      * @see #lineIterator(File, String)
+     * @since 1.3
      */
     public static LineIterator lineIterator(File file) throws IOException {
         return new LineIterator(FileUtils.lineIterator(file, null));
     }
     
     public static class LineIterator implements AutoCloseable {
-    
+        
         private final org.apache.commons.io.LineIterator target;
-    
+        
         /**
          * Constructs an iterator of the lines for a <code>Reader</code>.
          *
@@ -526,7 +497,7 @@ public final class DiskUtils {
         LineIterator(org.apache.commons.io.LineIterator target) {
             this.target = target;
         }
-    
+        
         public boolean hasNext() {
             return target.hasNext();
         }
@@ -534,20 +505,20 @@ public final class DiskUtils {
         public String next() {
             return target.next();
         }
-    
+        
         public String nextLine() {
             return target.nextLine();
         }
-    
+        
         @Override
         public void close() {
             target.close();
         }
-    
+        
         public void remove() {
             target.remove();
         }
-    
+        
         public void forEachRemaining(Consumer<? super String> action) {
             target.forEachRemaining(action);
         }

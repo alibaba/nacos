@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 
 import java.io.IOException;
 
