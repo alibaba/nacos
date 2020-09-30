@@ -21,7 +21,7 @@ import com.alibaba.nacos.naming.core.Instance;
 import java.util.List;
 
 /**
- * InstanceOperationInfo. operation resources description
+ * InstanceOperationInfo. operation resources's description
  *
  * @author horizonzy
  */
@@ -42,10 +42,11 @@ public class InstanceOperationInfo {
     private String serviceName;
     
     /**
-     * ephemeral/persist/*.
-     * <p>ephemeral = all ephemeral instances in {@link com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl}
+     * consistencyType. it helps to operate all instances from consistencyService, value = ephemeral or persist.
+     * <p>
+     * ephemeral = all ephemeral instances in {@link com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl}
      * persist = all persist instances in {@link com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl}
-     * * = persist union ephemeral</p>
+     * </p>
      */
     private String consistencyType;
     
@@ -58,24 +59,12 @@ public class InstanceOperationInfo {
         return serviceName;
     }
     
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-    
     public String getConsistencyType() {
         return consistencyType;
     }
     
-    public void setConsistencyType(String consistencyType) {
-        this.consistencyType = consistencyType;
-    }
-    
     public List<Instance> getInstances() {
         return instances;
-    }
-    
-    public void setInstances(List<Instance> instances) {
-        this.instances = instances;
     }
     
 }

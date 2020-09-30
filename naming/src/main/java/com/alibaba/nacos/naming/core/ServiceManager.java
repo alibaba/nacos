@@ -720,31 +720,22 @@ public class ServiceManager implements RecordListener<Service> {
         try {
             String serviceName = operationInfo.getServiceName();
             NamingUtils.checkServiceNameFormat(serviceName);
-            // type: */ephemeral/persist
+            // type: ephemeral/persist
+            InstanceOperationContext operationContext;
             String type = operationInfo.getConsistencyType();
-            InstanceOperationContext operationContext = new InstanceOperationContext();
-            operationContext.setNamespace(namespace);
-            operationContext.setServiceName(serviceName);
             if (!StringUtils.isEmpty(type)) {
                 switch (type) {
-                    case UtilsAndCommons.UNION:
-                        operationContext.allEphemeralOperate();
-                        operatedInstances.addAll(operateFunction.apply(operationContext));
-                        
-                        operationContext.allPersistOperate();
-                        operatedInstances.addAll(operateFunction.apply(operationContext));
-                        break;
                     case UtilsAndCommons.EPHEMERAL:
-                        operationContext.allEphemeralOperate();
+                        operationContext = new InstanceOperationContext(namespace, serviceName, true, true);
                         operatedInstances.addAll(operateFunction.apply(operationContext));
                         break;
                     case UtilsAndCommons.PERSIST:
-                        operationContext.allPersistOperate();
+                        operationContext = new InstanceOperationContext(namespace, serviceName, false, true);
                         operatedInstances.addAll(operateFunction.apply(operationContext));
                         break;
                     default:
                         Loggers.SRV_LOG
-                                .warn("UPDATE-METADATA: services.all value is illegal, it should be */ephemeral/persist. ignore the service '"
+                                .warn("UPDATE-METADATA: services.all value is illegal, it should be ephemeral/persist. ignore the service '"
                                         + serviceName + "'");
                         break;
                 }
@@ -756,7 +747,8 @@ public class ServiceManager implements RecordListener<Service> {
                             .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
                     
                     for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
-                        operationContext.locateInstanceOperate(entry.getKey(), entry.getValue());
+                        operationContext = new InstanceOperationContext(namespace, serviceName, entry.getKey(), false,
+                                entry.getValue());
                         operatedInstances.addAll(operateFunction.apply(operationContext));
                     }
                 }

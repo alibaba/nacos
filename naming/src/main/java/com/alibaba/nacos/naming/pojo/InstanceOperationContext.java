@@ -27,6 +27,25 @@ import java.util.List;
  */
 public class InstanceOperationContext {
     
+    public InstanceOperationContext() {
+    }
+    
+    public InstanceOperationContext(String namespace, String serviceName, Boolean ephemeral, Boolean all) {
+        this.namespace = namespace;
+        this.serviceName = serviceName;
+        this.ephemeral = ephemeral;
+        this.all = all;
+    }
+    
+    public InstanceOperationContext(String namespace, String serviceName, Boolean ephemeral, Boolean all,
+            List<Instance> instances) {
+        this.namespace = namespace;
+        this.serviceName = serviceName;
+        this.ephemeral = ephemeral;
+        this.all = all;
+        this.instances = instances;
+    }
+    
     private String namespace;
     
     private String serviceName;
@@ -41,67 +60,19 @@ public class InstanceOperationContext {
         return namespace;
     }
     
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-    
     public String getServiceName() {
         return serviceName;
-    }
-    
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
     }
     
     public Boolean getEphemeral() {
         return ephemeral;
     }
     
-    public void setEphemeral(Boolean ephemeral) {
-        this.ephemeral = ephemeral;
-    }
-    
     public Boolean getAll() {
         return all;
     }
     
-    public void setAll(Boolean all) {
-        this.all = all;
-    }
-    
     public List<Instance> getInstances() {
         return instances;
-    }
-    
-    public void setInstances(List<Instance> instances) {
-        this.instances = instances;
-    }
-    
-    /**
-     * to operate all ephemeral instances from consitencyService.
-     */
-    public void allEphemeralOperate() {
-        this.all = true;
-        this.ephemeral = true;
-    }
-    
-    /**
-     * to operate all persist instances from consitencyService.
-     */
-    public void allPersistOperate() {
-        this.all = true;
-        this.ephemeral = false;
-    }
-    
-    /**
-     * to operate locate instances from consistencySercice judged by ephemeral.
-     *
-     * @param ephemeral ephemeral
-     * @param instances need located instances.
-     */
-    public void locateInstanceOperate(Boolean ephemeral, List<Instance> instances) {
-        this.all = false;
-        this.ephemeral = ephemeral;
-        this.instances = instances;
     }
 }

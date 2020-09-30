@@ -119,8 +119,6 @@ public class UtilsAndCommons {
     
     public static final String UPDATE_INSTANCE_METADATA_ACTION_REMOVE = "remove";
     
-    public static final String UNION = "*";
-    
     public static final String EPHEMERAL = "ephemeral";
     
     public static final String PERSIST = "persist";
