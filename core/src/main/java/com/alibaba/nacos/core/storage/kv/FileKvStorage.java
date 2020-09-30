@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.storage.kv;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KvStorageException;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 
 import java.io.File;
 import java.io.IOException;
