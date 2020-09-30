@@ -117,7 +117,6 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
-        checkIsStopWork();
         raftCore.listen(key, listener);
     }
     

@@ -115,6 +115,14 @@ public interface KvStorage {
     void snapshotLoad(String path) throws KvStorageException;
     
     /**
+     * Get all keys.
+     *
+     * @return all keys
+     * @throws KvStorageException KVStorageException
+     */
+    List<byte[]> allKeys() throws KvStorageException;
+    
+    /**
      * shutdown.
      */
     void shutdown();
