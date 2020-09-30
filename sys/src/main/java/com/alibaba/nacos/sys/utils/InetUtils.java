@@ -229,7 +229,11 @@ public class InetUtils {
      */
     public static boolean isDomain(String str) {
         InetSocketAddress address = new InetSocketAddress(str, 0);
-        return !address.isUnresolved();
+        boolean isResolved = !address.isUnresolved();
+        if (isResolved) {
+            LOG.warn("the domain: '" + str + "' can not be resolved");
+        }
+        return isResolved;
     }
     
     /**
