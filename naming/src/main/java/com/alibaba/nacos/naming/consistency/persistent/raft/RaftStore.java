@@ -24,8 +24,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
 import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
+import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -49,14 +49,12 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DATA_BASE_DIR;
-import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_PREFIX;
-import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_SUFFIX;
 
 /**
  * Raft store.
  *
- * @deprecated will remove in 1.4.x
  * @author nacos
+ * @deprecated will remove in 1.4.x
  */
 @Deprecated
 @Component
@@ -75,8 +73,7 @@ public class RaftStore implements Closeable {
      * @param datums   cached datum map
      * @throws Exception any exception during load
      */
-    public synchronized void loadDatums(PersistentNotifier notifier, Map<String, Datum> datums)
-            throws Exception {
+    public synchronized void loadDatums(PersistentNotifier notifier, Map<String, Datum> datums) throws Exception {
         
         Datum datum;
         long start = System.currentTimeMillis();
@@ -87,8 +84,8 @@ public class RaftStore implements Closeable {
                     if (datum != null) {
                         datums.put(datum.key, datum);
                         if (notifier != null) {
-                            NotifyCenter
-                                    .publishEvent(ValueChangeEvent.builder().key(datum.key).action(DataOperation.CHANGE).build());
+                            NotifyCenter.publishEvent(
+                                    ValueChangeEvent.builder().key(datum.key).action(DataOperation.CHANGE).build());
                         }
                     }
                 }
@@ -137,8 +134,7 @@ public class RaftStore implements Closeable {
                 Loggers.RAFT.warn("warning: encountered directory in cache dir: {}", cache.getAbsolutePath());
             }
             
-            if (!StringUtils.equals(cache.getName(), encodeDatumKey(key)) && !StringUtils
-                    .equals(cache.getName(), encodeDatumKey(key) + RAFT_CACHE_FILE_SUFFIX)) {
+            if (!StringUtils.equals(cache.getName(), encodeDatumKey(key))) {
                 continue;
             }
             
@@ -149,12 +145,8 @@ public class RaftStore implements Closeable {
         return null;
     }
     
-    private boolean isDatumCacheFile(String fileName) {
-        return fileName.endsWith(RAFT_CACHE_FILE_SUFFIX) || fileName.startsWith(RAFT_CACHE_FILE_PREFIX);
-    }
-    
     private synchronized Datum readDatum(File file, String namespaceId) throws IOException {
-        if (!isDatumCacheFile(file.getName())) {
+        if (!KeyBuilder.isDatumCacheFile(file.getName())) {
             return null;
         }
         ByteBuffer buffer;
@@ -251,14 +243,6 @@ public class RaftStore implements Closeable {
         return fileName;
     }
     
-    private File cacheFile(String cacheFileName) {
-        File cacheFile = new File(cacheFileName);
-        if (cacheFile.exists()) {
-            return cacheFile;
-        }
-        return new File(cacheFileName + RAFT_CACHE_FILE_SUFFIX);
-    }
-    
     /**
      * Write datum to cache file.
      *
@@ -269,7 +253,7 @@ public class RaftStore implements Closeable {
         
         String namespaceId = KeyBuilder.getNamespace(datum.key);
         
-        File cacheFile = cacheFile(cacheFileName(namespaceId, datum.key));
+        File cacheFile = new File(cacheFileName(namespaceId, datum.key));
         
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
             MetricsMonitor.getDiskException().increment();
@@ -301,7 +285,7 @@ public class RaftStore implements Closeable {
                 String oldDatumKey = datum.key
                         .replace(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER, StringUtils.EMPTY);
                 
-                cacheFile = cacheFile(cacheFileName(namespaceId, oldDatumKey));
+                cacheFile = new File(cacheFileName(namespaceId, oldDatumKey));
                 if (cacheFile.exists() && !cacheFile.delete()) {
                     Loggers.RAFT.error("[RAFT-DELETE] failed to delete old format datum: {}, value: {}", datum.key,
                             datum.value);
