@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.sys.utils;
 
-import com.alibaba.nacos.common.utils.BiFunction;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.Objects;
 import org.apache.commons.io.FileUtils;
@@ -229,7 +228,7 @@ public final class DiskUtils {
      * @param append  write append mode
      * @return write success
      */
-    public static boolean writeFile(File file, byte[] content, boolean append) throws IOException {
+    public static boolean writeFile(File file, byte[] content, boolean append) {
         try (FileChannel fileChannel = new FileOutputStream(file, append).getChannel()) {
             ByteBuffer buffer = ByteBuffer.wrap(content);
             fileChannel.write(buffer);
@@ -239,11 +238,9 @@ public final class DiskUtils {
                 String errMsg = ioe.getMessage();
                 if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN) || errMsg
                         .contains(DISK_QUATA_EN)) {
-                    LOGGER.warn("Disk full, suicide exits");
+                    LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);
                 }
-            } else {
-                throw ioe;
             }
         }
         return false;
@@ -280,24 +277,6 @@ public final class DiskUtils {
     
     public static void forceMkdir(String path) throws IOException {
         FileUtils.forceMkdir(new File(path));
-    }
-    
-    /**
-     * force mkdir with path and {@link BiFunction}.
-     *
-     * @param path path
-     * @param job {@link BiFunction}
-     * @return {@link Throwable}
-     */
-    public static Throwable forceMkdir(String path, BiFunction<Void, IOException, Throwable> job) {
-        Throwable ex;
-        try {
-            FileUtils.forceMkdir(new File(path));
-            ex = job.apply(null, null);
-        } catch (IOException e) {
-            ex = job.apply(null, e);
-        }
-        return ex;
     }
     
     public static void forceMkdir(File file) throws IOException {
