@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.http.param;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -45,7 +46,6 @@ public class Header {
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
         addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip");
-        addParam(HttpHeaderConsts.CONTENT_ENCODING, "gzip");
     }
     
     public static Header newInstance() {
@@ -130,8 +130,10 @@ public class Header {
      * @param params parameters
      */
     public void addAll(Map<String, String> params) {
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            addParam(entry.getKey(), entry.getValue());
+        if (MapUtils.isNotEmpty(params)) {
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                addParam(entry.getKey(), entry.getValue());
+            }
         }
     }
     
@@ -143,9 +145,11 @@ public class Header {
      * @param headers original response header
      */
     public void setOriginalResponseHeader(Map<String, List<String>> headers) {
-        this.originalResponseHeader.putAll(headers);
-        for (Map.Entry<String, List<String>> entry : this.originalResponseHeader.entrySet()) {
-            addParam(entry.getKey(), entry.getValue().get(0));
+        if (MapUtils.isNotEmpty(headers)) {
+            this.originalResponseHeader.putAll(headers);
+            for (Map.Entry<String, List<String>> entry : this.originalResponseHeader.entrySet()) {
+                addParam(entry.getKey(), entry.getValue().get(0));
+            }
         }
     }
     

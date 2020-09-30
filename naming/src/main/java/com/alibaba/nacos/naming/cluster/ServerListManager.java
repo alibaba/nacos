@@ -24,7 +24,7 @@ import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;

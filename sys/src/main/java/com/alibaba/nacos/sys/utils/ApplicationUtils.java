@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.utils;
+package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.Constants;
 import com.sun.management.OperatingSystemMXBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -52,9 +53,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
-
-import static com.alibaba.nacos.core.utils.Constants.FUNCTION_MODE_PROPERTY_NAME;
-import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
 
 /**
  * Nacos global tool class.
@@ -90,6 +88,9 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     private static String functionModeType = null;
     
     private static String contextPath = "";
+    
+    @JustForTest
+    private static String confPath = "";
     
     @JustForTest
     private static String NACOS_HOME_PATH = null;
@@ -328,6 +329,21 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
         return environment.resolveRequiredPlaceholders(text);
     }
     
+    public static List<String> getPropertyList(String key) {
+        List<String> valueList = new ArrayList<>();
+        
+        for (int i = 0; i < Integer.MAX_VALUE; i++) {
+            String value = environment.getProperty(key + "[" + i + "]");
+            if (org.apache.commons.lang3.StringUtils.isBlank(value)) {
+                break;
+            }
+            
+            valueList.add(value);
+        }
+        
+        return valueList;
+    }
+    
     public static String getLocalAddress() {
         if (StringUtils.isBlank(localAddress)) {
             localAddress = InetUtils.getSelfIp() + ":" + getPort();
@@ -378,7 +394,7 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
      */
     public static boolean getStandaloneMode() {
         if (Objects.isNull(isStandalone)) {
-            isStandalone = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+            isStandalone = Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME);
         }
         return isStandalone;
     }
@@ -388,7 +404,7 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
      */
     public static String getFunctionMode() {
         if (StringUtils.isEmpty(functionModeType)) {
-            functionModeType = System.getProperty(FUNCTION_MODE_PROPERTY_NAME);
+            functionModeType = System.getProperty(Constants.FUNCTION_MODE_PROPERTY_NAME);
         }
         return functionModeType;
     }
@@ -446,7 +462,15 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     }
     
     public static String getConfFilePath() {
-        return Paths.get(getNacosHome(), "conf").toString();
+        if (StringUtils.isNotBlank(ApplicationUtils.confPath)) {
+            return ApplicationUtils.confPath;
+        }
+        ApplicationUtils.confPath = Paths.get(getNacosHome(), "conf").toString();
+        return confPath;
+    }
+    
+    public static void setConfFilePath(final String confPath) {
+        ApplicationUtils.confPath = confPath;
     }
     
     public static String getClusterConfFilePath() {

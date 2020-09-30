@@ -84,8 +84,7 @@ public class DistroController {
                         .isDefaultInstanceEphemeral()) {
                     serviceManager.createEmptyService(namespaceId, serviceName, true);
                 }
-                DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(entry.getKey()), null,
-                        entry.getValue());
+                DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(entry.getKey()), entry.getValue());
                 distroProtocol.onReceive(distroHttpData);
             }
         }
@@ -101,7 +100,7 @@ public class DistroController {
      */
     @PutMapping("/checksum")
     public ResponseEntity syncChecksum(@RequestParam String source, @RequestBody Map<String, String> dataMap) {
-        DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(source), null, dataMap);
+        DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(source), dataMap);
         distroProtocol.onVerify(distroHttpData);
         return ResponseEntity.ok("ok");
     }
