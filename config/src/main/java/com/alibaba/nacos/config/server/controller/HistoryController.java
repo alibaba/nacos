@@ -46,11 +46,11 @@ public class HistoryController {
     /**
      * Query the list history config.
      *
-     * @param dataId dataId string value.
-     * @param group group string value.
-     * @param tenant tenant string value.
-     * @param appName appName string value.
-     * @param pageNo pageNo string value.
+     * @param dataId   dataId string value.
+     * @param group    group string value.
+     * @param tenant   tenant string value.
+     * @param appName  appName string value.
+     * @param pageNo   pageNo string value.
      * @param pageSize pageSize string value.
      * @param modelMap modeMap.
      * @return
@@ -72,12 +72,20 @@ public class HistoryController {
     }
     
     /**
-     * Query the detailed configuration history informations.
+     * Query the detailed configuration history information.
      */
     @GetMapping
     public ConfigHistoryInfo getConfigHistoryInfo(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("nid") Long nid, ModelMap modelMap) {
         return persistService.detailConfigHistory(nid);
+    }
+    
+    /**
+     * Query previous config history information.
+     */
+    @GetMapping
+    public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("id") Long id) {
+        return persistService.detailPreviousConfigHistory(id);
     }
     
 }
