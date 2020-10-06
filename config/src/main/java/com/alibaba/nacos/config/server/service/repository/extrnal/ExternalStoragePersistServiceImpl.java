@@ -2305,7 +2305,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     .queryForObject(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
             return historyInfo;
         } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[detail-previous-history] error, id:{}", new Object[] {id}, e);
+            LogUtil.FATAL_LOG.error("[detail-previous-config-history] error, id:{}", new Object[] {id}, e);
             throw e;
         }
     }
