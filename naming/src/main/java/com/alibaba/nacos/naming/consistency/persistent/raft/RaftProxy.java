@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.http.HttpMethod;

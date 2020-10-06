@@ -32,7 +32,7 @@ import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.utils.GenericType;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.test.core.BaseClusterTest;
 
 import org.junit.Assert;

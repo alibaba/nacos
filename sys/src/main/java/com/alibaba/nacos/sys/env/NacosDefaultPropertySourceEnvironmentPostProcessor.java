@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.env;
+package com.alibaba.nacos.sys.env;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
@@ -34,8 +34,6 @@ import org.springframework.core.io.support.ResourcePropertySource;
 
 import java.io.IOException;
 
-import static org.springframework.core.io.support.ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX;
-
 /**
  * A lowest precedence {@link EnvironmentPostProcessor} implementation to append Nacos default {@link PropertySource}
  * with lowest order in {@link Environment}.
@@ -43,6 +41,7 @@ import static org.springframework.core.io.support.ResourcePatternResolver.CLASSP
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
  */
+@Deprecated
 public class NacosDefaultPropertySourceEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
     
     /**
@@ -56,7 +55,7 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
      * @see ResourcePatternResolver#CLASSPATH_ALL_URL_PREFIX
      */
     public static final String RESOURCE_LOCATION_PATTERN =
-            CLASSPATH_ALL_URL_PREFIX + "META-INF/nacos-default.properties";
+            ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX + "META-INF/nacos-default.properties";
     
     private static final String FILE_ENCODING = "UTF-8";
     
@@ -114,6 +113,6 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
     
     @Override
     public int getOrder() {
-        return LOWEST_PRECEDENCE;
+        return Ordered.LOWEST_PRECEDENCE;
     }
 }

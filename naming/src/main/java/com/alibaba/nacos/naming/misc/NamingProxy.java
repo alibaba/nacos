@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -146,7 +146,7 @@ public class NamingProxy {
         }
         
         throw new IOException("failed to req API: " + "http://" + server + ApplicationUtils.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: " + result.getCode() + " msg: "
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + ALL_DATA_GET_URL + ". code: " + result.getCode() + " msg: "
                 + result.getMessage());
     }
     

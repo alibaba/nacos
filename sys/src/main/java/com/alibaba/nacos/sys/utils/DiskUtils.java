@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.utils;
+package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.Objects;

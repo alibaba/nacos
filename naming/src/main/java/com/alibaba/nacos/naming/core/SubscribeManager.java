@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -102,7 +102,7 @@ public class SubscribeManager {
                                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(),
                         paramValues);
                 
-                if (!result.ok()) {
+                if (result.ok()) {
                     Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
                 }
