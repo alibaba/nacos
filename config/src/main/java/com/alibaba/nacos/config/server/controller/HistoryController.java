@@ -83,7 +83,7 @@ public class HistoryController {
     /**
      * Query previous config history information.
      */
-    @GetMapping
+    @GetMapping(value = "/previous")
     public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("id") Long id) {
         return persistService.detailPreviousConfigHistory(id);
     }
