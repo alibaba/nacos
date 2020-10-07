@@ -185,7 +185,8 @@ public class InstanceControllerTest extends BaseTest {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/metadata/batch").param("namespace", "public")
                 .param("serviceName", TEST_SERVICE_NAME).param("instances",
-                        "[{\"ip\":\"1.1.1.1\",\"port\": \"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"},{\"ip\":\"2.2.2.2\",\"port\":\"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"}]")
+                        "[{\"ip\":\"1.1.1.1\",\"port\": \"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"},"
+                                + "{\"ip\":\"2.2.2.2\",\"port\":\"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"}]")
                 .param("metadata", "{\"age\":\"20\",\"name\":\"horizon\"}");
         
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
@@ -200,7 +201,7 @@ public class InstanceControllerTest extends BaseTest {
         Assert.assertTrue(updated.get(0).asText().contains("8080"));
         Assert.assertTrue(updated.get(0).asText().contains(TEST_CLUSTER_NAME));
         Assert.assertTrue(updated.get(0).asText().contains("ephemeral"));
-    
+        
         Assert.assertTrue(updated.get(1).asText().contains("2.2.2.2"));
         Assert.assertTrue(updated.get(1).asText().contains("8080"));
         Assert.assertTrue(updated.get(1).asText().contains(TEST_CLUSTER_NAME));
@@ -229,7 +230,8 @@ public class InstanceControllerTest extends BaseTest {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .delete(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/metadata/batch").param("namespace", "public")
                 .param("serviceName", TEST_SERVICE_NAME).param("instances",
-                        "[{\"ip\":\"1.1.1.1\",\"port\": \"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"},{\"ip\":\"2.2.2.2\",\"port\":\"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"}]")
+                        "[{\"ip\":\"1.1.1.1\",\"port\": \"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"},"
+                                + "{\"ip\":\"2.2.2.2\",\"port\":\"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"}]")
                 .param("metadata", "{\"age\":\"20\",\"name\":\"horizon\"}");
         
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
