@@ -52,6 +52,8 @@ public class ClusterControllerTest extends BaseTest {
     @Before
     public void before() {
         super.before();
+        mockInjectSwitchDomain();
+        mockInjectDistroMapper();
         mockmvc = MockMvcBuilders.standaloneSetup(clusterController).build();
     }
     
@@ -87,17 +89,44 @@ public class ClusterControllerTest extends BaseTest {
     }
     
     @Test
-    public void testUpdateInvalidType() throws Exception {
-        expectedException.expectCause(isA(NacosException.class));
-        expectedException.expectMessage("unknown health check type:{\"type\":\"123\"}");
+    public void testUpdateHealthCheckerType() throws Exception {
+        
         Service service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
+        
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
                 .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"123\"}")
                 .param("checkPort", "1").param("useInstancePort4Check", "true");
         mockmvc.perform(builder);
+        
+        Assert.assertEquals("NONE", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
+        
+        MockHttpServletRequestBuilder builder2 = MockMvcRequestBuilders
+                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
+                .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"TCP\"}")
+                .param("checkPort", "1").param("useInstancePort4Check", "true");
+        mockmvc.perform(builder2);
+        
+        Assert.assertEquals("TCP", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
+        
+        MockHttpServletRequestBuilder builder3 = MockMvcRequestBuilders
+                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
+                .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"HTTP\"}")
+                .param("checkPort", "1").param("useInstancePort4Check", "true");
+        mockmvc.perform(builder3);
+        
+        Assert.assertEquals("HTTP", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
+    
+        MockHttpServletRequestBuilder builder4 = MockMvcRequestBuilders
+                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
+                .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"MYSQL\"}")
+                .param("checkPort", "1").param("useInstancePort4Check", "true");
+        mockmvc.perform(builder4);
+    
+        Assert.assertEquals("MYSQL", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
+        
     }
     
 }
