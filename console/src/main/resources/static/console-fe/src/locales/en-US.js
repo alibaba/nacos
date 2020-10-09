@@ -378,9 +378,7 @@ const I18N_CONF = {
   },
   DiffEditorDialog: {
     publish: 'Publish',
-    contents: 'Content Comparison',
-    currentArea: 'Current Value',
-    originalValue: 'Original Value',
+    back: 'Back',
   },
   ConfigEditor: {
     official: 'Official',
@@ -411,6 +409,9 @@ const I18N_CONF = {
     publish: 'Publish',
     back: 'Back',
     codeValErrorPrompt: 'Configuration information may have syntax errors. Are you sure to submit?',
+    dialogTitle: 'Content Comparison',
+    dialogCurrentArea: 'Current Value',
+    dialogOriginalArea: 'Original Value',
   },
   EditorNameSpace: {
     notice: 'Notice',
@@ -498,6 +499,9 @@ const I18N_CONF = {
     betaRelease: 'Beta Publish:',
     configuration: 'Configuration Content:',
     back: 'Back',
+    versionComparison: 'Version Comparison',
+    dialogCurrentArea: 'Current Version',
+    dialogOriginalArea: 'Previous Version',
   },
   ConfigRollback: {
     rollBack: 'Roll Back',

@@ -15,15 +15,27 @@
  */
 
 import React from 'react';
-import { Button, ConfigProvider, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
+import {
+  Button,
+  ConfigProvider,
+  Dialog,
+  Field,
+  Form,
+  Input,
+  Loading,
+  Tab,
+  Grid,
+} from '@alifd/next';
 import { getParams, request } from '../../../globalLib';
 import { generateUrl } from '../../../utils/nacosutil';
+import DiffEditorDialog from '../../../components/DiffEditorDialog';
 
 import './index.scss';
 import PropTypes from 'prop-types';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
+const { Row, Col } = Grid;
 
 @ConfigProvider.config
 class ConfigDetail extends React.Component {
@@ -56,6 +68,7 @@ class ConfigDetail extends React.Component {
     this.searchGroup = getParams('searchGroup') || '';
     this.pageSize = getParams('pageSize');
     this.pageNo = getParams('pageNo');
+    this.diffEditorDialog = React.createRef();
     // this.params = window.location.hash.split('?')[1]||'';
   }
 
@@ -188,6 +201,16 @@ class ConfigDetail extends React.Component {
     }
   }
 
+  openDiff() {
+    let leftvalue = this.monacoEditor.getValue(); // this.commoneditor.doc.getValue();
+    let rightvalue = leftvalue + 'aaaaaaaaaaaaaaaaaaaa';
+    leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    // let rightvalue = this.diffeditor.doc.getValue();
+    // console.log(this.commoneditor, leftvalue==rightvalue)
+    this.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
+  }
+
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
@@ -276,12 +299,23 @@ class ConfigDetail extends React.Component {
             <FormItem label={locale.configuration} required {...formItemLayout}>
               <div style={{ clear: 'both', height: 300 }} id="container" />
             </FormItem>
-            <FormItem label={' '} {...formItemLayout}>
-              <Button type={'primary'} onClick={this.goList.bind(this)}>
+          </Form>
+          <Row>
+            <Col span="24" className="button-list">
+              <Button size="large" type="primary" onClick={this.openDiff.bind(this)}>
+                {locale.versionComparison}
+              </Button>{' '}
+              <Button size="large" type="normal" onClick={this.goList.bind(this)}>
                 {locale.back}
               </Button>
-            </FormItem>
-          </Form>
+            </Col>
+          </Row>
+          <DiffEditorDialog
+            ref={this.diffEditorDialog}
+            title={locale.versionComparison}
+            currentArea={locale.dialogCurrentArea}
+            originalArea={locale.dialogOriginalArea}
+          />
         </Loading>
       </div>
     );
