@@ -45,7 +45,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.alibaba.nacos.core.utils.Constants.REQUEST_PATH_SEPARATOR;
+import static com.alibaba.nacos.sys.env.Constants.REQUEST_PATH_SEPARATOR;
+
 
 /**
  * Method cache.

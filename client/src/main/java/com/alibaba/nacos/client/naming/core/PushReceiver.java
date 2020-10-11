@@ -107,6 +107,9 @@ public class PushReceiver implements Runnable, Closeable {
                 udpSocket.send(new DatagramPacket(ack.getBytes(UTF_8), ack.getBytes(UTF_8).length,
                         packet.getSocketAddress()));
             } catch (Exception e) {
+                if (closed) {
+                    return;
+                }
                 NAMING_LOGGER.error("[NA] error while receiving push data", e);
             }
         }

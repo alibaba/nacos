@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.core.storage.StorageFactory;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.storage.kv.MemoryKvStorage;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.misc.Loggers;
 
@@ -136,12 +137,19 @@ public class NamingKvStorage extends MemoryKvStorage {
     
     @Override
     public void snapshotLoad(String path) throws KvStorageException {
-        final long startTime = System.currentTimeMillis();
-        baseDirStorage.snapshotLoad(path);
-        loadSnapshotFromActualStorage(baseDirStorage);
-        loadNamespaceSnapshot();
-        long costTime = System.currentTimeMillis() - startTime;
-        Loggers.RAFT.info("load snapshot cost time {}ms", costTime);
+        final KvStorageException e = TimerContext.run(() -> {
+            try {
+                baseDirStorage.snapshotLoad(path);
+                loadSnapshotFromActualStorage(baseDirStorage);
+                loadNamespaceSnapshot();
+                return null;
+            } catch (KvStorageException exception) {
+                return exception;
+            }
+        }, "naming kv storage load snapshot", Loggers.RAFT);
+        if (e != null) {
+            throw e;
+        }
     }
     
     private void loadSnapshotFromActualStorage(KvStorage actualStorage) throws KvStorageException {

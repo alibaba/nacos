@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.utils;
+package com.alibaba.nacos.sys.env;
 
 /**
  * Nacos common constants.
