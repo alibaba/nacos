@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.file;
+package com.alibaba.nacos.sys.file;
 
 import java.io.Serializable;
 
