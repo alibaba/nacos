@@ -131,7 +131,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     protected void init() throws NacosException {
         Loggers.CORE.info("Nacos-related cluster resource initialization");
         this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
-        this.localAddress = InetUtils.getSelfIp() + ":" + port;
+        this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtils.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
         serverList.put(self.getAddress(), self);
@@ -169,14 +169,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         NotifyCenter.registerSubscriber(new Subscriber<InetUtils.IPChangeEvent>() {
             @Override
             public void onEvent(InetUtils.IPChangeEvent event) {
-                String newAddress = event.getNewIp() + ":" + port;
+                String newAddress = event.getNewIP() + ":" + port;
                 ServerMemberManager.this.localAddress = newAddress;
                 ApplicationUtils.setLocalAddress(localAddress);
     
                 Member self = ServerMemberManager.this.self;
-                self.setIp(event.getNewIp());
+                self.setIp(event.getNewIP());
     
-                String oldAddress = event.getOldIp() + ":" + port;
+                String oldAddress = event.getOldIP() + ":" + port;
                 ServerMemberManager.this.serverList.remove(oldAddress);
                 ServerMemberManager.this.serverList.put(newAddress, self);
                 
