@@ -691,13 +691,6 @@ public class ConfigController {
         return ResultBuilder.buildSuccessResult("Clone Completed Successfully", saveResult);
     }
     
-    /**
-     * Treat the tenant parameters with values of "public" and "null" as an empty string.
-     * @author klw(213539@qq.com)
-     * 2020/10/12 15:59
-     * @param tenant tenant
-     * @return java.lang.String
-     */
     private String processTenant(String tenant) {
         if (StringUtils.isBlank(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant) || NAMESPACE_NULL_KEY
                 .equalsIgnoreCase(tenant)) {
