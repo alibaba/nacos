@@ -207,8 +207,10 @@ public class RsocketRpcServer extends BaseRpcServer {
         public Mono<Payload> requestResponse(Payload payload) {
             try {
                 RsocketUtils.PlainRequest requestType = RsocketUtils.parsePlainRequestFromPayload(payload);
-                Loggers.RPC_DIGEST.debug(String.format("[%s] request receive : %s", "rsocket", requestType.toString()));
-    
+                Loggers.RPC_DIGEST.debug(String
+                        .format("[%s] request receive : %s,clientIp : %s ", "rsocket", requestType.toString(),
+                                requestType.getMetadata().getClientIp()));
+                
                 RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(requestType.getType());
                 if (requestHandler != null) {
                     RequestMeta requestMeta = requestType.getMetadata();

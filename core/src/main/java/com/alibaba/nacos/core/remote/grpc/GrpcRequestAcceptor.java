@@ -67,7 +67,9 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         if (parseObj != null) {
             Request request = (Request) parseObj.getBody();
-            Loggers.RPC_DIGEST.debug(String.format("[%s] request receive :%s ", "grpc", request.toString()));
+            Loggers.RPC_DIGEST.debug(String
+                    .format("[%s] request receive :%s,clientIp : %s ", "grpc", request.toString(),
+                            grpcRequest.getMetadata().getClientIp()));
             RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
             if (requestHandler != null) {
                 try {

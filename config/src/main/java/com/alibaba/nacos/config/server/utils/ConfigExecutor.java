@@ -101,7 +101,6 @@ public final class ConfigExecutor {
         return ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR;
     }
     
-    
     public static void scheduleLongPolling(Runnable runnable, long initialDelay, long period, TimeUnit unit) {
         LONG_POLLING_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, period, unit);
     }

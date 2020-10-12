@@ -324,7 +324,7 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
-     * 1.判断当前是否正在重连中 2.如果正在重连中，则直接返回；如果不在重连中，则启动重连 3.重连逻辑：创建一个新的连接，如果连接可用
+     * switch server .
      */
     protected void switchServerAsync(final ServerInfo recommendServerInfo) {
         
@@ -349,6 +349,7 @@ public abstract class RpcClient implements Closeable {
                     boolean switchSuccess = false;
         
                     int reConnectTimes = 0;
+                    int retryTurns = 0;
                     Exception lastException = null;
                     while (!switchSuccess && !isShutdwon()) {
                         
@@ -388,17 +389,22 @@ public abstract class RpcClient implements Closeable {
                             recommendServer.set(null);
                         }
     
-                        reConnectTimes++;
-    
-                        if (reConnectTimes % 30 == 0) {
+                        if (reConnectTimes > 0
+                                && reConnectTimes % RpcClient.this.serverListFactory.getServerList().size() == 0) {
                             LoggerUtils.printIfInfoEnabled(LOGGER, String.format(
                                     "[%s]-fail to connect server,after trying %s times, last tryed server is %s", name,
                                     reConnectTimes, serverInfo));
+                            retryTurns++;
                         }
+    
+                        reConnectTimes++;
                         
                         try {
                             //sleep 100 millsecond to switch next server.
-                            Thread.sleep(100L);
+                            if (!isRunning()) {
+                                // first round ,try servers at a delay 100ms;sencond round ,200ms; max delays 1s. to be reconsidered.基本上会快速收敛到几个可用的IP
+                                Thread.sleep(NumberUtils.min(retryTurns + 1, 10) * 100L);
+                            }
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                             // Do  nothing.

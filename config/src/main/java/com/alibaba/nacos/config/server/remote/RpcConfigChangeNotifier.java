@@ -46,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 @Component(value = "rpcConfigChangeNotifier")
 public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
-    
     public RpcConfigChangeNotifier() {
         NotifyCenter.registerSubscriber(this);
     }
@@ -156,9 +155,9 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 
                 @Override
                 public void onFail(Throwable e) {
-                    Loggers.CORE.warn("push fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                    Loggers.CORE.warn("push fail.dataId={},group={},tenant={},clientId={},tryTimes={},errorMessage={}",
                             notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
-                            retryTimes);
+                            retryTimes, e.getMessage());
                     
                     push(RpcPushTask.this);
                 }
