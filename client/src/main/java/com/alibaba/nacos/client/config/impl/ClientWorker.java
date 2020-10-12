@@ -33,6 +33,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -553,13 +554,13 @@ public class ClientWorker implements Closeable {
             return labels;
         }
     
-        private void initHandlerRpcClient(RpcClient rpcClientInner) {
+        private void initHandlerRpcClient(final RpcClient rpcClientInner) {
             /*
              * Register Listen Change Handler
              */
             rpcClientInner.registerServerPushResponseHandler(new ServerRequestHandler() {
                 @Override
-                public Response requestReply(Request request) {
+                public Response requestReply(Request request, RequestMeta requestMeta) {
                     if (request instanceof ConfigChangeNotifyRequest) {
                         ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
                         String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
@@ -585,10 +586,15 @@ public class ClientWorker implements Closeable {
             
                 @Override
                 public void onDisConnect() {
-                    System.out.println("clear listen context...");
+                    String taskId = rpcClientInner.getLabels().get("taskId");
+                    LOGGER.info("clear listen context...");
                     Collection<CacheData> values = cacheMap.get().values();
                 
                     for (CacheData cacheData : values) {
+                        if (taskId != null && Integer.valueOf(taskId).equals(cacheData.getTaskId())) {
+                            cacheData.setListenSuccess(false);
+                            continue;
+                        }
                         cacheData.setListenSuccess(false);
                     }
                 }
@@ -668,7 +674,7 @@ public class ClientWorker implements Closeable {
         
         @Override
         public String getName() {
-            return null;
+            return "config_rpc_client";
         }
         
         @Override

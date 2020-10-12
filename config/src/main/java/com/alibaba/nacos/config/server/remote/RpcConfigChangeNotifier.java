@@ -18,19 +18,16 @@ package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.remote.response.AbstractPushCallBack;
-import com.alibaba.nacos.common.executor.ExecutorFactory;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
-import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -38,8 +35,6 @@ import org.springframework.stereotype.Component;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -50,11 +45,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Component(value = "rpcConfigChangeNotifier")
 public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
-    
-    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
-                    Runtime.getRuntime().availableProcessors() * 2,
-                    new NameThreadFactory("com.alibaba.nacos.config.server.remote.ConfigChangeNotifier"));
     
     public RpcConfigChangeNotifier() {
         NotifyCenter.registerSubscriber(this);
@@ -103,8 +93,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             }
         }
     
-        Loggers.RPC.info("push {} clients ,groupKey={},queue size={}", clients == null ? 0 : notifyCount, groupKey,
-                ((ScheduledThreadPoolExecutor) ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR).getQueue().size());
+        Loggers.RPC.info("push {} clients ,groupKey={}", clients == null ? 0 : notifyCount, groupKey);
     }
     
     @Override
@@ -166,14 +155,14 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 
                 @Override
                 public void onFail(Throwable e) {
-                    Loggers.CORE.warn("push fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                    Loggers.CORE.warn("push fail.dataId={},group={},tenant={},clientId={},tryTimes={},errorMessage={}",
                             notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
-                            retryTimes);
+                            retryTimes, e.getMessage());
                     
                     push(RpcPushTask.this);
                 }
-        
-            }, ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR);
+    
+            }, ConfigExecutor.getClientConfigNotifierServiceExecutor());
             
             tryTimes++;
         }
@@ -190,7 +179,8 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             return;
         } else if (connectionManager.getConnection(retryTask.clientId) != null) {
             // first time :delay 0s; sencond time:delay 2s  ;third time :delay 4s
-            ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR.schedule(retryTask, retryTask.tryTimes * 2, TimeUnit.SECONDS);
+            ConfigExecutor.getClientConfigNotifierServiceExecutor()
+                    .schedule(retryTask, retryTask.tryTimes * 2, TimeUnit.SECONDS);
         } else {
             // client is already offline,ingnore task.
         }

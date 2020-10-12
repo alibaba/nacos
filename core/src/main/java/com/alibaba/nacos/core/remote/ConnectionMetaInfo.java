@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Date;
@@ -39,6 +40,16 @@ public class ConnectionMetaInfo {
      * Client IP Address.
      */
     String clientIp;
+    
+    /**
+     * Client IP Port.
+     */
+    int clientPort;
+    
+    /**
+     * Local Ip Port.
+     */
+    int localPort;
     
     /**
      * Client version.
@@ -66,15 +77,27 @@ public class ConnectionMetaInfo {
         return labels.get(labelKey);
     }
     
-    public ConnectionMetaInfo(String connectionId, String clientIp, String connectType, String version,
-            Map<String, String> labels) {
+    public ConnectionMetaInfo(String connectionId, String clientIp, int clientPort, int localPort, String connectType,
+            String version, Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.connectType = connectType;
         this.version = version;
+        this.clientPort = clientPort;
+        this.localPort = localPort;
         this.createTime = new Date();
         this.lastActiveTime = System.currentTimeMillis();
         this.labels.putAll(labels);
+    }
+    
+    /**
+     * check if this connection is sdk source.
+     *
+     * @return if this connection is sdk source.
+     */
+    public boolean isSdkSource() {
+        String source = labels.get(RemoteConstants.LABEL_SOURCE);
+        return RemoteConstants.LABEL_SOURCE_SDK.equalsIgnoreCase(source);
     }
     
     /**
@@ -84,6 +107,24 @@ public class ConnectionMetaInfo {
      */
     public Map<String, String> getLabels() {
         return labels;
+    }
+    
+    /**
+     * Getter method for property <tt>clientPort</tt>.
+     *
+     * @return property value of clientPort
+     */
+    public int getClientPort() {
+        return clientPort;
+    }
+    
+    /**
+     * Setter method for property <tt>clientPort</tt>.
+     *
+     * @param clientPort value to be assigned to property clientPort
+     */
+    public void setClientPort(int clientPort) {
+        this.clientPort = clientPort;
     }
     
     /**
@@ -201,6 +242,24 @@ public class ConnectionMetaInfo {
      */
     public void setVersion(String version) {
         this.version = version;
+    }
+    
+    /**
+     * Getter method for property <tt>localPort</tt>.
+     *
+     * @return property value of localPort
+     */
+    public int getLocalPort() {
+        return localPort;
+    }
+    
+    /**
+     * Setter method for property <tt>localPort</tt>.
+     *
+     * @param localPort value to be assigned to property localPort
+     */
+    public void setLocalPort(int localPort) {
+        this.localPort = localPort;
     }
     
     @Override

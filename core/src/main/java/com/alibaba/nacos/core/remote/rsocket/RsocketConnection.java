@@ -23,7 +23,9 @@ import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.remote.RsocketUtils;
+import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.remote.client.rsocket.RsocketUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -80,7 +82,7 @@ public class RsocketConnection extends Connection {
         
         try {
             Mono<Payload> payloadMono = clientSocket
-                    .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
+                    .requestResponse(RsocketUtils.convertRequestToPayload(request, wrapMeta(requestMeta)));
             Payload block = payloadMono.block(Duration.ofMillis(timeoutMills));
             return RsocketUtils.parseResponseFromPayload(block);
         } catch (Exception e) {
@@ -88,11 +90,22 @@ public class RsocketConnection extends Connection {
         }
     }
     
+    private RequestMeta wrapMeta(RequestMeta meta) {
+        if (meta == null) {
+            meta = new RequestMeta();
+        }
+        meta.setConnectionId(getMetaInfo().getConnectionId());
+        meta.setClientPort(getMetaInfo().getLocalPort());
+        meta.setClientIp(NetUtils.localIP());
+        meta.setClientVersion(VersionUtils.getFullClientVersion());
+        return meta;
+    }
+    
     @Override
     public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException {
         Loggers.RPC_DIGEST.debug(String.format("[%s] send future request  : %s", "rsocket", request));
         final Mono<Payload> payloadMono = clientSocket
-                .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, wrapMeta(requestMeta)));
         final CompletableFuture<Payload> payloadCompletableFuture = payloadMono.toFuture();
         
         RequestFuture defaultPushFuture = new RequestFuture() {
@@ -124,7 +137,7 @@ public class RsocketConnection extends Connection {
         
         try {
             Mono<Payload> response = clientSocket
-                    .requestResponse(RsocketUtils.convertRequestToPayload(request, requestMeta));
+                    .requestResponse(RsocketUtils.convertRequestToPayload(request, wrapMeta(requestMeta)));
             
             response.toFuture().acceptEither(failAfter(requestCallBack.getTimeout()), new Consumer<Payload>() {
                 @Override

@@ -22,8 +22,6 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.PostConstruct;
-
 /**
  * Nacos based request handler.
  *
@@ -34,15 +32,7 @@ import javax.annotation.PostConstruct;
 public abstract class RequestHandler<T extends Request, S extends Response> {
     
     @Autowired
-    private RequestHandlerRegistry requestHandlerRegistry;
-    
-    @Autowired
     private RequestFilters requestFilters;
-    
-    @PostConstruct
-    public void init() {
-        requestHandlerRegistry.registryHandler(this);
-    }
     
     /**
      * Handler request.

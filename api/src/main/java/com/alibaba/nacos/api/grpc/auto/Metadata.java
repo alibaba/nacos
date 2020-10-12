@@ -32,8 +32,9 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
     }
     
     private Metadata() {
-        type_ = "";
         clientIp_ = "";
+        clientPort_ = 0;
+        type_ = "";
         connectionId_ = "";
         clientVersion_ = "";
     }
@@ -62,16 +63,21 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
                         }
                         break;
                     }
-                    case 18: {
+                    case 10: {
                         java.lang.String s = input.readStringRequireUtf8();
-                        
-                        type_ = s;
+        
+                        clientIp_ = s;
+                        break;
+                    }
+                    case 16: {
+        
+                        clientPort_ = input.readInt32();
                         break;
                     }
                     case 26: {
                         java.lang.String s = input.readStringRequireUtf8();
-                        
-                        clientIp_ = s;
+    
+                        type_ = s;
                         break;
                     }
                     case 34: {
@@ -87,9 +93,9 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
                         break;
                     }
                     case 50: {
-                        if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+                        if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
                             labels_ = com.google.protobuf.MapField.newMapField(LabelsDefaultEntryHolder.defaultEntry);
-                            mutable_bitField0_ |= 0x00000010;
+                            mutable_bitField0_ |= 0x00000020;
                         }
                         com.google.protobuf.MapEntry<java.lang.String, java.lang.String> labels__ = input
                                 .readMessage(LabelsDefaultEntryHolder.defaultEntry.getParserForType(),
@@ -98,9 +104,9 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
                         break;
                     }
                     case 58: {
-                        if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+                        if (!((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
                             headers_ = com.google.protobuf.MapField.newMapField(HeadersDefaultEntryHolder.defaultEntry);
-                            mutable_bitField0_ |= 0x00000020;
+                            mutable_bitField0_ |= 0x00000040;
                         }
                         com.google.protobuf.MapEntry<java.lang.String, java.lang.String> headers__ = input
                                 .readMessage(HeadersDefaultEntryHolder.defaultEntry.getParserForType(),
@@ -143,45 +149,12 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
     
     private int bitField0_;
     
-    public static final int TYPE_FIELD_NUMBER = 2;
-    
-    private volatile java.lang.Object type_;
-    
-    /**
-     * <code>string type = 2;</code>
-     */
-    public java.lang.String getType() {
-        java.lang.Object ref = type_;
-        if (ref instanceof java.lang.String) {
-            return (java.lang.String) ref;
-        } else {
-            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            type_ = s;
-            return s;
-        }
-    }
-    
-    /**
-     * <code>string type = 2;</code>
-     */
-    public com.google.protobuf.ByteString getTypeBytes() {
-        java.lang.Object ref = type_;
-        if (ref instanceof java.lang.String) {
-            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-            type_ = b;
-            return b;
-        } else {
-            return (com.google.protobuf.ByteString) ref;
-        }
-    }
-    
-    public static final int CLIENT_IP_FIELD_NUMBER = 3;
+    public static final int CLIENT_IP_FIELD_NUMBER = 1;
     
     private volatile java.lang.Object clientIp_;
     
     /**
-     * <code>string client_ip = 3;</code>
+     * <code>string client_ip = 1;</code>
      */
     public java.lang.String getClientIp() {
         java.lang.Object ref = clientIp_;
@@ -196,13 +169,57 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
     }
     
     /**
-     * <code>string client_ip = 3;</code>
+     * <code>string client_ip = 1;</code>
      */
     public com.google.protobuf.ByteString getClientIpBytes() {
         java.lang.Object ref = clientIp_;
         if (ref instanceof java.lang.String) {
             com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
             clientIp_ = b;
+            return b;
+        } else {
+            return (com.google.protobuf.ByteString) ref;
+        }
+    }
+    
+    public static final int CLIENT_PORT_FIELD_NUMBER = 2;
+    
+    private int clientPort_;
+    
+    /**
+     * <code>int32 client_port = 2;</code>
+     */
+    public int getClientPort() {
+        return clientPort_;
+    }
+    
+    public static final int TYPE_FIELD_NUMBER = 3;
+    
+    private volatile java.lang.Object type_;
+    
+    /**
+     * <code>string type = 3;</code>
+     */
+    public java.lang.String getType() {
+        java.lang.Object ref = type_;
+        if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+        } else {
+            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            type_ = s;
+            return s;
+        }
+    }
+    
+    /**
+     * <code>string type = 3;</code>
+     */
+    public com.google.protobuf.ByteString getTypeBytes() {
+        java.lang.Object ref = type_;
+        if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+            type_ = b;
             return b;
         } else {
             return (com.google.protobuf.ByteString) ref;
@@ -445,11 +462,14 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-        if (!getTypeBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 2, type_);
-        }
         if (!getClientIpBytes().isEmpty()) {
-            com.google.protobuf.GeneratedMessageV3.writeString(output, 3, clientIp_);
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 1, clientIp_);
+        }
+        if (clientPort_ != 0) {
+            output.writeInt32(2, clientPort_);
+        }
+        if (!getTypeBytes().isEmpty()) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 3, type_);
         }
         if (!getConnectionIdBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 4, connectionId_);
@@ -470,11 +490,14 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
         }
         
         size = 0;
-        if (!getTypeBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, type_);
-        }
         if (!getClientIpBytes().isEmpty()) {
-            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, clientIp_);
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, clientIp_);
+        }
+        if (clientPort_ != 0) {
+            size += com.google.protobuf.CodedOutputStream.computeInt32Size(2, clientPort_);
+        }
+        if (!getTypeBytes().isEmpty()) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, type_);
         }
         if (!getConnectionIdBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, connectionId_);
@@ -509,8 +532,9 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
         com.alibaba.nacos.api.grpc.auto.Metadata other = (com.alibaba.nacos.api.grpc.auto.Metadata) obj;
         
         boolean result = true;
-        result = result && getType().equals(other.getType());
         result = result && getClientIp().equals(other.getClientIp());
+        result = result && (getClientPort() == other.getClientPort());
+        result = result && getType().equals(other.getType());
         result = result && getConnectionId().equals(other.getConnectionId());
         result = result && getClientVersion().equals(other.getClientVersion());
         result = result && internalGetLabels().equals(other.internalGetLabels());
@@ -525,10 +549,12 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
         }
         int hash = 41;
         hash = (19 * hash) + getDescriptor().hashCode();
-        hash = (37 * hash) + TYPE_FIELD_NUMBER;
-        hash = (53 * hash) + getType().hashCode();
         hash = (37 * hash) + CLIENT_IP_FIELD_NUMBER;
         hash = (53 * hash) + getClientIp().hashCode();
+        hash = (37 * hash) + CLIENT_PORT_FIELD_NUMBER;
+        hash = (53 * hash) + getClientPort();
+        hash = (37 * hash) + TYPE_FIELD_NUMBER;
+        hash = (53 * hash) + getType().hashCode();
         hash = (37 * hash) + CONNECTION_ID_FIELD_NUMBER;
         hash = (53 * hash) + getConnectionId().hashCode();
         hash = (37 * hash) + CLIENT_VERSION_FIELD_NUMBER;
@@ -689,9 +715,11 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
         
         public Builder clear() {
             super.clear();
-            type_ = "";
-            
             clientIp_ = "";
+    
+            clientPort_ = 0;
+            
+            type_ = "";
             
             connectionId_ = "";
             
@@ -722,8 +750,9 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
             com.alibaba.nacos.api.grpc.auto.Metadata result = new com.alibaba.nacos.api.grpc.auto.Metadata(this);
             int from_bitField0_ = bitField0_;
             int to_bitField0_ = 0;
-            result.type_ = type_;
             result.clientIp_ = clientIp_;
+            result.clientPort_ = clientPort_;
+            result.type_ = type_;
             result.connectionId_ = connectionId_;
             result.clientVersion_ = clientVersion_;
             result.labels_ = internalGetLabels();
@@ -773,12 +802,15 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
             if (other == com.alibaba.nacos.api.grpc.auto.Metadata.getDefaultInstance()) {
                 return this;
             }
-            if (!other.getType().isEmpty()) {
-                type_ = other.type_;
-                onChanged();
-            }
             if (!other.getClientIp().isEmpty()) {
                 clientIp_ = other.clientIp_;
+                onChanged();
+            }
+            if (other.getClientPort() != 0) {
+                setClientPort(other.getClientPort());
+            }
+            if (!other.getType().isEmpty()) {
+                type_ = other.type_;
                 onChanged();
             }
             if (!other.getConnectionId().isEmpty()) {
@@ -816,79 +848,11 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
         }
         
         private int bitField0_;
-        
-        private java.lang.Object type_ = "";
-        
-        /**
-         * <code>string type = 2;</code>
-         */
-        public java.lang.String getType() {
-            java.lang.Object ref = type_;
-            if (!(ref instanceof java.lang.String)) {
-                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                java.lang.String s = bs.toStringUtf8();
-                type_ = s;
-                return s;
-            } else {
-                return (java.lang.String) ref;
-            }
-        }
-        
-        /**
-         * <code>string type = 2;</code>
-         */
-        public com.google.protobuf.ByteString getTypeBytes() {
-            java.lang.Object ref = type_;
-            if (ref instanceof String) {
-                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                type_ = b;
-                return b;
-            } else {
-                return (com.google.protobuf.ByteString) ref;
-            }
-        }
-        
-        /**
-         * <code>string type = 2;</code>
-         */
-        public Builder setType(java.lang.String value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-            
-            type_ = value;
-            onChanged();
-            return this;
-        }
-        
-        /**
-         * <code>string type = 2;</code>
-         */
-        public Builder clearType() {
-            
-            type_ = getDefaultInstance().getType();
-            onChanged();
-            return this;
-        }
-        
-        /**
-         * <code>string type = 2;</code>
-         */
-        public Builder setTypeBytes(com.google.protobuf.ByteString value) {
-            if (value == null) {
-                throw new NullPointerException();
-            }
-            checkByteStringIsUtf8(value);
-            
-            type_ = value;
-            onChanged();
-            return this;
-        }
-        
+    
         private java.lang.Object clientIp_ = "";
         
         /**
-         * <code>string client_ip = 3;</code>
+         * <code>string client_ip = 1;</code>
          */
         public java.lang.String getClientIp() {
             java.lang.Object ref = clientIp_;
@@ -903,7 +867,7 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
         }
         
         /**
-         * <code>string client_ip = 3;</code>
+         * <code>string client_ip = 1;</code>
          */
         public com.google.protobuf.ByteString getClientIpBytes() {
             java.lang.Object ref = clientIp_;
@@ -917,38 +881,135 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
         }
         
         /**
-         * <code>string client_ip = 3;</code>
+         * <code>string client_ip = 1;</code>
          */
         public Builder setClientIp(java.lang.String value) {
             if (value == null) {
                 throw new NullPointerException();
             }
-            
+    
             clientIp_ = value;
             onChanged();
             return this;
         }
         
         /**
-         * <code>string client_ip = 3;</code>
+         * <code>string client_ip = 1;</code>
          */
         public Builder clearClientIp() {
-            
+    
             clientIp_ = getDefaultInstance().getClientIp();
             onChanged();
             return this;
         }
         
         /**
-         * <code>string client_ip = 3;</code>
+         * <code>string client_ip = 1;</code>
          */
         public Builder setClientIpBytes(com.google.protobuf.ByteString value) {
             if (value == null) {
                 throw new NullPointerException();
             }
             checkByteStringIsUtf8(value);
-            
+    
             clientIp_ = value;
+            onChanged();
+            return this;
+        }
+    
+        private int clientPort_;
+    
+        /**
+         * <code>int32 client_port = 2;</code>
+         */
+        public int getClientPort() {
+            return clientPort_;
+        }
+    
+        /**
+         * <code>int32 client_port = 2;</code>
+         */
+        public Builder setClientPort(int value) {
+        
+            clientPort_ = value;
+            onChanged();
+            return this;
+        }
+    
+        /**
+         * <code>int32 client_port = 2;</code>
+         */
+        public Builder clearClientPort() {
+        
+            clientPort_ = 0;
+            onChanged();
+            return this;
+        }
+    
+        private java.lang.Object type_ = "";
+        
+        /**
+         * <code>string type = 3;</code>
+         */
+        public java.lang.String getType() {
+            java.lang.Object ref = type_;
+            if (!(ref instanceof java.lang.String)) {
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                type_ = s;
+                return s;
+            } else {
+                return (java.lang.String) ref;
+            }
+        }
+        
+        /**
+         * <code>string type = 3;</code>
+         */
+        public com.google.protobuf.ByteString getTypeBytes() {
+            java.lang.Object ref = type_;
+            if (ref instanceof String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                type_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+        
+        /**
+         * <code>string type = 3;</code>
+         */
+        public Builder setType(java.lang.String value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+    
+            type_ = value;
+            onChanged();
+            return this;
+        }
+        
+        /**
+         * <code>string type = 3;</code>
+         */
+        public Builder clearType() {
+    
+            type_ = getDefaultInstance().getType();
+            onChanged();
+            return this;
+        }
+        
+        /**
+         * <code>string type = 3;</code>
+         */
+        public Builder setTypeBytes(com.google.protobuf.ByteString value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+            checkByteStringIsUtf8(value);
+    
+            type_ = value;
             onChanged();
             return this;
         }
@@ -1385,6 +1446,6 @@ public final class Metadata extends com.google.protobuf.GeneratedMessageV3 imple
     public com.alibaba.nacos.api.grpc.auto.Metadata getDefaultInstanceForType() {
         return DEFAULT_INSTANCE;
     }
-    
+
 }
 

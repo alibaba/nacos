@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
@@ -28,11 +29,12 @@ import com.alibaba.nacos.api.remote.response.Response;
 public interface ServerRequestHandler {
     
     /**
-     * Handle logic when response received.
+     * Handle reuqest from server.
      *
      * @param request request
+     * @param requestMeta requestMeta
      * @return response.
      */
-    Response requestReply(Request request);
+    Response requestReply(Request request, RequestMeta requestMeta);
     
 }
