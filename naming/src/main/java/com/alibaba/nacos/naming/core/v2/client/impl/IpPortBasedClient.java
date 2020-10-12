@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
 import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
-import com.alibaba.nacos.naming.core.v2.metadata.MetadataConstants;
+import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTaskV2;
@@ -64,8 +64,7 @@ public class IpPortBasedClient extends AbstractClient {
     
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
-        instancePublishInfo.getExtendDatum().put(MetadataConstants.LAST_BEAT_TIME, System.currentTimeMillis());
-        return super.addServiceInstance(service, instancePublishInfo);
+        return super.addServiceInstance(service, parseToHeartBeatInstance(instancePublishInfo));
     }
     
     public Collection<InstancePublishInfo> getAllInstancePublishInfo() {
@@ -74,5 +73,17 @@ public class IpPortBasedClient extends AbstractClient {
     
     public void destroy() {
         HealthCheckReactor.cancelCheck(beatCheckTask);
+    }
+    
+    private InstancePublishInfo parseToHeartBeatInstance(InstancePublishInfo instancePublishInfo) {
+        if (instancePublishInfo instanceof HeartBeatInstancePublishInfo) {
+            return instancePublishInfo;
+        }
+        HeartBeatInstancePublishInfo result = new HeartBeatInstancePublishInfo();
+        result.setIp(instancePublishInfo.getIp());
+        result.setPort(instancePublishInfo.getPort());
+        result.setHealthy(instancePublishInfo.isHealthy());
+        result.setExtendDatum(instancePublishInfo.getExtendDatum());
+        return result;
     }
 }

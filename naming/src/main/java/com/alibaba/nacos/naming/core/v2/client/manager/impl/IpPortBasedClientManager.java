@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
-import com.alibaba.nacos.naming.core.v2.metadata.MetadataConstants;
+import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -100,7 +100,7 @@ public class IpPortBasedClientManager implements ClientManager {
         long currentTime = System.currentTimeMillis();
         if (null != client) {
             for (InstancePublishInfo each : client.getAllInstancePublishInfo()) {
-                each.getExtendDatum().put(MetadataConstants.LAST_BEAT_TIME, currentTime);
+                ((HeartBeatInstancePublishInfo) each).setLastHeartBeatTime(currentTime);
             }
             client.setLastUpdatedTime();
             return true;
