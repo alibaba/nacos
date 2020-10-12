@@ -201,6 +201,7 @@ public class NacosNamingService implements NamingService {
         if (instance.isEphemeral()) {
             BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
             beatReactor.addBeatInfo(groupedServiceName, beatInfo);
+            hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), "");
         }
         serverProxy.registerService(groupedServiceName, groupName, instance);
     }
