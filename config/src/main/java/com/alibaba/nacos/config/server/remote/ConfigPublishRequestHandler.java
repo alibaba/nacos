@@ -57,31 +57,31 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
     
     @Override
     @Secured(action = ActionTypes.WRITE, resource = "", parser = ConfigResourceParser.class)
-    public ConfigPubishResponse handle(ConfigPublishRequest myRequest, RequestMeta meta) throws NacosException {
+    public ConfigPubishResponse handle(ConfigPublishRequest request, RequestMeta meta) throws NacosException {
         
         try {
-            String dataId = myRequest.getDataId();
-            String group = myRequest.getGroup();
-            String content = myRequest.getContent();
-            final String tenant = myRequest.getTenant();
+            String dataId = request.getDataId();
+            String group = request.getGroup();
+            String content = request.getContent();
+            final String tenant = request.getTenant();
             
             final String srcIp = meta.getClientIp();
-            final String requestIpApp = myRequest.getAdditionParam("requestIpApp");
-            final String tag = myRequest.getAdditionParam("tag");
-            final String appName = myRequest.getAdditionParam("appName");
-            final String type = myRequest.getAdditionParam("type");
-            final String srcUser = myRequest.getAdditionParam("src_user");
+            final String requestIpApp = request.getAdditionParam("requestIpApp");
+            final String tag = request.getAdditionParam("tag");
+            final String appName = request.getAdditionParam("appName");
+            final String type = request.getAdditionParam("type");
+            final String srcUser = request.getAdditionParam("src_user");
             
             // check tenant
             ParamUtils.checkParam(dataId, group, "datumId", content);
             ParamUtils.checkParam(tag);
             Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
-            MapUtils.putIfValNoNull(configAdvanceInfo, "config_tags", myRequest.getAdditionParam("configTags"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "desc", myRequest.getAdditionParam("desc"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "use", myRequest.getAdditionParam("use"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "effect", myRequest.getAdditionParam("effect"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "config_tags", request.getAdditionParam("configTags"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "desc", request.getAdditionParam("desc"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "use", request.getAdditionParam("use"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "effect", request.getAdditionParam("effect"));
             MapUtils.putIfValNoNull(configAdvanceInfo, "type", type);
-            MapUtils.putIfValNoNull(configAdvanceInfo, "schema", myRequest.getAdditionParam("schema"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "schema", request.getAdditionParam("schema"));
             ParamUtils.checkParam(configAdvanceInfo);
             
             if (AggrWhitelist.isAggrDataId(dataId)) {
@@ -91,7 +91,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             }
             
             final Timestamp time = TimeUtils.getCurrentTime();
-            String betaIps = myRequest.getAdditionParam("betaIps");
+            String betaIps = request.getAdditionParam("betaIps");
             ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
             configInfo.setType(type);
             if (StringUtils.isBlank(betaIps)) {
@@ -115,7 +115,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
             return ConfigPubishResponse.buildSuccessResponse();
         } catch (Exception e) {
-            Loggers.RPC_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", myRequest);
+            Loggers.RPC_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
             return ConfigPubishResponse.buildFailResponse(e.getMessage());
         }
     }

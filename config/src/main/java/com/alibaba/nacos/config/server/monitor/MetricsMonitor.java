@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.config.server.monitor;
 
-import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.Counter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,11 +37,22 @@ public class MetricsMonitor {
     
     private static AtomicInteger publish = new AtomicInteger();
     
+    /**
+     * task for notify config change to sub client of http long polling..
+     */
     private static AtomicInteger longPolling = new AtomicInteger();
     
     private static AtomicInteger configCount = new AtomicInteger();
     
+    /**
+     * task for ntify config change to cluster server.
+     */
     private static AtomicInteger notifyTask = new AtomicInteger();
+    
+    /**
+     * task for notify config change to sub client of long connection.
+     */
+    private static AtomicInteger notifyClientTask = new AtomicInteger();
     
     private static AtomicInteger dumpTask = new AtomicInteger();
     
@@ -70,6 +81,11 @@ public class MetricsMonitor {
         tags.add(new ImmutableTag("module", "config"));
         tags.add(new ImmutableTag("name", "notifyTask"));
         Metrics.gauge("nacos_monitor", tags, notifyTask);
+    
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "notifyClientTask"));
+        Metrics.gauge("nacos_monitor", tags, notifyClientTask);
         
         tags = new ArrayList<Tag>();
         tags.add(new ImmutableTag("module", "config"));
@@ -96,6 +112,10 @@ public class MetricsMonitor {
     
     public static AtomicInteger getNotifyTaskMonitor() {
         return notifyTask;
+    }
+    
+    public static AtomicInteger getNotifyClientTaskMonitor() {
+        return notifyClientTask;
     }
     
     public static AtomicInteger getDumpTaskMonitor() {

@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.api.remote.response.UnKnowResponse;
-import com.alibaba.nacos.common.remote.GrpcUtils;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
@@ -67,7 +67,9 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         if (parseObj != null) {
             Request request = (Request) parseObj.getBody();
-            Loggers.RPC_DIGEST.debug(String.format("[%s] request receive :%s ", "grpc", request.toString()));
+            Loggers.RPC_DIGEST.debug(String
+                    .format("[%s] request receive :%s,clientIp : %s ", "grpc", request.toString(),
+                            grpcRequest.getMetadata().getClientIp()));
             RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
             if (requestHandler != null) {
                 try {
@@ -78,7 +80,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                         return;
                     }
                     connectionManager.refreshActiveTime(parseObj.getMetadata().getConnectionId());
-                    Response response = requestHandler.handleRequest(request, parseObj.getMetadata());
+                    Response response = requestHandler.handle(request, parseObj.getMetadata());
                     responseObserver.onNext(GrpcUtils.convert(response));
                     responseObserver.onCompleted();
                     return;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote;
+package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
@@ -95,7 +95,8 @@ public class GrpcUtils {
         Payload.Builder builder = Payload.newBuilder();
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         if (meta != null) {
-            metaBuilder.setClientIp(meta.getClientIp()).putAllLabels(meta.getLabels())
+            metaBuilder.setClientIp(meta.getClientIp()).setClientPort(meta.getClientPort())
+                    .setConnectionId(meta.getConnectionId()).putAllLabels(meta.getLabels())
                     .putAllHeaders(request.getHeaders()).setClientVersion(meta.getClientVersion())
                     .setType(request.getClass().getName());
         }
@@ -199,6 +200,7 @@ public class GrpcUtils {
     private static RequestMeta convertMeta(Metadata metadata) {
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp(metadata.getClientIp());
+        requestMeta.setClientPort(metadata.getClientPort());
         requestMeta.setConnectionId(metadata.getConnectionId());
         requestMeta.setClientVersion(metadata.getClientVersion());
         requestMeta.setLabels(metadata.getLabelsMap());

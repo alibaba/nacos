@@ -54,7 +54,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
         if (!RemoteConstants.LABEL_MODULE_NAMING.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
             return;
         }
-        clientConnected(new ConnectionBasedClient(connect.getConnectionId(), true));
+        clientConnected(new ConnectionBasedClient(connect.getMetaInfo().getConnectionId(), true));
     }
     
     @Override
@@ -73,7 +73,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     
     @Override
     public void clientDisConnected(Connection connect) {
-        clientDisconnected(connect.getConnectionId());
+        clientDisconnected(connect.getMetaInfo().getConnectionId());
     }
     
     @Override

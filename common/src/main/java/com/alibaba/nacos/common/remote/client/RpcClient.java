@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.LoggerUtils;
@@ -35,6 +34,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -59,7 +59,7 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RpcClient implements Closeable {
     
-    private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(RpcClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
     
     private ServerListFactory serverListFactory;
     
@@ -97,7 +97,6 @@ public abstract class RpcClient implements Closeable {
     protected RequestMeta buildMeta() {
         RequestMeta meta = new RequestMeta();
         meta.setClientVersion(VersionUtils.getFullClientVersion());
-        meta.setClientIp(NetUtils.localIP());
         meta.setLabels(labels);
         return meta;
     }
@@ -242,18 +241,20 @@ public abstract class RpcClient implements Closeable {
             try {
                 startUpretyTimes--;
                 ServerInfo serverInfo = nextRpcServer();
-                System.out.println(
+    
+                LoggerUtils.printIfInfoEnabled(LOGGER,
                         String.format("[%s]try to  connect to server on start up,server : %s", name, serverInfo));
+    
                 connectToServer = connectToServer(serverInfo);
             } catch (Exception e) {
-                System.out.println(String.format(
+                LoggerUtils.printIfWarnEnabled(LOGGER, String.format(
                         "fail to connect to server on start up,error message=%s,start up trytimes left :%s",
                         e.getMessage(), startUpretyTimes));
             }
         }
     
         if (connectToServer != null) {
-            System.out.println(String.format("[%s]success to connect to server on start up", name));
+            LoggerUtils.printIfInfoEnabled(LOGGER, String.format("[%s]success to connect to server on start up", name));
             this.currentConnetion = connectToServer;
             rpcClientStatus.set(RpcClientStatus.RUNNING);
             eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
@@ -263,7 +264,7 @@ public abstract class RpcClient implements Closeable {
     
         registerServerPushResponseHandler(new ServerRequestHandler() {
             @Override
-            public Response requestReply(Request request) {
+            public Response requestReply(Request request, RequestMeta requestMeta) {
                 if (request instanceof ConnectResetRequest) {
     
                     try {
@@ -285,7 +286,7 @@ public abstract class RpcClient implements Closeable {
                             }
                         }
                     } catch (Exception e) {
-                        LOGGER.error("switch server  error ", e);
+                        LoggerUtils.printIfErrorEnabled(LOGGER, "switch server  error ", e);
                     }
                     return new ConnectResetResponse();
                 }
@@ -323,7 +324,7 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
-     * 1.判断当前是否正在重连中 2.如果正在重连中，则直接返回；如果不在重连中，则启动重连 3.重连逻辑：创建一个新的连接，如果连接可用
+     * switch server .
      */
     protected void switchServerAsync(final ServerInfo recommendServerInfo) {
         
@@ -348,6 +349,7 @@ public abstract class RpcClient implements Closeable {
                     boolean switchSuccess = false;
         
                     int reConnectTimes = 0;
+                    int retryTurns = 0;
                     Exception lastException = null;
                     while (!switchSuccess && !isShutdwon()) {
                         
@@ -359,11 +361,13 @@ public abstract class RpcClient implements Closeable {
                             
                             Connection connectNew = connectToServer(serverInfo);
                             if (connectNew != null) {
-                                System.out.println(RpcClient.this.name + "-success to connect server:" + serverInfo);
-    
+                                LoggerUtils.printIfInfoEnabled(LOGGER,
+                                        String.format("[%s]-success to connect server : %s", name, serverInfo));
                                 //successfully create a new connect.
-                                currentConnetion.setAbandon(true);
-                                closeConnection(currentConnetion);
+                                if (currentConnetion != null) {
+                                    currentConnetion.setAbandon(true);
+                                    closeConnection(currentConnetion);
+                                }
                                 currentConnetion = connectNew;
                                 rpcClientStatus.set(RpcClientStatus.RUNNING);
                                 switchSuccess = true;
@@ -372,6 +376,7 @@ public abstract class RpcClient implements Closeable {
                                 return;
                             }
     
+                            //close connetion if client is already shutdown.
                             if (isShutdwon()) {
                                 closeConnection(connectNew);
                             }
@@ -384,17 +389,22 @@ public abstract class RpcClient implements Closeable {
                             recommendServer.set(null);
                         }
     
-                        reConnectTimes++;
-    
-                        if (reConnectTimes % 30 == 0) {
-                            System.out.println(
-                                    RpcClient.this.name + "-fail to connect server,after trying " + reConnectTimes
-                                            + " times, last tryed server is " + serverInfo);
+                        if (reConnectTimes > 0
+                                && reConnectTimes % RpcClient.this.serverListFactory.getServerList().size() == 0) {
+                            LoggerUtils.printIfInfoEnabled(LOGGER, String.format(
+                                    "[%s]-fail to connect server,after trying %s times, last tryed server is %s", name,
+                                    reConnectTimes, serverInfo));
+                            retryTurns++;
                         }
-                        
+    
+                        reConnectTimes++;
+                    
                         try {
                             //sleep 100 millsecond to switch next server.
-                            Thread.sleep(100L);
+                            if (!isRunning()) {
+                                // first round ,try servers at a delay 100ms;sencond round ,200ms; max delays 1s. to be reconsidered.基本上会快速收敛到几个可用的IP
+                                Thread.sleep(NumberUtils.min(retryTurns + 1, 10) * 100L);
+                            }
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                             // Do  nothing.
@@ -402,7 +412,8 @@ public abstract class RpcClient implements Closeable {
                     }
         
                     if (isShutdwon()) {
-                        System.out.println(RpcClient.this.name + " is shutdown ,stop reconnect to server :");
+                        LoggerUtils.printIfInfoEnabled(LOGGER,
+                                String.format("[%s]- client is shutdown ,stop reconnect to server", name));
                     }
                     
                 } catch (Exception e) {
@@ -420,10 +431,6 @@ public abstract class RpcClient implements Closeable {
             connection.close();
             eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
         }
-    }
-    
-    protected boolean connectionAbandon() {
-        return !(currentConnetion != null) && currentConnetion.isAbandon();
     }
     
     /**
@@ -571,10 +578,10 @@ public abstract class RpcClient implements Closeable {
      * @param request request.
      * @return response.
      */
-    protected Response handleServerRequest(final Request request) {
-    
+    protected Response handleServerRequest(final Request request, final RequestMeta meta) {
+        
         for (ServerRequestHandler serverRequestHandler : serverRequestHandlers) {
-            Response response = serverRequestHandler.requestReply(request);
+            Response response = serverRequestHandler.requestReply(request, meta);
             if (response != null) {
                 return response;
             }
@@ -587,10 +594,9 @@ public abstract class RpcClient implements Closeable {
      *
      * @param connectionEventListener connectionEventListener
      */
-    public void registerConnectionListener(ConnectionEventListener connectionEventListener) {
-        
-        LoggerUtils.printIfInfoEnabled(LOGGER,
-                "Registry connection listener to current client, connectionEventListener={}",
+    public synchronized void registerConnectionListener(ConnectionEventListener connectionEventListener) {
+    
+        LoggerUtils.printIfInfoEnabled(LOGGER, "Registry connection listener to current client:{}",
                 connectionEventListener.getClass().getName());
         this.connectionEventListeners.add(connectionEventListener);
     }
@@ -601,8 +607,7 @@ public abstract class RpcClient implements Closeable {
      * @param serverRequestHandler serverRequestHandler
      */
     public synchronized void registerServerPushResponseHandler(ServerRequestHandler serverRequestHandler) {
-        LoggerUtils.printIfInfoEnabled(LOGGER,
-                " Registry server push response  listener to current client, connectionEventListener={}",
+        LoggerUtils.printIfInfoEnabled(LOGGER, " Register server push request  handler :{}",
                 serverRequestHandler.getClass().getName());
         
         this.serverRequestHandlers.add(serverRequestHandler);
@@ -729,5 +734,14 @@ public abstract class RpcClient implements Closeable {
         public boolean isDisConnected() {
             return eventType == DISCONNECTED;
         }
+    }
+    
+    /**
+     * Getter method for property <tt>labels</tt>.
+     *
+     * @return property value of labels
+     */
+    public Map<String, String> getLabels() {
+        return labels;
     }
 }

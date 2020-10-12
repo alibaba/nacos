@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.Requester;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import java.util.Map;
 
 /**
  * Connection.
@@ -42,35 +39,6 @@ public abstract class Connection implements Requester {
      */
     public void freshActiveTime() {
         metaInfo.setLastActiveTime(System.currentTimeMillis());
-    }
-    
-    /**
-     * return last active time, include request occurs and.
-     *
-     * @return
-     */
-    public long getLastActiveTimestamp() {
-        return metaInfo.lastActiveTime;
-    }
-    
-    /**
-     * get connection Id.
-     *
-     * @return
-     */
-    public String getConnectionId() {
-        return metaInfo.connectionId;
-    }
-    
-    /**
-     * check if this connection is sdk source.
-     *
-     * @return if this connection is sdk source.
-     */
-    public boolean isSdkSource() {
-        Map<String, String> labels = metaInfo.labels;
-        String source = labels.get(RemoteConstants.LABEL_SOURCE);
-        return RemoteConstants.LABEL_SOURCE_SDK.equalsIgnoreCase(source);
     }
     
     /**

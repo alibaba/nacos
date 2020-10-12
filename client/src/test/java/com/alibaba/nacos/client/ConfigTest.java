@@ -55,9 +55,10 @@ public class ConfigTest {
     public void before() throws Exception {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-        properties.setProperty("-Dclientworker.use.http.switch", "Y");
+    
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.67.159:8849");
         
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.149:8848,11.160.144.148:8848,127.0.0.1:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
@@ -91,7 +92,7 @@ public class ConfigTest {
             }
     
         });
-        client.start();
+        //client.start();
     
         ConfigBatchListenRequest syncRequest = new ConfigBatchListenRequest();
         syncRequest.setListen(true);
@@ -201,12 +202,12 @@ public class ConfigTest {
                 public void receiveConfigInfo(String configInfo) {
                     System.out.println(
                             "receiveConfigInfo1 content:" + (System.currentTimeMillis() - Long.valueOf(configInfo)));
-            
+    
                 }
             };
     
             configService.addListener(dataId, group, listener);
-    
+            configServiceList.add(configService);
             System.out.println(configServiceList.size());
         }
         System.out.println("2");
@@ -239,22 +240,20 @@ public class ConfigTest {
     @Test
     public void test() throws Exception {
     
-        Random random = new Random();
+        //SnapShotSwitch.setIsSnapShot(false);
+        final Random random = new Random();
         final String dataId = "xiaochun.xxc";
         final String group = "xiaochun.xxc";
-        // final String content = "lessspring-" + System.currentTimeMillis();
         
         Thread th = new Thread(new Runnable() {
             @Override
             public void run() {
                 long start = System.currentTimeMillis();
-                Random random = new Random();
                 int times = 1000;
                 while (times > 0) {
                     try {
                         String content1 = System.currentTimeMillis() + "";
-                        //System.out.println("publish content:" + content1);
-                        boolean b = configService.publishConfig(dataId, group, content1);
+                        boolean b = configService.publishConfig(dataId + random.nextInt(20), group, content1);
                         times--;
                         Thread.sleep(1000L);
                     } catch (Exception e) {
@@ -278,12 +277,10 @@ public class ConfigTest {
                 
             }
         };
-    
-        configService.addListener(dataId, group, listener);
         
         for (int i = 0; i < 20; i++) {
             final int ls = i;
-            //configService.addListener(dataId + i, group, listener);
+            configService.addListener(dataId + i, group, listener);
             
         }
     

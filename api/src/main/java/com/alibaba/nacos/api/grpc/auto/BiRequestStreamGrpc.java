@@ -32,21 +32,22 @@ public final class BiRequestStreamGrpc {
     public static final String SERVICE_NAME = "BiRequestStream";
     
     // Static method descriptors that strictly reflect the proto.
-    private static volatile io.grpc.MethodDescriptor<Payload, Payload> getRequestBiStreamMethod;
+    private static volatile io.grpc.MethodDescriptor<com.alibaba.nacos.api.grpc.auto.Payload, com.alibaba.nacos.api.grpc.auto.Payload> getRequestBiStreamMethod;
     
     @io.grpc.stub.annotations.RpcMethod(fullMethodName = SERVICE_NAME + '/'
-            + "requestBiStream", requestType = Payload.class, responseType = Payload.class, methodType = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
-    public static io.grpc.MethodDescriptor<Payload, Payload> getRequestBiStreamMethod() {
-        io.grpc.MethodDescriptor<Payload, Payload> getRequestBiStreamMethod;
+            + "requestBiStream", requestType = com.alibaba.nacos.api.grpc.auto.Payload.class, responseType = com.alibaba.nacos.api.grpc.auto.Payload.class, methodType = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+    public static io.grpc.MethodDescriptor<com.alibaba.nacos.api.grpc.auto.Payload, com.alibaba.nacos.api.grpc.auto.Payload> getRequestBiStreamMethod() {
+        io.grpc.MethodDescriptor<com.alibaba.nacos.api.grpc.auto.Payload, com.alibaba.nacos.api.grpc.auto.Payload> getRequestBiStreamMethod;
         if ((getRequestBiStreamMethod = BiRequestStreamGrpc.getRequestBiStreamMethod) == null) {
             synchronized (BiRequestStreamGrpc.class) {
                 if ((getRequestBiStreamMethod = BiRequestStreamGrpc.getRequestBiStreamMethod) == null) {
-                    BiRequestStreamGrpc.getRequestBiStreamMethod = getRequestBiStreamMethod = io.grpc.MethodDescriptor.<Payload, Payload>newBuilder()
+                    BiRequestStreamGrpc.getRequestBiStreamMethod = getRequestBiStreamMethod = io.grpc.MethodDescriptor.<com.alibaba.nacos.api.grpc.auto.Payload, com.alibaba.nacos.api.grpc.auto.Payload>newBuilder()
                             .setType(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
                             .setFullMethodName(generateFullMethodName("BiRequestStream", "requestBiStream"))
-                            .setSampledToLocalTracing(true)
-                            .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(Payload.getDefaultInstance()))
-                            .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(Payload.getDefaultInstance()))
+                            .setSampledToLocalTracing(true).setRequestMarshaller(io.grpc.protobuf.ProtoUtils
+                                    .marshaller(com.alibaba.nacos.api.grpc.auto.Payload.getDefaultInstance()))
+                            .setResponseMarshaller(io.grpc.protobuf.ProtoUtils
+                                    .marshaller(com.alibaba.nacos.api.grpc.auto.Payload.getDefaultInstance()))
                             .setSchemaDescriptor(new BiRequestStreamMethodDescriptorSupplier("requestBiStream"))
                             .build();
                 }
@@ -85,16 +86,17 @@ public final class BiRequestStreamGrpc {
          * Sends a commonRequest
          * </pre>
          */
-        public io.grpc.stub.StreamObserver<Payload> requestBiStream(
-                io.grpc.stub.StreamObserver<Payload> responseObserver) {
+        public io.grpc.stub.StreamObserver<com.alibaba.nacos.api.grpc.auto.Payload> requestBiStream(
+                io.grpc.stub.StreamObserver<com.alibaba.nacos.api.grpc.auto.Payload> responseObserver) {
             return asyncUnimplementedStreamingCall(getRequestBiStreamMethod(), responseObserver);
         }
-        
-        @Override
+    
+        @java.lang.Override
         public final io.grpc.ServerServiceDefinition bindService() {
             return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor()).addMethod(getRequestBiStreamMethod(),
-                    asyncBidiStreamingCall(new MethodHandlers<Payload, Payload>(this, METHODID_REQUEST_BI_STREAM)))
-                    .build();
+                    asyncBidiStreamingCall(
+                            new MethodHandlers<com.alibaba.nacos.api.grpc.auto.Payload, com.alibaba.nacos.api.grpc.auto.Payload>(
+                                    this, METHODID_REQUEST_BI_STREAM))).build();
         }
     }
     
@@ -109,8 +111,8 @@ public final class BiRequestStreamGrpc {
         private BiRequestStreamStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             super(channel, callOptions);
         }
-        
-        @Override
+    
+        @java.lang.Override
         protected BiRequestStreamStub build(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             return new BiRequestStreamStub(channel, callOptions);
         }
@@ -120,8 +122,8 @@ public final class BiRequestStreamGrpc {
          * Sends a commonRequest
          * </pre>
          */
-        public io.grpc.stub.StreamObserver<Payload> requestBiStream(
-                io.grpc.stub.StreamObserver<Payload> responseObserver) {
+        public io.grpc.stub.StreamObserver<com.alibaba.nacos.api.grpc.auto.Payload> requestBiStream(
+                io.grpc.stub.StreamObserver<com.alibaba.nacos.api.grpc.auto.Payload> responseObserver) {
             return asyncBidiStreamingCall(getChannel().newCall(getRequestBiStreamMethod(), getCallOptions()),
                     responseObserver);
         }
@@ -139,8 +141,8 @@ public final class BiRequestStreamGrpc {
         private BiRequestStreamBlockingStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             super(channel, callOptions);
         }
-        
-        @Override
+    
+        @java.lang.Override
         protected BiRequestStreamBlockingStub build(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             return new BiRequestStreamBlockingStub(channel, callOptions);
         }
@@ -157,8 +159,8 @@ public final class BiRequestStreamGrpc {
         private BiRequestStreamFutureStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             super(channel, callOptions);
         }
-        
-        @Override
+    
+        @java.lang.Override
         protected BiRequestStreamFutureStub build(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             return new BiRequestStreamFutureStub(channel, callOptions);
         }
@@ -177,23 +179,23 @@ public final class BiRequestStreamGrpc {
             this.serviceImpl = serviceImpl;
             this.methodId = methodId;
         }
-        
-        @Override
-        @SuppressWarnings("unchecked")
+    
+        @java.lang.Override
+        @java.lang.SuppressWarnings("unchecked")
         public void invoke(Req request, io.grpc.stub.StreamObserver<Resp> responseObserver) {
             switch (methodId) {
                 default:
                     throw new AssertionError();
             }
         }
-        
-        @Override
-        @SuppressWarnings("unchecked")
+    
+        @java.lang.Override
+        @java.lang.SuppressWarnings("unchecked")
         public io.grpc.stub.StreamObserver<Req> invoke(io.grpc.stub.StreamObserver<Resp> responseObserver) {
             switch (methodId) {
                 case METHODID_REQUEST_BI_STREAM:
-                    return (io.grpc.stub.StreamObserver<Req>) serviceImpl
-                            .requestBiStream((io.grpc.stub.StreamObserver<Payload>) responseObserver);
+                    return (io.grpc.stub.StreamObserver<Req>) serviceImpl.requestBiStream(
+                            (io.grpc.stub.StreamObserver<com.alibaba.nacos.api.grpc.auto.Payload>) responseObserver);
                 default:
                     throw new AssertionError();
             }
@@ -205,13 +207,13 @@ public final class BiRequestStreamGrpc {
         
         BiRequestStreamBaseDescriptorSupplier() {
         }
-        
-        @Override
+    
+        @java.lang.Override
         public com.google.protobuf.Descriptors.FileDescriptor getFileDescriptor() {
-            return NacosGrpcService.getDescriptor();
+            return com.alibaba.nacos.api.grpc.auto.NacosGrpcService.getDescriptor();
         }
-        
-        @Override
+    
+        @java.lang.Override
         public com.google.protobuf.Descriptors.ServiceDescriptor getServiceDescriptor() {
             return getFileDescriptor().findServiceByName("BiRequestStream");
         }
@@ -231,8 +233,8 @@ public final class BiRequestStreamGrpc {
         BiRequestStreamMethodDescriptorSupplier(String methodName) {
             this.methodName = methodName;
         }
-        
-        @Override
+    
+        @java.lang.Override
         public com.google.protobuf.Descriptors.MethodDescriptor getMethodDescriptor() {
             return getServiceDescriptor().findMethodByName(methodName);
         }

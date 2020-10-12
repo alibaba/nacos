@@ -27,7 +27,6 @@ import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
@@ -53,9 +52,6 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
     
     @Autowired
     private AuthManager authManager;
-    
-    @Autowired
-    private ControllerMethodsCache methodsCache;
     
     private Method getMethod(Class handlerClazz) throws NacosException {
         try {

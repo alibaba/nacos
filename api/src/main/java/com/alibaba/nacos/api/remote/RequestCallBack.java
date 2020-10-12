@@ -26,7 +26,7 @@ import java.util.concurrent.Executor;
  * @author liuzunfei
  * @version $Id: PushCallBack.java, v 0.1 2020年09月01日 6:33 PM liuzunfei Exp $
  */
-public interface RequestCallBack {
+public interface RequestCallBack<T extends Response> {
     
     /**
      * get executor on callback.
@@ -47,7 +47,7 @@ public interface RequestCallBack {
      *
      * @param response response received.
      */
-    public void onResponse(Response response);
+    public void onResponse(T response);
     
     /**
      * called on failed.
