@@ -43,6 +43,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
+import com.alibaba.nacos.config.server.utils.TenantUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -95,10 +96,6 @@ public class ConfigController {
     private static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
     
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
-    
-    private static final String NAMESPACE_PUBLIC_KEY = "public";
-    
-    private static final String NAMESPACE_NULL_KEY = "null";
     
     private final ConfigServletInner inner;
     
@@ -198,7 +195,7 @@ public class ConfigController {
             throws IOException, ServletException, NacosException {
         // check tenant
         ParamUtils.checkTenant(tenant);
-        tenant = processTenant(tenant);
+        tenant = TenantUtil.processTenantParameter(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParam(tag);
@@ -471,7 +468,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "ids", required = false) List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
-        tenant = processTenant(tenant);
+        tenant = TenantUtil.processTenantParameter(tenant);
         List<ConfigAllInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         StringBuilder metaData = null;
@@ -529,7 +526,7 @@ public class ConfigController {
             return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         
-        namespace = processTenant(namespace);
+        namespace = TenantUtil.processTenantParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
@@ -631,7 +628,7 @@ public class ConfigController {
         }
         configBeansList.removeAll(Collections.singleton(null));
     
-        namespace = processTenant(namespace);
+        namespace = TenantUtil.processTenantParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
@@ -689,14 +686,6 @@ public class ConfigController {
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         return ResultBuilder.buildSuccessResult("Clone Completed Successfully", saveResult);
-    }
-    
-    private String processTenant(String tenant) {
-        if (StringUtils.isBlank(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant) || NAMESPACE_NULL_KEY
-                .equalsIgnoreCase(tenant)) {
-            return "";
-        }
-        return tenant.trim();
     }
     
 }
