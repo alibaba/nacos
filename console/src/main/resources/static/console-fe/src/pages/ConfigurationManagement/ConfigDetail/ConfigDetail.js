@@ -202,13 +202,29 @@ class ConfigDetail extends React.Component {
   }
 
   openDiff() {
-    let leftvalue = this.monacoEditor.getValue(); // this.commoneditor.doc.getValue();
-    let rightvalue = leftvalue + 'aaaaaaaaaaaaaaaaaaaa';
-    leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-    rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-    // let rightvalue = this.diffeditor.doc.getValue();
-    // console.log(this.commoneditor, leftvalue==rightvalue)
-    this.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
+    let self = this;
+    const { locale = {} } = this.props;
+    let leftvalue = this.monacoEditor.getValue();
+    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}`;
+    request({
+      url,
+      beforeSend() {
+        self.openLoading();
+      },
+      success(result) {
+        if (result != null) {
+          let rightvalue = result.content;
+          leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+          rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+          self.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
+        } else {
+          Dialog.alert({ title: locale.error, content: result.message });
+        }
+      },
+      complete() {
+        self.closeLoading();
+      },
+    });
   }
 
   render() {
