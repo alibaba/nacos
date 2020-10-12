@@ -92,6 +92,8 @@ public class ConfigController {
     
     private static final String NAMESPACE_PUBLIC_KEY = "public";
     
+    private static final String NAMESPACE_NULL_KEY = "null";
+    
     private static final String EXPORT_CONFIG_FILE_NAME = "nacos_config_export_";
     
     private static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
@@ -526,6 +528,14 @@ public class ConfigController {
         if (Objects.isNull(file)) {
             return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
+    
+        if (StringUtils.isEmpty(namespace) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(namespace) || NAMESPACE_NULL_KEY
+                .equalsIgnoreCase(namespace)) {
+            namespace = "";
+        } else if (persistService.tenantInfoCountByTenantId(namespace) <= 0) {
+            failedData.put("succCount", 0);
+            return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
+        }
         
         if (StringUtils.isNotBlank(namespace)) {
             if (persistService.tenantInfoCountByTenantId(namespace) <= 0) {
@@ -628,8 +638,9 @@ public class ConfigController {
             return ResultBuilder.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
         }
         configBeansList.removeAll(Collections.singleton(null));
-        
-        if (NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(namespace)) {
+    
+        if (StringUtils.isEmpty(namespace) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(namespace) || NAMESPACE_NULL_KEY
+                .equalsIgnoreCase(namespace)) {
             namespace = "";
         } else if (persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
@@ -691,7 +702,8 @@ public class ConfigController {
     }
     
     private String processTenant(String tenant) {
-        if (StringUtils.isEmpty(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant)) {
+        if (StringUtils.isEmpty(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant) || NAMESPACE_NULL_KEY
+                .equalsIgnoreCase(tenant)) {
             return "";
         }
         return tenant;
