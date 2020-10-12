@@ -20,8 +20,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
-import com.alibaba.nacos.naming.core.v2.metadata.MetadataConstants;
-import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -55,12 +54,12 @@ public class ClientBeatProcessorV2 implements BeatProcessor {
         String serviceName = NamingUtils.getServiceName(rsInfo.getServiceName());
         String groupName = NamingUtils.getGroupName(rsInfo.getServiceName());
         Service service = Service.newService(namespace, groupName, serviceName, rsInfo.isEphemeral());
-        InstancePublishInfo instance = client.getInstancePublishInfo(service);
+        HeartBeatInstancePublishInfo instance = (HeartBeatInstancePublishInfo) client.getInstancePublishInfo(service);
         if (instance.getIp().equals(ip) && instance.getPort() == port) {
             if (Loggers.EVT_LOG.isDebugEnabled()) {
                 Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
             }
-            instance.getExtendDatum().put(MetadataConstants.LAST_BEAT_TIME, System.currentTimeMillis());
+            instance.setLastHeartBeatTime(System.currentTimeMillis());
             if (!instance.isHealthy()) {
                 instance.setHealthy(true);
                 Loggers.EVT_LOG.info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",

@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.core.v2.metadata;
+package com.alibaba.nacos.naming.core.v2.pojo;
 
 /**
- * Metadata constants.
+ * Instance publish info with heart beat time for v1.x.
  *
  * @author xiweng.yy
  */
-public class MetadataConstants {
+public class HeartBeatInstancePublishInfo extends InstancePublishInfo {
     
-    public static final String LAST_BEAT_TIME = "lastBeatTime";
+    private long lastHeartBeatTime = System.currentTimeMillis();
+    
+    public long getLastHeartBeatTime() {
+        return lastHeartBeatTime;
+    }
+    
+    public void setLastHeartBeatTime(long lastHeartBeatTime) {
+        this.lastHeartBeatTime = lastHeartBeatTime;
+    }
 }
