@@ -90,15 +90,15 @@ public class ConfigController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigController.class);
     
-    private static final String NAMESPACE_PUBLIC_KEY = "public";
-    
-    private static final String NAMESPACE_NULL_KEY = "null";
-    
     private static final String EXPORT_CONFIG_FILE_NAME = "nacos_config_export_";
     
     private static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
     
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
+    
+    private static final String NAMESPACE_PUBLIC_KEY = "public";
+    
+    private static final String NAMESPACE_NULL_KEY = "null";
     
     private final ConfigServletInner inner;
     
@@ -528,21 +528,13 @@ public class ConfigController {
         if (Objects.isNull(file)) {
             return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
-    
-        if (StringUtils.isEmpty(namespace) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(namespace) || NAMESPACE_NULL_KEY
-                .equalsIgnoreCase(namespace)) {
-            namespace = "";
-        } else if (persistService.tenantInfoCountByTenantId(namespace) <= 0) {
+        
+        namespace = processTenant(namespace);
+        if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }
         
-        if (StringUtils.isNotBlank(namespace)) {
-            if (persistService.tenantInfoCountByTenantId(namespace) <= 0) {
-                failedData.put("succCount", 0);
-                return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
-            }
-        }
         List<ConfigAllInfo> configInfoList = null;
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
@@ -639,10 +631,8 @@ public class ConfigController {
         }
         configBeansList.removeAll(Collections.singleton(null));
     
-        if (StringUtils.isEmpty(namespace) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(namespace) || NAMESPACE_NULL_KEY
-                .equalsIgnoreCase(namespace)) {
-            namespace = "";
-        } else if (persistService.tenantInfoCountByTenantId(namespace) <= 0) {
+        namespace = processTenant(namespace);
+        if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }
@@ -701,12 +691,19 @@ public class ConfigController {
         return ResultBuilder.buildSuccessResult("Clone Completed Successfully", saveResult);
     }
     
+    /**
+     * Treat the tenant parameters with values of "public" and "null" as an empty string.
+     * @author klw(213539@qq.com)
+     * 2020/10/12 15:59
+     * @param tenant tenant
+     * @return java.lang.String
+     */
     private String processTenant(String tenant) {
-        if (StringUtils.isEmpty(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant) || NAMESPACE_NULL_KEY
+        if (StringUtils.isBlank(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant) || NAMESPACE_NULL_KEY
                 .equalsIgnoreCase(tenant)) {
             return "";
         }
-        return tenant;
+        return tenant.trim();
     }
     
 }
