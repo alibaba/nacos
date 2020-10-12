@@ -280,22 +280,19 @@ public class AsyncNotifyService {
             long delayed = System.currentTimeMillis() - task.getLastModified();
             
             if (result.ok()) {
-                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                        task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
+                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
                         task.target);
             } else {
                 LOGGER.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}", task.target, task.getDataId(),
                         task.getGroup(), task.getLastModified(), result.getCode());
-                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                        task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
+                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
                         task.target);
                 
                 //get delay time and set fail count to the task
                 asyncTaskExecute(task);
                 
                 LogUtil.NOTIFY_LOG
-                        .error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
-                                task.getGroup(), task.getLastModified());
+                        .error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(), task.getGroup(), task.getLastModified());
                 
                 MetricsMonitor.getConfigNotifyException().increment();
             }

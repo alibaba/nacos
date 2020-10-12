@@ -398,7 +398,7 @@ public abstract class RpcClient implements Closeable {
                         }
     
                         reConnectTimes++;
-                        
+                    
                         try {
                             //sleep 100 millsecond to switch next server.
                             if (!isRunning()) {
