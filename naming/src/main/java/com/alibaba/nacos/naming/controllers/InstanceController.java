@@ -288,7 +288,7 @@ public class InstanceController {
             return JacksonUtils.toObj(instances, new TypeReference<List<Instance>>() {
             });
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'target' is illegal, ignore this operation", e);
+            Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'instances' is illegal, ignore this operation", e);
         }
         return null;
     }
