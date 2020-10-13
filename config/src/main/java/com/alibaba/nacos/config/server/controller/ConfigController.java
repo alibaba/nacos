@@ -43,7 +43,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.TenantUtil;
+import com.alibaba.nacos.config.server.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -195,7 +195,7 @@ public class ConfigController {
             throws IOException, ServletException, NacosException {
         // check tenant
         ParamUtils.checkTenant(tenant);
-        tenant = TenantUtil.processTenantParameter(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParam(tag);
@@ -468,7 +468,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "ids", required = false) List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
-        tenant = TenantUtil.processTenantParameter(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         List<ConfigAllInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         StringBuilder metaData = null;
@@ -526,7 +526,7 @@ public class ConfigController {
             return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         
-        namespace = TenantUtil.processTenantParameter(namespace);
+        namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
@@ -628,7 +628,7 @@ public class ConfigController {
         }
         configBeansList.removeAll(Collections.singleton(null));
     
-        namespace = TenantUtil.processTenantParameter(namespace);
+        namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);

@@ -20,12 +20,12 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * test TenantUtil.
+ * test NamespaceUtil.
  *
  * @author klw(213539 @ qq.com)
  * @date 2020/10/13 9:46
  */
-public class TenantUtilTest {
+public class NamespaceUtilTest {
     
     @Test
     public void testProcessTenantParameter() {
@@ -35,13 +35,13 @@ public class TenantUtilTest {
         String strAbc = "abc";
         String strdef123 = "def123";
         String strAbcHasSpace = "  abc  ";
-        Assert.assertEquals(strEmpty, TenantUtil.processTenantParameter(strPublic));
-        Assert.assertEquals(strEmpty, TenantUtil.processTenantParameter(strNull));
-        Assert.assertEquals(strEmpty, TenantUtil.processTenantParameter(strEmpty));
-        Assert.assertEquals(strEmpty, TenantUtil.processTenantParameter(null));
-        Assert.assertEquals(strAbc, TenantUtil.processTenantParameter(strAbc));
-        Assert.assertEquals(strdef123, TenantUtil.processTenantParameter(strdef123));
-        Assert.assertEquals(strAbc, TenantUtil.processTenantParameter(strAbcHasSpace));
+        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strPublic));
+        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strNull));
+        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strEmpty));
+        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(null));
+        Assert.assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbc));
+        Assert.assertEquals(strdef123, NamespaceUtil.processNamespaceParameter(strdef123));
+        Assert.assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbcHasSpace));
     }
     
 }
