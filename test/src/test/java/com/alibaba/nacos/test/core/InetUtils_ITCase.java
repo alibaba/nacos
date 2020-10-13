@@ -39,7 +39,7 @@ public class InetUtils_ITCase {
 	static {
 		System.setProperty("nacos.core.inet.auto-refresh", "3");
 		// For load InetUtils.class
-		InetUtils.getSelfIp();
+		InetUtils.getSelfIP();
 	}
 
 	@Test
@@ -53,10 +53,10 @@ public class InetUtils_ITCase {
 		Subscriber<InetUtils.IPChangeEvent> subscribe = new Subscriber<InetUtils.IPChangeEvent>() {
 			@Override
 			public void onEvent(InetUtils.IPChangeEvent event) {
-				if (Objects.nonNull(event.getOldIp())) {
+				if (Objects.nonNull(event.getOldIP())) {
 					try {
 						System.out.println(event);
-						reference.set(event.getNewIp());
+						reference.set(event.getNewIP());
 					}
 					finally {
 						latch.countDown();
@@ -74,7 +74,7 @@ public class InetUtils_ITCase {
 		latch.await(10_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals(testIp, reference.get());
-		Assert.assertEquals(testIp, InetUtils.getSelfIp());
+		Assert.assertEquals(testIp, InetUtils.getSelfIP());
 	}
 
 }
