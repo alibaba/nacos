@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
  * Tenant(namespace) Util.
  * Because config and naming treat tenant(namespace) differently,
  * this tool class can only be used by the config module.
+ * @author klw(213539@qq.com)
  * @date 2020/10/12 17:56
  */
 public class TenantUtil {
