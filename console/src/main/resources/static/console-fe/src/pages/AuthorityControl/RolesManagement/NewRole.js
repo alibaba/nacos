@@ -16,17 +16,18 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import { Field, Form, Input, Dialog, ConfigProvider, Select } from '@alifd/next';
-import { searchUsers } from '../../../reducers/authority';
+import {connect} from 'react-redux';
+import {ConfigProvider, Dialog, Field, Form, Input, Select} from '@alifd/next';
+import {searchUsers} from '../../../reducers/authority';
 
 const FormItem = Form.Item;
 
 const formItemLayout = {
-  labelCol: { fixedSpan: 4 },
-  wrapperCol: { span: 19 },
+  labelCol: {fixedSpan: 4},
+  wrapperCol: {span: 19},
 };
-@connect(state => ({ users: state.authority.users }), { searchUsers })
+
+@connect(state => ({users: state.authority.users}), {searchUsers})
 @ConfigProvider.config
 class NewRole extends React.Component {
   static displayName = 'NewRole';
@@ -46,7 +47,7 @@ class NewRole extends React.Component {
   };
 
   check() {
-    const { locale } = this.props;
+    const {locale} = this.props;
     const errors = {
       role: locale.roleError,
       username: locale.usernameError,
@@ -67,48 +68,85 @@ class NewRole extends React.Component {
   handleChange = value => {
     if (value.length > 0) {
       searchUsers(value).then(val => {
-        this.setState({ dataSource: val });
+        this.setState({dataSource: val});
       });
     }
   };
 
   render() {
-    const { locale } = this.props;
-    const { getError } = this.field;
-    const { visible, onOk, onCancel } = this.props;
+    const {locale} = this.props;
+    const {getError} = this.field;
+    const {visible, onOk, onCancel} = this.props;
     return (
-      <>
-        <Dialog
-          title={locale.bindingRoles}
-          visible={visible}
-          onOk={() => {
-            const vals = this.check();
-            if (vals) {
-              onOk(vals).then(() => onCancel());
-            }
-          }}
-          onClose={onCancel}
-          onCancel={onCancel}
-          afterClose={() => this.field.reset()}
-        >
-          <Form style={{ width: 400 }} {...formItemLayout} field={this.field}>
-            <FormItem label={locale.role} required help={getError('role')}>
-              <Input name="role" trim placeholder={locale.rolePlaceholder} />
-            </FormItem>
-            <FormItem label={locale.username} required help={getError('username')}>
-              <Select.AutoComplete
-                name="username"
-                style={{ width: 316 }}
-                filterLocal={false}
-                placeholder={locale.usernamePlaceholder}
-                onChange={this.handleChange}
-                dataSource={this.state.dataSource}
-              />
-            </FormItem>
-          </Form>
-        </Dialog>
-      </>
-    );
+      < >
+      < Dialog
+    title = {locale.bindingRoles}
+    visible = {visible}
+    onOk = {()
+  =>
+    {
+      const vals = this.check();
+      if (vals) {
+        onOk(vals).then(() => onCancel());
+      }
+    }
+  }
+    onClose = {onCancel}
+    onCancel = {onCancel}
+    afterClose = {()
+  =>
+    this.field.reset()
+  }
+  >
+  <
+    Form
+    style = {
+    {
+      width: 400
+    }
+  }
+    {...
+      formItemLayout
+    }
+    field = {this.field} >
+      < FormItem
+    label = {locale.role}
+    required
+    help = {getError('role'
+  )
+  }>
+  <
+    Input
+    name = "role"
+    trim
+    placeholder = {locale.rolePlaceholder}
+    />
+    < /FormItem>
+    < FormItem
+    label = {locale.username}
+    required
+    help = {getError('username'
+  )
+  }>
+  <
+    Select.AutoComplete
+    name = "username"
+    style = {
+    {
+      width: 316
+    }
+  }
+    filterLocal = {false}
+    placeholder = {locale.usernamePlaceholder}
+    onChange = {this.handleChange}
+    dataSource = {this.state.dataSource}
+    />
+    < /FormItem>
+    < /Form>
+    < /Dialog>
+    < />
+  )
+    ;
   }
 }
 

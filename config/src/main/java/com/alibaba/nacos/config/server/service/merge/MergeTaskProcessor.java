@@ -17,9 +17,9 @@
 package com.alibaba.nacos.config.server.service.merge;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.Page;

@@ -18,20 +18,14 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
+import com.alibaba.nacos.config.server.modules.entity.QPermissionsEntity;
+import com.alibaba.nacos.config.server.modules.mapstruct.PermissionsMapStruct;
+import com.alibaba.nacos.config.server.modules.repository.PermissionsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.PERMISSION_ROW_MAPPER;
 
 /**
  * Implemetation of ExternalPermissionPersistServiceImpl.
@@ -43,44 +37,17 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 public class ExternalPermissionPersistServiceImpl implements PermissionPersistService {
     
     @Autowired
-    private ExternalStoragePersistServiceImpl persistService;
-    
-    private JdbcTemplate jt;
-    
-    @PostConstruct
-    protected void init() {
-        jt = persistService.getJdbcTemplate();
-    }
+    private PermissionsRepository permissionsRepository;
     
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
-        PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
-        
-        String sqlCountRows = "select count(*) from permissions where ";
-        String sqlFetchRows = "select role,resource,action from permissions where ";
-        
-        String where = " role='" + role + "' ";
-        
-        if (StringUtils.isBlank(role)) {
-            where = " 1=1 ";
-        }
-        
-        try {
-            Page<PermissionInfo> pageInfo = helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                            pageSize, PERMISSION_ROW_MAPPER);
-            
-            if (pageInfo == null) {
-                pageInfo = new Page<>();
-                pageInfo.setTotalCount(0);
-                pageInfo.setPageItems(new ArrayList<>());
-            }
-            
-            return pageInfo;
-            
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+        org.springframework.data.domain.Page<PermissionsEntity> sPage = permissionsRepository
+                .findAll(QPermissionsEntity.permissionsEntity.role.eq(role), PageRequest.of(pageNo, pageSize));
+        Page<PermissionInfo> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(PermissionsMapStruct.INSTANCE.convertPermissionInfoList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
     
     /**
@@ -91,15 +58,8 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
      * @param action action string value.
      */
     public void addPermission(String role, String resource, String action) {
-        
-        String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
-        
-        try {
-            jt.update(sql, role, resource, action);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+    
+        permissionsRepository.save(new PermissionsEntity(role, resource, action));
     }
     
     /**
@@ -110,14 +70,11 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
      * @param action action string value.
      */
     public void deletePermission(String role, String resource, String action) {
-        
-        String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
-        try {
-            jt.update(sql, role, resource, action);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+    
+        QPermissionsEntity qPermissions = QPermissionsEntity.permissionsEntity;
+        permissionsRepository.findOne(
+                qPermissions.role.eq(role).and(qPermissions.resource.eq(resource)).and(qPermissions.action.eq(action)))
+                .ifPresent(p -> permissionsRepository.delete(p));
     }
     
 }

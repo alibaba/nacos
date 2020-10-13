@@ -16,20 +16,21 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Field, Form, Input, Select, Dialog, ConfigProvider } from '@alifd/next';
-import { connect } from 'react-redux';
-import { getNamespaces } from '../../../reducers/namespace';
-import { searchRoles } from '../../../reducers/authority';
+import {ConfigProvider, Dialog, Field, Form, Select} from '@alifd/next';
+import {connect} from 'react-redux';
+import {getNamespaces} from '../../../reducers/namespace';
+import {searchRoles} from '../../../reducers/authority';
 
 const FormItem = Form.Item;
-const { Option } = Select;
+const {Option} = Select;
 
 const formItemLayout = {
-  labelCol: { fixedSpan: 4 },
-  wrapperCol: { span: 19 },
+  labelCol: {fixedSpan: 4},
+  wrapperCol: {span: 19},
 };
 
-@connect(state => ({ namespaces: state.namespace.namespaces }), { getNamespaces, searchRoles })
+@connect(state => ({namespaces: state.namespace.namespaces}),
+  {getNamespaces, searchRoles})
 @ConfigProvider.config
 class NewPermissions extends React.Component {
   static displayName = 'NewPermissions';
@@ -49,12 +50,13 @@ class NewPermissions extends React.Component {
   state = {
     dataSource: [],
   };
+
   componentDidMount() {
     this.props.getNamespaces();
   }
 
   check() {
-    const { locale } = this.props;
+    const {locale} = this.props;
     const errors = {
       role: locale.roleError,
       resource: locale.resourceError,
@@ -76,59 +78,116 @@ class NewPermissions extends React.Component {
   handleChange = value => {
     if (value.length > 0) {
       searchRoles(value).then(val => {
-        this.setState({ dataSource: val });
+        this.setState({dataSource: val});
       });
     }
   };
 
   render() {
-    const { getError } = this.field;
-    const { visible, onOk, onCancel, locale, namespaces } = this.props;
+    const {getError} = this.field;
+    const {visible, onOk, onCancel, locale, namespaces} = this.props;
     return (
-      <>
-        <Dialog
-          title={locale.addPermission}
-          visible={visible}
-          onOk={() => {
-            const vals = this.check();
-            if (vals) {
-              onOk(vals).then(() => onCancel());
-            }
-          }}
-          onClose={onCancel}
-          onCancel={onCancel}
-          afterClose={() => this.field.reset()}
-        >
-          <Form style={{ width: 400 }} {...formItemLayout} field={this.field}>
-            <FormItem label={locale.role} required help={getError('role')}>
-              <Select.AutoComplete
-                name="role"
-                style={{ width: 316 }}
-                filterLocal={false}
-                placeholder={locale.rolePlaceholder}
-                onChange={this.handleChange}
-                dataSource={this.state.dataSource}
-              />
-            </FormItem>
-            <FormItem label={locale.resource} required help={getError('resource')}>
-              <Select
-                name="resource"
-                placeholder={locale.resourcePlaceholder}
-                style={{ width: '100%' }}
-              >
-                {namespaces.map(({ namespace, namespaceShowName }) => (
-                  <Option value={`${namespace}:*:*`}>
-                    {namespaceShowName} {namespace ? `(${namespace})` : ''}
-                  </Option>
-                ))}
-              </Select>
-            </FormItem>
-            <FormItem label={locale.action} required help={getError('action')}>
-              <Select
-                name="action"
-                placeholder={locale.actionPlaceholder}
-                style={{ width: '100%' }}
-              >
+      < >
+      < Dialog
+    title = {locale.addPermission}
+    visible = {visible}
+    onOk = {()
+  =>
+    {
+      const vals = this.check();
+      if (vals) {
+        onOk(vals).then(() => onCancel());
+      }
+    }
+  }
+    onClose = {onCancel}
+    onCancel = {onCancel}
+    afterClose = {()
+  =>
+    this.field.reset()
+  }
+  >
+  <
+    Form
+    style = {
+    {
+      width: 400
+    }
+  }
+    {...
+      formItemLayout
+    }
+    field = {this.field} >
+      < FormItem
+    label = {locale.role}
+    required
+    help = {getError('role'
+  )
+  }>
+  <
+    Select.AutoComplete
+    name = "role"
+    style = {
+    {
+      width: 316
+    }
+  }
+    filterLocal = {false}
+    placeholder = {locale.rolePlaceholder}
+    onChange = {this.handleChange}
+    dataSource = {this.state.dataSource}
+    />
+    < /FormItem>
+    < FormItem
+    label = {locale.resource}
+    required
+    help = {getError('resource'
+  )
+  }>
+  <
+    Select
+    name = "resource"
+    placeholder = {locale.resourcePlaceholder}
+    style = {
+    {
+      width: '100%'
+    }
+  }
+  >
+    {
+      namespaces.map(({namespace, namespaceShowName}) => (
+        < Option
+      value = {`${namespace}:*:*`
+    }>
+      {
+        namespaceShowName
+      }
+      {
+        namespace ? `(${namespace})` : ''
+      }
+    <
+      /Option>
+    ))
+    }
+  <
+    /Select>
+    < /FormItem>
+    < FormItem
+    label = {locale.action}
+    required
+    help = {getError('action'
+  )
+  }>
+  <
+    Select
+    name = "action"
+    placeholder = {locale.actionPlaceholder}
+    style = {
+    {
+      width: '100%'
+    }
+  }
+  >
                 <Option value="r">{locale.readOnly}(r)</Option>
                 <Option value="w">{locale.writeOnly}(w)</Option>
                 <Option value="rw">{locale.readWrite}(rw)</Option>

@@ -104,7 +104,7 @@ public class AsyncNotifyService {
     class AsyncTask implements Runnable {
         
         private Queue<NotifySingleTask> queue;
-    
+        
         private NacosAsyncRestTemplate restTemplate;
         
         public AsyncTask(NacosAsyncRestTemplate restTemplate, Queue<NotifySingleTask> queue) {
@@ -133,7 +133,8 @@ public class AsyncNotifyService {
                         asyncTaskExecute(task);
                     } else {
                         Header header = Header.newInstance();
-                        header.addParam(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(task.getLastModified()));
+                        header.addParam(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
+                                String.valueOf(task.getLastModified()));
                         header.addParam(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIp());
                         if (task.isBeta) {
                             header.addParam("isBeta", "true");
@@ -154,7 +155,7 @@ public class AsyncNotifyService {
     }
     
     class AsyncNotifyCallBack implements Callback<String> {
-    
+        
         private NotifySingleTask task;
         
         public AsyncNotifyCallBack(NotifySingleTask task) {

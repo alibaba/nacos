@@ -19,7 +19,6 @@ package com.alibaba.nacos.console.config;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
@@ -37,7 +36,6 @@ import javax.annotation.PostConstruct;
  */
 @Component
 @EnableScheduling
-@PropertySource("/application.properties")
 public class ConsoleConfig {
     
     @Autowired

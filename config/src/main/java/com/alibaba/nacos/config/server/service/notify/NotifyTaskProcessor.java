@@ -17,9 +17,9 @@
 package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.core.cluster.Member;

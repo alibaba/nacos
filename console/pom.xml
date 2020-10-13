@@ -28,10 +28,20 @@
     <name>nacos-console ${project.version}</name>
     <url>http://nacos.io</url>
     <properties>
+        <!--        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>-->
+        <!-- 文件拷贝时的编码 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- 编译时的编码 -->
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
     </properties>
     
     <dependencies>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-config</artifactId>

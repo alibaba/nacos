@@ -35,16 +35,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Map;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * Config service.

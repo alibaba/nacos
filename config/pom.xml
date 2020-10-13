@@ -33,9 +33,62 @@
     
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <mapstruct.version>1.3.1.Final</mapstruct.version>
     </properties>
     
     <dependencies>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-jdk8</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>com.querydsl</groupId>
+            <artifactId>querydsl-jpa</artifactId>
+        </dependency>
+    
+        <dependency>
+            <groupId>com.querydsl</groupId>
+            <artifactId>querydsl-apt</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.oracle.ojdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -52,14 +105,27 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>javassist</artifactId>
+                    <groupId>org.javassist</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>HikariCP</artifactId>
+                    <groupId>com.zaxxer</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -163,6 +229,22 @@
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.mysema.maven</groupId>
+                <artifactId>apt-maven-plugin</artifactId>
+                <version>1.1.3</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>process</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>target/generated-sources/java</outputDirectory>
+                            <processor>com.querydsl.apt.jpa.JPAAnnotationProcessor</processor>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

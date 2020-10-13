@@ -177,8 +177,7 @@ public class ConfigSubService {
                 }
                 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
-                RestResult<String> result = NotifyService
-                        .invokeURL(urlAll, null, Constants.ENCODE);
+                RestResult<String> result = NotifyService.invokeURL(urlAll, null, Constants.ENCODE);
                 
                 // Http code 200
                 if (result.ok()) {

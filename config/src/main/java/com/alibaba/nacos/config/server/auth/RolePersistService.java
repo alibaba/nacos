@@ -28,16 +28,16 @@ import java.util.List;
  */
 @SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface RolePersistService {
-    
+
     Page<RoleInfo> getRoles(int pageNo, int pageSize);
-    
+
     Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize);
-    
+
     void addRole(String role, String userName);
-    
+
     void deleteRole(String role);
-    
+
     void deleteRole(String role, String username);
-    
+
     List<String> findRolesLikeRoleName(String role);
 }

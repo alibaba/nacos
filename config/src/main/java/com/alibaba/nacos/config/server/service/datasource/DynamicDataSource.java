@@ -37,23 +37,18 @@ public class DynamicDataSource {
     
     public synchronized DataSourceService getDataSource() {
         try {
-            
+    
             // Embedded storage is used by default in stand-alone mode
             // In cluster mode, external databases are used by default
-            
+    
             if (PropertyUtil.isEmbeddedStorage()) {
                 if (localDataSourceService == null) {
                     localDataSourceService = new LocalDataSourceServiceImpl();
                     localDataSourceService.init();
                 }
                 return localDataSourceService;
-            } else {
-                if (basicDataSourceService == null) {
-                    basicDataSourceService = new ExternalDataSourceServiceImpl();
-                    basicDataSourceService.init();
-                }
-                return basicDataSourceService;
             }
+            return null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -33,26 +33,26 @@ import java.util.List;
  * @author jiuRen
  */
 public class NotifyService {
-    
+
     @Autowired
     public NotifyService(ServerMemberManager memberManager) {
         notifyTaskManager = new TaskManager("com.alibaba.nacos.NotifyTaskManager");
         notifyTaskManager.setDefaultTaskProcessor(new NotifyTaskProcessor(memberManager));
     }
-    
+
     protected NotifyService() {
     }
-    
+
     /**
      * In order to facilitate the system beta, without changing the notify.do interface, the new lastModifed parameter
      * is passed through the Http header.
      */
     public static final String NOTIFY_HEADER_LAST_MODIFIED = "lastModified";
-    
+
     public static final String NOTIFY_HEADER_OP_HANDLE_IP = "opHandleIp";
-    
+
     private TaskManager notifyTaskManager;
-    
+
     /**
      * Invoke http get request.
      *

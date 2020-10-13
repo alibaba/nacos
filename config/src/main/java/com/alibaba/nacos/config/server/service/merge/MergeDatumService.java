@@ -164,8 +164,9 @@ public class MergeDatumService {
                     } else {
                         // remove
                         persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
-                        LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
-                                + group);
+                        LOGGER.warn(
+                                "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
+                                        + group);
                     }
                     
                 } catch (Exception e) {

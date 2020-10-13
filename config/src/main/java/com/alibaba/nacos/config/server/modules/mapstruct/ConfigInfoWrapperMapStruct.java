@@ -14,22 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.utils;
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
-import com.google.common.reflect.TypeToken;
-import org.junit.Assert;
-import org.junit.Test;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
-public class ClassUtilsTest {
+/**
+ * ConfigInfoWrapperMapStruct.
+ *
+ * @author Nacos
+ */
+@Mapper
+public interface ConfigInfoWrapperMapStruct {
     
-    @Test
-    public void testGeneric() {
-        GenericType<List<String>> genericType = new GenericType<List<String>>() {
-        };
-        Assert.assertEquals(genericType.getType(), new TypeToken<java.util.List<java.lang.String>>() {
-        }.getType());
-    }
+    ConfigInfoWrapperMapStruct INSTANCE = Mappers.getMapper(ConfigInfoWrapperMapStruct.class);
+    
+    List<ConfigInfoWrapper> convertConfigInfoWrapperList(List<ConfigInfoEntity> list);
+    
+    ConfigInfoWrapper convertConfigInfoWrapper(ConfigInfoEntity configInfoEntity);
     
 }

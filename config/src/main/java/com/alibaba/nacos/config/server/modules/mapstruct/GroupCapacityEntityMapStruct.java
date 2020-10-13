@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service;
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
-import com.alibaba.nacos.config.server.model.User;
-import com.alibaba.nacos.config.server.service.repository.RowMapperManager;
-import com.alibaba.nacos.core.utils.ClassUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.jdbc.core.RowMapper;
+import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
+import com.alibaba.nacos.config.server.modules.entity.GroupCapacityEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
 
-public class RowMapperManagerTest {
+/**
+ * GroupCapacityEntityMapStruct.
+ *
+ * @author Nacos
+ */
+@Mapper
+public interface GroupCapacityEntityMapStruct {
     
-    @Test
-    public void testUserMapper() {
-        RowMapper<User> mapper = new RowMapperManager.UserRowMapper();
-        Assert.assertEquals(ClassUtils.resolveGenericTypeByInterface(mapper.getClass()).getSimpleName(),
-                User.class.getSimpleName());
-    }
+    GroupCapacityEntityMapStruct INSTANCE = Mappers.getMapper(GroupCapacityEntityMapStruct.class);
     
+    GroupCapacityEntity convertGroupCapacityEntity(GroupCapacity groupCapacity);
 }
