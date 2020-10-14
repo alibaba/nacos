@@ -99,7 +99,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
             } else {
                 raftCore.signalDelete(key);
             }
-            raftCore.unlistenAll(key);
+            raftCore.unListenAll(key);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft remove failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR, "Raft remove failed, key:" + key, e);
