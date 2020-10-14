@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.common.http.client.response;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.IoUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -36,6 +38,8 @@ public class JdkHttpClientResponse implements HttpClientResponse {
     
     private Header responseHeader;
     
+    private static final String CONTENT_ENCODING = "gzip";
+    
     public JdkHttpClientResponse(HttpURLConnection conn) {
         this.conn = conn;
     }
@@ -51,8 +55,18 @@ public class JdkHttpClientResponse implements HttpClientResponse {
     
     @Override
     public InputStream getBody() throws IOException {
+        Header headers = getHeaders();
         InputStream errorStream = this.conn.getErrorStream();
         this.responseStream = (errorStream != null ? errorStream : this.conn.getInputStream());
+        String contentEncoding = headers.getValue(HttpHeaderConsts.CONTENT_ENCODING);
+        // Used to process http content_encoding, when content_encoding is GZIP, use GZIPInputStream
+        if (CONTENT_ENCODING.equals(contentEncoding)) {
+            byte[] bytes = IoUtils.tryDecompress(this.responseStream);
+            if (bytes == null) {
+                throw new IOException("decompress http response error");
+            }
+            return new ByteArrayInputStream(bytes);
+        }
         return this.responseStream;
     }
     

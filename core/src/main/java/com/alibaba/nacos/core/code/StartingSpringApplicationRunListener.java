@@ -21,10 +21,10 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.core.file.WatchFileCenter;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.DiskUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.file.WatchFileCenter;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -86,7 +86,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
             System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, ApplicationUtils.FUNCTION_MODE_NAMING);
         }
         
-        System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIp());
+        System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIP());
     }
     
     @Override

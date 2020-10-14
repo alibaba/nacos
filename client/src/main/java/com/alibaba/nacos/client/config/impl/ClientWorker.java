@@ -32,7 +32,6 @@ import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -166,7 +165,6 @@ public class ClientWorker implements Closeable {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
-        reMakeCacheDataTaskId();
         LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
@@ -179,36 +177,9 @@ public class ClientWorker implements Closeable {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
-        reMakeCacheDataTaskId();
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
-    }
-    
-    /**
-     * Remake cacheData taskId.
-     */
-    private void reMakeCacheDataTaskId() {
-        int listenerSize = cacheMap.get().size();
-        int remakeTaskId = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
-        if (remakeTaskId < (int) currentLongingTaskCount) {
-            for (int i = 0; i < remakeTaskId; i++) {
-                int count = 0;
-                for (String key : cacheMap.get().keySet()) {
-                    if (count == ParamUtil.getPerTaskConfigSize()) {
-                        break;
-                    }
-                    CacheData cacheData = cacheMap.get().get(key);
-                    cacheData.setTaskId(i);
-                    synchronized (cacheMap) {
-                        Map<String, CacheData> copy = new HashMap<String, CacheData>(this.cacheMap.get());
-                        copy.put(key, cacheData);
-                        cacheMap.set(copy);
-                    }
-                    count++;
-                }
-            }
-        }
     }
     
     /**
@@ -277,8 +248,6 @@ public class ClientWorker implements Closeable {
                 cache.setInitializing(true);
             } else {
                 cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
-                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
-                cache.setTaskId(taskId);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
                     String[] ct = getServerConfig(dataId, group, tenant, 3000L);
@@ -425,16 +394,11 @@ public class ClientWorker implements Closeable {
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
-                taskIdSet.add(i);
                 // The task list is no order.So it maybe has issues when changing.
                 executorService.execute(new LongPollingRunnable(i));
             }
-        } else if (longingTaskCount < currentLongingTaskCount) {
-            for (int i = longingTaskCount; i < (int) currentLongingTaskCount; i++) {
-                taskIdSet.remove(i);
-            }
+            currentLongingTaskCount = longingTaskCount;
         }
-        currentLongingTaskCount = longingTaskCount;
     }
     
     /**
@@ -692,9 +656,7 @@ public class ClientWorker implements Closeable {
                 }
                 inInitializingCacheList.clear();
                 
-                if (taskIdSet.contains(taskId)) {
-                    executorService.execute(this);
-                }
+                executorService.execute(this);
                 
             } catch (Throwable e) {
                 
@@ -722,11 +684,6 @@ public class ClientWorker implements Closeable {
      */
     private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
             new HashMap<String, CacheData>());
-    
-    /**
-     * Store the running taskId.
-     */
-    private final ConcurrentHashSet<Integer> taskIdSet = new ConcurrentHashSet<Integer>();
     
     private final HttpAgent agent;
     

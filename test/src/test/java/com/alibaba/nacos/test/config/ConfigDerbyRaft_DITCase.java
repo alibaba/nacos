@@ -32,7 +32,7 @@ import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.utils.GenericType;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.test.core.BaseClusterTest;
 
 import org.junit.Assert;
@@ -357,7 +357,7 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         // transfer leader to ip:8807
         
         Map<String, String> transfer = new HashMap<>();
-        transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIp() + ":9847");
+        transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIP() + ":9847");
         RestResult<String> result = protocol7.execute(transfer);
         System.out.println(result);
         Assert.assertTrue(result.ok());
@@ -372,7 +372,7 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         // transfer leader to ip:8808
         
         transfer = new HashMap<>();
-        transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIp() + ":9848");
+        transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIP() + ":9848");
         result = protocol8.execute(transfer);
         System.out.println(result);
         Assert.assertTrue(result.ok());
@@ -387,7 +387,7 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         // transfer leader to ip:8809
         
         transfer = new HashMap<>();
-        transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIp() + ":9849");
+        transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIP() + ":9849");
         result = protocol9.execute(transfer);
         System.out.println(result);
         Assert.assertTrue(result.ok());

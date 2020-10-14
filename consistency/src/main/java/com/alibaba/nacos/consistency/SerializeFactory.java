@@ -48,4 +48,7 @@ public class SerializeFactory {
         return SERIALIZER_MAP.get(defaultSerializer);
     }
     
+    public static Serializer getSerializer(String type) {
+        return SERIALIZER_MAP.get(type.toLowerCase());
+    }
 }
