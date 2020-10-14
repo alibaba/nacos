@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.impl;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KvStorageException;
@@ -28,11 +30,13 @@ import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Kv storage implementation for naming.
@@ -49,12 +53,13 @@ public class NamingKvStorage extends MemoryKvStorage {
     
     public NamingKvStorage(final String baseDir) throws Exception {
         this.baseDir = baseDir;
-        baseDirStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, "naming-persistent", baseDir);
-        namespaceKvStorage = new ConcurrentHashMap<>();
+        this.baseDirStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, "naming-persistent", baseDir);
+        this.namespaceKvStorage = new ConcurrentHashMap<>(16);
     }
     
     @Override
     public byte[] get(byte[] key) throws KvStorageException {
+        // First get the data from the memory Cache
         byte[] result = super.get(key);
         if (null == result) {
             try {
@@ -171,16 +176,17 @@ public class NamingKvStorage extends MemoryKvStorage {
     }
     
     private List<String> getAllNamespaceDirs() {
-        List<String> result = new LinkedList<>();
         File[] files = new File(baseDir).listFiles();
+        List<String> result = Collections.emptyList();
         if (null != files) {
+            result = new ArrayList<>(files.length);
             for (File each : files) {
                 if (each.isDirectory()) {
                     result.add(each.getName());
                 }
             }
         }
-        return result;
+        return Collections.unmodifiableList(result);
     }
     
     @Override
@@ -208,11 +214,16 @@ public class NamingKvStorage extends MemoryKvStorage {
         if (StringUtils.isBlank(namespace)) {
             return baseDirStorage;
         }
-        if (!namespaceKvStorage.containsKey(namespace)) {
-            String namespacePath = Paths.get(baseDir, namespace).toString();
-            namespaceKvStorage.putIfAbsent(namespace,
-                    StorageFactory.createKvStorage(KvStorage.KvType.File, "naming-persistent", namespacePath));
-        }
+        
+        Function<String, KvStorage> kvStorageBuilder = key -> {
+            try {
+                String namespacePath = Paths.get(baseDir, key).toString();
+                return StorageFactory.createKvStorage(KvType.File, "naming-persistent", namespacePath);
+            } catch (Exception e) {
+                throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+            }
+        };
+        namespaceKvStorage.computeIfAbsent(namespace, kvStorageBuilder);
         return namespaceKvStorage.get(namespace);
     }
 }

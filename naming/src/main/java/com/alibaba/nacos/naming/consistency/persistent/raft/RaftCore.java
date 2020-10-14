@@ -977,7 +977,7 @@ public class RaftCore implements Closeable {
         notifier.deregisterListener(key, listener);
     }
     
-    public void unlistenAll(String key) {
+    public void unListenAll(String key) {
         notifier.deregisterAllListener(key);
     }
     
