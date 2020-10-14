@@ -40,7 +40,14 @@ import com.alibaba.nacos.naming.push.PushService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -56,14 +63,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
 /**
  * Core manager storing all services in Nacos.
@@ -229,10 +228,14 @@ public class ServiceManager implements RecordListener<Service> {
         
         if (service != null) {
             service.destroy();
-            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
-            
-            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
-            
+            String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
+            String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
+            consistencyService.remove(ephemeralInstanceListKey);
+            consistencyService.remove(persistInstanceListKey);
+    
+            // remove listeners of key to avoid mem leak
+            consistencyService.unListen(ephemeralInstanceListKey, service);
+            consistencyService.unListen(persistInstanceListKey, service);
             consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
             Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
         }
@@ -631,7 +634,7 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         Map<String, Instance> instanceMap;
-        if (datum != null) {
+        if (datum != null && null != datum.value) {
             instanceMap = setValid(((Instances) datum.value).getInstanceList(), currentInstances);
         } else {
             instanceMap = new HashMap<>(ips.length);

@@ -48,7 +48,7 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
     /**
      * register listener with key.
      *
-     * @param key key
+     * @param key      key
      * @param listener {@link RecordListener}
      */
     public void registerListener(final String key, final RecordListener listener) {
@@ -59,7 +59,7 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
     /**
      * deregister listener by key.
      *
-     * @param key key
+     * @param key      key
      * @param listener {@link RecordListener}
      */
     public void deregisterListener(final String key, final RecordListener listener) {
@@ -70,12 +70,25 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
     }
     
     /**
-     * notify value to listener with {@link DataOperation} and key.
+     * deregister all listener by key.
      *
      * @param key key
+     */
+    public void deregisterAllListener(final String key) {
+        listenerMap.remove(key);
+    }
+    
+    public Map<String, ConcurrentHashSet<RecordListener>> getListeners() {
+        return listenerMap;
+    }
+    
+    /**
+     * notify value to listener with {@link DataOperation} and key.
+     *
+     * @param key    key
      * @param action {@link DataOperation}
-     * @param value value
-     * @param <T> type
+     * @param value  value
+     * @param <T>    type
      */
     public <T extends Record> void notify(final String key, final DataOperation action, final T value) {
         if (listenerMap.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
@@ -89,18 +102,16 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
                             listener.onDelete(key);
                         }
                     } catch (Throwable e) {
-                        Loggers.RAFT
-                                .error("[NACOS-RAFT] error while notifying listener of key: {}", key,
-                                        e);
+                        Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", key, e);
                     }
                 }
             }
         }
-    
+        
         if (!listenerMap.containsKey(key)) {
             return;
         }
-    
+        
         for (RecordListener listener : listenerMap.get(key)) {
             try {
                 if (action == DataOperation.CHANGE) {

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -37,7 +38,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -57,9 +57,9 @@ import java.util.Map;
 /**
  * Methods for Raft consistency protocol. These methods should only be invoked by Nacos server itself.
  *
- * @deprecated will remove in 1.4.x
  * @author nkorange
  * @since 1.0.0
+ * @deprecated will remove in 1.4.x
  */
 @Deprecated
 @RestController
@@ -72,7 +72,7 @@ public class RaftController {
     private final ServiceManager serviceManager;
     
     private final RaftCore raftCore;
-
+    
     private final ClusterVersionJudgement versionJudgement;
     
     public RaftController(RaftConsistencyServiceImpl raftConsistencyService, ServiceManager serviceManager,
@@ -387,7 +387,7 @@ public class RaftController {
             throw new IllegalStateException("old raft protocol already stop");
         }
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        Map<String, List<RecordListener>> listeners = raftCore.getListeners();
+        Map<String, ConcurrentHashSet<RecordListener>> listeners = raftCore.getListeners();
         
         ArrayNode listenerArray = JacksonUtils.createEmptyArrayNode();
         for (String key : listeners.keySet()) {

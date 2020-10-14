@@ -16,14 +16,16 @@
 
 package com.alibaba.nacos.core.storage.kv;
 
+import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KvStorageException;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -158,11 +160,14 @@ public class FileKvStorage implements KvStorage {
     public void snapshotLoad(String path) throws KvStorageException {
         writeLock.lock();
         try {
-            // First clean up the local file information, before the file copy
-            DiskUtils.deleteDirThenMkdir(baseDir);
             File srcDir = Paths.get(path).toFile();
-            File descDir = Paths.get(baseDir).toFile();
-            DiskUtils.copyDirectory(srcDir, descDir);
+            // If snapshot path is non-exist, means snapshot is empty
+            if (srcDir.exists()) {
+                // First clean up the local file information, before the file copy
+                DiskUtils.deleteDirThenMkdir(baseDir);
+                File descDir = Paths.get(baseDir).toFile();
+                DiskUtils.copyDirectory(srcDir, descDir);
+            }
         } catch (IOException e) {
             throw new KvStorageException(ErrorCode.IOCopyDirError, e);
         } finally {
@@ -171,7 +176,20 @@ public class FileKvStorage implements KvStorage {
     }
     
     @Override
-    public void shutdown() {
+    public List<byte[]> allKeys() throws KvStorageException {
+        List<byte[]> result = new LinkedList<>();
+        File[] files = new File(baseDir).listFiles();
+        if (null != files) {
+            for (File each : files) {
+                if (each.isFile()) {
+                    result.add(ByteUtils.toBytes(each.getName()));
+                }
+            }
+        }
+        return result;
+    }
     
+    @Override
+    public void shutdown() {
     }
 }

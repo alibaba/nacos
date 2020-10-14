@@ -2292,7 +2292,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     .queryForObject(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
             return historyInfo;
         } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[list-config-history] error, nid:{}", new Object[] {nid}, e);
+            LogUtil.FATAL_LOG.error("[detail-config-history] error, nid:{}", new Object[] {nid}, e);
             throw e;
         }
     }

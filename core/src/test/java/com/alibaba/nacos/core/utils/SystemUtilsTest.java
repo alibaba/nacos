@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -26,8 +27,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
-import static com.alibaba.nacos.core.utils.Constants.PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME;
-import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
+import static com.alibaba.nacos.sys.env.Constants.PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME;
+import static com.alibaba.nacos.sys.env.Constants.STANDALONE_MODE_PROPERTY_NAME;
 
 /**
  * {@link ApplicationUtils} Test.

@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -95,14 +95,11 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
         checkIsStopWork();
         try {
             if (KeyBuilder.matchInstanceListKey(key) && !raftCore.isLeader()) {
-                Datum datum = new Datum();
-                datum.key = key;
-                raftCore.onDelete(datum.key, peers.getLeader());
-                raftCore.unlistenAll(key);
-                return;
+                raftCore.onDelete(key, peers.getLeader());
+            } else {
+                raftCore.signalDelete(key);
             }
-            raftCore.signalDelete(key);
-            raftCore.unlistenAll(key);
+            raftCore.unListenAll(key);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft remove failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR, "Raft remove failed, key:" + key, e);
@@ -117,7 +114,6 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
-        checkIsStopWork();
         raftCore.listen(key, listener);
     }
     

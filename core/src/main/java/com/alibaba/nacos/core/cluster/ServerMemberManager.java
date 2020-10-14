@@ -32,13 +32,13 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
-import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
-import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.Constants;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
@@ -78,7 +78,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 @Component(value = "serverMemberManager")
 public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent> {
     
-    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CORE);
+    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder
+            .getNacosAsyncRestTemplate(Loggers.CORE);
     
     /**
      * Cluster node list.
@@ -131,7 +132,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     protected void init() throws NacosException {
         Loggers.CORE.info("Nacos-related cluster resource initialization");
         this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
-        this.localAddress = InetUtils.getSelfIp() + ":" + port;
+        this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtils.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
         serverList.put(self.getAddress(), self);
@@ -169,14 +170,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         NotifyCenter.registerSubscriber(new Subscriber<InetUtils.IPChangeEvent>() {
             @Override
             public void onEvent(InetUtils.IPChangeEvent event) {
-                String newAddress = event.getNewIp() + ":" + port;
+                String newAddress = event.getNewIP() + ":" + port;
                 ServerMemberManager.this.localAddress = newAddress;
                 ApplicationUtils.setLocalAddress(localAddress);
-    
+                
                 Member self = ServerMemberManager.this.self;
-                self.setIp(event.getNewIp());
-    
-                String oldAddress = event.getOldIp() + ":" + port;
+                self.setIp(event.getNewIP());
+                
+                String oldAddress = event.getOldIP() + ":" + port;
                 ServerMemberManager.this.serverList.remove(oldAddress);
                 ServerMemberManager.this.serverList.put(newAddress, self);
                 
@@ -209,10 +210,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             if (NodeState.DOWN.equals(newMember.getState())) {
                 memberAddressInfos.remove(newMember.getAddress());
             }
-            if (!MemberUtils.fullEquals(newMember, member)) {
-                newMember.setExtendVal(MemberMetaDataConstants.LAST_REFRESH_TIME, System.currentTimeMillis());
-                MemberUtils.copy(newMember, member);
-                // member data changes and all listeners need to be notified
+            boolean isPublishChangeEvent = MemberUtils.isBasicInfoChanged(newMember, member);
+            newMember.setExtendVal(MemberMetaDataConstants.LAST_REFRESH_TIME, System.currentTimeMillis());
+            MemberUtils.copy(newMember, member);
+            if (isPublishChangeEvent) {
+                // member basic data changes and all listeners need to be notified
                 NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
             }
             return member;
@@ -482,10 +484,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                                         ExceptionUtil.getAllExceptionMsg(throwable));
                                         MemberUtils.onFail(target, throwable);
                                     }
-            
+                                    
                                     @Override
                                     public void onCancel() {
-                
+                                    
                                     }
                                 });
             } catch (Throwable ex) {
