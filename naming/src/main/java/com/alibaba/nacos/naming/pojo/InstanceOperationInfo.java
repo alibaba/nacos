@@ -24,6 +24,7 @@ import java.util.List;
  * InstanceOperationInfo. operation resources's description
  *
  * @author horizonzy
+ * @since 1.4.0
  */
 public class InstanceOperationInfo {
     

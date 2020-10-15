@@ -24,6 +24,7 @@ import java.util.List;
  * InstanceOperationContext. used in instance batch operation's consumer.
  *
  * @author horizonzy
+ * @since 1.4.0
  */
 public class InstanceOperationContext {
     

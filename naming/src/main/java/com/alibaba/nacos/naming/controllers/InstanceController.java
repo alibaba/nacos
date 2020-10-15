@@ -195,8 +195,9 @@ public class InstanceController {
      * Batch update instance's metadata. old key exist = update, old key not exist = add.
      *
      * @param request http request
-     * @return 'ok' if success
+     * @return success updated instances. such as '{"updated":["2.2.2.2:8080:unknown:xxxx-cluster:ephemeral"}'.
      * @throws Exception any error during update
+     * @since 1.4.0
      */
     @CanDistro
     @PutMapping(value = "/metadata/batch")
@@ -235,8 +236,9 @@ public class InstanceController {
      * Batch delete instance's metadata. old key exist = delete, old key not exist = not operate
      *
      * @param request http request
-     * @return 'ok' if success
+     * @return success updated instances. such as '{"updated":["2.2.2.2:8080:unknown:xxxx-cluster:ephemeral"}'.
      * @throws Exception any error during update
+     * @since 1.4.0
      */
     @CanDistro
     @DeleteMapping("/metadata/batch")
