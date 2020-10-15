@@ -16,23 +16,17 @@
 
 package com.alibaba.nacos.core.distributed.distro.task.execute;
 
-import com.alibaba.nacos.common.task.AbstractExecuteTask;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.common.task.engine.NacosExecuteTaskExecuteEngine;
+import com.alibaba.nacos.core.utils.Loggers;
 
 /**
- * Abstract distro execute task.
+ * Distro execute task execute engine.
  *
  * @author xiweng.yy
  */
-public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
+public class DistroExecuteTaskExecuteEngine extends NacosExecuteTaskExecuteEngine {
     
-    private final DistroKey distroKey;
-    
-    protected AbstractDistroExecuteTask(DistroKey distroKey) {
-        this.distroKey = distroKey;
-    }
-    
-    protected DistroKey getDistroKey() {
-        return distroKey;
+    public DistroExecuteTaskExecuteEngine() {
+        super(DistroExecuteTaskExecuteEngine.class.getSimpleName(), Loggers.DISTRO);
     }
 }

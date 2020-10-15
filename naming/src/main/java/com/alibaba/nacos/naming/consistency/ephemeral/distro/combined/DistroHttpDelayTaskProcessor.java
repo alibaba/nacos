@@ -55,7 +55,7 @@ public class DistroHttpDelayTaskProcessor implements NacosTaskProcessor {
         DistroKey distroKey = distroDelayTask.getDistroKey();
         DistroHttpCombinedKeyExecuteTask executeTask = new DistroHttpCombinedKeyExecuteTask(globalConfig,
                 distroTaskEngineHolder.getDelayTaskExecuteEngine(), distroKey, distroDelayTask.getAction());
-        distroTaskEngineHolder.getExecuteWorkersManager().dispatch(distroKey, executeTask);
+        distroTaskEngineHolder.getExecuteWorkersManager().addTask(distroKey, executeTask);
         return true;
     }
 }
