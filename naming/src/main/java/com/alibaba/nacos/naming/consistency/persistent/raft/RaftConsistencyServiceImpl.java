@@ -95,14 +95,11 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
         checkIsStopWork();
         try {
             if (KeyBuilder.matchInstanceListKey(key) && !raftCore.isLeader()) {
-                Datum datum = new Datum();
-                datum.key = key;
-                raftCore.onDelete(datum.key, peers.getLeader());
-                raftCore.unlistenAll(key);
-                return;
+                raftCore.onDelete(key, peers.getLeader());
+            } else {
+                raftCore.signalDelete(key);
             }
-            raftCore.signalDelete(key);
-            raftCore.unlistenAll(key);
+            raftCore.unListenAll(key);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft remove failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR, "Raft remove failed, key:" + key, e);

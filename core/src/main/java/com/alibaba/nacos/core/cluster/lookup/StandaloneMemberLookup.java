@@ -33,7 +33,7 @@ public class StandaloneMemberLookup extends AbstractMemberLookup {
     @Override
     public void start() {
         if (start.compareAndSet(false, true)) {
-            String url = InetUtils.getSelfIp() + ":" + ApplicationUtils.getPort();
+            String url = InetUtils.getSelfIP() + ":" + ApplicationUtils.getPort();
             afterLookup(MemberUtils.readServerConf(Collections.singletonList(url)));
         }
     }
