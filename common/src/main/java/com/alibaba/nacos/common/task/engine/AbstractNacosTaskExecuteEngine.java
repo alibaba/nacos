@@ -16,20 +16,13 @@
 
 package com.alibaba.nacos.common.task.engine;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.executor.ExecutorFactory;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Abstract nacos task execute engine.
@@ -40,57 +33,12 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
     
     private final Logger log;
     
-    private final ScheduledExecutorService processingExecutor;
-    
     private final ConcurrentHashMap<Object, NacosTaskProcessor> taskProcessors = new ConcurrentHashMap<Object, NacosTaskProcessor>();
-    
-    protected final ConcurrentHashMap<Object, T> tasks;
-    
-    protected final ReentrantLock lock = new ReentrantLock();
     
     private NacosTaskProcessor defaultTaskProcessor;
     
-    public AbstractNacosTaskExecuteEngine(String name) {
-        this(name, 32, null, 100L);
-    }
-    
-    public AbstractNacosTaskExecuteEngine(String name, Logger logger) {
-        this(name, 32, logger, 100L);
-    }
-    
-    public AbstractNacosTaskExecuteEngine(String name, Logger logger, long processInterval) {
-        this(name, 32, logger, processInterval);
-    }
-    
-    public AbstractNacosTaskExecuteEngine(String name, int initCapacity, Logger logger) {
-        this(name, initCapacity, logger, 100L);
-    }
-    
-    public AbstractNacosTaskExecuteEngine(String name, int initCapacity, Logger logger, long processInterval) {
+    public AbstractNacosTaskExecuteEngine(Logger logger) {
         this.log = null != logger ? logger : LoggerFactory.getLogger(AbstractNacosTaskExecuteEngine.class.getName());
-        tasks = new ConcurrentHashMap<Object, T>(initCapacity);
-        processingExecutor = ExecutorFactory.newSingleScheduledExecutorService(new NameThreadFactory(name));
-        processingExecutor.scheduleWithFixedDelay(new ProcessRunnable(), processInterval, processInterval, TimeUnit.MILLISECONDS);
-    }
-    
-    @Override
-    public int size() {
-        lock.lock();
-        try {
-            return tasks.size();
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    @Override
-    public boolean isEmpty() {
-        lock.lock();
-        try {
-            return tasks.isEmpty();
-        } finally {
-            lock.unlock();
-        }
     }
     
     @Override
@@ -118,56 +66,7 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
         this.defaultTaskProcessor = defaultTaskProcessor;
     }
     
-    @Override
-    public T removeTask(Object key) {
-        lock.lock();
-        try {
-            T task = tasks.get(key);
-            if (null != task && task.shouldProcess()) {
-                return tasks.remove(key);
-            } else {
-                return null;
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    @Override
-    public Collection<Object> getAllTaskKeys() {
-        Collection<Object> keys = new HashSet<Object>();
-        lock.lock();
-        try {
-            keys.addAll(tasks.keySet());
-        } finally {
-            lock.unlock();
-        }
-        return keys;
-    }
-    
-    @Override
-    public void shutdown() throws NacosException {
-        processingExecutor.shutdown();
-    }
-    
     protected Logger getEngineLog() {
         return log;
-    }
-    
-    /**
-     * process tasks in execute engine.
-     */
-    protected abstract void processTasks();
-    
-    private class ProcessRunnable implements Runnable {
-    
-        @Override
-        public void run() {
-            try {
-                AbstractNacosTaskExecuteEngine.this.processTasks();
-            } catch (Throwable e) {
-                log.error(e.toString(), e);
-            }
-        }
     }
 }
