@@ -18,9 +18,9 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.consistency.DataOperation;
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -49,15 +49,18 @@ public class DistroHttpCombinedKeyDelayTask extends DistroDelayTask {
     public void merge(AbstractDelayTask task) {
         actualResourceKeys.addAll(((DistroHttpCombinedKeyDelayTask) task).getActualResourceKeys());
         if (actualResourceKeys.size() >= batchSize) {
-            this.setLastProcessTime(0);
             DistroHttpCombinedKey.incrementSequence();
+            setLastProcessTime(0);
+        } else {
+            setLastProcessTime(task.getLastProcessTime());
         }
     }
     
     @Override
     public DistroKey getDistroKey() {
         DistroKey taskKey = super.getDistroKey();
-        DistroHttpCombinedKey result = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, taskKey.getTargetServer());
+        DistroHttpCombinedKey result = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
+                taskKey.getTargetServer());
         result.setResourceKey(taskKey.getResourceKey());
         result.getActualResourceTypes().addAll(actualResourceKeys);
         return result;
