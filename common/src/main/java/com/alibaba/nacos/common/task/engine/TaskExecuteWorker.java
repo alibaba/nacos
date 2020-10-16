@@ -49,18 +49,14 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
     private final AtomicBoolean closed;
     
     public TaskExecuteWorker(final String name, final int mod, final int total) {
-        this.name = name + "_" + mod + "%" + total;
-        this.queue = new ArrayBlockingQueue<Runnable>(QUEUE_CAPACITY);
-        this.closed = new AtomicBoolean(false);
-        this.log = LoggerFactory.getLogger(TaskExecuteWorker.class);
-        new InnerWorker(name).start();
+        this(name, mod, total, null);
     }
     
     public TaskExecuteWorker(final String name, final int mod, final int total, final Logger logger) {
         this.name = name + "_" + mod + "%" + total;
         this.queue = new ArrayBlockingQueue<Runnable>(QUEUE_CAPACITY);
         this.closed = new AtomicBoolean(false);
-        this.log = logger;
+        this.log = null == logger ? LoggerFactory.getLogger(TaskExecuteWorker.class) : logger;
         new InnerWorker(name).start();
     }
     
