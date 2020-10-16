@@ -19,6 +19,7 @@ package com.alibaba.nacos.common.task.engine;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -33,21 +34,15 @@ public class NacosExecuteTaskExecuteEngine extends AbstractNacosTaskExecuteEngin
     private final TaskExecuteWorker[] executeWorkers;
     
     public NacosExecuteTaskExecuteEngine(String name, Logger logger) {
-        super(logger);
-        int workerCount = findWorkerCount();
-        executeWorkers = new TaskExecuteWorker[workerCount];
-        for (int mod = 0; mod < workerCount; ++mod) {
-            executeWorkers[mod] = new TaskExecuteWorker(name, mod, workerCount);
-        }
+        this(name, logger, ThreadUtils.getSuitableThreadCount(1));
     }
     
-    private int findWorkerCount() {
-        final int coreCount = Runtime.getRuntime().availableProcessors();
-        int result = 1;
-        while (result < coreCount) {
-            result <<= 1;
+    public NacosExecuteTaskExecuteEngine(String name, Logger logger, int dispatchWorkerCount) {
+        super(logger);
+        executeWorkers = new TaskExecuteWorker[dispatchWorkerCount];
+        for (int mod = 0; mod < dispatchWorkerCount; ++mod) {
+            executeWorkers[mod] = new TaskExecuteWorker(name, mod, dispatchWorkerCount);
         }
-        return result;
     }
     
     @Override
