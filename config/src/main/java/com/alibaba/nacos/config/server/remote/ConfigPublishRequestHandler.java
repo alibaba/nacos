@@ -111,7 +111,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                         .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
             }
             ConfigTraceService
-                    .logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(), InetUtils.getSelfIp(),
+                    .logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
             return ConfigPubishResponse.buildSuccessResponse();
         } catch (Exception e) {

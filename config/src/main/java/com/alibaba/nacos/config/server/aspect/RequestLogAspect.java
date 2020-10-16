@@ -70,6 +70,7 @@ public class RequestLogAspect {
     /**
      * Get config.
      */
+    @SuppressWarnings("checkstyle:linelength")
     private static final String CLIENT_INTERFACE_GET_CONFIG_RPC = "execution(* com.alibaba.nacos.config.server.remote.ConfigQueryRequestHandler.handle(..)) && args(request,requestMeta)";
     
     /**
@@ -82,6 +83,7 @@ public class RequestLogAspect {
     /**
      * Remove config.
      */
+    @SuppressWarnings("checkstyle:linelength")
     private static final String CLIENT_INTERFACE_REMOVE_ALL_CONFIG_RPC = "execution(* com.alibaba.nacos.config.server.remote.ConfiRemoveRequestHandler.handle(..)) && args(request,meta)";
     
     /**
