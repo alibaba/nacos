@@ -24,7 +24,7 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask implements Runnable {
+public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
     
     private final DistroKey distroKey;
     
