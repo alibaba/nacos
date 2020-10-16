@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.task;
+package com.alibaba.nacos.core.distributed.distro.task.execute;
+
+import com.alibaba.nacos.common.task.engine.NacosExecuteTaskExecuteEngine;
+import com.alibaba.nacos.core.utils.Loggers;
 
 /**
- * Task processor.
+ * Distro execute task execute engine.
  *
- * @author Nacos
+ * @author xiweng.yy
  */
-public interface NacosTaskProcessor {
+public class DistroExecuteTaskExecuteEngine extends NacosExecuteTaskExecuteEngine {
     
-    /**
-     * Process task.
-     *
-     * @param task     task.
-     * @return process task result.
-     */
-    boolean process(NacosTask task);
+    public DistroExecuteTaskExecuteEngine() {
+        super(DistroExecuteTaskExecuteEngine.class.getSimpleName(), Loggers.DISTRO);
+    }
 }

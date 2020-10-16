@@ -44,10 +44,6 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
     
     Condition notEmpty = this.lock.newCondition();
     
-    public TaskManager() {
-        this(null);
-    }
-    
     public TaskManager(String name) {
         super(name, LOGGER, 100L);
         this.name = name;
