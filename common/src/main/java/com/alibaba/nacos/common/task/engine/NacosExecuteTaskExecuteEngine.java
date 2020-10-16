@@ -41,7 +41,7 @@ public class NacosExecuteTaskExecuteEngine extends AbstractNacosTaskExecuteEngin
         super(logger);
         executeWorkers = new TaskExecuteWorker[dispatchWorkerCount];
         for (int mod = 0; mod < dispatchWorkerCount; ++mod) {
-            executeWorkers[mod] = new TaskExecuteWorker(name, mod, dispatchWorkerCount);
+            executeWorkers[mod] = new TaskExecuteWorker(name, mod, dispatchWorkerCount, getEngineLog());
         }
     }
     

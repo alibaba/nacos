@@ -35,23 +35,32 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskExecuteWorker.class);
-    
     /**
      * Max task queue size 32768.
      */
     private static final int QUEUE_CAPACITY = 1 << 15;
     
-    private final BlockingQueue<Runnable> queue;
+    private final Logger log;
     
     private final String name;
+    
+    private final BlockingQueue<Runnable> queue;
     
     private final AtomicBoolean closed;
     
     public TaskExecuteWorker(final String name, final int mod, final int total) {
         this.name = name + "_" + mod + "%" + total;
-        queue = new ArrayBlockingQueue<Runnable>(QUEUE_CAPACITY);
-        closed = new AtomicBoolean(false);
+        this.queue = new ArrayBlockingQueue<Runnable>(QUEUE_CAPACITY);
+        this.closed = new AtomicBoolean(false);
+        this.log = LoggerFactory.getLogger(TaskExecuteWorker.class);
+        new InnerWorker(name).start();
+    }
+    
+    public TaskExecuteWorker(final String name, final int mod, final int total, final Logger logger) {
+        this.name = name + "_" + mod + "%" + total;
+        this.queue = new ArrayBlockingQueue<Runnable>(QUEUE_CAPACITY);
+        this.closed = new AtomicBoolean(false);
+        this.log = logger;
         new InnerWorker(name).start();
     }
     
@@ -71,7 +80,7 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
         try {
             queue.put(task);
         } catch (InterruptedException ire) {
-            LOGGER.error(ire.toString(), ire);
+            log.error(ire.toString(), ire);
         }
     }
     
@@ -111,10 +120,10 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
                     task.run();
                     long duration = System.currentTimeMillis() - begin;
                     if (duration > 1000L) {
-                        LOGGER.warn("distro task {} takes {}ms", task, duration);
+                        log.warn("distro task {} takes {}ms", task, duration);
                     }
                 } catch (Throwable e) {
-                    LOGGER.error("[DISTRO-FAILED] " + e.toString(), e);
+                    log.error("[DISTRO-FAILED] " + e.toString(), e);
                 }
             }
         }
