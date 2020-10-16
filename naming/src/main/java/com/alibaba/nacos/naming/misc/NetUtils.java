@@ -32,7 +32,7 @@ public class NetUtils {
      * @return local server address
      */
     public static String localServer() {
-        return InetUtils.getSelfIp() + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        return InetUtils.getSelfIP() + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
     }
     
     /**

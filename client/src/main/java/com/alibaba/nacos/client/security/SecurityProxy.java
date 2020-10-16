@@ -28,8 +28,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,13 +125,13 @@ public class SecurityProxy {
      * @param server server address
      * @return true if login successfully
      */
-    public boolean login(String server) throws UnsupportedEncodingException {
+    public boolean login(String server) {
         
         if (StringUtils.isNotBlank(username)) {
             Map<String, String> params = new HashMap<String, String>(2);
             Map<String, String> bodyMap = new HashMap<String, String>(2);
             params.put("username", username);
-            bodyMap.put("password", URLEncoder.encode(password, "utf-8"));
+            bodyMap.put("password", password);
             String url = "http://" + server + contextPath + LOGIN_URL;
             
             if (server.contains(Constants.HTTP_PREFIX)) {
