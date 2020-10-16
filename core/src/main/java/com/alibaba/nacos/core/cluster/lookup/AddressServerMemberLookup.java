@@ -153,7 +153,6 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
                         ExceptionUtil.getAllExceptionMsg(e));
             }
             addressServerFailCount = 0;
-            isAddressServerHealth = false;
         } else {
             addressServerFailCount++;
             if (addressServerFailCount >= maxFailCount) {

@@ -106,7 +106,7 @@ public class MergeDatumService {
             return;
         }
         for (ConfigInfoChanged item : persistService.findAllAggrGroup()) {
-            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIp());
+            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIP());
         }
     }
     
@@ -163,7 +163,7 @@ public class MergeDatumService {
                                 ContentUtils.truncateContent(cf.getContent()));
                     } else {
                         // remove
-                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
+                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
                         LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                                 + group);
                     }

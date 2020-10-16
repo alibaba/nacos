@@ -175,7 +175,6 @@ public class OperatorController {
      * @param request request
      * @return metrics information
      */
-    @Secured(resource = "naming/metrics", action = ActionTypes.READ)
     @GetMapping("/metrics")
     public ObjectNode metrics(HttpServletRequest request) {
         
