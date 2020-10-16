@@ -47,6 +47,7 @@ public class DiskCacheTest {
         instance.setIp("1.1.1.1");
         instance.setPort(1234);
         instance.setServiceName("testName");
+        instance.addMetadata("chinese", "中文");
         serviceInfo.setHosts(Collections.singletonList(instance));
     }
     
@@ -87,9 +88,10 @@ public class DiskCacheTest {
     }
     
     private void assertInstance(Instance actual, Instance expected) {
-        assertEquals(actual.getServiceName(), actual.getServiceName());
-        assertEquals(actual.getClusterName(), actual.getClusterName());
-        assertEquals(actual.getIp(), actual.getIp());
-        assertEquals(actual.getPort(), actual.getPort());
+        assertEquals(actual.getServiceName(), expected.getServiceName());
+        assertEquals(actual.getClusterName(), expected.getClusterName());
+        assertEquals(actual.getIp(), expected.getIp());
+        assertEquals(actual.getPort(), expected.getPort());
+        assertEquals(actual.getMetadata(), expected.getMetadata());
     }
 }

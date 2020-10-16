@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.task;
+package com.alibaba.nacos.naming.core.v2.pojo;
 
 /**
- * Task processor.
+ * Instance publish info with heart beat time for v1.x.
  *
- * @author Nacos
+ * @author xiweng.yy
  */
-public interface NacosTaskProcessor {
+public class HeartBeatInstancePublishInfo extends InstancePublishInfo {
     
-    /**
-     * Process task.
-     *
-     * @param task     task.
-     * @return process task result.
-     */
-    boolean process(NacosTask task);
+    private long lastHeartBeatTime = System.currentTimeMillis();
+    
+    public long getLastHeartBeatTime() {
+        return lastHeartBeatTime;
+    }
+    
+    public void setLastHeartBeatTime(long lastHeartBeatTime) {
+        this.lastHeartBeatTime = lastHeartBeatTime;
+    }
 }

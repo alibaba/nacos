@@ -41,5 +41,9 @@ public enum DataOperation {
     /**
      * Data Snapshot.
      */
-    SNAPSHOT;
+    SNAPSHOT,
+    /**
+     * Data query.
+     */
+    QUERY;
 }

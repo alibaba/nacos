@@ -346,7 +346,7 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     
     public static String getLocalAddress() {
         if (StringUtils.isBlank(localAddress)) {
-            localAddress = InetUtils.getSelfIp() + ":" + getPort();
+            localAddress = InetUtils.getSelfIP() + ":" + getPort();
         }
         return localAddress;
     }
