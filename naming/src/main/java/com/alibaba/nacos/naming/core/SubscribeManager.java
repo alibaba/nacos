@@ -110,7 +110,7 @@ public class SubscribeManager {
                                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(),
                         paramValues);
                 
-                if (!result.ok()) {
+                if (result.ok()) {
                     Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
                 }

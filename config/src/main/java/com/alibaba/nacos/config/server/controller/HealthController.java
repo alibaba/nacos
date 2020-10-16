@@ -69,7 +69,7 @@ public class HealthController {
                 sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
             }
             if (!memberManager.isInIpList()) {
-                sb.append("server ip ").append(InetUtils.getSelfIp())
+                sb.append("server ip ").append(InetUtils.getSelfIP())
                         .append(" is not in the serverList of address server. ");
             }
         }

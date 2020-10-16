@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.core.v2.metadata;
+package com.alibaba.nacos.core.distributed.distro.task.execute;
+
+import com.alibaba.nacos.common.task.engine.NacosExecuteTaskExecuteEngine;
+import com.alibaba.nacos.core.utils.Loggers;
 
 /**
- * Metadata constants.
+ * Distro execute task execute engine.
  *
  * @author xiweng.yy
  */
-public class MetadataConstants {
+public class DistroExecuteTaskExecuteEngine extends NacosExecuteTaskExecuteEngine {
     
-    public static final String LAST_BEAT_TIME = "lastBeatTime";
+    public DistroExecuteTaskExecuteEngine() {
+        super(DistroExecuteTaskExecuteEngine.class.getSimpleName(), Loggers.DISTRO);
+    }
 }

@@ -131,7 +131,7 @@ public class AsyncNotifyService {
     class AsyncTask implements Runnable {
         
         private Queue<NotifySingleTask> queue;
-    
+        
         private NacosAsyncRestTemplate restTemplate;
         
         public AsyncTask(NacosAsyncRestTemplate restTemplate, Queue<NotifySingleTask> queue) {
@@ -154,7 +154,7 @@ public class AsyncNotifyService {
                     if (unHealthNeedDelay) {
                         // target ip is unhealthy, then put it in the notification list
                         ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                                task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_UNHEALTH,
+                                task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_UNHEALTH,
                                 0, task.target);
                         // get delay time and set fail count to the task
                         asyncTaskExecute(task);
@@ -162,7 +162,7 @@ public class AsyncNotifyService {
                         Header header = Header.newInstance();
                         header.addParam(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
                                 String.valueOf(task.getLastModified()));
-                        header.addParam(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIp());
+                        header.addParam(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIP());
                         if (task.isBeta) {
                             header.addParam("isBeta", "true");
                         }
@@ -185,7 +185,7 @@ public class AsyncNotifyService {
         public void run() {
             while (!queue.isEmpty()) {
                 NotifySingleRpcTask task = queue.poll();
-    
+                
                 ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
                 syncRequest.setDataId(task.getDataId());
                 syncRequest.setGroup(task.getGroup());
@@ -204,19 +204,19 @@ public class AsyncNotifyService {
                     }
                     continue;
                 }
-    
+                
                 if (memberManager.hasMember(member.getAddress())) {
                     // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
                     boolean unHealthNeedDelay = memberManager.isUnHealth(member.getAddress());
                     if (unHealthNeedDelay) {
                         // target ip is unhealthy, then put it in the notification list
                         ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                                task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_UNHEALTH,
+                                task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_UNHEALTH,
                                 0, member.getAddress());
                         // get delay time and set fail count to the task
                         asyncTaskExecute(task);
                     } else {
-    
+                        
                         try {
                             configClusterRpcClientProxy
                                     .syncConfigChange(member, syncRequest, new AsyncRpcNotifyCallBack(task));
@@ -280,19 +280,22 @@ public class AsyncNotifyService {
             long delayed = System.currentTimeMillis() - task.getLastModified();
             
             if (result.ok()) {
-                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
+                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
+                        task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
                         task.target);
             } else {
                 LOGGER.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}", task.target, task.getDataId(),
                         task.getGroup(), task.getLastModified(), result.getCode());
-                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
+                ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
+                        task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
                         task.target);
                 
                 //get delay time and set fail count to the task
                 asyncTaskExecute(task);
                 
                 LogUtil.NOTIFY_LOG
-                        .error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(), task.getGroup(), task.getLastModified());
+                        .error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
+                                task.getGroup(), task.getLastModified());
                 
                 MetricsMonitor.getConfigNotifyException().increment();
             }
@@ -306,7 +309,7 @@ public class AsyncNotifyService {
                     task.getGroup(), task.getLastModified(), ex.toString());
             ConfigTraceService
                     .logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
-                            InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, task.target);
+                            InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, task.target);
             
             //get delay time and set fail count to the task
             asyncTaskExecute(task);
@@ -355,13 +358,13 @@ public class AsyncNotifyService {
             
             if (response.isSuccess()) {
                 ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                        task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
+                        task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
                         task.member.getAddress());
             } else {
                 LOGGER.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}", task.member.getAddress(),
                         task.getDataId(), task.getGroup(), task.getLastModified(), response.getErrorCode());
                 ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                        task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
+                        task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
                         task.member.getAddress());
                 
                 //get delay time and set fail count to the task
@@ -381,7 +384,7 @@ public class AsyncNotifyService {
                     task.getDataId(), task.getGroup(), task.getLastModified(), ex.toString());
             ConfigTraceService
                     .logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
-                            InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed,
+                            InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed,
                             task.member.getAddress());
             
             //get delay time and set fail count to the task

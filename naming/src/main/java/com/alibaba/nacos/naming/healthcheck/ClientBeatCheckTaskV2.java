@@ -27,7 +27,7 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
-import com.alibaba.nacos.naming.core.v2.metadata.MetadataConstants;
+import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -83,8 +83,8 @@ public class ClientBeatCheckTaskV2 implements BeatCheckTask {
             boolean expireInstance = getGlobalConfig().isExpireInstance();
             Collection<Service> services = client.getAllPublishedService();
             for (Service each : services) {
-                InstancePublishInfo instance = client.getInstancePublishInfo(each);
-                long lastBeatTime = (long) instance.getExtendDatum().get(MetadataConstants.LAST_BEAT_TIME);
+                HeartBeatInstancePublishInfo instance = (HeartBeatInstancePublishInfo) client.getInstancePublishInfo(each);
+                long lastBeatTime = instance.getLastHeartBeatTime();
                 if (instance.isHealthy() && isUnhealthy(instance, lastBeatTime)) {
                     changeHealthyStatus(each, instance, lastBeatTime);
                 }

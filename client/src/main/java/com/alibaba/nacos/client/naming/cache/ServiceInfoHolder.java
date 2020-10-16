@@ -29,6 +29,7 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,9 +69,13 @@ public class ServiceInfoHolder implements Closeable {
     }
     
     private void initCacheDir(String namespace) {
-        cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
-        if (StringUtils.isEmpty(cacheDir)) {
-            cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
+        String jmSnapshotPath = System.getProperty("JM.SNAPSHOT.PATH");
+        if (!StringUtils.isBlank(jmSnapshotPath)) {
+            cacheDir =
+                    jmSnapshotPath + File.separator + "nacos" + File.separator + "naming" + File.separator + namespace;
+        } else {
+            cacheDir = System.getProperty("user.home") + File.separator + "nacos" + File.separator + "naming"
+                    + File.separator + namespace;
         }
     }
     
