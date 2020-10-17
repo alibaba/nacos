@@ -81,8 +81,10 @@ public class InetUtils {
                 if (StringUtils.isBlank(nacosIP)) {
                     nacosIP = ApplicationUtils.getProperty(IP_ADDRESS);
                 }
-                if (!StringUtils.isBlank(nacosIP) && !(IPUtil.isIP(nacosIP) || isDomain(nacosIP))) {
-                    throw new RuntimeException("nacos address " + nacosIP + " is not ip");
+                if (!StringUtils.isBlank(nacosIP)) {
+                    if (!(IPUtil.isIP(nacosIP) || isDomain(nacosIP))) {
+                        throw new RuntimeException("nacos address " + nacosIP + " is not ip");
+                    }
                 }
                 String tmpSelfIP = nacosIP;
                 if (StringUtils.isBlank(tmpSelfIP)) {
