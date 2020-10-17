@@ -14,69 +14,69 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.task.execute;
+package com.alibaba.nacos.common.task.engine;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.common.task.NacosTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Distro execute worker.
+ * Nacos execute task execute worker.
  *
  * @author xiweng.yy
  */
-public final class DistroExecuteWorker implements Closeable {
+public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(DistroExecuteWorker.class);
+    /**
+     * Max task queue size 32768.
+     */
+    private static final int QUEUE_CAPACITY = 1 << 15;
     
-    private static final int QUEUE_CAPACITY = 50000;
-    
-    private final BlockingQueue<Runnable> queue;
+    private final Logger log;
     
     private final String name;
     
+    private final BlockingQueue<Runnable> queue;
+    
     private final AtomicBoolean closed;
-
-    public DistroExecuteWorker(final int mod, final int total) {
-        name = getClass().getName() + "_" + mod + "%" + total;
-        queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
-        closed = new AtomicBoolean(false);
+    
+    public TaskExecuteWorker(final String name, final int mod, final int total) {
+        this(name, mod, total, null);
+    }
+    
+    public TaskExecuteWorker(final String name, final int mod, final int total, final Logger logger) {
+        this.name = name + "_" + mod + "%" + total;
+        this.queue = new ArrayBlockingQueue<Runnable>(QUEUE_CAPACITY);
+        this.closed = new AtomicBoolean(false);
+        this.log = null == logger ? LoggerFactory.getLogger(TaskExecuteWorker.class) : logger;
         new InnerWorker(name).start();
     }
-
+    
     public String getName() {
         return name;
     }
-
-    /**
-     * Execute task without result.
-     */
-    public void execute(Runnable task) {
-        putTask(task);
+    
+    @Override
+    public boolean process(NacosTask task) {
+        if (task instanceof AbstractExecuteTask) {
+            putTask((Runnable) task);
+        }
+        return true;
     }
-
-    /**
-     * Execute task with a result.
-     */
-    public <V> Future<V> execute(Callable<V> task) {
-        FutureTask<V> future = new FutureTask(task);
-        putTask(future);
-        return future;
-    }
-
+    
     private void putTask(Runnable task) {
         try {
             queue.put(task);
         } catch (InterruptedException ire) {
-            LOGGER.error(ire.toString(), ire);
+            log.error(ire.toString(), ire);
         }
     }
     
@@ -101,12 +101,12 @@ public final class DistroExecuteWorker implements Closeable {
      * Inner execute worker.
      */
     private class InnerWorker extends Thread {
-
+        
         InnerWorker(String name) {
             setDaemon(false);
             setName(name);
         }
-
+        
         @Override
         public void run() {
             while (!closed.get()) {
@@ -116,10 +116,10 @@ public final class DistroExecuteWorker implements Closeable {
                     task.run();
                     long duration = System.currentTimeMillis() - begin;
                     if (duration > 1000L) {
-                        LOGGER.warn("distro task {} takes {}ms", task, duration);
+                        log.warn("distro task {} takes {}ms", task, duration);
                     }
                 } catch (Throwable e) {
-                    LOGGER.error("[DISTRO-FAILED] " + e.toString(), e);
+                    log.error("[DISTRO-FAILED] " + e.toString(), e);
                 }
             }
         }

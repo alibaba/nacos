@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.test.BaseTest;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -163,5 +164,10 @@ public class NamingMaintainService_ITCase extends BaseTest {
 
         Assert.assertTrue(namingMaintainService.deleteService(serviceName));
     }
-
+    
+    @After
+    public void tearDown() throws NacosException {
+        namingMaintainService.shutDown();
+        namingService.shutDown();
+    }
 }
