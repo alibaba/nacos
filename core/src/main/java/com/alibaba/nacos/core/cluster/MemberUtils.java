@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
@@ -235,40 +236,40 @@ public class MemberUtils {
     }
     
     /**
-     * Judge whether two member is full equals.
+     * Judge whether basic info has changed.
      *
      * @param actual   actual member
      * @param expected expected member
      * @return true if all content is same, otherwise false
      */
-    public static boolean fullEquals(Member actual, Member expected) {
+    public static boolean isBasicInfoChanged(Member actual, Member expected) {
         if (null == expected) {
             return null == actual;
         }
         if (!expected.getIp().equals(actual.getIp())) {
-            return false;
+            return true;
         }
         if (expected.getPort() != actual.getPort()) {
-            return false;
+            return true;
         }
         if (!expected.getAddress().equals(actual.getAddress())) {
-            return false;
+            return true;
         }
         if (!expected.getState().equals(actual.getState())) {
-            return false;
+            return true;
         }
-        return equalsExtendInfo(expected, actual);
+        return isBasicInfoChangedInExtendInfo(expected, actual);
     }
     
-    private static boolean equalsExtendInfo(Member expected, Member actual) {
-        for (String each : MemberMetaDataConstants.META_KEY_LIST_WITHOUT_LAST_REFRESH_TIME) {
+    private static boolean isBasicInfoChangedInExtendInfo(Member expected, Member actual) {
+        for (String each : MemberMetaDataConstants.BASIC_META_KEYS) {
             if (expected.getExtendInfo().containsKey(each) != actual.getExtendInfo().containsKey(each)) {
-                return false;
+                return true;
             }
-            if (null != expected.getExtendVal(each) && !expected.getExtendVal(each).equals(actual.getExtendVal(each))) {
-                return false;
+            if (!Objects.equals(expected.getExtendVal(each), actual.getExtendVal(each))) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 }

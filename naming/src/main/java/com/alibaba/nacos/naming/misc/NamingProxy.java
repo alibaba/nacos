@@ -147,7 +147,7 @@ public class NamingProxy {
         }
         
         throw new IOException("failed to req API: " + "http://" + server + ApplicationUtils.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: " + result.getCode() + " msg: "
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + ALL_DATA_GET_URL + ". code: " + result.getCode() + " msg: "
                 + result.getMessage());
     }
     

@@ -143,11 +143,12 @@ public class ConcurrentDiskUtil {
                 }
             } while (null == lock);
             
-            ByteBuffer sendBuffer = ByteBuffer.wrap(content.getBytes(charsetName));
+            byte[] contentBytes = content.getBytes(charsetName);
+            ByteBuffer sendBuffer = ByteBuffer.wrap(contentBytes);
             while (sendBuffer.hasRemaining()) {
                 channel.write(sendBuffer);
             }
-            channel.truncate(content.length());
+            channel.truncate(contentBytes.length);
         } catch (FileNotFoundException e) {
             throw new IOException("file not exist");
         } finally {

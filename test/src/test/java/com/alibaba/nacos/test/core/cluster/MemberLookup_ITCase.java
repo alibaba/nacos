@@ -69,7 +69,7 @@ public class MemberLookup_ITCase extends BaseTest {
 		DiskUtils.forceMkdir(Paths.get(path, "conf").toString());
 		File file = Paths.get(path, "conf", name).toFile();
 		DiskUtils.touch(file);
-		String ip = InetUtils.getSelfIp();
+		String ip = InetUtils.getSelfIP();
 		DiskUtils.writeFile(file, (ip + ":8848," + ip + ":8847," + ip + ":8849").getBytes(
 				StandardCharsets.UTF_8), false);
 
