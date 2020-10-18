@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.task.engine;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.utils.ThreadUtils;

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -164,7 +164,7 @@ public class IoUtils {
         if (input == null) {
             return StringUtils.EMPTY;
         }
-        return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
+        return (null == encoding) ? toString(new InputStreamReader(input, CommonConstants.ENCODE))
                 : toString(new InputStreamReader(input, encoding));
     }
     

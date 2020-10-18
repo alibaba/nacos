@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -35,16 +36,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Map;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * Config service.
@@ -89,7 +90,7 @@ public class ConfigCacheService {
         }
         
         try {
-            final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+            final String md5 = MD5Utils.md5Hex(content, CommonConstants.ENCODE);
             
             if (md5.equals(ConfigCacheService.getContentMd5(groupKey))) {
                 DUMP_LOG.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
@@ -142,7 +143,7 @@ public class ConfigCacheService {
         }
         
         try {
-            final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+            final String md5 = MD5Utils.md5Hex(content, CommonConstants.ENCODE);
             if (md5.equals(ConfigCacheService.getContentBetaMd5(groupKey))) {
                 DUMP_LOG.warn("[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
@@ -187,7 +188,7 @@ public class ConfigCacheService {
         }
         
         try {
-            final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+            final String md5 = MD5Utils.md5Hex(content, CommonConstants.ENCODE);
             if (md5.equals(ConfigCacheService.getContentTagMd5(groupKey, tag))) {
                 DUMP_LOG.warn("[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
@@ -229,7 +230,7 @@ public class ConfigCacheService {
         }
         
         try {
-            final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+            final String md5 = MD5Utils.md5Hex(content, CommonConstants.ENCODE);
             if (!PropertyUtil.isDirectRead()) {
                 String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
                 if (md5.equals(loacalMd5)) {

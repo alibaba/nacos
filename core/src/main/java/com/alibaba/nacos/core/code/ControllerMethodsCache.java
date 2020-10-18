@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.auth.RequestMappingInfo;
 import com.alibaba.nacos.core.auth.RequestMappingInfo.RequestMappingInfoComparator;
 import com.alibaba.nacos.core.auth.condition.ParamRequestCondition;
 import com.alibaba.nacos.core.auth.condition.PathRequestCondition;
-import org.apache.commons.lang3.ArrayUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

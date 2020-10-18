@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -264,7 +264,7 @@ public class CapacityManagementAspect {
      */
     private int getCurrentSize(String content) {
         try {
-            return content.getBytes(Charset.forName(Constants.ENCODE)).length;
+            return content.getBytes(Charset.forName(CommonConstants.ENCODE)).length;
         } catch (Exception e) {
             LOGGER.error("[capacityManagement] getCurrentSize ", e);
         }

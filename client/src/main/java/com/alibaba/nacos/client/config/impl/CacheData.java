@@ -17,10 +17,11 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.api.config.ConfigChangeEvent;
 import com.alibaba.nacos.api.config.listener.AbstractSharedListener;
 import com.alibaba.nacos.api.config.listener.Listener;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
@@ -250,7 +251,7 @@ public class CacheData {
     }
     
     public static String getMd5String(String config) {
-        return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
+        return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, CommonConstants.ENCODE);
     }
     
     private String loadCacheContentFromDiskLocal(String name, String dataId, String group, String tenant) {

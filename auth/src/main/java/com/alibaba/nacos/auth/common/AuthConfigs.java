@@ -17,10 +17,9 @@
 package com.alibaba.nacos.auth.common;
 
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.jsonwebtoken.io.Decoders;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
@@ -86,10 +85,9 @@ public class AuthConfigs {
         // Runtime -D parameter has higher priority:
         String enabled = System.getProperty("nacos.core.auth.enabled");
         if (StringUtils.isNotBlank(enabled)) {
-            return BooleanUtils.toBoolean(enabled);
+            return Boolean.parseBoolean(enabled);
         }
-        return BooleanUtils
-                .toBoolean(ApplicationUtils.getProperty("nacos.core.auth.enabled", "false"));
+        return Boolean.parseBoolean(ApplicationUtils.getProperty("nacos.core.auth.enabled", "false"));
     }
     
     /**
@@ -101,8 +99,7 @@ public class AuthConfigs {
         if (Objects.nonNull(AuthConfigs.cachingEnabled)) {
             return cachingEnabled;
         }
-        return BooleanUtils
-                .toBoolean(ApplicationUtils.getProperty("nacos.core.auth.caching.enabled", "true"));
+        return Boolean.parseBoolean(ApplicationUtils.getProperty("nacos.core.auth.caching.enabled", "true"));
     }
     
     @JustForTest

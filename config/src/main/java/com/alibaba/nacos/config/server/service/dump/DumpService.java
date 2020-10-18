@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.constant.CommonConstants;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
@@ -49,9 +49,9 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -245,7 +245,7 @@ public abstract class DumpService {
                 File heartbeatFile = DiskUtil.heartBeatFile();
                 if (heartbeatFile.exists()) {
                     fis = new FileInputStream(heartbeatFile);
-                    String heartheatTempLast = IoUtils.toString(fis, Constants.ENCODE);
+                    String heartheatTempLast = IoUtils.toString(fis, CommonConstants.ENCODE);
                     heartheatLastStamp = Timestamp.valueOf(heartheatTempLast);
                     if (TimeUtils.getCurrentTime().getTime() - heartheatLastStamp.getTime()
                             < timeStep * 60 * 60 * 1000) {
@@ -409,7 +409,7 @@ public abstract class DumpService {
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
                         String aggrContent = cf.getContent();
                         String localContentMD5 = ConfigCacheService.getContentMd5(GroupKey.getKey(dataId, group));
-                        String aggrConetentMD5 = MD5Utils.md5Hex(aggrContent, Constants.ENCODE);
+                        String aggrConetentMD5 = MD5Utils.md5Hex(aggrContent, CommonConstants.ENCODE);
                         
                         if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
                             persistService.insertOrUpdate(null, null, cf, time, null, false);

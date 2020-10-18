@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.NacosException;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;

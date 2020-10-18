@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.config.http;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import io.prometheus.client.Histogram;

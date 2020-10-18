@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.client.identify.CredentialService;
+import com.alibaba.nacos.common.codec.Base64;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.crypto.Mac;
@@ -83,17 +83,17 @@ public class SpasAdapter {
      */
     public static String signWithHmacSha1Encrypt(String encryptText, String encryptKey) {
         try {
-            byte[] data = encryptKey.getBytes(Constants.ENCODE);
+            byte[] data = encryptKey.getBytes(CommonConstants.ENCODE);
             // 根据给定的字节数组构造一个密钥,第二参数指定一个密钥算法的名称
             SecretKey secretKey = new SecretKeySpec(data, "HmacSHA1");
             // 生成一个指定 Mac 算法 的 Mac 对象
             Mac mac = Mac.getInstance("HmacSHA1");
             // 用给定密钥初始化 Mac 对象
             mac.init(secretKey);
-            byte[] text = encryptText.getBytes(Constants.ENCODE);
+            byte[] text = encryptText.getBytes(CommonConstants.ENCODE);
             byte[] textFinal = mac.doFinal(text);
             // 完成 Mac 操作, base64编码，将byte数组转换为字符串
-            return new String(Base64.encodeBase64(textFinal), Constants.ENCODE);
+            return new String(Base64.encodeBase64(textFinal), CommonConstants.ENCODE);
         } catch (Exception e) {
             throw new RuntimeException("signWithhmacSHA1Encrypt fail", e);
         }

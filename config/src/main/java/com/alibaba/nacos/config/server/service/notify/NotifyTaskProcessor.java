@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.task.NacosTask;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.core.cluster.Member;
@@ -77,7 +78,7 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
             String urlString = MessageFormat
                     .format(URL_PATTERN, serverIp, ApplicationUtils.getContextPath(), dataId, group);
             
-            RestResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
+            RestResult<String> result = NotifyService.invokeURL(urlString, headers, CommonConstants.ENCODE);
             if (result.ok()) {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIP(),
                         ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);

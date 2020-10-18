@@ -334,7 +334,7 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
         
         for (int i = 0; i < Integer.MAX_VALUE; i++) {
             String value = environment.getProperty(key + "[" + i + "]");
-            if (org.apache.commons.lang3.StringUtils.isBlank(value)) {
+            if (StringUtils.isBlank(value)) {
                 break;
             }
             

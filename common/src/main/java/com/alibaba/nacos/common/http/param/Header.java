@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http.param;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -51,11 +51,11 @@ public class Header {
     public static Header newInstance() {
         return new Header();
     }
-
+    
     /**
      * Add the key and value to the header.
      *
-     * @param key the key
+     * @param key   the key
      * @param value the value
      * @return header
      */
@@ -168,14 +168,14 @@ public class Header {
         String acceptCharset = getValue(HttpHeaderConsts.ACCEPT_CHARSET);
         if (acceptCharset == null) {
             String contentType = getValue(HttpHeaderConsts.CONTENT_TYPE);
-            acceptCharset = StringUtils.isNotBlank(contentType) ? analysisCharset(contentType) : Constants.ENCODE;
+            acceptCharset = StringUtils.isNotBlank(contentType) ? analysisCharset(contentType) : CommonConstants.ENCODE;
         }
         return acceptCharset;
     }
     
     private String analysisCharset(String contentType) {
         String[] values = contentType.split(";");
-        String charset = Constants.ENCODE;
+        String charset = CommonConstants.ENCODE;
         if (values.length == 0) {
             return charset;
         }

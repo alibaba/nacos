@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.constant.CommonConstants;
+import com.alibaba.nacos.common.exception.NacosException;
+import com.alibaba.nacos.common.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
@@ -227,7 +227,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         configInfo.setTenant(tenantTmp);
         try {
-            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), CommonConstants.ENCODE);
             
             final String sql =
                     "INSERT INTO config_info_beta(data_id,group_id,tenant_id,app_name,content,md5,beta_ips,src_ip,"
@@ -254,7 +254,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         configInfo.setTenant(tenantTmp);
         
         try {
-            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), CommonConstants.ENCODE);
             
             final String sql =
                     "INSERT INTO config_info_tag(data_id,group_id,tenant_id,tag_id,app_name,content,md5,src_ip,src_user,"
@@ -317,7 +317,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         configInfo.setTenant(tenantTmp);
         try {
-            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), CommonConstants.ENCODE);
             
             final String sql = "UPDATE config_info_beta SET content=?,md5=?,src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND tenant_id=?";
             
@@ -343,7 +343,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         configInfo.setTenant(tenantTmp);
         
         try {
-            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), CommonConstants.ENCODE);
             
             final String sql = "UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?";
             final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
@@ -1803,7 +1803,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
-        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), CommonConstants.ENCODE);
         final String sql =
                 "INSERT INTO config_info(id, data_id, group_id, tenant_id, app_name, content, md5, src_ip, src_user, gmt_create,"
                         + "gmt_modified, c_desc, c_use, effect, type, c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
@@ -1906,7 +1906,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         final String tenantTmp =
                 StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), CommonConstants.ENCODE);
         final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
@@ -1998,7 +1998,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             final Timestamp time, String ops) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), CommonConstants.ENCODE);
         
         final String sql = "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,"
                 + "src_ip,src_user,gmt_modified,op_type) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
@@ -2225,7 +2225,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     String md5InDb = cf.getMd5();
                     final String content = cf.getContent();
                     final String tenant = cf.getTenant();
-                    final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+                    final String md5 = MD5Utils.md5Hex(content, CommonConstants.ENCODE);
                     if (StringUtils.isBlank(md5InDb)) {
                         try {
                             updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5, new Timestamp(cf.getLastModified()));

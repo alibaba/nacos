@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.config.annotation;
 
 import com.alibaba.nacos.api.annotation.NacosProperties;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.convert.NacosConfigConverter;
 

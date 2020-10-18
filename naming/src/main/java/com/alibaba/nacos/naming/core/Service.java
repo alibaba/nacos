@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
@@ -32,13 +32,12 @@ import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -556,7 +555,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             ipsString.append(",");
         }
         
-        checksum = MD5Utils.md5Hex(ipsString.toString(), Constants.ENCODE);
+        checksum = MD5Utils.md5Hex(ipsString.toString(), CommonConstants.ENCODE);
     }
     
     private void updateOrAddCluster(Collection<Cluster> clusters) {

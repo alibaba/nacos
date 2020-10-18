@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.client.config.utils.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.config.utils.JvmUtil;
 import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
@@ -79,12 +79,12 @@ public class LocalConfigInfoProcessor {
         }
         
         if (JvmUtil.isMultiInstance()) {
-            return ConcurrentDiskUtil.getFileContent(file, Constants.ENCODE);
+            return ConcurrentDiskUtil.getFileContent(file, CommonConstants.ENCODE);
         } else {
             InputStream is = null;
             try {
                 is = new FileInputStream(file);
-                return IoUtils.toString(is, Constants.ENCODE);
+                return IoUtils.toString(is, CommonConstants.ENCODE);
             } finally {
                 try {
                     if (null != is) {
@@ -127,9 +127,9 @@ public class LocalConfigInfoProcessor {
                 }
                 
                 if (JvmUtil.isMultiInstance()) {
-                    ConcurrentDiskUtil.writeFileContent(file, config, Constants.ENCODE);
+                    ConcurrentDiskUtil.writeFileContent(file, config, CommonConstants.ENCODE);
                 } else {
-                    IoUtils.writeStringToFile(file, config, Constants.ENCODE);
+                    IoUtils.writeStringToFile(file, config, CommonConstants.ENCODE);
                 }
             } catch (IOException ioe) {
                 LOGGER.error("[" + envName + "] save snapshot error, " + file, ioe);

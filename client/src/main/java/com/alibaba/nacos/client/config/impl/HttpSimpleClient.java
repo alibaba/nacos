@@ -17,9 +17,10 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -62,7 +63,7 @@ public class HttpSimpleClient {
         String encodedContent = encodingParams(paramValues, encoding);
         url += (null == encodedContent) ? "" : ("?" + encodedContent);
         if (Limiter
-                .isLimit(MD5Utils.md5Hex(new StringBuilder(url).append(encodedContent).toString(), Constants.ENCODE))) {
+                .isLimit(MD5Utils.md5Hex(new StringBuilder(url).append(encodedContent).toString(), CommonConstants.ENCODE))) {
             return new HttpResult(NacosException.CLIENT_OVER_THRESHOLD,
                     "More than client-side current limit threshold");
         }
@@ -118,7 +119,7 @@ public class HttpSimpleClient {
         String encodedContent = encodingParams(paramValues, encoding);
         encodedContent = (null == encodedContent) ? "" : encodedContent;
         if (Limiter
-                .isLimit(MD5Utils.md5Hex(new StringBuilder(url).append(encodedContent).toString(), Constants.ENCODE))) {
+                .isLimit(MD5Utils.md5Hex(new StringBuilder(url).append(encodedContent).toString(), CommonConstants.ENCODE))) {
             return new HttpResult(NacosException.CLIENT_OVER_THRESHOLD,
                     "More than client-side current limit threshold");
         }
@@ -182,7 +183,7 @@ public class HttpSimpleClient {
         String encodedContent = encodingParams(paramValues, encoding);
         url += (null == encodedContent) ? "" : ("?" + encodedContent);
         if (Limiter
-                .isLimit(MD5Utils.md5Hex(new StringBuilder(url).append(encodedContent).toString(), Constants.ENCODE))) {
+                .isLimit(MD5Utils.md5Hex(new StringBuilder(url).append(encodedContent).toString(), CommonConstants.ENCODE))) {
             return new HttpResult(NacosException.CLIENT_OVER_THRESHOLD,
                     "More than client-side current limit threshold");
         }
@@ -239,7 +240,7 @@ public class HttpSimpleClient {
         conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + encoding);
         
         String ts = String.valueOf(System.currentTimeMillis());
-        String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), Constants.ENCODE);
+        String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), CommonConstants.ENCODE);
         
         conn.addRequestProperty(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
         conn.addRequestProperty(Constants.CLIENT_REQUEST_TS_HEADER, ts);

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.trace;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -85,7 +85,7 @@ public class ConfigTraceService {
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed = -1] | ext
         // (md5)
-        String md5 = content == null ? null : MD5Utils.md5Hex(content, Constants.ENCODE);
+        String md5 = content == null ? null : MD5Utils.md5Hex(content, CommonConstants.ENCODE);
         
         LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
                 requestIpAppName, ts, handleIp, "persist", type, -1, md5);

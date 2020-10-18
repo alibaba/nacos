@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.task.NacosTask;
-import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -81,7 +81,7 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
             boolean result = ConfigCacheService
                     .dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(), cf.getLastModified());
             final String content = cf.getContent();
-            final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+            final String md5 = MD5Utils.md5Hex(content, CommonConstants.ENCODE);
             LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={}",
                     new Object[] {GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
                             content.length(), md5});

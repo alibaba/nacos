@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -173,12 +174,12 @@ public class ConfigSubService {
                 StringBuilder paramUrl = new StringBuilder();
                 for (Map.Entry<String, String> param : params.entrySet()) {
                     paramUrl.append("&").append(param.getKey()).append("=")
-                            .append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
+                            .append(URLEncoder.encode(param.getValue(), CommonConstants.ENCODE));
                 }
                 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
                 RestResult<String> result = NotifyService
-                        .invokeURL(urlAll, null, Constants.ENCODE);
+                        .invokeURL(urlAll, null, CommonConstants.ENCODE);
                 
                 // Http code 200
                 if (result.ok()) {

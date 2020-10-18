@@ -17,11 +17,12 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.common.constant.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.ReuseHttpRequest;
@@ -32,7 +33,6 @@ import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.codec.Charsets;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.Filter;
@@ -71,7 +71,7 @@ public class DistroFilter implements Filter {
     
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        
+    
     }
     
     @Override
@@ -169,6 +169,6 @@ public class DistroFilter implements Filter {
     
     @Override
     public void destroy() {
-        
+    
     }
 }

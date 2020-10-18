@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import org.apache.commons.lang3.StringUtils;
 
@@ -162,7 +162,7 @@ public class MD5Util {
     }
     
     public static String toString(InputStream input, String encoding) throws IOException {
-        return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
+        return (null == encoding) ? toString(new InputStreamReader(input, CommonConstants.ENCODE))
                 : toString(new InputStreamReader(input, encoding));
     }
     

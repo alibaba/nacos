@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.naming.web;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.constant.CommonParams;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 

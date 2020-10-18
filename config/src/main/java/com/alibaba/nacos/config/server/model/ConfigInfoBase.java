@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.model;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
@@ -25,8 +25,8 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 
 /**
- * ConfigInfoBase.
- * And can't add field, to compatible with old interface(If adding a field, then it will occour compatibility problems).
+ * ConfigInfoBase. And can't add field, to compatible with old interface(If adding a field, then it will occour
+ * compatibility problems).
  *
  * @author Nacos
  */
@@ -54,7 +54,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         this.group = group;
         this.content = content;
         if (this.content != null) {
-            this.md5 = MD5Utils.md5Hex(this.content, Constants.ENCODE);
+            this.md5 = MD5Utils.md5Hex(this.content, CommonConstants.ENCODE);
         }
     }
     

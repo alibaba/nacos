@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.Map;

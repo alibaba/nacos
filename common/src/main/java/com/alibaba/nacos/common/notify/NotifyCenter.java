@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.notify;
 
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -34,7 +34,7 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
+import static com.alibaba.nacos.common.exception.NacosException.SERVER_ERROR;
 
 /**
  * Unified Event Notify Center.

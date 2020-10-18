@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck;
 
-import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
-import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.alibaba.nacos.common.exception.runtime.NacosDeserializationException;
+import com.alibaba.nacos.common.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker.None;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;

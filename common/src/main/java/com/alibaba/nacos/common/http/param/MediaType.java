@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http.param;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
@@ -72,7 +72,7 @@ public final class MediaType {
             throw new IllegalArgumentException("MediaType must not be empty");
         }
         String[] values = contentType.split(";");
-        String charset = Constants.ENCODE;
+        String charset = CommonConstants.ENCODE;
         for (String value : values) {
             if (value.startsWith("charset=")) {
                 charset = value.substring("charset=".length());
@@ -85,7 +85,7 @@ public final class MediaType {
      * Use the given contentType and charset to assemble into a {@code MediaType} object.
      *
      * @param contentType contentType
-     * @param charset charset
+     * @param charset     charset
      * @return MediaType
      */
     public static MediaType valueOf(String contentType, String charset) {
@@ -93,7 +93,7 @@ public final class MediaType {
             throw new IllegalArgumentException("MediaType must not be empty");
         }
         String[] values = contentType.split(";");
-        return new MediaType(values[0], StringUtils.isEmpty(charset) ? Constants.ENCODE : charset);
+        return new MediaType(values[0], StringUtils.isEmpty(charset) ? CommonConstants.ENCODE : charset);
     }
     
     public String getType() {

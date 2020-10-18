@@ -18,7 +18,6 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
@@ -27,7 +26,9 @@ import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -223,8 +224,7 @@ public class ServerHttpAgent implements HttpAgent {
                 LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}",
                         serverListMgr.getCurrentServerAddr(), ExceptionUtil.getStackTrace(stoe));
             } catch (Exception ex) {
-                LOGGER.error(
-                        "[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
+                LOGGER.error("[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
                         ex);
                 throw ex;
             }
@@ -318,7 +318,7 @@ public class ServerHttpAgent implements HttpAgent {
                 .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ENCODE), new Callable<String>() {
                     @Override
                     public String call() throws Exception {
-                        return Constants.ENCODE;
+                        return CommonConstants.ENCODE;
                     }
                 });
     }
@@ -371,7 +371,7 @@ public class ServerHttpAgent implements HttpAgent {
             }
         }
         String ts = String.valueOf(System.currentTimeMillis());
-        String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), Constants.ENCODE);
+        String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), CommonConstants.ENCODE);
         
         header.addParam(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
         header.addParam(Constants.CLIENT_REQUEST_TS_HEADER, ts);

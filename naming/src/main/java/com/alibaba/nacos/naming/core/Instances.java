@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,7 +73,7 @@ public class Instances implements Record {
             sb.append(",");
         }
         
-        return MD5Utils.md5Hex(sb.toString(), Constants.ENCODE);
+        return MD5Utils.md5Hex(sb.toString(), CommonConstants.ENCODE);
     }
     
     /**

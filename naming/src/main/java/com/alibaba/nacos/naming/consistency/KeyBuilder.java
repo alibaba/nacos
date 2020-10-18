@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.consistency;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Key operations for data.

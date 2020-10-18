@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.exception.runtime.NacosRuntimeException;
 
-import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
+import static com.alibaba.nacos.common.exception.NacosException.SERVER_ERROR;
 
 /**
  * Utils for Class.

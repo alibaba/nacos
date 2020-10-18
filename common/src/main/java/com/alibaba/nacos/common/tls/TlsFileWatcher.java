@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.tls;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.ClassUtils;
@@ -84,7 +84,7 @@ public final class TlsFileWatcher {
                 InputStream in = null;
                 try {
                     in = new FileInputStream(filePath);
-                    fileMd5Map.put(filePath, MD5Utils.md5Hex(IoUtils.toString(in, Constants.ENCODE), Constants.ENCODE));
+                    fileMd5Map.put(filePath, MD5Utils.md5Hex(IoUtils.toString(in, CommonConstants.ENCODE), CommonConstants.ENCODE));
                 } finally {
                     IoUtils.closeQuietly(in);
                 }
@@ -106,7 +106,7 @@ public final class TlsFileWatcher {
                         InputStream in = null;
                         try {
                             in = new FileInputStream(filePath);
-                            newHash = MD5Utils.md5Hex(IoUtils.toString(in, Constants.ENCODE), Constants.ENCODE);
+                            newHash = MD5Utils.md5Hex(IoUtils.toString(in, CommonConstants.ENCODE), CommonConstants.ENCODE);
                         } catch (Exception ignored) {
                             LOGGER.warn(" service has exception when calculate the file MD5. " + ignored);
                             continue;

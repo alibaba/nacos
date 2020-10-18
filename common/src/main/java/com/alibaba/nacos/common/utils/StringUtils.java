@@ -16,13 +16,15 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -32,31 +34,45 @@ import java.util.Locale;
  */
 public class StringUtils {
     
-    public static final String DOT = ".";
+    public static final String LF = "\n";
     
-    private static final int INDEX_NOT_FOUND = -1;
+    public static final String DOT = ".";
     
     public static final String COMMA = ",";
     
     public static final String EMPTY = "";
     
+    private static final int INDEX_NOT_FOUND = -1;
+    
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+    
     public static String newStringForUtf8(byte[] bytes) {
-        return new String(bytes, Charset.forName(Constants.ENCODE));
+        return new String(bytes, Charset.forName(CommonConstants.ENCODE));
     }
     
     /**
-     * Judge whether string is blank.
+     * <p>Checks if a CharSequence is whitespace, empty ("") or null.</p>
      *
-     * @param str string
-     * @return true if str is null, empty string or only blanks, otherwise false
+     * <pre>
+     * StringUtils.isBlank(null)      = true
+     * StringUtils.isBlank("")        = true
+     * StringUtils.isBlank(" ")       = true
+     * StringUtils.isBlank("bob")     = false
+     * StringUtils.isBlank("  bob  ") = false
+     * </pre>
+     *
+     * @param cs the CharSequence to check, may be null
+     * @return {@code true} if the CharSequence is null, empty or whitespace
+     * @since 2.0
+     * @since 3.0 Changed signature from isBlank(String) to isBlank(CharSequence)
      */
-    public static boolean isBlank(String str) {
-        int strLen;
-        if (str == null || (strLen = str.length()) == 0) {
+    public static boolean isBlank(final CharSequence cs) {
+        final int strLen;
+        if (cs == null || (strLen = cs.length()) == 0) {
             return true;
         }
         for (int i = 0; i < strLen; i++) {
-            if (!Character.isWhitespace(str.charAt(i))) {
+            if (!Character.isWhitespace(cs.charAt(i))) {
                 return false;
             }
         }
@@ -64,18 +80,93 @@ public class StringUtils {
     }
     
     /**
-     * Judge whether all strings are blank.
+     * Checks if none of the strs are blank ("") or null or whitespace only.
      *
-     * @param strs strings
-     * @return true if all strings are blank, otherwise false
+     * <pre>
+     * StringUtils.isNoneBlank(null)             = false
+     * StringUtils.isNoneBlank(null, "foo")      = false
+     * StringUtils.isNoneBlank(null, null)       = false
+     * StringUtils.isNoneBlank("", "bar")        = false
+     * StringUtils.isNoneBlank("bob", "")        = false
+     * StringUtils.isNoneBlank("  bob  ", null)  = false
+     * StringUtils.isNoneBlank(" ", "bar")       = false
+     * StringUtils.isNoneBlank("foo", "bar")     = true
+     * </pre>
+     *
+     * @param strs the strs to check, may be null or empty
+     * @return true none of the strs are blank or null or whitespace only
+     */
+    public static boolean isNoneBlank(String... strs) {
+        if (ArrayUtils.isEmpty(strs)) {
+            return false;
+        }
+        for (String str : strs) {
+            if (isBlank(str)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public static boolean isAnyBlank(String... strs) {
+        return !isNoneBlank(strs);
+    }
+    
+    /**
+     * Checks if all of the strs are blank ("") or null or whitespace only.
+     *
+     * <pre>
+     * StringUtils.isAllBlank("foo")             = false
+     * StringUtils.isAllBlank(null, "foo")       = false
+     * StringUtils.isAllBlank("", "bar")         = false
+     * StringUtils.isAllBlank(" ", "bar")        = false
+     * StringUtils.isAllBlank("")                = true
+     * StringUtils.isAllBlank(null, null)        = true
+     * StringUtils.isAllBlank("", " ")           = true
+     * StringUtils.isAllBlank(" ", null)         = true
+     * </pre>
+     *
+     * @param strs the strs to check, may be null or empty
+     * @return true all of the strs are blank or null or whitespace only
      */
     public static boolean isAllBlank(String... strs) {
+        if (ArrayUtils.isEmpty(strs)) {
+            return true;
+        }
         for (String str : strs) {
             if (isNotBlank(str)) {
                 return false;
             }
         }
         return true;
+    }
+    
+    /**
+     * Check str is contains searchStr.
+     *
+     * @param str       need check str
+     * @param searchStr searchStr
+     * @return boolean
+     */
+    public static boolean contains(String str, String searchStr) {
+        if (str == null || searchStr == null) {
+            return false;
+        }
+        return str.indexOf(searchStr) > 0;
+    }
+    
+    /**
+     * Check seq is startsWith searchSeq.
+     *
+     * @param str       need check str
+     * @param searchStr searchStr
+     * @return boolean
+     */
+    public static boolean startsWith(String str, String searchStr) {
+        if (str == null || searchStr == null) {
+            return false;
+        }
+        return str.startsWith(searchStr);
     }
     
     public static boolean isNotBlank(String str) {
@@ -412,6 +503,65 @@ public class StringUtils {
             return true;
         }
         
+    }
+    
+    /**
+     * <p>Deletes all whitespaces from a String as defined by
+     * {@link Character#isWhitespace(char)}.</p>
+     *
+     * <pre>
+     * StringUtils.deleteWhitespace(null)         = null
+     * StringUtils.deleteWhitespace("")           = ""
+     * StringUtils.deleteWhitespace("abc")        = "abc"
+     * StringUtils.deleteWhitespace("   ab  c  ") = "abc"
+     * </pre>
+     *
+     * @param str the String to delete whitespace from, may be null
+     * @return the String without whitespaces, {@code null} if null String input
+     */
+    public static String deleteWhitespace(final String str) {
+        if (isEmpty(str)) {
+            return str;
+        }
+        final int sz = str.length();
+        final char[] chs = new char[sz];
+        int count = 0;
+        for (int i = 0; i < sz; i++) {
+            if (!Character.isWhitespace(str.charAt(i))) {
+                chs[count++] = str.charAt(i);
+            }
+        }
+        if (count == sz) {
+            return str;
+        }
+        return new String(chs, 0, count);
+    }
+    
+    /**
+     * split.
+     *
+     * @param ch char.
+     * @return string array.
+     */
+    public static String[] split(String str, char ch) {
+        List<String> list = null;
+        char c;
+        int ix = 0;
+        int len = str.length();
+        for (int i = 0; i < len; i++) {
+            c = str.charAt(i);
+            if (c == ch) {
+                if (list == null) {
+                    list = new ArrayList<String>();
+                }
+                list.add(str.substring(ix, i));
+                ix = i + 1;
+            }
+        }
+        if (ix > 0) {
+            list.add(str.substring(ix));
+        }
+        return list == null ? EMPTY_STRING_ARRAY : (String[]) list.toArray(EMPTY_STRING_ARRAY);
     }
     
     //   end

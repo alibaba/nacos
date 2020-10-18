@@ -16,15 +16,15 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.util.HashMap;

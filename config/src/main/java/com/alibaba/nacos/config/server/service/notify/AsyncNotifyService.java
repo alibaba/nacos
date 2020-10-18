@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -253,8 +254,8 @@ public class AsyncNotifyService {
             this.target = target;
             this.isBeta = isBeta;
             try {
-                dataId = URLEncoder.encode(dataId, Constants.ENCODE);
-                group = URLEncoder.encode(group, Constants.ENCODE);
+                dataId = URLEncoder.encode(dataId, CommonConstants.ENCODE);
+                group = URLEncoder.encode(group, CommonConstants.ENCODE);
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("URLEncoder encode error", e);
             }

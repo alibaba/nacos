@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.filter;
 
-import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.common.constant.CommonConstants;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -60,8 +60,8 @@ public class NacosWebFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        request.setCharacterEncoding(Constants.ENCODE);
-        response.setContentType("application/json;charset=" + Constants.ENCODE);
+        request.setCharacterEncoding(CommonConstants.ENCODE);
+        response.setContentType("application/json;charset=" + CommonConstants.ENCODE);
         
         try {
             chain.doFilter(request, response);

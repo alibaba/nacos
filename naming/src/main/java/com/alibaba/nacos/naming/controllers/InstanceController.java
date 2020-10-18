@@ -17,14 +17,15 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.constant.CommonParams;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -42,10 +43,7 @@ import com.alibaba.nacos.naming.web.DistroFilter;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -223,11 +221,11 @@ public class InstanceController {
         }
         String healthy = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(healthy)) {
-            instance.setHealthy(BooleanUtils.toBoolean(healthy));
+            instance.setHealthy(Boolean.parseBoolean(healthy));
         }
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(enabledString)) {
-            instance.setEnabled(BooleanUtils.toBoolean(enabledString));
+            instance.setEnabled(Boolean.parseBoolean(enabledString));
         }
         instance.setLastBeat(System.currentTimeMillis());
         instance.validate();
@@ -492,16 +490,16 @@ public class InstanceController {
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         boolean enabled;
         if (StringUtils.isBlank(enabledString)) {
-            enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+            enabled = Boolean.parseBoolean(WebUtils.optional(request, "enable", "true"));
         } else {
-            enabled = BooleanUtils.toBoolean(enabledString);
+            enabled = Boolean.parseBoolean(enabledString);
         }
         
-        boolean ephemeral = BooleanUtils.toBoolean(
+        boolean ephemeral = Boolean.parseBoolean(
                 WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
         
         String weight = WebUtils.optional(request, "weight", "1");
-        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
+        boolean healthy = Boolean.parseBoolean(WebUtils.optional(request, "healthy", "true"));
         
         Instance instance = new Instance();
         instance.setPort(Integer.parseInt(port));
@@ -576,7 +574,7 @@ public class InstanceController {
         
         List<Instance> srvedIPs;
         
-        srvedIPs = service.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));
+        srvedIPs = service.srvIPs(Arrays.asList(StringUtils.split(clusters, ',')));
         
         // filter ips using selector:
         if (service.getSelector() != null && StringUtils.isNotBlank(clientIP)) {

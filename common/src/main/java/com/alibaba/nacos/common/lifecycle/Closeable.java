@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.lifecycle;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.NacosException;
 
 /**
  * An interface is used to define the resource's close and shutdown, such as IO Connection and ThreadPool.

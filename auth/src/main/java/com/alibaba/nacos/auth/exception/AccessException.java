@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.exception;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.NacosException;
 
 /**
  * Exception to be thrown if authorization is failed.

@@ -16,9 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.constant.CommonConstants;
+import com.alibaba.nacos.common.exception.NacosException;
+import com.alibaba.nacos.common.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.notify.Event;
@@ -57,8 +58,8 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import org.springframework.context.annotation.Conditional;
@@ -426,7 +427,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             
             final String key =
                     System.currentTimeMillis() + "-" + group() + "-" + memberManager.getSelf().getAddress() + "-"
-                            + MD5Utils.md5Hex(sqlContext.toString(), Constants.ENCODE);
+                            + MD5Utils.md5Hex(sqlContext.toString(), CommonConstants.ENCODE);
             Log log = Log.newBuilder().setGroup(group()).setKey(key)
                     .setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
                     .putAllExtendInfo(EmbeddedStorageContextUtils.getCurrentExtendInfo())

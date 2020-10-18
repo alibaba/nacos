@@ -128,8 +128,6 @@ public class Constants {
      */
     public static final int RECV_WAIT_TIMEOUT = ONCE_TIMEOUT * 5;
     
-    public static final String ENCODE = "UTF-8";
-    
     public static final String MAP_FILE = "map-file.js";
     
     public static final int FLOW_CONTROL_THRESHOLD = 20;

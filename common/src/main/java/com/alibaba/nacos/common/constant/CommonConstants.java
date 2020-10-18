@@ -14,25 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming;
+package com.alibaba.nacos.common.constant;
 
-/**
- * Common parameters for service discovery.
- *
- * @author nkorange
- * @since 1.0.0
- */
-public class CommonParams {
+public interface CommonConstants {
     
-    public static final String CODE = "code";
+    String ENCODE = "UTF-8";
     
-    public static final String SERVICE_NAME = "serviceName";
+    String NULL = "";
     
-    public static final String CLUSTER_NAME = "clusterName";
-    
-    public static final String NAMESPACE_ID = "namespaceId";
-    
-    public static final String GROUP_NAME = "groupName";
-    
-    public static final String LIGHT_BEAT_ENABLED = "lightBeatEnabled";
 }

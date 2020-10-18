@@ -17,7 +17,7 @@
 package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
-import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.google.common.base.Objects;
 
 /**

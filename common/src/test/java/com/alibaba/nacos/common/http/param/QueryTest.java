@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http.param;
 
-import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.common.constant.CommonParams;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -25,7 +25,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 public class QueryTest {
-    
+
     @Test
     public void testToQueryUrl() {
         Map<String, String> parameters = new HashMap<String, String>();

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.consistency.DataOperation;

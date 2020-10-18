@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.common.constant.CommonConstants;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,7 +48,7 @@ public class DiskUtil {
     static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
     
     public static void saveHeartBeatToDisk(String heartBeatTime) throws IOException {
-        FileUtils.writeStringToFile(heartBeatFile(), heartBeatTime, Constants.ENCODE);
+        FileUtils.writeStringToFile(heartBeatFile(), heartBeatTime, CommonConstants.ENCODE);
     }
     
     /**
@@ -56,7 +56,7 @@ public class DiskUtil {
      */
     public static void saveToDisk(String dataId, String group, String tenant, String content) throws IOException {
         File targetFile = targetFile(dataId, group, tenant);
-        FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
+        FileUtils.writeStringToFile(targetFile, content, CommonConstants.ENCODE);
     }
     
     /**
@@ -64,7 +64,7 @@ public class DiskUtil {
      */
     public static void saveBetaToDisk(String dataId, String group, String tenant, String content) throws IOException {
         File targetFile = targetBetaFile(dataId, group, tenant);
-        FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
+        FileUtils.writeStringToFile(targetFile, content, CommonConstants.ENCODE);
     }
     
     /**
@@ -73,7 +73,7 @@ public class DiskUtil {
     public static void saveTagToDisk(String dataId, String group, String tenant, String tag, String content)
             throws IOException {
         File targetFile = targetTagFile(dataId, group, tenant, tag);
-        FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
+        FileUtils.writeStringToFile(targetFile, content, CommonConstants.ENCODE);
     }
     
     /**
@@ -155,7 +155,7 @@ public class DiskUtil {
         if (file.exists()) {
             
             try (FileInputStream fis = new FileInputStream(file);) {
-                return IoUtils.toString(fis, Constants.ENCODE);
+                return IoUtils.toString(fis, CommonConstants.ENCODE);
             } catch (FileNotFoundException e) {
                 return StringUtils.EMPTY;
             }
@@ -165,7 +165,7 @@ public class DiskUtil {
     }
     
     public static String getLocalConfigMd5(String dataId, String group, String tenant) throws IOException {
-        return MD5Utils.md5Hex(getConfig(dataId, group, tenant), Constants.ENCODE);
+        return MD5Utils.md5Hex(getConfig(dataId, group, tenant), CommonConstants.ENCODE);
     }
     
     public static File heartBeatFile() {

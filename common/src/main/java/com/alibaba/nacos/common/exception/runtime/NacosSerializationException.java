@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.exception.runtime;
+package com.alibaba.nacos.common.exception.runtime;
 
 /**
  * Nacos serialization exception.

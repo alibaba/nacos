@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.Nacos;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.test.base.Params;

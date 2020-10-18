@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.databind.JsonNode;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -48,7 +47,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.test.naming.NamingBase.*;
+import static com.alibaba.nacos.test.naming.NamingBase.NAMING_CONTROLLER_PATH;
+import static com.alibaba.nacos.test.naming.NamingBase.TEST_GROUP_1;
+import static com.alibaba.nacos.test.naming.NamingBase.TEST_NAMESPACE_1;
+import static com.alibaba.nacos.test.naming.NamingBase.TEST_NAMESPACE_2;
+import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT2_4_DOM_1;
 
 /**
  * @author nkorange

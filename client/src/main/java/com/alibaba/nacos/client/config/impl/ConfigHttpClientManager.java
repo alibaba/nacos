@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.constant.CommonConstants;
+import com.alibaba.nacos.common.exception.NacosException;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
@@ -129,7 +129,7 @@ public class ConfigHttpClientManager implements Closeable {
         @Override
         public boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) {
             final String body = requestHttpEntity.getBody() == null ? "" : JacksonUtils.toJson(requestHttpEntity.getBody());
-            return Limiter.isLimit(MD5Utils.md5Hex(uri + body, Constants.ENCODE));
+            return Limiter.isLimit(MD5Utils.md5Hex(uri + body, CommonConstants.ENCODE));
         }
         
         @Override

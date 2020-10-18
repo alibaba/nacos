@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.exception;
+package com.alibaba.nacos.common.exception;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.common.constant.CommonConstants;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * Nacos Exception.
@@ -70,7 +70,7 @@ public class NacosException extends Exception {
         if (this.causeThrowable != null) {
             return this.causeThrowable.getMessage();
         }
-        return Constants.NULL;
+        return CommonConstants.NULL;
     }
     
     public void setErrCode(final int errCode) {
