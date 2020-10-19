@@ -20,9 +20,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 
@@ -114,6 +114,14 @@ public class UtilsAndCommons {
     public static final String UPDATE_INSTANCE_ACTION_ADD = "add";
     
     public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
+    
+    public static final String UPDATE_INSTANCE_METADATA_ACTION_UPDATE = "update";
+    
+    public static final String UPDATE_INSTANCE_METADATA_ACTION_REMOVE = "remove";
+    
+    public static final String EPHEMERAL = "ephemeral";
+    
+    public static final String PERSIST = "persist";
     
     public static final String DATA_BASE_DIR =
             ApplicationUtils.getNacosHome() + File.separator + "data" + File.separator + "naming";
