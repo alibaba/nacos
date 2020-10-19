@@ -17,8 +17,8 @@
 package com.alibaba.nacos.config.server.service.merge;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
@@ -52,7 +52,7 @@ public class MergeTaskProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(AbstractDelayTask task) {
+    public boolean process(NacosTask task) {
         MergeDataTask mergeTask = (MergeDataTask) task;
         final String dataId = mergeTask.dataId;
         final String group = mergeTask.groupId;

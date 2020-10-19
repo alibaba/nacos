@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
-import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
@@ -44,7 +44,7 @@ public class DumpProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(AbstractDelayTask task) {
+    public boolean process(NacosTask task) {
         final PersistService persistService = dumpService.getPersistService();
         DumpTask dumpTask = (DumpTask) task;
         String[] pair = GroupKey2.parseKey(dumpTask.getGroupKey());
