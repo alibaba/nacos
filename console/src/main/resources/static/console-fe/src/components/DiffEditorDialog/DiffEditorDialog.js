@@ -32,6 +32,9 @@ class DiffEditorDialog extends React.Component {
 
   static propTypes = {
     publishConfig: PropTypes.func,
+    title: PropTypes.string,
+    currentArea: PropTypes.string,
+    originalArea: PropTypes.string,
   };
 
   constructor(props) {
@@ -71,6 +74,7 @@ class DiffEditorDialog extends React.Component {
       highlightDifferences: true,
       connect: 'align',
       collapseIdentical: false,
+      revertButtons: typeof this.props.publishConfig === 'function',
     });
   }
 
@@ -80,19 +84,29 @@ class DiffEditorDialog extends React.Component {
   }
 
   render() {
-    const { locale = {} } = this.props;
+    const { locale = {}, title, currentArea, originalArea } = this.props;
+    const publishButton = (
+      <Button type="primary" onClick={this.confirmPub.bind(this)}>
+        {locale.publish}
+      </Button>
+    );
     const footer = (
       <div>
         {' '}
-        <Button type="primary" onClick={this.confirmPub.bind(this)}>
-          {locale.publish}
-        </Button>
+        {typeof this.props.publishConfig === 'function' ? (
+          publishButton
+        ) : (
+          <Button type="primary" onClick={this.closeDialog.bind(this)}>
+            {locale.back}
+          </Button>
+        )}
       </div>
     );
+    console.log(footer);
     return (
       <div>
         <Dialog
-          title={locale.contents}
+          title={title}
           style={{ width: '80%' }}
           visible={this.state.dialogvisible}
           footer={footer}
@@ -101,8 +115,8 @@ class DiffEditorDialog extends React.Component {
           <div style={{ height: 400 }}>
             <div>
               <Row>
-                <Col style={{ textAlign: 'center' }}>{locale.currentArea}</Col>
-                <Col style={{ textAlign: 'center' }}>{locale.originalValue}</Col>
+                <Col style={{ textAlign: 'center' }}>{currentArea}</Col>
+                <Col style={{ textAlign: 'center' }}>{originalArea}</Col>
               </Row>
             </div>
             <div style={{ clear: 'both', height: 480 }} ref={this.diffeditor} />
