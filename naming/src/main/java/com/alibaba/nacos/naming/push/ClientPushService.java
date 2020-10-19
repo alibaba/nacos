@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.push;
 
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -28,8 +27,9 @@ import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.v2.PushExecuteService;
 import com.alibaba.nacos.naming.push.v2.PushExecuteServiceDelegate;
+import com.alibaba.nacos.naming.push.v2.task.PushDelayTask;
+import com.alibaba.nacos.naming.push.v2.task.PushDelayTaskExecuteEngine;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -49,17 +49,16 @@ public class ClientPushService extends SmartSubscriber {
     
     private final ClientServiceIndexesManager indexesManager;
     
-    private final ServiceStorage serviceStorage;
-    
-    private final PushExecuteService pushExecuteService;
+    private final PushDelayTaskExecuteEngine delayTaskEngine;
     
     public ClientPushService(ClientManagerDelegate clientManager, ClientServiceIndexesManager indexesManager,
             ServiceStorage serviceStorage, PushExecuteServiceDelegate pushExecuteService) {
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
-        this.serviceStorage = serviceStorage;
-        this.pushExecuteService = pushExecuteService;
+        this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
+                pushExecuteService);
         NotifyCenter.registerSubscriber(this);
+        
     }
     
     public Set<Subscriber> getSubscribes(String namespaceId, String serviceName) {
@@ -84,13 +83,8 @@ public class ClientPushService extends SmartSubscriber {
     
     @Override
     public void onEvent(Event event) {
-        // TODO delay & merge push task, and dispatch push task to execute async
         ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
         Service service = serviceChangedEvent.getService();
-        ServiceInfo serviceInfo = serviceStorage.getPushData(service);
-        for (String each : indexesManager.getAllClientsSubscribeService(service)) {
-            Subscriber subscriber = clientManager.getClient(each).getSubscriber(service);
-            pushExecuteService.doPush(each, subscriber, serviceInfo);
-        }
+        delayTaskEngine.addTask(service, new PushDelayTask(service, 500L));
     }
 }

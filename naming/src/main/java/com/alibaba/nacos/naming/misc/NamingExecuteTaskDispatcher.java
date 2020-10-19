@@ -39,7 +39,7 @@ public class NamingExecuteTaskDispatcher {
         return INSTANCE;
     }
     
-    public void dispatchAndExecuteTask(String dispatchTag, AbstractExecuteTask task) {
+    public void dispatchAndExecuteTask(Object dispatchTag, AbstractExecuteTask task) {
         executeEngine.addTask(dispatchTag, task);
     }
 }
