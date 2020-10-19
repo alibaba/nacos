@@ -56,13 +56,7 @@ public class WebUtils {
             throw new IllegalArgumentException("Param '" + key + "' is required.");
         }
         String encoding = req.getParameter("encoding");
-        if (!StringUtils.isEmpty(encoding)) {
-            try {
-                value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
-            } catch (UnsupportedEncodingException ignore) {
-            }
-        }
-        return value.trim();
+        return resolveValue(value, encoding);
     }
     
     /**
@@ -82,11 +76,25 @@ public class WebUtils {
             return defaultValue;
         }
         String encoding = req.getParameter("encoding");
-        if (!StringUtils.isEmpty(encoding)) {
-            try {
-                value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
-            } catch (UnsupportedEncodingException ignore) {
-            }
+        return resolveValue(value, encoding);
+    }
+    
+    /**
+     * decode target value with UrlDecode.
+     *
+     * <p>Under Content-Type:application/x-www-form-urlencoded situation.
+     *
+     * @param value    value
+     * @param encoding encode default UTF-8
+     * @return Decoded data
+     */
+    private static String resolveValueWithUrlDecode(String value, String encoding) {
+        if (StringUtils.isEmpty(encoding)) {
+            encoding = StandardCharsets.UTF_8.name();
+        }
+        try {
+            value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
+        } catch (UnsupportedEncodingException ignore) {
         }
         return value.trim();
     }
@@ -95,7 +103,7 @@ public class WebUtils {
      * decode target value.
      *
      * @param value    value
-     * @param encoding encode
+     * @param encoding encode default UTF-8
      * @return Decoded data
      */
     private static String resolveValue(String value, String encoding) {
@@ -103,7 +111,7 @@ public class WebUtils {
             encoding = StandardCharsets.UTF_8.name();
         }
         try {
-            value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
+            value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
         } catch (UnsupportedEncodingException ignore) {
         }
         return value.trim();
