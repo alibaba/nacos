@@ -76,6 +76,14 @@ public class CacheData {
         this.type = type;
     }
     
+    public String getEncryptedDataKey() {
+        return encryptedDataKey;
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        this.encryptedDataKey = encryptedDataKey;
+    }
+    
     /**
      * Add listener if CacheData already set new content, Listener should init lastCallMd5 by CacheData.md5
      *
@@ -178,13 +186,13 @@ public class CacheData {
     void checkListenerMd5() {
         for (ManagerListenerWrap wrap : listeners) {
             if (!md5.equals(wrap.lastCallMd5)) {
-                safeNotifyListener(dataId, group, content, type, md5, wrap);
+                safeNotifyListener(dataId, group, content, type, md5, encryptedDataKey, wrap);
             }
         }
     }
     
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
-            final String md5, final ManagerListenerWrap listenerWrap) {
+            final String md5, final String encryptedDataKey, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
         
         Runnable job = new Runnable() {
@@ -205,6 +213,7 @@ public class CacheData {
                     cr.setDataId(dataId);
                     cr.setGroup(group);
                     cr.setContent(content);
+                    cr.setEncryptedDataKey(encryptedDataKey);
                     configFilterChainManager.doFilter(null, cr);
                     String contentTmp = cr.getContent();
                     listener.receiveConfigInfo(contentTmp);
@@ -259,6 +268,16 @@ public class CacheData {
         return content;
     }
     
+    private String loadEncryptedDataKeyFromDiskLocal(String name, String dataId, String group, String tenant) {
+        String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(name, dataId, group, tenant);
+        
+        if (encryptedDataKey != null) {
+            return encryptedDataKey;
+        }
+        
+        return LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(name, dataId, group, tenant);
+    }
+    
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
@@ -271,6 +290,7 @@ public class CacheData {
         listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
         this.isInitializing = true;
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
+        this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
         this.md5 = getMd5String(content);
     }
     
@@ -287,6 +307,7 @@ public class CacheData {
         listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
         this.isInitializing = true;
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
+        this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
         this.md5 = getMd5String(content);
     }
     
@@ -323,6 +344,8 @@ public class CacheData {
     private volatile boolean isInitializing = true;
     
     private String type;
+    
+    private volatile String encryptedDataKey;
     
     private static class ManagerListenerWrap {
         

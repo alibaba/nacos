@@ -29,6 +29,7 @@ import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
+import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -139,7 +140,10 @@ public class NacosConfigService implements ConfigService {
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
                     dataId, group, tenant, ContentUtils.truncateContent(content));
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor
+                    .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
             cr.setContent(content);
+            cr.setEncryptedDataKey(encryptedDataKey);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
             return content;
@@ -148,7 +152,7 @@ public class NacosConfigService implements ConfigService {
         try {
             String[] ct = worker.getServerConfig(dataId, group, tenant, timeoutMs);
             cr.setContent(ct[0]);
-            
+            cr.setEncryptedDataKey(ct[2]);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
             
@@ -164,7 +168,10 @@ public class NacosConfigService implements ConfigService {
         LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
                 dataId, group, tenant, ContentUtils.truncateContent(content));
         content = LocalConfigInfoProcessor.getSnapshot(agent.getName(), dataId, group, tenant);
+        String encryptedDataKey = LocalEncryptedDataKeyProcessor
+                .getEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant);
         cr.setContent(content);
+        cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
         return content;

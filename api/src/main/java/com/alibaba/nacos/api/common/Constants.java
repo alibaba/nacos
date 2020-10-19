@@ -57,6 +57,14 @@ public class Constants {
     
     public static final String PROBE_MODIFY_RESPONSE_NEW = "Probe-Modify-Response-New";
     
+    public static final String ENCRYPTED_DATA_KEY = "Encrypted-Data-Key";
+    
+    public static final String CIPHER_PREFIX = "cipher-";
+    
+    public static final String CIPHER_KMS_AES_128_PREFIX = "cipher-kms-aes-128-";
+    
+    public static final String KMS_KEY_SPEC_AES_128 = "AES_128";
+    
     public static final String USE_ZIP = "true";
     
     public static final String CONTENT_MD5 = "Content-MD5";

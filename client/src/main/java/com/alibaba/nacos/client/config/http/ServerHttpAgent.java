@@ -19,6 +19,8 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.filter.impl.KmsConfigFilter;
+import com.alibaba.nacos.client.config.filter.impl.KmsFilterConfig;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
@@ -223,8 +225,7 @@ public class ServerHttpAgent implements HttpAgent {
                 LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}",
                         serverListMgr.getCurrentServerAddr(), ExceptionUtil.getStackTrace(stoe));
             } catch (Exception ex) {
-                LOGGER.error(
-                        "[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
+                LOGGER.error("[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
                         ex);
                 throw ex;
             }
@@ -311,6 +312,7 @@ public class ServerHttpAgent implements HttpAgent {
         initEncode(properties);
         initAkSk(properties);
         initMaxRetry(properties);
+        initKms(properties);
     }
     
     private void initEncode(Properties properties) {
@@ -341,6 +343,33 @@ public class ServerHttpAgent implements HttpAgent {
             secretKey = SpasAdapter.getSk();
         } else {
             secretKey = sk;
+        }
+    }
+    
+    private void initKms(Properties properties) {
+        String securityCredentials = (String) properties.get(PropertyKeyConst.SECURITY_CREDENTIALS);
+        if (!StringUtils.isBlank(securityCredentials)) {
+            if (StringUtils.isBlank(System.getProperty("security.credentials"))) {
+                StsConfig.getInstance().setSecurityCredentials(securityCredentials);
+            }
+        }
+        boolean openKmsFilter = properties.get(PropertyKeyConst.OPEN_KMS_FILTER) != null && (Boolean) properties
+                .get(PropertyKeyConst.OPEN_KMS_FILTER);
+        if (openKmsFilter) {
+            final KmsConfigFilter kmsConfigFilter = new KmsConfigFilter();
+            KmsFilterConfig filterConfig = new KmsFilterConfig();
+            filterConfig.addInitParamter(PropertyKeyConst.KMS_KEY_ID, properties.get(PropertyKeyConst.KMS_KEY_ID));
+            filterConfig.addInitParamter(PropertyKeyConst.REGION_ID, properties.get(PropertyKeyConst.REGION_ID));
+            filterConfig.addInitParamter(PropertyKeyConst.RAM_ROLE_NAME, StsConfig.getInstance().getRamRoleName());
+            filterConfig.addInitParamter(PropertyKeyConst.ACCESS_KEY, accessKey);
+            filterConfig.addInitParamter(PropertyKeyConst.SECRET_KEY, secretKey);
+            
+            if (!StringUtils.isBlank(securityCredentials)) {
+                filterConfig.addInitParamter(PropertyKeyConst.SECURITY_CREDENTIALS, securityCredentials);
+            }
+            
+            kmsConfigFilter.init(filterConfig);
+            ConfigService.addConfigFilter(kmsConfigFilter);
         }
     }
     

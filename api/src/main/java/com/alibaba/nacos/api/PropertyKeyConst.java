@@ -43,6 +43,14 @@ public class PropertyKeyConst {
     
     public static final String RAM_ROLE_NAME = "ramRoleName";
     
+    public static final String REGION_ID = "regionId";
+    
+    public static final String KMS_KEY_ID = "keyId";
+    
+    public static final String SECURITY_CREDENTIALS = "securityCredentials";
+    
+    public static final String OPEN_KMS_FILTER = "openKMSFilter";
+    
     public static final String SERVER_ADDR = "serverAddr";
     
     public static final String CONTEXT_PATH = "contextPath";
