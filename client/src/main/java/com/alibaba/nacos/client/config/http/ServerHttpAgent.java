@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.KmsConfigFilter;
 import com.alibaba.nacos.client.config.filter.impl.KmsFilterConfig;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
@@ -299,6 +300,12 @@ public class ServerHttpAgent implements HttpAgent {
         
     }
     
+    public ServerHttpAgent(ConfigFilterChainManager configFilterChainManager, Properties properties)
+            throws NacosException {
+        this(properties);
+        this.configFilterChainManager = configFilterChainManager;
+    }
+    
     private void injectSecurityInfo(Map<String, String> params) {
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
             params.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
@@ -369,7 +376,7 @@ public class ServerHttpAgent implements HttpAgent {
             }
             
             kmsConfigFilter.init(filterConfig);
-            ConfigService.addConfigFilter(kmsConfigFilter);
+            this.configFilterChainManager.addFilter(kmsConfigFilter);
         }
     }
     
@@ -541,5 +548,7 @@ public class ServerHttpAgent implements HttpAgent {
     private volatile StsCredential stsCredential;
     
     final ServerListManager serverListMgr;
+    
+    private ConfigFilterChainManager configFilterChainManager;
     
 }
