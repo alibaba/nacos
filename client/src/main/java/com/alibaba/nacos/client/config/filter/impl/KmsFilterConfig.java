@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config Impl.
+ * Kms Filter Config Impl.
  *
  * @author Nacos
  */

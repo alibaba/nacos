@@ -47,7 +47,7 @@ import static com.alibaba.nacos.api.common.Constants.CIPHER_KMS_AES_128_PREFIX;
 import static com.alibaba.nacos.api.common.Constants.KMS_KEY_SPEC_AES_128;
 
 /**
- * Config Impl.
+ * Kms Config Filter Impl.
  *
  * @author Nacos
  */
