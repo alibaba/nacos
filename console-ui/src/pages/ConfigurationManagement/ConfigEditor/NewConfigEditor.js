@@ -605,9 +605,6 @@ class ConfigEditor extends React.Component {
                 });
               });
             }}
-            title={locale.dialogTitle}
-            currentArea={locale.dialogCurrentArea}
-            originalArea={locale.dialogOriginalArea}
           />
           <SuccessDialog ref={this.successDialog} />
         </Loading>

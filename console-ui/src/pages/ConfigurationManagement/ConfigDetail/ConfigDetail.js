@@ -15,27 +15,15 @@
  */
 
 import React from 'react';
-import {
-  Button,
-  ConfigProvider,
-  Dialog,
-  Field,
-  Form,
-  Input,
-  Loading,
-  Tab,
-  Grid,
-} from '@alifd/next';
+import { Button, ConfigProvider, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
 import { getParams, request } from '../../../globalLib';
 import { generateUrl } from '../../../utils/nacosutil';
-import DiffEditorDialog from '../../../components/DiffEditorDialog';
 
 import './index.scss';
 import PropTypes from 'prop-types';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
-const { Row, Col } = Grid;
 
 @ConfigProvider.config
 class ConfigDetail extends React.Component {
@@ -68,7 +56,6 @@ class ConfigDetail extends React.Component {
     this.searchGroup = getParams('searchGroup') || '';
     this.pageSize = getParams('pageSize');
     this.pageNo = getParams('pageNo');
-    this.diffEditorDialog = React.createRef();
     // this.params = window.location.hash.split('?')[1]||'';
   }
 
@@ -201,32 +188,6 @@ class ConfigDetail extends React.Component {
     }
   }
 
-  openDiff() {
-    let self = this;
-    const { locale = {} } = this.props;
-    let leftvalue = this.monacoEditor.getValue();
-    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}`;
-    request({
-      url,
-      beforeSend() {
-        self.openLoading();
-      },
-      success(result) {
-        if (result != null) {
-          let rightvalue = result.content;
-          leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-          rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-          self.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
-        } else {
-          Dialog.alert({ title: locale.error, content: result.message });
-        }
-      },
-      complete() {
-        self.closeLoading();
-      },
-    });
-  }
-
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
@@ -315,23 +276,12 @@ class ConfigDetail extends React.Component {
             <FormItem label={locale.configuration} required {...formItemLayout}>
               <div style={{ clear: 'both', height: 300 }} id="container" />
             </FormItem>
-          </Form>
-          <Row>
-            <Col span="24" className="button-list">
-              <Button size="large" type="primary" onClick={this.openDiff.bind(this)}>
-                {locale.versionComparison}
-              </Button>{' '}
-              <Button size="large" type="normal" onClick={this.goList.bind(this)}>
+            <FormItem label={' '} {...formItemLayout}>
+              <Button type={'primary'} onClick={this.goList.bind(this)}>
                 {locale.back}
               </Button>
-            </Col>
-          </Row>
-          <DiffEditorDialog
-            ref={this.diffEditorDialog}
-            title={locale.versionComparison}
-            currentArea={locale.dialogCurrentArea}
-            originalArea={locale.dialogOriginalArea}
-          />
+            </FormItem>
+          </Form>
         </Loading>
       </div>
     );
