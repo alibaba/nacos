@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
@@ -30,6 +46,11 @@ import static com.alibaba.nacos.api.common.Constants.CIPHER_PREFIX;
 import static com.alibaba.nacos.api.common.Constants.CIPHER_KMS_AES_128_PREFIX;
 import static com.alibaba.nacos.api.common.Constants.KMS_KEY_SPEC_AES_128;
 
+/**
+ * Config Impl.
+ *
+ * @author Nacos
+ */
 public class KmsConfigFilter implements IConfigFilter {
     
     @Override
@@ -71,6 +92,14 @@ public class KmsConfigFilter implements IConfigFilter {
     private DefaultAcsClient kmsClient(String regionId, String accessKeyId, String accessKeySecret) {
         IClientProfile profile = DefaultProfile.getProfile(regionId, accessKeyId, accessKeySecret);
         return new DefaultAcsClient(profile);
+    }
+    
+    private DefaultAcsClient kmsClient(String regionId, String accessKeyId, String accessKeySecret,
+            String kmsEndpoint) {
+        if (StringUtils.isNotEmpty(kmsEndpoint)) {
+            DefaultProfile.addEndpoint(regionId, "kms", kmsEndpoint);
+        }
+        return kmsClient(regionId, accessKeyId, accessKeySecret);
     }
     
     /**
@@ -143,7 +172,11 @@ public class KmsConfigFilter implements IConfigFilter {
         String regionId = (String) filterConfig.getInitParameter(PropertyKeyConst.REGION_ID);
         String ramRoleName = (String) filterConfig.getInitParameter(PropertyKeyConst.RAM_ROLE_NAME);
         String securityCredentials = (String) filterConfig.getInitParameter(PropertyKeyConst.SECURITY_CREDENTIALS);
+        String kmsEndpoint = (String) filterConfig.getInitParameter(PropertyKeyConst.KMS_ENDPOINT);
         
+        if (StringUtils.isNotEmpty(kmsEndpoint)) {
+            DefaultProfile.addEndpoint(regionId, "kms", kmsEndpoint);
+        }
         if (!StringUtils.isBlank(securityCredentials)) {
             // 用户自己维护 securityCredentials 的更新
             initKmsClientBySecurityCredentials(regionId, securityCredentials);

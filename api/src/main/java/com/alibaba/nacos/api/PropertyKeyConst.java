@@ -51,6 +51,8 @@ public class PropertyKeyConst {
     
     public static final String OPEN_KMS_FILTER = "openKMSFilter";
     
+    public static final String KMS_ENDPOINT = "ksmEndpoint";
+    
     public static final String SERVER_ADDR = "serverAddr";
     
     public static final String CONTEXT_PATH = "contextPath";

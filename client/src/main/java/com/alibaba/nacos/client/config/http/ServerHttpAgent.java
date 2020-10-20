@@ -277,9 +277,26 @@ public class ServerHttpAgent implements HttpAgent {
         this.serverListMgr = new ServerListManager(properties);
         this.securityProxy = new SecurityProxy(properties, NACOS_RESTTEMPLATE);
         this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        
         init(properties);
         this.securityProxy.login(this.serverListMgr.getServerUrls());
+        initExecutorService();
         
+    }
+    
+    public ServerHttpAgent(ConfigFilterChainManager configFilterChainManager, Properties properties)
+            throws NacosException {
+        this.serverListMgr = new ServerListManager(properties);
+        this.securityProxy = new SecurityProxy(properties, NACOS_RESTTEMPLATE);
+        this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        this.configFilterChainManager = configFilterChainManager;
+        
+        init(properties);
+        this.securityProxy.login(this.serverListMgr.getServerUrls());
+        initExecutorService();
+    }
+    
+    private void initExecutorService() {
         // init executorService
         this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
@@ -297,13 +314,6 @@ public class ServerHttpAgent implements HttpAgent {
                 securityProxy.login(serverListMgr.getServerUrls());
             }
         }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-        
-    }
-    
-    public ServerHttpAgent(ConfigFilterChainManager configFilterChainManager, Properties properties)
-            throws NacosException {
-        this(properties);
-        this.configFilterChainManager = configFilterChainManager;
     }
     
     private void injectSecurityInfo(Map<String, String> params) {
@@ -354,24 +364,32 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     private void initKms(Properties properties) {
-        String securityCredentials = (String) properties.get(PropertyKeyConst.SECURITY_CREDENTIALS);
-        if (!StringUtils.isBlank(securityCredentials)) {
-            if (StringUtils.isBlank(System.getProperty("security.credentials"))) {
-                StsConfig.getInstance().setSecurityCredentials(securityCredentials);
-            }
+        if (this.configFilterChainManager == null) {
+            return;
         }
         boolean openKmsFilter = properties.get(PropertyKeyConst.OPEN_KMS_FILTER) != null && (Boolean) properties
                 .get(PropertyKeyConst.OPEN_KMS_FILTER);
         if (openKmsFilter) {
             final KmsConfigFilter kmsConfigFilter = new KmsConfigFilter();
             KmsFilterConfig filterConfig = new KmsFilterConfig();
-            filterConfig.addInitParamter(PropertyKeyConst.KMS_KEY_ID, properties.get(PropertyKeyConst.KMS_KEY_ID));
-            filterConfig.addInitParamter(PropertyKeyConst.REGION_ID, properties.get(PropertyKeyConst.REGION_ID));
+            filterConfig
+                    .addInitParamter(PropertyKeyConst.KMS_KEY_ID, properties.getProperty(PropertyKeyConst.KMS_KEY_ID));
+            filterConfig
+                    .addInitParamter(PropertyKeyConst.REGION_ID, properties.getProperty(PropertyKeyConst.REGION_ID));
             filterConfig.addInitParamter(PropertyKeyConst.RAM_ROLE_NAME, StsConfig.getInstance().getRamRoleName());
             filterConfig.addInitParamter(PropertyKeyConst.ACCESS_KEY, accessKey);
             filterConfig.addInitParamter(PropertyKeyConst.SECRET_KEY, secretKey);
             
-            if (!StringUtils.isBlank(securityCredentials)) {
+            if (System.getProperties().containsKey(PropertyKeyConst.KMS_ENDPOINT)) {
+                filterConfig.addInitParamter(PropertyKeyConst.KMS_ENDPOINT,
+                        System.getProperty(PropertyKeyConst.KMS_ENDPOINT));
+            } else {
+                String kmsEndpoint = properties.getProperty(PropertyKeyConst.KMS_ENDPOINT);
+                filterConfig.addInitParamter(PropertyKeyConst.KMS_ENDPOINT, kmsEndpoint);
+            }
+            
+            String securityCredentials = StsConfig.getInstance().getSecurityCredentials();
+            if (StringUtils.isNotBlank(securityCredentials)) {
                 filterConfig.addInitParamter(PropertyKeyConst.SECURITY_CREDENTIALS, securityCredentials);
             }
             
@@ -547,7 +565,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     private volatile StsCredential stsCredential;
     
-    final ServerListManager serverListMgr;
+    private final ServerListManager serverListMgr;
     
     private ConfigFilterChainManager configFilterChainManager;
     
