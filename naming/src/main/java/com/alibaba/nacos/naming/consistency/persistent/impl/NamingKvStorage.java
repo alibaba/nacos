@@ -27,6 +27,8 @@ import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,8 +50,8 @@ public class NamingKvStorage extends MemoryKvStorage {
     
     public NamingKvStorage(final String baseDir) throws Exception {
         this.baseDir = baseDir;
-        baseDirStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, "naming-persistent", baseDir);
-        namespaceKvStorage = new ConcurrentHashMap<>();
+        this.baseDirStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, "naming-persistent", baseDir);
+        this.namespaceKvStorage = new ConcurrentHashMap<>(16);
     }
     
     @Override
@@ -141,7 +143,7 @@ public class NamingKvStorage extends MemoryKvStorage {
         loadSnapshotFromActualStorage(baseDirStorage);
         loadNamespaceSnapshot();
         long costTime = System.currentTimeMillis() - startTime;
-        Loggers.RAFT.info("load snapshot cost time {}ms", costTime);
+        Loggers.RAFT.info("load snapshot cost time {} ms", costTime);
     }
     
     private void loadSnapshotFromActualStorage(KvStorage actualStorage) throws KvStorageException {
@@ -163,9 +165,10 @@ public class NamingKvStorage extends MemoryKvStorage {
     }
     
     private List<String> getAllNamespaceDirs() {
-        List<String> result = new LinkedList<>();
+        List<String> result = Collections.emptyList();
         File[] files = new File(baseDir).listFiles();
         if (null != files) {
+            result = new ArrayList<>(files.length);
             for (File each : files) {
                 if (each.isDirectory()) {
                     result.add(each.getName());
@@ -182,12 +185,12 @@ public class NamingKvStorage extends MemoryKvStorage {
     
     @Override
     public void shutdown() {
+        super.shutdown();
         baseDirStorage.shutdown();
         for (KvStorage each : namespaceKvStorage.values()) {
             each.shutdown();
         }
         namespaceKvStorage.clear();
-        super.shutdown();
     }
     
     private KvStorage createActualStorageIfAbsent(byte[] key) throws Exception {
