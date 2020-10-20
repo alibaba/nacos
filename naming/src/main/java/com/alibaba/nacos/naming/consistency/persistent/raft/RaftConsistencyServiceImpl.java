@@ -37,6 +37,7 @@ import org.springframework.stereotype.Service;
  */
 @DependsOn("ProtocolManager")
 @Service
+@Deprecated
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
     
     @Autowired

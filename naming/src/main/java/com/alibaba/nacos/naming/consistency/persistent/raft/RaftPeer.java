@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author nacos
  */
+@Deprecated
 public class RaftPeer {
     
     public String ip;

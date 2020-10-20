@@ -33,6 +33,7 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
+@Deprecated
 public class RaftListener implements SmartApplicationListener {
     
     private static final String GROUP = "naming";

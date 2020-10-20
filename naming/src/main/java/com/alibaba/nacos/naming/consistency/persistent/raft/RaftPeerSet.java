@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Component
 @DependsOn("ProtocolManager")
+@Deprecated
 public class RaftPeerSet extends MemberChangeListener {
     
     private final ServerMemberManager memberManager;

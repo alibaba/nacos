@@ -22,6 +22,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
  * @author pbting
  * @date 2019-07-01 8:45 PM
  */
+@Deprecated
 public class MakeLeaderEvent extends BaseRaftEvent {
     
     public MakeLeaderEvent(Object source, RaftPeer raftPeer, RaftPeer local) {

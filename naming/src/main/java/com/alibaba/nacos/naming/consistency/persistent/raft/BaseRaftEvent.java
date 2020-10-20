@@ -24,6 +24,7 @@ import org.springframework.context.ApplicationEvent;
  * @author pbting
  * @date 2019-07-01 8:46 PM
  */
+@Deprecated
 public abstract class BaseRaftEvent extends ApplicationEvent {
     
     private final RaftPeer raftPeer;

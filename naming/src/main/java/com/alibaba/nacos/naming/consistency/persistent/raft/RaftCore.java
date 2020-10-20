@@ -82,6 +82,7 @@ import java.util.zip.GZIPOutputStream;
  */
 @DependsOn("ProtocolManager")
 @Component
+@Deprecated
 public class RaftCore {
     
     public static final String API_VOTE = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/vote";

@@ -31,6 +31,7 @@ import java.util.Map;
  * @author nacos
  */
 @Component
+@Deprecated
 public class RaftProxy {
     
     /**

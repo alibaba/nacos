@@ -53,6 +53,7 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_SUFF
  * @author nacos
  */
 @Component
+@Deprecated
 public class RaftStore {
     
     private final Properties meta = new Properties();
