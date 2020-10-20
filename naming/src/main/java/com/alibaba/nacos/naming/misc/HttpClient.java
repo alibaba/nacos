@@ -110,8 +110,7 @@ public class HttpClient {
         query.addParam("encoding", "UTF-8");
         query.addParam("nofix", "1");
         try {
-            return SYNC_NACOS_REST_TEMPLATE
-                    .exchange(url, httpClientConfig, header, query, body, method, String.class);
+            return SYNC_NACOS_REST_TEMPLATE.exchange(url, httpClientConfig, header, query, body, method, String.class);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();
@@ -266,8 +265,8 @@ public class HttpClient {
             }
             header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
             
-            HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000).setReadTimeOutMillis(5000)
-                    .setConnectionRequestTimeout(5000).setMaxRedirects(5).build();
+            HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000)
+                    .setReadTimeOutMillis(5000).setConnectionRequestTimeout(5000).setMaxRedirects(5).build();
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postForm(url, httpClientConfig, header, paramValues, String.class);
         } catch (Throwable e) {
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();

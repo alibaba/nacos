@@ -25,7 +25,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Set;
@@ -46,6 +45,8 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     private static final double MIN_POSITIVE_WEIGHT_VALUE = 0.01D;
     
     private static final double MIN_WEIGHT_VALUE = 0.00D;
+    
+    private static final long serialVersionUID = -6527721638428975306L;
     
     private volatile long lastBeat = System.currentTimeMillis();
     

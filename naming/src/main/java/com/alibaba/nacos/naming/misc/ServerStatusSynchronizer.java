@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
@@ -59,15 +59,17 @@ public class ServerStatusSynchronizer implements Synchronizer {
                                 serverIP);
                     }
                 }
-    
+                
                 @Override
                 public void onError(Throwable throwable) {
-                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, throwable);
+                    Loggers.SRV_LOG
+                            .warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP,
+                                    throwable);
                 }
-    
+                
                 @Override
                 public void onCancel() {
-        
+                    
                 }
             });
         } catch (Exception e) {

@@ -21,7 +21,6 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.Assert;
@@ -45,6 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
     
     private static final String CLUSTER_NAME_SYNTAX = "[0-9a-zA-Z-]+";
+    
+    private static final long serialVersionUID = 8940123791150907510L;
     
     /**
      * a addition for same site routing, can group multiple sites into a region, like Hangzhou, Shanghai, etc.

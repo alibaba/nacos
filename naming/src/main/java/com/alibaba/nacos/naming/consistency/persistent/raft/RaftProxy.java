@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
@@ -29,9 +29,10 @@ import java.util.Map;
  * Raft http proxy.
  *
  * @author nacos
+ * @deprecated will remove in 1.4.x
  */
-@Component
 @Deprecated
+@Component
 public class RaftProxy {
     
     /**

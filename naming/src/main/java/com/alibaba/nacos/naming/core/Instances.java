@@ -16,12 +16,11 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -36,6 +35,8 @@ import java.util.Map;
  * @since 1.0.0
  */
 public class Instances implements Record {
+    
+    private static final long serialVersionUID = 5500823673993740145L;
     
     private List<Instance> instanceList = new ArrayList<>();
     

@@ -54,10 +54,10 @@ public class DistroHttpCombinedKey extends DistroKey {
             return false;
         }
         DistroHttpCombinedKey that = (DistroHttpCombinedKey) o;
-        return Objects.equals(getResourceKey(), that.getResourceKey())
-                && Objects.equals(getResourceType(), that.getResourceType())
-                && Objects.equals(getTargetServer(), that.getTargetServer())
-                && Objects.equals(actualResourceTypes, that.actualResourceTypes);
+        return Objects.equals(getResourceKey(), that.getResourceKey()) && Objects
+                .equals(getResourceType(), that.getResourceType()) && Objects
+                .equals(getTargetServer(), that.getTargetServer()) && Objects
+                .equals(actualResourceTypes, that.actualResourceTypes);
     }
     
     @Override

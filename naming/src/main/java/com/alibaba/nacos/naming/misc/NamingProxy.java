@@ -84,17 +84,17 @@ public class NamingProxy {
                                         result.getCode(), result.getMessage());
                             }
                         }
-    
+                        
                         @Override
                         public void onError(Throwable throwable) {
                             Loggers.DISTRO
                                     .error("failed to req API:" + "http://" + server + ApplicationUtils.getContextPath()
                                             + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL, throwable);
                         }
-    
+                        
                         @Override
                         public void onCancel() {
-        
+                        
                         }
                     });
         } catch (Exception e) {
@@ -317,8 +317,8 @@ public class NamingProxy {
             }
             
             throw new IOException("failed to req API:" + "http://" + curServer + ApplicationUtils.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + path + ". code:" + result.getCode() + " msg: "
-                    + result.getMessage());
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + path + ". code:" + result.getCode() + " msg: " + result
+                    .getMessage());
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }

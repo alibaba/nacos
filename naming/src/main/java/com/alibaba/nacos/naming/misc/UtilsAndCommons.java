@@ -126,8 +126,6 @@ public class UtilsAndCommons {
     public static final String DATA_BASE_DIR =
             ApplicationUtils.getNacosHome() + File.separator + "data" + File.separator + "naming";
     
-    public static final String RAFT_CACHE_FILE_SUFFIX = ".datum";
-    
     public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos.naming";
     
     public static final String NUMBER_PATTERN = "^\\d+$";

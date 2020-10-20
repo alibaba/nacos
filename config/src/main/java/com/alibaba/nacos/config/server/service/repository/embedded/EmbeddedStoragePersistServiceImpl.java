@@ -2305,7 +2305,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         int skipCount = 0;
         List<Map<String, String>> failData = null;
         List<Map<String, String>> skipData = null;
-        
+    
         final BiConsumer<Boolean, Throwable> callFinally = (result, t) -> {
             if (t != null) {
                 throw new NacosRuntimeException(0, t);

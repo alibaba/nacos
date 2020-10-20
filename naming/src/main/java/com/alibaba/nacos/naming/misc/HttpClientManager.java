@@ -74,6 +74,7 @@ public class HttpClientManager {
     
     /**
      * Use apache http client to achieve.
+     *
      * @return NacosRestTemplate
      */
     public static NacosRestTemplate getApacheRestTemplate() {
@@ -102,13 +103,10 @@ public class HttpClientManager {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(TIME_OUT_MILLIS)
-                    .setUserAgent(UtilsAndCommons.SERVER_VERSION)
-                    .setMaxConnTotal(-1)
-                    .setMaxConnPerRoute(128)
-                    .setMaxRedirects(0).build();
+                    .setReadTimeOutMillis(TIME_OUT_MILLIS).setUserAgent(UtilsAndCommons.SERVER_VERSION)
+                    .setMaxConnTotal(-1).setMaxConnPerRoute(128).setMaxRedirects(0).build();
         }
-    
+        
         @Override
         protected Logger assignLogger() {
             return SRV_LOG;
@@ -120,8 +118,7 @@ public class HttpClientManager {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(TIME_OUT_MILLIS)
-                    .setMaxRedirects(0).build();
+                    .setReadTimeOutMillis(TIME_OUT_MILLIS).setMaxRedirects(0).build();
         }
         
         @Override
@@ -131,16 +128,14 @@ public class HttpClientManager {
     }
     
     private static class ApacheSyncHttpClientFactory extends AbstractApacheHttpClientFactory {
-    
+        
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder()
-                    .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
+            return HttpClientConfig.builder().setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
                     .setMaxConnTotal(Runtime.getRuntime().availableProcessors() * 2)
-                    .setMaxConnPerRoute(Runtime.getRuntime().availableProcessors())
-                    .setMaxRedirects(0).build();
+                    .setMaxConnPerRoute(Runtime.getRuntime().availableProcessors()).setMaxRedirects(0).build();
         }
-    
+        
         @Override
         protected Logger assignLogger() {
             return SRV_LOG;

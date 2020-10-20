@@ -58,18 +58,20 @@ public class ServiceStatusSynchronizer implements Synchronizer {
                     if (!result.ok()) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: {}",
                                 serverIP);
-        
+                        
                     }
                 }
-    
+                
                 @Override
                 public void onError(Throwable throwable) {
-                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: " + serverIP, throwable);
+                    Loggers.SRV_LOG
+                            .warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: " + serverIP,
+                                    throwable);
                 }
-    
+                
                 @Override
                 public void onCancel() {
-        
+                    
                 }
             });
         } catch (Exception e) {

@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
@@ -32,6 +31,7 @@ import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
@@ -148,17 +148,17 @@ public class ClientBeatCheckTask implements Runnable {
                                         instance.toJson(), result.getMessage(), result.getCode());
                     }
                 }
-    
+                
                 @Override
                 public void onError(Throwable throwable) {
                     Loggers.SRV_LOG
                             .error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJson(),
                                     throwable);
                 }
-    
+                
                 @Override
                 public void onCancel() {
-        
+                    
                 }
             });
             

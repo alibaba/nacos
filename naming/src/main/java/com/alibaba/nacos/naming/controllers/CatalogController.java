@@ -37,7 +37,6 @@ import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -213,7 +212,8 @@ public class CatalogController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
         List<Service> services = new ArrayList<>();
-        final int total = serviceManager.getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
+        final int total = serviceManager
+                .getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
         if (CollectionUtils.isEmpty(services)) {
             result.replace("serviceList", JacksonUtils.transferToJsonNode(Collections.emptyList()));
             result.put("count", 0);

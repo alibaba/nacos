@@ -22,9 +22,9 @@ import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
