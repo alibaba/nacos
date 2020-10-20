@@ -27,21 +27,6 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class NamespaceUtil {
     
-    private static final String NAMESPACE_PUBLIC_KEY = "public";
-    
-    private static final String NAMESPACE_NULL_KEY = "null";
-    
-    /**
-     * Treat the namespace(tenant) parameters with values of "public" and "null" as an empty string.
-     * @param tenant namespace(tenant) id
-     * @return java.lang.String A namespace(tenant) string processed
-     */
-    public static String processNamespaceParameter(String tenant) {
-        if (StringUtils.isBlank(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant) || NAMESPACE_NULL_KEY
-                .equalsIgnoreCase(tenant)) {
-            return "";
-        }
-        return tenant.trim();
-    }
+
 
 }

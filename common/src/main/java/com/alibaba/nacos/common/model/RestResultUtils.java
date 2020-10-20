@@ -35,6 +35,10 @@ public class RestResultUtils {
         return RestResult.<T>builder().withCode(code).withData(data).build();
     }
     
+    public static <T> RestResult<T> success(int code, T data, String msg) {
+        return RestResult.<T>builder().withCode(code).withData(data).withMsg(msg).build();
+    }
+    
     public static <T> RestResult<T> failed() {
         return RestResult.<T>builder().withCode(500).build();
     }

@@ -66,7 +66,6 @@ public class ConfigOpsController {
     
     private final DumpService dumpService;
     
-    @Autowired
     public ConfigOpsController(PersistService persistService, DumpService dumpService) {
         this.persistService = persistService;
         this.dumpService = dumpService;

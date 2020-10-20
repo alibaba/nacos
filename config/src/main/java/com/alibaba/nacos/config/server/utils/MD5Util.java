@@ -109,8 +109,9 @@ public class MD5Util {
     }
     
     /**
-     * Parse the transport protocol, which has two formats (W for field delimiter, L for each data delimiter) old: D w G
-     * w MD5 l new: D w G w MD5 w T l.
+     * Parse the transport protocol, which has two formats (W for field delimiter, L for each data delimiter)
+     * old: D w G w MD5 l
+     * new: D w G w MD5 w T l.
      *
      * @param configKeysString protocol
      * @return protocol message

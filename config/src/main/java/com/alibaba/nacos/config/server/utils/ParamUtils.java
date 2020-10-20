@@ -19,7 +19,8 @@ package com.alibaba.nacos.config.server.utils;
 import java.util.Map;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 
 /**
  * Parameter validity check util.
@@ -32,7 +33,12 @@ public class ParamUtils {
     
     private static final int TAG_MAX_LEN = 16;
     
-    private static final int TANANT_MAX_LEN = 128;
+    private static final String NAMESPACE_PUBLIC_KEY = "public";
+    
+    private static final String NAMESPACE_NULL_KEY = "null";
+    
+    private static final int NAMESPACE_MAX_LEN = 128;
+    
     
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
@@ -82,7 +88,7 @@ public class ParamUtils {
     /**
      * Check the tag.
      */
-    public static void checkParam(String tag) {
+    public static void checkTag(String tag) {
         if (StringUtils.isNotBlank(tag)) {
             if (!isValid(tag.trim())) {
                 throw new IllegalArgumentException("invalid tag : " + tag);
@@ -96,7 +102,7 @@ public class ParamUtils {
     /**
      * Check the config info.
      */
-    public static void checkParam(Map<String, Object> configAdvanceInfo) throws NacosException {
+    public static void checkConfigInfo(Map<String, Object> configAdvanceInfo) throws NacosException {
         for (Map.Entry<String, Object> configAdvanceInfoTmp : configAdvanceInfo.entrySet()) {
             if ("config_tags".equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null) {
@@ -141,18 +147,48 @@ public class ParamUtils {
         }
     }
     
+    public static int checkInteger(Integer arg, int defaultVal) {
+        if (null == arg) {
+            return defaultVal;
+        }
+        return arg;
+    }
+    
     /**
-     * Check the tenant.
+     * Check the namespace.
      */
-    public static void checkTenant(String tenant) {
-        if (StringUtils.isNotBlank(tenant)) {
-            if (!isValid(tenant.trim())) {
-                throw new IllegalArgumentException("invalid tenant");
+    public static void checkNamespace(String namespace) {
+        if (StringUtils.isNotBlank(namespace)) {
+            if (!ParamUtils.isValid(namespace.trim())) {
+                throw new IllegalArgumentException("invalid namespace");
             }
-            if (tenant.length() > TANANT_MAX_LEN) {
+            if (namespace.length() > NAMESPACE_MAX_LEN) {
                 throw new IllegalArgumentException("too long tag, over 128");
             }
         }
+    }
+    
+    public static String processDataID(final String dataID) {
+        return dataID.trim();
+    }
+    
+    public static String processGroupID(final String groupID) {
+        final String tmpGroupID = groupID.trim();
+        return StringUtils.isBlank(tmpGroupID) ? Constants.DEFAULT_GROUP : tmpGroupID;
+    }
+    
+    /**
+     * Treat the namespace(tenant) parameters with values of "public" and "null" as an empty string.
+     * @param namespace namespace(tenant) id
+     * @return java.lang.String A namespace(tenant) string processed
+     */
+    public static String processNamespace(final String namespace) {
+        ParamUtils.checkNamespace(namespace);
+        if (StringUtils.isBlank(namespace) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(namespace) || NAMESPACE_NULL_KEY
+                .equalsIgnoreCase(namespace)) {
+            return "";
+        }
+        return namespace.trim();
     }
     
 }

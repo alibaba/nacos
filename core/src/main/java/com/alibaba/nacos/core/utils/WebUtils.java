@@ -106,7 +106,7 @@ public class WebUtils {
      * @param encoding encode
      * @return Decoded data
      */
-    private static String resolveValueWithUrlDecode(String value, String encoding) {
+    public static String resolveValueWithUrlDecode(String value, String encoding) {
         if (StringUtils.isEmpty(encoding)) {
             encoding = StandardCharsets.UTF_8.name();
         }
@@ -124,9 +124,13 @@ public class WebUtils {
      * @return accept encode
      */
     public static String getAcceptEncoding(HttpServletRequest req) {
-        String encode = StringUtils.defaultIfEmpty(req.getHeader("Accept-Charset"), StandardCharsets.UTF_8.name());
+        String encode = StringUtils.defaultIfEmpty(getHeader(req, "Accept-Charset"), StandardCharsets.UTF_8.name());
         encode = encode.contains(",") ? encode.substring(0, encode.indexOf(",")) : encode;
         return encode.contains(";") ? encode.substring(0, encode.indexOf(";")) : encode;
+    }
+    
+    public static String getHeader(final HttpServletRequest req, final String headerKey) {
+        return req.getHeader(headerKey);
     }
     
     /**

@@ -21,7 +21,6 @@ import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,20 +36,19 @@ import javax.annotation.PostConstruct;
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 public class HealthController {
     
-    private DataSourceService dataSourceService;
+    private final DataSourceService dataSourceService;
     
-    private String heathUpStr = "UP";
+    private static final String HEATH_UP_STR = "UP";
     
-    private String heathDownStr = "DOWN";
+    private static final String HEATH_DOWN_STR = "DOWN";
     
-    private String heathWarnStr = "WARN";
+    private static final String HEATH_WARN_STR = "WARN";
     
-    @Autowired
-    private ServerMemberManager memberManager;
+    private final ServerMemberManager memberManager;
     
-    @PostConstruct
-    public void init() {
-        dataSourceService = DynamicDataSource.getInstance().getDataSource();
+    public HealthController(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
     }
     
     @GetMapping
@@ -58,14 +56,14 @@ public class HealthController {
         // TODO UP DOWN WARN
         StringBuilder sb = new StringBuilder();
         String dbStatus = dataSourceService.getHealth();
-        if (dbStatus.contains(heathUpStr) && memberManager.isInIpList()) {
-            sb.append(heathUpStr);
-        } else if (dbStatus.contains(heathWarnStr) && memberManager.isInIpList()) {
+        if (dbStatus.contains(HEATH_UP_STR) && memberManager.isInIpList()) {
+            sb.append(HEATH_UP_STR);
+        } else if (dbStatus.contains(HEATH_WARN_STR) && memberManager.isInIpList()) {
             sb.append("WARN:");
             sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
         } else {
             sb.append("DOWN:");
-            if (dbStatus.contains(heathDownStr)) {
+            if (dbStatus.contains(HEATH_DOWN_STR)) {
                 sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
             }
             if (!memberManager.isInIpList()) {

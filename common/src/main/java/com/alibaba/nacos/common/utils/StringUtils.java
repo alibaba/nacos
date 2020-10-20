@@ -40,6 +40,8 @@ public class StringUtils {
     
     public static final String EMPTY = "";
     
+    private static final String TRUE_STR = "true";
+    
     public static String newStringForUtf8(byte[] bytes) {
         return new String(bytes, Charset.forName(Constants.ENCODE));
     }
@@ -100,6 +102,10 @@ public class StringUtils {
     
     public static String trim(final String str) {
         return str == null ? null : str.trim();
+    }
+    
+    public static boolean isTrueStr(final String val) {
+        return isNotBlank(val) && TRUE_STR.equalsIgnoreCase(val);
     }
     
     /**

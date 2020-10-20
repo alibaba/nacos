@@ -35,6 +35,8 @@ public class LocalDataChangeEvent extends Event {
     
     public final String tag;
     
+    private long changeTime;
+    
     public LocalDataChangeEvent(String groupKey) {
         this.groupKey = groupKey;
         this.isBeta = false;
@@ -54,5 +56,13 @@ public class LocalDataChangeEvent extends Event {
         this.isBeta = isBeta;
         this.betaIps = betaIps;
         this.tag = tag;
+    }
+    
+    public long getChangeTime() {
+        return changeTime;
+    }
+    
+    public void setChangeTime(long changeTime) {
+        this.changeTime = changeTime;
     }
 }

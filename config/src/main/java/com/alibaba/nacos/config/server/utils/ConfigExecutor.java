@@ -57,7 +57,8 @@ public final class ConfigExecutor {
                     new NameThreadFactory("com.alibaba.nacos.config.ConfigSubService"));
     
     private static final ScheduledExecutorService LONG_POLLING_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
+                    4,
                     new NameThreadFactory("com.alibaba.nacos.config.LongPolling"));
     
     public static void scheduleConfigTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
