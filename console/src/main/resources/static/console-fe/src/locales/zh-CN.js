@@ -376,9 +376,7 @@ const I18N_CONF = {
   },
   DiffEditorDialog: {
     publish: '确认发布',
-    contents: '内容比较',
-    currentArea: '当前值',
-    originalValue: '原始值',
+    back: '返回',
   },
   ConfigEditor: {
     official: '正式',
@@ -409,6 +407,9 @@ const I18N_CONF = {
     publish: '发布',
     back: '返回',
     codeValErrorPrompt: '配置信息可能有语法错误, 确定提交吗?',
+    dialogTitle: '内容比较',
+    dialogCurrentArea: '当前值',
+    dialogOriginalArea: '原始值',
   },
   EditorNameSpace: {
     notice: '提示',
@@ -495,6 +496,9 @@ const I18N_CONF = {
     betaRelease: 'Beta发布：',
     configuration: '配置内容：',
     back: '返回',
+    versionComparison: '版本对比',
+    dialogCurrentArea: '当前版本',
+    dialogOriginalArea: '上一版本',
   },
   ConfigRollback: {
     rollBack: '回滚配置',
