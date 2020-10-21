@@ -225,6 +225,10 @@ class NacosStateMachine extends StateMachineAdapter {
     public void onError(RaftException e) {
         super.onError(e);
         processor.onError(e);
+        NotifyCenter.publishEvent(
+                RaftEvent.builder().groupId(groupId).leader(leaderIp).term(term).raftClusterInfo(allPeers())
+                        .errMsg(e.toString())
+                        .build());
     }
     
     public boolean isLeader() {

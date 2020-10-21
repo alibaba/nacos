@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
-import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
+import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyServiceDelegateImpl;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
@@ -33,11 +33,11 @@ import org.springframework.stereotype.Service;
 @Service("consistencyDelegate")
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
     
-    private final PersistentConsistencyService persistentConsistencyService;
+    private final PersistentConsistencyServiceDelegateImpl persistentConsistencyService;
     
     private final EphemeralConsistencyService ephemeralConsistencyService;
     
-    public DelegateConsistencyServiceImpl(PersistentConsistencyService persistentConsistencyService,
+    public DelegateConsistencyServiceImpl(PersistentConsistencyServiceDelegateImpl persistentConsistencyService,
             EphemeralConsistencyService ephemeralConsistencyService) {
         this.persistentConsistencyService = persistentConsistencyService;
         this.ephemeralConsistencyService = ephemeralConsistencyService;
