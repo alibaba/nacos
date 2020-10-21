@@ -42,7 +42,7 @@ public class HessianSerializer implements Serializer {
     
     @Override
     public <T> T deserialize(byte[] data) {
-        return deserialize(data);
+        return deseiralize0(data);
     }
     
     @Override
@@ -55,7 +55,7 @@ public class HessianSerializer implements Serializer {
         return deserialize(data);
     }
     
-    private <T> T deseiralize(byte[] data) {
+    private <T> T deseiralize0(byte[] data) {
         if (ByteUtils.isEmpty(data)) {
             return null;
         }
