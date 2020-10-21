@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.watch.client;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
+import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.SwitchService;
 import com.alibaba.nacos.config.server.service.watch.WatchClient;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -25,7 +27,6 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.core.utils.WebUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,11 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
+
 /**
+ * HTTP long rotation configuration listening client
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class LongPollWatchClient extends WatchClient {
@@ -54,9 +59,13 @@ public class LongPollWatchClient extends WatchClient {
     private final long createTime = System.currentTimeMillis();
     
     LongPollWatchClient(String appName, String address, String namespace, Map<String, String> watchKey,
-            final long timeoutTime, final AsyncContext context) {
+            long timeoutTime, final AsyncContext context) {
         super(appName, address, namespace, watchKey);
         this.context = context;
+        if (isFixedPolling()) {
+            // Do nothing but set fix polling timeout.
+            timeoutTime = Math.max(10000, getFixedPollingInterval());
+        }
         this.timeoutTime = timeoutTime;
         String probeModify = WebUtils.required((HttpServletRequest) context.getRequest(), "Listening-Configs");
         if (StringUtils.isBlank(probeModify)) {
@@ -66,7 +75,29 @@ public class LongPollWatchClient extends WatchClient {
     }
     
     @Override
-    public void init() {
+    protected void init() {
+        final HttpServletRequest req = (HttpServletRequest) context.getRequest();
+        final HttpServletResponse resp = (HttpServletResponse) context.getResponse();
+        if (!isFixedPolling()) {
+            String noHangUpFlag = req.getHeader(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER);
+            long start = System.currentTimeMillis();
+            List<String> changedGroups = MD5Util.compareMd5(req, resp, getWatchKey());
+            if (changedGroups.size() > 0) {
+                clientManager.removeWatchClient(LongPollWatchClient.this);
+                generateResponse(req, resp, changedGroups);
+                LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
+                        RequestUtil.getRemoteIp(req), "polling", getWatchKey().size(), probeRequestSize,
+                        changedGroups.size());
+                return;
+            } else if (StringUtils.isTrueStr(noHangUpFlag)) {
+                clientManager.removeWatchClient(LongPollWatchClient.this);
+                LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
+                        RequestUtil.getRemoteIp(req), "polling", getWatchKey().size(), probeRequestSize,
+                        changedGroups.size());
+                return;
+            }
+        }
+        
         this.asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(() -> {
             try {
                 clientManager.getRetainIps().put(getAddress(), System.currentTimeMillis());
@@ -142,6 +173,24 @@ public class LongPollWatchClient extends WatchClient {
         } catch (Exception ex) {
             LogUtil.PULL_LOG.error(ex.toString(), ex);
             context.complete();
+        }
+    }
+    
+    void generateResponse(HttpServletRequest request, HttpServletResponse response, List<String> changedGroups) {
+        if (null == changedGroups) {
+            return;
+        }
+        
+        try {
+            final String respString = MD5Util.compareMd5ResultString(changedGroups);
+            // Disable cache.
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
+            response.setHeader("Cache-Control", "no-cache,no-store");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().println(respString);
+        } catch (Exception ex) {
+            PULL_LOG.error(ex.toString(), ex);
         }
     }
     

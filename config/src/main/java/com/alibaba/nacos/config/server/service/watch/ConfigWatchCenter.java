@@ -195,7 +195,7 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
             Set<String> appSubscribeConfigs = app2GroupKeys.get(client.getAppName());
             Set<String> clientSubscribeConfigs = client.getWatchKey().keySet();
             if (appSubscribeConfigs == null) {
-                appSubscribeConfigs = new HashSet<String>(clientSubscribeConfigs.size());
+                appSubscribeConfigs = new HashSet<>(clientSubscribeConfigs.size());
             }
             appSubscribeConfigs.addAll(clientSubscribeConfigs);
             app2GroupKeys.put(client.getAppName(), appSubscribeConfigs);
@@ -207,7 +207,7 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
         
         @Override
         public void run() {
-            MEMORY_LOG.info("[long-pulling] client count " + clientManager.size());
+            MEMORY_LOG.info("[config-watch] client count " + clientManager.size());
             MetricsMonitor.getLongPollingMonitor().set(clientManager.size());
         }
     }

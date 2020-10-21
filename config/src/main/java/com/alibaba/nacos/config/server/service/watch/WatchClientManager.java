@@ -58,6 +58,8 @@ public final class WatchClientManager {
             clients.computeIfAbsent(key, groupIDAndDataID -> new ConcurrentHashSet<>());
             clients.get(key).add(client);
         });
+        client.injectWatchClientManager(this);
+        client.init();
     }
     
     public Set<WatchClient> findClientByAddress(final String address) {

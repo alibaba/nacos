@@ -162,6 +162,20 @@ public class MD5Util {
         return md5Map;
     }
     
+    public static String[] splitConfigKey(final String configKey) {
+        int start = 0;
+        int end = configKey.length();
+        List<String> result = new ArrayList<>();
+        for (int i = start; i < end; i++) {
+            char c = configKey.charAt(i);
+            if (c == WORD_SEPARATOR_CHAR) {
+                result.add(configKey.substring(start, i));
+                start = i + 1;
+            }
+        }
+        return result.toArray(new String[0]);
+    }
+    
     public static String toString(InputStream input, String encoding) throws IOException {
         return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
                 : toString(new InputStreamReader(input, encoding));

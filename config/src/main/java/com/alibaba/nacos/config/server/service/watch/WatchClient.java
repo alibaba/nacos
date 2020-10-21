@@ -21,6 +21,8 @@ import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import java.util.Map;
 
 /**
+ * Configure the listening client base class
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public abstract class WatchClient {
@@ -32,7 +34,7 @@ public abstract class WatchClient {
     private final String address;
     
     /**
-     *
+     * namespace
      */
     private final String namespace;
     
@@ -41,6 +43,9 @@ public abstract class WatchClient {
      */
     private final Map<String, String> watchKey;
     
+    /**
+     * Manage your own manager {@link WatchClientManager}
+     */
     protected WatchClientManager clientManager;
     
     public WatchClient(String appName, String address, String namespace, Map<String, String> watchKey) {
@@ -51,11 +56,11 @@ public abstract class WatchClient {
     }
     
     /**
-     *
+     * Listens for the client's initialization
      */
-    public abstract void init();
+    protected abstract void init();
     
-    public final void injectWatchClientManager(final WatchClientManager clientManager) {
+    protected final void injectWatchClientManager(final WatchClientManager clientManager) {
         this.clientManager = clientManager;
     }
     

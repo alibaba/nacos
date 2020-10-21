@@ -77,11 +77,11 @@ public class ConfigServletInner {
      * 轮询接口.
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
-            Map<String, String> clientMd5Map, int probeRequestSize) throws IOException {
+            Map<String, String> clientMd5Map) throws IOException {
         
         // Long polling.
         if (LongPollingService.isSupportLongPolling(request)) {
-            longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
+            longPollingService.addLongPollingClient(request, response, clientMd5Map);
             return HttpServletResponse.SC_OK + "";
         }
         
