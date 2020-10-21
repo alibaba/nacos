@@ -25,6 +25,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -48,8 +50,9 @@ public class NacosExecuteTaskExecuteEngineTest {
     private AbstractExecuteTask task;
     
     @Test
-    public void testAddTask() {
+    public void testAddTask() throws InterruptedException {
         executeTaskExecuteEngine.addTask("test", task);
+        TimeUnit.SECONDS.sleep(1);
         verify(task).run();
         assertTrue(executeTaskExecuteEngine.isEmpty());
         assertEquals(0, executeTaskExecuteEngine.size());

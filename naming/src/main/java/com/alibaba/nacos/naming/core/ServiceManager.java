@@ -234,10 +234,14 @@ public class ServiceManager implements RecordListener<Service> {
         
         if (service != null) {
             service.destroy();
-            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
-            
-            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
-            
+            String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
+            String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
+            consistencyService.remove(ephemeralInstanceListKey);
+            consistencyService.remove(persistInstanceListKey);
+    
+            // remove listeners of key to avoid mem leak
+            consistencyService.unListen(ephemeralInstanceListKey, service);
+            consistencyService.unListen(persistInstanceListKey, service);
             consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
             Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
         }
@@ -786,7 +790,7 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         Map<String, Instance> instanceMap;
-        if (datum != null) {
+        if (datum != null && null != datum.value) {
             instanceMap = setValid(((Instances) datum.value).getInstanceList(), currentInstances);
         } else {
             instanceMap = new HashMap<>(ips.length);

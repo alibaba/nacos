@@ -24,6 +24,7 @@ package com.alibaba.nacos.api.common;
  * <li> Global and common code starts with 10001.
  * <li> Naming module code starts with 20001.
  * <li> Config module code starts with 30001.
+ * <li> Core module code starts with 40001.
  *
  * @author nkorange
  * @since 1.2.0
