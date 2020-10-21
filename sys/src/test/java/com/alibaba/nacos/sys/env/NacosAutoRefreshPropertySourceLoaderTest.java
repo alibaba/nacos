@@ -36,6 +36,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
@@ -61,7 +62,7 @@ public class NacosAutoRefreshPropertySourceLoaderTest {
     }
 
     @Test
-    public void testConfigFileAutoRefresh() throws URISyntaxException, InterruptedException, NacosException {
+    public void testConfigFileAutoRefresh() throws URISyntaxException, InterruptedException, NacosException, IOException {
         final URL url = ClassLoader.getSystemResource("application.properties");
         ApplicationUtils.setContextPath(url.getPath());
         final String val1 = environment.getProperty("name");
