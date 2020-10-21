@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.cluster;
 
 /**
@@ -23,19 +24,19 @@ package com.alibaba.nacos.naming.cluster;
  */
 public enum ServerStatus {
     /**
-     * server is up and ready for request
+     * server is up and ready for request.
      */
     UP,
     /**
-     * server is out of service, something abnormal happened
+     * server is out of service, something abnormal happened.
      */
     DOWN,
     /**
-     * server is preparing itself for request, usually 'UP' is the next status
+     * server is preparing itself for request, usually 'UP' is the next status.
      */
     STARTING,
     /**
-     * server is manually paused
+     * server is manually paused.
      */
     PAUSED,
     /**

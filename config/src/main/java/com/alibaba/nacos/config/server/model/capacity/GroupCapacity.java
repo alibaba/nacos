@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model.capacity;
 
 /**
- * Group Capacity
+ * Group Capacity.
  *
  * @author hexu.hxy
  * @date 2018/3/13
  */
 public class GroupCapacity extends Capacity {
+    
+    private static final long serialVersionUID = 5888791286289014878L;
+    
     private String group;
-
+    
     public String getGroup() {
         return group;
     }
-
+    
     public void setGroup(String group) {
         this.group = group;
     }

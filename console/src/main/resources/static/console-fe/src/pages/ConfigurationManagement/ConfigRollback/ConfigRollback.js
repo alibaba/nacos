@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,6 +17,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { getParams, request } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 import { Button, ConfigProvider, Dialog, Field, Form, Input } from '@alifd/next';
 
 import './index.scss';
@@ -96,11 +100,10 @@ class ConfigRollback extends React.Component {
   }
 
   goList() {
-    const tenant = getParams('namespace');
+    const namespace = getParams('namespace');
+    const { serverId, dataId, group } = this;
     this.props.history.push(
-      `/historyRollback?serverId=${this.serverId}&group=${this.group}&dataId=${
-        this.dataId
-      }&namespace=${tenant}`
+      generateUrl('/historyRollback', { serverId, dataId, group, namespace })
     );
   }
 

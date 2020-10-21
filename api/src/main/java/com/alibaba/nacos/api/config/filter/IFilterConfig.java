@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.filter;
 
 /**
- * Filter Config Interface
+ * Filter Config Interface.
  *
  * @author Nacos
  */
 public interface IFilterConfig {
-
+    
     /**
-     * get filter name
+     * get filter name.
      *
-     * @return
+     * @return filter name
      */
     String getFilterName();
-
+    
     /**
-     * Get init param
+     * Get init param.
      *
-     * @param name
+     * @param name parameter name
      * @return param
      */
     Object getInitParameter(String name);
-
+    
 }

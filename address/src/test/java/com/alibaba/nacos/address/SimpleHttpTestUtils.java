@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 the original author or authors.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.address;
 
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -26,49 +27,46 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
 
-/**
- * @author pbting
- * @date 2019-06-18 2:40 PM
- */
 public class SimpleHttpTestUtils {
-
+    
     private static final String REQUEST_METHOD_DELETE = "DELETE";
+    
     private static final String REQUEST_METHOD_PUT = "PUT";
+    
     private static final String REQUEST_METHOD_POST = "POST";
+    
     private static final String REQUEST_METHOD_GET = "GET";
-
+    
     /**
-     * 连接超时
+     * 连接超时.
      */
-    private static int CONNECT_TIME_OUT = 2000;
-
+    private static final int CONNECT_TIME_OUT = 2000;
+    
     /**
-     * 读取数据超时
+     * 读取数据超时.
      */
-    private static int READ_TIME_OUT = 2000;
-
+    private static final int READ_TIME_OUT = 2000;
+    
     /**
-     * 请求编码
+     * 请求编码.
      */
-    public static String REQUEST_ENCODING = "UTF-8";
-
+    public static final String REQUEST_ENCODING = "UTF-8";
+    
     /**
-     * 接收编码
+     * 接收编码.
      */
-    public static String RESPONSE_ENCODING = "UTF-8";
-
+    public static final String RESPONSE_ENCODING = "UTF-8";
+    
     public static final short OK = 200;
-
-    public static final short Bad_Request = 400;
-
-    public static final short Internal_Server_Error = 500;
-
+    
+    public static final short BAD_REQUEST = 400;
+    
+    public static final short INTERNAL_SERVER_ERROR = 500;
+    
     public static final short PARAM_ERROR_NO_ANALYSESOR = 1000;
-
+    
     /**
-     * <pre>
-     * 发送带参数的GET的HTTP请求
-     * </pre>
+     * 发送带参数的GET的HTTP请求.
      *
      * @param reqUrl   HTTP请求URL
      * @param paramMap 参数映射表
@@ -77,11 +75,9 @@ public class SimpleHttpTestUtils {
     public static String doGet(String reqUrl, Map<String, String> paramMap, String recvEncoding) {
         return doRequest(reqUrl, paramMap, REQUEST_METHOD_GET, recvEncoding);
     }
-
+    
     /**
-     * <pre>
-     * 发送带参数的POST的HTTP请求
-     * </pre>
+     * 发送带参数的POST的HTTP请求.
      *
      * @param reqUrl   HTTP请求URL
      * @param paramMap 参数映射表
@@ -90,11 +86,9 @@ public class SimpleHttpTestUtils {
     public static String doPost(String reqUrl, Map<String, String> paramMap, String recvEncoding) {
         return doRequest(reqUrl, paramMap, REQUEST_METHOD_POST, recvEncoding);
     }
-
+    
     /**
-     * <pre>
-     * 发送带参数的 PUT 的 HTTP 请求
-     * </pre>
+     * 发送带参数的 PUT 的 HTTP 请求.
      *
      * @param reqUrl   HTTP请求URL
      * @param paramMap 参数映射表
@@ -103,11 +97,9 @@ public class SimpleHttpTestUtils {
     public static String doPut(String reqUrl, Map<String, String> paramMap, String recvEncoding) {
         return doRequest(reqUrl, paramMap, REQUEST_METHOD_PUT, recvEncoding);
     }
-
+    
     /**
-     * <pre>
-     * 发送带参数的 DELETE 的 HTTP 请求
-     * </pre>
+     * 发送带参数的 DELETE 的 HTTP 请求.
      *
      * @param reqUrl   HTTP请求URL
      * @param paramMap 参数映射表
@@ -116,13 +108,15 @@ public class SimpleHttpTestUtils {
     public static String doDelete(String reqUrl, Map<String, String> paramMap, String recvEncoding) {
         return doRequest(reqUrl, paramMap, REQUEST_METHOD_DELETE, recvEncoding);
     }
-
-    private static String doRequest(String reqUrl, Map<String, String> paramMap, String reqMethod, String recvEncoding) {
-
+    
+    private static String doRequest(String reqUrl, Map<String, String> paramMap, String reqMethod,
+            String recvEncoding) {
+        
         return doExecute(reqUrl, paramMap, reqMethod, recvEncoding);
     }
-
-    private static String doExecute(String reqUrl, Map<String, String> paramMap, String reqMethod, String recvEncoding) {
+    
+    private static String doExecute(String reqUrl, Map<String, String> paramMap, String reqMethod,
+            String recvEncoding) {
         HttpURLConnection urlCon = null;
         String responseContent = null;
         try {
@@ -134,13 +128,13 @@ public class SimpleHttpTestUtils {
                     params.append(URLEncoder.encode(element.getValue(), REQUEST_ENCODING));
                     params.append("&");
                 }
-
+                
                 if (params.length() > 0) {
                     params = params.deleteCharAt(params.length() - 1);
                 }
-
-                if (params.length() > 0 &&
-                        (REQUEST_METHOD_GET.equals(reqMethod) || REQUEST_METHOD_DELETE.equals(reqMethod))) {
+                
+                if (params.length() > 0 && (REQUEST_METHOD_GET.equals(reqMethod) || REQUEST_METHOD_DELETE
+                        .equals(reqMethod))) {
                     reqUrl = reqUrl + "?" + params.toString();
                 }
             }
@@ -169,7 +163,7 @@ public class SimpleHttpTestUtils {
             responseContent = tempStr.toString();
             rd.close();
             in.close();
-
+            
             urlCon.getResponseMessage();
         } catch (IOException e) {
             e.printStackTrace();
@@ -178,5 +172,5 @@ public class SimpleHttpTestUtils {
         }
         return responseContent;
     }
-
+    
 }

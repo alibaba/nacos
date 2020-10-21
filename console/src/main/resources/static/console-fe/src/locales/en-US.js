@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -50,6 +53,10 @@ const I18N_CONF = {
     namespace: 'Namespace',
     clusterManagementVirtual: 'ClusterManagement',
     clusterManagement: 'Cluster Node List',
+    authorityControl: 'Authority Control',
+    userList: 'User List',
+    roleManagement: 'Role Management',
+    privilegeManagement: 'Privilege Management',
   },
   Password: {
     passwordNotConsistent: 'The passwords are not consistent',
@@ -87,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: 'Namespaces',
     namespaceNumber: 'Namespace ID',
     namespaceOperation: 'Actions',
+    refresh: 'Refresh',
   },
   ServiceList: {
     serviceList: 'Service List',
@@ -130,10 +138,7 @@ const I18N_CONF = {
     query: 'Search',
     pubNoData: 'No results found.',
     nodeState: 'NodeState',
-    clusterTerm: 'ClusterTerm',
-    leaderDueMs: 'LeaderDue(ms)',
-    heartbeatDueMs: 'HeartbeatDue(ms)',
-    voteFor: 'VoteFor',
+    extendInfo: 'NodeMetaData',
   },
   EditClusterDialog: {
     updateCluster: 'Update Cluster',
@@ -218,6 +223,7 @@ const I18N_CONF = {
     queryResult: 'Search Results: Found',
     articleMeet: 'configuration items.',
     lastUpdateTime: 'Last Modified At',
+    operator: 'Operator',
     operation: 'Operation',
   },
   HistoryDetail: {
@@ -229,6 +235,7 @@ const I18N_CONF = {
     moreAdvancedOptions: 'Advanced Options',
     home: 'Application:',
     actionType: 'Action Type:',
+    operator: 'Operator:',
     configureContent: 'Configuration Content:',
     back: 'Back',
   },
@@ -277,6 +284,7 @@ const I18N_CONF = {
     importSuccBegin: 'The import was successful,with ',
     importSuccEnd: 'configuration items imported',
     importFail: 'Import failed',
+    importFail403: 'Unauthorized!',
     importDataValidationError: 'No legitimate data was read, please check the imported data file.',
     metadataIllegal: 'The imported metadata file is illegal',
     namespaceNotExist: 'namespace does not exist',
@@ -301,6 +309,7 @@ const I18N_CONF = {
     cloneSuccEnd: 'configuration items cloned',
     cloneFail: 'Clone failed',
     getNamespaceFailed: 'get the namespace failed',
+    getNamespace403: 'Without permission to access ${namespaceName} namespace!',
     startCloning: 'Start Clone',
     cloningConfiguration: 'Clone config',
     source: 'Source :',
@@ -313,6 +322,8 @@ const I18N_CONF = {
     delSelectedAlertTitle: 'Delete config',
     delSelectedAlertContent: 'please select the configuration to delete',
     delSuccessMsg: 'delete successful',
+    cloneEditableTitle: 'Modify Data Id and Group (optional)',
+    authFail: 'Auth failed',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',
@@ -367,9 +378,7 @@ const I18N_CONF = {
   },
   DiffEditorDialog: {
     publish: 'Publish',
-    contents: 'Content Comparison',
-    currentArea: 'Current Value',
-    originalValue: 'Original Value',
+    back: 'Back',
   },
   ConfigEditor: {
     official: 'Official',
@@ -400,6 +409,9 @@ const I18N_CONF = {
     publish: 'Publish',
     back: 'Back',
     codeValErrorPrompt: 'Configuration information may have syntax errors. Are you sure to submit?',
+    dialogTitle: 'Content Comparison',
+    dialogCurrentArea: 'Current Value',
+    dialogOriginalArea: 'Original Value',
   },
   EditorNameSpace: {
     notice: 'Notice',
@@ -463,9 +475,14 @@ const I18N_CONF = {
     newnamespce: 'Create Namespace',
     loading: 'Loading...',
     name: 'Namespace:',
+    namespaceId: 'Namespace ID(automatically generated if not filled):',
+    namespaceIdTooLong: 'The namespace ID length cannot exceed 128',
     namespacenotnull: 'Namespace cannot be empty',
     namespacedescnotnull: 'Namespace description cannot be empty',
     description: 'Description:',
+    namespaceIdAlreadyExist: 'namespaceId already exist',
+    newnamespceFailedMessage:
+      'namespaceId format is incorrect/namespaceId length greater than 128/namespaceId already exist',
   },
   NameSpaceList: {
     notice: 'Notice',
@@ -482,6 +499,9 @@ const I18N_CONF = {
     betaRelease: 'Beta Publish:',
     configuration: 'Configuration Content:',
     back: 'Back',
+    versionComparison: 'Version Comparison',
+    dialogCurrentArea: 'Current Version',
+    dialogOriginalArea: 'Previous Version',
   },
   ConfigRollback: {
     rollBack: 'Roll Back',
@@ -498,6 +518,89 @@ const I18N_CONF = {
     rollbackDelete: 'Delete',
     update: 'Update',
     insert: 'Insert',
+  },
+  UserManagement: {
+    userManagement: 'User Management',
+    createUser: 'Create user',
+    resetPassword: 'Edit',
+    deleteUser: 'Delete',
+    deleteUserTip: 'Do you want to delete this user?',
+    username: 'Username',
+    password: 'Password',
+    operation: 'Operation',
+    refresh: 'Refresh',
+  },
+  NewUser: {
+    createUser: 'Create user',
+    username: 'Username',
+    password: 'Password',
+    rePassword: 'Repeat',
+    usernamePlaceholder: 'Please Enter Username',
+    passwordPlaceholder: 'Please Enter Password',
+    rePasswordPlaceholder: 'Please Enter Repeat Password',
+    usernameError: 'User name cannot be empty!',
+    passwordError: 'Password cannot be empty!',
+    rePasswordError: 'Repeat Password cannot be empty!',
+    rePasswordError2: 'Passwords are inconsistent!',
+  },
+  PasswordReset: {
+    resetPassword: 'Password Reset',
+    username: 'Username',
+    password: 'Password',
+    rePassword: 'Repeat',
+    passwordPlaceholder: 'Please Enter Password',
+    rePasswordPlaceholder: 'Please Enter Repeat Password',
+    passwordError: 'Password cannot be empty!',
+    rePasswordError: 'Repeat Password cannot be empty!',
+    rePasswordError2: 'Passwords are inconsistent!',
+  },
+  RolesManagement: {
+    roleManagement: 'Role management',
+    bindingRoles: 'Binding roles',
+    role: 'Role',
+    username: 'Username',
+    operation: 'Operation',
+    deleteRole: 'Delete',
+    deleteRoleTip: 'Do you want to delete this role?',
+    refresh: 'Refresh',
+  },
+  NewRole: {
+    bindingRoles: 'Binding roles',
+    username: 'Username',
+    role: 'Role',
+    usernamePlaceholder: 'Please Enter Username',
+    rolePlaceholder: 'Please Enter Role',
+    usernameError: 'User name cannot be empty!',
+    roleError: 'Role cannot be empty!',
+  },
+  PermissionsManagement: {
+    privilegeManagement: 'Permissions Management',
+    addPermission: 'Add Permission',
+    role: 'Role',
+    resource: 'Resource',
+    action: 'Action',
+    operation: 'Operation',
+    deletePermission: 'Delete',
+    deletePermissionTip: 'Do you want to delete this permission?',
+    readOnly: 'read only',
+    writeOnly: 'write only',
+    readWrite: 'Read and write',
+    refresh: 'Refresh',
+  },
+  NewPermissions: {
+    addPermission: 'Add Permission',
+    role: 'Role',
+    resource: 'Resource',
+    action: 'Action',
+    resourcePlaceholder: 'Please select resources',
+    rolePlaceholder: 'Please enter Role',
+    actionPlaceholder: 'Please select Action',
+    resourceError: 'Resource cannot be empty!',
+    roleError: 'Role cannot be empty!',
+    actionError: 'Action cannot be empty!',
+    readOnly: 'read only',
+    writeOnly: 'write only',
+    readWrite: 'Read and write',
   },
 };
 

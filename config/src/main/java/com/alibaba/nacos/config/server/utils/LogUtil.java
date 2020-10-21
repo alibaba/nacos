@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 import ch.qos.logback.classic.Level;
@@ -20,83 +21,76 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * log util
+ * Log util.
  *
  * @author Nacos
  */
 public class LogUtil {
-
+    
     /**
-     * 默认的日志
+     * Default log.
      */
-    public static  final Logger defaultLog = LoggerFactory.getLogger("com.alibaba.nacos.config.startLog");
-
+    public static final Logger DEFAULT_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.startLog");
+    
     /**
-     * 致命错误，需要告警
+     * Fatal error log, require alarm.
      */
-    public static final Logger fatalLog = LoggerFactory
-        .getLogger("com.alibaba.nacos.config.fatal");
-
+    public static final Logger FATAL_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.fatal");
+    
     /**
-     * 客户端GET方法获取数据的日志
+     * Http client log.
      */
-    public static final Logger pullLog = LoggerFactory
-        .getLogger("com.alibaba.nacos.config.pullLog");
-
-    public static final Logger pullCheckLog = LoggerFactory
-        .getLogger("com.alibaba.nacos.config.pullCheckLog");
+    public static final Logger PULL_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.pullLog");
+    
+    public static final Logger PULL_CHECK_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.pullCheckLog");
+    
     /**
-     * 从DB dump数据的日志
+     * Dump log.
      */
-    public static final Logger dumpLog = LoggerFactory
-        .getLogger("com.alibaba.nacos.config.dumpLog");
-
-    public static final Logger memoryLog = LoggerFactory
-        .getLogger("com.alibaba.nacos.config.monitorLog");
-
-    public static final Logger clientLog = LoggerFactory
-        .getLogger("com.alibaba.nacos.config.clientLog");
-
-    public static final Logger traceLog = LoggerFactory
-        .getLogger("com.alibaba.nacos.config.traceLog");
-
-    public static final Logger notifyLog = LoggerFactory
-        .getLogger("com.alibaba.nacos.config.notifyLog");
-
+    public static final Logger DUMP_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.dumpLog");
+    
+    public static final Logger MEMORY_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.monitorLog");
+    
+    public static final Logger CLIENT_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.clientLog");
+    
+    public static final Logger TRACE_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.traceLog");
+    
+    public static final Logger NOTIFY_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.notifyLog");
+    
     public static void setLogLevel(String logName, String level) {
-
+        
         switch (logName) {
             case "config-server":
-                ((ch.qos.logback.classic.Logger) defaultLog).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) DEFAULT_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-fatal":
-                ((ch.qos.logback.classic.Logger) fatalLog).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) FATAL_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-pull":
-                ((ch.qos.logback.classic.Logger) pullLog).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) PULL_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-pull-check":
-                ((ch.qos.logback.classic.Logger) pullCheckLog).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) PULL_CHECK_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-dump":
-                ((ch.qos.logback.classic.Logger) dumpLog).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) DUMP_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-memory":
-                ((ch.qos.logback.classic.Logger) memoryLog).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) MEMORY_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-client-request":
-                ((ch.qos.logback.classic.Logger) clientLog).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) CLIENT_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-trace":
-                ((ch.qos.logback.classic.Logger) traceLog).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) TRACE_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-notify":
-                ((ch.qos.logback.classic.Logger) notifyLog).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) NOTIFY_LOG).setLevel(Level.valueOf(level));
                 break;
             default:
                 break;
         }
-
+        
     }
-
+    
 }
