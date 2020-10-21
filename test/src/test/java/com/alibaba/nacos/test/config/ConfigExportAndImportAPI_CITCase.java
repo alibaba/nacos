@@ -61,6 +61,7 @@ public class ConfigExportAndImportAPI_CITCase {
     @AfterClass
     public static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigExportAndImportAPI_CITCase.class.getSimpleName());
     }
 
     @Before
