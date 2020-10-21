@@ -200,6 +200,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     @Override
     public void shutdown() {
         if (initialized.get() && shutdowned.compareAndSet(false, true)) {
+            Loggers.RAFT.info("shutdown jraft server");
             raftServer.shutdown();
         }
     }
