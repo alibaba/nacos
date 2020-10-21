@@ -26,8 +26,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Raft peer.
  *
+ * @deprecated will remove in 1.4.x
  * @author nacos
  */
+@Deprecated
 public class RaftPeer {
     
     public String ip;

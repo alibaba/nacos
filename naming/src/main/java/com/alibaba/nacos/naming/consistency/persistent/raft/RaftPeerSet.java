@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -24,10 +26,10 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
@@ -49,10 +51,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * Sets of raft peers.
  *
  * @author nacos
+ * @deprecated will remove in 1.4.x
  */
+@Deprecated
 @Component
 @DependsOn("ProtocolManager")
-public class RaftPeerSet extends MemberChangeListener {
+public class RaftPeerSet extends MemberChangeListener implements Closeable {
     
     private final ServerMemberManager memberManager;
     
@@ -66,7 +70,7 @@ public class RaftPeerSet extends MemberChangeListener {
     
     private volatile boolean ready = false;
     
-    private Set<Member> oldMembers;
+    private Set<Member> oldMembers = new HashSet<>();
     
     public RaftPeerSet(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -76,6 +80,16 @@ public class RaftPeerSet extends MemberChangeListener {
     public void init() {
         NotifyCenter.registerSubscriber(this);
         changePeers(memberManager.allMembers());
+    }
+    
+    @Override
+    public void shutdown() throws NacosException {
+        this.localTerm.set(-1);
+        this.leader = null;
+        this.peers.clear();
+        this.sites.clear();
+        this.ready = false;
+        this.oldMembers.clear();
     }
     
     public RaftPeer getLeader() {
@@ -223,23 +237,22 @@ public class RaftPeerSet extends MemberChangeListener {
                         public void onReceive(RestResult<String> result) {
                             if (!result.ok()) {
                                 Loggers.RAFT
-                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", result.getCode(),
-                                                peer.ip);
+                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", result.getCode(), peer.ip);
                                 peer.state = RaftPeer.State.FOLLOWER;
                                 return;
                             }
-    
+                            
                             update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
                         }
-    
+                        
                         @Override
                         public void onError(Throwable throwable) {
-        
+                        
                         }
-    
+                        
                         @Override
                         public void onCancel() {
-        
+                        
                         }
                     });
                 } catch (Exception e) {
@@ -310,7 +323,7 @@ public class RaftPeerSet extends MemberChangeListener {
     @Override
     public void onEvent(MembersChangeEvent event) {
         Collection<Member> members = event.getMembers();
-        if (oldMembers == null) {
+        if (oldMembers.isEmpty()) {
             oldMembers = new HashSet<>(members);
         } else {
             oldMembers.removeAll(members);
@@ -319,7 +332,7 @@ public class RaftPeerSet extends MemberChangeListener {
         if (!oldMembers.isEmpty()) {
             changePeers(members);
         }
-    
+        
         oldMembers.clear();
         oldMembers.addAll(members);
     }
