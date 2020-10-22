@@ -41,6 +41,10 @@ import java.util.zip.Checksum;
  */
 public class NamingSnapshotOperation implements SnapshotOperation {
     
+    private static final String NAMING_SNAPSHOT_SAVE = NamingSnapshotOperation.class.getSimpleName() + ".SAVE";
+    
+    private static final String NAMING_SNAPSHOT_LOAD = NamingSnapshotOperation.class.getSimpleName() + ".LOAD";
+    
     private final String snapshotDir = "naming_persistent";
     
     private final String snapshotArchive = "naming_persistent.zip";
@@ -59,7 +63,7 @@ public class NamingSnapshotOperation implements SnapshotOperation {
     @Override
     public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
         RaftExecutor.doSnapshot(() -> {
-            TimerContext.start("NAMING_SNAPSHOT_SAVE");
+            TimerContext.start(NAMING_SNAPSHOT_SAVE);
             
             final Lock lock = writeLock;
             lock.lock();
@@ -85,7 +89,7 @@ public class NamingSnapshotOperation implements SnapshotOperation {
                 callFinally.accept(false, t);
             } finally {
                 lock.unlock();
-                TimerContext.end(Loggers.RAFT);
+                TimerContext.end(NAMING_SNAPSHOT_SAVE, Loggers.RAFT);
             }
         });
     }
@@ -95,7 +99,7 @@ public class NamingSnapshotOperation implements SnapshotOperation {
         final String readerPath = reader.getPath();
         final String sourceFile = Paths.get(readerPath, snapshotArchive).toString();
         
-        TimerContext.start("NAMING_SNAPSHOT_LOAD");
+        TimerContext.start(NAMING_SNAPSHOT_LOAD);
         final Lock lock = writeLock;
         lock.lock();
         try {
@@ -119,7 +123,7 @@ public class NamingSnapshotOperation implements SnapshotOperation {
             return false;
         } finally {
             lock.unlock();
-            TimerContext.end(Loggers.RAFT);
+            TimerContext.end(NAMING_SNAPSHOT_LOAD, Loggers.RAFT);
         }
     }
 }
