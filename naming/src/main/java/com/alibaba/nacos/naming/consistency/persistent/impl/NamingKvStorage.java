@@ -45,6 +45,8 @@ import java.util.function.Function;
  */
 public class NamingKvStorage extends MemoryKvStorage {
     
+    private static final String LOAD_SNAPSHOT = NamingKvStorage.class.getSimpleName() + ".snapshotLoad";
+    
     private final String baseDir;
     
     private final KvStorage baseDirStorage;
@@ -142,18 +144,13 @@ public class NamingKvStorage extends MemoryKvStorage {
     
     @Override
     public void snapshotLoad(String path) throws KvStorageException {
-        final KvStorageException e = TimerContext.run(() -> {
-            try {
-                baseDirStorage.snapshotLoad(path);
-                loadSnapshotFromActualStorage(baseDirStorage);
-                loadNamespaceSnapshot();
-                return null;
-            } catch (KvStorageException exception) {
-                return exception;
-            }
-        }, "naming kv storage load snapshot", Loggers.RAFT);
-        if (e != null) {
-            throw e;
+        TimerContext.start(LOAD_SNAPSHOT);
+        try {
+            baseDirStorage.snapshotLoad(path);
+            loadSnapshotFromActualStorage(baseDirStorage);
+            loadNamespaceSnapshot();
+        } finally {
+            TimerContext.end(LOAD_SNAPSHOT, Loggers.RAFT);
         }
     }
     
