@@ -28,8 +28,10 @@ import java.util.Map;
 /**
  * Raft http proxy.
  *
+ * @deprecated will remove in 1.4.x
  * @author nacos
  */
+@Deprecated
 @Component
 public class RaftProxy {
     
