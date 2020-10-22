@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.consistency;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,11 +33,30 @@ public interface Serializer {
      * Deserialize the data.
      *
      * @param data byte[]
+     * @param <T>  class type
+     * @return target object instance
+     */
+    <T> T deserialize(byte[] data);
+    
+    /**
+     * Deserialize the data.
+     *
+     * @param data byte[]
      * @param cls  class
      * @param <T>  class type
      * @return target object instance
      */
-    <T> T deserialize(byte[] data, Class cls);
+    <T> T deserialize(byte[] data, Class<T> cls);
+    
+    /**
+     * Deserialize the data.
+     *
+     * @param data byte[]
+     * @param type data type
+     * @param <T>  class type
+     * @return target object instance
+     */
+    <T> T deserialize(byte[] data, Type type);
     
     /**
      * Deserialize the data.

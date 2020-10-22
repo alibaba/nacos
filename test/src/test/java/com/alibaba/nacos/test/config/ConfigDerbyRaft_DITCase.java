@@ -36,6 +36,7 @@ import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.test.core.BaseClusterTest;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -57,6 +58,11 @@ import java.util.concurrent.atomic.AtomicReference;
 @Ignore
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
 public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
+    
+    @BeforeClass
+    public static void beforeClass() {
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigDerbyRaft_DITCase.class.getSimpleName());
+    }
     
     @Test
     public void test_a_publish_config() throws Exception {

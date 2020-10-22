@@ -20,7 +20,6 @@ import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -38,10 +37,13 @@ public class ServerStatusManager {
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
     private ServerStatus serverStatus = ServerStatus.STARTING;
+    
+    public ServerStatusManager(SwitchDomain switchDomain) {
+        this.switchDomain = switchDomain;
+    }
     
     @PostConstruct
     public void init() {

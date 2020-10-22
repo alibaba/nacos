@@ -36,6 +36,7 @@ import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -108,6 +109,7 @@ public class ProtocolManager extends MemberChangeListener implements Application
         return apProtocol;
     }
     
+    @PreDestroy
     public void destroy() {
         if (Objects.nonNull(apProtocol)) {
             apProtocol.shutdown();

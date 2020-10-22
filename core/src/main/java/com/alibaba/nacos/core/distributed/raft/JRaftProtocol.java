@@ -133,12 +133,14 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
                     final String leader = event.getLeader();
                     final Long term = event.getTerm();
                     final List<String> raftClusterInfo = event.getRaftClusterInfo();
+                    final String errMsg = event.getErrMsg();
                     
                     // Leader information needs to be selectively updated. If it is valid data,
                     // the information in the protocol metadata is updated.
                     MapUtils.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
                     MapUtils.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
                     MapUtils.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
+                    MapUtils.putIfValNoEmpty(properties, MetadataKey.ERR_MSG, errMsg);
                     
                     value.put(groupId, properties);
                     metaData.load(value);
@@ -198,6 +200,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     @Override
     public void shutdown() {
         if (initialized.get() && shutdowned.compareAndSet(false, true)) {
+            Loggers.RAFT.info("shutdown jraft server");
             raftServer.shutdown();
         }
     }
