@@ -23,6 +23,7 @@ import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
+import com.alibaba.nacos.config.server.service.watch.ConfigWatchCenter;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import org.springframework.ui.ModelMap;
@@ -46,10 +47,13 @@ public class CommunicationController {
     
     private final DumpService dumpService;
     
+    private final ConfigWatchCenter configWatchCenter;
+    
     private final LongPollingService longPollingService;
     
-    public CommunicationController(DumpService dumpService, LongPollingService longPollingService) {
+    public CommunicationController(DumpService dumpService, ConfigWatchCenter configWatchCenter, LongPollingService longPollingService) {
         this.dumpService = dumpService;
+        this.configWatchCenter = configWatchCenter;
         this.longPollingService = longPollingService;
     }
     
@@ -88,7 +92,7 @@ public class CommunicationController {
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         dataId = ParamUtils.processDataID(dataId);
         group = ParamUtils.processGroupID(group);
-        return longPollingService.getCollectSubscribleInfo(dataId, group, namespace);
+        return configWatchCenter.getCollectSubscribeInfo(dataId, group, namespace);
     }
     
     /**
@@ -98,6 +102,6 @@ public class CommunicationController {
     @GetMapping("/watcherConfigs")
     public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("ip") String ip, ModelMap modelMap) {
-        return longPollingService.getCollectSubscribleInfoByIp(ip);
+        return configWatchCenter.getCollectSubscribeInfoByIp(ip);
     }
 }

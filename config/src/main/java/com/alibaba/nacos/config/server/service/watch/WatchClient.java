@@ -31,7 +31,7 @@ public abstract class WatchClient {
     
     private final String appName;
     
-    private final String address;
+    private final String identity;
     
     /**
      * namespace
@@ -48,9 +48,9 @@ public abstract class WatchClient {
      */
     protected WatchClientManager clientManager;
     
-    public WatchClient(String appName, String address, String namespace, Map<String, String> watchKey) {
+    public WatchClient(String appName, String identity, String namespace, Map<String, String> watchKey) {
         this.appName = appName;
-        this.address = address;
+        this.identity = identity;
         this.namespace = namespace;
         this.watchKey = watchKey;
     }
@@ -76,8 +76,8 @@ public abstract class WatchClient {
         return appName;
     }
     
-    public String getAddress() {
-        return address;
+    public String getIdentity() {
+        return identity;
     }
     
     public String getNamespace() {

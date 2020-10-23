@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.sys.env.EnvUtils;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
@@ -33,6 +36,7 @@ import org.springframework.boot.context.event.EventPublishingRunListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.io.FileUrlResource;
 
 import java.io.File;
 import java.io.IOException;
@@ -73,6 +77,14 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
         ApplicationUtils.injectEnvironment(environment);
+        
+        try {
+            EnvUtils.loadProperties(new FileUrlResource(
+                    Paths.get(ApplicationUtils.getConfFilePath(), "application.properties").toUri().toURL()));
+        } catch (IOException e) {
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+        }
+        
         if (ApplicationUtils.getStandaloneMode()) {
             System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "stand alone");
         } else {

@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
+ * Manage all listening clients.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class WatchClientManager {
@@ -33,7 +35,7 @@ public final class WatchClientManager {
     
     private final Map<String, Map<String, Set<WatchClient>>> config2ClientMap = new ConcurrentHashMap<>(128);
     
-    private final Map<String, Set<WatchClient>> ip2ClientMap = new ConcurrentHashMap<>(128);
+    private final Map<String, Set<WatchClient>> identity2ClientMap = new ConcurrentHashMap<>(128);
     
     private final Map<String, Long> retainIps = new ConcurrentHashMap<>(128);
     
@@ -43,15 +45,20 @@ public final class WatchClientManager {
     
     public int size() {
         int clientSize = 0;
-        for (Map.Entry<String, Set<WatchClient>> entry : ip2ClientMap.entrySet()) {
+        for (Map.Entry<String, Set<WatchClient>> entry : identity2ClientMap.entrySet()) {
             clientSize += entry.getValue().size();
         }
         return clientSize;
     }
     
+    /**
+     * add watch-client.
+     *
+     * @param client {@link WatchClient}
+     */
     public void addWatchClient(final WatchClient client) {
-        ip2ClientMap.computeIfAbsent(client.getAddress(), address -> new ConcurrentHashSet<>());
-        ip2ClientMap.get(client.getAddress()).add(client);
+        identity2ClientMap.computeIfAbsent(client.getIdentity(), address -> new ConcurrentHashSet<>());
+        identity2ClientMap.get(client.getIdentity()).add(client);
         config2ClientMap.computeIfAbsent(client.getNamespace(), namespace -> new ConcurrentHashMap<>(128));
         Map<String, Set<WatchClient>> clients = config2ClientMap.get(client.getNamespace());
         client.getWatchKey().forEach((key, md5sum) -> {
@@ -63,7 +70,7 @@ public final class WatchClientManager {
     }
     
     public Set<WatchClient> findClientByAddress(final String address) {
-        return ip2ClientMap.getOrDefault(address, Collections.emptySet());
+        return identity2ClientMap.getOrDefault(address, Collections.emptySet());
     }
     
     public Set<WatchClient> findClientsByGroupKey(final String namespace, final String groupID, final String dataID) {
@@ -78,7 +85,7 @@ public final class WatchClientManager {
      * @param clientConsumer {@link Consumer}
      */
     public void forEach(Consumer<WatchClient> clientConsumer) {
-        ip2ClientMap.forEach((address, clients) -> clients.forEach(clientConsumer));
+        identity2ClientMap.forEach((address, clients) -> clients.forEach(clientConsumer));
     }
     
     /**
@@ -87,8 +94,9 @@ public final class WatchClientManager {
      * @param client {@link WatchClient}
      */
     public void removeWatchClient(final WatchClient client) {
-        ip2ClientMap.getOrDefault(client.getAddress(), Collections.emptySet()).remove(client);
+        identity2ClientMap.getOrDefault(client.getIdentity(), Collections.emptySet()).remove(client);
         config2ClientMap
                 .forEach((s, stringSetMap) -> stringSetMap.forEach((s1, watchClients) -> watchClients.remove(client)));
     }
+    
 }

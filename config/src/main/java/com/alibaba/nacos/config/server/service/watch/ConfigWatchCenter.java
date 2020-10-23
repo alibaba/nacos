@@ -77,7 +77,7 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
                     .iterator(); iter.hasNext(); ) {
                 WatchClient clientSub = iter.next();
                 // If published tag is not in the beta list, then it skipped.
-                if (isBeta && !CollectionUtils.contains(event.betaIps, clientSub.getAddress())) {
+                if (isBeta && !CollectionUtils.contains(event.betaIps, clientSub.getIdentity())) {
                     continue;
                 }
                 
@@ -86,9 +86,7 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
                     continue;
                 }
                 
-                clientManager.getRetainIps().put(clientSub.getAddress(), changeTime);
-                // Delete subscribers' relationships.
-                iter.remove();
+                clientManager.getRetainIps().put(clientSub.getIdentity(), changeTime);
                 clientSub.notifyChangeEvent(event);
             }
         });
@@ -116,7 +114,7 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
         Map<String, String> listenersGroupKeyStatus = new HashMap<>(64);
         
         for (WatchClient watchClient : clientManager.findClientsByGroupKey(namespace, group, dataId)) {
-            listenersGroupKeyStatus.put(watchClient.getAddress(), watchClient.getWatchKey().get(groupKey));
+            listenersGroupKeyStatus.put(watchClient.getIdentity(), watchClient.getWatchKey().get(groupKey));
         }
         sampleResult.setLisentersGroupkeyStatus(listenersGroupKeyStatus);
         return sampleResult;

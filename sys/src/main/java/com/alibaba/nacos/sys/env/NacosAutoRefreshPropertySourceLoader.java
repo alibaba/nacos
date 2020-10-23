@@ -43,7 +43,7 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
     
     private final Map<String, Object> properties = new ConcurrentHashMap<>(16);
     
-    private Resource holder = null;
+    private volatile Resource holder = null;
     
     @Override
     public String[] getFileExtensions() {
@@ -53,7 +53,7 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
     @Override
     public List<PropertySource<?>> load(String name, Resource resource) throws IOException {
         holder = resource;
-        Map<String, ?> tmp = loadProperties(resource);
+        Map<String, ?> tmp = EnvUtils.loadProperties(resource);
         properties.putAll(tmp);
         
         try {
@@ -61,7 +61,7 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
                 @Override
                 public void onChange(FileChangeEvent event) {
                     try {
-                        Map<String, ?> tmp1 = loadProperties(holder);
+                        Map<String, ?> tmp1 = EnvUtils.loadProperties(holder);
                         properties.putAll(tmp1);
                     } catch (IOException ignore) {
                     
@@ -81,10 +81,6 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
             return Collections.emptyList();
         }
         return Collections.singletonList(new OriginTrackedMapPropertySource("nacos_application_conf", properties));
-    }
-    
-    private Map<String, ?> loadProperties(Resource resource) throws IOException {
-        return new OriginTrackedPropertiesLoader(resource).load();
     }
     
     @JustForTest

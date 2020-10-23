@@ -100,7 +100,7 @@ public class LongPollWatchClient extends WatchClient {
         
         this.asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(() -> {
             try {
-                clientManager.getRetainIps().put(getAddress(), System.currentTimeMillis());
+                clientManager.getRetainIps().put(getIdentity(), System.currentTimeMillis());
                 // Delete subscriber's relations.
                 clientManager.removeWatchClient(LongPollWatchClient.this);
                 if (isFixedPolling()) {
@@ -143,7 +143,7 @@ public class LongPollWatchClient extends WatchClient {
     protected void notifyChangeEvent(LocalDataChangeEvent event) {
         LogUtil.CLIENT_LOG
                 .info("{}|{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - event.getChangeTime()), "in-advance",
-                        getAddress(), "polling", getWatchKey().size(), getProbeRequestSize(), event.groupKey);
+                        getIdentity(), "polling", getWatchKey().size(), getProbeRequestSize(), event.groupKey);
         sendResponse(Collections.singletonList(event.groupKey));
     }
     
