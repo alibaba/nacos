@@ -168,17 +168,18 @@ public class RaftCore implements Closeable {
         
         masterTask = GlobalExecutor.registerMasterElection(new MasterElection());
         heartbeatTask = GlobalExecutor.registerHeartbeat(new HeartBeat());
-        
-        versionJudgement.registerObserver(isAllNewVersion -> {
-            stopWork = isAllNewVersion;
-            if (stopWork) {
-                try {
-                    shutdown();
-                } catch (NacosException e) {
-                    throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+        if (!ApplicationUtils.getStandaloneMode()) {
+            versionJudgement.registerObserver(isAllNewVersion -> {
+                stopWork = isAllNewVersion;
+                if (stopWork) {
+                    try {
+                        shutdown();
+                    } catch (NacosException e) {
+                        throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+                    }
                 }
-            }
-        }, 100);
+            }, 100);
+        }
         
         NotifyCenter.registerSubscriber(notifier);
         

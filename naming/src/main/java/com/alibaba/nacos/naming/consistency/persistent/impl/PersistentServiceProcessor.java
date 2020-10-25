@@ -147,6 +147,10 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     private void init() {
         NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
         this.protocol.addLogProcessors(Collections.singletonList(this));
+        if (ApplicationUtils.getStandaloneMode()) {
+            this.hasLeader = true;
+            return;
+        }
         this.protocol.protocolMetaData()
                 .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
                         (o, arg) -> hasLeader = StringUtils.isNotBlank(String.valueOf(arg)));

@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.impl.PersistentServiceProcessor;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.pojo.Record;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -86,6 +87,9 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     }
     
     private PersistentConsistencyService switchOne() {
+        if (ApplicationUtils.getStandaloneMode()) {
+            return oldPersistentConsistencyService;
+        }
         return switchNewPersistentService ? newPersistentConsistencyService : oldPersistentConsistencyService;
     }
 }

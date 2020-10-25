@@ -26,6 +26,7 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,6 +75,9 @@ public class DistroLoadDataTask implements Runnable {
     }
     
     private void load() throws Exception {
+        if (ApplicationUtils.getStandaloneMode()) {
+            return;
+        }
         while (memberManager.allMembersWithoutSelf().isEmpty()) {
             Loggers.DISTRO.info("[DISTRO-INIT] waiting server list init...");
             TimeUnit.SECONDS.sleep(1);

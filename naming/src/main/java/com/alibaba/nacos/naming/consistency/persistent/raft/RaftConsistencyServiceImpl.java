@@ -59,16 +59,18 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
         this.raftCore = raftCore;
         this.peers = raftCore.getPeerSet();
         this.switchDomain = switchDomain;
-        versionJudgement.registerObserver(isAllNewVersion -> {
-            stopWork = isAllNewVersion;
-            if (stopWork) {
-                try {
-                    this.raftCore.shutdown();
-                } catch (NacosException e) {
-                    throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+        if (!ApplicationUtils.getStandaloneMode()) {
+            versionJudgement.registerObserver(isAllNewVersion -> {
+                stopWork = isAllNewVersion;
+                if (stopWork) {
+                    try {
+                        this.raftCore.shutdown();
+                    } catch (NacosException e) {
+                        throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+                    }
                 }
-            }
-        }, 1000);
+            }, 1000);
+        }
     }
     
     @PostConstruct
