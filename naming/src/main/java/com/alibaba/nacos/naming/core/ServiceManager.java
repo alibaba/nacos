@@ -52,8 +52,10 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -238,7 +240,7 @@ public class ServiceManager implements RecordListener<Service> {
             String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
             consistencyService.remove(ephemeralInstanceListKey);
             consistencyService.remove(persistInstanceListKey);
-    
+            
             // remove listeners of key to avoid mem leak
             consistencyService.unListen(ephemeralInstanceListKey, service);
             consistencyService.unListen(persistInstanceListKey, service);
@@ -867,7 +869,7 @@ public class ServiceManager implements RecordListener<Service> {
         if (!serviceMap.containsKey(service.getNamespaceId())) {
             synchronized (putServiceLock) {
                 if (!serviceMap.containsKey(service.getNamespaceId())) {
-                    serviceMap.put(service.getNamespaceId(), new ConcurrentHashMap<>(16));
+                    serviceMap.put(service.getNamespaceId(), Collections.synchronizedMap(new LinkedHashMap<>(16)));
                 }
             }
         }
