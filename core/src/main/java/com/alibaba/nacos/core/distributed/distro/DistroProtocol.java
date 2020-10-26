@@ -32,6 +32,7 @@ import com.alibaba.nacos.core.distributed.distro.task.load.DistroLoadDataTask;
 import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTask;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -58,10 +59,19 @@ public class DistroProtocol {
         this.distroComponentHolder = distroComponentHolder;
         this.distroTaskEngineHolder = distroTaskEngineHolder;
         this.distroConfig = distroConfig;
+        startDistroTask();
+    }
+    
+    private void startDistroTask() {
+        if (ApplicationUtils.getStandaloneMode()) {
+            loadCompleted = true;
+            return;
+        }
+        startLoadTask();
         startVerifyTask();
     }
     
-    private void startVerifyTask() {
+    private void startLoadTask() {
         DistroCallback loadCallback = new DistroCallback() {
             @Override
             public void onSuccess() {
@@ -73,10 +83,13 @@ public class DistroProtocol {
                 loadCompleted = false;
             }
         };
-        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder),
-                distroConfig.getVerifyIntervalMillis());
         GlobalExecutor.submitLoadDataTask(
                 new DistroLoadDataTask(memberManager, distroComponentHolder, distroConfig, loadCallback));
+    }
+    
+    private void startVerifyTask() {
+        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder),
+                distroConfig.getVerifyIntervalMillis());
     }
     
     public boolean isLoadCompleted() {
