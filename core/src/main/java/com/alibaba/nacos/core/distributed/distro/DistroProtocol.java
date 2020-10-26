@@ -51,7 +51,7 @@ public class DistroProtocol {
     
     private final DistroConfig distroConfig;
     
-    private volatile boolean loadCompleted = false;
+    private volatile boolean isInitialized = false;
     
     public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
             DistroTaskEngineHolder distroTaskEngineHolder, DistroConfig distroConfig) {
@@ -64,23 +64,23 @@ public class DistroProtocol {
     
     private void startDistroTask() {
         if (ApplicationUtils.getStandaloneMode()) {
-            loadCompleted = true;
+            isInitialized = true;
             return;
         }
-        startLoadTask();
         startVerifyTask();
+        startLoadTask();
     }
     
     private void startLoadTask() {
         DistroCallback loadCallback = new DistroCallback() {
             @Override
             public void onSuccess() {
-                loadCompleted = true;
+                isInitialized = true;
             }
             
             @Override
             public void onFailed(Throwable throwable) {
-                loadCompleted = false;
+                isInitialized = false;
             }
         };
         GlobalExecutor.submitLoadDataTask(
@@ -92,8 +92,8 @@ public class DistroProtocol {
                 distroConfig.getVerifyIntervalMillis());
     }
     
-    public boolean isLoadCompleted() {
-        return loadCompleted;
+    public boolean isInitialized() {
+        return isInitialized;
     }
     
     /**
