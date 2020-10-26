@@ -143,7 +143,7 @@ public class RaftCore implements Closeable {
         this.raftProxy = raftProxy;
         this.raftStore = raftStore;
         this.versionJudgement = versionJudgement;
-        this.notifier = new PersistentNotifier(key -> getDatum(key).value);
+        this.notifier = new PersistentNotifier(key -> null == getDatum(key) ? null : getDatum(key).value);
         this.publisher = NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
     }
     
@@ -242,7 +242,7 @@ public class RaftCore implements Closeable {
                     continue;
                 }
                 final String url = buildUrl(server, API_ON_PUB);
-                HttpClient.asyncHttpPostLarge(url, Arrays.asList("key=" + key), content, new Callback<String>() {
+                HttpClient.asyncHttpPostLarge(url, Arrays.asList("key", key), content, new Callback<String>() {
                     @Override
                     public void onReceive(RestResult<String> result) {
                         if (!result.ok()) {
@@ -818,8 +818,10 @@ public class RaftCore implements Closeable {
                             processedCount, beatDatums.size(), datums.size());
                     
                     // update datum entry
-                    String url = buildUrl(remote.ip, API_GET) + "?keys=" + URLEncoder.encode(keys, "UTF-8");
-                    HttpClient.asyncHttpGet(url, null, null, new Callback<String>() {
+                    String url = buildUrl(remote.ip, API_GET);
+                    Map<String, String> queryParam = new HashMap<>(1);
+                    queryParam.put("keys", URLEncoder.encode(keys, "UTF-8"));
+                    HttpClient.asyncHttpGet(url, null, queryParam, new Callback<String>() {
                         @Override
                         public void onReceive(RestResult<String> result) {
                             if (!result.ok()) {

@@ -133,7 +133,8 @@ public abstract class DumpService {
     
     protected void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
             DumpAllBetaProcessor dumpAllBetaProcessor, DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
-        TimerContext.start("CONFIG_DUMP_TO_FILE");
+        String dumpFileContext = "CONFIG_DUMP_TO_FILE";
+        TimerContext.start(dumpFileContext);
         try {
             LogUtil.DEFAULT_LOG.warn("DumpService start");
             
@@ -229,7 +230,7 @@ public abstract class DumpService {
             
             ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
         } finally {
-            TimerContext.end(LogUtil.DUMP_LOG);
+            TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
         }
         
     }
