@@ -81,7 +81,6 @@ public class ServiceManagerTest extends BaseTest {
     
     private List<String> serviceNames;
     
-    
     @Before
     public void before() {
         super.before();
