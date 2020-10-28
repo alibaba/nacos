@@ -142,21 +142,60 @@ public class ServiceManagerTest extends BaseTest {
     }
     
     @Test
-    public void testGetAllServiceNamesOrder() throws NacosException {
+    public void testGetAllServiceNamesOrder() throws NacosException, InterruptedException {
         assertTrue(serviceManager.getAllServiceNames().isEmpty());
-        for (String serviceName : serviceNames) {
-            serviceManager.createEmptyService(TEST_NAMESPACE, serviceName, true);
+        for (int i = 0; i < 8; i++) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceNames.get(i), true);
         }
-        assertFalse(serviceManager.getAllServiceNames().isEmpty());
-        assertEquals(1, serviceManager.getAllServiceNames().size());
-        assertEquals(serviceNames.size(), serviceManager.getAllServiceNames(TEST_NAMESPACE).size());
+        assertEquals(8, serviceManager.getAllServiceNames(TEST_NAMESPACE).size());
         
         Iterator<String> iterator = serviceManager.getAllServiceNames(TEST_NAMESPACE).iterator();
-        int index = 0;
+        List<String> firstSearchData = new ArrayList<>();
         while (iterator.hasNext()) {
-            assertEquals(serviceNames.get(index), iterator.next());
-            index++;
+            firstSearchData.add(iterator.next());
         }
+        
+        for (int i = 8; i < 16; i++) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceNames.get(i), true);
+        }
+        assertEquals(16, serviceManager.getAllServiceNames(TEST_NAMESPACE).size());
+        
+        Iterator<String> iterator2 = serviceManager.getAllServiceNames(TEST_NAMESPACE).iterator();
+        List<String> secondSearchData = new ArrayList<>();
+        while (iterator2.hasNext()) {
+            secondSearchData.add(iterator2.next());
+        }
+        
+        for (int i = 16; i < 24; i++) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceNames.get(i), true);
+        }
+        assertEquals(24, serviceManager.getAllServiceNames(TEST_NAMESPACE).size());
+        
+        Iterator<String> iterator3 = serviceManager.getAllServiceNames(TEST_NAMESPACE).iterator();
+        List<String> thirdSearchData = new ArrayList<>();
+        while (iterator3.hasNext()) {
+            thirdSearchData.add(iterator3.next());
+        }
+        
+        for (int i = 24; i < 32; i++) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceNames.get(i), true);
+        }
+        assertEquals(32, serviceManager.getAllServiceNames(TEST_NAMESPACE).size());
+        
+        Iterator<String> iterator4 = serviceManager.getAllServiceNames(TEST_NAMESPACE).iterator();
+        List<String> forthSearchData = new ArrayList<>();
+        while (iterator4.hasNext()) {
+            forthSearchData.add(iterator4.next());
+        }
+        
+        Assert.assertEquals(firstSearchData, secondSearchData.subList(0, 8));
+        Assert.assertEquals(firstSearchData, thirdSearchData.subList(0, 8));
+        Assert.assertEquals(firstSearchData, forthSearchData.subList(0, 8));
+        
+        Assert.assertEquals(secondSearchData, thirdSearchData.subList(0, 16));
+        Assert.assertEquals(secondSearchData, forthSearchData.subList(0, 16));
+        
+        Assert.assertEquals(thirdSearchData, forthSearchData.subList(0, 24));
     }
     
     @Test
@@ -169,18 +208,44 @@ public class ServiceManagerTest extends BaseTest {
     }
     
     @Test
-    public void testGetAllServiceNameListOrder() throws NacosException {
+    public void testGetAllServiceNameListOrder() throws NacosException, InterruptedException {
         assertTrue(serviceManager.getAllServiceNames().isEmpty());
-        for (String serviceName : serviceNames) {
-            serviceManager.createEmptyService(TEST_NAMESPACE, serviceName, true);
+        for (int i = 0; i < 8; i++) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceNames.get(i), true);
         }
-        assertFalse(serviceManager.getAllServiceNameList(TEST_NAMESPACE).isEmpty());
-        assertEquals(serviceNames.size(), serviceManager.getAllServiceNameList(TEST_NAMESPACE).size());
+        assertEquals(8, serviceManager.getAllServiceNameList(TEST_NAMESPACE).size());
         
-        List<String> allServiceNameList = serviceManager.getAllServiceNameList(TEST_NAMESPACE);
-        for (int i = 0; i < allServiceNameList.size(); i++) {
-            assertEquals(allServiceNameList.get(i), serviceNames.get(i));
+        List<String> firstSearchData = serviceManager.getAllServiceNameList(TEST_NAMESPACE);
+        
+        for (int i = 8; i < 16; i++) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceNames.get(i), true);
         }
+        assertEquals(16, serviceManager.getAllServiceNameList(TEST_NAMESPACE).size());
+        
+        List<String> secondSearchData = serviceManager.getAllServiceNameList(TEST_NAMESPACE);
+        
+        for (int i = 16; i < 24; i++) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceNames.get(i), true);
+        }
+        assertEquals(24, serviceManager.getAllServiceNameList(TEST_NAMESPACE).size());
+        
+        List<String> thirdSearchData = serviceManager.getAllServiceNameList(TEST_NAMESPACE);
+        
+        for (int i = 24; i < 32; i++) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceNames.get(i), true);
+        }
+        assertEquals(32, serviceManager.getAllServiceNameList(TEST_NAMESPACE).size());
+        
+        List<String> forthSearchData = serviceManager.getAllServiceNameList(TEST_NAMESPACE);
+        
+        Assert.assertEquals(firstSearchData, secondSearchData.subList(0, 8));
+        Assert.assertEquals(firstSearchData, thirdSearchData.subList(0, 8));
+        Assert.assertEquals(firstSearchData, forthSearchData.subList(0, 8));
+        
+        Assert.assertEquals(secondSearchData, thirdSearchData.subList(0, 16));
+        Assert.assertEquals(secondSearchData, forthSearchData.subList(0, 16));
+        
+        Assert.assertEquals(thirdSearchData, forthSearchData.subList(0, 24));
     }
     
     @Test

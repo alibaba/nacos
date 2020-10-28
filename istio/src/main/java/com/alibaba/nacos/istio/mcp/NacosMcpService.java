@@ -37,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,14 +95,14 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
             Set<String> namespaces = serviceManager.getAllNamespaces();
             
             for (String namespace : namespaces) {
-                
-                Map<String, Service> services = serviceManager.chooseServiceMap(namespace);
-                
-                if (services.isEmpty()) {
+    
+                Collection<Service> values = serviceManager.chooseServiceMap(namespace).values();
+    
+                if (values.isEmpty()) {
                     continue;
                 }
                 
-                for (Service service : services.values()) {
+                for (Service service : values) {
                     
                     String convertedName = convertName(service);
                     

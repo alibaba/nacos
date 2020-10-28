@@ -52,15 +52,15 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -83,7 +83,7 @@ public class ServiceManager implements RecordListener<Service> {
     /**
      * Map(namespace, Map(group::serviceName, Service)).
      */
-    private final Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
+    private final Map<String, Map<ServiceNameHelper, Service>> serviceMap = new ConcurrentHashMap<>();
     
     private final LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
     
@@ -158,7 +158,7 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
     
-    public Map<String, Service> chooseServiceMap(String namespaceId) {
+    public Map<ServiceNameHelper, Service> chooseServiceMap(String namespaceId) {
         return serviceMap.get(namespaceId);
     }
     
@@ -365,14 +365,16 @@ public class ServiceManager implements RecordListener<Service> {
     }
     
     public Set<String> getAllServiceNames(String namespaceId) {
-        return serviceMap.get(namespaceId).keySet();
+        return serviceMap.get(namespaceId).keySet().stream().map(ServiceNameHelper::getServiceName)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
     
     public Map<String, Set<String>> getAllServiceNames() {
-        
         Map<String, Set<String>> namesMap = new HashMap<>(16);
         for (String namespaceId : serviceMap.keySet()) {
-            namesMap.put(namespaceId, serviceMap.get(namespaceId).keySet());
+            namesMap.put(namespaceId,
+                    serviceMap.get(namespaceId).keySet().stream().map(ServiceNameHelper::getServiceName)
+                            .collect(Collectors.toCollection(LinkedHashSet::new)));
         }
         return namesMap;
     }
@@ -385,16 +387,17 @@ public class ServiceManager implements RecordListener<Service> {
         if (chooseServiceMap(namespaceId) == null) {
             return new ArrayList<>();
         }
-        return new ArrayList<>(chooseServiceMap(namespaceId).keySet());
+        return chooseServiceMap(namespaceId).keySet().stream().map(ServiceNameHelper::getServiceName)
+                .collect(Collectors.toList());
     }
     
     public Map<String, Set<Service>> getResponsibleServices() {
         Map<String, Set<Service>> result = new HashMap<>(16);
         for (String namespaceId : serviceMap.keySet()) {
             result.put(namespaceId, new HashSet<>());
-            for (Map.Entry<String, Service> entry : serviceMap.get(namespaceId).entrySet()) {
+            for (Map.Entry<ServiceNameHelper, Service> entry : serviceMap.get(namespaceId).entrySet()) {
                 Service service = entry.getValue();
-                if (distroMapper.responsible(entry.getKey())) {
+                if (distroMapper.responsible(entry.getKey().getServiceName())) {
                     result.get(namespaceId).add(service);
                 }
             }
@@ -405,8 +408,8 @@ public class ServiceManager implements RecordListener<Service> {
     public int getResponsibleServiceCount() {
         int serviceCount = 0;
         for (String namespaceId : serviceMap.keySet()) {
-            for (Map.Entry<String, Service> entry : serviceMap.get(namespaceId).entrySet()) {
-                if (distroMapper.responsible(entry.getKey())) {
+            for (Map.Entry<ServiceNameHelper, Service> entry : serviceMap.get(namespaceId).entrySet()) {
+                if (distroMapper.responsible(entry.getKey().getServiceName())) {
                     serviceCount++;
                 }
             }
@@ -853,7 +856,7 @@ public class ServiceManager implements RecordListener<Service> {
         if (serviceMap.get(namespaceId) == null) {
             return null;
         }
-        return chooseServiceMap(namespaceId).get(serviceName);
+        return chooseServiceMap(namespaceId).get(new ServiceNameHelper(serviceName));
     }
     
     public boolean containService(String namespaceId, String serviceName) {
@@ -869,11 +872,11 @@ public class ServiceManager implements RecordListener<Service> {
         if (!serviceMap.containsKey(service.getNamespaceId())) {
             synchronized (putServiceLock) {
                 if (!serviceMap.containsKey(service.getNamespaceId())) {
-                    serviceMap.put(service.getNamespaceId(), Collections.synchronizedMap(new LinkedHashMap<>(16)));
+                    serviceMap.put(service.getNamespaceId(), new ConcurrentSkipListMap<>());
                 }
             }
         }
-        serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
+        serviceMap.get(service.getNamespaceId()).put(new ServiceNameHelper(service.getName()), service);
     }
     
     private void putServiceAndInit(Service service) throws NacosException {
@@ -895,7 +898,7 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public List<Service> searchServices(String namespaceId, String regex) {
         List<Service> result = new ArrayList<>();
-        for (Map.Entry<String, Service> entry : chooseServiceMap(namespaceId).entrySet()) {
+        for (Map.Entry<ServiceNameHelper, Service> entry : chooseServiceMap(namespaceId).entrySet()) {
             Service service = entry.getValue();
             String key = service.getName() + ":" + ArrayUtils.toString(service.getOwners());
             if (key.matches(regex)) {
@@ -1036,16 +1039,16 @@ public class ServiceManager implements RecordListener<Service> {
             int parallelSize = 100;
             
             serviceMap.forEach((namespace, stringServiceMap) -> {
-                Stream<Map.Entry<String, Service>> stream = null;
+                Stream<Map.Entry<ServiceNameHelper, Service>> stream = null;
                 if (stringServiceMap.size() > parallelSize) {
                     stream = stringServiceMap.entrySet().parallelStream();
                 } else {
                     stream = stringServiceMap.entrySet().stream();
                 }
                 stream.filter(entry -> {
-                    final String serviceName = entry.getKey();
+                    final String serviceName = entry.getKey().getServiceName();
                     return distroMapper.responsible(serviceName);
-                }).forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceName, service) -> {
+                }).forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceNameHelper, service) -> {
                     if (service.isEmpty()) {
                         
                         // To avoid violent Service removal, the number of times the Service
@@ -1054,12 +1057,12 @@ public class ServiceManager implements RecordListener<Service> {
                         
                         if (service.getFinalizeCount() > maxFinalizeCount) {
                             Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned", namespace,
-                                    serviceName);
+                                    serviceNameHelper.getServiceName());
                             try {
-                                easyRemoveService(namespace, serviceName);
+                                easyRemoveService(namespace, serviceNameHelper.getServiceName());
                             } catch (Exception e) {
                                 Loggers.SRV_LOG.error("namespace : {}, [{}] services are automatically clean has "
-                                        + "error : {}", namespace, serviceName, e);
+                                        + "error : {}", namespace, serviceNameHelper.getServiceName(), e);
                             }
                         }
                         
@@ -1067,7 +1070,7 @@ public class ServiceManager implements RecordListener<Service> {
                         
                         Loggers.SRV_LOG
                                 .debug("namespace : {}, [{}] The number of times the current service experiences "
-                                                + "an empty instance is : {}", namespace, serviceName,
+                                                + "an empty instance is : {}", namespace, serviceNameHelper.getServiceName(),
                                         service.getFinalizeCount());
                     } else {
                         service.setFinalizeCount(0);
@@ -1134,6 +1137,49 @@ public class ServiceManager implements RecordListener<Service> {
                 GlobalExecutor.scheduleServiceReporter(this, switchDomain.getServiceStatusSynchronizationPeriodMillis(),
                         TimeUnit.MILLISECONDS);
             }
+        }
+    }
+    
+    private static class ServiceNameHelper implements Comparable<ServiceNameHelper> {
+        
+        static Map<String, Long> serviceTimeStamp = new ConcurrentHashMap<>();
+        
+        private final String serviceName;
+        
+        private Long timestamp;
+        
+        public ServiceNameHelper(String serviceName) {
+            this.serviceName = serviceName;
+            //这里对同一个serviceName加锁，当出现并发问题，同一个serviceName创建了两次，加锁保证两个serviceName共用一个timestamp.
+            //然后在compareTo中通过返回0(timestamp和service都相同)来进行去重
+            synchronized (serviceName.intern()) {
+                timestamp = serviceTimeStamp.get(serviceName);
+                if (timestamp == null) {
+                    timestamp = System.currentTimeMillis();
+                    serviceTimeStamp.putIfAbsent(serviceName, timestamp);
+                }
+            }
+        }
+        
+        public String getServiceName() {
+            return serviceName;
+        }
+        
+        @Override
+        public int compareTo(ServiceNameHelper other) {
+            if (other == null) {
+                throw new IllegalArgumentException("other serviceNameOrderHelper is null");
+            }
+            //名字一样自动去重
+            if (this.serviceName.equals(other.serviceName)) {
+                return 0;
+            }
+            int i = Long.compare(this.timestamp, other.timestamp);
+            //如果两个timestamp一样,根据名字进行排序.如果名字一样的话,返回值为0,则会自动去重
+            if (i == 0) {
+                return this.serviceName.compareTo(other.serviceName);
+            }
+            return i;
         }
     }
     
