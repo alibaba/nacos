@@ -1142,7 +1142,7 @@ public class ServiceManager implements RecordListener<Service> {
     
     private static class ServiceNameHelper implements Comparable<ServiceNameHelper> {
         
-        static Map<String, Long> serviceTimeStamp = new ConcurrentHashMap<>();
+        private static Map<String, Long> serviceTimeStamp = new ConcurrentHashMap<>();
         
         private final String serviceName;
         
