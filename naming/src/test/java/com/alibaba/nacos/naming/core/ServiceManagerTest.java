@@ -344,7 +344,8 @@ public class ServiceManagerTest extends BaseTest {
     @Test
     public void testUpdateIpAddressesNoInstance() throws Exception {
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("ip list can not be empty, service: test-service, ip list: []");
+        expectedException
+                .expectMessage(String.format("ip list can not be empty, service: %s, ip list: []", TEST_SERVICE_NAME));
         serviceManager.updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, true);
     }
     
