@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.metadata;
 
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +28,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author xiweng.yy
  */
+@Component
 public class NacosNamingMetadataManager {
     
     private final ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap;

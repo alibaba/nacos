@@ -27,6 +27,8 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
+import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
+import com.alibaba.nacos.naming.core.v2.metadata.NacosNamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -38,6 +40,7 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Collection;
+import java.util.Optional;
 
 /**
  * Client beat check task of service for version 2.x.
@@ -65,6 +68,10 @@ public class ClientBeatCheckTaskV2 implements BeatCheckTask {
         return ApplicationUtils.getBean(SwitchDomain.class);
     }
     
+    public NacosNamingMetadataManager getMetadataManager() {
+        return ApplicationUtils.getBean(NacosNamingMetadataManager.class);
+    }
+    
     @Override
     public String taskKey() {
         return KeyBuilder.buildServiceMetaKey(client.getClientId(), String.valueOf(client.isEphemeral()));
@@ -85,10 +92,10 @@ public class ClientBeatCheckTaskV2 implements BeatCheckTask {
             for (Service each : services) {
                 HeartBeatInstancePublishInfo instance = (HeartBeatInstancePublishInfo) client.getInstancePublishInfo(each);
                 long lastBeatTime = instance.getLastHeartBeatTime();
-                if (instance.isHealthy() && isUnhealthy(instance, lastBeatTime)) {
+                if (instance.isHealthy() && isUnhealthy(each, instance, lastBeatTime)) {
                     changeHealthyStatus(each, instance, lastBeatTime);
                 }
-                if (expireInstance && isExpireInstance(instance, lastBeatTime)) {
+                if (expireInstance && isExpireInstance(each, instance, lastBeatTime)) {
                     deleteIp(each, instance);
                 }
             }
@@ -98,15 +105,15 @@ public class ClientBeatCheckTaskV2 implements BeatCheckTask {
         
     }
     
-    private boolean isUnhealthy(InstancePublishInfo instance, long lastBeatTime) {
-        long beatTimeout = getTimeout(instance, PreservedMetadataKeys.HEART_BEAT_TIMEOUT,
+    private boolean isUnhealthy(Service service, InstancePublishInfo instance, long lastBeatTime) {
+        long beatTimeout = getTimeout(service, instance, PreservedMetadataKeys.HEART_BEAT_TIMEOUT,
                 Constants.DEFAULT_HEART_BEAT_TIMEOUT);
         return System.currentTimeMillis() - lastBeatTime > beatTimeout;
     }
     
     private void changeHealthyStatus(Service service, InstancePublishInfo instance, long lastBeatTime) {
         instance.setHealthy(false);
-        String cluster = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
+        Object cluster = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME);
         Loggers.EVT_LOG
                 .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client last beat: {}", instance.getIp(),
                         instance.getPort(), cluster, service.getName(), UtilsAndCommons.LOCALHOST_SITE, lastBeatTime);
@@ -114,8 +121,8 @@ public class ClientBeatCheckTaskV2 implements BeatCheckTask {
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));
     }
     
-    private boolean isExpireInstance(InstancePublishInfo instance, long lastBeatTime) {
-        long deleteTimeout = getTimeout(instance, PreservedMetadataKeys.IP_DELETE_TIMEOUT,
+    private boolean isExpireInstance(Service service, InstancePublishInfo instance, long lastBeatTime) {
+        long deleteTimeout = getTimeout(service, instance, PreservedMetadataKeys.IP_DELETE_TIMEOUT,
                 Constants.DEFAULT_IP_DELETE_TIMEOUT);
         return System.currentTimeMillis() - lastBeatTime > deleteTimeout;
     }
@@ -126,12 +133,15 @@ public class ClientBeatCheckTaskV2 implements BeatCheckTask {
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
     }
     
-    private long getTimeout(InstancePublishInfo instance, String timeoutKey, long defaultValue) {
-        // TODO get time out config from CP metadata
+    private long getTimeout(Service service, InstancePublishInfo instance, String timeoutKey, long defaultValue) {
+        Optional<InstanceMetadata> instanceMetadata = getMetadataManager().getInstanceMetadata(service, instance.getIp());
         Object object = instance.getExtendDatum().get(timeoutKey);
+        if (instanceMetadata.isPresent() && instanceMetadata.get().getExtendData().containsKey(timeoutKey)) {
+            object = instanceMetadata.get().getExtendData().get(timeoutKey);
+        }
         if (null == object) {
             return defaultValue;
         }
-        return (long) object;
+        return Long.parseLong(object.toString());
     }
 }

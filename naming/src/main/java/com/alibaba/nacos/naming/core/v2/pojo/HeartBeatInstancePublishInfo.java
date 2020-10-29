@@ -25,6 +25,13 @@ public class HeartBeatInstancePublishInfo extends InstancePublishInfo {
     
     private long lastHeartBeatTime = System.currentTimeMillis();
     
+    public HeartBeatInstancePublishInfo() {
+    }
+    
+    public HeartBeatInstancePublishInfo(String ip, int port) {
+        super(ip, port);
+    }
+    
     public long getLastHeartBeatTime() {
         return lastHeartBeatTime;
     }

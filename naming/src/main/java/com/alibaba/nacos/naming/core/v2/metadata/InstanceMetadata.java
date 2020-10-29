@@ -36,7 +36,7 @@ public class InstanceMetadata {
      */
     private boolean enabled = true;
     
-    private Map<String, String> extendData = new ConcurrentHashMap<>(1);
+    private Map<String, Object> extendData = new ConcurrentHashMap<>(1);
     
     public double getWeight() {
         return weight;
@@ -54,11 +54,11 @@ public class InstanceMetadata {
         this.enabled = enabled;
     }
     
-    public Map<String, String> getExtendData() {
+    public Map<String, Object> getExtendData() {
         return extendData;
     }
     
-    public void setExtendData(Map<String, String> extendData) {
+    public void setExtendData(Map<String, Object> extendData) {
         this.extendData = extendData;
     }
 }
