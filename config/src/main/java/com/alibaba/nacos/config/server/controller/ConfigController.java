@@ -301,8 +301,6 @@ public class ConfigController {
             throw new IllegalArgumentException("invalid probeModify");
         }
         
-        probeModify = WebUtils.resolveValueWithUrlDecode(probeModify, Constants.ENCODE);
-        
         Map<String, String> clientMd5Map;
         try {
             clientMd5Map = MD5Util.getClientMd5Map(probeModify);

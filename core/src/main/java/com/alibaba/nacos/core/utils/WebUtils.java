@@ -94,7 +94,7 @@ public class WebUtils {
             value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
         } catch (UnsupportedEncodingException ignore) {
         }
-        return value.trim();
+        return value;
     }
     
     /**

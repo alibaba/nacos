@@ -186,7 +186,7 @@ public class ParamUtils {
         ParamUtils.checkNamespace(namespace);
         if (StringUtils.isBlank(namespace) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(namespace) || NAMESPACE_NULL_KEY
                 .equalsIgnoreCase(namespace)) {
-            return "";
+            return Constants.DEFAULT_NAMESPACE;
         }
         return namespace.trim();
     }

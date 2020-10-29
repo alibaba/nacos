@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.common.utils.BiConsumer;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import org.apache.commons.lang3.StringUtils;
@@ -118,13 +119,13 @@ public class MD5Util {
      */
     public static Map<String, String> getClientMd5Map(String configKeysString) {
         
-        Map<String, String> md5Map = new HashMap<String, String>(5);
+        Map<String, String> md5Map = new HashMap<>(5);
         
         if (null == configKeysString || "".equals(configKeysString)) {
             return md5Map;
         }
         int start = 0;
-        List<String> tmpList = new ArrayList<String>(3);
+        List<String> tmpList = new ArrayList<>(3);
         for (int i = start; i < configKeysString.length(); i++) {
             char c = configKeysString.charAt(i);
             if (c == WORD_SEPARATOR_CHAR) {
@@ -140,7 +141,6 @@ public class MD5Util {
                     endValue = configKeysString.substring(start, i);
                 }
                 start = i + 1;
-                
                 // If it is the old message, the last digit is MD5. The post-multi-tenant message is tenant
                 if (tmpList.size() == 2) {
                     String groupKey = GroupKey2.getKey(tmpList.get(0), tmpList.get(1));

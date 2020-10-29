@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.watch.ConfigWatchCenter;
 import com.alibaba.nacos.config.server.service.watch.client.LongPollWatchClient;
 import com.alibaba.nacos.config.server.utils.MD5Util;
@@ -46,27 +47,29 @@ public class LongPollingService {
      */
     public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp,
             Map<String, String> clientMd5Map) {
-        String str = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
         String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         String tag = req.getHeader("Vipserver-Tag");
-        
-        // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
-        long timeout = Math
-                .max(10000, Long.parseLong(str) - SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500));
         
         // old: D w G w MD5 l
         // new: D w G w MD5 w T l
         // just support new: D w G w MD5 w T l
         final Set<String> namespaces = new HashSet<>();
         clientMd5Map.forEach((key, md5Sign) -> {
-            namespaces.add(ParamUtils.processNamespace(MD5Util.splitConfigKey(key)[3]));
+            final String[] configMetadata = MD5Util.splitConfigKey(key);
+            if (configMetadata.length == 3) {
+                namespaces.add(ParamUtils.processNamespace(configMetadata[3]));
+            } else {
+                namespaces.add(ParamUtils.processNamespace(Constants.DEFAULT_NAMESPACE));
+            }
+            
         });
         // Must be called by http thread, or send response.
-        namespaces.forEach(namespace -> configWatchCenter.getClientManager().addWatchClient(
-                LongPollWatchClient.builder().namespace(namespace).appName(appName)
-                        .address(RequestUtil.getRemoteIp(req)).context(req.getAsyncContext()).timeoutTime(timeout)
-                        .tag(tag).watchKey(clientMd5Map).build()));
-        
+
+        for (final String namespace : namespaces) {
+            configWatchCenter.addWatchClient(LongPollWatchClient.builder().namespace(namespace).appName(appName)
+                    .address(RequestUtil.getRemoteIp(req)).context(req.startAsync()).tag(tag)
+                    .watchKey(clientMd5Map).build());
+        }
     }
     
     public static boolean isSupportLongPolling(HttpServletRequest req) {

@@ -50,23 +50,18 @@ public class LongPollWatchClient extends WatchClient {
     
     private Future<?> asyncTimeoutFuture;
     
-    private final AsyncContext context;
+    private AsyncContext context;
     
     private final int probeRequestSize;
     
-    private final long timeoutTime;
+    private long timeout;
     
     private final long createTime = System.currentTimeMillis();
     
     LongPollWatchClient(String appName, String address, String namespace, Map<String, String> watchKey,
-            long timeoutTime, final AsyncContext context) {
+            AsyncContext context) {
         super(appName, address, namespace, watchKey);
         this.context = context;
-        if (isFixedPolling()) {
-            // Do nothing but set fix polling timeout.
-            timeoutTime = Math.max(10000, getFixedPollingInterval());
-        }
-        this.timeoutTime = timeoutTime;
         String probeModify = WebUtils.required((HttpServletRequest) context.getRequest(), "Listening-Configs");
         if (StringUtils.isBlank(probeModify)) {
             throw new IllegalArgumentException("invalid probeModify");
@@ -78,7 +73,12 @@ public class LongPollWatchClient extends WatchClient {
     protected void init() {
         final HttpServletRequest req = (HttpServletRequest) context.getRequest();
         final HttpServletResponse resp = (HttpServletResponse) context.getResponse();
-        if (!isFixedPolling()) {
+        if (isFixedPolling()) {
+            // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
+            String str = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
+            this.timeout = Math.max(10000,
+                    Long.parseLong(str) - SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500));
+        } else {
             String noHangUpFlag = req.getHeader(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER);
             long start = System.currentTimeMillis();
             List<String> changedGroups = MD5Util.compareMd5(req, resp, getWatchKey());
@@ -88,16 +88,17 @@ public class LongPollWatchClient extends WatchClient {
                 LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
                         RequestUtil.getRemoteIp(req), "polling", getWatchKey().size(), probeRequestSize,
                         changedGroups.size());
+                context.complete();
                 return;
             } else if (StringUtils.isTrueStr(noHangUpFlag)) {
                 clientManager.removeWatchClient(LongPollWatchClient.this);
                 LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
                         RequestUtil.getRemoteIp(req), "polling", getWatchKey().size(), probeRequestSize,
                         changedGroups.size());
+                context.complete();
                 return;
             }
         }
-        
         this.asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(() -> {
             try {
                 clientManager.getRetainIps().put(getIdentity(), System.currentTimeMillis());
@@ -122,9 +123,15 @@ public class LongPollWatchClient extends WatchClient {
                 }
             } catch (Throwable t) {
                 LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
+                // Disable cache.
+                resp.setHeader("Pragma", "no-cache");
+                resp.setDateHeader("Expires", 0);
+                resp.setHeader("Cache-Control", "no-cache,no-store");
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                context.complete();
             }
             
-        }, timeoutTime, TimeUnit.MILLISECONDS);
+        }, timeout, TimeUnit.MILLISECONDS);
     }
     
     private static boolean isFixedPolling() {
@@ -205,10 +212,6 @@ public class LongPollWatchClient extends WatchClient {
     
     public static final class LongPollWatchClientBuilder {
         
-        private AsyncContext context;
-        
-        private long timeoutTime;
-        
         private String tag;
         
         private String appName;
@@ -219,19 +222,9 @@ public class LongPollWatchClient extends WatchClient {
         
         private Map<String, String> watchKey;
         
+        private AsyncContext context;
+        
         private LongPollWatchClientBuilder() {
-        }
-        
-        public LongPollWatchClientBuilder context(AsyncContext context) {
-            this.context = context;
-            // AsyncContext.setTimeout() is incorrect, Control by oneself
-            this.context.setTimeout(0L);
-            return this;
-        }
-        
-        public LongPollWatchClientBuilder timeoutTime(long timeoutTime) {
-            this.timeoutTime = timeoutTime;
-            return this;
         }
         
         public LongPollWatchClientBuilder tag(String tag) {
@@ -259,9 +252,15 @@ public class LongPollWatchClient extends WatchClient {
             return this;
         }
         
+        public LongPollWatchClientBuilder context(final AsyncContext context) {
+            this.context = context;
+            this.context.setTimeout(0L);
+            return this;
+        }
+        
         public LongPollWatchClient build() {
             LongPollWatchClient longPollWatchClient = new LongPollWatchClient(appName, address, namespace, watchKey,
-                    timeoutTime, context);
+                    context);
             longPollWatchClient.setTag(tag);
             return longPollWatchClient;
         }

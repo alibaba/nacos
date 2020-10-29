@@ -27,7 +27,10 @@ import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -45,6 +48,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Service
+@Scope(proxyMode = ScopedProxyMode.NO)
 public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
     
     private static final int SAMPLE_PERIOD = 100;
@@ -56,16 +60,21 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
     public ConfigWatchCenter() {
         // Register LocalDataChangeEvent to NotifyCenter.
         NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
+        NotifyCenter.registerSubscriber(this);
         this.clientManager = new WatchClientManager();
         ConfigExecutor.scheduleLongPolling(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+    }
+    
+    public void addWatchClient(final WatchClient client) {
+        clientManager.addWatchClient(client);
     }
     
     @Override
     public void onEvent(LocalDataChangeEvent event) {
         final String[] metaKey = GroupKey.parseKey(event.groupKey);
-        final String namespace = metaKey[2];
-        final String groupID = metaKey[1];
-        final String dataID = metaKey[0];
+        final String namespace = ParamUtils.processNamespace(metaKey[2]);
+        final String groupID = ParamUtils.processGroupID(metaKey[1]);
+        final String dataID = ParamUtils.processDataID(metaKey[0]);
         final boolean isBeta = event.isBeta;
         final String groupKey = event.groupKey;
         final Set<WatchClient> clients = clientManager.findClientsByGroupKey(namespace, groupID, dataID);
@@ -73,27 +82,21 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
         event.setChangeTime(changeTime);
         clients.parallelStream().forEach(client -> {
             ConfigCacheService.getContentBetaMd5(groupKey);
-            for (Iterator<WatchClient> iter = clientManager.findClientsByGroupKey(namespace, groupID, dataID)
-                    .iterator(); iter.hasNext(); ) {
-                WatchClient clientSub = iter.next();
+            for (WatchClient clientSub : clientManager.findClientsByGroupKey(namespace, groupID, dataID)) {
                 // If published tag is not in the beta list, then it skipped.
                 if (isBeta && !CollectionUtils.contains(event.betaIps, clientSub.getIdentity())) {
                     continue;
                 }
-                
+        
                 // If published tag is not in the tag list, then it skipped.
                 if (StringUtils.isNotBlank(event.tag) && !event.tag.equals(clientSub.getTag())) {
                     continue;
                 }
-                
+        
                 clientManager.getRetainIps().put(clientSub.getIdentity(), changeTime);
                 clientSub.notifyChangeEvent(event);
             }
         });
-    }
-    
-    public WatchClientManager getClientManager() {
-        return clientManager;
     }
     
     public SampleResult getSubscribeInfoByIp(String address) {
