@@ -21,8 +21,8 @@ import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

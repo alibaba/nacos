@@ -27,7 +27,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -101,7 +101,7 @@ public class HttpClient {
         header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
-        header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, ApplicationUtils.getLocalAddress());
+        header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, EnvUtil.getLocalAddress());
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
         
         HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)
@@ -110,8 +110,7 @@ public class HttpClient {
         query.addParam("encoding", "UTF-8");
         query.addParam("nofix", "1");
         try {
-            return SYNC_NACOS_REST_TEMPLATE
-                    .exchange(url, httpClientConfig, header, query, body, method, String.class);
+            return SYNC_NACOS_REST_TEMPLATE.exchange(url, httpClientConfig, header, query, body, method, String.class);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();
@@ -266,8 +265,8 @@ public class HttpClient {
             }
             header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
             
-            HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000).setReadTimeOutMillis(5000)
-                    .setConnectionRequestTimeout(5000).setMaxRedirects(5).build();
+            HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000)
+                    .setReadTimeOutMillis(5000).setConnectionRequestTimeout(5000).setMaxRedirects(5).build();
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postForm(url, httpClientConfig, header, paramValues, String.class);
         } catch (Throwable e) {
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();

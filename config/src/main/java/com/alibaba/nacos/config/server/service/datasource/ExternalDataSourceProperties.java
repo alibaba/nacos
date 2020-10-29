@@ -13,20 +13,19 @@
 
 package com.alibaba.nacos.config.server.service.datasource;
 
-import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
+import com.google.common.base.Preconditions;
+import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.core.env.Environment;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.boot.context.properties.bind.Bindable;
-import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.core.env.Environment;
-
-import com.google.common.base.Preconditions;
-import com.zaxxer.hikari.HikariDataSource;
+import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
 
 /**
  * Properties of external DataSource.

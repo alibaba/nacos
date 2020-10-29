@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
@@ -44,19 +45,26 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = NamingApp.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class NamingProxy_ITCase {
+    
     @LocalServerPort
     private int port;
+    
     @Autowired
     private Serializer serializer;
+    
     private final DataStore dataStore = new DataStore();
+    
     private NamingService namingService;
+    
     private final String namespaceId = "dev";
+    
     private final String serviceName = "biz";
+    
     private final String groupName = "DEFAULT_GROUP";
-
+    
     @Before
     public void init() throws NacosException {
         Properties properties = new Properties();
@@ -64,7 +72,7 @@ public class NamingProxy_ITCase {
         properties.put(PropertyKeyConst.SERVER_ADDR, "localhost:" + port);
         namingService = NamingFactory.createNamingService(properties);
     }
-
+    
     @Test
     public void testSyncData() throws NacosException, InterruptedException {
         // write data to DataStore
@@ -79,13 +87,13 @@ public class NamingProxy_ITCase {
         instanceList.add(instance);
         instances.setInstanceList(instanceList);
         String key = KeyBuilder.buildInstanceListKey(namespaceId, instance.getServiceName(), true);
-
+        
         Datum<Instances> datum = new Datum<>();
         datum.value = instances;
         datum.key = key;
         datum.timestamp.incrementAndGet();
         this.dataStore.put(key, datum);
-
+        
         // sync data to server
         Map<String, Datum> dataMap = dataStore.getDataMap();
         byte[] content = serializer.serialize(dataMap);
@@ -93,9 +101,10 @@ public class NamingProxy_ITCase {
         if (!result) {
             Assert.fail("NamingProxy.syncData error");
         }
-
+        
         // query instance by api
-        List<com.alibaba.nacos.api.naming.pojo.Instance> allInstances = namingService.getAllInstances(serviceName, false);
+        List<com.alibaba.nacos.api.naming.pojo.Instance> allInstances = namingService
+                .getAllInstances(serviceName, false);
         for (int i = 0; i < 3 && allInstances.isEmpty(); i++) {
             // wait for async op
             TimeUnit.SECONDS.sleep(100);
@@ -104,11 +113,11 @@ public class NamingProxy_ITCase {
         if (allInstances.isEmpty()) {
             Assert.fail("instance is empty");
         }
-
+        
         com.alibaba.nacos.api.naming.pojo.Instance dst = allInstances.get(0);
         Assert.assertEquals(instance.getIp(), dst.getIp());
         Assert.assertEquals(instance.getPort(), dst.getPort());
         Assert.assertEquals(instance.getServiceName(), dst.getServiceName());
     }
-
+    
 }

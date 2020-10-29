@@ -56,7 +56,6 @@ public class CommunicationController {
     
     /**
      * Notify the change of config information.
-     *
      */
     @GetMapping("/dataChange")
     public Boolean notifyConfigInfo(HttpServletRequest request, @RequestParam("dataId") String dataId,
@@ -79,7 +78,6 @@ public class CommunicationController {
     
     /**
      * Get client config information of subscriber in local machine.
-     *
      */
     @GetMapping("/configWatchers")
     public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
@@ -90,7 +88,6 @@ public class CommunicationController {
     
     /**
      * Get client config listener lists of subscriber in local machine.
-     *
      */
     @GetMapping("/watcherConfigs")
     public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,

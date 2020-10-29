@@ -81,10 +81,10 @@ public class NacosAsyncRestTemplate_ITCase {
         public void onError(Throwable throwable) {
             this.throwable = throwable;
         }
-    
+        
         @Override
         public void onCancel() {
-        
+            
         }
         
         public HttpRestResult<T> getRestResult() {

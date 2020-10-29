@@ -25,5 +25,5 @@ import com.alibaba.nacos.consistency.LogProcessor;
  */
 @SuppressWarnings("all")
 public abstract class LogProcessor4AP extends LogProcessor {
-
+    
 }

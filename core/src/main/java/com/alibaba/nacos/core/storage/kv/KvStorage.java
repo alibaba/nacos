@@ -33,12 +33,12 @@ public interface KvStorage {
          * Local file storage.
          */
         File,
-    
+        
         /**
          * Local memory storage.
          */
         Memory,
-    
+        
         /**
          * RocksDB storage.
          */

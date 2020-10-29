@@ -18,13 +18,13 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.task.NacosTask;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,8 +74,7 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
             List<String> headers = Arrays
                     .asList(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
                             NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIP());
-            String urlString = MessageFormat
-                    .format(URL_PATTERN, serverIp, ApplicationUtils.getContextPath(), dataId, group);
+            String urlString = MessageFormat.format(URL_PATTERN, serverIp, EnvUtil.getContextPath(), dataId, group);
             
             RestResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
             if (result.ok()) {

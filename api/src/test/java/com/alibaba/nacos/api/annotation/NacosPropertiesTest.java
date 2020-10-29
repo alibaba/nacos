@@ -80,6 +80,6 @@ public class NacosPropertiesTest {
     
     @Test
     public void testSort() {
-    
+        
     }
 }

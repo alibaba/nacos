@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.Nacos;
@@ -40,13 +41,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7005"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
+        "server.port=7005"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigLongPollReturnChanges_CITCase {
-
+    
     @LocalServerPort
     private int port;
-
+    
     private ConfigService configService;
     
     @BeforeClass
@@ -55,7 +56,7 @@ public class ConfigLongPollReturnChanges_CITCase {
         ConfigCleanUtils.cleanClientCache();
         ConfigCleanUtils.changeToNewTestNacosHome(ConfigLongPollReturnChanges_CITCase.class.getSimpleName());
     }
-
+    
     @Before
     public void init() throws NacosException {
         Properties properties = new Properties();
@@ -65,23 +66,23 @@ public class ConfigLongPollReturnChanges_CITCase {
         properties.put(PropertyKeyConst.MAX_RETRY, "5");
         configService = NacosFactory.createConfigService(properties);
     }
-
+    
     @After
-    public void destroy(){
+    public void destroy() {
         try {
             configService.shutDown();
-        }catch (NacosException ex) {
+        } catch (NacosException ex) {
         }
     }
-
+    
     @Test
     public void testAdd() throws InterruptedException, NacosException {
         CountDownLatch latch = new CountDownLatch(1);
-
+        
         final String dataId = "test" + System.currentTimeMillis();
         final String group = "DEFAULT_GROUP";
         final String content = "config data";
-
+        
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
@@ -98,25 +99,25 @@ public class ConfigLongPollReturnChanges_CITCase {
         });
         boolean result = configService.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
-
+        
         configService.getConfig(dataId, group, 50);
-
+        
         latch.await(10_000L, TimeUnit.MILLISECONDS);
     }
-
+    
     @Test
     public void testModify() throws InterruptedException, NacosException {
         CountDownLatch latch = new CountDownLatch(1);
-
+        
         final String dataId = "test" + System.currentTimeMillis();
         final String group = "DEFAULT_GROUP";
         final String oldData = "old data";
         final String newData = "new data";
-
+        
         boolean result = configService.publishConfig(dataId, group, oldData);
-
+        
         Assert.assertTrue(result);
-
+        
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
@@ -130,24 +131,24 @@ public class ConfigLongPollReturnChanges_CITCase {
                     latch.countDown();
                 }
             }
-
+            
         });
         configService.publishConfig(dataId, group, newData);
-
+        
         latch.await(10_000L, TimeUnit.MILLISECONDS);
     }
-
+    
     @Test
     public void testDelete() throws InterruptedException, NacosException {
         CountDownLatch latch = new CountDownLatch(1);
-
+        
         final String dataId = "test" + System.currentTimeMillis();
         final String group = "DEFAULT_GROUP";
         final String oldData = "old data";
-
+        
         boolean result = configService.publishConfig(dataId, group, oldData);
         Assert.assertTrue(result);
-
+        
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
@@ -161,11 +162,11 @@ public class ConfigLongPollReturnChanges_CITCase {
                     latch.countDown();
                 }
             }
-
+            
         });
         configService.removeConfig(dataId, group);
-
+        
         latch.await(10_000L, TimeUnit.MILLISECONDS);
     }
-
+    
 }

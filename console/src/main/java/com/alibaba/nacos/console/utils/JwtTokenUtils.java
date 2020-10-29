@@ -111,9 +111,9 @@ public class JwtTokenUtils {
      * @return token
      */
     public String createToken(Authentication authentication) {
-
+        
         long now = System.currentTimeMillis();
-
+        
         Date validity = new Date(now + this.tokenValidityInMilliseconds);
         
         return Jwts.builder().setSubject(authentication.getName()).claim(AUTHORITIES_KEY, "").setExpiration(validity)

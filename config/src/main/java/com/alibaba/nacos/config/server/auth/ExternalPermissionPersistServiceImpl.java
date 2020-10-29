@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
+import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,9 +86,9 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
     /**
      * Execute add permission operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param resource resource string value.
-     * @param action action string value.
+     * @param action   action string value.
      */
     public void addPermission(String role, String resource, String action) {
         
@@ -105,9 +105,9 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
     /**
      * Execute delete permission operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param resource resource string value.
-     * @param action action string value.
+     * @param action   action string value.
      */
     public void deletePermission(String role, String resource, String action) {
         

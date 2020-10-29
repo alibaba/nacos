@@ -59,7 +59,7 @@ public class HessianSerializer implements Serializer {
         if (ByteUtils.isEmpty(data)) {
             return null;
         }
-    
+        
         Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));
         input.setSerializerFactory(serializerFactory);
         Object resultObject;

@@ -20,12 +20,12 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.env.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -64,8 +64,8 @@ public class ServerMemberManager_ITCase {
     public static void initClass() throws Exception {
         System.setProperty(Constants.NACOS_SERVER_IP, "127.0.0.1");
         System.setProperty("server.port", "8847");
-        ApplicationUtils.setIsStandalone(true);
-        ApplicationUtils.injectEnvironment(new StandardEnvironment());
+        EnvUtil.setIsStandalone(true);
+        EnvUtil.setEnvironment(new StandardEnvironment());
     }
     
     @AfterClass
@@ -145,7 +145,8 @@ public class ServerMemberManager_ITCase {
             @Override
             public void onEvent(MembersChangeEvent event) {
                 System.out.println(event);
-                healthMembers.set(MemberUtils.selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
+                healthMembers.set(MemberUtils
+                        .selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
                 if (first.getCount() == 1) {
                     first.countDown();
                     return;

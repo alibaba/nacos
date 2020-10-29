@@ -36,7 +36,7 @@ public class ResultBuilder {
      *
      * @param resultCode resultCode.
      * @param resultData resultData.
-     * @param <T> T.
+     * @param <T>        T.
      * @return RestResult.
      */
     public static <T extends Object> RestResult<T> buildResult(IResultCode resultCode, T resultData) {
@@ -54,7 +54,7 @@ public class ResultBuilder {
      *
      * @param successMsg successMsg string value.
      * @param resultData resultData.
-     * @param <T> T.
+     * @param <T>        T.
      * @return RestResult.
      */
     public static <T extends Object> RestResult<T> buildSuccessResult(String successMsg, T resultData) {
@@ -71,7 +71,7 @@ public class ResultBuilder {
      * BuildSuccessResult.
      *
      * @param successMsg successMsg string value.
-     * @param <T> T.
+     * @param <T>        T.
      * @return RestResult.
      */
     public static <T extends Object> RestResult<T> buildSuccessResult(String successMsg) {

@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
+import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,7 +107,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     /**
      * Execute add role operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param userName username string value.
      */
     public void addRole(String role, String userName) {
@@ -140,7 +140,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     /**
      * Execute delete role operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param username username string value.
      */
     public void deleteRole(String role, String username) {
@@ -156,7 +156,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     @Override
     public List<String> findRolesLikeRoleName(String role) {
         String sql = "SELECT role FROM roles WHERE role like '%' ? '%'";
-        List<String> users = this.jt.queryForList(sql, new String[]{role}, String.class);
+        List<String> users = this.jt.queryForList(sql, new String[] {role}, String.class);
         return users;
     }
     

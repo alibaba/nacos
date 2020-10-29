@@ -19,9 +19,9 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 /**
  * Leader election finished event.
  *
- * @deprecated will remove in 1.4.x
  * @author pbting
  * @date 2019-07-01 8:25 PM
+ * @deprecated will remove in 1.4.x
  */
 @Deprecated
 public class LeaderElectFinishedEvent extends BaseRaftEvent {

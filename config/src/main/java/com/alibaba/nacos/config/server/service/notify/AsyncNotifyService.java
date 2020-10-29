@@ -32,7 +32,7 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -104,7 +104,7 @@ public class AsyncNotifyService {
     class AsyncTask implements Runnable {
         
         private Queue<NotifySingleTask> queue;
-    
+        
         private NacosAsyncRestTemplate restTemplate;
         
         public AsyncTask(NacosAsyncRestTemplate restTemplate, Queue<NotifySingleTask> queue) {
@@ -133,7 +133,8 @@ public class AsyncNotifyService {
                         asyncTaskExecute(task);
                     } else {
                         Header header = Header.newInstance();
-                        header.addParam(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(task.getLastModified()));
+                        header.addParam(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
+                                String.valueOf(task.getLastModified()));
                         header.addParam(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIP());
                         if (task.isBeta) {
                             header.addParam("isBeta", "true");
@@ -154,7 +155,7 @@ public class AsyncNotifyService {
     }
     
     class AsyncNotifyCallBack implements Callback<String> {
-    
+        
         private NotifySingleTask task;
         
         public AsyncNotifyCallBack(NotifySingleTask task) {
@@ -259,10 +260,10 @@ public class AsyncNotifyService {
                 LOGGER.error("URLEncoder encode error", e);
             }
             if (StringUtils.isBlank(tenant)) {
-                this.url = MessageFormat.format(URL_PATTERN, target, ApplicationUtils.getContextPath(), dataId, group);
+                this.url = MessageFormat.format(URL_PATTERN, target, EnvUtil.getContextPath(), dataId, group);
             } else {
                 this.url = MessageFormat
-                        .format(URL_PATTERN_TENANT, target, ApplicationUtils.getContextPath(), dataId, group, tenant);
+                        .format(URL_PATTERN_TENANT, target, EnvUtil.getContextPath(), dataId, group, tenant);
             }
             if (StringUtils.isNotEmpty(tag)) {
                 url = url + "&tag=" + tag;

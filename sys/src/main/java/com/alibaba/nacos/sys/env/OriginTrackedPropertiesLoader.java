@@ -56,7 +56,7 @@ public class OriginTrackedPropertiesLoader {
      * @return the loaded properties
      * @throws IOException on read error
      */
-    public Map<String, OriginTrackedValue> load() throws IOException {
+    public Map<String, Object> load() throws IOException {
         return load(true);
     }
     
@@ -67,9 +67,9 @@ public class OriginTrackedPropertiesLoader {
      * @return the loaded properties
      * @throws IOException on read error
      */
-    public Map<String, OriginTrackedValue> load(boolean expandLists) throws IOException {
+    public Map<String, Object> load(boolean expandLists) throws IOException {
         try (OriginTrackedPropertiesLoader.CharacterReader reader = new CharacterReader(this.resource)) {
-            Map<String, OriginTrackedValue> result = new LinkedHashMap<>();
+            Map<String, Object> result = new LinkedHashMap<>();
             StringBuilder buffer = new StringBuilder();
             while (reader.read()) {
                 String key = loadKey(buffer, reader).trim();
@@ -92,7 +92,7 @@ public class OriginTrackedPropertiesLoader {
         }
     }
     
-    private void put(Map<String, OriginTrackedValue> result, String key, OriginTrackedValue value) {
+    private void put(Map<String, Object> result, String key, Object value) {
         if (!key.isEmpty()) {
             result.put(key, value);
         }

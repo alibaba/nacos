@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.datasource;
 
-import java.io.IOException;
-
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.io.IOException;
 
 /**
  * Datasource interface.

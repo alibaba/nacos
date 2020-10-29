@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,10 +44,10 @@ public class ServerStateController {
     @GetMapping("/state")
     public ResponseEntity serverState() {
         Map<String, String> serverState = new HashMap<>(3);
-        serverState.put("standalone_mode", ApplicationUtils.getStandaloneMode() ? ApplicationUtils.STANDALONE_MODE_ALONE
+        serverState.put("standalone_mode", EnvUtil.getStandaloneMode() ? ApplicationUtils.STANDALONE_MODE_ALONE
                 : ApplicationUtils.STANDALONE_MODE_CLUSTER);
         
-        serverState.put("function_mode", ApplicationUtils.getFunctionMode());
+        serverState.put("function_mode", EnvUtil.getFunctionMode());
         serverState.put("version", VersionUtils.version);
         
         return ResponseEntity.ok().body(serverState);

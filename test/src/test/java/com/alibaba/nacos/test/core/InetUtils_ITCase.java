@@ -35,46 +35,45 @@ import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class InetUtils_ITCase {
-
-	static {
-		System.setProperty("nacos.core.inet.auto-refresh", "3");
-		// For load InetUtils.class
-		InetUtils.getSelfIP();
-	}
-
-	@Test
-	public void test_InternetAddress_Change() throws Exception {
-		String testIp = "1.1.1.1";
-		System.setProperty(NACOS_SERVER_IP, testIp);
-		CountDownLatch latch = new CountDownLatch(1);
-
-		AtomicReference<String> reference = new AtomicReference<>(null);
-
-		Subscriber<InetUtils.IPChangeEvent> subscribe = new Subscriber<InetUtils.IPChangeEvent>() {
-			@Override
-			public void onEvent(InetUtils.IPChangeEvent event) {
-				if (Objects.nonNull(event.getOldIP())) {
-					try {
-						System.out.println(event);
-						reference.set(event.getNewIP());
-					}
-					finally {
-						latch.countDown();
-					}
-				}
-			}
-
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return InetUtils.IPChangeEvent.class;
-			}
-		};
-
-		NotifyCenter.registerSubscriber(subscribe);
-		latch.await(10_000L, TimeUnit.MILLISECONDS);
-
-		Assert.assertEquals(testIp, reference.get());
-		Assert.assertEquals(testIp, InetUtils.getSelfIP());
-	}
-
+    
+    static {
+        System.setProperty("nacos.core.inet.auto-refresh", "3");
+        // For load InetUtils.class
+        InetUtils.getSelfIP();
+    }
+    
+    @Test
+    public void test_InternetAddress_Change() throws Exception {
+        String testIp = "1.1.1.1";
+        System.setProperty(NACOS_SERVER_IP, testIp);
+        CountDownLatch latch = new CountDownLatch(1);
+        
+        AtomicReference<String> reference = new AtomicReference<>(null);
+        
+        Subscriber<InetUtils.IPChangeEvent> subscribe = new Subscriber<InetUtils.IPChangeEvent>() {
+            @Override
+            public void onEvent(InetUtils.IPChangeEvent event) {
+                if (Objects.nonNull(event.getOldIP())) {
+                    try {
+                        System.out.println(event);
+                        reference.set(event.getNewIP());
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return InetUtils.IPChangeEvent.class;
+            }
+        };
+        
+        NotifyCenter.registerSubscriber(subscribe);
+        latch.await(10_000L, TimeUnit.MILLISECONDS);
+        
+        Assert.assertEquals(testIp, reference.get());
+        Assert.assertEquals(testIp, InetUtils.getSelfIP());
+    }
+    
 }

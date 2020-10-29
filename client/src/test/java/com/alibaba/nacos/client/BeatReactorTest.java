@@ -47,7 +47,7 @@ public class BeatReactorTest {
         beatInfo.setMetadata(new HashMap<String, String>());
         beatInfo.setScheduled(false);
         beatInfo.setPeriod(1000L);
-    
+        
         BeatReactor beatReactor = new BeatReactor(namingProxy);
         beatReactor.addBeatInfo("testService", beatInfo);
         

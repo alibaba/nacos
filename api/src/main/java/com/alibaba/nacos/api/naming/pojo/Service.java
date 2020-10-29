@@ -23,7 +23,8 @@ import java.util.Map;
 /**
  * Service of Nacos.
  *
- * <p>We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters, which contains a
+ * <p>We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters, which
+ * contains a
  * list of instances.
  *
  * <p>Typically we put some unique properties between instances to service level.

@@ -19,12 +19,11 @@ package com.alibaba.nacos.naming.cluster;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -34,6 +33,7 @@ import com.alibaba.nacos.naming.misc.ServerStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -152,7 +152,7 @@ public class ServerListManager extends MemberChangeListener {
             
             this.cursor = (this.cursor + 1) % members.size();
             Member target = members.get(cursor);
-            if (Objects.equals(target.getAddress(), ApplicationUtils.getLocalAddress())) {
+            if (Objects.equals(target.getAddress(), EnvUtil.getLocalAddress())) {
                 return;
             }
             
@@ -190,7 +190,7 @@ public class ServerListManager extends MemberChangeListener {
         public void run() {
             try {
                 
-                if (ApplicationUtils.getPort() <= 0) {
+                if (EnvUtil.getPort() <= 0) {
                     return;
                 }
                 
@@ -200,21 +200,21 @@ public class ServerListManager extends MemberChangeListener {
                 }
                 
                 long curTime = System.currentTimeMillis();
-                String status = LOCALHOST_SITE + "#" + ApplicationUtils.getLocalAddress() + "#" + curTime + "#" + weight
-                        + "\r\n";
+                String status =
+                        LOCALHOST_SITE + "#" + EnvUtil.getLocalAddress() + "#" + curTime + "#" + weight + "\r\n";
                 
                 List<Member> allServers = getServers();
                 
-                if (!contains(ApplicationUtils.getLocalAddress())) {
-                    Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}",
-                            ApplicationUtils.getLocalAddress(), allServers);
+                if (!contains(EnvUtil.getLocalAddress())) {
+                    Loggers.SRV_LOG
+                            .error("local ip is not in serverlist, ip: {}, serverlist: {}", EnvUtil.getLocalAddress(),
+                                    allServers);
                     return;
                 }
                 
-                if (allServers.size() > 0 && !ApplicationUtils.getLocalAddress()
-                        .contains(UtilsAndCommons.LOCAL_HOST_IP)) {
+                if (allServers.size() > 0 && !EnvUtil.getLocalAddress().contains(UtilsAndCommons.LOCAL_HOST_IP)) {
                     for (Member server : allServers) {
-                        if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
+                        if (Objects.equals(server.getAddress(), EnvUtil.getLocalAddress())) {
                             continue;
                         }
                         

@@ -31,8 +31,8 @@ import java.util.Map;
 /**
  * Inject the raft information from the naming module into the outlier information of the node.
  *
- * @deprecated will remove in 1.4.x
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @deprecated will remove in 1.4.x
  */
 @Deprecated
 @Component

@@ -16,13 +16,15 @@
 
 package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
@@ -33,6 +35,8 @@ import org.springframework.boot.context.event.EventPublishingRunListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.io.FileUrlResource;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,18 +76,24 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
-        ApplicationUtils.injectEnvironment(environment);
-        if (ApplicationUtils.getStandaloneMode()) {
+        EnvUtil.setEnvironment(environment);
+        try {
+            environment.getPropertySources().addLast(new MapPropertySource("first_pre", EnvUtil.loadProperties(
+                    new FileUrlResource(Paths.get(EnvUtil.getConfPath(), "application.properties").toUri().toURL()))));
+        } catch (IOException e) {
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+        }
+        if (EnvUtil.getStandaloneMode()) {
             System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "stand alone");
         } else {
             System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "cluster");
         }
-        if (ApplicationUtils.getFunctionMode() == null) {
+        if (EnvUtil.getFunctionMode() == null) {
             System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, "All");
-        } else if (ApplicationUtils.FUNCTION_MODE_CONFIG.equals(ApplicationUtils.getFunctionMode())) {
-            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, ApplicationUtils.FUNCTION_MODE_CONFIG);
-        } else if (ApplicationUtils.FUNCTION_MODE_NAMING.equals(ApplicationUtils.getFunctionMode())) {
-            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, ApplicationUtils.FUNCTION_MODE_NAMING);
+        } else if (EnvUtil.FUNCTION_MODE_CONFIG.equals(EnvUtil.getFunctionMode())) {
+            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, EnvUtil.FUNCTION_MODE_CONFIG);
+        } else if (EnvUtil.FUNCTION_MODE_NAMING.equals(EnvUtil.getFunctionMode())) {
+            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, EnvUtil.FUNCTION_MODE_NAMING);
         }
         
         System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIP());
@@ -118,7 +128,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
         // default value is depend on ${nacos.standalone}
         
         if (!useExternalStorage) {
-            boolean embeddedStorage = ApplicationUtils.getStandaloneMode() || Boolean.getBoolean("embeddedStorage");
+            boolean embeddedStorage = EnvUtil.getStandaloneMode() || Boolean.getBoolean("embeddedStorage");
             // If the embedded data source storage is not turned on, it is automatically
             // upgraded to the external data source storage, as before
             if (!embeddedStorage) {
@@ -132,7 +142,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     
     @Override
     public void running(ConfigurableApplicationContext context) {
-    
+        EnvUtil.getEnvironment().getPropertySources().remove("first_pre");
     }
     
     @Override
@@ -153,7 +163,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
         context.close();
         
         LOGGER.error("Nacos failed to start, please see {} for more details.",
-                Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
+                Paths.get(EnvUtil.getNacosHome(), "logs/nacos.log"));
     }
     
     /**
@@ -167,9 +177,9 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     }
     
     private void logClusterConf() {
-        if (!ApplicationUtils.getStandaloneMode()) {
+        if (!EnvUtil.getStandaloneMode()) {
             try {
-                List<String> clusterConf = ApplicationUtils.readClusterConf();
+                List<String> clusterConf = EnvUtil.readClusterConf();
                 LOGGER.info("The server IP list of Nacos is {}", clusterConf);
             } catch (IOException e) {
                 LOGGER.error("read cluster conf fail", e);
@@ -180,9 +190,9 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     private void logFilePath() {
         String[] dirNames = new String[] {"logs", "conf", "data"};
         for (String dirName : dirNames) {
-            LOGGER.info("Nacos Log files: {}", Paths.get(ApplicationUtils.getNacosHome(), dirName).toString());
+            LOGGER.info("Nacos Log files: {}", Paths.get(EnvUtil.getNacosHome(), dirName).toString());
             try {
-                DiskUtils.forceMkdir(new File(Paths.get(ApplicationUtils.getNacosHome(), dirName).toUri()));
+                DiskUtils.forceMkdir(new File(Paths.get(EnvUtil.getNacosHome(), dirName).toUri()));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -196,7 +206,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     }
     
     private void logStarting() {
-        if (!ApplicationUtils.getStandaloneMode()) {
+        if (!EnvUtil.getStandaloneMode()) {
             
             scheduledExecutorService = ExecutorFactory
                     .newSingleScheduledExecutorService(new NameThreadFactory("com.alibaba.nacos.core.nacos-starting"));

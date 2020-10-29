@@ -21,7 +21,7 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -40,27 +40,27 @@ public class NamingSnapshotOperationTest {
     
     static {
         RaftExecutor.init(new RaftConfig());
-        ApplicationUtils.injectEnvironment(new MockEnvironment());
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Mock
     private KvStorage storage;
     
-    private final String tmpDir = Paths.get(ApplicationUtils.getNacosTmpDir(), "rocks_test").toString();
+    private final String tmpDir = Paths.get(EnvUtil.getNacosTmpDir(), "rocks_test").toString();
     
-    private final String snapshotDir = Paths.get(ApplicationUtils.getNacosTmpDir(), "rocks_snapshot_test").toString();
+    private final String snapshotDir = Paths.get(EnvUtil.getNacosTmpDir(), "rocks_snapshot_test").toString();
     
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
     @Before
     public void init() {
-        DiskUtils.deleteQuietly(Paths.get(ApplicationUtils.getNacosTmpDir()));
+        DiskUtils.deleteQuietly(Paths.get(EnvUtil.getNacosTmpDir()));
     }
     
     @After
     public void after() {
         storage.shutdown();
-        DiskUtils.deleteQuietly(Paths.get(ApplicationUtils.getNacosTmpDir()));
+        DiskUtils.deleteQuietly(Paths.get(EnvUtil.getNacosTmpDir()));
     }
     
     @Test

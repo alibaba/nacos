@@ -109,7 +109,8 @@ public class DistroLoadDataTask implements Runnable {
                     return true;
                 }
             } catch (Exception e) {
-                Loggers.DISTRO.error("[DISTRO-INIT] load snapshot {} from {} failed.", resourceType, each.getAddress(), e);
+                Loggers.DISTRO
+                        .error("[DISTRO-INIT] load snapshot {} from {} failed.", resourceType, each.getAddress(), e);
             }
         }
         return false;

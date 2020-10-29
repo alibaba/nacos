@@ -26,8 +26,8 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Raft peer.
  *
- * @deprecated will remove in 1.4.x
  * @author nacos
+ * @deprecated will remove in 1.4.x
  */
 @Deprecated
 public class RaftPeer {

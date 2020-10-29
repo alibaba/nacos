@@ -55,10 +55,10 @@ public abstract class AbstractConfigChangeParser implements ConfigChangeParser {
                 cci = new ConfigChangeItem(e.getKey(), e.getValue().toString(), null);
                 cci.setType(PropertyChangeType.DELETED);
             }
-        
+            
             result.put(e.getKey(), cci);
         }
-    
+        
         for (Map.Entry<String, Object> e : (Iterable<Map.Entry<String, Object>>) newMap.entrySet()) {
             if (!oldMap.containsKey(e.getKey())) {
                 ConfigChangeItem cci = new ConfigChangeItem(e.getKey(), null, e.getValue().toString());

@@ -24,7 +24,8 @@ package com.alibaba.nacos.naming.utils;
  */
 public final class Constants {
     
-    private Constants() {}
+    private Constants() {
+    }
     
     public static final String NAMING_PERSISTENT_SERVICE_GROUP = "naming_persistent_service";
     

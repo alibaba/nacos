@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,10 +35,9 @@ import java.util.Map;
  * <strong>WorkerId</strong> generation policy: Calculate the InetAddress hashcode
  *
  * <p>The repeat rate of the dataCenterId, the value of the maximum dataCenterId times the time of each Raft election.
- * The
- * time for raft to select the master is generally measured in seconds. If the interval of an election is 5 seconds, it
- * will take 150 seconds for the DataCenterId to be repeated. This is still based on the situation that the new master
- * needs to be selected after each election of the Leader
+ * The time for raft to select the master is generally measured in seconds. If the interval of an election is 5 seconds,
+ * it will take 150 seconds for the DataCenterId to be repeated. This is still based on the situation that the new
+ * master needs to be selected after each election of the Leader
  *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
@@ -79,7 +78,7 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     private long currentId;
     
     {
-        long workerId = ApplicationUtils.getProperty("nacos.core.snowflake.worker-id", Integer.class, -1);
+        long workerId = EnvUtil.getProperty("nacos.core.snowflake.worker-id", Integer.class, -1);
         
         if (workerId != -1) {
             this.workerId = workerId;

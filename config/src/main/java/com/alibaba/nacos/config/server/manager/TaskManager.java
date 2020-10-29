@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 /**
- * TaskManager, is aim to process the task which is need to be done.
- * And this class process the task by single thread to ensure task should be process successfully.
+ * TaskManager, is aim to process the task which is need to be done. And this class process the task by single thread to
+ * ensure task should be process successfully.
  *
  * @author huali
  */
@@ -79,7 +79,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
      * Await for lock by timeout.
      *
      * @param timeout timeout value.
-     * @param unit time unit.
+     * @param unit    time unit.
      * @return success or not.
      * @throws InterruptedException InterruptedException.
      */

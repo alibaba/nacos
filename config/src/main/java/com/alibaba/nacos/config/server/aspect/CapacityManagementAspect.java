@@ -20,8 +20,8 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -109,9 +109,8 @@ public class CapacityManagementAspect {
     }
     
     /**
-     * Write operation.
-     * Step 1: count whether to open the limination checking funtion for capacity management;
-     * Step 2: open limination checking capacity management and check size of content and quota;
+     * Write operation. Step 1: count whether to open the limination checking funtion for capacity management; Step 2:
+     * open limination checking capacity management and check size of content and quota;
      *
      * @throws Throwable Expcetion.
      */
@@ -143,7 +142,8 @@ public class CapacityManagementAspect {
     }
     
     /**
-     * The usage of capacity table for counting module will subtracte one whether open the limination check of capacity management.
+     * The usage of capacity table for counting module will subtracte one whether open the limination check of capacity
+     * management.
      */
     @Around(DELETE_CONFIG)
     public Object aroundDeleteConfig(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
@@ -181,7 +181,7 @@ public class CapacityManagementAspect {
             correctUsage(group, tenant, hasTenant);
             return pjp.proceed();
         }
-
+        
         // The same record can be deleted concurrently. This interface can be deleted asynchronously(submit MergeDataTask
         // to MergeTaskProcessor for processing), It may lead to more than one decrease in usage.
         // Therefore, it is necessary to modify the usage job regularly.

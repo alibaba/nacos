@@ -154,8 +154,8 @@ public class NacosNamingService implements NamingService {
     private void initCacheDir() {
         String jmSnapshotPath = System.getProperty("JM.SNAPSHOT.PATH");
         if (!StringUtils.isBlank(jmSnapshotPath)) {
-            cacheDir = jmSnapshotPath + File.separator + "nacos" + File.separator + "naming"
-                    + File.separator + namespace;
+            cacheDir =
+                    jmSnapshotPath + File.separator + "nacos" + File.separator + "naming" + File.separator + namespace;
         } else {
             cacheDir = System.getProperty("user.home") + File.separator + "nacos" + File.separator + "naming"
                     + File.separator + namespace;

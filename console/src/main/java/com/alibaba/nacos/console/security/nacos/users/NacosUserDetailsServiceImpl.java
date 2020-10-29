@@ -100,11 +100,11 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     public User getUserFromDatabase(String username) {
         return userPersistService.findUserByUsername(username);
     }
-
+    
     public List<String> findUserLikeUsername(String username) {
         return userPersistService.findUserLikeUsername(username);
     }
-
+    
     public void createUser(String username, String password) {
         userPersistService.createUser(username, password);
     }

@@ -32,8 +32,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Consistent protocol metadata information, &lt;Key, &lt;Key, Value &gt;&gt; structure Listeners that can register to listen to
- * changes in value.
+ * Consistent protocol metadata information, &lt;Key, &lt;Key, Value &gt;&gt; structure Listeners that can register to
+ * listen to changes in value.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -72,7 +72,7 @@ public final class ProtocolMetaData {
     /**
      * get protocol metadata by group and key.
      *
-     * @param group group name
+     * @param group  group name
      * @param subKey key
      * @return target value
      */

@@ -33,13 +33,11 @@ public class Constants {
     
     /**
      * Config file directory in server side.
-     *
      */
     public static final String BASE_DIR = "config-data";
     
     /**
      * Back up file directory in server side.
-     *
      */
     public static final String CONFIG_BAK_DIR = System.getProperty("user.home", "/home/admin") + "/nacos/bak_data";
     

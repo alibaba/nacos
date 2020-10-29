@@ -55,6 +55,7 @@ import java.util.zip.ZipOutputStream;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public final class DiskUtils {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskUtils.class);
@@ -96,8 +97,8 @@ public final class DiskUtils {
      *
      * <p>The details as to how the name of the file is constructed is
      * implementation dependent and therefore not specified. Where possible the {@code prefix} and {@code suffix} are
-     * used to construct candidate names in the same manner as the {@link java.io.File#createTempFile(String, String, File)}
-     * method.
+     * used to construct candidate names in the same manner as the {@link java.io.File#createTempFile(String, String,
+     * File)} method.
      *
      * @param dir    the path to directory in which to create the file
      * @param prefix the prefix string to be used in generating the file's name; may be {@code null}
@@ -353,9 +354,9 @@ public final class DiskUtils {
      */
     public static void compress(final String rootDir, final String sourceDir, final String outputFile,
             final Checksum checksum) throws IOException {
-        try (final FileOutputStream fos = new FileOutputStream(outputFile);
-                final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
-                final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(cos))) {
+        try (final FileOutputStream fos = new FileOutputStream(
+                outputFile); final CheckedOutputStream cos = new CheckedOutputStream(fos,
+                checksum); final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(cos))) {
             compressDirectoryToZipFile(rootDir, sourceDir, zos);
             zos.flush();
             fos.getFD().sync();
@@ -374,8 +375,8 @@ public final class DiskUtils {
                 compressDirectoryToZipFile(rootDir, child, zos);
             } else {
                 zos.putNextEntry(new ZipEntry(child));
-                try (final FileInputStream fis = new FileInputStream(file);
-                        final BufferedInputStream bis = new BufferedInputStream(fis)) {
+                try (final FileInputStream fis = new FileInputStream(
+                        file); final BufferedInputStream bis = new BufferedInputStream(fis)) {
                     IOUtils.copy(bis, zos);
                 }
             }
@@ -394,16 +395,16 @@ public final class DiskUtils {
      */
     public static void decompress(final String sourceFile, final String outputDir, final Checksum checksum)
             throws IOException {
-        try (final FileInputStream fis = new FileInputStream(sourceFile);
-                final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
-                final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis))) {
+        try (final FileInputStream fis = new FileInputStream(
+                sourceFile); final CheckedInputStream cis = new CheckedInputStream(fis,
+                checksum); final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 final String fileName = entry.getName();
                 final File entryFile = new File(Paths.get(outputDir, fileName).toString());
                 FileUtils.forceMkdir(entryFile.getParentFile());
-                try (final FileOutputStream fos = new FileOutputStream(entryFile);
-                        final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                try (final FileOutputStream fos = new FileOutputStream(
+                        entryFile); final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
                     IOUtils.copy(zis, bos);
                     bos.flush();
                     fos.getFD().sync();

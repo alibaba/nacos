@@ -222,11 +222,11 @@ public class HttpClient {
     }
     
     public static class HttpResult {
-    
+        
         public final int code;
-    
+        
         public final String content;
-    
+        
         private final Map<String, String> respHeaders;
         
         public HttpResult(int code, String content, Map<String, String> respHeaders) {

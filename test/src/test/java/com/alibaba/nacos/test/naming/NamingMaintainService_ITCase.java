@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.test.BaseTest;
 import org.junit.After;
 import org.junit.Assert;
@@ -50,33 +49,36 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  * @date 2019-05-07 10:13
  **/
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class NamingMaintainService_ITCase extends BaseTest {
-
+    
     private NamingMaintainService namingMaintainService;
+    
     private NamingService namingService;
+    
     private Instance instance;
+    
     private String serviceName;
-
+    
     @LocalServerPort
     private int port;
-
+    
     @Before
     public void init() throws Exception {
-
+        
         NamingBase.prepareServer(port);
-
+        
         if (namingMaintainService == null) {
             TimeUnit.SECONDS.sleep(10);
             namingMaintainService = NamingMaintainFactory.createMaintainService("127.0.0.1" + ":" + port);
         }
-
+        
         if (namingService == null) {
             TimeUnit.SECONDS.sleep(10);
             namingService = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
-
+        
         instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
@@ -86,11 +88,11 @@ public class NamingMaintainService_ITCase extends BaseTest {
         map.put("netType", "external");
         map.put("version", "1.0");
         instance.setMetadata(map);
-
+        
         serviceName = randomDomainName();
-
+        
     }
-
+    
     @Test
     public void updateInstance() throws NacosException {
         Map<String, String> map = new HashMap<String, String>();
@@ -100,11 +102,11 @@ public class NamingMaintainService_ITCase extends BaseTest {
         instance.setMetadata(map);
         namingMaintainService.updateInstance(serviceName, instance);
         List<Instance> instances = namingService.getAllInstances(serviceName, true);
-
+        
         Assert.assertEquals(instances.size(), 1);
         System.out.println(instances.get(0));
     }
-
+    
     @Test
     public void updateInstanceWithDisable() throws NacosException {
         Map<String, String> map = new HashMap<String, String>();
@@ -115,13 +117,13 @@ public class NamingMaintainService_ITCase extends BaseTest {
         instance.setEnabled(false);
         namingMaintainService.updateInstance(serviceName, instance);
         List<Instance> instances = namingService.getAllInstances(serviceName, true);
-
+        
         Assert.assertEquals(instances.size(), 0);
     }
-
+    
     @Test
     public void createAndUpdateService() throws NacosException {
-
+        
         // register service
         Service preService = new Service();
         preService.setName(serviceName);
@@ -132,13 +134,13 @@ public class NamingMaintainService_ITCase extends BaseTest {
         preService.setMetadata(metadata);
         ExpressionSelector selector = new ExpressionSelector();
         selector.setExpression("CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
-
+        
         System.out.println("service info : " + preService);
         namingMaintainService.createService(preService, selector);
         Service remoteService = namingMaintainService.queryService(serviceName);
         System.out.println("remote service info : " + remoteService);
         Assert.assertEquals(preService.toString(), remoteService.toString());
-
+        
         // update service
         Service nowService = new Service();
         nowService.setName(serviceName);
@@ -147,21 +149,21 @@ public class NamingMaintainService_ITCase extends BaseTest {
         metadata.clear();
         metadata.put(serviceName, "this is a update metadata");
         nowService.setMetadata(metadata);
-
+        
         namingMaintainService.updateService(nowService, new NoneSelector());
         remoteService = namingMaintainService.queryService(serviceName);
         System.out.println("remote service info : " + remoteService);
         Assert.assertEquals(nowService.toString(), remoteService.toString());
     }
-
+    
     @Test
     public void deleteService() throws NacosException {
-
+        
         Service preService = new Service();
         preService.setName(serviceName);
         System.out.println("service info : " + preService);
         namingMaintainService.createService(preService, new NoneSelector());
-
+        
         Assert.assertTrue(namingMaintainService.deleteService(serviceName));
     }
     

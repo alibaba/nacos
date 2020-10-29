@@ -28,6 +28,7 @@ import java.util.Random;
  * <b>N.B.</b> the current implementation overrides the methods {@link Random#nextInt(int)} and {@link
  * Random#nextLong()} to produce positive numbers ranging from 0 (inclusive) to MAX_VALUE (exclusive).
  * </p>
+ *
  * @author unknown
  * @version $Id: JVMRandom.java 911986 2010-02-19 21:19:05Z niallp $
  * @since 2.0
@@ -116,8 +117,7 @@ public final class JvmRandom extends Random {
     
     /**
      * <p>Returns the next pseudorandom, uniformly distributed long value from the Math.random() sequence.</p>
-     * Identical
-     * to <code>nextLong(Long.MAX_VALUE)</code> <p> <b>N.B. All values are >= 0.</b> </p>
+     * Identical to <code>nextLong(Long.MAX_VALUE)</code> <p> <b>N.B. All values are >= 0.</b> </p>
      *
      * @return the random long
      */

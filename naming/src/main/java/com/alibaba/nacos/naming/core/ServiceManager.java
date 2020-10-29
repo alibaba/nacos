@@ -238,7 +238,7 @@ public class ServiceManager implements RecordListener<Service> {
             String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
             consistencyService.remove(ephemeralInstanceListKey);
             consistencyService.remove(persistInstanceListKey);
-    
+            
             // remove listeners of key to avoid mem leak
             consistencyService.unListen(ephemeralInstanceListKey, service);
             consistencyService.unListen(persistInstanceListKey, service);

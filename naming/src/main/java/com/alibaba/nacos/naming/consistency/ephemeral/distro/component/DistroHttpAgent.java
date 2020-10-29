@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.component;
 
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.exception.DistroException;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public void syncData(DistroData data, String targetServer, DistroCallback callback) {
-    
+        
     }
     
     @Override
@@ -54,7 +54,7 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public void syncVerifyData(DistroData verifyData, String targetServer, DistroCallback callback) {
-    
+        
     }
     
     @Override

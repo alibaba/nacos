@@ -35,7 +35,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 public class Balancer {
     
     public static class RandomByWeight {
-    
+        
         /**
          * Select all instance.
          *
@@ -51,7 +51,7 @@ public class Balancer {
             
             return hosts;
         }
-    
+        
         /**
          * Random select one instance from service.
          *

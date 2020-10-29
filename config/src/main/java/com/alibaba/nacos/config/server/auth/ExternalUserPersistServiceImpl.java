@@ -19,8 +19,8 @@ package com.alibaba.nacos.config.server.auth;
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
+import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
@@ -146,11 +146,11 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw e;
         }
     }
-
+    
     @Override
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username like '%' ? '%'";
-        List<String> users = this.jt.queryForList(sql, new String[]{username}, String.class);
+        List<String> users = this.jt.queryForList(sql, new String[] {username}, String.class);
         return users;
     }
 }

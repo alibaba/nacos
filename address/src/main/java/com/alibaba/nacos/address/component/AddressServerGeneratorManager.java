@@ -57,7 +57,7 @@ public class AddressServerGeneratorManager {
      *
      * @param serviceName service name
      * @param clusterName cluster name
-     * @param ipArray array of ips
+     * @param ipArray     array of ips
      * @return instance list
      */
     public List<Instance> generateInstancesByIps(String serviceName, String rawProductName, String clusterName,

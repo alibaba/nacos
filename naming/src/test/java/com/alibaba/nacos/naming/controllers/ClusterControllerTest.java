@@ -118,13 +118,13 @@ public class ClusterControllerTest extends BaseTest {
         mockmvc.perform(builder3);
         
         Assert.assertEquals("HTTP", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
-    
+        
         MockHttpServletRequestBuilder builder4 = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
                 .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"MYSQL\"}")
                 .param("checkPort", "1").param("useInstancePort4Check", "true");
         mockmvc.perform(builder4);
-    
+        
         Assert.assertEquals("MYSQL", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
         
     }

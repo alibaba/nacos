@@ -39,8 +39,8 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
@@ -232,7 +232,7 @@ public class JRaftServer {
             return;
         }
         
-        final String parentPath = Paths.get(ApplicationUtils.getNacosHome(), "data/protocol/raft").toString();
+        final String parentPath = Paths.get(EnvUtil.getNacosHome(), "data/protocol/raft").toString();
         
         for (LogProcessor4CP processor : processors) {
             final String groupName = processor.group();
@@ -500,8 +500,7 @@ public class JRaftServer {
             // fix issue #3661  https://github.com/alibaba/nacos/issues/3661
             status = instance.refreshLeader(this.cliClientService, groupName, rpcRequestTimeoutMs);
             if (!status.isOk()) {
-                Loggers.RAFT
-                        .error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
+                Loggers.RAFT.error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
             }
             status = instance.refreshConfiguration(this.cliClientService, groupName, rpcRequestTimeoutMs);
             if (!status.isOk()) {

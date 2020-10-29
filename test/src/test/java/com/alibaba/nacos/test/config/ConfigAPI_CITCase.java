@@ -581,7 +581,7 @@ public class ConfigAPI_CITCase {
                 }
             });
         } catch (Exception e) {
-        
+            
         }
     }
     
@@ -599,7 +599,7 @@ public class ConfigAPI_CITCase {
             iconfig.removeListener(dataId, group, new AbstractListener() {
                 @Override
                 public void receiveConfigInfo(String configInfo) {
-                
+                    
                 }
             });
         } catch (Exception e) {

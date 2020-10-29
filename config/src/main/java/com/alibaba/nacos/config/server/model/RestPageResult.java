@@ -24,7 +24,7 @@ import java.io.Serializable;
  * @author Nacos
  */
 public class RestPageResult<T> implements Serializable {
-
+    
     private static final long serialVersionUID = -8048577763828650575L;
     
     private int code;

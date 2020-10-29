@@ -117,8 +117,7 @@ public class NacosRestTemplate_Interceptors_ITCase {
         param.put("dataId", "test-1");
         param.put("group", "DEFAULT_GROUP");
         param.put("content", "aaa=b");
-        HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), param, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.newInstance(), param, String.class);
         Assert.assertEquals(500, restResult.getCode());
         Assert.assertEquals("Stop request", restResult.getData());
         System.out.println(restResult.getData());

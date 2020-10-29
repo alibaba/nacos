@@ -71,7 +71,7 @@ public final class RaftExecutor {
         snapshotNum = snapshotNum == 0 ? raftCoreThreadNum : snapshotNum;
         
         raftSnapshotExecutor = ExecutorFactory.Managed.newFixedExecutorService(OWNER, snapshotNum,
-                        new NameThreadFactory("com.alibaba.naocs.core.raft-snapshot"));
+                new NameThreadFactory("com.alibaba.naocs.core.raft-snapshot"));
         
     }
     

@@ -18,9 +18,9 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
+import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,7 +89,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     /**
      * Add user role.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param userName username string value.
      */
     public void addRole(String role, String userName) {
@@ -122,7 +122,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     /**
      * Execute delete role sql operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param username user string value.
      */
     public void deleteRole(String role, String username) {

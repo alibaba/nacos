@@ -39,7 +39,7 @@ public interface UserPersistService {
     User findUserByUsername(String username);
     
     Page<User> getUsers(int pageNo, int pageSize);
-
+    
     List<String> findUserLikeUsername(String username);
-
+    
 }

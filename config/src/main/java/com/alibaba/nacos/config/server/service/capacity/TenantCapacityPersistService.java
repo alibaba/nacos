@@ -200,11 +200,11 @@ public class TenantCapacityPersistService {
     /**
      * Update TenantCapacity.
      *
-     * @param tenant tenant string value.
-     * @param quota quota int value.
-     * @param maxSize maxSize int value.
+     * @param tenant       tenant string value.
+     * @param quota        quota int value.
+     * @param maxSize      maxSize int value.
      * @param maxAggrCount maxAggrCount int value.
-     * @param maxAggrSize maxAggrSize int value.
+     * @param maxAggrSize  maxAggrSize int value.
      * @return operate result.
      */
     public boolean updateTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
@@ -247,7 +247,7 @@ public class TenantCapacityPersistService {
     /**
      * Correct Usage.
      *
-     * @param tenant tenant.
+     * @param tenant      tenant.
      * @param gmtModified gmtModified.
      * @return operate result.
      */

@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.model;
 
 /**
  * ConfigInfoBetaWrapper.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConfigInfoBetaWrapper extends ConfigInfo4Beta {

@@ -48,7 +48,7 @@ public class NamingTest {
         map.put("netType", "external");
         map.put("version", "2.0");
         instance.setMetadata(map);
-    
+        
         NamingService namingService = NacosFactory.createNamingService(properties);
         namingService.registerInstance("nacos.test.1", instance);
         

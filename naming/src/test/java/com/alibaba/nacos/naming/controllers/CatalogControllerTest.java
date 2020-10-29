@@ -23,7 +23,6 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

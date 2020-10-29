@@ -125,7 +125,7 @@ public class RaftEvent extends SlowEvent {
             this.raftClusterInfo = raftClusterInfo;
             return this;
         }
-    
+        
         public RaftEventBuilder errMsg(String errMsg) {
             this.errMsg = errMsg;
             return this;

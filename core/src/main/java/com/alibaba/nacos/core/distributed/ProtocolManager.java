@@ -21,13 +21,13 @@ import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
@@ -50,7 +50,8 @@ import java.util.Set;
 @SuppressWarnings("all")
 @Component(value = "ProtocolManager")
 @DependsOn("serverMemberManager")
-public class ProtocolManager extends MemberChangeListener implements ApplicationListener<ContextStartedEvent>, DisposableBean {
+public class ProtocolManager extends MemberChangeListener
+        implements ApplicationListener<ContextStartedEvent>, DisposableBean {
     
     private CPProtocol cpProtocol;
     
@@ -164,7 +165,7 @@ public class ProtocolManager extends MemberChangeListener implements Application
         // time T2 after a period of time.
         // (T1 < T2)
         Set<Member> copy = new HashSet<>(event.getMembers());
-    
+        
         if (oldMembers == null) {
             oldMembers = new HashSet<>(copy);
         } else {
@@ -183,7 +184,7 @@ public class ProtocolManager extends MemberChangeListener implements Application
                 ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
             }
         }
-    
+        
         // remove old members info
         oldMembers.clear();
         oldMembers.addAll(copy);

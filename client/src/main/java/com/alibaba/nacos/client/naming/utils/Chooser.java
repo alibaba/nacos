@@ -118,7 +118,7 @@ public class Chooser<K, T> {
         public Ref(List<Pair<T>> itemsWithWeight) {
             this.itemsWithWeight = itemsWithWeight;
         }
-    
+        
         /**
          * Refresh.
          */

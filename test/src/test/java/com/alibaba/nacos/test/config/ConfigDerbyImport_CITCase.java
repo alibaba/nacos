@@ -64,11 +64,11 @@ public class ConfigDerbyImport_CITCase {
             RestResult<String> result = future.join();
             System.out.println(result);
             Assert.assertTrue(result.ok());
-    
+            
             final String queryDataId = "people";
             final String queryGroup = "DEFAULT_GROUP";
             final String expectContent = "people.enable=true";
-    
+            
             PersistService persistService = context.getBean(PersistService.class);
             ConfigInfo configInfo = persistService.findConfigInfo(queryDataId, queryGroup, "");
             System.out.println(configInfo);

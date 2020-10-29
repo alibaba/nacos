@@ -19,10 +19,9 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
-
-import org.springframework.jdbc.core.RowMapper;
 
 /**
  * Pagination Utils For Apache Derby.

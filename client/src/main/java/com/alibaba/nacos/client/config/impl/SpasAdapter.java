@@ -17,8 +17,8 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.client.identify.CredentialService;
+import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.crypto.Mac;
@@ -33,7 +33,7 @@ import java.util.Map;
  * @author Nacos
  */
 public class SpasAdapter {
-
+    
     public static Map<String, String> getSignHeaders(String resource, String secretKey) {
         Map<String, String> header = new HashMap<String, String>(2);
         String timeStamp = String.valueOf(System.currentTimeMillis());
@@ -49,7 +49,7 @@ public class SpasAdapter {
         }
         return header;
     }
-
+    
     public static Map<String, String> getSignHeaders(Map<String, String> paramValues, String secretKey) {
         if (null == paramValues) {
             return null;

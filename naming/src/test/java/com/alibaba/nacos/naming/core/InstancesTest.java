@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -28,9 +30,6 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import static org.junit.Assert.assertEquals;
 
