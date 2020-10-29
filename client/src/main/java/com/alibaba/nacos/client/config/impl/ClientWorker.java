@@ -75,10 +75,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -547,7 +549,7 @@ public class ClientWorker implements Closeable {
         }
     
         private Map<String, String> getLabels() {
-    
+        
             Map<String, String> labels = new HashMap<String, String>(2, 1);
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
@@ -587,7 +589,7 @@ public class ClientWorker implements Closeable {
                 @Override
                 public void onDisConnect() {
                     String taskId = rpcClientInner.getLabels().get("taskId");
-                    LOGGER.info("clear listen context...");
+                    LOGGER.info("[0]clear listen context...", rpcClientInner.getName());
                     Collection<CacheData> values = cacheMap.get().values();
                 
                     for (CacheData cacheData : values) {
@@ -728,17 +730,27 @@ public class ClientWorker implements Closeable {
                                 rpcClient, configChangeListenRequest);
                         if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
     
+                            Set<String> changeKeys = new HashSet<String>();
+                            //handle changed keys,notify listener
                             if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedConfigs())) {
                                 for (ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
                                         .getChangedConfigs()) {
-                                    refreshContentAndCheck(
-                                            GroupKey.getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
-                                                    changeConfig.getTenant()));
+                                    String changeKey = GroupKey
+                                            .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
+                                                    changeConfig.getTenant());
+                                    changeKeys.add(changeKey);
+                                    refreshContentAndCheck(changeKey);
                                 }
                             }
+    
+                            //handler constent configs
                             for (CacheData cacheData : listenCaches) {
-                                cacheData.setListenSuccess(true);
+                                if (!changeKeys.contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group,
+                                        cacheData.getTenant()))) {
+                                    cacheData.setListenSuccess(true);
+                                }
                             }
+    
                         }
                     } catch (Exception e) {
                         LOGGER.error("async listen config change error ", e);

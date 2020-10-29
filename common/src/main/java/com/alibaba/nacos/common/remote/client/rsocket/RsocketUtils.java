@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -34,7 +33,6 @@ import io.rsocket.util.DefaultPayload;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -116,8 +114,7 @@ public class RsocketUtils {
         jsonObject.addProperty("headers", toJson(request.getHeaders()));
         jsonObject.addProperty("type", request.getClass().getName());
         request.clearHeaders();
-        byte[] bytes = IoUtils.tryCompress(toJson(request), StandardCharsets.UTF_8.name());
-        return DefaultPayload.create(bytes, jsonObject.toString().getBytes());
+        return DefaultPayload.create(toJson(request).getBytes(), jsonObject.toString().getBytes());
         
     }
     
@@ -130,9 +127,7 @@ public class RsocketUtils {
     public static Payload convertResponseToPayload(Response response) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("type", response.getClass().getName());
-    
-        byte[] bytes = IoUtils.tryCompress(toJson(response), StandardCharsets.UTF_8.name());
-        return DefaultPayload.create(bytes, jsonObject.toString().getBytes());
+        return DefaultPayload.create(toJson(response).getBytes(), jsonObject.toString().getBytes());
     }
     
     /**
@@ -196,12 +191,12 @@ public class RsocketUtils {
         byte[] data = new byte[data1.remaining()];
         payload.data().readBytes(data);
         byte[] bytes = new byte[0];
-        try {
-            bytes = IoUtils.tryDecompress(data);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        //        try {
+        //            bytes = IoUtils.tryDecompress(data);
+        //        } catch (Exception e) {
+        //            e.printStackTrace();
+        //            return null;
+        //        }
         return new String(bytes);
     }
     

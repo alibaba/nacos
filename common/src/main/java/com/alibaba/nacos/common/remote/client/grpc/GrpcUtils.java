@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,7 +33,6 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * grpc utils, use to parse request and response.
@@ -105,14 +103,8 @@ public class GrpcUtils {
         // request body .
         request.clearHeaders();
         String jsonString = toJson(request);
-        byte[] bytes = null;
-        try {
-            bytes = IoUtils.tryCompress(jsonString, StandardCharsets.UTF_8.name());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+    
+        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString))).build();
         return payload;
         
     }
@@ -129,15 +121,10 @@ public class GrpcUtils {
         Metadata buildMeta = meta.toBuilder().putAllHeaders(request.getHeaders()).build();
         request.clearHeaders();
         String jsonString = toJson(request);
-        byte[] bytes = null;
-        try {
-            bytes = IoUtils.tryCompress(jsonString, StandardCharsets.UTF_8.name());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    
         Payload.Builder builder = Payload.newBuilder();
-        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).setMetadata(buildMeta)
+        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString)))
+                .setMetadata(buildMeta)
                 .build();
         return payload;
         
@@ -151,18 +138,11 @@ public class GrpcUtils {
      */
     public static Payload convert(Response response) {
         String jsonString = toJson(response);
-        byte[] bytes = null;
-        try {
-            bytes = IoUtils.tryCompress(jsonString, StandardCharsets.UTF_8.name());
-            ;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         metaBuilder.setClientVersion(VersionUtils.getFullClientVersion()).setType(response.getClass().getName());
     
-        Payload payload = Payload.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes)))
+        Payload payload = Payload.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString)))
                 .setMetadata(metaBuilder.build()).build();
         return payload;
     }
@@ -177,15 +157,7 @@ public class GrpcUtils {
         PlainRequest plainRequest = new PlainRequest();
         Class classbyType = PayloadRegistry.getClassbyType(payload.getMetadata().getType());
         if (classbyType != null) {
-            byte[] value = new byte[0];
-            try {
-                value = IoUtils.tryDecompress(payload.getBody().getValue().toByteArray());
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-    
-            Object obj = toObj(ByteString.copyFrom(value).toStringUtf8(), classbyType);
+            Object obj = toObj(payload.getBody().getValue().toStringUtf8(), classbyType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }
