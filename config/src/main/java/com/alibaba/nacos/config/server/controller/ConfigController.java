@@ -46,6 +46,7 @@ import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
+import com.alibaba.nacos.config.server.utils.UsernameUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -96,7 +97,7 @@ public class ConfigController {
     private static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
     
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
-    
+
     private final ConfigServletInner inner;
     
     private final PersistService persistService;
@@ -134,6 +135,12 @@ public class ConfigController {
         final String srcIp = RequestUtil.getRemoteIp(request);
         final String requestIpApp = RequestUtil.getAppName(request);
         srcUser = RequestUtil.getSrcUserName(request);
+
+        // check srcUser
+        if (null == srcUser) {
+            srcUser = UsernameUtil.getUsernameFromRequest(request);
+        }
+
         // check tenant
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -240,6 +247,10 @@ public class ConfigController {
         ParamUtils.checkParam(tag);
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
+
+        if (null == srcUser) {
+            srcUser = UsernameUtil.getUsernameFromRequest(request);
+        }
         if (StringUtils.isBlank(tag)) {
             persistService.removeConfigInfo(dataId, group, tenant, clientIp, srcUser);
         } else {

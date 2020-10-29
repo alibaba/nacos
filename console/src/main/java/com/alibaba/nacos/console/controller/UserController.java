@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.User;
+import com.alibaba.nacos.config.server.utils.UsernameUtil;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
@@ -80,6 +81,8 @@ public class UserController {
     
     @Autowired
     private NacosAuthManager authManager;
+
+    private static final String REQUEST_HEADER_USERNAME = "username";
     
     /**
      * Create a new user.
@@ -181,6 +184,7 @@ public class UserController {
             NacosUser user = (NacosUser) authManager.login(request);
             
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
+            UsernameUtil.putUsernameInRequest(response, user.getUserName());
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             //            JSONObject result = new JSONObject();
@@ -204,6 +208,7 @@ public class UserController {
             String token = jwtTokenUtils.createToken(authentication);
             //将Token写入到Http头部
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, "Bearer " + token);
+            UsernameUtil.putUsernameInRequest(response, authentication.getName());
             rr.setCode(200);
             rr.setData("Bearer " + token);
             return rr;
