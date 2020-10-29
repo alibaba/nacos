@@ -68,6 +68,7 @@ public class ConfigBeta_CITCase {
     @AfterClass
     public static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigBeta_CITCase.class.getSimpleName());
     }
 
     @Before

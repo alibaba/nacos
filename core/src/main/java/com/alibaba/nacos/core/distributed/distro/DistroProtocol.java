@@ -32,6 +32,7 @@ import com.alibaba.nacos.core.distributed.distro.task.load.DistroLoadDataTask;
 import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTask;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -50,7 +51,7 @@ public class DistroProtocol {
     
     private final DistroConfig distroConfig;
     
-    private volatile boolean loadCompleted = false;
+    private volatile boolean isInitialized = false;
     
     public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
             DistroTaskEngineHolder distroTaskEngineHolder, DistroConfig distroConfig) {
@@ -58,29 +59,41 @@ public class DistroProtocol {
         this.distroComponentHolder = distroComponentHolder;
         this.distroTaskEngineHolder = distroTaskEngineHolder;
         this.distroConfig = distroConfig;
-        startVerifyTask();
+        startDistroTask();
     }
     
-    private void startVerifyTask() {
+    private void startDistroTask() {
+        if (ApplicationUtils.getStandaloneMode()) {
+            isInitialized = true;
+            return;
+        }
+        startVerifyTask();
+        startLoadTask();
+    }
+    
+    private void startLoadTask() {
         DistroCallback loadCallback = new DistroCallback() {
             @Override
             public void onSuccess() {
-                loadCompleted = true;
+                isInitialized = true;
             }
             
             @Override
             public void onFailed(Throwable throwable) {
-                loadCompleted = false;
+                isInitialized = false;
             }
         };
-        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder),
-                distroConfig.getVerifyIntervalMillis());
         GlobalExecutor.submitLoadDataTask(
                 new DistroLoadDataTask(memberManager, distroComponentHolder, distroConfig, loadCallback));
     }
     
-    public boolean isLoadCompleted() {
-        return loadCompleted;
+    private void startVerifyTask() {
+        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder),
+                distroConfig.getVerifyIntervalMillis());
+    }
+    
+    public boolean isInitialized() {
+        return isInitialized;
     }
     
     /**
