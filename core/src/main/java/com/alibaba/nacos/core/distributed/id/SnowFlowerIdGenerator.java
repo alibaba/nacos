@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +71,7 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     // 工作机器ID最大值1024
     private static final long WORKER_ID_MAX_VALUE = 1024L;
     
-    private long workerId;
+    private static long workerId;
     
     private long sequence;
     
@@ -78,20 +79,20 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     
     private long currentId;
     
-    {
+    static {
         long workerId = ApplicationUtils.getProperty("nacos.core.snowflake.worker-id", Integer.class, -1);
         
         if (workerId != -1) {
-            this.workerId = workerId;
+            SnowFlowerIdGenerator.workerId = workerId;
         } else {
             InetAddress address;
             try {
-                address = InetAddress.getLocalHost();
+                address = InetAddress.getByName(InetUtils.getSelfIP());
             } catch (final UnknownHostException e) {
                 throw new IllegalStateException("Cannot get LocalHost InetAddress, please check your network!", e);
             }
             byte[] ipAddressByteArray = address.getAddress();
-            this.workerId = (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE) + (
+            SnowFlowerIdGenerator.workerId = (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE) + (
                     ipAddressByteArray[ipAddressByteArray.length - 1] & 0xFF));
         }
     }
