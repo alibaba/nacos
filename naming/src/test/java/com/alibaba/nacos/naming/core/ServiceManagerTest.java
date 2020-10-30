@@ -120,7 +120,6 @@ public class ServiceManagerTest extends BaseTest {
         }
     }
     
-    
     @Test
     public void testGetAllNamespaces() throws NacosException {
         assertTrue(serviceManager.getAllNamespaces().isEmpty());
