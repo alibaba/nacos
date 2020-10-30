@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import org.springframework.stereotype.Component;
@@ -28,19 +31,42 @@ import org.springframework.stereotype.Component;
 @Component
 public class DistroTagGeneratorImpl implements DistroTagGenerator {
     
+    private final ServerMemberManager serverMemberManager;
+    
     private final DistroTagGenerator serviceNameTag = new DistroServiceNameTagGenerator();
     
     private final DistroTagGenerator ipPortTag = new DistroIpPortTagGenerator();
     
+    public DistroTagGeneratorImpl(ServerMemberManager serverMemberManager) {
+        this.serverMemberManager = serverMemberManager;
+    }
+    
     @Override
     public String getResponsibleTag(ReuseHttpServletRequest request) {
-        // TODO Judge which tag generator by Member's ability
-        return ipPortTag.getResponsibleTag(request);
+        return getTagGenerator().getResponsibleTag(request);
     }
     
     @Override
     public OverrideParameterRequestWrapper wrapperRequestWithTag(ReuseHttpServletRequest request, String tag) {
-        // TODO Judge which tag generator by Member's ability
-        return ipPortTag.wrapperRequestWithTag(request, tag);
+        return getTagGenerator().wrapperRequestWithTag(request, tag);
+    }
+    
+    /**
+     * Get tag generator according to cluster member ability.
+     *
+     * <p>
+     * If all member is upper than 2.x. Using {@link DistroIpPortTagGenerator}.
+     * Otherwise use 1.x {@link DistroServiceNameTagGenerator}.
+     * </p>
+     *
+     * @return actual tag generator
+     */
+    private DistroTagGenerator getTagGenerator() {
+        for (Member each : serverMemberManager.allMembers()) {
+            if (null == each.getExtendVal(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE)) {
+                return serviceNameTag;
+            }
+        }
+        return ipPortTag;
     }
 }

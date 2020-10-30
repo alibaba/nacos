@@ -43,7 +43,7 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public void syncData(DistroData data, String targetServer, DistroCallback callback) {
-    
+        throw new UnsupportedOperationException("Http distro agent do not support this method");
     }
     
     @Override
@@ -54,7 +54,7 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public void syncVerifyData(DistroData verifyData, String targetServer, DistroCallback callback) {
-    
+        throw new UnsupportedOperationException("Http distro agent do not support this method");
     }
     
     @Override
