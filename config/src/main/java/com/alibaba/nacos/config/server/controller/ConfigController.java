@@ -143,7 +143,7 @@ public class ConfigController {
                 } catch (Exception ex) {
                     type = ConfigType.TEXT.getType();
                 }
-            }else {
+            } else {
                 type = ConfigType.TEXT.getType();
             }
         }
