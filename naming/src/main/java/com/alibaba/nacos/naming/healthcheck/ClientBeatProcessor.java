@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.healthcheck.heartbeat.BeatProcessor;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;

@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NacosNamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,8 +38,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -68,12 +64,6 @@ public class ClientBeatCheckTaskV2Test {
     private GlobalConfig globalConfig;
     
     @Mock
-    private SwitchDomain switchDomain;
-    
-    @Mock
-    private DistroMapper distroMapper;
-    
-    @Mock
     private ConfigurableApplicationContext applicationContext;
     
     private IpPortBasedClient client;
@@ -82,32 +72,14 @@ public class ClientBeatCheckTaskV2Test {
     public void setUp() throws Exception {
         when(applicationContext.getBean(NacosNamingMetadataManager.class)).thenReturn(nacosNamingMetadataManager);
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
-        when(applicationContext.getBean(SwitchDomain.class)).thenReturn(switchDomain);
-        when(applicationContext.getBean(DistroMapper.class)).thenReturn(distroMapper);
         ApplicationUtils.injectContext(applicationContext);
         client = new IpPortBasedClient(CLIENT_ID, true);
         beatCheckTask = new ClientBeatCheckTaskV2(client);
-        when(switchDomain.isHealthCheckEnabled()).thenReturn(true);
-        when(distroMapper.responsible(CLIENT_ID)).thenReturn(true);
     }
     
     @Test
     public void testTaskKey() {
         assertEquals(KeyBuilder.buildServiceMetaKey(CLIENT_ID, "true"), beatCheckTask.taskKey());
-    }
-    
-    @Test
-    public void testRunWithDisableHealthCheck() {
-        when(switchDomain.isHealthCheckEnabled()).thenReturn(false);
-        beatCheckTask.run();
-        verify(distroMapper, never()).responsible(CLIENT_ID);
-    }
-    
-    @Test
-    public void testRunWithoutResponsibleClient() {
-        when(distroMapper.responsible(CLIENT_ID)).thenReturn(false);
-        beatCheckTask.run();
-        verify(globalConfig, never()).isExpireInstance();
     }
     
     @Test
@@ -152,7 +124,8 @@ public class ClientBeatCheckTaskV2Test {
     
     @Test
     public void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
-        injectInstance(true, System.currentTimeMillis()).getExtendDatum().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
+        injectInstance(true, System.currentTimeMillis()).getExtendDatum()
+                .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         beatCheckTask.run();
