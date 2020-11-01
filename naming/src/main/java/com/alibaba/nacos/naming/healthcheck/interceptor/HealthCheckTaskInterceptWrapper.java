@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.healthcheck.interceptor;
 
 import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
 import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptorChain;
+import com.alibaba.nacos.naming.misc.Loggers;
 
 /**
  * Health check task intercept wrapper.
@@ -37,6 +38,10 @@ public class HealthCheckTaskInterceptWrapper implements Runnable {
     
     @Override
     public void run() {
-        interceptorChain.doInterceptor(task);
+        try {
+            interceptorChain.doInterceptor(task);
+        } catch (Exception e) {
+            Loggers.SRV_LOG.info("Interceptor health check task {} failed", task.getTaskId(), e);
+        }
     }
 }

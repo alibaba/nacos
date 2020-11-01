@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck.interceptor;
+package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
-import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
 import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptor;
 import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptorChain;
 
@@ -24,38 +23,38 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Health check interceptor chain.
+ * Instance beat check interceptor chain.
  *
  * @author xiweng.yy
  */
-public class HealthCheckInterceptorChain implements NacosNamingInterceptorChain<NacosHealthCheckTask> {
+public class InstanceBeatCheckTaskInterceptorChain implements NacosNamingInterceptorChain<InstanceBeatCheckTask> {
     
-    private static final HealthCheckInterceptorChain INSTANCE = new HealthCheckInterceptorChain();
+    private static final InstanceBeatCheckTaskInterceptorChain INSTANCE = new InstanceBeatCheckTaskInterceptorChain();
     
-    private final List<NacosNamingInterceptor<NacosHealthCheckTask>> interceptors;
+    private final List<NacosNamingInterceptor<InstanceBeatCheckTask>> interceptors;
     
-    private HealthCheckInterceptorChain() {
+    private InstanceBeatCheckTaskInterceptorChain() {
         this.interceptors = new LinkedList<>();
     }
     
     static {
         // TODO inject and register by SPI
-        INSTANCE.addInterceptor(new HealthCheckEnableInterceptor());
-        INSTANCE.addInterceptor(new HealthCheckResponsibleInterceptor());
+        INSTANCE.addInterceptor(new ServiceEnableBeatCheckInterceptor());
+        INSTANCE.addInterceptor(new InstanceEnableBeatCheckInterceptor());
     }
     
-    public static HealthCheckInterceptorChain getInstance() {
+    public static InstanceBeatCheckTaskInterceptorChain getInstance() {
         return INSTANCE;
     }
     
     @Override
-    public void addInterceptor(NacosNamingInterceptor<NacosHealthCheckTask> interceptor) {
+    public void addInterceptor(NacosNamingInterceptor<InstanceBeatCheckTask> interceptor) {
         interceptors.add(interceptor);
     }
     
     @Override
-    public void doInterceptor(NacosHealthCheckTask object) {
-        for (NacosNamingInterceptor<NacosHealthCheckTask> each : interceptors) {
+    public void doInterceptor(InstanceBeatCheckTask object) {
+        for (NacosNamingInterceptor<InstanceBeatCheckTask> each : interceptors) {
             if (!each.isInterceptType(object.getClass())) {
                 continue;
             }
