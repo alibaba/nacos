@@ -27,7 +27,7 @@ import com.alibaba.nacos.naming.core.v2.client.manager.impl.IpPortBasedClientMan
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
-import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessorV2;
+import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatProcessorV2;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;

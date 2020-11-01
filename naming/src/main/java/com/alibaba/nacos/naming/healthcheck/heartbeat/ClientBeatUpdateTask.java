@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;

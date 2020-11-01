@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.healthcheck.heartbeat.BeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.interceptor.HealthCheckTaskInterceptWrapper;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;

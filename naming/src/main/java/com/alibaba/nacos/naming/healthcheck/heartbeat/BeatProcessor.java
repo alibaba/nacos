@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 /**
- * Check and update statues of ephemeral instances, remove them if they have been expired.
+ * Thread to update ephemeral instance triggered by client beat.
  *
  * @author xiweng.yy
  */
-public interface BeatCheckTask extends Runnable {
-    
-    /**
-     * Task key.
-     *
-     * @return task key
-     */
-    String taskKey();
-    
+public interface BeatProcessor extends Runnable {
+
 }
