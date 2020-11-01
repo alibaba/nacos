@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.naming.healthcheck.interceptor;
+
+import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 /**
- * Check and update statues of ephemeral instances, remove them if they have been expired.
+ * Health check responsible interceptor.
  *
  * @author xiweng.yy
  */
-public interface BeatCheckTask extends Runnable {
+public class HealthCheckResponsibleInterceptor extends AbstractHealthCheckInterceptor {
     
-    /**
-     * Task key.
-     *
-     * @return task key
-     */
-    String taskKey();
-    
+    @Override
+    public boolean intercept(NacosHealthCheckTask object) {
+        return !ApplicationUtils.getBean(DistroMapper.class).responsible(object.getTaskId());
+    }
 }

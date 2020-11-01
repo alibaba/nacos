@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.naming.interceptor;
 
 /**
- * Check and update statues of ephemeral instances, remove them if they have been expired.
+ * Interceptable Interface.
  *
  * @author xiweng.yy
  */
-public interface BeatCheckTask extends Runnable {
+public interface Interceptable {
     
     /**
-     * Task key.
-     *
-     * @return task key
+     * If no {@link NacosNamingInterceptor} intercept this object, this method will be called to execute.
      */
-    String taskKey();
-    
+    void afterIntercept();
 }

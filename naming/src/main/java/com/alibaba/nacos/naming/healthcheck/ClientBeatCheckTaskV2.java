@@ -20,9 +20,9 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
@@ -34,10 +34,8 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -47,25 +45,19 @@ import java.util.Optional;
  *
  * @author nkorange
  */
-public class ClientBeatCheckTaskV2 implements BeatCheckTask {
+public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCheckTask, NacosHealthCheckTask {
     
     private final IpPortBasedClient client;
     
+    private final String taskId;
+    
     public ClientBeatCheckTaskV2(IpPortBasedClient client) {
         this.client = client;
-    }
-    
-    @JsonIgnore
-    public DistroMapper getDistroMapper() {
-        return ApplicationUtils.getBean(DistroMapper.class);
+        taskId = client.getClientId();
     }
     
     public GlobalConfig getGlobalConfig() {
         return ApplicationUtils.getBean(GlobalConfig.class);
-    }
-    
-    public SwitchDomain getSwitchDomain() {
-        return ApplicationUtils.getBean(SwitchDomain.class);
     }
     
     public NacosNamingMetadataManager getMetadataManager() {
@@ -78,19 +70,19 @@ public class ClientBeatCheckTaskV2 implements BeatCheckTask {
     }
     
     @Override
-    public void run() {
+    public String getTaskId() {
+        return taskId;
+    }
+    
+    @Override
+    public void doHealthCheck() {
         // TODO add white list like v1 {@code marked}
         try {
-            if (!getSwitchDomain().isHealthCheckEnabled()) {
-                return;
-            }
-            if (!getDistroMapper().responsible(client.getClientId())) {
-                return;
-            }
             boolean expireInstance = getGlobalConfig().isExpireInstance();
             Collection<Service> services = client.getAllPublishedService();
             for (Service each : services) {
-                HeartBeatInstancePublishInfo instance = (HeartBeatInstancePublishInfo) client.getInstancePublishInfo(each);
+                HeartBeatInstancePublishInfo instance = (HeartBeatInstancePublishInfo) client
+                        .getInstancePublishInfo(each);
                 long lastBeatTime = instance.getLastHeartBeatTime();
                 if (instance.isHealthy() && isUnhealthy(each, instance, lastBeatTime)) {
                     changeHealthyStatus(each, instance, lastBeatTime);
@@ -102,7 +94,16 @@ public class ClientBeatCheckTaskV2 implements BeatCheckTask {
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while processing client beat time out.", e);
         }
-        
+    }
+    
+    @Override
+    public void run() {
+        doHealthCheck();
+    }
+    
+    @Override
+    public void afterIntercept() {
+        doHealthCheck();
     }
     
     private boolean isUnhealthy(Service service, InstancePublishInfo instance, long lastBeatTime) {
@@ -134,7 +135,8 @@ public class ClientBeatCheckTaskV2 implements BeatCheckTask {
     }
     
     private long getTimeout(Service service, InstancePublishInfo instance, String timeoutKey, long defaultValue) {
-        Optional<InstanceMetadata> instanceMetadata = getMetadataManager().getInstanceMetadata(service, instance.getIp());
+        Optional<InstanceMetadata> instanceMetadata = getMetadataManager()
+                .getInstanceMetadata(service, instance.getIp());
         Object object = instance.getExtendDatum().get(timeoutKey);
         if (instanceMetadata.isPresent() && instanceMetadata.get().getExtendData().containsKey(timeoutKey)) {
             object = instanceMetadata.get().getExtendData().get(timeoutKey);
