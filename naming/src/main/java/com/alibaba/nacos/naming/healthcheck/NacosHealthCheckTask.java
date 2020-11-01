@@ -16,17 +16,24 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.interceptor.Interceptable;
+
 /**
- * Check and update statues of ephemeral instances, remove them if they have been expired.
+ * Nacos health check task.
  *
  * @author xiweng.yy
  */
-public interface BeatCheckTask extends Runnable {
+public interface NacosHealthCheckTask extends Interceptable, Runnable {
     
     /**
-     * Task key.
+     * Get task id.
      *
-     * @return task key
+     * @return task id.
      */
-    String taskKey();
+    String getTaskId();
+    
+    /**
+     * Do health check.
+     */
+    void doHealthCheck();
 }
