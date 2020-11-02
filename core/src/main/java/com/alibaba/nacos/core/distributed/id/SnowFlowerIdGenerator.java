@@ -71,7 +71,7 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     // 工作机器ID最大值1024
     private static final long WORKER_ID_MAX_VALUE = 1024L;
     
-    private static long workerId;
+    private long workerId;
     
     private long sequence;
     
@@ -79,11 +79,11 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     
     private long currentId;
     
-    static {
+    {
         long workerId = ApplicationUtils.getProperty("nacos.core.snowflake.worker-id", Integer.class, -1);
         
         if (workerId != -1) {
-            SnowFlowerIdGenerator.workerId = workerId;
+            this.workerId = workerId;
         } else {
             InetAddress address;
             try {
@@ -92,7 +92,7 @@ public class SnowFlowerIdGenerator implements IdGenerator {
                 throw new IllegalStateException("Cannot get LocalHost InetAddress, please check your network!", e);
             }
             byte[] ipAddressByteArray = address.getAddress();
-            SnowFlowerIdGenerator.workerId = (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE) + (
+            this.workerId = (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE) + (
                     ipAddressByteArray[ipAddressByteArray.length - 1] & 0xFF));
         }
     }
