@@ -324,13 +324,11 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
     @Override
     public void onEvent(MembersChangeEvent event) {
         Collection<Member> members = event.getMembers();
-        if (oldMembers.isEmpty()) {
-            oldMembers = new HashSet<>(members);
-        } else {
-            oldMembers.removeAll(members);
-        }
+        Collection<Member> newMembers = new HashSet<>(members);
+        newMembers.removeAll(oldMembers);
         
-        if (!oldMembers.isEmpty()) {
+        // If an IP change occurs, the change starts
+        if (!newMembers.isEmpty()) {
             changePeers(members);
         }
         
@@ -338,7 +336,7 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
         oldMembers.addAll(members);
     }
     
-    private void changePeers(Collection<Member> members) {
+    protected void changePeers(Collection<Member> members) {
         Map<String, RaftPeer> tmpPeers = new HashMap<>(members.size());
         
         for (Member member : members) {
