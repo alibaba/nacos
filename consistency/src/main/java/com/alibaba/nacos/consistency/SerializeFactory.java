@@ -33,8 +33,7 @@ public class SerializeFactory {
     
     private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(4);
     
-    @SuppressWarnings("checkstyle:StaticVariableName")
-    public static String DEFAULT_SERIALIZER = HESSIAN_INDEX;
+    public static String defaultSerializer = HESSIAN_INDEX;
     
     static {
         Serializer serializer = new HessianSerializer();
@@ -46,7 +45,10 @@ public class SerializeFactory {
     }
     
     public static Serializer getDefault() {
-        return SERIALIZER_MAP.get(DEFAULT_SERIALIZER);
+        return SERIALIZER_MAP.get(defaultSerializer);
     }
     
+    public static Serializer getSerializer(String type) {
+        return SERIALIZER_MAP.get(type.toLowerCase());
+    }
 }

@@ -22,7 +22,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>1.3.2</version>
+    <version>1.4.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-1.3.2</tag>
+        <tag>nacos-all-1.4.0</tag>
     </scm>
 
     <mailingLists>
@@ -126,7 +126,7 @@
         <p3c-pmd.version>1.3.0</p3c-pmd.version>
 
         <!-- dependency version -->
-        <spring-boot-dependencies.version>2.1.1.RELEASE</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>2.1.17.RELEASE</spring-boot-dependencies.version>
         <servlet-api.version>3.0</servlet-api.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.4</commons-lang3.version>
@@ -149,7 +149,7 @@
         <jackson-core.version>2.10.4</jackson-core.version>
         <jackson-databind.version>2.10.4</jackson-databind.version>
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
-        <jjwt.version>0.10.5</jjwt.version>
+        <jjwt.version>0.11.2</jjwt.version>
         <netty-all.version>4.1.42.Final</netty-all.version>
         <netty-common.version>4.1.31.Final</netty-common.version>
         <mina-core.version>2.0.0-RC1</mina-core.version>
@@ -165,7 +165,7 @@
         <mockito-all.version>1.10.19</mockito-all.version>
         <hamcrest-all.version>1.3</hamcrest-all.version>
         <prometheus-simpleclient.version>0.5.0</prometheus-simpleclient.version>
-        <tomcat-embed-jasper.version>7.0.59</tomcat-embed-jasper.version>
+        <tomcat-embed-jasper.version>9.0.37</tomcat-embed-jasper.version>
         <truth.version>0.30</truth.version>
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.3.2</jraft-core.version>
@@ -578,6 +578,8 @@
         <module>cmdb</module>
         <module>istio</module>
         <module>consistency</module>
+        <module>auth</module>
+        <module>sys</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
@@ -586,6 +588,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -673,6 +680,16 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-consistency</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-auth</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-sys</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

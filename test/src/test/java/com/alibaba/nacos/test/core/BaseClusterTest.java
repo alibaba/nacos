@@ -20,22 +20,24 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.naming.NamingService;
-import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.NSyncHttpClient;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.service.repository.embedded.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -60,6 +62,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class BaseClusterTest extends HttpClient4Test {
     
+    private static final Logger logger = LoggerFactory.getLogger(BaseClusterTest.class);
+    
     protected static final String CONFIG_INFO_ID = "config-info-id";
     
     protected static ConfigService iconfig7;
@@ -74,7 +78,7 @@ public class BaseClusterTest extends HttpClient4Test {
     
     protected static NamingService inaming9;
     
-    protected static final NSyncHttpClient httpClient = HttpClientManager.getSyncHttpClient();
+    protected static final NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(logger);
     
     protected static final AtomicBoolean[] finished = new AtomicBoolean[] {new AtomicBoolean(false),
             new AtomicBoolean(false), new AtomicBoolean(false)};
@@ -86,7 +90,7 @@ public class BaseClusterTest extends HttpClient4Test {
     static {
         System.getProperties().setProperty("nacos.core.auth.enabled", "false");
         System.getProperties().setProperty("embeddedStorage", "true");
-        String ip = InetUtils.getSelfIp();
+        String ip = InetUtils.getSelfIP();
         clusterInfo = "nacos.member.list=" + ip + ":8847," + ip + ":8848," + ip + ":8849";
         
         NotifyCenter.registerSubscriber(new Subscriber<RaftDbErrorEvent>() {

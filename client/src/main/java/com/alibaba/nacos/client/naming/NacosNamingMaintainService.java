@@ -173,4 +173,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         serverProxy.updateService(service, selector);
     }
     
+    @Override
+    public void shutDown() throws NacosException {
+        serverProxy.shutdown();
+    }
 }

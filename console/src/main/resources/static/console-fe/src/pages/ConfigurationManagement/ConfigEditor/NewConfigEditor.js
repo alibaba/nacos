@@ -196,6 +196,14 @@ class ConfigEditor extends React.Component {
     return codeVal;
   }
 
+  setCodeVal(codeVal) {
+    const { form } = this.state;
+    this.setState({ form: { ...form, content: codeVal } });
+    if (this.monacoEditor) {
+      this.monacoEditor.setValue(codeVal);
+    }
+  }
+
   publish() {
     const { locale = {} } = this.props;
     const { type } = this.state.form;
@@ -572,7 +580,8 @@ class ConfigEditor extends React.Component {
           </Row>
           <DiffEditorDialog
             ref={this.diffEditorDialog}
-            publishConfig={() => {
+            publishConfig={codeVal => {
+              this.setCodeVal(codeVal);
               const res = this[this.diffcb]();
               res.then(res => {
                 if (!res) {
@@ -596,6 +605,9 @@ class ConfigEditor extends React.Component {
                 });
               });
             }}
+            title={locale.dialogTitle}
+            currentArea={locale.dialogCurrentArea}
+            originalArea={locale.dialogOriginalArea}
           />
           <SuccessDialog ref={this.successDialog} />
         </Loading>

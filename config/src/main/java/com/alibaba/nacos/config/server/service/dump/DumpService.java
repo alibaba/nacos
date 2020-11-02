@@ -49,8 +49,8 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,7 +133,8 @@ public abstract class DumpService {
     
     protected void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
             DumpAllBetaProcessor dumpAllBetaProcessor, DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
-        TimerContext.start("CONFIG_DUMP_TO_FILE");
+        String dumpFileContext = "CONFIG_DUMP_TO_FILE";
+        TimerContext.start(dumpFileContext);
         try {
             LogUtil.DEFAULT_LOG.warn("DumpService start");
             
@@ -174,13 +175,13 @@ public abstract class DumpService {
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
                 DiskUtil.clearAllBeta();
                 if (persistService.isExistTable(BETA_TABLE_NAME)) {
-                    dumpAllBetaProcessor.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
+                    dumpAllBetaProcessor.process(new DumpAllBetaTask());
                 }
                 // update Tag cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-tag.");
                 DiskUtil.clearAllTag();
                 if (persistService.isExistTable(TAG_TABLE_NAME)) {
-                    dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
+                    dumpAllTagProcessor.process(new DumpAllTagTask());
                 }
                 
                 // add to dump aggr
@@ -229,7 +230,7 @@ public abstract class DumpService {
             
             ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
         } finally {
-            TimerContext.end(LogUtil.DUMP_LOG);
+            TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
         }
         
     }
@@ -256,12 +257,12 @@ public abstract class DumpService {
             if (isAllDump) {
                 LogUtil.DEFAULT_LOG.info("start clear all config-info.");
                 DiskUtil.clearAll();
-                dumpAllProcessor.process(DumpAllTask.TASK_ID, new DumpAllTask());
+                dumpAllProcessor.process(new DumpAllTask());
             } else {
                 Timestamp beforeTimeStamp = getBeforeStamp(heartheatLastStamp, timeStep);
                 DumpChangeProcessor dumpChangeProcessor = new DumpChangeProcessor(this, beforeTimeStamp,
                         TimeUtils.getCurrentTime());
-                dumpChangeProcessor.process(DumpChangeTask.TASK_ID, new DumpChangeTask());
+                dumpChangeProcessor.process(new DumpChangeTask());
                 Runnable checkMd5Task = () -> {
                     LogUtil.DEFAULT_LOG.error("start checkMd5Task");
                     List<String> diffList = ConfigCacheService.checkMd5();
@@ -419,7 +420,7 @@ public abstract class DumpService {
                         }
                     } else {
                         // remove config info
-                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
+                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
                         LOGGER.warn(
                                 "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                                         + group);

@@ -94,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: 'Namespaces',
     namespaceNumber: 'Namespace ID',
     namespaceOperation: 'Actions',
+    refresh: 'Refresh',
   },
   ServiceList: {
     serviceList: 'Service List',
@@ -222,6 +223,7 @@ const I18N_CONF = {
     queryResult: 'Search Results: Found',
     articleMeet: 'configuration items.',
     lastUpdateTime: 'Last Modified At',
+    operator: 'Operator',
     operation: 'Operation',
   },
   HistoryDetail: {
@@ -233,6 +235,7 @@ const I18N_CONF = {
     moreAdvancedOptions: 'Advanced Options',
     home: 'Application:',
     actionType: 'Action Type:',
+    operator: 'Operator:',
     configureContent: 'Configuration Content:',
     back: 'Back',
   },
@@ -306,6 +309,7 @@ const I18N_CONF = {
     cloneSuccEnd: 'configuration items cloned',
     cloneFail: 'Clone failed',
     getNamespaceFailed: 'get the namespace failed',
+    getNamespace403: 'Without permission to access ${namespaceName} namespace!',
     startCloning: 'Start Clone',
     cloningConfiguration: 'Clone config',
     source: 'Source :',
@@ -319,6 +323,7 @@ const I18N_CONF = {
     delSelectedAlertContent: 'please select the configuration to delete',
     delSuccessMsg: 'delete successful',
     cloneEditableTitle: 'Modify Data Id and Group (optional)',
+    authFail: 'Auth failed',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',
@@ -373,9 +378,7 @@ const I18N_CONF = {
   },
   DiffEditorDialog: {
     publish: 'Publish',
-    contents: 'Content Comparison',
-    currentArea: 'Current Value',
-    originalValue: 'Original Value',
+    back: 'Back',
   },
   ConfigEditor: {
     official: 'Official',
@@ -406,6 +409,9 @@ const I18N_CONF = {
     publish: 'Publish',
     back: 'Back',
     codeValErrorPrompt: 'Configuration information may have syntax errors. Are you sure to submit?',
+    dialogTitle: 'Content Comparison',
+    dialogCurrentArea: 'Current Value',
+    dialogOriginalArea: 'Original Value',
   },
   EditorNameSpace: {
     notice: 'Notice',
@@ -493,6 +499,9 @@ const I18N_CONF = {
     betaRelease: 'Beta Publish:',
     configuration: 'Configuration Content:',
     back: 'Back',
+    versionComparison: 'Version Comparison',
+    dialogCurrentArea: 'Current Version',
+    dialogOriginalArea: 'Previous Version',
   },
   ConfigRollback: {
     rollBack: 'Roll Back',
@@ -519,6 +528,7 @@ const I18N_CONF = {
     username: 'Username',
     password: 'Password',
     operation: 'Operation',
+    refresh: 'Refresh',
   },
   NewUser: {
     createUser: 'Create user',
@@ -552,6 +562,7 @@ const I18N_CONF = {
     operation: 'Operation',
     deleteRole: 'Delete',
     deleteRoleTip: 'Do you want to delete this role?',
+    refresh: 'Refresh',
   },
   NewRole: {
     bindingRoles: 'Binding roles',
@@ -574,6 +585,7 @@ const I18N_CONF = {
     readOnly: 'read only',
     writeOnly: 'write only',
     readWrite: 'Read and write',
+    refresh: 'Refresh',
   },
   NewPermissions: {
     addPermission: 'Add Permission',

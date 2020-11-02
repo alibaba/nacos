@@ -2240,7 +2240,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ?";
         String sqlFetchRows =
-                "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,gmt_create,gmt_modified from his_config_info "
+                "select nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified from his_config_info "
                         + "where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
         
         Page<ConfigHistoryInfo> page = null;
@@ -2249,7 +2249,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     .fetchPage(sqlCountRows, sqlFetchRows, new Object[] {dataId, group, tenantTmp}, pageNo, pageSize,
                             HISTORY_LIST_ROW_MAPPER);
         } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[list-config-history] error, dataId:{}, group:{}", new Object[] {dataId, group}, e);
+            LogUtil.FATAL_LOG
+                    .error("[list-config-history] error, dataId:{}, group:{}", new Object[] {dataId, group}, e);
             throw e;
         }
         return page;
@@ -2291,7 +2292,20 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     .queryForObject(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
             return historyInfo;
         } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[list-config-history] error, nid:{}", new Object[] {nid}, e);
+            LogUtil.FATAL_LOG.error("[detail-config-history] error, nid:{}", new Object[] {nid}, e);
+            throw e;
+        }
+    }
+    
+    @Override
+    public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (select max(nid) from his_config_info where id = ?) ";
+        try {
+            ConfigHistoryInfo historyInfo = jt
+                    .queryForObject(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
+            return historyInfo;
+        } catch (DataAccessException e) {
+            LogUtil.FATAL_LOG.error("[detail-previous-config-history] error, id:{}", new Object[] {id}, e);
             throw e;
         }
     }

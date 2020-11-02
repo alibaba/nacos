@@ -16,9 +16,15 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.auth.AuthManager;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.core.utils.Constants;
+import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,7 +39,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URI;
 
 /**
  * Unified filter to handle authentication and authorization.
@@ -73,8 +78,7 @@ public class AuthFilter implements Filter {
         
         try {
             
-            String path = new URI(req.getRequestURI()).getPath();
-            Method method = methodsCache.getMethod(req.getMethod(), path);
+            Method method = methodsCache.getMethod(req);
             
             if (method == null) {
                 chain.doFilter(request, response);

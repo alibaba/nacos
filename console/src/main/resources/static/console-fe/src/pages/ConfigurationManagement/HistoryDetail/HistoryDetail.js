@@ -74,6 +74,7 @@ class HistoryDetail extends React.Component {
           self.field.setValue('content', data.content);
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
           self.field.setValue('envs', self.serverId);
+          self.field.setValue('srcUser', self.srcUser);
           self.field.setValue('opType', typeMap[data.opType.trim()]);
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
@@ -119,6 +120,9 @@ class HistoryDetail extends React.Component {
               <Input htmlType="text" readOnly {...init('appName')} />
             </Form.Item>
           </div>
+          <Form.Item label={locale.operator} required {...formItemLayout}>
+            <Input htmlType="text" readOnly {...init('srcUser')} />
+          </Form.Item>
           <Form.Item label={locale.actionType} required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('opType')} />
           </Form.Item>

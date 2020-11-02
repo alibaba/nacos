@@ -17,9 +17,9 @@
 package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.utils.HttpMethod;
-
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPatch;
@@ -27,6 +27,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpTrace;
+
+import java.net.URI;
 
 /**
  * Base http method.
@@ -48,7 +50,7 @@ public enum BaseHttpMethod {
     GET_LARGE(HttpMethod.GET_LARGE) {
         @Override
         protected HttpRequestBase createRequest(String url) {
-            return new BaseHttpClient.HttpGetWithEntity(url);
+            return new HttpGetWithEntity(url);
         }
     },
     
@@ -79,6 +81,16 @@ public enum BaseHttpMethod {
         @Override
         protected HttpRequestBase createRequest(String url) {
             return new HttpDelete(url);
+        }
+    },
+    
+    /**
+     * delete Large request.
+     */
+    DELETE_LARGE(HttpMethod.DELETE_LARGE) {
+        @Override
+        protected HttpRequestBase createRequest(String url) {
+            return new HttpDeleteWithEntity(url);
         }
     },
     
@@ -149,6 +161,50 @@ public enum BaseHttpMethod {
             }
         }
         throw new IllegalArgumentException("Unsupported http method : " + name);
+    }
+    
+    /**
+     * get Large implemented.
+     * <p>
+     * Mainly used for GET request parameters are relatively large, can not be placed on the URL, so it needs to be
+     * placed in the body.
+     * </p>
+     */
+    public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
+        
+        public static final String METHOD_NAME = "GET";
+        
+        public HttpGetWithEntity(String url) {
+            super();
+            setURI(URI.create(url));
+        }
+        
+        @Override
+        public String getMethod() {
+            return METHOD_NAME;
+        }
+    }
+    
+    /**
+     * delete Large implemented.
+     * <p>
+     * Mainly used for DELETE request parameters are relatively large, can not be placed on the URL, so it needs to be
+     * placed in the body.
+     * </p>
+     */
+    public static class HttpDeleteWithEntity extends HttpEntityEnclosingRequestBase {
+        
+        public static final String METHOD_NAME = "DELETE";
+        
+        public HttpDeleteWithEntity(String url) {
+            super();
+            setURI(URI.create(url));
+        }
+        
+        @Override
+        public String getMethod() {
+            return METHOD_NAME;
+        }
     }
     
 }

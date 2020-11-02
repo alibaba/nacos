@@ -16,20 +16,22 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
-import java.net.HttpURLConnection;
 import java.util.Map;
 
 /**
  * Raft http proxy.
  *
+ * @deprecated will remove in 1.4.x
  * @author nacos
  */
+@Deprecated
 @Component
 public class RaftProxy {
     
@@ -48,9 +50,9 @@ public class RaftProxy {
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         
-        HttpClient.HttpResult result = HttpClient.httpGet(url, null, params);
-        if (result.code != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        RestResult<String> result = HttpClient.httpGet(url, null, params);
+        if (!result.ok()) {
+            throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
     }
     
@@ -69,7 +71,7 @@ public class RaftProxy {
             server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
-        HttpClient.HttpResult result;
+        RestResult<String> result;
         switch (method) {
             case GET:
                 result = HttpClient.httpGet(url, null, params);
@@ -84,8 +86,8 @@ public class RaftProxy {
                 throw new RuntimeException("unsupported method:" + method);
         }
         
-        if (result.code != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        if (!result.ok()) {
+            throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
     }
     
@@ -106,9 +108,9 @@ public class RaftProxy {
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         
-        HttpClient.HttpResult result = HttpClient.httpPostLarge(url, headers, content);
-        if (result.code != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        RestResult<String> result = HttpClient.httpPostLarge(url, headers, content);
+        if (!result.ok()) {
+            throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
     }
 }

@@ -39,7 +39,7 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
@@ -497,13 +497,19 @@ public class JRaftServer {
             Configuration oldConf = instance.getConfiguration(groupName);
             String oldLeader = Optional.ofNullable(instance.selectLeader(groupName)).orElse(PeerId.emptyPeer())
                     .getEndpoint().toString();
+            // fix issue #3661  https://github.com/alibaba/nacos/issues/3661
+            status = instance.refreshLeader(this.cliClientService, groupName, rpcRequestTimeoutMs);
+            if (!status.isOk()) {
+                Loggers.RAFT
+                        .error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
+            }
             status = instance.refreshConfiguration(this.cliClientService, groupName, rpcRequestTimeoutMs);
             if (!status.isOk()) {
                 Loggers.RAFT
                         .error("Fail to refresh route configuration for group : {}, status is : {}", groupName, status);
             }
         } catch (Exception e) {
-            Loggers.RAFT.error("Fail to refresh route configuration for group : {}, error is : {}", groupName, e);
+            Loggers.RAFT.error("Fail to refresh raft metadata info for group : {}, error is : {}", groupName, e);
         }
     }
     

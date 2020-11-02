@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
@@ -90,6 +91,26 @@ public class WebUtils {
             encoding = StandardCharsets.UTF_8.name();
         }
         try {
+            value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
+        } catch (UnsupportedEncodingException ignore) {
+        }
+        return value.trim();
+    }
+    
+    /**
+     * decode target value with UrlDecode.
+     *
+     * <p>Under Content-Type:application/x-www-form-urlencoded situation.
+     *
+     * @param value    value
+     * @param encoding encode
+     * @return Decoded data
+     */
+    private static String resolveValueWithUrlDecode(String value, String encoding) {
+        if (StringUtils.isEmpty(encoding)) {
+            encoding = StandardCharsets.UTF_8.name();
+        }
+        try {
             value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
         } catch (UnsupportedEncodingException ignore) {
         }
@@ -113,7 +134,7 @@ public class WebUtils {
      *
      * @param request HttpServletRequest
      * @return the value of the request header "user-agent", or the value of the request header "client-version" if the
-     *         request does not have a header of "user-agent".
+     * request does not have a header of "user-agent".
      */
     public static String getUserAgent(HttpServletRequest request) {
         String userAgent = request.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
@@ -143,8 +164,8 @@ public class WebUtils {
      * Handle file upload operations.
      *
      * @param multipartFile file
-     * @param consumer post processor
-     * @param response {@link DeferredResult}
+     * @param consumer      post processor
+     * @param response      {@link DeferredResult}
      */
     public static void onFileUpload(MultipartFile multipartFile, Consumer<File> consumer,
             DeferredResult<RestResult<String>> response) {

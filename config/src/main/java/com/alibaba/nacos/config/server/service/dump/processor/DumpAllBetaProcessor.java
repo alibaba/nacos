@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
-import com.alibaba.nacos.config.server.manager.AbstractTask;
-import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.common.task.NacosTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -35,7 +35,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  * @author Wei.Wang
  * @date 2020/7/5 12:18 PM
  */
-public class DumpAllBetaProcessor implements TaskProcessor {
+public class DumpAllBetaProcessor implements NacosTaskProcessor {
     
     public DumpAllBetaProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
@@ -43,7 +43,7 @@ public class DumpAllBetaProcessor implements TaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractTask task) {
+    public boolean process(NacosTask task) {
         int rowCount = persistService.configInfoBetaCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
         

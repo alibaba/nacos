@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.config.server.manager;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -24,12 +27,8 @@ import org.slf4j.Logger;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * TaskManager, is aim to process the task which is need to be done.
@@ -37,73 +36,27 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author huali
  */
-public final class TaskManager implements TaskManagerMBean {
+public final class TaskManager extends NacosDelayTaskExecuteEngine implements TaskManagerMBean {
     
     private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
     
-    private final ConcurrentHashMap<String, AbstractTask> tasks = new ConcurrentHashMap<String, AbstractTask>();
-    
-    private final ConcurrentHashMap<String, TaskProcessor> taskProcessors = new ConcurrentHashMap<String, TaskProcessor>();
-    
-    private TaskProcessor defaultTaskProcessor;
-    
-    Thread processingThread;
-    
-    private final AtomicBoolean closed = new AtomicBoolean(true);
-    
     private String name;
-    
-    class ProcessRunnable implements Runnable {
-        
-        @Override
-        public void run() {
-            while (!TaskManager.this.closed.get()) {
-                try {
-                    Thread.sleep(100);
-                    TaskManager.this.process();
-                } catch (Throwable e) {
-                    LogUtil.DUMP_LOG.error("execute dump process has error : {}", e);
-                }
-            }
-        }
-    }
-    
-    ReentrantLock lock = new ReentrantLock();
     
     Condition notEmpty = this.lock.newCondition();
     
-    public TaskManager() {
-        this(null);
-    }
-    
-    public AbstractTask getTask(String type) {
-        return this.tasks.get(type);
-    }
-    
-    public TaskProcessor getTaskProcessor(String type) {
-        return this.taskProcessors.get(type);
-    }
-    
-    @SuppressWarnings("PMD.AvoidManuallyCreateThreadRule")
     public TaskManager(String name) {
+        super(name, LOGGER, 100L);
         this.name = name;
-        if (null != name && name.length() > 0) {
-            this.processingThread = new Thread(new ProcessRunnable(), name);
-        } else {
-            this.processingThread = new Thread(new ProcessRunnable());
-        }
-        this.processingThread.setDaemon(true);
-        this.closed.set(false);
-        this.processingThread.start();
     }
     
-    public int size() {
-        return tasks.size();
-    }
-    
+    /**
+     * Close task manager.
+     */
     public void close() {
-        this.closed.set(true);
-        this.processingThread.interrupt();
+        try {
+            super.shutdown();
+        } catch (NacosException ignored) {
+        }
     }
     
     /**
@@ -143,97 +96,23 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
     
-    public void addProcessor(String type, TaskProcessor taskProcessor) {
-        this.taskProcessors.put(type, taskProcessor);
+    @Override
+    public void addTask(Object key, AbstractDelayTask newTask) {
+        super.addTask(key, newTask);
+        MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
     }
     
-    public void removeProcessor(String type) {
-        this.taskProcessors.remove(type);
+    @Override
+    public AbstractDelayTask removeTask(Object key) {
+        AbstractDelayTask result = super.removeTask(key);
+        MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
+        return result;
     }
     
-    /**
-     * Remove task.
-     *
-     * @param type task type.
-     */
-    public void removeTask(String type) {
-        this.lock.lock();
-        try {
-            this.tasks.remove(type);
-            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
-        } finally {
-            this.lock.unlock();
-        }
-    }
-    
-    /**
-     * Add task into the task map container.
-     *
-     * @param type type of task.
-     * @param task task which needs to process.
-     */
-    public void addTask(String type, AbstractTask task) {
-        this.lock.lock();
-        try {
-            AbstractTask oldTask = tasks.put(type, task);
-            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
-            if (null != oldTask) {
-                task.merge(oldTask);
-            }
-        } finally {
-            this.lock.unlock();
-        }
-    }
-    
-    /**
-     * Execute to process all tasks in the task map.
-     */
-    protected void process() {
-        for (Map.Entry<String, AbstractTask> entry : this.tasks.entrySet()) {
-            AbstractTask task = null;
-            this.lock.lock();
-            try {
-                // Getting task.
-                task = entry.getValue();
-                if (null != task) {
-                    if (!task.shouldProcess()) {
-                        // If current task needn't to process, then it will skip.
-                        continue;
-                    }
-                    // Remove task from task maps.
-                    this.tasks.remove(entry.getKey());
-                    MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
-                }
-            } finally {
-                this.lock.unlock();
-            }
-            
-            if (null != task) {
-                // Getting task processor.
-                TaskProcessor processor = this.taskProcessors.get(entry.getKey());
-                if (null == processor) {
-                    // If has no related typpe processor, then it will use default processor.
-                    processor = this.getDefaultTaskProcessor();
-                }
-                if (null != processor) {
-                    boolean result = false;
-                    try {
-                        // Execute the task.
-                        result = processor.process(entry.getKey(), task);
-                    } catch (Throwable t) {
-                        LOGGER.error("task_fail", "处理task失败", t);
-                    }
-                    if (!result) {
-                        // If task is executed failed, the set lastProcessTime.
-                        task.setLastProcessTime(System.currentTimeMillis());
-                        
-                        // Add task into task map again.
-                        this.addTask(entry.getKey(), task);
-                    }
-                }
-            }
-        }
-        
+    @Override
+    protected void processTasks() {
+        super.processTasks();
+        MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
         if (tasks.isEmpty()) {
             this.lock.lock();
             try {
@@ -244,34 +123,12 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
     
-    public boolean isEmpty() {
-        return tasks.isEmpty();
-    }
-    
-    public TaskProcessor getDefaultTaskProcessor() {
-        this.lock.lock();
-        try {
-            return this.defaultTaskProcessor;
-        } finally {
-            this.lock.unlock();
-        }
-    }
-    
-    public void setDefaultTaskProcessor(TaskProcessor defaultTaskProcessor) {
-        this.lock.lock();
-        try {
-            this.defaultTaskProcessor = defaultTaskProcessor;
-        } finally {
-            this.lock.unlock();
-        }
-    }
-    
     @Override
     public String getTaskInfos() {
         StringBuilder sb = new StringBuilder();
-        for (String taskType : this.taskProcessors.keySet()) {
+        for (Object taskType : getAllProcessorKey()) {
             sb.append(taskType).append(":");
-            AbstractTask task = this.tasks.get(taskType);
+            AbstractDelayTask task = this.tasks.get(taskType);
             if (task != null) {
                 sb.append(new Date(task.getLastProcessTime()).toString());
             } else {

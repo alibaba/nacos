@@ -18,8 +18,7 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.config.server.manager.AbstractTask;
-import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -51,7 +50,7 @@ public class NotifySingleService {
         }
         
         @Override
-        public boolean process(String taskType, AbstractTask task) {
+        public boolean process(NacosTask task) {
             NotifySingleTask notifyTask = (NotifySingleTask) task;
             return notifyToDump(notifyTask.getDataId(), notifyTask.getGroup(), notifyTask.getTenant(),
                     notifyTask.getLastModified(), notifyTask.target);
@@ -78,7 +77,7 @@ public class NotifySingleService {
         @Override
         public void run() {
             try {
-                this.isSuccess = PROCESSOR.process(GroupKey2.getKey(getDataId(), getGroup()), this);
+                this.isSuccess = PROCESSOR.process(this);
             } catch (Exception e) { // never goes here, but in case (never interrupts this notification thread)
                 this.isSuccess = false;
                 LogUtil.NOTIFY_LOG

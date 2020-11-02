@@ -17,7 +17,6 @@
 package com.alibaba.nacos.test.core.cluster;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup;
@@ -25,8 +24,9 @@ import com.alibaba.nacos.core.cluster.lookup.FileConfigMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.StandaloneMemberLookup;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.test.BaseTest;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -69,7 +69,7 @@ public class MemberLookup_ITCase extends BaseTest {
 		DiskUtils.forceMkdir(Paths.get(path, "conf").toString());
 		File file = Paths.get(path, "conf", name).toFile();
 		DiskUtils.touch(file);
-		String ip = InetUtils.getSelfIp();
+		String ip = InetUtils.getSelfIP();
 		DiskUtils.writeFile(file, (ip + ":8848," + ip + ":8847," + ip + ":8849").getBytes(
 				StandardCharsets.UTF_8), false);
 

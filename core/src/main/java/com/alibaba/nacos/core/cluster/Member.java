@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
@@ -106,6 +106,10 @@ public class Member implements Comparable<Member>, Cloneable {
     
     public void setExtendVal(String key, Object value) {
         extendInfo.put(key, value);
+    }
+    
+    public void delExtendVal(String key) {
+        extendInfo.remove(key);
     }
     
     public boolean check() {

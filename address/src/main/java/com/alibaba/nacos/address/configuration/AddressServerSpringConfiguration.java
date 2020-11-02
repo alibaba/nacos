@@ -17,7 +17,7 @@
 package com.alibaba.nacos.address.configuration;
 
 import com.alibaba.nacos.address.auth.AddressServerAuthManager;
-import com.alibaba.nacos.core.auth.AuthManager;
+import com.alibaba.nacos.auth.AuthManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

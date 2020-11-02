@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.web;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
@@ -96,7 +97,7 @@ public class DistroFilter implements Filter {
             if (StringUtils.isNotBlank(serviceName)) {
                 serviceName = serviceName.trim();
             }
-            Method method = controllerMethodsCache.getMethod(req.getMethod(), path);
+            Method method = controllerMethodsCache.getMethod(req);
             
             if (method == null) {
                 throw new NoSuchMethodException(req.getMethod() + " " + path);
@@ -139,11 +140,12 @@ public class DistroFilter implements Filter {
                 final String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
                 final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
                 
-                HttpClient.HttpResult result = HttpClient
+                RestResult<String> result = HttpClient
                         .request("http://" + targetServer + req.getRequestURI(), headerList, paramsValue, body,
                                 PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
+                String data = result.ok() ? result.getData() : result.getMessage();
                 try {
-                    WebUtils.response(resp, result.content, result.code);
+                    WebUtils.response(resp, data, result.getCode());
                 } catch (Exception ignore) {
                     Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(groupedServiceName)
                             + urlString);

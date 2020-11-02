@@ -94,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: '命名空间名称',
     namespaceNumber: '命名空间ID',
     namespaceOperation: '操作',
+    refresh: '刷新',
   },
   ServiceList: {
     serviceList: '服务列表',
@@ -222,6 +223,7 @@ const I18N_CONF = {
     queryResult: '查询结果：共查询到',
     articleMeet: '条满足要求的配置。',
     lastUpdateTime: '最后更新时间',
+    operator: '操作人',
     operation: '操作',
   },
   HistoryDetail: {
@@ -234,6 +236,7 @@ const I18N_CONF = {
     home: '归属应用:',
     actionType: '操作类型:',
     configureContent: '配置内容:',
+    operator: '操作人:',
     back: '返回',
   },
   DashboardCard: {
@@ -304,6 +307,7 @@ const I18N_CONF = {
     cloneSuccEnd: '项配置',
     cloneFail: '克隆失败',
     getNamespaceFailed: '获取命名空间失败',
+    getNamespace403: '没有 ${namespaceName} 命名空间的访问权限！',
     startCloning: '开始克隆',
     cloningConfiguration: '克隆配置',
     source: '源空间：',
@@ -317,6 +321,7 @@ const I18N_CONF = {
     delSelectedAlertContent: '请选择要删除的配置',
     delSuccessMsg: '删除成功',
     cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
+    authFail: '权限认证失败',
   },
   NewConfig: {
     newListingMain: '新建配置',
@@ -371,9 +376,7 @@ const I18N_CONF = {
   },
   DiffEditorDialog: {
     publish: '确认发布',
-    contents: '内容比较',
-    currentArea: '当前值',
-    originalValue: '原始值',
+    back: '返回',
   },
   ConfigEditor: {
     official: '正式',
@@ -404,6 +407,9 @@ const I18N_CONF = {
     publish: '发布',
     back: '返回',
     codeValErrorPrompt: '配置信息可能有语法错误, 确定提交吗?',
+    dialogTitle: '内容比较',
+    dialogCurrentArea: '当前值',
+    dialogOriginalArea: '原始值',
   },
   EditorNameSpace: {
     notice: '提示',
@@ -490,6 +496,9 @@ const I18N_CONF = {
     betaRelease: 'Beta发布：',
     configuration: '配置内容：',
     back: '返回',
+    versionComparison: '版本对比',
+    dialogCurrentArea: '当前版本',
+    dialogOriginalArea: '上一版本',
   },
   ConfigRollback: {
     rollBack: '回滚配置',
@@ -516,6 +525,7 @@ const I18N_CONF = {
     username: '用户名',
     password: '密码',
     operation: '操作',
+    refresh: '刷新',
   },
   NewUser: {
     createUser: '创建用户',
@@ -549,6 +559,7 @@ const I18N_CONF = {
     operation: '操作',
     deleteRole: '删除',
     deleteRoleTip: '是否要删除该角色？',
+    refresh: '刷新',
   },
   NewRole: {
     bindingRoles: '绑定角色',
@@ -571,6 +582,7 @@ const I18N_CONF = {
     readOnly: '只读',
     writeOnly: '只写',
     readWrite: '读写',
+    refresh: '刷新',
   },
   NewPermissions: {
     addPermission: '添加权限',

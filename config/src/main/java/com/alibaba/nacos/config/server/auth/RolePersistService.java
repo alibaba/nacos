@@ -18,6 +18,8 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.model.Page;
 
+import java.util.List;
+
 /**
  * Role CRUD service.
  *
@@ -37,4 +39,5 @@ public interface RolePersistService {
     
     void deleteRole(String role, String username);
     
+    List<String> findRolesLikeRoleName(String role);
 }

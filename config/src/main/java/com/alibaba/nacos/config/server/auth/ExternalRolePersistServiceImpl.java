@@ -33,6 +33,7 @@ import javax.annotation.PostConstruct;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
 
@@ -150,6 +151,13 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
+    }
+    
+    @Override
+    public List<String> findRolesLikeRoleName(String role) {
+        String sql = "SELECT role FROM roles WHERE role like '%' ? '%'";
+        List<String> users = this.jt.queryForList(sql, new String[]{role}, String.class);
+        return users;
     }
     
     private static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {

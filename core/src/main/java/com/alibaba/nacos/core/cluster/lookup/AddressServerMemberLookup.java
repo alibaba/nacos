@@ -17,20 +17,19 @@
 package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.NSyncHttpClient;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpStatus;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -63,7 +62,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     
     private int maxFailCount = 12;
     
-    private NSyncHttpClient syncHttpClient = HttpClientManager.getSyncHttpClient();
+    private final NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(Loggers.CORE);
     
     private volatile boolean shutdown = false;
     
@@ -79,17 +78,22 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {
-            domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
+            domainName = ApplicationUtils.getProperty("address.server.domain", "jmenv.tbsite.net");
         } else {
             domainName = envDomainName;
         }
         String envAddressPort = System.getenv("address_server_port");
         if (StringUtils.isBlank(envAddressPort)) {
-            addressPort = System.getProperty("address.server.port", "8080");
+            addressPort = ApplicationUtils.getProperty("address.server.port", "8080");
         } else {
             addressPort = envAddressPort;
         }
-        addressUrl = System.getProperty("address.server.url", ApplicationUtils.getContextPath() + "/" + "serverlist");
+        String envAddressUrl = System.getenv("address_server_url");
+        if (StringUtils.isBlank(envAddressUrl)) {
+            addressUrl = ApplicationUtils.getProperty("address.server.url", ApplicationUtils.getContextPath() + "/" + "serverlist");
+        } else {
+            addressUrl = envAddressUrl;
+        }
         addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
         envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
         
@@ -137,9 +141,9 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     }
     
     private void syncFromAddressUrl() throws Exception {
-        RestResult<String> result = syncHttpClient
+        RestResult<String> result = restTemplate
                 .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
-        if (HttpStatus.OK.value() == result.getCode()) {
+        if (result.ok()) {
             isAddressServerHealth = true;
             Reader reader = new StringReader(result.getData());
             try {
@@ -149,7 +153,6 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
                         ExceptionUtil.getAllExceptionMsg(e));
             }
             addressServerFailCount = 0;
-            isAddressServerHealth = false;
         } else {
             addressServerFailCount++;
             if (addressServerFailCount >= maxFailCount) {
