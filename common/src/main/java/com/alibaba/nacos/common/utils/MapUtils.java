@@ -140,6 +140,7 @@ public class MapUtils {
     public static Object computeIfAbsent(Map target, Object key, BiFunction mappingFunction, Object param1,
             Object param2) {
         
+        Objects.requireNonNull(target, "target");
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(mappingFunction, "mappingFunction");
         Objects.requireNonNull(param1, "param1");
