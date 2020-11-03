@@ -13,29 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model;
 
+import java.io.Serializable;
+
 /**
- * user info
+ * User.
  *
  * @author wfnuser
  */
-public class User {
+public class User implements Serializable {
+    
+    private static final long serialVersionUID = 3371769277802700069L;
+    
     private String username;
+    
     private String password;
-
+    
     public String getPassword() {
         return password;
     }
-
+    
     public void setPassword(String password) {
         this.password = password;
     }
-
+    
     public String getUsername() {
         return username;
     }
-
+    
     public void setUsername(String username) {
         this.username = username;
     }

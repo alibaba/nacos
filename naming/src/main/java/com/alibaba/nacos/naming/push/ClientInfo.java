@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -21,19 +22,21 @@ import org.codehaus.jackson.Version;
 import org.codehaus.jackson.util.VersionUtil;
 
 /**
+ * Client info.
+ *
  * @author nacos
  */
 public class ClientInfo {
-    public Version version = Version.unknownVersion();
-    public ClientType type = ClientType.UNKNOWN;
 
+    public Version version = Version.unknownVersion();
+
+    public ClientType type = ClientType.UNKNOWN;
     /**
      * 构造
      * @param userAgent
      */
     public ClientInfo(String userAgent) {
         String versionStr = StringUtils.isEmpty(userAgent) ? StringUtils.EMPTY : userAgent;
-
         /**
          * java客户端
          */
@@ -109,7 +112,6 @@ public class ClientInfo {
             return;
         }
 
-
         //we're not eager to implement other type yet
         this.type = ClientType.UNKNOWN;
         this.version = Version.unknownVersion();
@@ -117,51 +119,58 @@ public class ClientInfo {
 
     public enum ClientType {
         /**
-         * Go client type
+         * Go client type.
          */
         GO,
         /**
-         * Java client type
+         * Java client type.
          */
         JAVA,
         /**
-         * C client type
+         * C client type.
          */
         C,
         /**
-         * php client type
+         * php client type.
          */
         PHP,
         /**
-         * dns-f client type
+         * dns-f client type.
          */
         DNS,
         /**
-         * nginx client type
+         * nginx client type.
          */
         TENGINE,
         /**
-         * sdk client type
+         * sdk client type.
          */
         JAVA_SDK,
         /**
-         * Server notify each other
+         * Server notify each other.
          */
         NACOS_SERVER,
         /**
-         * Unknown client type
+         * Unknown client type.
          */
         UNKNOWN
     }
 
     public static class ClientTypeDescription {
+
         public static final String JAVA_CLIENT = "Nacos-Java-Client";
+
         public static final String DNSF_CLIENT = "Nacos-DNS";
+
         public static final String C_CLIENT = "Nacos-C-Client";
+
         public static final String SDK_CLIENT = "Nacos-SDK-Java";
+
         public static final String NGINX_CLIENT = "unit-nginx";
+
         public static final String CPP_CLIENT = "vip-client4cpp";
-        public static final String GO_CLIENT = "nacos-go-sdk";
+
+        public static final String GO_CLIENT = "Nacos-Go-Client";
 
     }
 

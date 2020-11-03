@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
@@ -30,38 +32,56 @@ import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Service of Nacos server side
- * <p>
- * We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters,
- * which contain a list of instances.
- * <p>
- * This class inherits from Service in API module and stores some fields that do not have to expose to client.
+ *
+ * <p>We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters, which
+ * contain
+ * a list of instances.
+ *
+ * <p>his class inherits from Service in API module and stores some fields that do not have to expose to client.
  *
  * @author nkorange
  */
+@JsonInclude(Include.NON_NULL)
 public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, RecordListener<Instances> {
 
     private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z@\\.:_-]+";
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
+    /**
+     * Identify the information used to determine how many isEmpty judgments the service has experienced.
+     */
+    private int finalizeCount = 0;
+
     private String token;
+
     private List<String> owners = new ArrayList<>();
+
     private Boolean resetWeight = false;
+
     private Boolean enabled = true;
+
     private Selector selector = new NoneSelector();
+
     private String namespaceId;
 
     /**
@@ -74,7 +94,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     private volatile String checksum;
 
     /**
-     * TODO set customized push expire time:
+     * TODO set customized push expire time.
      */
     private long pushCacheMillis = 0L;
 
@@ -87,9 +107,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         super(name);
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public PushService getPushService() {
-        return SpringContext.getAppContext().getBean(PushService.class);
+        return ApplicationUtils.getBean(PushService.class);
     }
 
     public long getIpDeleteTimeout() {
@@ -101,8 +121,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     /**
+     * Process client beat.
      * 处理心跳
-     * @param rsInfo
+     *
+     * @param rsInfo metrics info of server
      */
     public void processClientBeat(final RsInfo rsInfo) {
         ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
@@ -156,6 +178,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return KeyBuilder.matchInstanceListKey(key, namespaceId, getName());
     }
 
+
     /**
      *
      * @param key   target key
@@ -186,10 +209,12 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             }
         }
 
+
         /**
          * 更新service下得对应新注册服务得cluster下的instance列表  并触发ServiceChangeEvent
          */
         updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
+
 
         /**
          * 重新计算checksum
@@ -202,6 +227,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         // ignore
     }
 
+    /**
+     * Get count of healthy instance in service.
+     *
+     * @return count of healthy instance
+     */
     public int healthyInstanceCount() {
 
         int healthyCount = 0;
@@ -218,9 +248,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     /**
+     * Update instances.
      *
-     * @param instances   service对应的所有instance列表
-     * @param ephemeral
+     * @param instances instances
+     * @param ephemeral whether is ephemeral instance
      */
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
         /**
@@ -238,6 +269,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     continue;
                 }
 
+
                 /**
                  * instance对应的ClusterName为空   则默认为DEFAULT
                  */
@@ -249,8 +281,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                  * instance的ClusterName在clusterMap中没有对应  则新增
                  */
                 if (!clusterMap.containsKey(instance.getClusterName())) {
-                    Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
-                        instance.getClusterName(), instance.toJSON());
+                    Loggers.SRV_LOG
+                            .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
+                                    instance.getClusterName(), instance.toJson());
                     Cluster cluster = new Cluster(instance.getClusterName(), this);
                     /**
                      * 初始化   ？？？？
@@ -262,6 +295,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }
 
+
                 /**
                  * 在ipMap也没有对应时   再次新增
                  */
@@ -270,6 +304,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     clusterIPs = new LinkedList<>();
                     ipMap.put(instance.getClusterName(), clusterIPs);
                 }
+
 
                 /**
                  * 将instance存入ClusterName对应的ipMap中
@@ -288,7 +323,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
              * 对clusterMap下的Cluster   执行updateIPs
              * 对clusterMap下的Cluster   执行updateIPs
              */
-            clusterMap.get(entry.getKey()).updateIPs(entryIPs, ephemeral);
+            clusterMap.get(entry.getKey()).updateIps(entryIPs, ephemeral);
         }
 
         setLastModifiedMillis(System.currentTimeMillis());
@@ -296,16 +331,16 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         StringBuilder stringBuilder = new StringBuilder();
 
         for (Instance instance : allIPs()) {
-            stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
+            stringBuilder.append(instance.toIpAddr()).append("_").append(instance.isHealthy()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}",
-            getNamespaceId(), getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}", getNamespaceId(), getName(),
+                stringBuilder.toString());
 
     }
 
     /**
-     * 初始化
+     * Init service.
      */
     public void init() {
 
@@ -314,7 +349,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
          * 检查待删除的实例
          */
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
-
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             entry.getValue().setService(this);
             /**
@@ -324,6 +358,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
     }
 
+    /**
+     * Destroy service.
+     *
+     * @throws Exception exception
+     */
     public void destroy() throws Exception {
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             entry.getValue().destroy();
@@ -332,28 +371,45 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     /**
+     * Judge whether service has instance.
+     *
+     * @return true if no instance, otherwise false
+     */
+    public boolean isEmpty() {
+        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            final Cluster cluster = entry.getValue();
+            if (!cluster.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Get all instance.
      * 获取在nacos注册的所有节点
-     * @return
+     * @return list of all instance
      */
     public List<Instance> allIPs() {
-        List<Instance> allIPs = new ArrayList<>();
+        List<Instance> result = new ArrayList<>();
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             /**
              * 获取Cluster对应的节点
              */
-            allIPs.addAll(entry.getValue().allIPs());
+            result.addAll(entry.getValue().allIPs());
         }
 
-        return allIPs;
+        return result;
     }
 
     /**
+     * Get all instance of ephemeral or consistency.
      * 获取当前server注册到nacos的全部节点
-     * @param ephemeral true:临时节点   false:持久化节点
-     * @return
+     * @param ephemeral whether ephemeral instance
+     * @return all instance of ephemeral if @param ephemeral = true, otherwise all instance of consistency
      */
     public List<Instance> allIPs(boolean ephemeral) {
-        List<Instance> allIPs = new ArrayList<>();
+        List<Instance> result = new ArrayList<>();
         /**
          * 当前server下的Cluster
          */
@@ -361,38 +417,38 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             /**
              * 获取Cluster下的节点
              */
-            allIPs.addAll(entry.getValue().allIPs(ephemeral));
+            result.addAll(entry.getValue().allIPs(ephemeral));
         }
 
-        return allIPs;
+        return result;
     }
 
     /**
-     * 查询clusters下的所有Instance  临时与持久化
-     * @param clusters
-     * @return
+     * Get all instance from input clusters.
+     * 查询clusters下的所有Instance
+     * @param clusters cluster names
+     * @return all instance from input clusters.
      */
     public List<Instance> allIPs(List<String> clusters) {
-        List<Instance> allIPs = new ArrayList<>();
+        List<Instance> result = new ArrayList<>();
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
                 continue;
             }
-
             /**
              * 查询clusters下的所有Instance  临时与持久化
              */
-            allIPs.addAll(clusterObj.allIPs());
+            result.addAll(clusterObj.allIPs());
         }
-
-        return allIPs;
+        return result;
     }
 
     /**
-     * 查询clusters下的所有Instance  临时与持久化
-     * @param clusters
-     * @return
+     * Get all instance from input clusters.
+     * 查询clusters下的所有Instance
+     * @param clusters cluster names
+     * @return all instance from input clusters, if clusters is empty, return all cluster
      */
     public List<Instance> srvIPs(List<String> clusters) {
         /**
@@ -408,20 +464,21 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return allIPs(clusters);
     }
 
-    public String toJSON() {
-        return JSON.toJSONString(this);
+    public String toJson() {
+        return JacksonUtils.toJson(this);
     }
 
     /**
      * 将server转成string
      * @return
      */
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getServiceString() {
         Map<Object, Object> serviceObject = new HashMap<Object, Object>(10);
         Service service = this;
 
         serviceObject.put("name", service.getName());
+
 
         /**
          * 获取在nacos注册的所有节点
@@ -430,21 +487,21 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         /**
          * 不健康的实例数
          */
-        int invalidIPCount = 0;
+        int invalidIpCount = 0;
         /**
          * 总实例数
          */
         int ipCount = 0;
         for (Instance ip : ips) {
             if (!ip.isHealthy()) {
-                invalidIPCount++;
+                invalidIpCount++;
             }
 
             ipCount++;
         }
 
         serviceObject.put("ipCount", ipCount);
-        serviceObject.put("invalidIPCount", invalidIPCount);
+        serviceObject.put("invalidIPCount", invalidIpCount);
 
         serviceObject.put("owners", service.getOwners());
         serviceObject.put("token", service.getToken());
@@ -469,7 +526,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         serviceObject.put("clusters", clustersList);
 
-        return JSON.toJSONString(serviceObject);
+        try {
+            return JacksonUtils.toJson(serviceObject);
+        } catch (Exception e) {
+            throw new RuntimeException("Service toJson failed", e);
+        }
     }
 
     public String getToken() {
@@ -505,11 +566,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     /**
+     * Update from other service.
      * 更新缓存中的Service
-     * @param vDom
+     * @param vDom other service
      */
     public void update(Service vDom) {
-
         /**
          * 更新缓存中的数据
          */
@@ -524,23 +585,28 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
 
         if (getProtectThreshold() != vDom.getProtectThreshold()) {
-            Loggers.SRV_LOG.info("[SERVICE-UPDATE] service: {}, protectThreshold: {} -> {}", getName(), getProtectThreshold(), vDom.getProtectThreshold());
+            Loggers.SRV_LOG
+                    .info("[SERVICE-UPDATE] service: {}, protectThreshold: {} -> {}", getName(), getProtectThreshold(),
+                            vDom.getProtectThreshold());
             setProtectThreshold(vDom.getProtectThreshold());
         }
 
         if (resetWeight != vDom.getResetWeight().booleanValue()) {
-            Loggers.SRV_LOG.info("[SERVICE-UPDATE] service: {}, resetWeight: {} -> {}", getName(), resetWeight, vDom.getResetWeight());
+            Loggers.SRV_LOG.info("[SERVICE-UPDATE] service: {}, resetWeight: {} -> {}", getName(), resetWeight,
+                    vDom.getResetWeight());
             resetWeight = vDom.getResetWeight();
         }
 
         if (enabled != vDom.getEnabled().booleanValue()) {
-            Loggers.SRV_LOG.info("[SERVICE-UPDATE] service: {}, enabled: {} -> {}", getName(), enabled, vDom.getEnabled());
+            Loggers.SRV_LOG
+                    .info("[SERVICE-UPDATE] service: {}, enabled: {} -> {}", getName(), enabled, vDom.getEnabled());
             enabled = vDom.getEnabled();
         }
 
         selector = vDom.getSelector();
 
         setMetadata(vDom.getMetadata());
+
 
         /**
          * 新增或修改Cluster
@@ -552,6 +618,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         remvDeadClusters(this, vDom);
 
         Loggers.SRV_LOG.info("cluster size, new: {}, old: {}", getClusterMap().size(), vDom.getClusterMap().size());
+
 
         /**
          * 重新计算checksum
@@ -569,6 +636,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     /**
+     * Re-calculate checksum of service.
      * 重新计算checksum
      */
     public synchronized void recalculateChecksum() {
@@ -591,35 +659,22 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             Collections.sort(ips);
         }
 
+
         /**
          * Instance转String
          */
         for (Instance ip : ips) {
-            String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
-                + ip.isHealthy() + "_" + ip.getClusterName();
+            String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_" + ip.isHealthy() + "_" + ip
+                    .getClusterName();
             ipsString.append(string);
             ipsString.append(",");
         }
-
         /**
          * md5加密
          */
-        try {
-            String result;
-            try {
-                MessageDigest md5 = MessageDigest.getInstance("MD5");
-                result = new BigInteger(1, md5.digest((ipsString.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
-            } catch (Exception e) {
-                Loggers.SRV_LOG.error("[NACOS-DOM] error while calculating checksum(md5)", e);
-                result = RandomStringUtils.randomAscii(32);
-            }
-
-            checksum = result;
-        } catch (Exception e) {
-            Loggers.SRV_LOG.error("[NACOS-DOM] error while calculating checksum(md5)", e);
-            checksum = RandomStringUtils.randomAscii(32);
-        }
+        checksum = MD5Utils.md5Hex(ipsString.toString(), Constants.ENCODE);
     }
+
 
     /**
      * 新增或修改Cluster
@@ -649,6 +704,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
     }
 
+
     /**
      * 移除Clusters
      * @param oldDom
@@ -667,6 +723,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
              */
             oldDom.getClusterMap().remove(cluster.getName());
 
+
             /**
              * 设置业务删除标志
              */
@@ -674,13 +731,27 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
     }
 
+    public int getFinalizeCount() {
+        return finalizeCount;
+    }
+
+    public void setFinalizeCount(int finalizeCount) {
+        this.finalizeCount = finalizeCount;
+    }
+
     public void addCluster(Cluster cluster) {
         clusterMap.put(cluster.getName(), cluster);
     }
 
+    /**
+     * Judge whether service is validate.
+     *
+     * @throws IllegalArgumentException if service is not validate
+     */
     public void validate() {
         if (!getName().matches(SERVICE_NAME_SYNTAX)) {
-            throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + getName());
+            throw new IllegalArgumentException(
+                    "dom name can only have these characters: 0-9a-zA-Z-._:, current: " + getName());
         }
         for (Cluster cluster : clusterMap.values()) {
             cluster.validate();

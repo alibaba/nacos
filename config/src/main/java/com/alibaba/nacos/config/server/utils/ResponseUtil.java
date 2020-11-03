@@ -13,27 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
- * write response
+ * Write response.
  *
  * @author Nacos
  */
 public class ResponseUtil {
-
-    public static void writeErrMsg(HttpServletResponse response, int httpCode,
-                                   String msg) {
+    
+    /**
+     * Write error msg.
+     */
+    public static void writeErrMsg(HttpServletResponse response, int httpCode, String msg) {
         response.setStatus(httpCode);
         try {
             response.getWriter().println(msg);
         } catch (IOException e) {
-            defaultLog.error("ResponseUtil:writeErrMsg wrong", e);
+            DEFAULT_LOG.error("ResponseUtil:writeErrMsg wrong", e);
         }
     }
 }

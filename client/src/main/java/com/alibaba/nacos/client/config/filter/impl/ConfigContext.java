@@ -13,30 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.config.filter.impl;
+
+import com.alibaba.nacos.api.config.filter.IConfigContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.nacos.api.config.filter.IConfigContext;
-
 /**
- * Config Context
+ * Config Context.
  *
  * @author Nacos
  */
 public class ConfigContext implements IConfigContext {
-
-    private Map<String, Object> param = new HashMap<String, Object>();
-
+    
+    private final Map<String, Object> param = new HashMap<String, Object>();
+    
     @Override
     public Object getParameter(String key) {
         return param.get(key);
     }
-
+    
     @Override
     public void setParameter(String key, Object value) {
         param.put(key, value);
     }
-
+    
 }

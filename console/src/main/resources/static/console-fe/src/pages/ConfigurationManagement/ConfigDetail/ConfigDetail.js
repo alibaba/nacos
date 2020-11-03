@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -12,14 +15,27 @@
  */
 
 import React from 'react';
-import { Button, ConfigProvider, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
+import {
+  Button,
+  ConfigProvider,
+  Dialog,
+  Field,
+  Form,
+  Input,
+  Loading,
+  Tab,
+  Grid,
+} from '@alifd/next';
 import { getParams, request } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
+import DiffEditorDialog from '../../../components/DiffEditorDialog';
 
 import './index.scss';
 import PropTypes from 'prop-types';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
+const { Row, Col } = Grid;
 
 @ConfigProvider.config
 class ConfigDetail extends React.Component {
@@ -50,6 +66,9 @@ class ConfigDetail extends React.Component {
     this.tenant = getParams('namespace') || '';
     this.searchDataId = getParams('searchDataId') || '';
     this.searchGroup = getParams('searchGroup') || '';
+    this.pageSize = getParams('pageSize');
+    this.pageNo = getParams('pageNo');
+    this.diffEditorDialog = React.createRef();
     // this.params = window.location.hash.split('?')[1]||'';
   }
 
@@ -128,6 +147,8 @@ class ConfigDetail extends React.Component {
           self.field.setValue('config_tags', data.configTags);
           self.field.setValue('desc', data.desc);
           self.field.setValue('md5', data.md5);
+          self.field.setValue('type', data.type);
+          self.initMoacoEditor(data.type, data.content);
         } else {
           Dialog.alert({ title: locale.error, content: result.message });
         }
@@ -140,10 +161,70 @@ class ConfigDetail extends React.Component {
 
   goList() {
     this.props.history.push(
-      `/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${
-        this.searchDataId
-      }&namespace=${this.tenant}`
+      generateUrl('/configurationManagement', {
+        serverId: this.serverId,
+        group: this.searchGroup,
+        dataId: this.searchDataId,
+        namespace: this.tenant,
+        pageNo: this.pageNo,
+        pageSize: this.pageSize,
+      })
     );
+  }
+
+  initMoacoEditor(language, value) {
+    const container = document.getElementById('container');
+    container.innerHTML = '';
+    this.monacoEditor = null;
+    const options = {
+      value,
+      language,
+      codeLens: true,
+      selectOnLineNumbers: true,
+      roundedSelection: false,
+      readOnly: true,
+      lineNumbersMinChars: true,
+      theme: 'vs-dark',
+      wordWrapColumn: 120,
+      folding: false,
+      showFoldingControls: 'always',
+      wordWrap: 'wordWrapColumn',
+      cursorStyle: 'line',
+      automaticLayout: true,
+    };
+    if (!window.monaco) {
+      window.importEditor(() => {
+        this.monacoEditor = window.monaco.editor.create(container, options);
+      });
+    } else {
+      this.monacoEditor = window.monaco.editor.create(container, options);
+    }
+  }
+
+  openDiff() {
+    let self = this;
+    const { locale = {} } = this.props;
+    let leftvalue = this.monacoEditor.getValue();
+    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}`;
+    request({
+      url,
+      beforeSend() {
+        self.openLoading();
+      },
+      success(result) {
+        if (result != null) {
+          let rightvalue = result.content;
+          leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+          rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+          self.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
+        } else {
+          Dialog.alert({ title: locale.error, content: result.message });
+        }
+      },
+      complete() {
+        self.closeLoading();
+      },
+    });
   }
 
   render() {
@@ -232,14 +313,25 @@ class ConfigDetail extends React.Component {
               <Input htmlType={'text'} readOnly {...init('md5')} />
             </FormItem>
             <FormItem label={locale.configuration} required {...formItemLayout}>
-              <Input.TextArea htmlType={'text'} multiple rows={15} readOnly {...init('content')} />
-            </FormItem>
-            <FormItem label={' '} {...formItemLayout}>
-              <Button type={'primary'} onClick={this.goList.bind(this)}>
-                {locale.back}
-              </Button>
+              <div style={{ clear: 'both', height: 300 }} id="container" />
             </FormItem>
           </Form>
+          <Row>
+            <Col span="24" className="button-list">
+              <Button size="large" type="primary" onClick={this.openDiff.bind(this)}>
+                {locale.versionComparison}
+              </Button>{' '}
+              <Button size="large" type="normal" onClick={this.goList.bind(this)}>
+                {locale.back}
+              </Button>
+            </Col>
+          </Row>
+          <DiffEditorDialog
+            ref={this.diffEditorDialog}
+            title={locale.versionComparison}
+            currentArea={locale.dialogCurrentArea}
+            originalArea={locale.dialogOriginalArea}
+          />
         </Loading>
       </div>
     );

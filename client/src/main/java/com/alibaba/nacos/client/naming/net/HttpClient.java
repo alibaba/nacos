@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.tls.TlsSystemConfig;
+import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.google.common.net.HttpHeaders;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,25 +31,30 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
+ * Http client.
+ *
  * @author nkorange
+ * @deprecated Use NacosRestTemplate{@link NacosRestTemplate} unified http client
  */
+@Deprecated
 public class HttpClient {
 
-    public static final int TIME_OUT_MILLIS = Integer
-        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
-    public static final int CON_TIME_OUT_MILLIS = Integer
-        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
-    private static final boolean ENABLE_HTTPS = Boolean
-        .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
+    public static final int READ_TIME_OUT_MILLIS = Integer
+            .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
 
-    private static final String POST = "POST";
-    private static final String PUT = "PUT";
+    public static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+
+    private static final boolean ENABLE_HTTPS = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
 
     static {
         // limit max redirection
@@ -61,21 +70,24 @@ public class HttpClient {
 
     }
 
-    public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
-        return request(url, headers, paramValues, encoding, "GET");
+    public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues,
+            String encoding) {
+        return request(url, headers, paramValues, StringUtils.EMPTY, encoding, HttpMethod.GET);
     }
 
     /**
-     * http请求
+     * request.
      *
-     * @param url
-     * @param headers
-     * @param paramValues
-     * @param encoding
-     * @param method
-     * @return
+     * @param url         url
+     * @param headers     headers
+     * @param paramValues paramValues
+     * @param body        body
+     * @param encoding    encoding
+     * @param method      method
+     * @return result
      */
-    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String encoding, String method) {
+    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String body,
+            String encoding, String method) {
         HttpURLConnection conn = null;
         try {
             /**
@@ -88,25 +100,26 @@ public class HttpClient {
              */
             url += (StringUtils.isEmpty(encodedContent)) ? "" : ("?" + encodedContent);
 
+
             /**
              * 创建链接
              */
             conn = (HttpURLConnection) new URL(url).openConnection();
+
 
             /**
              * 设置header
              */
             setHeaders(conn, headers, encoding);
             conn.setConnectTimeout(CON_TIME_OUT_MILLIS);
-            conn.setReadTimeout(TIME_OUT_MILLIS);
+            conn.setReadTimeout(READ_TIME_OUT_MILLIS);
             conn.setRequestMethod(method);
             conn.setDoOutput(true);
             /**
              * post或者put请求    将请求参数  设置到输出流中
              */
-            if (POST.equals(method) || PUT.equals(method)) {
-                // fix: apache http nio framework must set some content to request body
-                byte[] b = encodedContent.getBytes();
+            if (StringUtils.isNotBlank(body)) {
+                byte[] b = body.getBytes();
                 conn.setRequestProperty("Content-Length", String.valueOf(b.length));
                 conn.getOutputStream().write(b, 0, b.length);
                 conn.getOutputStream().flush();
@@ -115,9 +128,13 @@ public class HttpClient {
             /**
              * 链接nacos服务器   发送http请求
              */
+            /**
+             * 链接nacos服务器   发送http请求
+             */
             conn.connect();
-            NAMING_LOGGER.debug("Request from server: " + url);
-
+            if (NAMING_LOGGER.isDebugEnabled()) {
+                NAMING_LOGGER.debug("Request from server: " + url);
+            }
             /**
              * 处理结果
              */
@@ -125,11 +142,11 @@ public class HttpClient {
         } catch (Exception e) {
             try {
                 if (conn != null) {
-                    NAMING_LOGGER.warn("failed to request " + conn.getURL() + " from "
-                        + InetAddress.getByName(conn.getURL().getHost()).getHostAddress());
+                    NAMING_LOGGER.warn("failed to request " + conn.getURL() + " from " + InetAddress
+                            .getByName(conn.getURL().getHost()).getHostAddress());
                 }
-            } catch (Exception e1) {
-                NAMING_LOGGER.error("[NA] failed to request ", e1);
+            } catch (Exception ex) {
+                NAMING_LOGGER.error("[NA] failed to request ", ex);
                 //ignore
             }
 
@@ -140,6 +157,7 @@ public class HttpClient {
             IoUtils.closeQuietly(conn);
         }
     }
+
 
     /**
      * 处理服务器返回结果
@@ -152,17 +170,16 @@ public class HttpClient {
         int respCode = conn.getResponseCode();
 
         InputStream inputStream;
-
         /**
          * 成功应答与异常应答
          */
-        if (HttpURLConnection.HTTP_OK == respCode
-            || HttpURLConnection.HTTP_NOT_MODIFIED == respCode
-            || Constants.WRITE_REDIRECT_CODE == respCode) {
+        if (HttpURLConnection.HTTP_OK == respCode || HttpURLConnection.HTTP_NOT_MODIFIED == respCode
+                || Constants.WRITE_REDIRECT_CODE == respCode) {
             inputStream = conn.getInputStream();
         } else {
             inputStream = conn.getErrorStream();
         }
+
 
         /**
          * 获取应答的header
@@ -177,8 +194,14 @@ public class HttpClient {
         if (encodingGzip.equals(respHeaders.get(HttpHeaders.CONTENT_ENCODING))) {
             inputStream = new GZIPInputStream(inputStream);
         }
+        HttpResult httpResult = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
 
-        return new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        //InputStream from HttpURLConnection can be closed automatically,but new GZIPInputStream can't be closed automatically
+        //so needs to close it manually
+        if (inputStream instanceof GZIPInputStream) {
+            inputStream.close();
+        }
+        return httpResult;
     }
 
     private static String getCharset(HttpURLConnection conn) {
@@ -204,6 +227,7 @@ public class HttpClient {
         return charset;
     }
 
+
     /**
      * 设置header
      *
@@ -218,10 +242,10 @@ public class HttpClient {
             }
         }
 
-        conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset="
-            + encoding);
+        conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
     }
+
 
     /**
      * 对参数编码
@@ -232,13 +256,14 @@ public class HttpClient {
      * @throws UnsupportedEncodingException
      */
     private static String encodingParams(Map<String, String> params, String encoding)
-        throws UnsupportedEncodingException {
+            throws UnsupportedEncodingException {
         if (null == params || params.isEmpty()) {
             return "";
         }
 
         params.put("encoding", encoding);
         StringBuilder sb = new StringBuilder();
+
 
         /**
          * 对参数按encoding进行编码
@@ -253,6 +278,7 @@ public class HttpClient {
             sb.append("&");
         }
 
+
         /**
          * 删除最后一位  &
          */
@@ -263,9 +289,12 @@ public class HttpClient {
     }
 
     public static class HttpResult {
-        final public int code;
-        final public String content;
-        final private Map<String, String> respHeaders;
+
+        public final int code;
+
+        public final String content;
+
+        private final Map<String, String> respHeaders;
 
         public HttpResult(int code, String content, Map<String, String> respHeaders) {
             this.code = code;
@@ -275,6 +304,12 @@ public class HttpClient {
 
         public String getHeader(String name) {
             return respHeaders.get(name);
+        }
+
+        @Override
+        public String toString() {
+            return "HttpResult{" + "code=" + code + ", content='" + content + '\'' + ", respHeaders=" + respHeaders
+                    + '}';
         }
     }
 }

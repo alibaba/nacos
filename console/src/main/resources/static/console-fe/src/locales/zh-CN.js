@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -50,6 +53,10 @@ const I18N_CONF = {
     namespace: '命名空间',
     clusterManagementVirtual: '集群管理',
     clusterManagement: '节点列表',
+    authorityControl: '权限控制',
+    userList: '用户列表',
+    roleManagement: '角色管理',
+    privilegeManagement: '权限管理',
   },
   Password: {
     passwordNotConsistent: '两次输入密码不一致',
@@ -87,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: '命名空间名称',
     namespaceNumber: '命名空间ID',
     namespaceOperation: '操作',
+    refresh: '刷新',
   },
   ServiceList: {
     serviceList: '服务列表',
@@ -130,10 +138,7 @@ const I18N_CONF = {
     query: '查询',
     pubNoData: '没有数据',
     nodeState: '节点状态',
-    clusterTerm: '集群任期',
-    leaderDueMs: 'Leader止时(ms)',
-    heartbeatDueMs: '心跳止时(ms)',
-    voteFor: '投票对象',
+    extendInfo: '节点元数据',
   },
   EditClusterDialog: {
     updateCluster: '更新集群',
@@ -218,6 +223,7 @@ const I18N_CONF = {
     queryResult: '查询结果：共查询到',
     articleMeet: '条满足要求的配置。',
     lastUpdateTime: '最后更新时间',
+    operator: '操作人',
     operation: '操作',
   },
   HistoryDetail: {
@@ -230,6 +236,7 @@ const I18N_CONF = {
     home: '归属应用:',
     actionType: '操作类型:',
     configureContent: '配置内容:',
+    operator: '操作人:',
     back: '返回',
   },
   DashboardCard: {
@@ -276,6 +283,7 @@ const I18N_CONF = {
     importSuccBegin: '导入成功,导入了',
     importSuccEnd: '项配置',
     importFail: '导入失败',
+    importFail403: '没有权限!',
     importDataValidationError: '未读取到合法数据，请检查导入的数据文件。',
     metadataIllegal: '导入的元数据文件非法',
     namespaceNotExist: 'namespace 不存在',
@@ -299,6 +307,7 @@ const I18N_CONF = {
     cloneSuccEnd: '项配置',
     cloneFail: '克隆失败',
     getNamespaceFailed: '获取命名空间失败',
+    getNamespace403: '没有 ${namespaceName} 命名空间的访问权限！',
     startCloning: '开始克隆',
     cloningConfiguration: '克隆配置',
     source: '源空间：',
@@ -311,6 +320,8 @@ const I18N_CONF = {
     delSelectedAlertTitle: '配置删除',
     delSelectedAlertContent: '请选择要删除的配置',
     delSuccessMsg: '删除成功',
+    cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
+    authFail: '权限认证失败',
   },
   NewConfig: {
     newListingMain: '新建配置',
@@ -365,9 +376,7 @@ const I18N_CONF = {
   },
   DiffEditorDialog: {
     publish: '确认发布',
-    contents: '内容比较',
-    currentArea: '当前值',
-    originalValue: '原始值',
+    back: '返回',
   },
   ConfigEditor: {
     official: '正式',
@@ -398,6 +407,9 @@ const I18N_CONF = {
     publish: '发布',
     back: '返回',
     codeValErrorPrompt: '配置信息可能有语法错误, 确定提交吗?',
+    dialogTitle: '内容比较',
+    dialogCurrentArea: '当前值',
+    dialogOriginalArea: '原始值',
   },
   EditorNameSpace: {
     notice: '提示',
@@ -461,9 +473,13 @@ const I18N_CONF = {
     newnamespce: '新建命名空间',
     loading: '加载中...',
     name: '命名空间名：',
+    namespaceId: '命名空间ID(不填则自动生成)：',
+    namespaceIdTooLong: '命名空间ID长度不能超过128',
     namespacenotnull: '命名空间不能为空',
     namespacedescnotnull: '命名空间描述不能为空',
     description: '描述：',
+    namespaceIdAlreadyExist: 'namespaceId已存在',
+    newnamespceFailedMessage: 'namespaceId格式不正确/namespaceId长度大于128/namespaceId已存在',
   },
   NameSpaceList: {
     notice: '提示',
@@ -480,6 +496,9 @@ const I18N_CONF = {
     betaRelease: 'Beta发布：',
     configuration: '配置内容：',
     back: '返回',
+    versionComparison: '版本对比',
+    dialogCurrentArea: '当前版本',
+    dialogOriginalArea: '上一版本',
   },
   ConfigRollback: {
     rollBack: '回滚配置',
@@ -496,6 +515,89 @@ const I18N_CONF = {
     rollbackDelete: '删除',
     update: '更新',
     insert: '插入',
+  },
+  UserManagement: {
+    userManagement: '用户管理',
+    createUser: '创建用户',
+    resetPassword: '修改',
+    deleteUser: '删除',
+    deleteUserTip: '是否要删除该用户？',
+    username: '用户名',
+    password: '密码',
+    operation: '操作',
+    refresh: '刷新',
+  },
+  NewUser: {
+    createUser: '创建用户',
+    username: '用户名',
+    password: '密码',
+    rePassword: '确认密码',
+    usernamePlaceholder: '请输入用户名',
+    passwordPlaceholder: '请输入密码',
+    rePasswordPlaceholder: '请输入确认密码',
+    usernameError: '用户名不能为空！',
+    passwordError: '密码不能为空!',
+    rePasswordError: '确认密码不能为空!',
+    rePasswordError2: '两次输入密码不一致!',
+  },
+  PasswordReset: {
+    resetPassword: '密码重置',
+    username: '用户名',
+    password: '密码',
+    rePassword: '确认密码',
+    passwordError: '密码不能为空！',
+    passwordPlaceholder: '请输入密码',
+    rePasswordPlaceholder: '请输入确认密码',
+    rePasswordError: '确认密码不能为空!',
+    rePasswordError2: '两次输入密码不一致!',
+  },
+  RolesManagement: {
+    roleManagement: '角色管理',
+    bindingRoles: '绑定角色',
+    role: '角色名',
+    username: '用户名',
+    operation: '操作',
+    deleteRole: '删除',
+    deleteRoleTip: '是否要删除该角色？',
+    refresh: '刷新',
+  },
+  NewRole: {
+    bindingRoles: '绑定角色',
+    username: '用户名',
+    role: '角色名',
+    usernamePlaceholder: '请输入用户名',
+    rolePlaceholder: '请输入角色名',
+    usernameError: '用户名不能为空！',
+    roleError: '角色名不能为空!',
+  },
+  PermissionsManagement: {
+    privilegeManagement: '权限管理',
+    addPermission: '添加权限',
+    role: '角色名',
+    resource: '资源',
+    action: '动作',
+    operation: '操作',
+    deletePermission: '删除',
+    deletePermissionTip: '是否要删除该权限？',
+    readOnly: '只读',
+    writeOnly: '只写',
+    readWrite: '读写',
+    refresh: '刷新',
+  },
+  NewPermissions: {
+    addPermission: '添加权限',
+    role: '角色名',
+    resource: '资源',
+    action: '动作',
+    resourcePlaceholder: '请选择资源',
+    rolePlaceholder: '请输入角色名',
+    actionPlaceholder: '请选择动作',
+    resourceError: '资源不能为空！',
+    roleError: '角色名不能为空!',
+    actionError: '动作不能为空!',
+    readOnly: '只读',
+    writeOnly: '只写',
+    readWrite: '读写',
   },
 };
 

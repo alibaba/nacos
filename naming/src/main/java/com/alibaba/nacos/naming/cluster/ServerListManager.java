@@ -13,74 +13,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.cluster;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
-import com.alibaba.nacos.naming.misc.*;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
+import com.alibaba.nacos.core.cluster.MemberChangeListener;
+import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
+import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.Message;
+import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.misc.ServerStatusSynchronizer;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.Synchronizer;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The manager to globally refresh and operate server list.
  *
  * @author nkorange
  * @since 1.0.0
+ * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 @Component("serverListManager")
-public class ServerListManager {
+public class ServerListManager extends MemberChangeListener {
 
-    private static final int STABLE_PERIOD = 60 * 1000;
+    private static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
 
-    private List<ServerChangeListener> listeners = new ArrayList<>();
+    private final ServerMemberManager memberManager;
 
+    private final Synchronizer synchronizer = new ServerStatusSynchronizer();
     /**
      * 集群内所有的节点列表
      */
-    private List<Server> servers = new ArrayList<>();
+    private volatile List<Member> servers;
 
-    /**
-     * 集群内所有健康的节点列表
-     */
-    private List<Server> healthyServers = new ArrayList<>();
-
-    private Map<String, List<Server>> distroConfig = new ConcurrentHashMap<>();
-
-    /**
-     * nacos集群内节点最后一次心跳时间   <Key,timestamp>
-     */
-    private Map<String, Long> distroBeats = new ConcurrentHashMap<>(16);
-
-    private Set<String> liveSites = new HashSet<>();
-
-    private final static String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
-
-    private long lastHealthServerMillis = 0L;
-
-    private boolean autoDisabledHealthCheck = false;
-
-    private Synchronizer synchronizer = new ServerStatusSynchronizer();
-
-    /**
-     * 注册监听   集群内节点的变化
-     * @param listener
-     */
-    public void listen(ServerChangeListener listener) {
-        listeners.add(listener);
+    public ServerListManager(final SwitchDomain switchDomain, final ServerMemberManager memberManager) {
+        this.switchDomain = switchDomain;
+        this.memberManager = memberManager;
+        NotifyCenter.registerSubscriber(this);
+        this.servers = new ArrayList<>(memberManager.allMembers());
     }
 
     @PostConstruct
@@ -88,130 +80,41 @@ public class ServerListManager {
         /**
          * 配置文件对应的集群列表有变化
          */
-        GlobalExecutor.registerServerListUpdater(new ServerListUpdater());
         /**
          * 根据心跳判断集群内成员状态
          */
         GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 2000);
+        GlobalExecutor.registerServerInfoUpdater(new ServerInfoUpdater());
     }
 
     /**
-     * 读取cluster.conf获得nacos集群列表
-     * @return
+     * Judge whether contain server in cluster.
+     *
+     * @param serverAddress server address
+     * @return true if contain, otherwise false
      */
-    private List<Server> refreshServerList() {
-
-        List<Server> result = new ArrayList<>();
-
-        /**
-         * 单点模式
-         */
-        if (STANDALONE_MODE) {
-            Server server = new Server();
-            server.setIp(NetUtils.getLocalAddress());
-            server.setServePort(RunningConfig.getServerPort());
-            result.add(server);
-            return result;
-        }
-
-        List<String> serverList = new ArrayList<>();
-        try {
-            /**
-             * 读取cluster.conf中的集群列表
-             */
-            serverList = readClusterConf();
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("failed to get config: " + CLUSTER_CONF_FILE_PATH, e);
-        }
-
-        if (Loggers.SRV_LOG.isDebugEnabled()) {
-            Loggers.SRV_LOG.debug("SERVER-LIST from cluster.conf: {}", result);
-        }
-
-        //use system env
-        /**
-         * 集群信息为空   则读取系统中的环境变量
-         */
-        if (CollectionUtils.isEmpty(serverList)) {
-            serverList = SystemUtils.getIPsBySystemEnv(UtilsAndCommons.SELF_SERVICE_CLUSTER_ENV);
-            if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("SERVER-LIST from system variable: {}", result);
-            }
-        }
-
-        /**
-         * 遍历集群信息   获取Server
-         */
-        if (CollectionUtils.isNotEmpty(serverList)) {
-
-            for (int i = 0; i < serverList.size(); i++) {
-
-                String ip;
-                int port;
-                String server = serverList.get(i);
-                if (server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-                    ip = server.split(UtilsAndCommons.IP_PORT_SPLITER)[0];
-                    port = Integer.parseInt(server.split(UtilsAndCommons.IP_PORT_SPLITER)[1]);
-                } else {
-                    ip = server;
-                    port = RunningConfig.getServerPort();
-                }
-
-                Server member = new Server();
-                member.setIp(ip);
-                member.setServePort(port);
-                result.add(member);
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * 集群列表中是否有当前地址
-     * @param s
-     * @return
-     */
-    public boolean contains(String s) {
-        for (Server server : servers) {
-            if (server.getKey().equals(s)) {
+    public boolean contains(String serverAddress) {
+        for (Member server : getServers()) {
+            if (Objects.equals(serverAddress, server.getAddress())) {
                 return true;
             }
         }
         return false;
     }
 
-    public List<Server> getServers() {
+    public List<Member> getServers() {
         return servers;
     }
 
-    public List<Server> getHealthyServers() {
-        return healthyServers;
+    @Override
+    public void onEvent(MembersChangeEvent event) {
+        this.servers = new ArrayList<>(event.getMembers());
     }
 
     /**
-     * nacos集群内的节点有变化（节点地址发生变化   节点本身出现故障以及恢复）
-     */
-    private void notifyListeners() {
-
-        GlobalExecutor.notifyServerListChange(new Runnable() {
-            @Override
-            public void run() {
-                for (ServerChangeListener listener : listeners) {
-                    listener.onChangeServerList(servers);
-                    listener.onChangeHealthyServerList(healthyServers);
-                }
-            }
-        });
-    }
-
-    public Map<String, List<Server>> getDistroConfig() {
-        return distroConfig;
-    }
-
-    /**
+     * Compatible with older version logic, In version 1.2.1 and before
      * 接受集群内节点状态
-     * @param configInfo  unknown#192.168.56.1:8848#1566292196551#6
+     * @param configInfo site:ip:lastReportTime:weight
      */
     public synchronized void onReceiveServerStatus(String configInfo) {
 
@@ -222,11 +125,7 @@ public class ServerListManager {
             return;
         }
 
-        List<Server> newHealthyList = new ArrayList<>();
-        List<Server> tmpServerList = new ArrayList<>();
-
         for (String config : configs) {
-            tmpServerList.clear();
             // site:ip:lastReportTime:weight
             //unknown#192.168.56.1:8848#1566292196551#6
             String[] params = config.split("#");
@@ -234,186 +133,72 @@ public class ServerListManager {
                 Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
                 continue;
             }
-
             /**
              * 存储节点数据   ip  端口   状态   上次心跳时间
              */
-            Server server = new Server();
+            Member server = Optional.ofNullable(memberManager.find(params[1]))
+                    .orElse(Member.builder().ip(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0]).state(NodeState.UP)
+                            .port(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1])).build());
 
-            server.setSite(params[0]);
-            server.setIp(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0]);
-            server.setServePort(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1]));
-            server.setLastRefTime(Long.parseLong(params[2]));
-
+            server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
+            server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
+            memberManager.update(server);
             /**
              * 集群列表不包括当前地址
              */
-            if (!contains(server.getKey())) {
-                throw new IllegalArgumentException("server: " + server.getKey() + " is not in serverlist");
+            if (!contains(server.getAddress())) {
+                throw new IllegalArgumentException("server: " + server.getAddress() + " is not in serverlist");
             }
-
-            /**
-             * 上次心跳时间
-             */
-            Long lastBeat = distroBeats.get(server.getKey());
-            long now = System.currentTimeMillis();
-            if (null != lastBeat) {
-                /**
-                 * 服务是否Alive
-                 */
-                server.setAlive(now - lastBeat < switchDomain.getDistroServerExpiredMillis());
-            }
-            /**
-             * 设置distroBeats
-             */
-            distroBeats.put(server.getKey(), now);
-
-            Date date = new Date(Long.parseLong(params[2]));
-            server.setLastRefTimeStr(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date));
-
-            server.setWeight(params.length == 4 ? Integer.parseInt(params[3]) : 1);
-
-            /**
-             * 查询和server对应的site相同状态的节点列表
-             */
-            List<Server> list = distroConfig.get(server.getSite());
-            if (list == null || list.size() <= 0) {
-                list = new ArrayList<>();
-                list.add(server);
-                distroConfig.put(server.getSite(), list);
-            }
-
-            for (Server s : list) {
-                String serverId = s.getKey() + "_" + s.getSite();
-                String newServerId = server.getKey() + "_" + server.getSite();
-
-                /**
-                 * 集合中的server和心跳上送的server key和site的组合 是否相同
-                 */
-                if (serverId.equals(newServerId)) {
-                    if (s.isAlive() != server.isAlive() || s.getWeight() != server.getWeight()) {
-                        Loggers.SRV_LOG.warn("server beat out of date, current: {}, last: {}",
-                            JSON.toJSONString(server), JSON.toJSONString(s));
-                    }
-                    /**
-                     * 以新数据为准
-                     */
-                    tmpServerList.add(server);
-                    continue;
-                }
-                tmpServerList.add(s);
-            }
-
-            /**
-             * tmpServerList中需要包含server
-             */
-            if (!tmpServerList.contains(server)) {
-                tmpServerList.add(server);
-            }
-
-            /**
-             * 更新distroConfig中  site对应的集合
-             */
-            distroConfig.put(server.getSite(), tmpServerList);
-        }
-        liveSites.addAll(distroConfig.keySet());
-    }
-
-    public void clean() {
-        cleanInvalidServers();
-
-        for (Map.Entry<String, List<Server>> entry : distroConfig.entrySet()) {
-            for (Server server : entry.getValue()) {
-                //request other server to clean invalid servers
-                if (!server.getKey().equals(NetUtils.localServer())) {
-                    requestOtherServerCleanInvalidServers(server.getKey());
-                }
-            }
-
         }
     }
 
-    public Set<String> getLiveSites() {
-        return liveSites;
-    }
+    private class ServerInfoUpdater implements Runnable {
 
-    private void cleanInvalidServers() {
-        for (Map.Entry<String, List<Server>> entry : distroConfig.entrySet()) {
-            List<Server> currentServers = entry.getValue();
-            if (null == currentServers) {
-                distroConfig.remove(entry.getKey());
-                continue;
-            }
-
-            currentServers.removeIf(server -> !server.isAlive());
-        }
-    }
-
-    private void requestOtherServerCleanInvalidServers(String serverIP) {
-        Map<String, String> params = new HashMap<String, String>(1);
-
-        params.put("action", "without-diamond-clean");
-        try {
-            NamingProxy.reqAPI("distroStatus", params, serverIP, false);
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[DISTRO-STATUS-CLEAN] Failed to request to clean server status to " + serverIP, e);
-        }
-    }
-
-    public class ServerListUpdater implements Runnable {
+        private int cursor = 0;
 
         @Override
         public void run() {
+            /**
+             * 读取cluster.conf获得nacos集群列表
+             */
+            List<Member> members = servers;
+            if (members.isEmpty()) {
+                return;
+            }
+
+            this.cursor = (this.cursor + 1) % members.size();
+            Member target = members.get(cursor);
+            if (Objects.equals(target.getAddress(), ApplicationUtils.getLocalAddress())) {
+                return;
+            }
+
+            // This metadata information exists from 1.3.0 onwards "version"
+            if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
+                return;
+            }
+
+            final String path =
+                    UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT
+                            + "/state";
+            final Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
+            final String server = target.getAddress();
+
             try {
-                /**
-                 * 读取cluster.conf获得nacos集群列表
-                 */
-                List<Server> refreshedServers = refreshServerList();
-                List<Server> oldServers = servers;
-
-                if (CollectionUtils.isEmpty(refreshedServers)) {
-                    Loggers.RAFT.warn("refresh server list failed, ignore it.");
-                    return;
+                String content = NamingProxy.reqCommon(path, params, server, false);
+                if (!StringUtils.EMPTY.equals(content)) {
+                    RaftPeer raftPeer = JacksonUtils.toObj(content, RaftPeer.class);
+                    if (null != raftPeer) {
+                        String json = JacksonUtils.toJson(raftPeer);
+                        Map map = JacksonUtils.toObj(json, HashMap.class);
+                        target.setExtendVal("naming", map);
+                        memberManager.update(target);
+                    }
                 }
-
-                boolean changed = false;
-
-                /**
-                 * 新旧集群列表比较   获取新增的Server
-                 */
-                List<Server> newServers = (List<Server>) CollectionUtils.subtract(refreshedServers, oldServers);
-                if (CollectionUtils.isNotEmpty(newServers)) {
-                    servers.addAll(newServers);
-                    changed = true;
-                    Loggers.RAFT.info("server list is updated, new: {} servers: {}", newServers.size(), newServers);
-                }
-
-                /**
-                 * 移除被遗弃的server
-                 */
-                List<Server> deadServers = (List<Server>) CollectionUtils.subtract(oldServers, refreshedServers);
-                if (CollectionUtils.isNotEmpty(deadServers)) {
-                    servers.removeAll(deadServers);
-                    changed = true;
-                    Loggers.RAFT.info("server list is updated, dead: {}, servers: {}", deadServers.size(), deadServers);
-                }
-
-                /**
-                 * 集群列表有变化  发送通知
-                 */
-                if (changed) {
-                    /**
-                     * 发送通知
-                     */
-                    notifyListeners();
-                }
-
-            } catch (Exception e) {
-                Loggers.RAFT.info("error while updating server list.", e);
+            } catch (Exception ignore) {
+                //
             }
         }
     }
-
 
     private class ServerStatusReporter implements Runnable {
 
@@ -421,15 +206,9 @@ public class ServerListManager {
         public void run() {
             try {
 
-                if (RunningConfig.getServerPort() <= 0) {
+                if (ApplicationUtils.getPort() <= 0) {
                     return;
                 }
-
-                /**
-                 * 通过检查心跳   判断集群内的节点是否alive   有变化时   发送通知
-                 * 节点心跳的记录  是由onReceiveServerStatus来完成的
-                 */
-                checkDistroHeartbeat();
 
                 int weight = Runtime.getRuntime().availableProcessors() / 2;
                 if (weight <= 0) {
@@ -440,168 +219,50 @@ public class ServerListManager {
                 /**
                  * unknown#192.168.56.1:8848#1566292196551#6
                  */
-                String status = LOCALHOST_SITE + "#" + NetUtils.localServer() + "#" + curTime + "#" + weight + "\r\n";
+                String status = LOCALHOST_SITE + "#" + ApplicationUtils.getLocalAddress() + "#" + curTime + "#" + weight
+                        + "\r\n";
 
-                //send status to itself
-                /**
-                 * 处理本地节点状态
-                 */
-                onReceiveServerStatus(status);
+                List<Member> allServers = getServers();
 
-                /**
-                 * 获取集群中的节点列表
-                 */
-                List<Server> allServers = getServers();
-
-                /**
-                 * 集群中不包含本机地址
-                 */
-                if (!contains(NetUtils.localServer())) {
-                    Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}", NetUtils.localServer(), allServers);
+                if (!contains(ApplicationUtils.getLocalAddress())) {
+                    Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}",
+                            ApplicationUtils.getLocalAddress(), allServers);
                     return;
                 }
-
                 /**
                  * 向集群中的其他节点发送status
                  */
-                if (allServers.size() > 0 && !NetUtils.localServer().contains(UtilsAndCommons.LOCAL_HOST_IP)) {
-                    for (com.alibaba.nacos.naming.cluster.servers.Server server : allServers) {
-                        /**
-                         * 排除本机地址
-                         */
-                        if (server.getKey().equals(NetUtils.localServer())) {
+                if (allServers.size() > 0 && !ApplicationUtils.getLocalAddress()
+                        .contains(UtilsAndCommons.LOCAL_HOST_IP)) {
+                    for (Member server : allServers) {
+                        if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
+                            continue;
+                        }
+
+                        // This metadata information exists from 1.3.0 onwards "version"
+                        if (server.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
+                            Loggers.SRV_LOG
+                                    .debug("[SERVER-STATUS] target {} has extend val {} = {}, use new api report status",
+                                            server.getAddress(), MemberMetaDataConstants.VERSION,
+                                            server.getExtendVal(MemberMetaDataConstants.VERSION));
                             continue;
                         }
 
                         Message msg = new Message();
                         msg.setData(status);
-
                         /**
                          * 向集群中的其他节点发送status
                          */
-                        synchronizer.send(server.getKey(), msg);
-
+                        synchronizer.send(server.getAddress(), msg);
                     }
                 }
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[SERVER-STATUS] Exception while sending server status", e);
             } finally {
-                GlobalExecutor.registerServerStatusReporter(this, switchDomain.getServerStatusSynchronizationPeriodMillis());
+                GlobalExecutor
+                        .registerServerStatusReporter(this, switchDomain.getServerStatusSynchronizationPeriodMillis());
             }
 
-        }
-    }
-
-    /**
-     * 检查其他节点发送的心跳
-     */
-    private void checkDistroHeartbeat() {
-
-        Loggers.SRV_LOG.debug("check distro heartbeat.");
-
-        /**
-         * 获取状态为unknown的节点
-         */
-        List<Server> servers = distroConfig.get(LOCALHOST_SITE);
-        if (CollectionUtils.isEmpty(servers)) {
-            return;
-        }
-
-        List<Server> newHealthyList = new ArrayList<>(servers.size());
-        long now = System.currentTimeMillis();
-        for (Server s: servers) {
-            /**
-             * 节点上一次的心跳时间
-             */
-            Long lastBeat = distroBeats.get(s.getKey());
-            if (null == lastBeat) {
-                continue;
-            }
-
-            /**
-             * 当前节点是否alive
-             */
-            s.setAlive(now - lastBeat < switchDomain.getDistroServerExpiredMillis());
-        }
-
-        //local site servers
-        List<String> allLocalSiteSrvs = new ArrayList<>();
-        for (Server server : servers) {
-
-            /**
-             * 端口为0   则忽略
-             */
-            if (server.getKey().endsWith(":0")) {
-                continue;
-            }
-
-            server.setAdWeight(switchDomain.getAdWeight(server.getKey()) == null ? 0 : switchDomain.getAdWeight(server.getKey()));
-
-            for (int i = 0; i < server.getWeight() + server.getAdWeight(); i++) {
-
-                /**
-                 * 所有的节点
-                 */
-                if (!allLocalSiteSrvs.contains(server.getKey())) {
-                    allLocalSiteSrvs.add(server.getKey());
-                }
-
-                /**
-                 * alive的节点
-                 */
-                if (server.isAlive() && !newHealthyList.contains(server)) {
-                    newHealthyList.add(server);
-                }
-            }
-        }
-
-        Collections.sort(newHealthyList);
-
-        /**
-         * 健康心跳的节点的比率
-         */
-        float curRatio = (float) newHealthyList.size() / allLocalSiteSrvs.size();
-
-        /**
-         * autoDisabledHealthCheck  &&  健康心跳节点比率大于distroThreshold  &&  时间间隔大于一分钟
-         */
-        if (autoDisabledHealthCheck
-            && curRatio > switchDomain.getDistroThreshold()
-            && System.currentTimeMillis() - lastHealthServerMillis > STABLE_PERIOD) {
-            Loggers.SRV_LOG.info("[NACOS-DISTRO] distro threshold restored and " +
-                "stable now, enable health check. current ratio: {}", curRatio);
-
-            switchDomain.setHealthCheckEnabled(true);
-
-            // we must set this variable, otherwise it will conflict with user's action
-            autoDisabledHealthCheck = false;
-        }
-
-        /**
-         * 集群内健康（alive）的节点发生变化
-         */
-        if (!CollectionUtils.isEqualCollection(healthyServers, newHealthyList)) {
-            // for every change disable healthy check for some while
-            if (switchDomain.isHealthCheckEnabled()) {
-                Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, " +
-                        "disable health check for {} ms from now on, old: {}, new: {}", STABLE_PERIOD,
-                    healthyServers, newHealthyList);
-
-                switchDomain.setHealthCheckEnabled(false);
-                autoDisabledHealthCheck = true;
-
-                lastHealthServerMillis = System.currentTimeMillis();
-            }
-
-            /**
-             * 更新healthyServers
-             */
-            healthyServers = newHealthyList;
-
-            /**
-             * 发送通知
-             */
-            notifyListeners();
         }
     }
 

@@ -13,24 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.common.utils.VersionUtils;
 
 /**
+ * Util and constants.
+ *
  * @author xuanyin.zy
  */
 public class UtilAndComs {
 
-    public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.VERSION;
+    public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.version;
 
-    public static String WEB_CONTEXT = "/nacos";
+    public static String webContext = "/nacos";
 
-    public static String NACOS_URL_BASE = WEB_CONTEXT + "/v1/ns";
+    public static String nacosUrlBase = webContext + "/v1/ns";
 
-    public static String NACOS_URL_INSTANCE = NACOS_URL_BASE + "/instance";
+    public static String nacosUrlInstance = nacosUrlBase + "/instance";
 
-    public static String NACOS_URL_SERVICE = NACOS_URL_BASE + "/service";
+    public static String nacosUrlService = nacosUrlBase + "/service";
 
     public static final String ENCODING = "UTF-8";
 
@@ -50,16 +53,11 @@ public class UtilAndComs {
 
     public static final String SERVER_ADDR_IP_SPLITER = ":";
 
-    /**
-     * cpu内核数量大于1  则为核数/2  否则为1
-     */
-    public static final int DEFAULT_CLIENT_BEAT_THREAD_COUNT = Runtime.getRuntime()
-        .availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2
-        : 1;
+    public static final int DEFAULT_CLIENT_BEAT_THREAD_COUNT =
+            Runtime.getRuntime().availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2 : 1;
 
-    public static final int DEFAULT_POLLING_THREAD_COUNT = Runtime.getRuntime()
-        .availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2
-        : 1;
+    public static final int DEFAULT_POLLING_THREAD_COUNT =
+            Runtime.getRuntime().availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2 : 1;
 
     public static final String HTTP = "http://";
 

@@ -13,37 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
+ * Event dispatcher.
+ *
  * @author xuanyin
  */
-public class EventDispatcher {
+@SuppressWarnings("PMD.ThreadPoolCreationRule")
+public class EventDispatcher implements Closeable {
 
     private ExecutorService executor = null;
 
-    private BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
+    private final BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
 
-    private ConcurrentMap<String, List<EventListener>> observerMap
-        = new ConcurrentHashMap<String, List<EventListener>>();
+    private final ConcurrentMap<String, List<EventListener>> observerMap = new ConcurrentHashMap<String, List<EventListener>>();
+
+    private volatile boolean closed = false;
 
     public EventDispatcher() {
 
-        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+        this.executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r, "com.alibaba.nacos.naming.client.listener");
@@ -52,18 +67,19 @@ public class EventDispatcher {
                 return thread;
             }
         });
-
         /**
          * 事件通知
          */
-        executor.execute(new Notifier());
+        this.executor.execute(new Notifier());
     }
 
     /**
+     * Add listener.
      * 触发监听
-     * @param serviceInfo
-     * @param clusters
-     * @param listener
+     *
+     * @param serviceInfo service info
+     * @param clusters    clusters
+     * @param listener    listener
      */
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
 
@@ -73,7 +89,6 @@ public class EventDispatcher {
          */
         List<EventListener> observers = Collections.synchronizedList(new ArrayList<EventListener>());
         observers.add(listener);
-
         /**
          * 存入缓存
          */
@@ -81,7 +96,6 @@ public class EventDispatcher {
         if (observers != null) {
             observers.add(listener);
         }
-
         /**
          * 触发监听
          */
@@ -89,15 +103,16 @@ public class EventDispatcher {
     }
 
     /**
+     * Remove listener.
      * 取消监听
-     * @param serviceName
-     * @param clusters
-     * @param listener
+     *
+     * @param serviceName service name
+     * @param clusters    clusters
+     * @param listener    listener
      */
     public void removeListener(String serviceName, String clusters, EventListener listener) {
 
         NAMING_LOGGER.info("[LISTENER] removing " + serviceName + " with " + clusters + " from listener map");
-
         /**
          * 获取key对应得所有监听
          */
@@ -136,8 +151,10 @@ public class EventDispatcher {
     }
 
     /**
+     * Service changed.
      * 通知监听器   新增监听任务
-     * @param serviceInfo
+     *
+     * @param serviceInfo service info
      */
     public void serviceChanged(ServiceInfo serviceInfo) {
         if (serviceInfo == null) {
@@ -147,13 +164,23 @@ public class EventDispatcher {
         changedServices.add(serviceInfo);
     }
 
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
+        closed = true;
+        NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
     /**
      * 事件通知
      */
     private class Notifier implements Runnable {
+
         @Override
         public void run() {
-            while (true) {
+            while (!closed) {
+
                 ServiceInfo serviceInfo = null;
                 try {
                     /**
@@ -179,13 +206,14 @@ public class EventDispatcher {
                             /**
                              * 事件通知   由用户来实现业务逻辑  例如：NamingExample
                              */
-                            listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
+                            listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+                                    serviceInfo.getClusters(), hosts));
                         }
                     }
 
                 } catch (Exception e) {
-                    NAMING_LOGGER.error("[NA] notify error for service: "
-                        + serviceInfo.getName() + ", clusters: " + serviceInfo.getClusters(), e);
+                    NAMING_LOGGER.error("[NA] notify error for service: " + serviceInfo.getName() + ", clusters: "
+                            + serviceInfo.getClusters(), e);
                 }
             }
         }

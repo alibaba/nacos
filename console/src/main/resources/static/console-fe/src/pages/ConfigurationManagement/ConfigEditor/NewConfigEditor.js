@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,6 +17,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { getParams } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 import request from '../../../utils/request';
 import validateContent from 'utils/validateContent';
 import SuccessDialog from '../../../components/SuccessDialog';
@@ -38,6 +42,7 @@ import {
   ConfigProvider,
 } from '@alifd/next';
 import { resolve } from 'url';
+import qs from 'qs';
 
 const { Row, Col } = Grid;
 
@@ -96,7 +101,7 @@ class ConfigEditor extends React.Component {
             dataId: getParams('dataId').trim(),
             group,
           },
-          () =>
+          () => {
             this.getConfig(true).then(res => {
               if (!res) {
                 this.getConfig();
@@ -107,7 +112,8 @@ class ConfigEditor extends React.Component {
                 tabActiveKey: 'beta',
                 betaPublishSuccess: true,
               });
-            })
+            });
+          }
         );
       } else {
         if (group) {
@@ -173,7 +179,6 @@ class ConfigEditor extends React.Component {
   }
 
   clickTab(tabActiveKey) {
-    console.log('tabActiveKey', tabActiveKey, tabActiveKey === 'beta');
     this.setState({ tabActiveKey }, () => this.getConfig(tabActiveKey === 'beta'));
   }
 
@@ -189,6 +194,14 @@ class ConfigEditor extends React.Component {
       return false;
     }
     return codeVal;
+  }
+
+  setCodeVal(codeVal) {
+    const { form } = this.state;
+    this.setState({ form: { ...form, content: codeVal } });
+    if (this.monacoEditor) {
+      this.monacoEditor.setValue(codeVal);
+    }
   }
 
   publish() {
@@ -215,26 +228,21 @@ class ConfigEditor extends React.Component {
   }
 
   _publishConfig(beta = false) {
-    const { locale } = this.props;
     const { betaIps, isNewConfig } = this.state;
     const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (beta) {
       headers.betaIps = betaIps;
     }
-    const data = { ...this.state.form, content: this.getCodeVal() };
+    const form = { ...this.state.form, content: this.getCodeVal() };
+    const payload = {};
+    Object.keys(form).forEach(key => {
+      payload[key] = form[key];
+    });
+    const stringify = require('qs/lib/stringify');
     return request({
       url: 'v1/cs/configs',
       method: 'post',
-      data,
-      transformRequest: [
-        function(data) {
-          let ret = '';
-          for (let it in data) {
-            ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&';
-          }
-          return ret;
-        },
-      ],
+      data: stringify(payload),
       headers,
     }).then(res => {
       if (res) {
@@ -315,11 +323,20 @@ class ConfigEditor extends React.Component {
 
   goBack() {
     const serverId = getParams('serverId') || '';
-    const tenant = getParams('namespace');
-    const searchGroup = getParams('searchGroup') || '';
-    const searchDataId = getParams('searchDataId') || '';
+    const namespace = getParams('namespace');
+    const group = getParams('searchGroup') || '';
+    const dataId = getParams('searchDataId') || '';
+    const pageSize = getParams('pageSize');
+    const pageNo = getParams('pageNo');
     this.props.history.push(
-      `/configurationManagement?serverId=${serverId}&group=${searchGroup}&dataId=${searchDataId}&namespace=${tenant}`
+      generateUrl('/configurationManagement', {
+        serverId,
+        group,
+        dataId,
+        namespace,
+        pageSize,
+        pageNo,
+      })
     );
   }
 
@@ -563,7 +580,8 @@ class ConfigEditor extends React.Component {
           </Row>
           <DiffEditorDialog
             ref={this.diffEditorDialog}
-            publishConfig={() => {
+            publishConfig={codeVal => {
+              this.setCodeVal(codeVal);
               const res = this[this.diffcb]();
               res.then(res => {
                 if (!res) {
@@ -587,6 +605,9 @@ class ConfigEditor extends React.Component {
                 });
               });
             }}
+            title={locale.dialogTitle}
+            currentArea={locale.dialogCurrentArea}
+            originalArea={locale.dialogOriginalArea}
           />
           <SuccessDialog ref={this.successDialog} />
         </Loading>

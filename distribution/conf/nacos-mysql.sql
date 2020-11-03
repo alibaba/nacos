@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 /******************************************/
 /*   数据库全名 = nacos_config   */
 /*   表名称 = config_info   */
@@ -178,15 +194,23 @@ CREATE TABLE `tenant_info` (
   KEY `idx_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='tenant_info';
 
-CREATE TABLE users (
-	username varchar(50) NOT NULL PRIMARY KEY,
-	password varchar(500) NOT NULL,
-	enabled boolean NOT NULL
+CREATE TABLE `users` (
+	`username` varchar(50) NOT NULL PRIMARY KEY,
+	`password` varchar(500) NOT NULL,
+	`enabled` boolean NOT NULL
 );
 
-CREATE TABLE roles (
-	username varchar(50) NOT NULL,
-	role varchar(50) NOT NULL
+CREATE TABLE `roles` (
+	`username` varchar(50) NOT NULL,
+	`role` varchar(50) NOT NULL,
+	UNIQUE INDEX `idx_user_role` (`username` ASC, `role` ASC) USING BTREE
+);
+
+CREATE TABLE `permissions` (
+    `role` varchar(50) NOT NULL,
+    `resource` varchar(255) NOT NULL,
+    `action` varchar(8) NOT NULL,
+    UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`) USING BTREE
 );
 
 INSERT INTO users (username, password, enabled) VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE);

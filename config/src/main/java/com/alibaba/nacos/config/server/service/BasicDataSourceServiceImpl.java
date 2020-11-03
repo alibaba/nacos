@@ -264,7 +264,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-    public String         getHealth() {
+    public String getHealth() {
         for (int i = 0; i < isHealthList.size(); i++) {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {

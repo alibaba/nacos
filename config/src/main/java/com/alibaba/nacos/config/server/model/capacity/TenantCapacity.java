@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model.capacity;
 
 /**
- * Tenant Capacity
+ * Tenant Capacity.
  *
  * @author hexu.hxy
  * @date 2018/3/13
  */
 public class TenantCapacity extends Capacity {
+    
+    private static final long serialVersionUID = -1238179608935781384L;
+    
     private String tenant;
-
+    
     public String getTenant() {
         return tenant;
     }
-
+    
     public void setTenant(String tenant) {
         this.tenant = tenant;
     }

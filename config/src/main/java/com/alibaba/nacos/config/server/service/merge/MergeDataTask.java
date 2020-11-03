@@ -13,55 +13,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service.merge;
 
-import com.alibaba.nacos.config.server.manager.AbstractTask;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
 
 /**
- * 表示对数据进行聚合的任务。
+ * Represents the task of aggregating data.
  *
  * @author jiuRen
  */
-class MergeDataTask extends AbstractTask {
-
+class MergeDataTask extends AbstractDelayTask {
+    
     MergeDataTask(String dataId, String groupId, String tenant, String clientIp) {
         this(dataId, groupId, tenant, null, clientIp);
     }
-
+    
     MergeDataTask(String dataId, String groupId, String tenant, String tag, String clientIp) {
         this.dataId = dataId;
         this.groupId = groupId;
         this.tenant = tenant;
         this.tag = tag;
         this.clientIp = clientIp;
-
-        // 聚合延迟
+        
+        // aggregation delay
         setTaskInterval(DELAY);
         setLastProcessTime(System.currentTimeMillis());
     }
-
+    
     @Override
-    public void merge(AbstractTask task) {
+    public void merge(AbstractDelayTask task) {
     }
-
+    
     public String getId() {
         return toString();
     }
-
+    
     @Override
     public String toString() {
         return "MergeTask[" + dataId + ", " + groupId + ", " + tenant + ", " + clientIp + "]";
     }
-
+    
     public String getClientIp() {
         return clientIp;
     }
-
+    
     static final long DELAY = 0L;
-
+    
     final String dataId;
+    
     final String groupId;
+    
     final String tenant;
+    
     final String tag;
+    
     private final String clientIp;
 }

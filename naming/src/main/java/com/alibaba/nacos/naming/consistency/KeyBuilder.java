@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_PREFIX;
+
 /**
- * Key operations for data
+ * Key operations for data.
  *
  * @author nkorange
  * @since 1.0.0
@@ -39,15 +42,12 @@ public class KeyBuilder {
     public static final String BRIEF_INSTANCE_LIST_KEY_PREFIX = "iplist.";
 
     private static String buildEphemeralInstanceListKey(String namespaceId, String serviceName) {
-        return INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR
-            + serviceName;
+        return INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName;
     }
 
     private static String buildPersistentInstanceListKey(String namespaceId, String serviceName) {
-        return INSTANCE_LIST_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR
-            + serviceName;
+        return INSTANCE_LIST_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName;
     }
-
     /**
      * 创建节点
      * @param namespaceId
@@ -56,8 +56,8 @@ public class KeyBuilder {
      * @return
      */
     public static String buildInstanceListKey(String namespaceId, String serviceName, boolean ephemeral) {
-        return ephemeral ? buildEphemeralInstanceListKey(namespaceId, serviceName) :
-            buildPersistentInstanceListKey(namespaceId, serviceName);
+        return ephemeral ? buildEphemeralInstanceListKey(namespaceId, serviceName)
+                : buildPersistentInstanceListKey(namespaceId, serviceName);
     }
 
     public static String buildServiceMetaKey(String namespaceId, String serviceName) {
@@ -67,6 +67,7 @@ public class KeyBuilder {
     public static String getSwitchDomainKey() {
         return SERVICE_META_KEY_PREFIX + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
+
 
     /**
      * 是否临时节点
@@ -78,6 +79,7 @@ public class KeyBuilder {
         return key.startsWith(INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX);
     }
 
+
     /**
      * 以com.alibaba.nacos.naming.iplist.开始
      * 或者以iplist.开始
@@ -87,6 +89,11 @@ public class KeyBuilder {
     public static boolean matchInstanceListKey(String key) {
         return key.startsWith(INSTANCE_LIST_KEY_PREFIX) || key.startsWith(BRIEF_INSTANCE_LIST_KEY_PREFIX);
     }
+
+    public static boolean matchInstanceListKey(String key, String namespaceId, String serviceName) {
+        return matchInstanceListKey(key) && matchServiceName(key, namespaceId, serviceName);
+    }
+
 
     /**
      * 以com.alibaba.nacos.naming.domains.meta.开始
@@ -98,6 +105,9 @@ public class KeyBuilder {
         return key.startsWith(SERVICE_META_KEY_PREFIX) || key.startsWith(BRIEF_SERVICE_META_KEY_PREFIX);
     }
 
+    public static boolean matchServiceMetaKey(String key, String namespaceId, String serviceName) {
+        return matchServiceMetaKey(key) && matchServiceName(key, namespaceId, serviceName);
+    }
     /**
      * 00-00---000-NACOS_SWITCH_DOMAIN-000---00-00结尾
      * @param key
@@ -109,14 +119,6 @@ public class KeyBuilder {
 
     public static boolean matchServiceName(String key, String namespaceId, String serviceName) {
         return key.endsWith(namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName);
-    }
-
-    public static boolean matchServiceMetaKey(String key, String namespaceId, String serviceName) {
-        return matchServiceMetaKey(key) && matchServiceName(key, namespaceId, serviceName);
-    }
-
-    public static boolean matchInstanceListKey(String key, String namespaceId, String serviceName) {
-        return matchInstanceListKey(key) && matchServiceName(key, namespaceId, serviceName);
     }
 
     public static boolean matchEphemeralKey(String key) {
@@ -135,7 +137,6 @@ public class KeyBuilder {
     public static String briefServiceMetaKey(String key) {
         return BRIEF_SERVICE_META_KEY_PREFIX + key.split(SERVICE_META_KEY_PREFIX)[1];
     }
-
     /**
      * INSTANCE_LIST_KEY_PREFIX = "com.alibaba.nacos.naming.iplist."
      * BRIEF_INSTANCE_LIST_KEY_PREFIX = "iplist."
@@ -145,9 +146,8 @@ public class KeyBuilder {
      */
     public static String detailInstanceListkey(String key) {
         return INSTANCE_LIST_KEY_PREFIX.substring(0, INSTANCE_LIST_KEY_PREFIX.indexOf(BRIEF_INSTANCE_LIST_KEY_PREFIX))
-            + key;
+                + key;
     }
-
     /**
      * SERVICE_META_KEY_PREFIX = "com.alibaba.nacos.naming.domains.meta."
      * BRIEF_SERVICE_META_KEY_PREFIX = "meta."
@@ -157,30 +157,28 @@ public class KeyBuilder {
      */
     public static String detailServiceMetaKey(String key) {
         return SERVICE_META_KEY_PREFIX.substring(0, SERVICE_META_KEY_PREFIX.indexOf(BRIEF_SERVICE_META_KEY_PREFIX))
-            + key;
+                + key;
     }
 
     public static String getNamespace(String key) {
-
         /**
          * switch
          */
         if (matchSwitchKey(key)) {
             return StringUtils.EMPTY;
         }
-
         /**
          * 元数据
          */
         if (matchServiceMetaKey(key)) {
             return key.split(NAMESPACE_KEY_CONNECTOR)[0].substring(SERVICE_META_KEY_PREFIX.length());
         }
-
-        /**
-         * 临时节点
-         */
+/**
+ * 临时节点
+ */
         if (matchEphemeralInstanceListKey(key)) {
-            return key.split(NAMESPACE_KEY_CONNECTOR)[0].substring(INSTANCE_LIST_KEY_PREFIX.length() + EPHEMERAL_KEY_PREFIX.length());
+            return key.split(NAMESPACE_KEY_CONNECTOR)[0]
+                    .substring(INSTANCE_LIST_KEY_PREFIX.length() + EPHEMERAL_KEY_PREFIX.length());
         }
 
         /**
@@ -195,5 +193,9 @@ public class KeyBuilder {
 
     public static String getServiceName(String key) {
         return key.split(NAMESPACE_KEY_CONNECTOR)[1];
+    }
+
+    public static boolean isDatumCacheFile(String key) {
+        return key.startsWith(RAFT_CACHE_FILE_PREFIX);
     }
 }

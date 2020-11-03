@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -35,7 +37,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Switch manager
+ * Switch manager.
  *
  * @author nkorange
  * @since 1.0.0
@@ -51,22 +53,33 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
     ReentrantLock lock = new ReentrantLock();
 
+    /**
+     * Init switch manager.
+     */
     @PostConstruct
     public void init() {
 
         try {
-            consistencyService.listen(UtilsAndCommons.getSwitchDomainKey(), this);
+            consistencyService.listen(KeyBuilder.getSwitchDomainKey(), this);
         } catch (NacosException e) {
             Loggers.SRV_LOG.error("listen switch service failed.", e);
         }
     }
 
+    /**
+     * Update switch information.
+     *
+     * @param entry item entry of switch, {@link SwitchEntry}
+     * @param value switch value
+     * @param debug whether debug
+     * @throws Exception exception
+     */
     public void update(String entry, String value, boolean debug) throws Exception {
 
+        lock.lock();
         try {
-            lock.lock();
 
-            Datum datum = consistencyService.get(UtilsAndCommons.getSwitchDomainKey());
+            Datum datum = consistencyService.get(KeyBuilder.getSwitchDomainKey());
             SwitchDomain switchDomain;
 
             if (datum != null && datum.value != null) {
@@ -77,24 +90,22 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
             if (SwitchEntry.BATCH.equals(entry)) {
                 //batch update
-                SwitchDomain dom = JSON.parseObject(value, SwitchDomain.class);
+                SwitchDomain dom = JacksonUtils.toObj(value, SwitchDomain.class);
                 dom.setEnableStandalone(switchDomain.isEnableStandalone());
                 if (dom.getHttpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
-                    || dom.getTcpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
+                        || dom.getTcpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
 
                     throw new IllegalArgumentException("min check time for http or tcp is too small(<500)");
                 }
 
                 if (dom.getHttpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX
-                    || dom.getTcpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
+                        || dom.getTcpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
 
                     throw new IllegalArgumentException("max check time for http or tcp is too small(<3000)");
                 }
 
-                if (dom.getHttpHealthParams().getFactor() < 0
-                    || dom.getHttpHealthParams().getFactor() > 1
-                    || dom.getTcpHealthParams().getFactor() < 0
-                    || dom.getTcpHealthParams().getFactor() > 1) {
+                if (dom.getHttpHealthParams().getFactor() < 0 || dom.getHttpHealthParams().getFactor() > 1
+                        || dom.getTcpHealthParams().getFactor() < 0 || dom.getTcpHealthParams().getFactor() > 1) {
 
                     throw new IllegalArgumentException("malformed factor");
                 }
@@ -103,7 +114,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.DISTRO_THRESHOLD)) {
-                Float threshold = Float.parseFloat(value);
+                float threshold = Float.parseFloat(value);
                 if (threshold <= 0) {
                     throw new IllegalArgumentException("distroThreshold can not be zero or negative: " + threshold);
                 }
@@ -121,7 +132,8 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 String version = value.split(":")[1];
 
                 if (!version.matches(UtilsAndCommons.VERSION_STRING_SYNTAX)) {
-                    throw new IllegalArgumentException("illegal version, must match: " + UtilsAndCommons.VERSION_STRING_SYNTAX);
+                    throw new IllegalArgumentException(
+                            "illegal version, must match: " + UtilsAndCommons.VERSION_STRING_SYNTAX);
                 }
 
                 if (StringUtils.equals(SwitchEntry.CLIENT_JAVA, type)) {
@@ -138,7 +150,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.PUSH_CACHE_MILLIS)) {
-                Long cacheMillis = Long.parseLong(value);
+                long cacheMillis = Long.parseLong(value);
 
                 if (cacheMillis < SwitchEntry.MIN_PUSH_CACHE_TIME_MIILIS) {
                     throw new IllegalArgumentException("min cache time for http or tcp is too small(<10000)");
@@ -149,7 +161,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
             // extremely careful while modifying this, cause it will affect all clients without pushing enabled
             if (entry.equals(SwitchEntry.DEFAULT_CACHE_MILLIS)) {
-                Long cacheMillis = Long.parseLong(value);
+                long cacheMillis = Long.parseLong(value);
 
                 if (cacheMillis < SwitchEntry.MIN_CACHE_TIME_MIILIS) {
                     throw new IllegalArgumentException("min default cache time  is too small(<1000)");
@@ -179,7 +191,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.SERVICE_STATUS_SYNC_PERIOD)) {
-                Long millis = Long.parseLong(value);
+                long millis = Long.parseLong(value);
 
                 if (millis < SwitchEntry.MIN_SERVICE_SYNC_TIME_MIILIS) {
                     throw new IllegalArgumentException("serviceStatusSynchronizationPeriodMillis is too small(<5000)");
@@ -189,7 +201,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.SERVER_STATUS_SYNC_PERIOD)) {
-                Long millis = Long.parseLong(value);
+                long millis = Long.parseLong(value);
 
                 if (millis < SwitchEntry.MIN_SERVER_SYNC_TIME_MIILIS) {
                     throw new IllegalArgumentException("serverStatusSynchronizationPeriodMillis is too small(<15000)");
@@ -199,15 +211,15 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.HEALTH_CHECK_TIMES)) {
-                Integer times = Integer.parseInt(value);
+                int times = Integer.parseInt(value);
 
                 switchDomain.setCheckTimes(times);
             }
 
             if (entry.equals(SwitchEntry.DISABLE_ADD_IP)) {
-                boolean disableAddIP = Boolean.parseBoolean(value);
+                boolean disableAddIp = Boolean.parseBoolean(value);
 
-                switchDomain.setDisableAddIP(disableAddIP);
+                switchDomain.setDisableAddIP(disableAddIp);
             }
 
             if (entry.equals(SwitchEntry.SEND_BEAT_ONLY)) {
@@ -218,12 +230,11 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
             if (entry.equals(SwitchEntry.LIMITED_URL_MAP)) {
                 Map<String, Integer> limitedUrlMap = new HashMap<>(16);
-                String limitedUrls = value;
 
-                if (!StringUtils.isEmpty(limitedUrls)) {
-                    String[] entries = limitedUrls.split(",");
-                    for (int i = 0; i < entries.length; i++) {
-                        String[] parts = entries[i].split(":");
+                if (!StringUtils.isEmpty(value)) {
+                    String[] entries = value.split(",");
+                    for (String each : entries) {
+                        String[] parts = each.split(":");
                         if (parts.length < 2) {
                             throw new IllegalArgumentException("invalid input for limited urls");
                         }
@@ -247,10 +258,9 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.ENABLE_STANDALONE)) {
-                String enabled = value;
 
-                if (!StringUtils.isNotEmpty(enabled)) {
-                    switchDomain.setEnableStandalone(Boolean.parseBoolean(enabled));
+                if (!StringUtils.isNotEmpty(value)) {
+                    switchDomain.setEnableStandalone(Boolean.parseBoolean(value));
                 }
             }
 
@@ -263,19 +273,25 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.DEFAULT_INSTANCE_EPHEMERAL)) {
-                String defaultEphemeral = value;
-                switchDomain.setDefaultInstanceEphemeral(Boolean.parseBoolean(defaultEphemeral));
+                switchDomain.setDefaultInstanceEphemeral(Boolean.parseBoolean(value));
             }
 
             if (entry.equals(SwitchEntry.DISTRO_SERVER_EXPIRED_MILLIS)) {
-                String distroServerExpiredMillis = value;
-                switchDomain.setDistroServerExpiredMillis(Long.parseLong(distroServerExpiredMillis));
+                switchDomain.setDistroServerExpiredMillis(Long.parseLong(value));
+            }
+
+            if (entry.equals(SwitchEntry.LIGHT_BEAT_ENABLED)) {
+                switchDomain.setLightBeatEnabled(BooleanUtils.toBoolean(value));
+            }
+
+            if (entry.equals(SwitchEntry.AUTO_CHANGE_HEALTH_CHECK_ENABLED)) {
+                switchDomain.setAutoChangeHealthCheckEnabled(BooleanUtils.toBoolean(value));
             }
 
             if (debug) {
                 update(switchDomain);
             } else {
-                consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
+                consistencyService.put(KeyBuilder.getSwitchDomainKey(), switchDomain);
             }
 
         } finally {
@@ -285,8 +301,9 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
     }
 
     /**
+     * Update switch information from new switch domain.
      * 更新SwitchDomain
-     * @param newSwitchDomain
+     * @param newSwitchDomain new switch domain
      */
     public void update(SwitchDomain newSwitchDomain) {
         switchDomain.setMasters(newSwitchDomain.getMasters());
@@ -296,6 +313,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setDefaultCacheMillis(newSwitchDomain.getDefaultCacheMillis());
         switchDomain.setDistroThreshold(newSwitchDomain.getDistroThreshold());
         switchDomain.setHealthCheckEnabled(newSwitchDomain.isHealthCheckEnabled());
+        switchDomain.setAutoChangeHealthCheckEnabled(newSwitchDomain.isAutoChangeHealthCheckEnabled());
         switchDomain.setDistroEnabled(newSwitchDomain.isDistroEnabled());
         switchDomain.setPushEnabled(newSwitchDomain.isPushEnabled());
         switchDomain.setEnableStandalone(newSwitchDomain.isEnableStandalone());
@@ -304,8 +322,10 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setTcpHealthParams(newSwitchDomain.getTcpHealthParams());
         switchDomain.setMysqlHealthParams(newSwitchDomain.getMysqlHealthParams());
         switchDomain.setIncrementalList(newSwitchDomain.getIncrementalList());
-        switchDomain.setServerStatusSynchronizationPeriodMillis(newSwitchDomain.getServerStatusSynchronizationPeriodMillis());
-        switchDomain.setServiceStatusSynchronizationPeriodMillis(newSwitchDomain.getServiceStatusSynchronizationPeriodMillis());
+        switchDomain.setServerStatusSynchronizationPeriodMillis(
+                newSwitchDomain.getServerStatusSynchronizationPeriodMillis());
+        switchDomain.setServiceStatusSynchronizationPeriodMillis(
+                newSwitchDomain.getServiceStatusSynchronizationPeriodMillis());
         switchDomain.setDisableAddIP(newSwitchDomain.isDisableAddIP());
         switchDomain.setSendBeatOnly(newSwitchDomain.isSendBeatOnly());
         switchDomain.setLimitedUrlMap(newSwitchDomain.getLimitedUrlMap());
@@ -317,6 +337,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setEnableAuthentication(newSwitchDomain.isEnableAuthentication());
         switchDomain.setOverriddenServerStatus(newSwitchDomain.getOverriddenServerStatus());
         switchDomain.setDefaultInstanceEphemeral(newSwitchDomain.isDefaultInstanceEphemeral());
+        switchDomain.setLightBeatEnabled(newSwitchDomain.isLightBeatEnabled());
     }
 
     public SwitchDomain getSwitchDomain() {
@@ -332,6 +353,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
     public boolean matchUnlistenKey(String key) {
         return KeyBuilder.matchSwitchKey(key);
     }
+
 
     /**
      * 更新SwitchDomain

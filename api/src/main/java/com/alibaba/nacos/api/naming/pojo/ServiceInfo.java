@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.api.common.Constants;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -25,14 +28,16 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * ServiceInfo
+ * ServiceInfo.
  *
  * @author nkorange
  */
+@JsonInclude(Include.NON_NULL)
 public class ServiceInfo {
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     private String jsonFromServer = EMPTY;
+
     public static final String SPLITER = "@@";
 
     private String name;
@@ -43,7 +48,6 @@ public class ServiceInfo {
 
     private long cacheMillis = 1000L;
 
-    @JSONField(name = "hosts")
     private List<Instance> hosts = new ArrayList<Instance>();
 
     private long lastRefTime = 0L;
@@ -63,6 +67,7 @@ public class ServiceInfo {
         this.allIPs = allIPs;
     }
 
+
     /**
      * 根据key  填充name和clusters
      * @param key
@@ -72,6 +77,7 @@ public class ServiceInfo {
         int maxIndex = 2;
         int clusterIndex = 1;
         int serviceNameIndex = 0;
+
 
         /**
          * 按@@分割
@@ -151,8 +157,9 @@ public class ServiceInfo {
     }
 
     /**
-     * 校验
-     * @return
+     * Judge whether service info is validate.
+     *
+     * @return true if validate, otherwise false
      */
     public boolean validate() {
         if (isAllIPs()) {
@@ -176,7 +183,7 @@ public class ServiceInfo {
         return true;
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getJsonFromServer() {
         return jsonFromServer;
     }
@@ -189,16 +196,25 @@ public class ServiceInfo {
      * name@@clusters
      * @return
      */
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getKey() {
         return getKey(name, clusters);
     }
 
+    @JsonIgnore
+    public static String getKey(String name, String clusters) {
+
+        if (!isEmpty(clusters)) {
+            return name + Constants.SERVICE_INFO_SPLITER + clusters;
+        }
+
+        return name;
+    }
     /**
      * name@@clusters   name为UTF-8
      * @return
      */
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getKeyEncoded() {
         try {
             return getKey(URLEncoder.encode(name, "UTF-8"), clusters);
@@ -207,12 +223,17 @@ public class ServiceInfo {
         }
     }
 
-    @JSONField(serialize = false)
+    /**
+     * Get {@link ServiceInfo} from key.
+     *
+     * @param key key of service info
+     * @return new service info
+     */
     public static ServiceInfo fromKey(String key) {
         ServiceInfo serviceInfo = new ServiceInfo();
         int maxSegCount = 3;
         String[] segs = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (segs.length == maxSegCount -1) {
+        if (segs.length == maxSegCount - 1) {
             serviceInfo.setGroupName(segs[0]);
             serviceInfo.setName(segs[1]);
         } else if (segs.length == maxSegCount) {
@@ -221,22 +242,6 @@ public class ServiceInfo {
             serviceInfo.setClusters(segs[2]);
         }
         return serviceInfo;
-    }
-
-    /**
-     * name@@clusters
-     * @param name
-     * @param clusters
-     * @return
-     */
-    @JSONField(serialize = false)
-    public static String getKey(String name, String clusters) {
-
-        if (!isEmpty(clusters)) {
-            return name + Constants.SERVICE_INFO_SPLITER + clusters;
-        }
-
-        return name;
     }
 
     @Override
@@ -256,12 +261,12 @@ public class ServiceInfo {
         return str == null || str.length() == 0;
     }
 
-    private static boolean strEquals(String str1, String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
-    }
-
     private static boolean isEmpty(Collection coll) {
         return (coll == null || coll.isEmpty());
+    }
+
+    private static boolean strEquals(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equals(str2);
     }
 
     private static final String EMPTY = "";

@@ -13,35 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.backups;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
 import java.nio.charset.Charset;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
+ * Failover reactor.
+ *
  * @author nkorange
  */
-public class FailoverReactor {
+public class FailoverReactor implements Closeable {
 
-    private String failoverDir;
+    private final String failoverDir;
 
-    private HostReactor hostReactor;
+    private final HostReactor hostReactor;
 
+    private final ScheduledExecutorService executorService;
     /**
      * 容错
      * @param hostReactor
@@ -53,30 +68,33 @@ public class FailoverReactor {
          * 容错路径  C:\Users\Administrator/nacos/naming/quickStart/failover
          */
         this.failoverDir = cacheDir + "/failover";
+        // init executorService
+        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("com.alibaba.nacos.naming.failover");
+                return thread;
+            }
+        });
         this.init();
     }
 
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("com.alibaba.nacos.naming.failover");
-            return thread;
-        }
-    });
 
-    private Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
+    private final Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
+
     private static final long DAY_PERIOD_MINUTES = 24 * 60;
 
+    /**
+     * Init.
+     */
     public void init() {
-
         /**
          * 5000毫秒   将容灾策略从磁盘读取到内存中
          */
         executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
-
         /**
          * 24小时  每隔24小时，把内存中所有的服务数据，写一遍到磁盘中 failoverDir目录下
          */
@@ -88,13 +106,13 @@ public class FailoverReactor {
             public void run() {
                 try {
                     File cacheDir = new File(failoverDir);
-
                     /**
                      * 检查failoverDir目录是否存在  不存在则创建
                      */
                     if (!cacheDir.exists() && !cacheDir.mkdirs()) {
                         throw new IllegalStateException("failed to create cache dir: " + failoverDir);
                     }
+
 
                     /**
                      * 检查failoverDir下的文件
@@ -114,6 +132,13 @@ public class FailoverReactor {
         }, 10000L, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Add day.
+     *
+     * @param date start time
+     * @param num  add day number
+     * @return new date
+     */
     public Date addDay(Date date, int num) {
         Calendar startDT = Calendar.getInstance();
         startDT.setTime(date);
@@ -121,7 +146,16 @@ public class FailoverReactor {
         return startDT.getTime();
     }
 
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
+
     class SwitchRefresher implements Runnable {
+
         long lastModifiedMillis = 0L;
 
         @Override
@@ -134,6 +168,7 @@ public class FailoverReactor {
                     return;
                 }
 
+
                 /**
                  * 获取文件最后一次更改时间
                  */
@@ -145,12 +180,12 @@ public class FailoverReactor {
                      * 获取文件内容   failoverDir下的 UtilAndComs.FAILOVER_SWITCH
                      */
                     String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
-                        Charset.defaultCharset().toString());
+                            Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
                         /**
                          * 分割
                          */
-                        List<String> lines = Arrays.asList(failover.split(DiskCache.getLineSeparator()));
+                        String[] lines = failover.split(DiskCache.getLineSeparator());
 
                         for (String line : lines) {
                             String line1 = line.trim();
@@ -179,6 +214,7 @@ public class FailoverReactor {
 
     class FailoverFileReader implements Runnable {
 
+
         /**
          * 将容灾策略从硬盘中读取到内存中
          */
@@ -188,6 +224,7 @@ public class FailoverReactor {
 
             BufferedReader reader = null;
             try {
+
 
                 /**
                  * 查看文件夹
@@ -201,6 +238,7 @@ public class FailoverReactor {
                 if (files == null) {
                     return;
                 }
+
 
                 /**
                  * 便利文件
@@ -220,8 +258,8 @@ public class FailoverReactor {
                         /**
                          * 读取文件内容
                          */
-                        String dataString = ConcurrentDiskUtil.getFileContent(file,
-                            Charset.defaultCharset().toString());
+                        String dataString = ConcurrentDiskUtil
+                                .getFileContent(file, Charset.defaultCharset().toString());
                         reader = new BufferedReader(new StringReader(dataString));
 
                         String json;
@@ -230,7 +268,7 @@ public class FailoverReactor {
                                 /**
                                  * 将内容转换为ServiceInfo
                                  */
-                                dom = JSON.parseObject(json, ServiceInfo.class);
+                                dom = JacksonUtils.toObj(json, ServiceInfo.class);
                             } catch (Exception e) {
                                 NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
                             }
@@ -259,6 +297,7 @@ public class FailoverReactor {
                 NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
 
+
             /**
              * 更新
              */
@@ -269,6 +308,7 @@ public class FailoverReactor {
     }
 
     class DiskFileWriter extends TimerTask {
+
         @Override
         public void run() {
             Map<String, ServiceInfo> map = hostReactor.getServiceInfoMap();
@@ -277,11 +317,11 @@ public class FailoverReactor {
                 /**
                  * 过滤特殊数据
                  */
-                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils.equals(
-                    serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY)
-                    || StringUtils.equals(serviceInfo.getName(), "00-00---000-ENV_CONFIGS-000---00-00")
-                    || StringUtils.equals(serviceInfo.getName(), "vipclient.properties")
-                    || StringUtils.equals(serviceInfo.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
+                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils
+                        .equals(serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY) || StringUtils
+                        .equals(serviceInfo.getName(), "00-00---000-ENV_CONFIGS-000---00-00") || StringUtils
+                        .equals(serviceInfo.getName(), "vipclient.properties") || StringUtils
+                        .equals(serviceInfo.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
                     continue;
                 }
 
@@ -290,6 +330,7 @@ public class FailoverReactor {
         }
     }
 
+
     /**
      * 是否开启了容灾开关
      * @return
@@ -297,6 +338,7 @@ public class FailoverReactor {
     public boolean isFailoverSwitch() {
         return Boolean.parseBoolean(switchParams.get("failover-mode"));
     }
+
 
     /**
      * 从容灾策略中获取ServiceInfo

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -26,13 +27,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Store of data
+ * Store of data.
  *
  * @author nkorange
  * @since 1.0.0
  */
 @Component
 public class DataStore {
+
 
     /**
      * {
@@ -150,9 +152,10 @@ public class DataStore {
     }
 
     /**
-     * 批量获取key对应的Datum  存入map
-     * @param keys
-     * @return
+     * Batch get datum for a list of keys.
+     * 批量获取key对应的Datum
+     * @param keys of datum
+     * @return list of datum
      */
     public Map<String, Datum> batchGet(List<String> keys) {
         Map<String, Datum> map = new HashMap<>(128);

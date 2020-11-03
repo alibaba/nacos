@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.utils;
 
 import java.util.UUID;
 
 /**
+ * UUID utils.
+ *
  * @author nkorange
  */
 public class UuidUtils {
-
+    
     public static String generateUuid() {
         return UUID.randomUUID().toString();
     }
