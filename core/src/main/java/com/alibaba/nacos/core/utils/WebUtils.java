@@ -42,7 +42,7 @@ import java.util.function.Function;
  * @author nkorange
  */
 public class WebUtils {
-    
+
     /**
      * get target value from parameterMap, if not found will throw {@link IllegalArgumentException}.
      *
@@ -58,7 +58,7 @@ public class WebUtils {
         String encoding = req.getParameter("encoding");
         return resolveValue(value, encoding);
     }
-    
+
     /**
      * get target value from parameterMap, if not found will return default value.
      *
@@ -78,7 +78,7 @@ public class WebUtils {
         String encoding = req.getParameter("encoding");
         return resolveValue(value, encoding);
     }
-    
+
     /**
      * decode target value.
      *
@@ -96,7 +96,7 @@ public class WebUtils {
         }
         return value.trim();
     }
-    
+
     /**
      * decode target value with UrlDecode.
      *
@@ -114,6 +114,8 @@ public class WebUtils {
             value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
         } catch (UnsupportedEncodingException ignore) {
         } catch (Exception ex) {
+            // If the value contains a special character without encoding (such as "[IPv6]"),
+            // a URLDecoder exception is thrown, which is ignored and the original value is returned
             final String seq = "URLDecoder";
             if (!StringUtils.contains(ex.toString(), seq)) {
                 throw ex;
@@ -121,7 +123,7 @@ public class WebUtils {
         }
         return value.trim();
     }
-    
+
     /**
      * get accept encode from request.
      *
@@ -133,7 +135,7 @@ public class WebUtils {
         encode = encode.contains(",") ? encode.substring(0, encode.indexOf(",")) : encode;
         return encode.contains(";") ? encode.substring(0, encode.indexOf(";")) : encode;
     }
-    
+
     /**
      * Returns the value of the request header "user-agent" as a <code>String</code>.
      *
@@ -149,7 +151,7 @@ public class WebUtils {
         }
         return userAgent;
     }
-    
+
     /**
      * response data to client.
      *
@@ -164,7 +166,7 @@ public class WebUtils {
         response.getWriter().write(body);
         response.setStatus(code);
     }
-    
+
     /**
      * Handle file upload operations.
      *
@@ -174,7 +176,7 @@ public class WebUtils {
      */
     public static void onFileUpload(MultipartFile multipartFile, Consumer<File> consumer,
             DeferredResult<RestResult<String>> response) {
-        
+
         if (Objects.isNull(multipartFile) || multipartFile.isEmpty()) {
             response.setResult(RestResultUtils.failed("File is empty"));
             return;
@@ -192,7 +194,7 @@ public class WebUtils {
             DiskUtils.deleteQuietly(tmpFile);
         }
     }
-    
+
     /**
      * Register DeferredResult in the callback of CompletableFuture.
      *
@@ -203,9 +205,9 @@ public class WebUtils {
      */
     public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future,
             Function<Throwable, T> errorHandler) {
-        
+
         deferredResult.onTimeout(future::join);
-        
+
         future.whenComplete((t, throwable) -> {
             if (Objects.nonNull(throwable)) {
                 deferredResult.setResult(errorHandler.apply(throwable));
@@ -214,7 +216,7 @@ public class WebUtils {
             deferredResult.setResult(t);
         });
     }
-    
+
     /**
      * Register DeferredResult in the callback of CompletableFuture.
      *
@@ -226,9 +228,9 @@ public class WebUtils {
      */
     public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future, Runnable success,
             Function<Throwable, T> errorHandler) {
-        
+
         deferredResult.onTimeout(future::join);
-        
+
         future.whenComplete((t, throwable) -> {
             if (Objects.nonNull(throwable)) {
                 deferredResult.setResult(errorHandler.apply(throwable));
