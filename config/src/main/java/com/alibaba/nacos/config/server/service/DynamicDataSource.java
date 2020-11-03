@@ -16,6 +16,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
