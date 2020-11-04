@@ -136,7 +136,7 @@ public class ClientBeatCheckTask implements Runnable {
                     .appendParam("ephemeral", "true").appendParam("clusterName", instance.getClusterName())
                     .appendParam("serviceName", service.getName()).appendParam("namespaceId", service.getNamespaceId());
             
-            String url = "http://" + IPUtil.localHostIP() + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
+            String url = "http://" + IPUtil.localHostIP() + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
             
             // delete instance asynchronously:

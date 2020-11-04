@@ -89,12 +89,12 @@ public class InetUtils {
                 String tmpSelfIP = nacosIP;
                 if (StringUtils.isBlank(tmpSelfIP)) {
                     preferHostnameOverIP = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
-    
+                    
                     if (!preferHostnameOverIP) {
                         preferHostnameOverIP = Boolean
                                 .parseBoolean(ApplicationUtils.getProperty(PREFER_HOSTNAME_OVER_IP));
                     }
-    
+                    
                     if (preferHostnameOverIP) {
                         InetAddress inetAddress;
                         try {
@@ -156,13 +156,13 @@ public class InetUtils {
                     } else {
                         continue;
                     }
-                    
+    
                     if (!ignoreInterface(ifc.getDisplayName())) {
                         for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
                             InetAddress address = addrs.nextElement();
-                            if ((IPUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
-                                    : address instanceof Inet4Address) && !address.isLoopbackAddress()
-                                    && isPreferredAddress(address)) {
+                            boolean isLegalIpVersion = IPUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
+                                    : address instanceof Inet4Address;
+                            if (isLegalIpVersion && !address.isLoopbackAddress() && isPreferredAddress(address)) {
                                 LOG.debug("Found non-loopback interface: " + ifc.getDisplayName());
                                 result = address;
                             }
