@@ -17,11 +17,19 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.listener.Event;
+import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
+import com.alibaba.nacos.common.notify.EventPublisher;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.ClassUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,6 +37,8 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -78,6 +88,90 @@ public class HostReactorTest {
         when(namingProxy.queryList("testName", "testClusters", 0, false)).thenReturn(EXAMPLE);
         ServiceInfo actual = hostReactor.getServiceInfoDirectlyFromServer("testName", "testClusters");
         assertServiceInfo(actual);
+    }
+    
+    @Test
+    public void testSubscribe() throws InterruptedException {
+        final AtomicInteger count = new AtomicInteger(1);
+        EventListener eventListener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                if (event instanceof NamingEvent) {
+                    List<Instance> instances = ((NamingEvent) event).getInstances();
+                    assertInstance(instances.get(0));
+                    Assert.assertEquals("nacos.publisher-" + ClassUtils.getCanonicalName(InstancesChangeEvent.class),
+                            Thread.currentThread().getName());
+                    count.decrementAndGet();
+                }
+            }
+        };
+        hostReactor.subscribe("testName", "testClusters", eventListener);
+        hostReactor.processServiceJson(EXAMPLE);
+        Thread.sleep(1000);
+        Assert.assertEquals(0, count.intValue());
+        hostReactor.unSubscribe("testName", "testClusters", eventListener);
+    }
+    
+    @Test
+    public void testSubscribeAsyncHandle() throws InterruptedException {
+        final AtomicInteger count = new AtomicInteger(1);
+        EventListener eventListener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                if (event instanceof NamingEvent) {
+                    List<Instance> instances = ((NamingEvent) event).getInstances();
+                    assertInstance(instances.get(0));
+                    Assert.assertEquals("com.alibaba.nacos.client.naming.async.notifier",
+                            Thread.currentThread().getName());
+                    count.decrementAndGet();
+                }
+            }
+        };
+        hostReactor.subscribeAsyncHandle("testName", "testClusters", eventListener);
+        hostReactor.processServiceJson(EXAMPLE);
+        Thread.sleep(1000);
+        Assert.assertEquals(0, count.intValue());
+        hostReactor.unSubscribeAsyncHandle("testName", "testClusters", eventListener);
+    }
+    
+    @Test
+    public void testUnsubscribe() {
+        EventListener eventListener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+            }
+        };
+        EventPublisher publisher = NotifyCenter.getPublisher(InstancesChangeEvent.class);
+        Assert.assertEquals(0, publisher.getSubscribers().size());
+        
+        hostReactor.subscribe("testName", "testClusters", eventListener);
+        Assert.assertEquals(1, publisher.getSubscribers().size());
+        
+        hostReactor.unSubscribeAsyncHandle("testName", "testClusters", eventListener);
+        Assert.assertEquals(1, publisher.getSubscribers().size());
+        
+        hostReactor.unSubscribe("testName", "testClusters", eventListener);
+        Assert.assertEquals(0, publisher.getSubscribers().size());
+    }
+    
+    @Test
+    public void testUnsubscribeAsyncHandle() {
+        EventListener eventListener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+            }
+        };
+        EventPublisher publisher = NotifyCenter.getPublisher(InstancesChangeEvent.class);
+        Assert.assertEquals(0, publisher.getSubscribers().size());
+        
+        hostReactor.subscribeAsyncHandle("testName", "testClusters", eventListener);
+        Assert.assertEquals(1, publisher.getSubscribers().size());
+        
+        hostReactor.unSubscribe("testName", "testClusters", eventListener);
+        Assert.assertEquals(1, publisher.getSubscribers().size());
+        
+        hostReactor.unSubscribeAsyncHandle("testName", "testClusters", eventListener);
+        Assert.assertEquals(0, publisher.getSubscribers().size());
     }
     
     private void assertServiceInfo(ServiceInfo actual) {

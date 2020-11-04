@@ -110,7 +110,7 @@ public class HostReactor implements Closeable {
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
                 thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.client.naming.updater");
+                thread.setName("com.alibaba.nacos.client.naming.async.notifier");
                 return thread;
             }
         };
@@ -151,6 +151,7 @@ public class HostReactor implements Closeable {
     public void subscribe(String serviceName, String clusters, EventListener eventListener) {
         InstancesChangeListener subscriber = new InstancesChangeListener(serviceName, clusters, eventListener, null);
         NotifyCenter.registerSubscriber(subscriber);
+        getServiceInfo(serviceName, clusters);
     }
     
     /**
@@ -164,6 +165,7 @@ public class HostReactor implements Closeable {
         InstancesChangeListener subscriber = new InstancesChangeListener(serviceName, clusters, eventListener,
                 instancesNotifyExecutor);
         NotifyCenter.registerSubscriber(subscriber);
+        getServiceInfo(serviceName, clusters);
     }
     
     /**
@@ -468,6 +470,7 @@ public class HostReactor implements Closeable {
         ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
         pushReceiver.shutdown();
         failoverReactor.shutdown();
+        NotifyCenter.shutdown();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
     

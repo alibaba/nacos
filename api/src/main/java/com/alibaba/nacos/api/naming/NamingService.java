@@ -470,6 +470,47 @@ public interface NamingService {
             throws NacosException;
     
     /**
+     * Subscribe service to receive events of instances alteration, finally async handle it.
+     *
+     * @param serviceName name of service
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribeAsyncHandle(String serviceName, EventListener listener) throws NacosException;
+    
+    /**
+     * Subscribe service to receive events of instances alteration, finally async handle it.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribeAsyncHandle(String serviceName, String groupName, EventListener listener) throws NacosException;
+    
+    /**
+     * Subscribe service to receive events of instances alteration, finally async handle it.
+     *
+     * @param serviceName name of service
+     * @param clusters    list of cluster
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribeAsyncHandle(String serviceName, List<String> clusters, EventListener listener) throws NacosException;
+    
+    /**
+     * Subscribe service to receive events of instances alteration, finally async handle it.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param clusters    list of cluster
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribeAsyncHandle(String serviceName, String groupName, List<String> clusters, EventListener listener)
+            throws NacosException;
+    
+    /**
      * Unsubscribe event listener of service.
      *
      * @param serviceName name of service
@@ -508,6 +549,47 @@ public interface NamingService {
      * @throws NacosException nacos exception
      */
     void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
+            throws NacosException;
+    
+    /**
+     * Unsubscribe async handle event listener of service.
+     *
+     * @param serviceName name of service
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribeAsyncHandle(String serviceName, EventListener listener) throws NacosException;
+    
+    /**
+     * unsubscribe async handle event listener of service.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribeAsyncHandle(String serviceName, String groupName, EventListener listener) throws NacosException;
+    
+    /**
+     * Unsubscribe async handle event listener of service.
+     *
+     * @param serviceName name of service
+     * @param clusters    list of cluster
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribeAsyncHandle(String serviceName, List<String> clusters, EventListener listener) throws NacosException;
+    
+    /**
+     * Unsubscribe async handle event listener of service.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param clusters    list of cluster
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribeAsyncHandle(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException;
     
     /**
