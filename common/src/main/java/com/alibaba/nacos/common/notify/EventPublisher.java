@@ -19,6 +19,8 @@ package com.alibaba.nacos.common.notify;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 
+import java.util.Set;
+
 /**
  * Event publisher.
  *
@@ -71,4 +73,12 @@ public interface EventPublisher extends Closeable {
      * @param event      {@link Event}
      */
     void notifySubscriber(Subscriber subscriber, Event event);
+    
+    /**
+     * Get current Subscribers.
+     *
+     * @return subscribers
+     */
+    Set<Subscriber> getSubscribers();
+    
 }

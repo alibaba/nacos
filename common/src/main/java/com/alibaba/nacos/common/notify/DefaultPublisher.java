@@ -69,6 +69,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         start();
     }
     
+    @Override
     public ConcurrentHashSet<Subscriber> getSubscribers() {
         return subscribers;
     }

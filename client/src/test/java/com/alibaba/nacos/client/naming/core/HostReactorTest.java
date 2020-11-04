@@ -44,9 +44,6 @@ public class HostReactorTest {
     @Mock
     private NamingProxy namingProxy;
     
-    @Mock
-    private EventDispatcher eventDispatcher;
-    
     private HostReactor hostReactor;
     
     private BeatReactor beatReactor;
@@ -64,7 +61,7 @@ public class HostReactorTest {
         beatInfo.setScheduled(false);
         beatInfo.setPeriod(1000L);
         beatReactor.addBeatInfo("testName", beatInfo);
-        hostReactor = new HostReactor(eventDispatcher, namingProxy, beatReactor, CACHE_DIR);
+        hostReactor = new HostReactor(namingProxy, beatReactor, CACHE_DIR);
     }
     
     @Test
