@@ -131,7 +131,7 @@ public class MapUtils {
      *
      * @param target          target Map data.
      * @param key             map key.
-     * @param mappingFunction funtion which is need to be executed.
+     * @param mappingFunction function which is need to be executed.
      * @param param1          function's parameter value1.
      * @param param2          function's parameter value1.
      * @return
@@ -140,10 +140,11 @@ public class MapUtils {
     public static Object computeIfAbsent(Map target, Object key, BiFunction mappingFunction, Object param1,
             Object param2) {
         
+        Objects.requireNonNull(target, "target");
         Objects.requireNonNull(key, "key");
-        Objects.requireNonNull(key, "mappingFunction");
-        Objects.requireNonNull(key, "param1");
-        Objects.requireNonNull(key, "param2");
+        Objects.requireNonNull(mappingFunction, "mappingFunction");
+        Objects.requireNonNull(param1, "param1");
+        Objects.requireNonNull(param2, "param2");
         
         Object val = target.get(key);
         if (val == null) {
