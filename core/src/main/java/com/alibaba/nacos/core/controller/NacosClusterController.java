@@ -17,9 +17,9 @@
 package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpUtils;
-import com.alibaba.nacos.common.http.NAsyncHttpClient;
+import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
@@ -152,7 +152,7 @@ public class NacosClusterController {
     public RestResult<String> leave(@RequestBody Collection<String> params) throws Exception {
         Collection<Member> memberList = MemberUtils.multiParse(params);
         memberManager.memberLeave(memberList);
-        final NAsyncHttpClient asyncHttpClient = HttpClientManager.getAsyncHttpClient();
+        final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CLUSTER);
         final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
         };
         final Collection<Member> notifyList = memberManager.allMembersWithoutSelf();
@@ -162,7 +162,7 @@ public class NacosClusterController {
             final String url = HttpUtils
                     .buildUrl(false, member.getAddress(), ApplicationUtils.getContextPath(), Commons.NACOS_CORE_CONTEXT,
                             "/cluster/server/leave");
-            asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, params, genericType.getType(), new Callback<String>() {
+            nacosAsyncRestTemplate.post(url, Header.EMPTY, Query.EMPTY, params, genericType.getType(), new Callback<String>() {
                 @Override
                 public void onReceive(RestResult<String> result) {
                     try {
