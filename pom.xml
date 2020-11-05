@@ -339,7 +339,6 @@
                         <exclude>**/consistency/entity/**</exclude>
                         <exclude>**/*.txt</exclude>
                         <exclude>**/*.factories</exclude>
-                        <exclude>console-ui/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
