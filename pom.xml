@@ -551,6 +551,25 @@
                 <sonar.host.url>https://builds.apache.org/analysis</sonar.host.url>
             </properties>
         </profile>
+        <profile>
+            <id>remove-test-data</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <configuration>
+                            <followSymLinks>false</followSymLinks>
+                            <filesets>
+                                <fileset>
+                                    <directory>${user.home}/nacos/data</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
     <reporting>
         <plugins>
