@@ -23,6 +23,7 @@ import java.util.concurrent.Executor;
  *
  * @author Nacos
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class EventListener {
     
     /**
