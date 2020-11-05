@@ -25,6 +25,7 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,11 @@ public class ConfigDerbyImport_CITCase {
     
     @Autowired
     private ApplicationContext context;
+    
+    @BeforeClass
+    public static void beforeClass() {
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigDerbyImport_CITCase.class.getSimpleName());
+    }
     
     @Test()
     public void testDerbyImport() throws Throwable {

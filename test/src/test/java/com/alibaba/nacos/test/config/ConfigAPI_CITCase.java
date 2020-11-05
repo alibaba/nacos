@@ -74,6 +74,11 @@ public class ConfigAPI_CITCase {
     @LocalServerPort
     private int port;
     
+    @BeforeClass
+    public static void beforeClass() {
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPI_CITCase.class.getSimpleName());
+    }
+    
     @Before
     public void setUp() throws Exception {
         Properties properties = new Properties();

@@ -17,10 +17,11 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -33,47 +34,49 @@ import java.util.function.Supplier;
  */
 public class TimerContext {
     
-    private static final ThreadLocal<Pair<String, Long>> TIME_RECORD = new ThreadLocal<>();
+    private static final ThreadLocal<Map<String, Long>> TIME_RECORD = ThreadLocal.withInitial(() -> new HashMap<>(2));
     
+    /**
+     * Record context start time.
+     *
+     * @param name context name
+     */
     public static void start(final String name) {
-        long startTime = System.currentTimeMillis();
-        TIME_RECORD.set(Pair.with(name, startTime));
+        TIME_RECORD.get().put(name, System.currentTimeMillis());
     }
     
-    public static void end(final Logger logger) {
-        end(logger, LoggerUtils.DEBUG);
+    public static void end(final String name, final Logger logger) {
+        end(name, logger, LoggerUtils.DEBUG);
     }
     
     /**
      * End the task and print based on the log level.
      *
+     * @param name   context name
      * @param logger logger
      * @param level  logger level
      */
-    public static void end(final Logger logger, final String level) {
-        long endTime = System.currentTimeMillis();
-        Pair<String, Long> record = TIME_RECORD.get();
+    public static void end(final String name, final Logger logger, final String level) {
+        Map<String, Long> record = TIME_RECORD.get();
+        long contextTime = System.currentTimeMillis() - record.remove(name);
         if (StringUtils.equals(level, LoggerUtils.DEBUG)) {
-            LoggerUtils.printIfDebugEnabled(logger, "{} cost time : {} ms", record.getFirst(),
-                    (endTime - record.getSecond()));
+            LoggerUtils.printIfDebugEnabled(logger, "{} cost time : {} ms", name, contextTime);
         }
         if (StringUtils.equals(level, LoggerUtils.INFO)) {
-            LoggerUtils.printIfInfoEnabled(logger, "{} cost time : {} ms", record.getFirst(),
-                    (endTime - record.getSecond()));
+            LoggerUtils.printIfInfoEnabled(logger, "{} cost time : {} ms", name, contextTime);
         }
         if (StringUtils.equals(level, LoggerUtils.TRACE)) {
-            LoggerUtils.printIfTraceEnabled(logger, "{} cost time : {} ms", record.getFirst(),
-                    (endTime - record.getSecond()));
+            LoggerUtils.printIfTraceEnabled(logger, "{} cost time : {} ms", name, contextTime);
         }
         if (StringUtils.equals(level, LoggerUtils.ERROR)) {
-            LoggerUtils.printIfErrorEnabled(logger, "{} cost time : {} ms", record.getFirst(),
-                    (endTime - record.getSecond()));
+            LoggerUtils.printIfErrorEnabled(logger, "{} cost time : {} ms", name, contextTime);
         }
         if (StringUtils.equals(level, LoggerUtils.WARN)) {
-            LoggerUtils.printIfWarnEnabled(logger, "{} cost time : {} ms", record.getFirst(),
-                    (endTime - record.getSecond()));
+            LoggerUtils.printIfWarnEnabled(logger, "{} cost time : {} ms", name, contextTime);
         }
-        TIME_RECORD.remove();
+        if (record.isEmpty()) {
+            TIME_RECORD.remove();
+        }
     }
     
     /**
@@ -88,7 +91,7 @@ public class TimerContext {
         try {
             job.run();
         } finally {
-            end(logger);
+            end(name, logger);
         }
     }
     
@@ -104,7 +107,7 @@ public class TimerContext {
         try {
             return job.get();
         } finally {
-            end(logger);
+            end(name, logger);
         }
     }
     
@@ -121,7 +124,7 @@ public class TimerContext {
         try {
             return job.apply(args);
         } finally {
-            end(logger);
+            end(name, logger);
         }
     }
     
@@ -138,7 +141,7 @@ public class TimerContext {
         try {
             job.accept(args);
         } finally {
-            end(logger);
+            end(name, logger);
         }
     }
     

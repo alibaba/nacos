@@ -218,8 +218,12 @@ public class ServiceController {
         
         serviceMap = ServiceUtil.selectServiceWithGroupName(serviceMap, groupName);
         serviceMap = ServiceUtil.selectServiceBySelector(serviceMap, selectorString);
+        if (!Constants.ALL_PATTERN.equals(groupName)) {
+            serviceMap.entrySet()
+                    .removeIf(entry -> !entry.getKey().startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
+        }
         List<String> serviceNameList = ServiceUtil.pageServiceName(pageNo, pageSize, serviceMap);
-        
+    
         result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
         result.put("count", serviceNameList.size());
         
