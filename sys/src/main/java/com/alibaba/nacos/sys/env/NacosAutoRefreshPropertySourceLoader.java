@@ -18,11 +18,12 @@ package com.alibaba.nacos.sys.env;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.apache.commons.lang3.StringUtils;
+
 import org.springframework.boot.env.OriginTrackedMapPropertySource;
 import org.springframework.boot.env.PropertySourceLoader;
 import org.springframework.core.env.PropertySource;
@@ -40,22 +41,22 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoader {
-    
+
     private final Map<String, Object> properties = new ConcurrentHashMap<>(16);
-    
+
     private Resource holder = null;
-    
+
     @Override
     public String[] getFileExtensions() {
-        return new String[] {"properties"};
+        return new String[]{"properties"};
     }
-    
+
     @Override
     public List<PropertySource<?>> load(String name, Resource resource) throws IOException {
         holder = resource;
         Map<String, ?> tmp = loadProperties(resource);
         properties.putAll(tmp);
-        
+
         try {
             WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), new FileWatcher() {
                 @Override
@@ -64,29 +65,29 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
                         Map<String, ?> tmp1 = loadProperties(holder);
                         properties.putAll(tmp1);
                     } catch (IOException ignore) {
-                    
+
                     }
                 }
-                
+
                 @Override
                 public boolean interest(String context) {
                     return StringUtils.contains(context, "application.properties");
                 }
             });
         } catch (NacosException ignore) {
-        
+
         }
-        
+
         if (properties.isEmpty()) {
             return Collections.emptyList();
         }
         return Collections.singletonList(new OriginTrackedMapPropertySource("nacos_application_conf", properties));
     }
-    
+
     private Map<String, ?> loadProperties(Resource resource) throws IOException {
         return new OriginTrackedPropertiesLoader(resource).load();
     }
-    
+
     @JustForTest
     protected Map<String, Object> getProperties() {
         return properties;

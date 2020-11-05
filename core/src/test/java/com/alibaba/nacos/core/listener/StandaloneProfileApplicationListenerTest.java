@@ -17,7 +17,8 @@
 package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.core.code.StandaloneProfileApplicationListener;
-import org.apache.commons.lang3.ArrayUtils;
+
+import org.apache.commons.lang.ArrayUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,18 +39,18 @@ import static com.alibaba.nacos.sys.env.Constants.STANDALONE_SPRING_PROFILE;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = StandaloneProfileApplicationListenerTest.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class StandaloneProfileApplicationListenerTest {
-    
+
     @Autowired
     private Environment environment;
-    
+
     @BeforeClass
     public static void init() {
         System.setProperty("nacos.standalone", "true");
     }
-    
+
     @Test
     public void testProfile() {
         Assert.assertTrue(ArrayUtils.contains(environment.getActiveProfiles(), STANDALONE_SPRING_PROFILE));
     }
-    
+
 }

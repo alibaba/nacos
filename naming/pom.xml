@@ -54,8 +54,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-api</artifactId>
         </dependency>
-        
-        
+
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
@@ -82,6 +81,11 @@
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.codehaus.jackson</groupId>

@@ -19,7 +19,7 @@ package com.alibaba.nacos.auth.annotation;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.auth.parser.DefaultResourceParser;
 import com.alibaba.nacos.auth.parser.ResourceParser;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

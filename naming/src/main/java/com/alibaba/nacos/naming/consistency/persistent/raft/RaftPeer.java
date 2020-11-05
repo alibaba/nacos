@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.common.utils.RandomUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import org.apache.commons.lang3.RandomUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,32 +26,32 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Raft peer.
  *
- * @deprecated will remove in 1.4.x
  * @author nacos
+ * @deprecated will remove in 1.4.x
  */
 @Deprecated
 public class RaftPeer {
-    
+
     public String ip;
-    
+
     public String voteFor;
-    
+
     public AtomicLong term = new AtomicLong(0L);
-    
+
     public volatile long leaderDueMs = RandomUtils.nextLong(0, GlobalExecutor.LEADER_TIMEOUT_MS);
-    
+
     public volatile long heartbeatDueMs = RandomUtils.nextLong(0, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
-    
+
     public volatile State state = State.FOLLOWER;
-    
+
     public void resetLeaderDue() {
         leaderDueMs = GlobalExecutor.LEADER_TIMEOUT_MS + RandomUtils.nextLong(0, GlobalExecutor.RANDOM_MS);
     }
-    
+
     public void resetHeartbeatDue() {
         heartbeatDueMs = GlobalExecutor.HEARTBEAT_INTERVAL_MS;
     }
-    
+
     public enum State {
         /**
          * Leader of the cluster, only one leader stands in a cluster.
@@ -66,30 +66,30 @@ public class RaftPeer {
          */
         CANDIDATE
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(ip);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;
         }
-        
+
         if (!(obj instanceof RaftPeer)) {
             return false;
         }
-        
+
         RaftPeer other = (RaftPeer) obj;
-        
+
         return StringUtils.equals(ip, other.ip);
     }
-    
+
     @Override
     public String toString() {
         return "RaftPeer{" + "ip='" + ip + '\'' + ", voteFor='" + voteFor + '\'' + ", term=" + term + ", leaderDueMs="
-                + leaderDueMs + ", heartbeatDueMs=" + heartbeatDueMs + ", state=" + state + '}';
+            + leaderDueMs + ", heartbeatDueMs=" + heartbeatDueMs + ", state=" + state + '}';
     }
 }

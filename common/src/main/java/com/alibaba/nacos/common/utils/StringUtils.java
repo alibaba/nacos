@@ -40,6 +40,8 @@ public class StringUtils {
     
     public static final String EMPTY = "";
     
+    public static final String LF = "\n";
+    
     public static String newStringForUtf8(byte[] bytes) {
         return new String(bytes, Charset.forName(Constants.ENCODE));
     }
@@ -57,6 +59,37 @@ public class StringUtils {
         }
         for (int i = 0; i < strLen; i++) {
             if (!Character.isWhitespace(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * <p>Checks if a CharSequence is empty (""), null or whitespace only.</p>
+     *
+     * <p>Whitespace is defined by {@link Character#isWhitespace(char)}.</p>
+     *
+     * <pre>
+     * StringUtils.isBlank(null)      = true
+     * StringUtils.isBlank("")        = true
+     * StringUtils.isBlank(" ")       = true
+     * StringUtils.isBlank("bob")     = false
+     * StringUtils.isBlank("  bob  ") = false
+     * </pre>
+     *
+     * @param cs the CharSequence to check, may be null
+     * @return {@code true} if the CharSequence is null, empty or whitespace only
+     * @since 2.0
+     * @since 3.0 Changed signature from isBlank(String) to isBlank(CharSequence)
+     */
+    public static boolean isBlank(final CharSequence cs) {
+        int strLen;
+        if (cs == null || (strLen = cs.length()) == 0) {
+            return true;
+        }
+        for (int i = 0; i < strLen; i++) {
+            if (!Character.isWhitespace(cs.charAt(i))) {
                 return false;
             }
         }
@@ -88,6 +121,10 @@ public class StringUtils {
     
     public static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
+    }
+    
+    public static boolean isEmpty(CharSequence cs) {
+        return cs == null || cs.length() == 0;
     }
     
     public static String defaultIfEmpty(String str, String defaultStr) {
@@ -411,8 +448,236 @@ public class StringUtils {
             
             return true;
         }
+    
+        @SuppressWarnings("PMD.UndefineMagicConstantRule")
+        static int indexOf(CharSequence cs, int searchChar, int start) {
+            if (cs instanceof String) {
+                return ((String) cs).indexOf(searchChar, start);
+            } else {
+                int sz = cs.length();
+                if (start < 0) {
+                    start = 0;
+                }
+                
+                if (searchChar < 65536) {
+                    for (int i = start; i < sz; ++i) {
+                        if (cs.charAt(i) == searchChar) {
+                            return i;
+                        }
+                    }
+                }
+                
+                if (searchChar <= 1114111) {
+                    char[] chars = Character.toChars(searchChar);
+                    
+                    for (int i = start; i < sz - 1; ++i) {
+                        char high = cs.charAt(i);
+                        char low = cs.charAt(i + 1);
+                        if (high == chars[0] && low == chars[1]) {
+                            return i;
+                        }
+                    }
+                }
+                
+                return -1;
+            }
+        }
         
+        static int indexOf(CharSequence cs, CharSequence searchChar, int start) {
+            return cs.toString().indexOf(searchChar.toString(), start);
+        }
     }
     
-    //   end
+    /**
+     * <p>Checks if CharSequence contains a search character, handling {@code null}.
+     * This method uses {@link String#indexOf(int)} if possible.</p>
+     *
+     * <p>A {@code null} or empty ("") CharSequence will return {@code false}.</p>
+     *
+     * <pre>
+     * StringUtils.contains(null, *)    = false
+     * StringUtils.contains("", *)      = false
+     * StringUtils.contains("abc", 'a') = true
+     * StringUtils.contains("abc", 'z') = false
+     * </pre>
+     *
+     * @param seq        the CharSequence to check, may be null
+     * @param searchChar the character to find
+     * @return true if the CharSequence contains the search character, false if not or {@code null} string input
+     * @since 2.0
+     * @since 3.0 Changed signature from contains(String, int) to contains(CharSequence, int)
+     */
+    public static boolean contains(final CharSequence seq, final int searchChar) {
+        if (isEmpty(seq)) {
+            return false;
+        }
+        return CharSequenceUtils.indexOf(seq, searchChar, 0) >= 0;
+    }
+    
+    /**
+     * <p>Checks if CharSequence contains a search CharSequence, handling {@code null}.
+     * This method uses {@link String#indexOf(String)} if possible.</p>
+     *
+     * <p>A {@code null} CharSequence will return {@code false}.</p>
+     *
+     * <pre>
+     * StringUtils.contains(null, *)     = false
+     * StringUtils.contains(*, null)     = false
+     * StringUtils.contains("", "")      = true
+     * StringUtils.contains("abc", "")   = true
+     * StringUtils.contains("abc", "a")  = true
+     * StringUtils.contains("abc", "z")  = false
+     * </pre>
+     *
+     * @param seq       the CharSequence to check, may be null
+     * @param searchSeq the CharSequence to find, may be null
+     * @return true if the CharSequence contains the search CharSequence, false if not or {@code null} string input
+     * @since 2.0
+     * @since 3.0 Changed signature from contains(String, String) to contains(CharSequence, CharSequence)
+     */
+    public static boolean contains(final CharSequence seq, final CharSequence searchSeq) {
+        if (seq == null || searchSeq == null) {
+            return false;
+        }
+        return CharSequenceUtils.indexOf(seq, searchSeq, 0) >= 0;
+    }
+    
+    /**
+     * <p>Checks if none of the CharSequences are empty (""), null or whitespace only.</p>
+     *
+     * <p>Whitespace is defined by {@link Character#isWhitespace(char)}.</p>
+     *
+     * <pre>
+     * StringUtils.isNoneBlank((String) null)    = false
+     * StringUtils.isNoneBlank((String[]) null)  = true
+     * StringUtils.isNoneBlank(null, "foo")      = false
+     * StringUtils.isNoneBlank(null, null)       = false
+     * StringUtils.isNoneBlank("", "bar")        = false
+     * StringUtils.isNoneBlank("bob", "")        = false
+     * StringUtils.isNoneBlank("  bob  ", null)  = false
+     * StringUtils.isNoneBlank(" ", "bar")       = false
+     * StringUtils.isNoneBlank(new String[] {})  = true
+     * StringUtils.isNoneBlank(new String[]{""}) = false
+     * StringUtils.isNoneBlank("foo", "bar")     = true
+     * </pre>
+     *
+     * @param css the CharSequences to check, may be null or empty
+     * @return {@code true} if none of the CharSequences are empty or null or whitespace only
+     * @since 3.2
+     */
+    public static boolean isNoneBlank(final CharSequence... css) {
+        return !isAnyBlank(css);
+    }
+    
+    /**
+     * <p>Checks if any of the CharSequences are empty ("") or null or whitespace only.</p>
+     *
+     * <p>Whitespace is defined by {@link Character#isWhitespace(char)}.</p>
+     *
+     * <pre>
+     * StringUtils.isAnyBlank((String) null)    = true
+     * StringUtils.isAnyBlank((String[]) null)  = false
+     * StringUtils.isAnyBlank(null, "foo")      = true
+     * StringUtils.isAnyBlank(null, null)       = true
+     * StringUtils.isAnyBlank("", "bar")        = true
+     * StringUtils.isAnyBlank("bob", "")        = true
+     * StringUtils.isAnyBlank("  bob  ", null)  = true
+     * StringUtils.isAnyBlank(" ", "bar")       = true
+     * StringUtils.isAnyBlank(new String[] {})  = false
+     * StringUtils.isAnyBlank(new String[]{""}) = true
+     * StringUtils.isAnyBlank("foo", "bar")     = false
+     * </pre>
+     *
+     * @param css the CharSequences to check, may be null or empty
+     * @return {@code true} if any of the CharSequences are empty or null or whitespace only
+     * @since 3.2
+     */
+    public static boolean isAnyBlank(final CharSequence... css) {
+        if (ArrayUtils.isEmpty(css)) {
+            return false;
+        }
+        for (final CharSequence cs : css) {
+            if (isBlank(cs)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * <p>Check if a CharSequence starts with a specified prefix.</p>
+     *
+     * <p>{@code null}s are handled without exceptions. Two {@code null}
+     * references are considered to be equal. The comparison is case sensitive.</p>
+     *
+     * <pre>
+     * StringUtils.startsWith(null, null)      = true
+     * StringUtils.startsWith(null, "abc")     = false
+     * StringUtils.startsWith("abcdef", null)  = false
+     * StringUtils.startsWith("abcdef", "abc") = true
+     * StringUtils.startsWith("ABCDEF", "abc") = false
+     * </pre>
+     *
+     * @param str    the CharSequence to check, may be null
+     * @param prefix the prefix to find, may be null
+     * @return {@code true} if the CharSequence starts with the prefix, case sensitive, or both {@code null}
+     * @see java.lang.String#startsWith(String)
+     * @since 2.4
+     * @since 3.0 Changed signature from startsWith(String, String) to startsWith(CharSequence, CharSequence)
+     */
+    public static boolean startsWith(final CharSequence str, final CharSequence prefix) {
+        return startsWith(str, prefix, false);
+    }
+    
+    /**
+     * <p>Check if a CharSequence starts with a specified prefix (optionally case insensitive).</p>
+     *
+     * @param str        the CharSequence to check, may be null
+     * @param prefix     the prefix to find, may be null
+     * @param ignoreCase indicates whether the compare should ignore case (case insensitive) or not.
+     * @return {@code true} if the CharSequence starts with the prefix or both {@code null}
+     * @see java.lang.String#startsWith(String)
+     */
+    private static boolean startsWith(final CharSequence str, final CharSequence prefix, final boolean ignoreCase) {
+        if (str == null || prefix == null) {
+            return str == prefix;
+        }
+        if (prefix.length() > str.length()) {
+            return false;
+        }
+        return CharSequenceUtils.regionMatches(str, ignoreCase, 0, prefix, 0, prefix.length());
+    }
+    
+    /**
+     * <p>Deletes all whitespaces from a String as defined by
+     * {@link Character#isWhitespace(char)}.</p>
+     *
+     * <pre>
+     * StringUtils.deleteWhitespace(null)         = null
+     * StringUtils.deleteWhitespace("")           = ""
+     * StringUtils.deleteWhitespace("abc")        = "abc"
+     * StringUtils.deleteWhitespace("   ab  c  ") = "abc"
+     * </pre>
+     *
+     * @param str the String to delete whitespace from, may be null
+     * @return the String without whitespaces, {@code null} if null String input
+     */
+    public static String deleteWhitespace(final String str) {
+        if (isEmpty(str)) {
+            return str;
+        }
+        final int sz = str.length();
+        final char[] chs = new char[sz];
+        int count = 0;
+        for (int i = 0; i < sz; i++) {
+            if (!Character.isWhitespace(str.charAt(i))) {
+                chs[count++] = str.charAt(i);
+            }
+        }
+        if (count == sz) {
+            return str;
+        }
+        return new String(chs, 0, count);
+    }
+    
 }

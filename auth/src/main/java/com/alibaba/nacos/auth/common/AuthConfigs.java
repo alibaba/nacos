@@ -17,10 +17,10 @@
 package com.alibaba.nacos.auth.common;
 
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.utils.BooleanUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.jsonwebtoken.io.Decoders;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
