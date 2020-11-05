@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http;
+package com.alibaba.nacos.naming;
 
-import java.io.Closeable;
+import com.alibaba.nacos.consistency.serialize.HessianSerializer;
+import com.alibaba.nacos.naming.core.Service;
+import org.junit.Test;
 
-/**
- * Nacos http client interface.
- *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- * @deprecated Refer to the new {@link com.alibaba.nacos.common.http.client.request.HttpClientRequest}
- */
-@Deprecated
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public interface NHttpClient extends Closeable {
-
+public class JraftTest {
+    
+    @Test
+    public void test() {
+        HessianSerializer serializer = new HessianSerializer();
+        Service service = new Service();
+        byte[] result = serializer.serialize(service);
+        Service service1 = serializer.deserialize(result, Service.class);
+    }
 }

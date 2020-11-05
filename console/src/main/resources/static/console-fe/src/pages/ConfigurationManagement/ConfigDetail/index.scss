@@ -13,3 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ .button-list {
+  text-align: right;
+  button {
+    margin-left: 1em;
+    font-size: 14px;
+  }
+}
