@@ -16,17 +16,28 @@
 
 package com.alibaba.nacos.api.naming.listener;
 
+import java.util.concurrent.Executor;
+
 /**
  * Event Listener.
  *
  * @author Nacos
  */
-public interface EventListener {
+public abstract class EventListener {
+    
+    /**
+     * Get executor for execute this receive.
+     *
+     * @return Executor
+     */
+    public Executor getExecutor() {
+        return null;
+    }
     
     /**
      * callback event.
      *
      * @param event event
      */
-    void onEvent(Event event);
+    public abstract void onEvent(Event event);
 }

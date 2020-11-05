@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 
 /**
  * A subscriber to notify eventListener callback.
@@ -38,10 +37,10 @@ public class InstancesChangeListener extends Subscriber<InstancesChangeEvent> {
     
     private final EventListener eventListener;
     
-    private final ExecutorService executorService;
+    private final Executor executorService;
     
     public InstancesChangeListener(String serviceName, String clusters, EventListener eventListener,
-            ExecutorService executorService) {
+            Executor executorService) {
         this.serviceName = serviceName;
         this.clusters = clusters;
         this.eventListener = eventListener;
@@ -81,7 +80,7 @@ public class InstancesChangeListener extends Subscriber<InstancesChangeEvent> {
         return eventListener;
     }
     
-    public ExecutorService getExecutorService() {
+    public Executor getExecutorService() {
         return executorService;
     }
     

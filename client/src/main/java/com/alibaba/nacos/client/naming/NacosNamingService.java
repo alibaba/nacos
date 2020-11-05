@@ -451,30 +451,6 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public void subscribeAsyncHandle(String serviceName, EventListener listener) throws NacosException {
-        subscribeAsyncHandle(serviceName, new ArrayList<String>(), listener);
-    }
-    
-    @Override
-    public void subscribeAsyncHandle(String serviceName, String groupName, EventListener listener)
-            throws NacosException {
-        subscribeAsyncHandle(serviceName, groupName, new ArrayList<String>(), listener);
-    }
-    
-    @Override
-    public void subscribeAsyncHandle(String serviceName, List<String> clusters, EventListener listener)
-            throws NacosException {
-        subscribeAsyncHandle(serviceName, Constants.DEFAULT_GROUP, clusters, listener);
-    }
-    
-    @Override
-    public void subscribeAsyncHandle(String serviceName, String groupName, List<String> clusters,
-            EventListener listener) throws NacosException {
-        hostReactor.subscribeAsyncHandle(NamingUtils.getGroupedName(serviceName, groupName),
-                StringUtils.join(clusters, ","), listener);
-    }
-    
-    @Override
     public void unsubscribe(String serviceName, EventListener listener) throws NacosException {
         unsubscribe(serviceName, new ArrayList<String>(), listener);
     }
@@ -494,30 +470,6 @@ public class NacosNamingService implements NamingService {
             throws NacosException {
         hostReactor.unSubscribe(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","),
                 listener);
-    }
-    
-    @Override
-    public void unsubscribeAsyncHandle(String serviceName, EventListener listener) throws NacosException {
-        unsubscribeAsyncHandle(serviceName, new ArrayList<String>(), listener);
-    }
-    
-    @Override
-    public void unsubscribeAsyncHandle(String serviceName, String groupName, EventListener listener)
-            throws NacosException {
-        unsubscribeAsyncHandle(serviceName, groupName, new ArrayList<String>(), listener);
-    }
-    
-    @Override
-    public void unsubscribeAsyncHandle(String serviceName, List<String> clusters, EventListener listener)
-            throws NacosException {
-        unsubscribeAsyncHandle(serviceName, Constants.DEFAULT_GROUP, clusters, listener);
-    }
-    
-    @Override
-    public void unsubscribeAsyncHandle(String serviceName, String groupName, List<String> clusters,
-            EventListener listener) throws NacosException {
-        hostReactor.unSubscribeAsyncHandle(NamingUtils.getGroupedName(serviceName, groupName),
-                StringUtils.join(clusters, ","), listener);
     }
     
     @Override

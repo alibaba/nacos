@@ -46,13 +46,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -86,8 +83,6 @@ public class HostReactor implements Closeable {
     
     private final ScheduledExecutorService executor;
     
-    private final ExecutorService instancesNotifyExecutor;
-    
     public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
         this(serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
@@ -104,19 +99,6 @@ public class HostReactor implements Closeable {
                 return thread;
             }
         });
-        
-        ThreadFactory instancesNotifyThreadFactory = new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.client.naming.async.notifier");
-                return thread;
-            }
-        };
-        // init async handle eventListener executorService
-        this.instancesNotifyExecutor = new ThreadPoolExecutor(5, 10, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(), instancesNotifyThreadFactory);
         
         this.beatReactor = beatReactor;
         this.serverProxy = serverProxy;
@@ -149,21 +131,8 @@ public class HostReactor implements Closeable {
      * @param eventListener custom listener
      */
     public void subscribe(String serviceName, String clusters, EventListener eventListener) {
-        InstancesChangeListener subscriber = new InstancesChangeListener(serviceName, clusters, eventListener, null);
-        NotifyCenter.registerSubscriber(subscriber);
-        getServiceInfo(serviceName, clusters);
-    }
-    
-    /**
-     * subscribe async handle listener.
-     *
-     * @param serviceName   combineServiceName, such as 'xxx@@xxx'
-     * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
-     * @param eventListener custom listener
-     */
-    public void subscribeAsyncHandle(String serviceName, String clusters, EventListener eventListener) {
         InstancesChangeListener subscriber = new InstancesChangeListener(serviceName, clusters, eventListener,
-                instancesNotifyExecutor);
+                eventListener.getExecutor());
         NotifyCenter.registerSubscriber(subscriber);
         getServiceInfo(serviceName, clusters);
     }
@@ -177,20 +146,8 @@ public class HostReactor implements Closeable {
      */
     public void unSubscribe(String serviceName, String clusters, EventListener eventListener) {
         EventPublisher publisher = NotifyCenter.getPublisher(InstancesChangeEvent.class);
-        publisher.removeSubscriber(new InstancesChangeListener(serviceName, clusters, eventListener, null));
-    }
-    
-    /**
-     * unsubscribe async handle listener.
-     *
-     * @param serviceName   combineServiceName, such as 'xxx@@xxx'
-     * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
-     * @param eventListener custom listener
-     */
-    public void unSubscribeAsyncHandle(String serviceName, String clusters, EventListener eventListener) {
-        EventPublisher publisher = NotifyCenter.getPublisher(InstancesChangeEvent.class);
         publisher.removeSubscriber(
-                new InstancesChangeListener(serviceName, clusters, eventListener, instancesNotifyExecutor));
+                new InstancesChangeListener(serviceName, clusters, eventListener, eventListener.getExecutor()));
     }
     
     private String combineSubscribeKey(String serviceName, String clusters) {

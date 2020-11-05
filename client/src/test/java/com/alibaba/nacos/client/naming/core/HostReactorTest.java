@@ -36,8 +36,14 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -113,29 +119,47 @@ public class HostReactorTest {
     }
     
     @Test
-    public void testSubscribeAsyncHandle() throws InterruptedException {
+    public void testAsyncSubscribe() throws InterruptedException, IOException {
         final AtomicInteger count = new AtomicInteger(1);
+        
+        ThreadFactory threadFactory = new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("test-thread");
+                return thread;
+            }
+        };
+        
+        final Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(), threadFactory);
         EventListener eventListener = new EventListener() {
+            
+            @Override
+            public Executor getExecutor() {
+                return executor;
+            }
+            
             @Override
             public void onEvent(Event event) {
                 if (event instanceof NamingEvent) {
                     List<Instance> instances = ((NamingEvent) event).getInstances();
                     assertInstance(instances.get(0));
-                    Assert.assertEquals("com.alibaba.nacos.client.naming.async.notifier",
-                            Thread.currentThread().getName());
+                    Assert.assertEquals("test-thread", Thread.currentThread().getName());
                     count.decrementAndGet();
                 }
             }
         };
-        hostReactor.subscribeAsyncHandle("testName", "testClusters", eventListener);
+        hostReactor.subscribe("testName", "testClusters", eventListener);
         hostReactor.processServiceJson(EXAMPLE);
         Thread.sleep(1000);
         Assert.assertEquals(0, count.intValue());
-        hostReactor.unSubscribeAsyncHandle("testName", "testClusters", eventListener);
+        hostReactor.unSubscribe("testName", "testClusters", eventListener);
     }
     
+    
     @Test
-    public void testUnsubscribe() {
+    public void testUnsubscribe() throws InterruptedException, IOException {
         EventListener eventListener = new EventListener() {
             @Override
             public void onEvent(Event event) {
@@ -147,30 +171,9 @@ public class HostReactorTest {
         hostReactor.subscribe("testName", "testClusters", eventListener);
         Assert.assertEquals(1, publisher.getSubscribers().size());
         
-        hostReactor.unSubscribeAsyncHandle("testName", "testClusters", eventListener);
-        Assert.assertEquals(1, publisher.getSubscribers().size());
+        Thread.sleep(1000);
         
         hostReactor.unSubscribe("testName", "testClusters", eventListener);
-        Assert.assertEquals(0, publisher.getSubscribers().size());
-    }
-    
-    @Test
-    public void testUnsubscribeAsyncHandle() {
-        EventListener eventListener = new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-            }
-        };
-        EventPublisher publisher = NotifyCenter.getPublisher(InstancesChangeEvent.class);
-        Assert.assertEquals(0, publisher.getSubscribers().size());
-        
-        hostReactor.subscribeAsyncHandle("testName", "testClusters", eventListener);
-        Assert.assertEquals(1, publisher.getSubscribers().size());
-        
-        hostReactor.unSubscribe("testName", "testClusters", eventListener);
-        Assert.assertEquals(1, publisher.getSubscribers().size());
-        
-        hostReactor.unSubscribeAsyncHandle("testName", "testClusters", eventListener);
         Assert.assertEquals(0, publisher.getSubscribers().size());
     }
     
