@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
@@ -119,7 +120,7 @@ public class HostReactorTest {
     }
     
     @Test
-    public void testAsyncSubscribe() throws InterruptedException, IOException {
+    public void testAsyncSubscribe() throws InterruptedException {
         final AtomicInteger count = new AtomicInteger(1);
         
         ThreadFactory threadFactory = new ThreadFactory() {
@@ -133,7 +134,7 @@ public class HostReactorTest {
         
         final Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(), threadFactory);
-        EventListener eventListener = new EventListener() {
+        EventListener eventListener = new AbstractEventListener() {
             
             @Override
             public Executor getExecutor() {

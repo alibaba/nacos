@@ -19,6 +19,7 @@ package com.alibaba.nacos.example;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
@@ -65,7 +66,7 @@ public class NamingExample {
                     }
                 });
         
-        naming.subscribe("nacos.test.3", new EventListener() {
+        naming.subscribe("nacos.test.3", new AbstractEventListener() {
             
             //EventListener onEvent is sync to handle, If process too low in onEvent, maybe block other onEvent callback.
             //So you can override getExecutor() to async handle event.

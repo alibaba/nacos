@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -130,8 +132,12 @@ public class HostReactor implements Closeable {
      * @param eventListener custom listener
      */
     public void subscribe(String serviceName, String clusters, EventListener eventListener) {
+        Executor executor = null;
+        if (eventListener instanceof AbstractEventListener) {
+            executor = ((AbstractEventListener) eventListener).getExecutor();
+        }
         InstancesChangeListener subscriber = new InstancesChangeListener(serviceName, clusters, eventListener,
-                eventListener.getExecutor());
+                executor);
         NotifyCenter.registerSubscriber(subscriber);
         getServiceInfo(serviceName, clusters);
     }
@@ -144,9 +150,12 @@ public class HostReactor implements Closeable {
      * @param eventListener custom listener
      */
     public void unSubscribe(String serviceName, String clusters, EventListener eventListener) {
+        Executor executor = null;
+        if (eventListener instanceof AbstractEventListener) {
+            executor = ((AbstractEventListener) eventListener).getExecutor();
+        }
         EventPublisher publisher = NotifyCenter.getPublisher(InstancesChangeEvent.class);
-        publisher.removeSubscriber(
-                new InstancesChangeListener(serviceName, clusters, eventListener, eventListener.getExecutor()));
+        publisher.removeSubscriber(new InstancesChangeListener(serviceName, clusters, eventListener, executor));
     }
     
     /**

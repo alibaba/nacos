@@ -16,17 +16,21 @@
 
 package com.alibaba.nacos.api.naming.listener;
 
+import java.util.concurrent.Executor;
+
 /**
- * Event Listener.
+ * Abstract event listener, to support handle event by user custom executor.
  *
- * @author Nacos
+ * @author horizonzy
+ * @since 1.4.0
  */
-public interface EventListener {
+public abstract class AbstractEventListener implements EventListener {
     
     /**
-     * callback event.
+     * Get executor for execute this receive.
      *
-     * @param event event
+     * @return Executor
      */
-    void onEvent(Event event);
+    public abstract Executor getExecutor();
+    
 }
