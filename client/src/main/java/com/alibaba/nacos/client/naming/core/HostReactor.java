@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -124,7 +123,7 @@ public class HostReactor implements Closeable {
     }
     
     /**
-     * subscribe sync handle listener.
+     * subscribe instancesChangeEvent.
      *
      * @param serviceName   combineServiceName, such as 'xxx@@xxx'
      * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
@@ -138,7 +137,7 @@ public class HostReactor implements Closeable {
     }
     
     /**
-     * unsubscribe sync handle listener.
+     * unsubscribe instancesChangeEvent.
      *
      * @param serviceName   combineServiceName, such as 'xxx@@xxx'
      * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
@@ -148,13 +147,6 @@ public class HostReactor implements Closeable {
         EventPublisher publisher = NotifyCenter.getPublisher(InstancesChangeEvent.class);
         publisher.removeSubscriber(
                 new InstancesChangeListener(serviceName, clusters, eventListener, eventListener.getExecutor()));
-    }
-    
-    private String combineSubscribeKey(String serviceName, String clusters) {
-        if (!StringUtils.isEmpty(clusters)) {
-            return serviceName + Constants.SERVICE_INFO_SPLITER + clusters;
-        }
-        return serviceName;
     }
     
     /**
