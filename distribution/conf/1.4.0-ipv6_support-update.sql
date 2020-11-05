@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.address;
+ALTER TABLE `config_info_tag`
+MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL COMMENT 'source ip' AFTER `src_user`;
 
-import com.alibaba.nacos.common.utils.IPUtil;
-import org.junit.Test;
+ALTER TABLE `his_config_info`
+MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL AFTER `src_user`;
 
-public class ParamCheckUtilTests {
-    
-    @Test
-    public void checkIPs() {
-        String[] ips = {"127.0.0.1"};
-        System.out.println(IPUtil.checkIPs(ips));
-        
-        String[] illlegalIps = {"127.100.19", "127.0.0.1"};
-        System.err.println(IPUtil.checkIPs(illlegalIps));
-    }
-}
+ALTER TABLE `config_info`
+MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL COMMENT 'source ip' AFTER `src_user`;
+
+ALTER TABLE `config_info_beta`
+MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL COMMENT 'source ip' AFTER `src_user`;
