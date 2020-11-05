@@ -157,7 +157,6 @@ public class HostReactorTest {
         hostReactor.unSubscribe("testName", "testClusters", eventListener);
     }
     
-    
     @Test
     public void testUnsubscribe() throws InterruptedException, IOException {
         EventListener eventListener = new EventListener() {
