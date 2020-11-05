@@ -30,6 +30,7 @@ import com.alibaba.nacos.naming.core.ServiceManager.ServiceChecksum;
 import com.alibaba.nacos.naming.misc.Message;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,10 +39,16 @@ import org.mockito.Mock;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -73,6 +80,8 @@ public class ServiceManagerTest extends BaseTest {
     
     private Instance instance2;
     
+    private List<String> serviceNames;
+    
     @Before
     public void before() {
         super.before();
@@ -84,6 +93,7 @@ public class ServiceManagerTest extends BaseTest {
         mockService();
         mockCluster();
         mockInstance();
+        mockServiceName();
     }
     
     private void mockService() {
@@ -97,7 +107,17 @@ public class ServiceManagerTest extends BaseTest {
     
     private void mockInstance() {
         instance = new Instance("1.1.1.1", 1, TEST_CLUSTER_NAME);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key1", "value1");
+        instance.setMetadata(metadata);
         instance2 = new Instance("2.2.2.2", 2);
+    }
+    
+    private void mockServiceName() {
+        serviceNames = new ArrayList<>(5);
+        for (int i = 0; i < 32; i++) {
+            serviceNames.add(String.valueOf(i));
+        }
     }
     
     @Test
@@ -120,12 +140,46 @@ public class ServiceManagerTest extends BaseTest {
     }
     
     @Test
+    public void testGetAllServiceNamesOrder() throws NacosException {
+        assertTrue(serviceManager.getAllServiceNames().isEmpty());
+        for (String serviceName : serviceNames) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceName, true);
+        }
+        assertFalse(serviceManager.getAllServiceNames().isEmpty());
+        assertEquals(1, serviceManager.getAllServiceNames().size());
+        assertEquals(serviceNames.size(), serviceManager.getAllServiceNames(TEST_NAMESPACE).size());
+        Collections.sort(serviceNames);
+        Iterator<String> iterator = serviceManager.getAllServiceNames(TEST_NAMESPACE).iterator();
+        int index = 0;
+        while (iterator.hasNext()) {
+            String next = iterator.next();
+            assertEquals(next, serviceNames.get(index));
+            index++;
+        }
+    }
+    
+    @Test
     public void testGetAllServiceNameList() throws NacosException {
         assertTrue(serviceManager.getAllServiceNameList(TEST_NAMESPACE).isEmpty());
         serviceManager.createEmptyService(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         assertFalse(serviceManager.getAllServiceNameList(TEST_NAMESPACE).isEmpty());
         assertEquals(1, serviceManager.getAllServiceNameList(TEST_NAMESPACE).size());
         assertEquals(TEST_SERVICE_NAME, serviceManager.getAllServiceNameList(TEST_NAMESPACE).get(0));
+    }
+    
+    @Test
+    public void testGetAllServiceNameListOrder() throws NacosException {
+        assertTrue(serviceManager.getAllServiceNameList(TEST_NAMESPACE).isEmpty());
+        for (String serviceName : serviceNames) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceName, true);
+        }
+        assertFalse(serviceManager.getAllServiceNameList(TEST_NAMESPACE).isEmpty());
+        assertEquals(serviceNames.size(), serviceManager.getAllServiceNameList(TEST_NAMESPACE).size());
+        List<String> allServiceNameList = serviceManager.getAllServiceNameList(TEST_NAMESPACE);
+        Collections.sort(serviceNames);
+        for (int i = 0; i < allServiceNameList.size(); i++) {
+            assertEquals(allServiceNameList.get(i), serviceNames.get(i));
+        }
     }
     
     @Test
@@ -215,6 +269,76 @@ public class ServiceManagerTest extends BaseTest {
     }
     
     @Test
+    public void testUpdateMetadata() throws NacosException {
+        
+        serviceManager.createEmptyService(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
+        
+        List<Instance> instanceList = new LinkedList<>();
+        Datum datam = new Datum();
+        datam.key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
+        Instances instances = new Instances();
+        instanceList.add(instance);
+        instanceList.add(instance2);
+        instances.setInstanceList(instanceList);
+        datam.value = instances;
+        when(consistencyService.get(KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true)))
+                .thenReturn(datam);
+        
+        Instance updateMetadataInstance = new Instance();
+        updateMetadataInstance.setIp(instance.getIp());
+        updateMetadataInstance.setPort(instance.getPort());
+        updateMetadataInstance.setClusterName(cluster.getName());
+        updateMetadataInstance.setEphemeral(instance.isEphemeral());
+        
+        Map<String, String> updateMetadata = new HashMap<>(16);
+        updateMetadata.put("key1", "new-value1");
+        updateMetadata.put("key2", "value2");
+        updateMetadataInstance.setMetadata(updateMetadata);
+        
+        //all=false, update input instances
+        serviceManager
+                .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_UPDATE, false,
+                        Lists.newArrayList(updateMetadataInstance), updateMetadata);
+        
+        assertEquals(instance.getMetadata().get("key1"), "new-value1");
+        assertEquals(instance.getMetadata().get("key2"), "value2");
+        
+        //all=true, update all instances
+        serviceManager
+                .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_UPDATE, true,
+                        null, updateMetadata);
+        
+        assertEquals(instance2.getMetadata().get("key1"), "new-value1");
+        assertEquals(instance2.getMetadata().get("key2"), "value2");
+        
+        Instance deleteMetadataInstance = new Instance();
+        deleteMetadataInstance.setIp(instance.getIp());
+        deleteMetadataInstance.setPort(instance.getPort());
+        deleteMetadataInstance.setClusterName(cluster.getName());
+        deleteMetadataInstance.setEphemeral(instance.isEphemeral());
+        Map<String, String> deleteMetadata = new HashMap<>(16);
+        deleteMetadata.put("key2", null);
+        deleteMetadata.put("key3", null);
+        updateMetadataInstance.setMetadata(deleteMetadata);
+        
+        serviceManager
+                .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_REMOVE, false,
+                        Lists.newArrayList(deleteMetadataInstance), deleteMetadata);
+        
+        assertEquals(instance.getMetadata().get("key1"), "new-value1");
+        assertNull(instance.getMetadata().get("key2"));
+        assertNull(instance.getMetadata().get("key3"));
+        
+        serviceManager
+                .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_REMOVE, true,
+                        null, deleteMetadata);
+        
+        assertEquals(instance2.getMetadata().get("key1"), "new-value1");
+        assertNull(instance2.getMetadata().get("key2"));
+        assertNull(instance2.getMetadata().get("key3"));
+    }
+    
+    @Test
     public void testRemoveInstance() throws NacosException {
         serviceManager.createEmptyService(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         serviceManager.removeInstance(TEST_NAMESPACE, TEST_SERVICE_NAME, true, instance);
@@ -266,7 +390,8 @@ public class ServiceManagerTest extends BaseTest {
     @Test
     public void testUpdateIpAddressesNoInstance() throws Exception {
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("ip list can not be empty, service: test-service, ip list: []");
+        expectedException
+                .expectMessage(String.format("ip list can not be empty, service: %s, ip list: []", TEST_SERVICE_NAME));
         serviceManager.updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, true);
     }
     

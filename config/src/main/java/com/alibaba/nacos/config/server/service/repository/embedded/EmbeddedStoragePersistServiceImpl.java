@@ -2060,6 +2060,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (select max(nid) from his_config_info where id = ?)";
+        return databaseOperate.queryOne(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
+    }
+    
+    @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
             String createResoure, final long time) {
         
@@ -2299,7 +2305,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         int skipCount = 0;
         List<Map<String, String>> failData = null;
         List<Map<String, String>> skipData = null;
-    
+        
         final BiConsumer<Boolean, Throwable> callFinally = (result, t) -> {
             if (t != null) {
                 throw new NacosRuntimeException(0, t);

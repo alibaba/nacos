@@ -53,6 +53,7 @@ public class ConfigLongPollReturnChanges_CITCase {
     @AfterClass
     public static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigLongPollReturnChanges_CITCase.class.getSimpleName());
     }
 
     @Before
