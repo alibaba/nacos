@@ -31,4 +31,9 @@ public class HealthCheckResponsibleInterceptor extends AbstractHealthCheckInterc
     public boolean intercept(NacosHealthCheckTask object) {
         return !ApplicationUtils.getBean(DistroMapper.class).responsible(object.getTaskId());
     }
+    
+    @Override
+    public int order() {
+        return Integer.MIN_VALUE + 1;
+    }
 }

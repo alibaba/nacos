@@ -42,4 +42,11 @@ public interface NacosNamingInterceptor<T extends Interceptable> {
      * @return true if object is intercepted, otherwise false
      */
     boolean intercept(T object);
+    
+    /**
+     * The order of interceptor. The lower the number, the earlier the execution.
+     *
+     * @return the order number of interceptor
+     */
+    int order();
 }
