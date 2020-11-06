@@ -18,8 +18,12 @@ package com.alibaba.nacos.console.filter;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.client.config.impl.SpasAdapter;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.service.NamespaceServiceImpl;
 import com.alibaba.nacos.core.utils.WebUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -27,6 +31,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_CONTROLLER_PATH;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.NACOS_NAMING_CONTEXT;
 
 /**
  * param check filter.
@@ -36,9 +45,14 @@ import java.io.IOException;
  */
 public class ParamCheckFilter extends OncePerRequestFilter {
     
+    private String contextPath;
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParamCheckFilter.class);
+    
     private final NamespaceServiceImpl namespaceService;
     
-    public ParamCheckFilter(NamespaceServiceImpl namespaceService) {
+    public ParamCheckFilter(String contextPath, NamespaceServiceImpl namespaceService) {
+        this.contextPath = contextPath;
         this.namespaceService = namespaceService;
     }
     
@@ -50,11 +64,40 @@ public class ParamCheckFilter extends OncePerRequestFilter {
     }
     
     private void checkTenantIsExist(HttpServletRequest request) {
-        final String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        if (!namespaceService.tenantIsExist(namespaceId)) {
-            throw new IllegalArgumentException(
-                    "Param 'namespaceId':{" + namespaceId + "} is not exist, please create it firstly'");
+        String path = getPath(request);
+        if (StringUtils.isEmpty(path)) {
+            return;
         }
+        if (path.startsWith(NACOS_NAMING_CONTEXT)) {
+            final String namespaceId = WebUtils
+                    .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+            if (!namespaceService.tenantIsExist(namespaceId)) {
+                throw new IllegalArgumentException(
+                        "Param 'namespaceId':" + namespaceId + " is not exist, please create it firstly'");
+            }
+        }
+        if (path.startsWith(CONFIG_CONTROLLER_PATH)) {
+            final String namespaceId = WebUtils
+                    .optional(request, SpasAdapter.TENANT_KEY, Constants.DEFAULT_NAMESPACE_ID);
+            if (!namespaceService.tenantIsExist(namespaceId)) {
+                throw new IllegalArgumentException(
+                        "Param 'tenant':" + namespaceId + " is not exist, please create it firstly'");
+            }
+        }
+        
+    }
+    
+    private String getPath(HttpServletRequest request) {
+        String path = null;
+        try {
+            path = new URI(request.getRequestURI()).getPath();
+        } catch (URISyntaxException e) {
+            LOGGER.error("parse request to path error", e);
+        }
+        
+        if (path != null) {
+            path = path.replace(contextPath, "");
+        }
+        return path;
     }
 }
