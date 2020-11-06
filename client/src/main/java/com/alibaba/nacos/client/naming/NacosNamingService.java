@@ -30,14 +30,11 @@ import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.core.HostReactor;
-import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
-import com.alibaba.nacos.common.notify.EventPublisher;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -496,8 +493,7 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public List<ServiceInfo> getSubscribeServices() {
-        EventPublisher publisher = NotifyCenter.getPublisher(InstancesChangeEvent.class);
-        return new ArrayList(publisher.getSubscribers());
+        return hostReactor.getSubscribeServices();
     }
     
     @Override

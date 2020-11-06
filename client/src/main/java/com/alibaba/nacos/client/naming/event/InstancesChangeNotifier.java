@@ -20,12 +20,15 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -77,19 +80,30 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
             return;
         }
         eventListeners.remove(listener);
+        if (CollectionUtils.isEmpty(eventListeners)) {
+            listenerMap.remove(key);
+        }
     }
     
     /**
-     * check serviceName,clusters has listener.
+     * check serviceName,clusters is subscribed.
      *
      * @param serviceName combineServiceName, such as 'xxx@@xxx'
      * @param clusters    clusters, concat by ','. such as 'xxx,yyy'
-     * @return Is serviceName,clusters has listener
+     * @return is serviceName,clusters subscribed
      */
-    public Boolean hasListener(String serviceName, String clusters) {
+    public Boolean isSubscribed(String serviceName, String clusters) {
         String key = combineListenKey(serviceName, clusters);
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         return CollectionUtils.isNotEmpty(eventListeners);
+    }
+    
+    public List<ServiceInfo> getSubscribeServices() {
+        List<ServiceInfo> serviceInfos = new ArrayList<ServiceInfo>();
+        for (String key : listenerMap.keySet()) {
+            serviceInfos.add(ServiceInfo.fromKey(key));
+        }
+        return serviceInfos;
     }
     
     @Override
@@ -108,7 +122,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
                         listener.onEvent(namingEvent);
                     }
                 });
-                return;
+                continue;
             }
             listener.onEvent(namingEvent);
         }

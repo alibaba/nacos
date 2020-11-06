@@ -148,6 +148,10 @@ public class HostReactor implements Closeable {
         notifier.deregisterListener(serviceName, clusters, eventListener);
     }
     
+    public List<ServiceInfo> getSubscribeServices() {
+        return notifier.getSubscribeServices();
+    }
+    
     /**
      * Process service json.
      *
@@ -461,7 +465,7 @@ public class HostReactor implements Closeable {
                 
                 lastRefTime = serviceObj.getLastRefTime();
                 
-                if (!notifier.hasListener(serviceName, clusters) && !futureMap
+                if (!notifier.isSubscribed(serviceName, clusters) && !futureMap
                         .containsKey(ServiceInfo.getKey(serviceName, clusters))) {
                     // abort the update task
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);

@@ -176,6 +176,24 @@ public class HostReactorTest {
         Assert.assertEquals(0, count.intValue());
     }
     
+    @Test
+    public void testGetSubscribeServices() {
+        EventListener listener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+            }
+        };
+        hostReactor.subscribe("testGroup@@testName", "testClusters", listener);
+        
+        Assert.assertEquals(1, hostReactor.getSubscribeServices().size());
+        Assert.assertEquals("testName", hostReactor.getSubscribeServices().get(0).getName());
+        Assert.assertEquals("testGroup", hostReactor.getSubscribeServices().get(0).getGroupName());
+        Assert.assertEquals("testClusters", hostReactor.getSubscribeServices().get(0).getClusters());
+        
+        hostReactor.unSubscribe("testGroup@@testName", "testClusters", listener);
+        Assert.assertEquals(0, hostReactor.getSubscribeServices().size());
+    }
+    
     private void assertServiceInfo(ServiceInfo actual) {
         assertEquals("testName", actual.getName());
         assertEquals("testClusters", actual.getClusters());
