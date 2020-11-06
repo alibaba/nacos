@@ -17,13 +17,16 @@
 package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
-import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -33,7 +36,6 @@ import com.alibaba.nacos.naming.misc.ServerStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -124,10 +126,11 @@ public class ServerListManager extends MemberChangeListener {
                 Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
                 continue;
             }
-            
+    
+            String[] info = IPUtil.splitIPPortStr(params[1]);
             Member server = Optional.ofNullable(memberManager.find(params[1]))
-                    .orElse(Member.builder().ip(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0]).state(NodeState.UP)
-                            .port(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1])).build());
+                    .orElse(Member.builder().ip(info[0]).state(NodeState.UP)
+                            .port(Integer.parseInt(info[1])).build());
             
             server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
             server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
@@ -200,19 +203,19 @@ public class ServerListManager extends MemberChangeListener {
                 }
                 
                 long curTime = System.currentTimeMillis();
-                String status =
-                        LOCALHOST_SITE + "#" + EnvUtil.getLocalAddress() + "#" + curTime + "#" + weight + "\r\n";
+                String status = LOCALHOST_SITE + "#" + EnvUtil.getLocalAddress() + "#" + curTime + "#" + weight
+                        + "\r\n";
                 
                 List<Member> allServers = getServers();
                 
                 if (!contains(EnvUtil.getLocalAddress())) {
-                    Loggers.SRV_LOG
-                            .error("local ip is not in serverlist, ip: {}, serverlist: {}", EnvUtil.getLocalAddress(),
-                                    allServers);
+                    Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}",
+                            EnvUtil.getLocalAddress(), allServers);
                     return;
                 }
                 
-                if (allServers.size() > 0 && !EnvUtil.getLocalAddress().contains(UtilsAndCommons.LOCAL_HOST_IP)) {
+                if (allServers.size() > 0 && !EnvUtil.getLocalAddress()
+                        .contains(IPUtil.localHostIP())) {
                     for (Member server : allServers) {
                         if (Objects.equals(server.getAddress(), EnvUtil.getLocalAddress())) {
                             continue;

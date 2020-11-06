@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.misc.HttpClient;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
@@ -28,8 +29,8 @@ import java.util.Map;
 /**
  * Raft http proxy.
  *
- * @author nacos
  * @deprecated will remove in 1.4.x
+ * @author nacos
  */
 @Deprecated
 @Component
@@ -45,8 +46,8 @@ public class RaftProxy {
      */
     public void proxyGet(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
-        if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + EnvUtil.getPort();
+        if (!IPUtil.containsPort(server)) {
+            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
         String url = "http://" + server + EnvUtil.getContextPath() + api;
         
@@ -67,8 +68,8 @@ public class RaftProxy {
      */
     public void proxy(String server, String api, Map<String, String> params, HttpMethod method) throws Exception {
         // do proxy
-        if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + EnvUtil.getPort();
+        if (!IPUtil.containsPort(server)) {
+            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
         String url = "http://" + server + EnvUtil.getContextPath() + api;
         RestResult<String> result;
@@ -103,8 +104,8 @@ public class RaftProxy {
     public void proxyPostLarge(String server, String api, String content, Map<String, String> headers)
             throws Exception {
         // do proxy
-        if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + EnvUtil.getPort();
+        if (!IPUtil.containsPort(server)) {
+            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
         String url = "http://" + server + EnvUtil.getContextPath() + api;
         

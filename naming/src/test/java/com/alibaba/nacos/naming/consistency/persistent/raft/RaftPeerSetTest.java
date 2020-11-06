@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,7 +37,7 @@ public class RaftPeerSetTest {
     @BeforeClass
     public static void beforeClass() {
         ApplicationUtils.injectContext(new StaticApplicationContext());
-        ApplicationUtils.injectEnvironment(new MockEnvironment());
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     private ServerMemberManager memberManager;

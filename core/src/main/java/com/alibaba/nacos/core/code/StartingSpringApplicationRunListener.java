@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
-import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
@@ -152,8 +151,6 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
         logFilePath();
         
         LOGGER.error("Startup errors : {}", exception);
-        
-        HttpClientManager.shutdown();
         ThreadPoolManager.shutdown();
         WatchFileCenter.shutdown();
         NotifyCenter.shutdown();

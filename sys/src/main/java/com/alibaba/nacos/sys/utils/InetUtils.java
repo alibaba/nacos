@@ -18,6 +18,7 @@ package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -34,8 +36,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.sys.env.Constants.IP_ADDRESS;
 import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
@@ -51,12 +51,6 @@ import static com.alibaba.nacos.sys.env.Constants.USE_ONLY_SITE_INTERFACES;
 public class InetUtils {
     
     private static final Logger LOG = LoggerFactory.getLogger(InetUtils.class);
-    
-    private static final String NUM = "(25[0-5]|2[0-4]\\d|[0-1]\\d{2}|[1-9]?\\d)";
-    
-    private static final String IP_REGEX = "^" + NUM + "\\." + NUM + "\\." + NUM + "\\." + NUM + "$";
-    
-    private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
     
     private static String selfIP;
     
@@ -86,10 +80,10 @@ public class InetUtils {
                 if (StringUtils.isBlank(nacosIP)) {
                     nacosIP = EnvUtil.getProperty(IP_ADDRESS);
                 }
-                
-                boolean illegalIP = !StringUtils.isBlank(nacosIP) && !(isIP(nacosIP) || isDomain(nacosIP));
-                if (illegalIP) {
-                    throw new RuntimeException("nacos address " + nacosIP + " is not ip");
+                if (!StringUtils.isBlank(nacosIP)) {
+                    if (!(IPUtil.isIP(nacosIP) || isDomain(nacosIP))) {
+                        throw new RuntimeException("nacos address " + nacosIP + " is not ip");
+                    }
                 }
                 String tmpSelfIP = nacosIP;
                 if (StringUtils.isBlank(tmpSelfIP)) {
@@ -115,7 +109,14 @@ public class InetUtils {
                         tmpSelfIP = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
                     }
                 }
-                
+                if (IPUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIP.startsWith(IPUtil.IPV6_START_MARK) && !tmpSelfIP
+                        .endsWith(IPUtil.IPV6_END_MARK)) {
+                    tmpSelfIP = IPUtil.IPV6_START_MARK + tmpSelfIP + IPUtil.IPV6_END_MARK;
+                    if (StringUtils.contains(tmpSelfIP, IPUtil.PERCENT_SIGN_IN_IPV6)) {
+                        tmpSelfIP = tmpSelfIP.substring(0, tmpSelfIP.indexOf(IPUtil.PERCENT_SIGN_IN_IPV6))
+                                + IPUtil.IPV6_END_MARK;
+                    }
+                }
                 if (!Objects.equals(selfIP, tmpSelfIP) && Objects.nonNull(selfIP)) {
                     IPChangeEvent event = new IPChangeEvent();
                     event.setOldIP(selfIP);
@@ -153,12 +154,13 @@ public class InetUtils {
                     } else {
                         continue;
                     }
-                    
+    
                     if (!ignoreInterface(ifc.getDisplayName())) {
                         for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
                             InetAddress address = addrs.nextElement();
-                            if (address instanceof Inet4Address && !address.isLoopbackAddress() && isPreferredAddress(
-                                    address)) {
+                            boolean isLegalIpVersion = IPUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
+                                    : address instanceof Inet4Address;
+                            if (isLegalIpVersion && !address.isLoopbackAddress() && isPreferredAddress(address)) {
                                 LOG.debug("Found non-loopback interface: " + ifc.getDisplayName());
                                 result = address;
                             }
@@ -212,11 +214,6 @@ public class InetUtils {
             }
         }
         return false;
-    }
-    
-    public static boolean isIP(String str) {
-        Matcher matcher = IP_PATTERN.matcher(str);
-        return matcher.matches();
     }
     
     /**

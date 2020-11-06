@@ -16,13 +16,19 @@
 
 package com.alibaba.nacos.config.server.service.datasource;
 
-import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import javax.sql.DataSource;
+
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -31,17 +37,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
+import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Base data source.
@@ -80,8 +82,6 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     private volatile List<Boolean> isHealthList;
     
     private volatile int masterIndex;
-    
-    private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
     
     @Override
     public void init() {
@@ -124,13 +124,14 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     @Override
     public synchronized void reload() throws IOException {
         try {
-            dataSourceList = new ExternalDataSourceProperties().build(EnvUtil.getEnvironment(), (dataSource) -> {
-                JdbcTemplate jdbcTemplate = new JdbcTemplate();
-                jdbcTemplate.setQueryTimeout(queryTimeout);
-                jdbcTemplate.setDataSource(dataSource);
-                testJtList.add(jdbcTemplate);
-                isHealthList.add(Boolean.TRUE);
-            });
+            dataSourceList = new ExternalDataSourceProperties()
+                    .build(EnvUtil.getEnvironment(), (dataSource) -> {
+                        JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                        jdbcTemplate.setQueryTimeout(queryTimeout);
+                        jdbcTemplate.setDataSource(dataSource);
+                        testJtList.add(jdbcTemplate);
+                        isHealthList.add(Boolean.TRUE);
+                    });
             new SelectMasterTask().run();
             new CheckDbHealthTask().run();
         } catch (RuntimeException e) {
@@ -187,25 +188,15 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
                     // The master is unhealthy.
-                    return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
+                    return "DOWN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     // The slave  is unhealthy.
-                    return "WARN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
+                    return "WARN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
         
         return "UP";
-    }
-    
-    private String getIpFromUrl(String url) {
-        
-        Matcher m = ipPattern.matcher(url);
-        if (m.find()) {
-            return m.group();
-        }
-        
-        return "";
     }
     
     static String defaultIfNull(String value, String defaultValue) {
@@ -266,10 +257,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         FATAL_LOG.error("[db-error] master db {} down.",
-                                getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
+                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         FATAL_LOG.error("[db-error] slave db {} down.",
-                                getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
+                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     

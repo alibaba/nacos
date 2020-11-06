@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
@@ -45,7 +47,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
         String url = "http://" + serverIP + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
         
-        if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+        if (IPUtil.containsPort(serverIP)) {
             url = "http://" + serverIP + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/operator/server/status";
         }
@@ -59,17 +61,15 @@ public class ServerStatusSynchronizer implements Synchronizer {
                                 serverIP);
                     }
                 }
-                
+    
                 @Override
                 public void onError(Throwable throwable) {
-                    Loggers.SRV_LOG
-                            .warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP,
-                                    throwable);
+                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, throwable);
                 }
-                
+    
                 @Override
                 public void onCancel() {
-                
+        
                 }
             });
         } catch (Exception e) {
