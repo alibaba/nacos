@@ -45,4 +45,9 @@ public class InstanceEnableBeatCheckInterceptor extends AbstractBeatCheckInterce
         }
         return false;
     }
+    
+    @Override
+    public int order() {
+        return Integer.MIN_VALUE + 1;
+    }
 }

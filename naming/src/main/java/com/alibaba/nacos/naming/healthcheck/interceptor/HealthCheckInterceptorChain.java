@@ -17,52 +17,22 @@
 package com.alibaba.nacos.naming.healthcheck.interceptor;
 
 import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
-import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptor;
-import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptorChain;
-
-import java.util.LinkedList;
-import java.util.List;
+import com.alibaba.nacos.naming.interceptor.AbstractNamingInterceptorChain;
 
 /**
  * Health check interceptor chain.
  *
  * @author xiweng.yy
  */
-public class HealthCheckInterceptorChain implements NacosNamingInterceptorChain<NacosHealthCheckTask> {
+public class HealthCheckInterceptorChain extends AbstractNamingInterceptorChain<NacosHealthCheckTask> {
     
     private static final HealthCheckInterceptorChain INSTANCE = new HealthCheckInterceptorChain();
     
-    private final List<NacosNamingInterceptor<NacosHealthCheckTask>> interceptors;
-    
     private HealthCheckInterceptorChain() {
-        this.interceptors = new LinkedList<>();
-    }
-    
-    static {
-        // TODO inject and register by SPI
-        INSTANCE.addInterceptor(new HealthCheckEnableInterceptor());
-        INSTANCE.addInterceptor(new HealthCheckResponsibleInterceptor());
+        super(AbstractHealthCheckInterceptor.class);
     }
     
     public static HealthCheckInterceptorChain getInstance() {
         return INSTANCE;
-    }
-    
-    @Override
-    public void addInterceptor(NacosNamingInterceptor<NacosHealthCheckTask> interceptor) {
-        interceptors.add(interceptor);
-    }
-    
-    @Override
-    public void doInterceptor(NacosHealthCheckTask object) {
-        for (NacosNamingInterceptor<NacosHealthCheckTask> each : interceptors) {
-            if (!each.isInterceptType(object.getClass())) {
-                continue;
-            }
-            if (each.intercept(object)) {
-                return;
-            }
-        }
-        object.afterIntercept();
     }
 }
