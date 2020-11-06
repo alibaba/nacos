@@ -31,4 +31,9 @@ public class HealthCheckEnableInterceptor extends AbstractHealthCheckInterceptor
     public boolean intercept(NacosHealthCheckTask object) {
         return !ApplicationUtils.getBean(SwitchDomain.class).isHealthCheckEnabled();
     }
+    
+    @Override
+    public int order() {
+        return Integer.MIN_VALUE;
+    }
 }

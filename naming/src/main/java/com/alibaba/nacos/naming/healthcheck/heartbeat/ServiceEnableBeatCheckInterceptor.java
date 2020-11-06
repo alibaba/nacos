@@ -39,4 +39,9 @@ public class ServiceEnableBeatCheckInterceptor extends AbstractBeatCheckIntercep
         }
         return false;
     }
+    
+    @Override
+    public int order() {
+        return Integer.MIN_VALUE;
+    }
 }

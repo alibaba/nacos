@@ -16,52 +16,22 @@
 
 package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
-import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptor;
-import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptorChain;
-
-import java.util.LinkedList;
-import java.util.List;
+import com.alibaba.nacos.naming.interceptor.AbstractNamingInterceptorChain;
 
 /**
  * Instance beat check interceptor chain.
  *
  * @author xiweng.yy
  */
-public class InstanceBeatCheckTaskInterceptorChain implements NacosNamingInterceptorChain<InstanceBeatCheckTask> {
+public class InstanceBeatCheckTaskInterceptorChain extends AbstractNamingInterceptorChain<InstanceBeatCheckTask> {
     
     private static final InstanceBeatCheckTaskInterceptorChain INSTANCE = new InstanceBeatCheckTaskInterceptorChain();
     
-    private final List<NacosNamingInterceptor<InstanceBeatCheckTask>> interceptors;
-    
     private InstanceBeatCheckTaskInterceptorChain() {
-        this.interceptors = new LinkedList<>();
-    }
-    
-    static {
-        // TODO inject and register by SPI
-        INSTANCE.addInterceptor(new ServiceEnableBeatCheckInterceptor());
-        INSTANCE.addInterceptor(new InstanceEnableBeatCheckInterceptor());
+        super(AbstractBeatCheckInterceptor.class);
     }
     
     public static InstanceBeatCheckTaskInterceptorChain getInstance() {
         return INSTANCE;
-    }
-    
-    @Override
-    public void addInterceptor(NacosNamingInterceptor<InstanceBeatCheckTask> interceptor) {
-        interceptors.add(interceptor);
-    }
-    
-    @Override
-    public void doInterceptor(InstanceBeatCheckTask object) {
-        for (NacosNamingInterceptor<InstanceBeatCheckTask> each : interceptors) {
-            if (!each.isInterceptType(object.getClass())) {
-                continue;
-            }
-            if (each.intercept(object)) {
-                return;
-            }
-        }
-        object.afterIntercept();
     }
 }
