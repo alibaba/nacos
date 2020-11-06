@@ -27,8 +27,6 @@ import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
-import com.alibaba.nacos.common.notify.EventPublisher;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,7 +35,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -159,22 +156,24 @@ public class HostReactorTest {
     }
     
     @Test
-    public void testUnsubscribe() throws InterruptedException, IOException {
+    public void testUnsubscribe() throws InterruptedException {
+        Thread.sleep(1000);
+        final AtomicInteger count = new AtomicInteger(1);
         EventListener eventListener = new EventListener() {
             @Override
             public void onEvent(Event event) {
+                count.decrementAndGet();
             }
         };
-        EventPublisher publisher = NotifyCenter.getPublisher(InstancesChangeEvent.class);
-        Assert.assertEquals(0, publisher.getSubscribers().size());
-        
         hostReactor.subscribe("testName", "testClusters", eventListener);
-        Assert.assertEquals(1, publisher.getSubscribers().size());
+        hostReactor.processServiceJson(EXAMPLE);
         
         Thread.sleep(1000);
         
         hostReactor.unSubscribe("testName", "testClusters", eventListener);
-        Assert.assertEquals(0, publisher.getSubscribers().size());
+        hostReactor.processServiceJson(CHANGE_DATA_EXAMPLE);
+        
+        Assert.assertEquals(0, count.intValue());
     }
     
     private void assertServiceInfo(ServiceInfo actual) {
