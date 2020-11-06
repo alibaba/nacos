@@ -24,6 +24,7 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
+import com.alibaba.nacos.console.service.NamespaceServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,6 +53,9 @@ public class NamespaceController {
     
     @Autowired
     private PersistService persistService;
+    
+    @Autowired
+    private NamespaceServiceImpl namespaceService;
     
     private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
     
@@ -137,6 +141,7 @@ public class NamespaceController {
         }
         persistService.insertTenantInfoAtomic("1", namespaceId, namespaceName, namespaceDesc, "nacos",
                 System.currentTimeMillis());
+        namespaceService.addTenantId(namespaceId);
         return true;
     }
     
@@ -185,6 +190,7 @@ public class NamespaceController {
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("namespaceId") String namespaceId) {
         persistService.removeTenantInfoAtomic("1", namespaceId);
+        namespaceService.deleteTenantId(namespaceId);
         return true;
     }
     
