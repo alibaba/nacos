@@ -17,10 +17,8 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.console.filter.ParamCheckFilter;
-import com.alibaba.nacos.console.service.NamespaceServiceImpl;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
@@ -44,14 +42,11 @@ import javax.annotation.PostConstruct;
 @PropertySource("/application.properties")
 public class ConsoleConfig {
     
-    @Value("${server.servlet.contextPath:/nacos}")
-    private String contextPath;
-    
     @Autowired
     private ControllerMethodsCache methodsCache;
     
     @Autowired
-    private NamespaceServiceImpl namespaceService;
+    private ParamCheckFilter paramCheckFilter;
     
     /**
      * Init.
@@ -79,15 +74,10 @@ public class ConsoleConfig {
     @Bean
     public FilterRegistrationBean paramCheckFilterRegistration() {
         FilterRegistrationBean<ParamCheckFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(paramCheckFilter());
+        registration.setFilter(paramCheckFilter);
         registration.addUrlPatterns("/*");
         registration.setName("paramCheckFilter");
         registration.setOrder(2);
         return registration;
-    }
-    
-    @Bean
-    public ParamCheckFilter paramCheckFilter() {
-        return new ParamCheckFilter(contextPath, namespaceService);
     }
 }

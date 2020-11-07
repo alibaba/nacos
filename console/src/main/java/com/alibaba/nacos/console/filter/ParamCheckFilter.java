@@ -24,6 +24,8 @@ import com.alibaba.nacos.console.service.NamespaceServiceImpl;
 import com.alibaba.nacos.core.utils.WebUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -43,16 +45,17 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.NACOS_NAMING_CONTEXT
  * @author horizonzy
  * @since 1.4.0
  */
+@Component
 public class ParamCheckFilter extends OncePerRequestFilter {
-    
-    private String contextPath;
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ParamCheckFilter.class);
     
+    @Value("${server.servlet.contextPath:/nacos}")
+    private String contextPath;
+    
     private final NamespaceServiceImpl namespaceService;
     
-    public ParamCheckFilter(String contextPath, NamespaceServiceImpl namespaceService) {
-        this.contextPath = contextPath;
+    public ParamCheckFilter(NamespaceServiceImpl namespaceService) {
         this.namespaceService = namespaceService;
     }
     
