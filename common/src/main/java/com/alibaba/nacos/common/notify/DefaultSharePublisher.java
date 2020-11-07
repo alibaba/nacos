@@ -79,7 +79,7 @@ public class DefaultSharePublisher extends DefaultPublisher {
         try {
             Set<Subscriber> sets = subMappings.get(subSlowEventType);
             
-            if (sets != null && sets.contains(subscriber)) {
+            if (sets != null) {
                 sets.remove(subscriber);
             }
         } finally {

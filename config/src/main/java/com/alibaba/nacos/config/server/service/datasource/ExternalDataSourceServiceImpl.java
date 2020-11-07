@@ -24,11 +24,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
+import com.alibaba.nacos.common.utils.IPUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -82,8 +81,6 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     private volatile List<Boolean> isHealthList;
     
     private volatile int masterIndex;
-    
-    private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
     
     @Override
     public void init() {
@@ -190,25 +187,15 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
                     // The master is unhealthy.
-                    return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
+                    return "DOWN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     // The slave  is unhealthy.
-                    return "WARN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
+                    return "WARN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
         
         return "UP";
-    }
-    
-    private String getIpFromUrl(String url) {
-        
-        Matcher m = ipPattern.matcher(url);
-        if (m.find()) {
-            return m.group();
-        }
-        
-        return "";
     }
     
     static String defaultIfNull(String value, String defaultValue) {
@@ -269,10 +256,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         FATAL_LOG.error("[db-error] master db {} down.",
-                                getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
+                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         FATAL_LOG.error("[db-error] slave db {} down.",
-                                getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
+                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     
