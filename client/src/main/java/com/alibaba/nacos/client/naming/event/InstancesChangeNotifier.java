@@ -92,7 +92,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      * @param clusters    clusters, concat by ','. such as 'xxx,yyy'
      * @return is serviceName,clusters subscribed
      */
-    public Boolean isSubscribed(String serviceName, String clusters) {
+    public boolean isSubscribed(String serviceName, String clusters) {
         String key = combineListenKey(serviceName, clusters);
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         return CollectionUtils.isNotEmpty(eventListeners);

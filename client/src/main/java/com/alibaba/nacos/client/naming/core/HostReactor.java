@@ -441,7 +441,6 @@ public class HostReactor implements Closeable {
             failCount = 0;
         }
         
-        @SuppressWarnings("checkstyle:EmptyLineSeparator")
         @Override
         public void run() {
             long delayTime = DEFAULT_DELAY;

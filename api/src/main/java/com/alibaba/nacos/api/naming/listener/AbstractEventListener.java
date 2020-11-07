@@ -31,6 +31,8 @@ public abstract class AbstractEventListener implements EventListener {
      *
      * @return Executor
      */
-    public abstract Executor getExecutor();
+    public Executor getExecutor() {
+        return null;
+    }
     
 }

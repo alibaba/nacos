@@ -31,8 +31,13 @@ public class InstancesChangeEvent extends Event {
     
     private static final long serialVersionUID = -8823087028212249603L;
     
-    public InstancesChangeEvent() {
-    }
+    private final String serviceName;
+    
+    private final String groupName;
+    
+    private final String clusters;
+    
+    private final List<Instance> hosts;
     
     public InstancesChangeEvent(String serviceName, String groupName, String clusters, List<Instance> hosts) {
         this.serviceName = serviceName;
@@ -41,44 +46,20 @@ public class InstancesChangeEvent extends Event {
         this.hosts = hosts;
     }
     
-    private String serviceName;
-    
-    private String groupName;
-    
-    private String clusters;
-    
-    private List<Instance> hosts;
-    
     public String getServiceName() {
         return serviceName;
-    }
-    
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
     }
     
     public String getGroupName() {
         return groupName;
     }
     
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
-    }
-    
     public String getClusters() {
         return clusters;
     }
     
-    public void setClusters(String clusters) {
-        this.clusters = clusters;
-    }
-    
     public List<Instance> getHosts() {
         return hosts;
-    }
-    
-    public void setHosts(List<Instance> hosts) {
-        this.hosts = hosts;
     }
     
 }
