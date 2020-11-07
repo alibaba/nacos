@@ -880,6 +880,7 @@ public class StringUtils {
      *                          false}, adjacent separators are treated as one separator.
      * @return an array of parsed Strings, {@code null} if null String input
      */
+    @SuppressWarnings("PMD.AvoidComplexConditionRule")
     private static String[] splitWorker(final String str, final String separatorChars, final int max,
             final boolean preserveAllTokens) {
         // Performance tuned for 2.0 (JDK1.4)
@@ -895,7 +896,8 @@ public class StringUtils {
         }
         final List<String> list = new ArrayList<String>();
         int sizePlus1 = 1;
-        int i = 0, start = 0;
+        int i = 0;
+        int start = 0;
         boolean match = false;
         boolean lastMatch = false;
         if (separatorChars == null) {

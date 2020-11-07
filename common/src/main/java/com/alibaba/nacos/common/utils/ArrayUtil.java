@@ -25,7 +25,6 @@ import java.lang.reflect.Array;
  */
 public class ArrayUtil {
     
-    
     /**
      * The index value when an element is not found in a list or array: {@code -1}. This value is returned by methods in
      * this class and can also be used in comparisons with values returned by various method from {@link
@@ -80,7 +79,7 @@ public class ArrayUtil {
     }
     
     /**
-     * <p>Checks if the object is in the given array.
+     * Checks if the object is in the given array.
      *
      * <p>The method returns {@code false} if a {@code null} array is passed in.
      *
@@ -124,7 +123,7 @@ public class ArrayUtil {
     //-----------------------------------------------------------------------
     
     /**
-     * <p>Finds the index of the given object in the array.
+     * Finds the index of the given object in the array.
      *
      * <p>This method returns {@link #INDEX_NOT_FOUND} ({@code -1}) for a {@code null} input array.
      *
@@ -138,7 +137,7 @@ public class ArrayUtil {
     }
     
     /**
-     * <p>Finds the index of the given object in the array starting at the given index.
+     * Finds the index of the given object in the array starting at the given index.
      *
      * <p>This method returns {@link #INDEX_NOT_FOUND} ({@code -1}) for a {@code null} input array.
      *
