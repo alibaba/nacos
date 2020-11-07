@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 import { getParams, request, aliwareIntl } from './globalLib';
+import { Dialog } from '@alifd/next';
+
+window.Dialog = window.Dialog ? window.Dialog : Dialog;
 
 let hasAlert = false;
 
@@ -81,7 +84,7 @@ request.middleWare((_config = {}) => {
 
       window.Dialog.alert({
         style: { width: 400 },
-        content: aliwareIntl.get('com.alibaba.nacos.pubshow'), // '子账号没有权限，请联系主账号负责人RAM上授权',
+        content: "子账号没有权限，请联系主账号负责人RAM上授权", // aliwareIntl.get('com.alibaba.nacos.pubshow')
         onOk: () => {
           hasAlert = false;
         },

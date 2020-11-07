@@ -113,6 +113,9 @@ class ServiceList extends React.Component {
           loading: false,
         }),
     });
+    setTimeout(() => {
+      this.closeLoading();
+    }, 0);
   }
 
   getQueryLater = () => {
