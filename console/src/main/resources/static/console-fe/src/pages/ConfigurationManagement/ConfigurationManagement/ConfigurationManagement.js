@@ -1064,7 +1064,7 @@ class ConfigurationManagement extends React.Component {
     const { accessToken = '' } = token;
     const uploadProps = {
       accept: 'application/zip',
-      action: `v1/cs/configs?import=true&namespace=${getParams(
+      action: `v1/cs/configs?import=true&tenant=${getParams(
         'namespace'
       )}&accessToken=${accessToken}`,
       headers: Object.assign({}, {}, { accessToken }),

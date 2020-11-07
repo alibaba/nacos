@@ -257,7 +257,7 @@ public class ConfigExportAndImportAPI_CITCase {
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT/test3.properties", "test.test1.value=test"));
         String metaDataStr = "TEST_IMPORT.test2~txt.app=testApp1\r\nTEST_IMPORT.test3~properties.app=testApp2";
         zipItemList.add(new ZipUtils.ZipItem(".meta.yml", metaDataStr));
-        String importUrl = "?import=true&namespace=";
+        String importUrl = "?import=true&tenant=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
         UploadByteFile uploadByteFile = new UploadByteFile();
