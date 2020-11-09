@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -66,20 +67,25 @@ public class ServiceInfo {
     public void setAllIPs(boolean allIPs) {
         this.allIPs = allIPs;
     }
-    
+
+
     public ServiceInfo(String key) {
-        
-        int maxIndex = 2;
-        int clusterIndex = 1;
-        int serviceNameIndex = 0;
-        
-        String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (keys.length >= maxIndex) {
-            this.name = keys[serviceNameIndex];
-            this.clusters = keys[clusterIndex];
-        }
-        
-        this.name = keys[0];
+	int maxIndex = 2;
+	int clusterIndex = 2;
+	int serviceNameIndex = 1;
+	int groupIndex = 0;
+
+	String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
+	if (keys.length >= maxIndex + 1) {
+	    this.groupName = keys[groupIndex];
+	    this.name = keys[serviceNameIndex];
+	    this.clusters = keys[clusterIndex];
+	} else if (keys.length == maxIndex) {
+	    this.groupName = keys[groupIndex];
+	    this.name = keys[serviceNameIndex];
+	} else {
+	    this.name = key[0];
+  	}
     }
     
     public ServiceInfo(String name, String clusters) {
@@ -182,7 +188,11 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKey() {
-        return getKey(name, clusters);
+	String serviceName = this.name;
+	if (StringUtils.isNotEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+	    serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+	}
+	return getKey(serviceName, clusters);
     }
     
     @JsonIgnore
@@ -197,11 +207,16 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKeyEncoded() {
-        try {
-            return getKey(URLEncoder.encode(name, "UTF-8"), clusters);
-        } catch (UnsupportedEncodingException e) {
-            return getKey();
-        }
+	String serviceName;
+	try {
+	    serviceName = URLEncoder.encode(this.name, "UTF-8");
+	} catch (UnsupportedEncodingException e) {
+	    serviceName = this.name;
+	}
+	if (StringUtils.isNotEmpty(groupName) && this.name.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+	    serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+	}
+	return getKey(serviceName, clusters);
     }
     
     /**
