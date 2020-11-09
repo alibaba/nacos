@@ -215,7 +215,10 @@ public class ServiceController {
             return result;
         }
         
-        serviceNameList.removeIf(serviceName -> !serviceName.startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
+        if (!Constants.ALL_PATTERN.equals(groupName)) {
+            serviceNameList
+                    .removeIf(serviceName -> !serviceName.startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
+        }
         
         if (StringUtils.isNotBlank(selectorString)) {
             

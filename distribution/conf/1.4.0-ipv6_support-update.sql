@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http;
+ALTER TABLE `config_info_tag`
+MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL COMMENT 'source ip' AFTER `src_user`;
 
-import java.io.Closeable;
+ALTER TABLE `his_config_info`
+MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL AFTER `src_user`;
 
-/**
- * Nacos http client interface.
- *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- * @deprecated Refer to the new {@link com.alibaba.nacos.common.http.client.request.HttpClientRequest}
- */
-@Deprecated
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public interface NHttpClient extends Closeable {
+ALTER TABLE `config_info`
+MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL COMMENT 'source ip' AFTER `src_user`;
 
-}
+ALTER TABLE `config_info_beta`
+MODIFY COLUMN `src_ip` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT NULL COMMENT 'source ip' AFTER `src_user`;
