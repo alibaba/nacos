@@ -16,33 +16,29 @@
 
 package com.alibaba.nacos.config.server.service.datasource;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import javax.sql.DataSource;
-
-import com.alibaba.nacos.common.utils.IPUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
-
 import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * Base data source.
@@ -50,10 +46,6 @@ import com.zaxxer.hikari.HikariDataSource;
  * @author Nacos
  */
 public class ExternalDataSourceServiceImpl implements DataSourceService {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDataSourceServiceImpl.class);
-    
-    private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
     
     /**
      * JDBC execute timeout value, unit:second.
@@ -196,10 +188,6 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         }
         
         return "UP";
-    }
-    
-    static String defaultIfNull(String value, String defaultValue) {
-        return null == value ? defaultValue : value;
     }
     
     class SelectMasterTask implements Runnable {
