@@ -251,11 +251,11 @@ public class NotifyCenter {
         
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         EventPublisher eventPublisher = INSTANCE.publisherMap.get(topic);
-        if (eventPublisher == null) {
-            return false;
+        if (eventPublisher != null) {
+            eventPublisher.removeSubscriber(consumer);
+            return true;
         }
-        eventPublisher.removeSubscriber(consumer);
-        return true;
+        return false;
     }
     
     /**
@@ -287,12 +287,11 @@ public class NotifyCenter {
         final String topic = ClassUtils.getCanonicalName(eventType);
         
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
-        if (publisher == null) {
-            LOGGER.warn("There are no [{}] publishers for this event, please register", topic);
-            return false;
+        if (publisher != null) {
+            return publisher.publish(event);
         }
-        
-        return publisher.publish(event);
+        LOGGER.warn("There are no [{}] publishers for this event, please register", topic);
+        return false;
     }
     
     /**
