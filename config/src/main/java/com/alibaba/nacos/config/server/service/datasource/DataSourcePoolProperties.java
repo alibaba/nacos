@@ -41,8 +41,6 @@ public class DataSourcePoolProperties {
     
     public static final int DEFAULT_MINIMUM_IDLE = 2;
     
-    public static final String TEST_QUERY = "SELECT 1";
-    
     private final HikariDataSource dataSource;
     
     private DataSourcePoolProperties() {
@@ -51,7 +49,6 @@ public class DataSourcePoolProperties {
         dataSource.setValidationTimeout(DEFAULT_VALIDATION_TIMEOUT);
         dataSource.setMaximumPoolSize(DEFAULT_MAX_POOL_SIZE);
         dataSource.setMinimumIdle(DEFAULT_MINIMUM_IDLE);
-        dataSource.setConnectionTestQuery(TEST_QUERY);
     }
     
     /**

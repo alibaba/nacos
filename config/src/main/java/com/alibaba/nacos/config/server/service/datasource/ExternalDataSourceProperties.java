@@ -35,6 +35,8 @@ public class ExternalDataSourceProperties {
     
     private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
     
+    private static final String TEST_QUERY = "SELECT 1";
+    
     private Integer num;
     
     private List<String> url = new ArrayList<>();
@@ -81,6 +83,7 @@ public class ExternalDataSourceProperties {
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
             HikariDataSource ds = poolProperties.getDataSource();
+            ds.setConnectionTestQuery(TEST_QUERY);
             dataSources.add(ds);
             callback.accept(ds);
         }
