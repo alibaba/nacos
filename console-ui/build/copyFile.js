@@ -19,7 +19,7 @@ const path = require('path');
 // 默认打包存放地址
 const srcDir = path.join(__dirname, '../dist');
 // 打包后文件存放地址
-const destDir = path.join(__dirname, '../../');
+const destDir = path.join(__dirname, '../../console/src/main/resources/static/');
 
 const mkdir = dir => {
     if (!fs.existsSync(dir)) {
