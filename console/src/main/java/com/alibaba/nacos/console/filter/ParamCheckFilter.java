@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.console.filter;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.service.NamespaceServiceImpl;
-import com.alibaba.nacos.core.utils.WebUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,21 +69,18 @@ public class ParamCheckFilter extends OncePerRequestFilter {
         if (StringUtils.isEmpty(path)) {
             return;
         }
-        if (path.startsWith(NACOS_NAMING_CONTEXT)) {
-            final String namespaceId = WebUtils
-                    .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-            if (!namespaceService.tenantIsExist(namespaceId)) {
-                throw new IllegalArgumentException(
-                        "Param 'namespaceId':" + namespaceId + " is not exist, please create it firstly'");
-            }
+        
+        if (!path.startsWith(NACOS_NAMING_CONTEXT) && !path.startsWith(CONFIG_CONTROLLER_PATH)) {
+            return;
         }
-        if (path.startsWith(CONFIG_CONTROLLER_PATH)) {
-            final String namespaceId = WebUtils
-                    .optional(request, SpasAdapter.TENANT_KEY, Constants.DEFAULT_NAMESPACE_ID);
-            if (!namespaceService.tenantIsExist(namespaceId)) {
-                throw new IllegalArgumentException(
-                        "Param 'tenant':" + namespaceId + " is not exist, please create it firstly'");
-            }
+        
+        String namespaceId = request.getParameter(CommonParams.NAMESPACE_ID);
+        if (StringUtils.isNotEmpty(namespaceId) && !namespaceService.namespaceIsExist(namespaceId)) {
+            throw new IllegalArgumentException("'" + namespaceId + "' is not exist, please create it firstly");
+        }
+        String tenant = request.getParameter(SpasAdapter.TENANT_KEY);
+        if (StringUtils.isNotEmpty(tenant) && !namespaceService.namespaceIsExist(tenant)) {
+            throw new IllegalArgumentException("'" + namespaceId + "' is not exist, please create it firstly");
         }
         
     }

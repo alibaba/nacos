@@ -141,7 +141,7 @@ public class NamespaceController {
         }
         persistService.insertTenantInfoAtomic("1", namespaceId, namespaceName, namespaceDesc, "nacos",
                 System.currentTimeMillis());
-        namespaceService.addTenantId(namespaceId);
+        namespaceService.addNamespaceId(namespaceId);
         return true;
     }
     
@@ -190,7 +190,7 @@ public class NamespaceController {
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("namespaceId") String namespaceId) {
         persistService.removeTenantInfoAtomic("1", namespaceId);
-        namespaceService.deleteTenantId(namespaceId);
+        namespaceService.deleteNamespaceId(namespaceId);
         return true;
     }
     

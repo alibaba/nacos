@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.console.service;
 
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -26,8 +26,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 
 /**
  * namespace service.
@@ -41,40 +39,38 @@ public class NamespaceServiceImpl {
     @Autowired
     private PersistService persistService;
     
-    private List<String> tenantIds = new ArrayList<>();
+    private List<String> namespaceIds = new ArrayList<>();
     
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
         try {
-            List<String> tmpTenantIds = new ArrayList<>(tenantIds.size());
+            List<String> namespaceIds = new ArrayList<>(this.namespaceIds.size());
+            namespaceIds.add(Constants.DEFAULT_NAMESPACE_ID);
             List<TenantInfo> tenantInfos = persistService.findTenantByKp("1");
             for (TenantInfo tenantInfo : tenantInfos) {
-                tmpTenantIds.add(tenantInfo.getTenantId());
+                namespaceIds.add(tenantInfo.getTenantId());
             }
-            tenantIds = tmpTenantIds;
+            this.namespaceIds = namespaceIds;
         } catch (Exception e) {
             Loggers.CORE.warn("[LOAD-TENANT-IDS] load failed", e);
         }
     }
     
-    public void addTenantId(String tenantId) {
-        tenantIds.add(tenantId);
+    public void addNamespaceId(String namespaceId) {
+        namespaceIds.add(namespaceId);
     }
     
-    public void deleteTenantId(String tenantId) {
-        tenantIds.remove(tenantId);
+    public void deleteNamespaceId(String namespaceId) {
+        namespaceIds.remove(namespaceId);
     }
     
     /**
-     * check tenantId is exist.
+     * check namespaceId is exist.
      *
-     * @param tenantId tenantId
-     * @return is tenant is exist
+     * @param namespaceId namespaceId
+     * @return is namespaceId is exist
      */
-    public boolean tenantIsExist(String tenantId) {
-        if (StringUtils.isEmpty(tenantId) || DEFAULT_NAMESPACE_ID.equals(tenantId)) {
-            return true;
-        }
-        return tenantIds.contains(tenantId);
+    public boolean namespaceIsExist(String namespaceId) {
+        return namespaceIds.contains(namespaceId);
     }
 }
