@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
-import com.alibaba.nacos.naming.core.v2.metadata.NacosNamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -32,7 +32,7 @@ public class ServiceEnableBeatCheckInterceptor extends AbstractBeatCheckIntercep
     
     @Override
     public boolean intercept(InstanceBeatCheckTask object) {
-        NacosNamingMetadataManager metadataManager = ApplicationUtils.getBean(NacosNamingMetadataManager.class);
+        NamingMetadataManager metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
         Optional<ServiceMetadata> metadata = metadataManager.getServiceMetadata(object.getService());
         if (metadata.isPresent() && metadata.get().getExtendData().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
             return Boolean.parseBoolean(metadata.get().getExtendData().get(UtilsAndCommons.ENABLE_CLIENT_BEAT));
