@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.metadata;
 import com.alibaba.nacos.api.selector.SelectorType;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -72,5 +73,23 @@ public class ServiceMetadata {
     
     public void setClusters(Map<String, ClusterMetadata> clusters) {
         this.clusters = clusters;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ServiceMetadata)) {
+            return false;
+        }
+        ServiceMetadata metadata = (ServiceMetadata) o;
+        return Float.compare(metadata.protectThreshold, protectThreshold) == 0 && selectorType == metadata.selectorType
+                && Objects.equals(extendData, metadata.extendData) && Objects.equals(clusters, metadata.clusters);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(protectThreshold, selectorType, extendData, clusters);
     }
 }
