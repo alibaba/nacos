@@ -68,24 +68,24 @@ public class ServiceInfo {
         this.allIPs = allIPs;
     }
     
-		public ServiceInfo(String key) {
-				int maxIndex = 2;
-				int clusterIndex = 2;
-				int serviceNameIndex = 1;
-				int groupIndex = 0;
-			
-				String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
-				if (keys.length >= maxIndex + 1) {
-					this.groupName = keys[groupIndex];
-					this.name = keys[serviceNameIndex];
-					this.clusters = keys[clusterIndex];
-				} else if (keys.length == maxIndex) {
-					this.groupName = keys[groupIndex];
-					this.name = keys[serviceNameIndex];
-				} else {
-					this.name = key[0];
-				}
-		}
+    public ServiceInfo(String key) {
+        int maxIndex = 2;
+        int clusterIndex = 2;
+        int serviceNameIndex = 1;
+        int groupIndex = 0;
+
+        String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
+        if (keys.length >= maxIndex + 1) {
+            this.groupName = keys[groupIndex];
+            this.name = keys[serviceNameIndex];
+            this.clusters = keys[clusterIndex];
+        } else if (keys.length == maxIndex) {
+            this.groupName = keys[groupIndex];
+            this.name = keys[serviceNameIndex];
+        } else {
+            this.name = key[0];
+        }
+    }
     
     public ServiceInfo(String name, String clusters) {
         this.name = name;
@@ -187,12 +187,12 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKey() {
-				String serviceName = this.name;
-				if (StringUtils.isNotEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
-					serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
-				}
-				return getKey(serviceName, clusters);    
-		}
+        String serviceName = this.name;
+        if (StringUtils.isNotEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+            serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+        }
+        return getKey(serviceName, clusters);    
+    }
     
     @JsonIgnore
     public static String getKey(String name, String clusters) {
@@ -206,16 +206,16 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKeyEncoded() {
-				String serviceName;
-				try {
-						serviceName = URLEncoder.encode(this.name, "UTF-8");
-				} catch (UnsupportedEncodingException e) {
-						serviceName = this.name;
-				}
-				if (StringUtils.isNotEmpty(groupName) && this.name.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
-						serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
-				}
-				return getKey(serviceName, clusters);
+        String serviceName;
+        try {
+            serviceName = URLEncoder.encode(this.name, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            serviceName = this.name;
+        }
+        if (StringUtils.isNotEmpty(groupName) && this.name.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+            serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+        }
+        return getKey(serviceName, clusters);
     }
     
     /**
