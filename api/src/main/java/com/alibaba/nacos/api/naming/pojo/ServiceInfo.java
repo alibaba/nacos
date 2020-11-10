@@ -188,7 +188,7 @@ public class ServiceInfo {
     @JsonIgnore
     public String getKey() {
         String serviceName = this.name;
-        if (StringUtils.isNotEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+        if (!StringUtils.isBlank(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
             serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         }
         return getKey(serviceName, clusters);    
@@ -212,7 +212,7 @@ public class ServiceInfo {
         } catch (UnsupportedEncodingException e) {
             serviceName = this.name;
         }
-        if (StringUtils.isNotEmpty(groupName) && this.name.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+        if (!StringUtils.isBlank(groupName) && this.name.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
             serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         }
         return getKey(serviceName, clusters);
