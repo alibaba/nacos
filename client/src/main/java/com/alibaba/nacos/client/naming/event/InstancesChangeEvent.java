@@ -25,7 +25,7 @@ import java.util.List;
  * Instances change event.
  *
  * @author horizonzy
- * @since 1.4.0
+ * @since 1.4.1
  */
 public class InstancesChangeEvent extends Event {
     

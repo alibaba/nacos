@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * A subscriber to notify eventListener callback.
  *
  * @author horizonzy
- * @since 1.4.0
+ * @since 1.4.1
  */
 public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     

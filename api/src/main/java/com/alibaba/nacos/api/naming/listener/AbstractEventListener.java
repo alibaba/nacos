@@ -22,7 +22,7 @@ import java.util.concurrent.Executor;
  * Abstract event listener, to support handle event by user custom executor.
  *
  * @author horizonzy
- * @since 1.4.0
+ * @since 1.4.1
  */
 public abstract class AbstractEventListener implements EventListener {
     
