@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.naming.event;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
@@ -25,7 +24,6 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +50,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      * @param listener    custom listener
      */
     public void registerListener(String serviceName, String clusters, EventListener listener) {
-        String key = combineListenKey(serviceName, clusters);
+        String key = ServiceInfo.getKey(serviceName, clusters);
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (eventListeners == null) {
             synchronized (lock) {
@@ -74,7 +72,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      * @param listener    custom listener
      */
     public void deregisterListener(String serviceName, String clusters, EventListener listener) {
-        String key = combineListenKey(serviceName, clusters);
+        String key = ServiceInfo.getKey(serviceName, clusters);
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (eventListeners == null) {
             return;
@@ -93,7 +91,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      * @return is serviceName,clusters subscribed
      */
     public boolean isSubscribed(String serviceName, String clusters) {
-        String key = combineListenKey(serviceName, clusters);
+        String key = ServiceInfo.getKey(serviceName, clusters);
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         return CollectionUtils.isNotEmpty(eventListeners);
     }
@@ -108,7 +106,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     @Override
     public void onEvent(InstancesChangeEvent event) {
-        String key = combineListenKey(event.getServiceName(), event.getClusters());
+        String key = ServiceInfo.getKey(event.getServiceName(), event.getClusters());
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (CollectionUtils.isEmpty(eventListeners)) {
             return;
@@ -139,10 +137,4 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         return InstancesChangeEvent.class;
     }
     
-    private String combineListenKey(String serviceName, String clusters) {
-        if (!StringUtils.isEmpty(clusters)) {
-            return serviceName + Constants.SERVICE_INFO_SPLITER + clusters;
-        }
-        return serviceName;
-    }
 }
