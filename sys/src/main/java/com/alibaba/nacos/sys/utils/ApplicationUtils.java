@@ -87,7 +87,7 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     
     private static String functionModeType = null;
     
-    private static String contextPath = "";
+    private static String contextPath = null;
     
     @JustForTest
     private static String confPath = "";
@@ -367,14 +367,10 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     }
     
     public static String getContextPath() {
-        if (StringUtils.isBlank(contextPath)) {
-            if (StringUtils.isBlank(contextPath)) {
-                contextPath = getProperty(Constants.WEB_CONTEXT_PATH, "/nacos");
-            }
+        if (Objects.isNull(contextPath)) {
+            contextPath = getProperty(Constants.WEB_CONTEXT_PATH, "/nacos");
             if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
-                return StringUtils.EMPTY;
-            } else {
-                return contextPath;
+                contextPath = StringUtils.EMPTY;
             }
         }
         return contextPath;
