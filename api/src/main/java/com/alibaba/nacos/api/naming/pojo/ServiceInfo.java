@@ -83,7 +83,7 @@ public class ServiceInfo {
             this.groupName = keys[groupIndex];
             this.name = keys[serviceNameIndex];
         } else {
-            this.name = key[0];
+            this.name = keys[0];
         }
     }
     
