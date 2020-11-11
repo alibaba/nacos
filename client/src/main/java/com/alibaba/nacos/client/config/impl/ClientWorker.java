@@ -56,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
+import static com.alibaba.nacos.api.common.Constants.ENCRYPTED_DATA_KEY;
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
@@ -279,7 +280,7 @@ public class ClientWorker implements Closeable {
     
     public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
             throws NacosException {
-        String[] ct = new String[2];
+        String[] ct = new String[3];
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
@@ -307,15 +308,22 @@ public class ClientWorker implements Closeable {
         switch (result.getCode()) {
             case HttpURLConnection.HTTP_OK:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.getData());
+                LocalEncryptedDataKeyProcessor.saveEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant,
+                        result.getHeader().getValue(CONFIG_TYPE));
+                
                 ct[0] = result.getData();
                 if (result.getHeader().getValue(CONFIG_TYPE) != null) {
                     ct[1] = result.getHeader().getValue(CONFIG_TYPE);
                 } else {
                     ct[1] = ConfigType.TEXT.getType();
                 }
+                if (result.getHeader().getValue(ENCRYPTED_DATA_KEY) != null) {
+                    ct[2] = result.getHeader().getValue(ENCRYPTED_DATA_KEY);
+                }
                 return ct;
             case HttpURLConnection.HTTP_NOT_FOUND:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
+                LocalEncryptedDataKeyProcessor.saveEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant, null);
                 return ct;
             case HttpURLConnection.HTTP_CONFLICT: {
                 LOGGER.error(
@@ -352,6 +360,10 @@ public class ClientWorker implements Closeable {
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
             
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor
+                    .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+            cacheData.setEncryptedDataKey(encryptedDataKey);
+            
             LOGGER.warn(
                     "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
                     agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
@@ -374,6 +386,10 @@ public class ClientWorker implements Closeable {
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
+            
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor
+                    .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+            cacheData.setEncryptedDataKey(encryptedDataKey);
             LOGGER.warn(
                     "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
                     agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
@@ -636,6 +652,9 @@ public class ClientWorker implements Closeable {
                         cache.setContent(ct[0]);
                         if (null != ct[1]) {
                             cache.setType(ct[1]);
+                        }
+                        if (null != ct[2]) {
+                            cache.setEncryptedDataKey(ct[2]);
                         }
                         LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
                                 agent.getName(), dataId, group, tenant, cache.getMd5(),

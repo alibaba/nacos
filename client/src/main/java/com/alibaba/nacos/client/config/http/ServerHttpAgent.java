@@ -19,6 +19,9 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
+import com.alibaba.nacos.client.config.filter.impl.KmsConfigFilter;
+import com.alibaba.nacos.client.config.filter.impl.KmsFilterConfig;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
@@ -223,8 +226,7 @@ public class ServerHttpAgent implements HttpAgent {
                 LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}",
                         serverListMgr.getCurrentServerAddr(), ExceptionUtil.getStackTrace(stoe));
             } catch (Exception ex) {
-                LOGGER.error(
-                        "[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
+                LOGGER.error("[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
                         ex);
                 throw ex;
             }
@@ -275,9 +277,26 @@ public class ServerHttpAgent implements HttpAgent {
         this.serverListMgr = new ServerListManager(properties);
         this.securityProxy = new SecurityProxy(properties, NACOS_RESTTEMPLATE);
         this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        
         init(properties);
         this.securityProxy.login(this.serverListMgr.getServerUrls());
+        initExecutorService();
         
+    }
+    
+    public ServerHttpAgent(ConfigFilterChainManager configFilterChainManager, Properties properties)
+            throws NacosException {
+        this.serverListMgr = new ServerListManager(properties);
+        this.securityProxy = new SecurityProxy(properties, NACOS_RESTTEMPLATE);
+        this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        this.configFilterChainManager = configFilterChainManager;
+        
+        init(properties);
+        this.securityProxy.login(this.serverListMgr.getServerUrls());
+        initExecutorService();
+    }
+    
+    private void initExecutorService() {
         // init executorService
         this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
@@ -295,7 +314,6 @@ public class ServerHttpAgent implements HttpAgent {
                 securityProxy.login(serverListMgr.getServerUrls());
             }
         }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-        
     }
     
     private void injectSecurityInfo(Map<String, String> params) {
@@ -311,6 +329,7 @@ public class ServerHttpAgent implements HttpAgent {
         initEncode(properties);
         initAkSk(properties);
         initMaxRetry(properties);
+        initKms(properties);
     }
     
     private void initEncode(Properties properties) {
@@ -341,6 +360,41 @@ public class ServerHttpAgent implements HttpAgent {
             secretKey = SpasAdapter.getSk();
         } else {
             secretKey = sk;
+        }
+    }
+    
+    private void initKms(Properties properties) {
+        if (this.configFilterChainManager == null) {
+            return;
+        }
+        boolean openKmsFilter = properties.get(PropertyKeyConst.OPEN_KMS_FILTER) != null && (Boolean) properties
+                .get(PropertyKeyConst.OPEN_KMS_FILTER);
+        if (openKmsFilter) {
+            final KmsConfigFilter kmsConfigFilter = new KmsConfigFilter();
+            KmsFilterConfig filterConfig = new KmsFilterConfig();
+            filterConfig
+                    .addInitParamter(PropertyKeyConst.KMS_KEY_ID, properties.getProperty(PropertyKeyConst.KMS_KEY_ID));
+            filterConfig
+                    .addInitParamter(PropertyKeyConst.REGION_ID, properties.getProperty(PropertyKeyConst.REGION_ID));
+            filterConfig.addInitParamter(PropertyKeyConst.RAM_ROLE_NAME, StsConfig.getInstance().getRamRoleName());
+            filterConfig.addInitParamter(PropertyKeyConst.ACCESS_KEY, accessKey);
+            filterConfig.addInitParamter(PropertyKeyConst.SECRET_KEY, secretKey);
+            
+            if (System.getProperties().containsKey(PropertyKeyConst.KMS_ENDPOINT)) {
+                filterConfig.addInitParamter(PropertyKeyConst.KMS_ENDPOINT,
+                        System.getProperty(PropertyKeyConst.KMS_ENDPOINT));
+            } else {
+                String kmsEndpoint = properties.getProperty(PropertyKeyConst.KMS_ENDPOINT);
+                filterConfig.addInitParamter(PropertyKeyConst.KMS_ENDPOINT, kmsEndpoint);
+            }
+            
+            String securityCredentials = StsConfig.getInstance().getSecurityCredentials();
+            if (StringUtils.isNotBlank(securityCredentials)) {
+                filterConfig.addInitParamter(PropertyKeyConst.SECURITY_CREDENTIALS, securityCredentials);
+            }
+            
+            kmsConfigFilter.init(filterConfig);
+            this.configFilterChainManager.addFilter(kmsConfigFilter);
         }
     }
     
@@ -511,6 +565,8 @@ public class ServerHttpAgent implements HttpAgent {
     
     private volatile StsCredential stsCredential;
     
-    final ServerListManager serverListMgr;
+    private final ServerListManager serverListMgr;
+    
+    private ConfigFilterChainManager configFilterChainManager;
     
 }

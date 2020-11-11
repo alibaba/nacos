@@ -65,6 +65,14 @@ public class ConfigRequest implements IConfigRequest {
         param.put("content", content);
     }
     
+    public String getEncryptedDataKey() {
+        return (String) param.get("encryptedDataKey");
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        param.put("encryptedDataKey", encryptedDataKey);
+    }
+    
     @Override
     public Object getParameter(String key) {
         return param.get(key);
