@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
-import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.naming.selector.Selector;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,7 +38,7 @@ public class ServiceMetadata {
     /**
      * Type of {@link com.alibaba.nacos.naming.selector.Selector}.
      */
-    private SelectorType selectorType = SelectorType.none;
+    private Selector selector = new NoneSelector();
     
     private Map<String, String> extendData = new ConcurrentHashMap<>(1);
     
@@ -50,12 +52,12 @@ public class ServiceMetadata {
         this.protectThreshold = protectThreshold;
     }
     
-    public SelectorType getSelectorType() {
-        return selectorType;
+    public Selector getSelector() {
+        return selector;
     }
     
-    public void setSelectorType(SelectorType selectorType) {
-        this.selectorType = selectorType;
+    public void setSelector(Selector selector) {
+        this.selector = selector;
     }
     
     public Map<String, String> getExtendData() {
@@ -72,5 +74,23 @@ public class ServiceMetadata {
     
     public void setClusters(Map<String, ClusterMetadata> clusters) {
         this.clusters = clusters;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ServiceMetadata)) {
+            return false;
+        }
+        ServiceMetadata metadata = (ServiceMetadata) o;
+        return Float.compare(metadata.protectThreshold, protectThreshold) == 0 && selector == metadata.selector
+                && Objects.equals(extendData, metadata.extendData) && Objects.equals(clusters, metadata.clusters);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(protectThreshold, selector, extendData, clusters);
     }
 }

@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,8 @@ public class ServiceStorage {
     
     private final ConcurrentMap<Service, ServiceInfo> serviceDataIndexes;
     
+    private final ConcurrentMap<Service, Set<String>> serviceClusterIndex;
+    
     private final ConcurrentMap<String, Set<Service>> namespaceServiceIndex;
     
     public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager, ClientManagerDelegate clientManager,
@@ -62,8 +65,9 @@ public class ServiceStorage {
         this.serviceIndexesManager = serviceIndexesManager;
         this.clientManager = clientManager;
         this.switchDomain = switchDomain;
-        serviceDataIndexes = new ConcurrentHashMap<>();
-        namespaceServiceIndex = new ConcurrentHashMap<>();
+        this.serviceDataIndexes = new ConcurrentHashMap<>();
+        this.serviceClusterIndex = new ConcurrentHashMap<>();
+        this.namespaceServiceIndex = new ConcurrentHashMap<>();
     }
     
     public ServiceInfo getData(Service service) {
@@ -77,14 +81,24 @@ public class ServiceStorage {
         result.setLastRefTime(System.currentTimeMillis());
         result.setCacheMillis(switchDomain.getDefaultPushCacheMillis());
         List<Instance> instances = new LinkedList<>();
+        Set<String> clusters = new HashSet<>();
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
             Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(each, service);
-            instancePublishInfo.ifPresent(publishInfo -> instances.add(parseInstance(service, publishInfo)));
+            if (instancePublishInfo.isPresent()) {
+                Instance instance = parseInstance(service, instancePublishInfo.get());
+                instances.add(instance);
+                clusters.add(instance.getClusterName());
+            }
         }
         result.setHosts(instances);
         serviceDataIndexes.put(service, result);
+        serviceClusterIndex.put(service, clusters);
         updateNamespaceIndex(service);
         return result;
+    }
+    
+    public Set<String> getClusters(Service service) {
+        return serviceClusterIndex.getOrDefault(service, new HashSet<>());
     }
     
     public Collection<Service> getAllServicesOfNamespace(String namespace) {
@@ -114,6 +128,7 @@ public class ServiceStorage {
         }
         result.setMetadata(instanceMetadata);
         result.setEphemeral(service.isEphemeral());
+        result.setHealthy(instancePublishInfo.isHealthy());
         return result;
     }
     

@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
-import com.alibaba.nacos.naming.core.v2.metadata.NacosNamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -65,7 +65,7 @@ public class ExpiredInstanceChecker implements InstanceBeatChecker {
     }
     
     private Optional<Object> getTimeoutFromMetadata(Service service, InstancePublishInfo instance) {
-        Optional<InstanceMetadata> instanceMetadata = ApplicationUtils.getBean(NacosNamingMetadataManager.class)
+        Optional<InstanceMetadata> instanceMetadata = ApplicationUtils.getBean(NamingMetadataManager.class)
                 .getInstanceMetadata(service, instance.getIp());
         return instanceMetadata.map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
     }

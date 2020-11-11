@@ -29,13 +29,13 @@ import java.util.concurrent.ConcurrentMap;
  * @author xiweng.yy
  */
 @Component
-public class NacosNamingMetadataManager {
+public class NamingMetadataManager {
     
     private final ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap;
     
     private final ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataMap;
     
-    public NacosNamingMetadataManager() {
+    public NamingMetadataManager() {
         serviceMetadataMap = new ConcurrentHashMap<>(1 << 10);
         instanceMetadataMap = new ConcurrentHashMap<>(1 << 10);
     }
