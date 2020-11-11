@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
-import com.alibaba.nacos.naming.core.v2.metadata.NacosNamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
@@ -61,7 +61,7 @@ public class HealthCheckTaskInterceptWrapperTest {
     private HealthCheckTaskInterceptWrapper taskWrapper;
     
     @Mock
-    private NacosNamingMetadataManager nacosNamingMetadataManager;
+    private NamingMetadataManager namingMetadataManager;
     
     @Mock
     private GlobalConfig globalConfig;
@@ -79,7 +79,7 @@ public class HealthCheckTaskInterceptWrapperTest {
     
     @Before
     public void setUp() throws Exception {
-        when(applicationContext.getBean(NacosNamingMetadataManager.class)).thenReturn(nacosNamingMetadataManager);
+        when(applicationContext.getBean(NamingMetadataManager.class)).thenReturn(namingMetadataManager);
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
         when(applicationContext.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(applicationContext.getBean(DistroMapper.class)).thenReturn(distroMapper);
@@ -162,7 +162,7 @@ public class HealthCheckTaskInterceptWrapperTest {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
         metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000L);
-        when(nacosNamingMetadataManager.getInstanceMetadata(service, IP)).thenReturn(Optional.of(metadata));
+        when(namingMetadataManager.getInstanceMetadata(service, IP)).thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         taskWrapper.run();

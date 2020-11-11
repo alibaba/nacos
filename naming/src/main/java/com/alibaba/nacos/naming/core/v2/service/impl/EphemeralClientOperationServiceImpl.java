@@ -75,6 +75,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         result.getExtendDatum().putAll(instance.getMetadata());
         String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
                 : instance.getClusterName();
+        result.setHealthy(instance.isHealthy());
         result.getExtendDatum().put(CommonParams.CLUSTER_NAME, clusterName);
         return result;
     }

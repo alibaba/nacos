@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
-import com.alibaba.nacos.naming.core.v2.metadata.NacosNamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
@@ -52,8 +52,8 @@ public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCh
         return ApplicationUtils.getBean(GlobalConfig.class);
     }
     
-    public NacosNamingMetadataManager getMetadataManager() {
-        return ApplicationUtils.getBean(NacosNamingMetadataManager.class);
+    public NamingMetadataManager getMetadataManager() {
+        return ApplicationUtils.getBean(NamingMetadataManager.class);
     }
     
     @Override
