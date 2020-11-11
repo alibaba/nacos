@@ -40,8 +40,8 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
@@ -458,10 +458,10 @@ public class JRaftServer {
     
     boolean peerChange(JRaftMaintainService maintainService, Set<String> newPeers) {
         Set<String> oldPeers = new HashSet<>(this.raftConfig.getMembers());
-        oldPeers.removeAll(newPeers);
         
-        if (oldPeers.isEmpty()) {
-            return true;
+        // If the list of old and new clusters does not want to wait, it is returned
+        if (oldPeers.equals(newPeers)) {
+            return false;
         }
         
         Set<String> waitRemove = oldPeers;
@@ -501,8 +501,7 @@ public class JRaftServer {
             // fix issue #3661  https://github.com/alibaba/nacos/issues/3661
             status = instance.refreshLeader(this.cliClientService, groupName, rpcRequestTimeoutMs);
             if (!status.isOk()) {
-                Loggers.RAFT
-                        .error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
+                Loggers.RAFT.error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
             }
             status = instance.refreshConfiguration(this.cliClientService, groupName, rpcRequestTimeoutMs);
             if (!status.isOk()) {
@@ -529,6 +528,11 @@ public class JRaftServer {
     
     Map<String, RaftGroupTuple> getMultiRaftGroup() {
         return multiRaftGroup;
+    }
+    
+    @JustForTest
+    void mockMultiRaftGroup(Map<String, RaftGroupTuple> map) {
+        this.multiRaftGroup = map;
     }
     
     CliService getCliService() {
