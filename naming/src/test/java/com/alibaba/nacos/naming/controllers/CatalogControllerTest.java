@@ -67,7 +67,7 @@ public class CatalogControllerTest {
     
     @Test
     public void testServiceDetail() throws Exception {
-        ObjectNode result = catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID,
+        Object result = catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID,
                 TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME);
         String actual = result.toString();
         assertTrue(actual.contains("\"service\":{"));
