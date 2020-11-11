@@ -407,7 +407,7 @@ public class HostReactor implements Closeable {
         ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
         pushReceiver.shutdown();
         failoverReactor.shutdown();
-        NotifyCenter.shutdown();
+        NotifyCenter.deregisterSubscriber(notifier);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
     
