@@ -81,26 +81,43 @@ public class JRaftServerTest {
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
                 Member.builder().ip("127.0.0.3").port(82).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(firstEvent));
+<<<<<<< HEAD
         Assert.assertFalse(changed.get());
+=======
+        Assert.assertTrue(changed.get());
+>>>>>>> 3e33851d17ef504b2cd640695e7cd25089be846e
         changed.set(false);
         
         Collection<Member> secondEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
+<<<<<<< HEAD
                 Member.builder().ip("127.0.0.4").port(83).build());
+=======
+                Member.builder().ip("127.0.0.3").port(82).build(), Member.builder().ip("127.0.0.4").port(83).build());
+>>>>>>> 3e33851d17ef504b2cd640695e7cd25089be846e
         server.peerChange(service, ProtocolManager.toCPMembersInfo(secondEvent));
         Assert.assertTrue(changed.get());
         changed.set(false);
         
         Collection<Member> thirdEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
+<<<<<<< HEAD
                 Member.builder().ip("127.0.0.2").port(81).build(),
+=======
+                Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
+>>>>>>> 3e33851d17ef504b2cd640695e7cd25089be846e
                 Member.builder().ip("127.0.0.5").port(82).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(thirdEvent));
         Assert.assertTrue(changed.get());
         changed.set(false);
         
+<<<<<<< HEAD
         // remove Member.builder().ip("127.0.0.2").port(81).build()
         Collection<Member> fourEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build());
+=======
+        Collection<Member> fourEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
+                Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build());
+>>>>>>> 3e33851d17ef504b2cd640695e7cd25089be846e
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fourEvent));
         Assert.assertTrue(changed.get());
         changed.set(false);
@@ -108,7 +125,11 @@ public class JRaftServerTest {
         Collection<Member> fiveEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.3").port(81).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fiveEvent));
+<<<<<<< HEAD
         Assert.assertFalse(changed.get());
+=======
+        Assert.assertTrue(changed.get());
+>>>>>>> 3e33851d17ef504b2cd640695e7cd25089be846e
         changed.set(false);
     }
 }
