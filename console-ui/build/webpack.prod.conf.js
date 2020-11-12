@@ -26,8 +26,8 @@ cssLoader.use.push({
   loader: '@alifd/next-theme-loader',
   options: {
     modifyVars: {
-      '$icon-font-path': '"/nacos/icons/icon-font"',
-      '$font-custom-path': '"/nacos/fonts/"'
+      '$icon-font-path': '"/nacos/console-ui/public/icons/icon-font"',
+      '$font-custom-path': '"/nacos/console-ui/public/fonts/"'
     }
   }
 })
