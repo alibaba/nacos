@@ -52,7 +52,7 @@ public class GrpcConnection extends Connection {
      * grpc channel.
      */
     protected ManagedChannel channel;
-
+    
     /**
      * stub to send request.
      */

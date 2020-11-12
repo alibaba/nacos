@@ -56,7 +56,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         if (ServerCheckRequest.class.getName().equals(type)) {
     
-            Loggers.RPC_DIGEST.debug(String.format("[%s]  server check request receive ,clientIp : %s ", "grpc",
+            Loggers.REMOTE_DIGEST.debug(String.format("[%s]  server check request receive ,clientIp : %s ", "grpc",
                     grpcRequest.getMetadata().getClientIp()));
             responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse()));
             responseObserver.onCompleted();
@@ -67,9 +67,6 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         if (parseObj != null) {
             Request request = (Request) parseObj.getBody();
-            Loggers.RPC_DIGEST.debug(String
-                    .format("[%s] request receive :%s,clientIp : %s ", "grpc", request.toString(),
-                            grpcRequest.getMetadata().getClientIp()));
             RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
             if (requestHandler != null) {
                 try {
@@ -86,14 +83,14 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                     return;
                 } catch (Exception e) {
     
-                    Loggers.RPC_DIGEST.error(String
+                    Loggers.REMOTE_DIGEST.error(String
                             .format("[%s] fail to handle request ,error message :%s", "grpc", e.getMessage(), e));
                     responseObserver.onNext(GrpcUtils.convert(buildFailResponse("Error")));
                     responseObserver.onCompleted();
                     return;
                 }
             } else {
-                Loggers.RPC_DIGEST.debug(String.format("[%s] no handler for request type : %s :", "grpc", type));
+                Loggers.REMOTE_DIGEST.debug(String.format("[%s] no handler for request type : %s :", "grpc", type));
                 responseObserver.onNext(GrpcUtils.convert(buildFailResponse("RequestHandler Not Found")));
                 responseObserver.onCompleted();
                 return;

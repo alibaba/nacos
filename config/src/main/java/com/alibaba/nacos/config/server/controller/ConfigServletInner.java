@@ -22,16 +22,16 @@ import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
@@ -121,6 +121,8 @@ public class ConfigServletInner {
             String tenant, String tag, String clientIp) throws IOException, ServletException {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String autoTag = request.getHeader("Vipserver-Tag");
+        boolean notify = Boolean.valueOf(request.getHeader("notify"));
+        
         String requestIpApp = RequestUtil.getAppName(request);
         int lockResult = tryConfigReadLock(groupKey);
         
@@ -194,7 +196,7 @@ public class ConfigServletInner {
                                 // FIXME CacheItem
                                 // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify);
                                 
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
@@ -226,7 +228,7 @@ public class ConfigServletInner {
                             // FIXME CacheItem
                             // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify);
                             
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
@@ -272,7 +274,7 @@ public class ConfigServletInner {
                  because the delayed value of active get requests is very large.
                  */
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                        ConfigTraceService.PULL_EVENT_OK, delayed, requestIp);
+                        ConfigTraceService.PULL_EVENT_OK, delayed, requestIp, notify);
                 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -285,7 +287,7 @@ public class ConfigServletInner {
             // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
             ConfigTraceService
                     .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
-                            requestIp);
+                            requestIp, notify);
             
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.getWriter().println("config data not exist");

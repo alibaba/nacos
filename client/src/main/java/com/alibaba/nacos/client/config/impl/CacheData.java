@@ -76,6 +76,24 @@ public class CacheData {
         this.md5 = getMd5String(this.content);
     }
     
+    /**
+     * Getter method for property <tt>lastModifiedTs</tt>.
+     *
+     * @return property value of lastModifiedTs
+     */
+    public long getLastModifiedTs() {
+        return lastModifiedTs;
+    }
+    
+    /**
+     * Setter method for property <tt>lastModifiedTs</tt>.
+     *
+     * @param lastModifiedTs value to be assigned to property lastModifiedTs
+     */
+    public void setLastModifiedTs(long lastModifiedTs) {
+        this.lastModifiedTs = lastModifiedTs;
+    }
+    
     public String getType() {
         return type;
     }
@@ -325,6 +343,8 @@ public class CacheData {
     private volatile long localConfigLastModified;
     
     private volatile String content;
+    
+    private volatile long lastModifiedTs;
     
     private int taskId;
     
