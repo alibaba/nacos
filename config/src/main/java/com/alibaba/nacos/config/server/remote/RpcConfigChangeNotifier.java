@@ -164,17 +164,11 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 
                 @Override
                 public void onSuccess() {
-                    //                    Loggers.REMOTE_PUSH.warn("push success.dataId={},group={},tenant={},clientId={},tryTimes={}",
-                    //                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
-                    //                            retryTimes);
+    
                 }
                 
                 @Override
                 public void onFail(Throwable e) {
-                    //                    Loggers.REMOTE_PUSH.warn("push fail.dataId={},group={},tenant={},clientId={},tryTimes={},errorMessage={}",
-                    //                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
-                    //                            retryTimes, e.getMessage());
-                    //
                     push(RpcPushTask.this);
                 }
     

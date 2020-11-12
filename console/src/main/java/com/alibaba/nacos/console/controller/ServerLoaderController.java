@@ -35,6 +35,7 @@ import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
+import com.alibaba.nacos.core.utils.RemoteUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -158,8 +159,8 @@ public class ServerLoaderController {
         Object avgString = (Object) serverLoadMetrics.get("avg");
         if (avgString != null && NumberUtils.isDigits(avgString.toString())) {
             int avg = Integer.valueOf(avgString.toString());
-            if (count < avg * 1.1) {
-                result = " count Must be 10% larger than avg,avg current is " + avg;
+            if (count < avg * RemoteUtils.LOADER_FACTOR + 1) {
+                result = " loader count must be 10% larger than avg,avg current is " + avg;
             } else {
                 reloadClusterInner(count);
             }
