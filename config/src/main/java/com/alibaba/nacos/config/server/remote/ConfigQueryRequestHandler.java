@@ -77,7 +77,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         String clientIp = requestMeta.getClientIp();
         try {
             ConfigQueryResponse context = getContext(dataId, group, tenant, configQueryRequest.getTag(),
-                    requestMeta.getClientIp(), requestMeta);
+                    requestMeta.getClientIp(), requestMeta, request.isNotify());
             return context;
         } catch (Exception e) {
             ConfigQueryResponse contextFail = ConfigQueryResponse
@@ -88,10 +88,10 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     }
     
     private ConfigQueryResponse getContext(String dataId, String group, String tenant, String tag, String clientIp,
-            RequestMeta meta) throws UnsupportedEncodingException {
+            RequestMeta meta, boolean notify) throws UnsupportedEncodingException {
         
         ConfigQueryResponse response = new ConfigQueryResponse();
-        
+    
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
         String autoTag = meta.getLabels().get("Vipserver-Tag");
@@ -159,7 +159,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                                 // FIXME CacheItem
                                 // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp);
+                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp, false);
                                 
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
@@ -190,7 +190,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             // FIXME CacheItem
                             // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp);
+                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp, false);
                             
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
@@ -229,7 +229,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                  because the delayed value of active get requests is very large.
                  */
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                        ConfigTraceService.PULL_EVENT_OK, delayed, clientIp);
+                        ConfigTraceService.PULL_EVENT_OK, delayed, clientIp, notify);
                 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -239,7 +239,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
             ConfigTraceService
                     .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
-                            clientIp);
+                            clientIp, notify);
             response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
             
         } else {

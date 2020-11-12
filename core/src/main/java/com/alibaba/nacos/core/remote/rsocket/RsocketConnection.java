@@ -28,7 +28,6 @@ import com.alibaba.nacos.common.remote.client.rsocket.RsocketUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
-import com.alibaba.nacos.core.utils.Loggers;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import reactor.core.publisher.Mono;
@@ -78,7 +77,6 @@ public class RsocketConnection extends Connection {
     
     @Override
     public Response request(Request request, RequestMeta requestMeta, long timeoutMills) throws NacosException {
-        Loggers.RPC_DIGEST.debug(String.format("[%s] send request  : %s", "rsocket", request));
         
         try {
             Mono<Payload> payloadMono = clientSocket
@@ -103,7 +101,6 @@ public class RsocketConnection extends Connection {
     
     @Override
     public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException {
-        Loggers.RPC_DIGEST.debug(String.format("[%s] send future request  : %s", "rsocket", request));
         final Mono<Payload> payloadMono = clientSocket
                 .requestResponse(RsocketUtils.convertRequestToPayload(request, wrapMeta(requestMeta)));
         final CompletableFuture<Payload> payloadCompletableFuture = payloadMono.toFuture();
@@ -133,7 +130,6 @@ public class RsocketConnection extends Connection {
     @Override
     public void asyncRequest(Request request, RequestMeta requestMeta, RequestCallBack requestCallBack)
             throws NacosException {
-        Loggers.RPC_DIGEST.debug(String.format("[%s] send callback request  : %s", "rsocket", request));
         
         try {
             Mono<Payload> response = clientSocket
@@ -164,5 +160,10 @@ public class RsocketConnection extends Connection {
         if (clientSocket != null && !clientSocket.isDisposed()) {
             clientSocket.dispose();
         }
+    }
+    
+    @Override
+    public boolean isConnected() {
+        return clientSocket != null && !clientSocket.isDisposed();
     }
 }

@@ -329,7 +329,7 @@ public class ClientWorker implements Closeable {
                 cache.setTaskId(taskId);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
-                    String[] ct = getServerConfig(dataId, group, tenant, 3000L);
+                    String[] ct = getServerConfig(dataId, group, tenant, 3000L, false);
                     cache.setContent(ct[0]);
                 }
             }
@@ -356,12 +356,12 @@ public class ClientWorker implements Closeable {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
-    public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
+    public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout, boolean notify)
             throws NacosException {
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
-        return this.agent.queryConfig(dataId, group, tenant, readTimeout);
+        return this.agent.queryConfig(dataId, group, tenant, readTimeout, notify);
     }
     
     private void checkLocalConfig(String agentName, CacheData cacheData) {
@@ -450,16 +450,16 @@ public class ClientWorker implements Closeable {
     
     }
     
-    private void refreshContentAndCheck(String groupKey) {
+    private void refreshContentAndCheck(String groupKey, boolean notify) {
         if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
             CacheData cache = cacheMap.get().get(groupKey);
-            refreshContentAndCheck(cache);
+            refreshContentAndCheck(cache, notify);
         }
     }
     
-    private void refreshContentAndCheck(CacheData cacheData) {
+    private void refreshContentAndCheck(CacheData cacheData, boolean notify) {
         try {
-            String[] ct = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L);
+            String[] ct = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L, notify);
             cacheData.setContent(ct[0]);
             if (null != ct[1]) {
                 cacheData.setType(ct[1]);
@@ -569,6 +569,12 @@ public class ClientWorker implements Closeable {
                                 configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
                         CacheData cacheData = cacheMap.get().get(groupKey);
                         if (cacheData != null) {
+                            if (configChangeNotifyRequest.isContentPush()
+                                    && cacheData.getLastModifiedTs() < configChangeNotifyRequest.getLastModifiedTs()) {
+                                cacheData.setContent(configChangeNotifyRequest.getContent());
+                                cacheData.setType(configChangeNotifyRequest.getType());
+                                cacheData.checkListenerMd5();
+                            }
                             cacheData.setListenSuccess(false);
                             notifyListenConfig();
                         }
@@ -739,7 +745,7 @@ public class ClientWorker implements Closeable {
                                             .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
                                                     changeConfig.getTenant());
                                     changeKeys.add(changeKey);
-                                    refreshContentAndCheck(changeKey);
+                                    refreshContentAndCheck(changeKey, true);
                                 }
                             }
     
@@ -890,9 +896,10 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public String[] queryConfig(String dataId, String group, String tenant, long readTimeous)
+        public String[] queryConfig(String dataId, String group, String tenant, long readTimeous, boolean notify)
                 throws NacosException {
             ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
+            request.putHeader("notify", String.valueOf(notify));
             ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(getOneRunningClient(), request);
             
             String[] ct = new String[2];
@@ -1035,7 +1042,7 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public String[] queryConfig(String dataId, String group, String tenant, long readTimeout)
+        public String[] queryConfig(String dataId, String group, String tenant, long readTimeout, boolean notify)
                 throws NacosException {
             String[] ct = new String[2];
             if (StringUtils.isBlank(group)) {
@@ -1055,6 +1062,7 @@ public class ClientWorker implements Closeable {
                 }
     
                 Map<String, String> headers = new HashMap<String, String>(16);
+                headers.put("notify", String.valueOf(notify));
                 result = httpGet(Constants.CONFIG_CONTROLLER_PATH, headers, params, agent.getEncode(), readTimeout);
             } catch (Exception ex) {
                 String message = String
@@ -1305,7 +1313,7 @@ public class ClientWorker implements Closeable {
                         tenant = key[2];
                     }
                     try {
-                        String[] ct = getServerConfig(dataId, group, tenant, 3000L);
+                        String[] ct = getServerConfig(dataId, group, tenant, 3000L, true);
                         CacheData cache = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
                         cache.setContent(ct[0]);
                         if (null != ct[1]) {

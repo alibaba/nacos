@@ -35,24 +35,55 @@ public class LocalDataChangeEvent extends Event {
     
     public final String tag;
     
-    public LocalDataChangeEvent(String groupKey) {
+    public final String content;
+    
+    public final String type;
+    
+    public final long lastModifiedTs;
+    
+    public LocalDataChangeEvent(String groupKey, long lastModifiedTs) {
         this.groupKey = groupKey;
         this.isBeta = false;
         this.betaIps = null;
         this.tag = null;
+        this.content = null;
+        this.type = null;
+        this.lastModifiedTs = lastModifiedTs;
     }
     
-    public LocalDataChangeEvent(String groupKey, boolean isBeta, List<String> betaIps) {
+    public LocalDataChangeEvent(String groupKey, String content, String type, long lastModifiedTs) {
+        this.groupKey = groupKey;
+        this.isBeta = false;
+        this.betaIps = null;
+        this.tag = null;
+        this.content = content;
+        this.type = type;
+        this.lastModifiedTs = lastModifiedTs;
+        
+    }
+    
+    
+    public LocalDataChangeEvent(String groupKey, boolean isBeta, List<String> betaIps, String content, String type,
+            long lastModifiedTs) {
         this.groupKey = groupKey;
         this.isBeta = isBeta;
         this.betaIps = betaIps;
         this.tag = null;
+        this.content = null;
+        this.type = null;
+        this.lastModifiedTs = lastModifiedTs;
+        
     }
     
-    public LocalDataChangeEvent(String groupKey, boolean isBeta, List<String> betaIps, String tag) {
+    public LocalDataChangeEvent(String groupKey, boolean isBeta, List<String> betaIps, String tag, String content,
+            String type, long lastModifiedTs) {
         this.groupKey = groupKey;
         this.isBeta = isBeta;
         this.betaIps = betaIps;
         this.tag = tag;
+        this.content = content;
+        this.type = type;
+        this.lastModifiedTs = lastModifiedTs;
+        
     }
 }

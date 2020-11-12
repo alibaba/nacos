@@ -35,6 +35,13 @@ public abstract class Connection implements Requester {
     }
     
     /**
+     * check is connected.
+     *
+     * @return
+     */
+    public abstract boolean isConnected();
+    
+    /**
      * Update last Active Time to now.
      */
     public void freshActiveTime() {

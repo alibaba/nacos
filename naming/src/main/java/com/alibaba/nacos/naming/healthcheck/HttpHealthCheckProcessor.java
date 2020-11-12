@@ -191,7 +191,6 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
             int maxStackDepth = 50;
             for (int deepth = 0; deepth < maxStackDepth && cause != null; deepth++) {
                 if (cause instanceof SocketTimeoutException || cause instanceof ConnectTimeoutException
-                        || cause instanceof org.jboss.netty.channel.ConnectTimeoutException
                         || cause instanceof TimeoutException || cause.getCause() instanceof TimeoutException) {
                     
                     healthCheckCommon.checkFail(ip, task, "http:timeout:" + cause.getMessage());

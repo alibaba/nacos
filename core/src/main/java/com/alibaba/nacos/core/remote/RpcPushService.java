@@ -78,7 +78,7 @@ public class RpcPushService {
                 connectionManager.unregister(connectionId);
                 requestCallBack.onSuccess();
             } catch (Exception e) {
-                Loggers.RPC_DIGEST
+                Loggers.REMOTE_DIGEST
                         .error("error to send push response to connectionId ={},push response={}", connectionId,
                                 request, e);
             }
@@ -101,7 +101,7 @@ public class RpcPushService {
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
-                Loggers.RPC_DIGEST
+                Loggers.REMOTE_DIGEST
                         .error("error to send push response to connectionId ={},push response={}", connectionId,
                                 request, e);
             }
