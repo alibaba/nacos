@@ -93,7 +93,7 @@ module.exports = {
     }),
     new CopyWebpackPlugin([
       {
-        from: resolve('public'),
+        from: resolve('../console/src/main/resources/static/console-ui/public'),
         to: './',
         ignore: ['index.html'],
       },
