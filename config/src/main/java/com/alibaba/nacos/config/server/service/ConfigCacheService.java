@@ -35,16 +35,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Map;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * Config service.
@@ -98,7 +98,7 @@ public class ConfigCacheService {
             } else if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.saveToDisk(dataId, group, tenant, content);
             }
-            updateMd5(groupKey, md5, lastModifiedTs);
+            updateMd5(groupKey, md5, lastModifiedTs, content, type);
             return true;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
@@ -151,8 +151,8 @@ public class ConfigCacheService {
                 DiskUtil.saveBetaToDisk(dataId, group, tenant, content);
             }
             String[] betaIpsArr = betaIps.split(",");
-            
-            updateBetaMd5(groupKey, md5, Arrays.asList(betaIpsArr), lastModifiedTs);
+    
+            updateBetaMd5(groupKey, md5, Arrays.asList(betaIpsArr), lastModifiedTs, content);
             return true;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-beta-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
@@ -195,8 +195,8 @@ public class ConfigCacheService {
             } else if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.saveTagToDisk(dataId, group, tenant, tag, content);
             }
-            
-            updateTagMd5(groupKey, tag, md5, lastModifiedTs);
+    
+            updateTagMd5(groupKey, tag, md5, lastModifiedTs, content);
             return true;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-tag-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
@@ -240,7 +240,7 @@ public class ConfigCacheService {
                     DiskUtil.saveToDisk(dataId, group, tenant, content);
                 }
             }
-            updateMd5(groupKey, md5, lastModifiedTs);
+            updateMd5(groupKey, md5, lastModifiedTs, content);
             return true;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
@@ -369,7 +369,7 @@ public class ConfigCacheService {
                 DiskUtil.removeConfigInfo(dataId, group, tenant);
             }
             CACHE.remove(groupKey);
-            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, System.currentTimeMillis()));
             
             return true;
         } finally {
@@ -405,7 +405,9 @@ public class ConfigCacheService {
             if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.removeConfigInfo4Beta(dataId, group, tenant);
             }
-            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, true, CACHE.get(groupKey).getIps4Beta()));
+            NotifyCenter.publishEvent(
+                    new LocalDataChangeEvent(groupKey, true, CACHE.get(groupKey).getIps4Beta(), null, null,
+                            System.currentTimeMillis()));
             CACHE.get(groupKey).setBeta(false);
             CACHE.get(groupKey).setIps4Beta(null);
             CACHE.get(groupKey).setMd54Beta(Constants.NULL);
@@ -448,7 +450,8 @@ public class ConfigCacheService {
             CacheItem ci = CACHE.get(groupKey);
             ci.tagMd5.remove(tag);
             ci.tagLastModifiedTs.remove(tag);
-            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
+            NotifyCenter.publishEvent(
+                    new LocalDataChangeEvent(groupKey, false, null, tag, null, null, System.currentTimeMillis()));
             return true;
         } finally {
             releaseWriteLock(groupKey);
@@ -462,12 +465,28 @@ public class ConfigCacheService {
      * @param md5            md5 string value.
      * @param lastModifiedTs lastModifiedTs long value.
      */
-    public static void updateMd5(String groupKey, String md5, long lastModifiedTs) {
+    public static void updateMd5(String groupKey, String md5, long lastModifiedTs, String content, String type) {
         CacheItem cache = makeSure(groupKey);
         if (cache.md5 == null || !cache.md5.equals(md5)) {
             cache.md5 = md5;
             cache.lastModifiedTs = lastModifiedTs;
-            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, content, type, lastModifiedTs));
+        }
+    }
+    
+    /**
+     * Update md5 value.
+     *
+     * @param groupKey       groupKey string value.
+     * @param md5            md5 string value.
+     * @param lastModifiedTs lastModifiedTs long value.
+     */
+    public static void updateMd5(String groupKey, String md5, long lastModifiedTs, String content) {
+        CacheItem cache = makeSure(groupKey);
+        if (cache.md5 == null || !cache.md5.equals(md5)) {
+            cache.md5 = md5;
+            cache.lastModifiedTs = lastModifiedTs;
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, content, cache.type, lastModifiedTs));
         }
     }
     
@@ -479,14 +498,16 @@ public class ConfigCacheService {
      * @param ips4Beta       ips4Beta List.
      * @param lastModifiedTs lastModifiedTs long value.
      */
-    public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs) {
+    public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs,
+            String content) {
         CacheItem cache = makeSure(groupKey);
         if (cache.md54Beta == null || !cache.md54Beta.equals(md5)) {
             cache.isBeta = true;
             cache.md54Beta = md5;
             cache.lastModifiedTs4Beta = lastModifiedTs;
             cache.ips4Beta = ips4Beta;
-            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, true, ips4Beta));
+            NotifyCenter.publishEvent(
+                    new LocalDataChangeEvent(groupKey, true, ips4Beta, content, cache.type, lastModifiedTs));
         }
     }
     
@@ -498,7 +519,7 @@ public class ConfigCacheService {
      * @param md5            md5 string value.
      * @param lastModifiedTs lastModifiedTs long value.
      */
-    public static void updateTagMd5(String groupKey, String tag, String md5, long lastModifiedTs) {
+    public static void updateTagMd5(String groupKey, String tag, String md5, long lastModifiedTs, String content) {
         CacheItem cache = makeSure(groupKey);
         if (cache.tagMd5 == null) {
             Map<String, String> tagMd5Tmp = new HashMap<String, String>(1);
@@ -511,13 +532,15 @@ public class ConfigCacheService {
             } else {
                 cache.tagLastModifiedTs.put(tag, lastModifiedTs);
             }
-            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
+            NotifyCenter.publishEvent(
+                    new LocalDataChangeEvent(groupKey, false, null, tag, content, cache.type, lastModifiedTs));
             return;
         }
         if (cache.tagMd5.get(tag) == null || !cache.tagMd5.get(tag).equals(md5)) {
             cache.tagMd5.put(tag, md5);
             cache.tagLastModifiedTs.put(tag, lastModifiedTs);
-            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
+            NotifyCenter.publishEvent(
+                    new LocalDataChangeEvent(groupKey, false, null, tag, content, cache.type, lastModifiedTs));
         }
     }
     

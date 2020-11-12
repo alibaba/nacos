@@ -85,7 +85,7 @@ public class ClientConnectionEventListenerRegistry {
      * @param listener listener.
      */
     public void registerClientConnectionEventListener(ClientConnectionEventListener listener) {
-        Loggers.RPC.info("[ClientConnectionEventListenerRegistry] registry listener - " + listener.getClass()
+        Loggers.REMOTE.info("[ClientConnectionEventListenerRegistry] registry listener - " + listener.getClass()
                 .getSimpleName());
         this.clientConnectionEventListeners.add(listener);
     }

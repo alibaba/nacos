@@ -53,10 +53,10 @@
     </appender>
     
     <appender name="REMOTE_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.logging.path}/rpc.log</file>
+        <file>${JM.LOG.PATH}/remote.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${nacos.logging.path}/rpc.log.%i</fileNamePattern>
+            <fileNamePattern>${JM.LOG.PATH}/remote.log.%i</fileNamePattern>
             <maxIndex>${JM.LOG.RETAIN.COUNT:-7}</maxIndex>
         </rollingPolicy>
         

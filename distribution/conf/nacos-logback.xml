@@ -478,12 +478,12 @@
     </appender>
     
     
-    <appender name="rpc-core"
+    <appender name="remote"
         class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/rpc-core.log</file>
+        <file>${LOG_HOME}/remote.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/rpc-core.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/remote.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -495,12 +495,29 @@
         </encoder>
     </appender>
     
-    <appender name="rpc-digest"
+    <appender name="remote-digest"
         class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/rpc-digest.log</file>
+        <file>${LOG_HOME}/remote-digest.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/rpc-digest.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/remote-digest.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="remote-push"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/remote-push.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/remote-push.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -523,14 +540,18 @@
         <appender-ref ref="cmdb-main"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.core.rpc" additivity="false">
+    <logger name="com.alibaba.nacos.core.remote" additivity="false">
         <level value="DEBUG"/>
-        <appender-ref ref="rpc-core"/>
+        <appender-ref ref="remote"/>
+    </logger>
+    <logger name="com.alibaba.nacos.core.remote.push" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="remote-push"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.core.rpc.digest" additivity="false">
+    <logger name="com.alibaba.nacos.core.remote.digest" additivity="false">
         <level value="DEBUG"/>
-        <appender-ref ref="rpc-digest"/>
+        <appender-ref ref="remote-digest"/>
     </logger>
     
     <logger name="com.alibaba.nacos.naming.main" additivity="false">

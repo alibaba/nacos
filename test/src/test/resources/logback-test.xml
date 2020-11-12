@@ -16,7 +16,9 @@
   -->
 
 <configuration>
-
+    
+    <springProperty scope="context" name="logPath" source="nacos.logging.path" defaultValue="${nacos.home}/logs"/>
+    
     <!--<appender name="DefaultAppender" class="ch.qos.logback.core.ConsoleAppender">-->
         <!--<append>true</append>-->
         <!--<encoder>-->

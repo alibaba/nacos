@@ -62,7 +62,7 @@ public final class ConfigExecutor {
     
     private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
-                    Runtime.getRuntime().availableProcessors() * 2,
+                    ThreadUtils.getSuitableThreadCount(),
                     new NameThreadFactory("com.alibaba.nacos.config.server.remote.ConfigChangeNotifier"));
     
     public static void scheduleConfigTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {

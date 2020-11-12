@@ -124,7 +124,8 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
                 useExternalStorage = true;
             }
         }
-        
+    
+        ApplicationUtils.setStarted(true);
         LOGGER.info("Nacos started successfully in {} mode. use {} storage",
                 System.getProperty(MODE_PROPERTY_KEY_STAND_MODE), useExternalStorage ? "external" : "embedded");
     }
