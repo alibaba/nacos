@@ -111,9 +111,9 @@ public class HostReactor implements Closeable {
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
-        
+        this.notifier = new InstancesChangeNotifier();
+    
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
-        notifier = new InstancesChangeNotifier();
         NotifyCenter.registerSubscriber(notifier);
     }
     
