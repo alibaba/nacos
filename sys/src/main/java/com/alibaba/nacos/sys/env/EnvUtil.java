@@ -24,12 +24,14 @@ import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.sun.management.OperatingSystemMXBean;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.management.ManagementFactory;
@@ -354,6 +356,25 @@ public class EnvUtil {
      */
     public static Map<String, ?> loadProperties(Resource resource) throws IOException {
         return new OriginTrackedPropertiesLoader(resource).load();
+    }
+    
+    private static final String FILE_PREFIX = "file:";
+    
+    public static Resource getApplicationConfFileResource() {
+        String path = getProperty("spring.config.location");
+        InputStream inputStream = null;
+        if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
+            String[] paths = path.split(",");
+            path = paths[paths.length - 1].substring(FILE_PREFIX.length());
+        }
+        try {
+            inputStream = new FileInputStream(new File(path + "application.properties"));
+        } catch (Exception ignore) {
+        }
+        if (inputStream == null) {
+            inputStream = EnvUtil.class.getResourceAsStream("/application.properties");
+        }
+        return new InputStreamResource(inputStream);
     }
     
 }

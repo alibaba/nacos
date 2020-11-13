@@ -36,7 +36,6 @@ import org.springframework.boot.env.OriginTrackedMapPropertySource;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.io.FileUrlResource;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,8 +79,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
         EnvUtil.setEnvironment(environment);
         try {
             environment.getPropertySources().addLast(new OriginTrackedMapPropertySource("first_pre",
-                    EnvUtil.loadProperties(new FileUrlResource(
-                            Paths.get(EnvUtil.getConfPath(), "application.properties").toUri().toURL()))));
+                    EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource())));
         } catch (IOException e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
