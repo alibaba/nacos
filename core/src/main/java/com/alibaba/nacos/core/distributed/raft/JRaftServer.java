@@ -457,9 +457,9 @@ public class JRaftServer {
     }
     
     boolean peerChange(JRaftMaintainService maintainService, Set<String> newPeers) {
-        this.raftConfig.setMembers(localPeerId.toString(), newPeers);
         // This is only dealing with node deletion, the Raft protocol, where the node adds itself to the cluster when it starts up
         Set<String> oldPeers = new HashSet<>(this.raftConfig.getMembers());
+        this.raftConfig.setMembers(localPeerId.toString(), newPeers);
         oldPeers.removeAll(newPeers);
         if (oldPeers.isEmpty()) {
             return true;
