@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.consistency;
 
-import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 
 import java.util.Collection;
 import java.util.Set;
@@ -69,7 +69,7 @@ public interface ConsistencyProtocol<T extends Config, P extends LogProcessor> e
      * @return data {@link Response}
      * @throws Exception {@link Exception}
      */
-    Response getData(GetRequest request) throws Exception;
+    Response getData(ReadRequest request) throws Exception;
     
     /**
      * Get data asynchronously.
@@ -77,27 +77,27 @@ public interface ConsistencyProtocol<T extends Config, P extends LogProcessor> e
      * @param request request
      * @return data {@link CompletableFuture}
      */
-    CompletableFuture<Response> aGetData(GetRequest request);
+    CompletableFuture<Response> aGetData(ReadRequest request);
     
     /**
      * Data operation, returning submission results synchronously.
      * 同步数据提交，在 Datum 中已携带相应的数据操作信息
      *
-     * @param data {@link Log}
+     * @param request {@link com.alibaba.nacos.consistency.entity.WriteRequest}
      * @return submit operation result {@link Response}
      * @throws Exception {@link Exception}
      */
-    Response submit(Log data) throws Exception;
+    Response submit(WriteRequest request) throws Exception;
     
     /**
      * Data submission operation, returning submission results asynchronously.
      * 异步数据提交，在 Datum中已携带相应的数据操作信息，返回一个Future，自行操作，提交发生的异常会在CompleteFuture中
      *
-     * @param data {@link Log}
+     * @param request {@link com.alibaba.nacos.consistency.entity.WriteRequest}
      * @return {@link CompletableFuture} submit result
      * @throws Exception when submit throw Exception
      */
-    CompletableFuture<Response> submitAsync(Log data);
+    CompletableFuture<Response> submitAsync(WriteRequest request);
     
     /**
      * New member list .
