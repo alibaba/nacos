@@ -457,11 +457,12 @@ public class JRaftServer {
     }
     
     boolean peerChange(JRaftMaintainService maintainService, Set<String> newPeers) {
+        // This is only dealing with node deletion, the Raft protocol, where the node adds itself to the cluster when it starts up
         Set<String> oldPeers = new HashSet<>(this.raftConfig.getMembers());
-        
-        // If the list of old and new clusters does not want to wait, it is returned
-        if (oldPeers.equals(newPeers)) {
-            return false;
+        this.raftConfig.setMembers(localPeerId.toString(), newPeers);
+        oldPeers.removeAll(newPeers);
+        if (oldPeers.isEmpty()) {
+            return true;
         }
         
         Set<String> waitRemove = oldPeers;
@@ -481,8 +482,6 @@ public class JRaftServer {
                 }
             }
         });
-        this.raftConfig.setMembers(localPeerId.toString(), newPeers);
-        
         return successCnt.get() == multiRaftGroup.size();
     }
     
