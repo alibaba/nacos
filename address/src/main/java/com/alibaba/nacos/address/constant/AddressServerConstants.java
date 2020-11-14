@@ -39,11 +39,6 @@ public interface AddressServerConstants {
     String DEFAULT_PRODUCT = "nacos";
     
     /**
-     * the separator between ip and port.
-     */
-    String IP_PORT_SEPARATOR = ":";
-    
-    /**
      * the separator for service name between raw service name and group.
      */
     String GROUP_SERVICE_NAME_SEP = "@@";

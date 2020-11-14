@@ -351,7 +351,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
     
     public boolean isInitialized() {
-        return distroProtocol.isLoadCompleted() || !globalConfig.isDataWarmup();
+        return distroProtocol.isInitialized() || !globalConfig.isDataWarmup();
     }
     
     public class Notifier implements Runnable {

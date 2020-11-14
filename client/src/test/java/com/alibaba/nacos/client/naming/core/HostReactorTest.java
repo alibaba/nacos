@@ -17,11 +17,18 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
+import com.alibaba.nacos.api.naming.listener.Event;
+import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
+import com.alibaba.nacos.common.utils.ClassUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,6 +36,13 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -43,9 +57,6 @@ public class HostReactorTest {
     
     @Mock
     private NamingProxy namingProxy;
-    
-    @Mock
-    private EventDispatcher eventDispatcher;
     
     private HostReactor hostReactor;
     
@@ -64,7 +75,7 @@ public class HostReactorTest {
         beatInfo.setScheduled(false);
         beatInfo.setPeriod(1000L);
         beatReactor.addBeatInfo("testName", beatInfo);
-        hostReactor = new HostReactor(eventDispatcher, namingProxy, beatReactor, CACHE_DIR);
+        hostReactor = new HostReactor(namingProxy, beatReactor, CACHE_DIR);
     }
     
     @Test
@@ -81,6 +92,106 @@ public class HostReactorTest {
         when(namingProxy.queryList("testName", "testClusters", 0, false)).thenReturn(EXAMPLE);
         ServiceInfo actual = hostReactor.getServiceInfoDirectlyFromServer("testName", "testClusters");
         assertServiceInfo(actual);
+    }
+    
+    @Test
+    public void testSubscribe() throws InterruptedException {
+        final AtomicInteger count = new AtomicInteger(1);
+        EventListener eventListener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                if (event instanceof NamingEvent) {
+                    List<Instance> instances = ((NamingEvent) event).getInstances();
+                    assertInstance(instances.get(0));
+                    Assert.assertEquals("nacos.publisher-" + ClassUtils.getCanonicalName(InstancesChangeEvent.class),
+                            Thread.currentThread().getName());
+                    count.decrementAndGet();
+                }
+            }
+        };
+        hostReactor.subscribe("testName", "testClusters", eventListener);
+        hostReactor.processServiceJson(EXAMPLE);
+        Thread.sleep(1000);
+        Assert.assertEquals(0, count.intValue());
+        hostReactor.unSubscribe("testName", "testClusters", eventListener);
+    }
+    
+    @Test
+    public void testAsyncSubscribe() throws InterruptedException {
+        final AtomicInteger count = new AtomicInteger(1);
+        
+        ThreadFactory threadFactory = new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("test-thread");
+                return thread;
+            }
+        };
+        
+        final Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(), threadFactory);
+        EventListener eventListener = new AbstractEventListener() {
+            
+            @Override
+            public Executor getExecutor() {
+                return executor;
+            }
+            
+            @Override
+            public void onEvent(Event event) {
+                if (event instanceof NamingEvent) {
+                    List<Instance> instances = ((NamingEvent) event).getInstances();
+                    assertInstance(instances.get(0));
+                    Assert.assertEquals("test-thread", Thread.currentThread().getName());
+                    count.decrementAndGet();
+                }
+            }
+        };
+        hostReactor.subscribe("testName", "testClusters", eventListener);
+        hostReactor.processServiceJson(EXAMPLE);
+        Thread.sleep(1000);
+        Assert.assertEquals(0, count.intValue());
+        hostReactor.unSubscribe("testName", "testClusters", eventListener);
+    }
+    
+    @Test
+    public void testUnsubscribe() throws InterruptedException {
+        Thread.sleep(1000);
+        final AtomicInteger count = new AtomicInteger(1);
+        EventListener eventListener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                count.decrementAndGet();
+            }
+        };
+        hostReactor.subscribe("testName", "testClusters", eventListener);
+        hostReactor.processServiceJson(EXAMPLE);
+        
+        Thread.sleep(1000);
+        
+        hostReactor.unSubscribe("testName", "testClusters", eventListener);
+        hostReactor.processServiceJson(CHANGE_DATA_EXAMPLE);
+        
+        Assert.assertEquals(0, count.intValue());
+    }
+    
+    @Test
+    public void testGetSubscribeServices() {
+        EventListener listener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+            }
+        };
+        hostReactor.subscribe("testGroup@@testName", "testClusters", listener);
+        
+        Assert.assertEquals(1, hostReactor.getSubscribeServices().size());
+        Assert.assertEquals("testName", hostReactor.getSubscribeServices().get(0).getName());
+        Assert.assertEquals("testGroup", hostReactor.getSubscribeServices().get(0).getGroupName());
+        Assert.assertEquals("testClusters", hostReactor.getSubscribeServices().get(0).getClusters());
+        
+        hostReactor.unSubscribe("testGroup@@testName", "testClusters", listener);
+        Assert.assertEquals(0, hostReactor.getSubscribeServices().size());
     }
     
     private void assertServiceInfo(ServiceInfo actual) {

@@ -1,7 +1,7 @@
 {
-  "name": "console-fe",
+  "name": "console-ui",
   "version": "1.0.0",
-  "description": "console fe",
+  "description": "console ui",
   "main": "index.js",
   "scripts": {
     "start": "cross-env NODE_ENV=development webpack-dev-server --config build/webpack.dev.conf.js",

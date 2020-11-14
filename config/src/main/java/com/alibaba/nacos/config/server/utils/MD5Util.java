@@ -162,6 +162,12 @@ public class MD5Util {
         return md5Map;
     }
     
+    /**
+     * Parse listener package.
+     *
+     * @param configKey protocol
+     * @return old: D w G w MD5 l or new: D w G w MD5 w T l.
+     */
     public static String[] splitConfigKey(final String configKey) {
         int start = 0;
         int end = configKey.length();

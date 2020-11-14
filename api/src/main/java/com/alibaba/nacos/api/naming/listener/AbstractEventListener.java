@@ -14,18 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http;
+package com.alibaba.nacos.api.naming.listener;
 
-import java.io.Closeable;
+import java.util.concurrent.Executor;
 
 /**
- * Nacos http client interface.
+ * Abstract event listener, to support handle event by user custom executor.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- * @deprecated Refer to the new {@link com.alibaba.nacos.common.http.client.request.HttpClientRequest}
+ * @author horizonzy
+ * @since 1.4.1
  */
-@Deprecated
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public interface NHttpClient extends Closeable {
-
+public abstract class AbstractEventListener implements EventListener {
+    
+    /**
+     * Get executor for execute this receive.
+     *
+     * @return Executor
+     */
+    public Executor getExecutor() {
+        return null;
+    }
+    
 }
