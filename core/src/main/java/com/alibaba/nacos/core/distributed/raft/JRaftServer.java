@@ -26,7 +26,7 @@ import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
-import com.alibaba.nacos.consistency.entity.GetRequest;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupException;
@@ -280,7 +280,7 @@ public class JRaftServer {
         }
     }
     
-    CompletableFuture<Response> get(final GetRequest request) {
+    CompletableFuture<Response> get(final ReadRequest request) {
         final String group = request.getGroup();
         CompletableFuture<Response> future = new CompletableFuture<>();
         final RaftGroupTuple tuple = findTupleByGroup(group);
@@ -322,7 +322,7 @@ public class JRaftServer {
         }
     }
     
-    public void readFromLeader(final GetRequest request, final CompletableFuture<Response> future) {
+    public void readFromLeader(final ReadRequest request, final CompletableFuture<Response> future) {
         commit(request.getGroup(), request, future).whenComplete(new BiConsumer<Response, Throwable>() {
             @Override
             public void accept(Response response, Throwable throwable) {
