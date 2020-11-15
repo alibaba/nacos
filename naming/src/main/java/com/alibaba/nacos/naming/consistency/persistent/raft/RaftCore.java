@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.http.Callback;
@@ -1003,8 +1004,8 @@ public class RaftCore implements Closeable {
      * @return api url
      */
     public static String buildUrl(String ip, String api) {
-        if (!ip.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        if (!IPUtil.containsPort(ip)) {
+            ip = ip + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         return "http://" + ip + ApplicationUtils.getContextPath() + api;
     }

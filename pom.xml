@@ -128,7 +128,6 @@
         <!-- dependency version -->
         <spring-boot-dependencies.version>2.1.17.RELEASE</spring-boot-dependencies.version>
         <servlet-api.version>3.0</servlet-api.version>
-        <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.4</commons-lang3.version>
         <commons-io.version>2.2</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
@@ -340,6 +339,7 @@
                         <exclude>**/consistency/entity/**</exclude>
                         <exclude>**/*.txt</exclude>
                         <exclude>**/*.factories</exclude>
+                        <exclude>/console-ui/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -733,12 +733,6 @@
                 <groupId>com.caucho</groupId>
                 <artifactId>hessian</artifactId>
                 <version>${hessian.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${commons-lang.version}</version>
             </dependency>
 
             <!-- Apache commons -->

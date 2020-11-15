@@ -71,6 +71,7 @@ public class DistroFilter implements Filter {
     
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
+    
     }
     
     @Override
@@ -94,6 +95,17 @@ public class DistroFilter implements Filter {
             }
             
             String distroTag = distroTagGenerator.getResponsibleTag(req);
+            String groupName = req.getParameter(CommonParams.GROUP_NAME);
+            if (StringUtils.isBlank(groupName)) {
+                groupName = Constants.DEFAULT_GROUP;
+            }
+            
+            // use groupName@@serviceName as new service name.
+            // in naming controller, will use com.alibaba.nacos.api.naming.utils.NamingUtils.checkServiceNameFormat to check it's format.
+            String groupedServiceName = serviceName;
+            if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+                groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+            }
             
             // proxy request to other server if necessary:
             if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(distroTag)) {
@@ -150,6 +162,6 @@ public class DistroFilter implements Filter {
     
     @Override
     public void destroy() {
-        
+    
     }
 }

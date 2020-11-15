@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -55,10 +56,10 @@ public class ServiceInfoUpdateService implements Closeable {
     
     private final NamingClientProxy namingClientProxy;
     
-    private final EventDispatcher eventDispatcher;
+    private final InstancesChangeNotifier eventDispatcher;
     
     public ServiceInfoUpdateService(Properties properties, ServiceInfoHolder serviceInfoHolder,
-            NamingClientProxy namingClientProxy, EventDispatcher eventDispatcher) {
+            NamingClientProxy namingClientProxy, InstancesChangeNotifier eventDispatcher) {
         this.executor = new ScheduledThreadPoolExecutor(initPollingThreadCount(properties),
                 new NameThreadFactory("com.alibaba.nacos.client.naming.updater"));
         this.serviceInfoHolder = serviceInfoHolder;
