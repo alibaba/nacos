@@ -309,7 +309,7 @@ public abstract class ConfigTransportClient {
      * @return content.
      * @throws NacosException throw where query fail .
      */
-    public abstract String[] queryConfig(String dataId, String group, String tenat, long readTimeous, boolean notify)
+    public abstract String[] queryConfig(String dataId, String group, String tenat, long readTimeous)
             throws NacosException;
     
     /**

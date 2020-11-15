@@ -75,12 +75,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -329,7 +327,7 @@ public class ClientWorker implements Closeable {
                 cache.setTaskId(taskId);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
-                    String[] ct = getServerConfig(dataId, group, tenant, 3000L, false);
+                    String[] ct = getServerConfig(dataId, group, tenant, 3000L);
                     cache.setContent(ct[0]);
                 }
             }
@@ -356,12 +354,12 @@ public class ClientWorker implements Closeable {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
-    public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout, boolean notify)
+    public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
             throws NacosException {
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
-        return this.agent.queryConfig(dataId, group, tenant, readTimeout, notify);
+        return this.agent.queryConfig(dataId, group, tenant, readTimeout);
     }
     
     private void checkLocalConfig(String agentName, CacheData cacheData) {
@@ -450,16 +448,16 @@ public class ClientWorker implements Closeable {
     
     }
     
-    private void refreshContentAndCheck(String groupKey, boolean notify) {
+    private void refreshContentAndCheck(String groupKey) {
         if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
             CacheData cache = cacheMap.get().get(groupKey);
-            refreshContentAndCheck(cache, notify);
+            refreshContentAndCheck(cache);
         }
     }
     
-    private void refreshContentAndCheck(CacheData cacheData, boolean notify) {
+    private void refreshContentAndCheck(CacheData cacheData) {
         try {
-            String[] ct = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L, notify);
+            String[] ct = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L);
             cacheData.setContent(ct[0]);
             if (null != ct[1]) {
                 cacheData.setType(ct[1]);
@@ -549,7 +547,7 @@ public class ClientWorker implements Closeable {
         }
     
         private Map<String, String> getLabels() {
-        
+    
             Map<String, String> labels = new HashMap<String, String>(2, 1);
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
@@ -569,12 +567,6 @@ public class ClientWorker implements Closeable {
                                 configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
                         CacheData cacheData = cacheMap.get().get(groupKey);
                         if (cacheData != null) {
-                            if (configChangeNotifyRequest.isContentPush()
-                                    && cacheData.getLastModifiedTs() < configChangeNotifyRequest.getLastModifiedTs()) {
-                                cacheData.setContent(configChangeNotifyRequest.getContent());
-                                cacheData.setType(configChangeNotifyRequest.getType());
-                                cacheData.checkListenerMd5();
-                            }
                             cacheData.setListenSuccess(false);
                             notifyListenConfig();
                         }
@@ -595,7 +587,7 @@ public class ClientWorker implements Closeable {
                 @Override
                 public void onDisConnect() {
                     String taskId = rpcClientInner.getLabels().get("taskId");
-                    LOGGER.info("[0]clear listen context...", rpcClientInner.getName());
+                    LOGGER.info("clear listen context...");
                     Collection<CacheData> values = cacheMap.get().values();
                 
                     for (CacheData cacheData : values) {
@@ -736,27 +728,17 @@ public class ClientWorker implements Closeable {
                                 rpcClient, configChangeListenRequest);
                         if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
     
-                            Set<String> changeKeys = new HashSet<String>();
-                            //handle changed keys,notify listener
                             if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedConfigs())) {
                                 for (ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
                                         .getChangedConfigs()) {
-                                    String changeKey = GroupKey
-                                            .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
-                                                    changeConfig.getTenant());
-                                    changeKeys.add(changeKey);
-                                    refreshContentAndCheck(changeKey, true);
+                                    refreshContentAndCheck(
+                                            GroupKey.getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
+                                                    changeConfig.getTenant()));
                                 }
                             }
-    
-                            //handler constent configs
                             for (CacheData cacheData : listenCaches) {
-                                if (!changeKeys.contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group,
-                                        cacheData.getTenant()))) {
-                                    cacheData.setListenSuccess(true);
-                                }
+                                cacheData.setListenSuccess(true);
                             }
-    
                         }
                     } catch (Exception e) {
                         LOGGER.error("async listen config change error ", e);
@@ -896,10 +878,9 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public String[] queryConfig(String dataId, String group, String tenant, long readTimeous, boolean notify)
+        public String[] queryConfig(String dataId, String group, String tenant, long readTimeous)
                 throws NacosException {
             ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
-            request.putHeader("notify", String.valueOf(notify));
             ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(getOneRunningClient(), request);
             
             String[] ct = new String[2];
@@ -1042,7 +1023,7 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public String[] queryConfig(String dataId, String group, String tenant, long readTimeout, boolean notify)
+        public String[] queryConfig(String dataId, String group, String tenant, long readTimeout)
                 throws NacosException {
             String[] ct = new String[2];
             if (StringUtils.isBlank(group)) {
@@ -1062,7 +1043,6 @@ public class ClientWorker implements Closeable {
                 }
     
                 Map<String, String> headers = new HashMap<String, String>(16);
-                headers.put("notify", String.valueOf(notify));
                 result = httpGet(Constants.CONFIG_CONTROLLER_PATH, headers, params, agent.getEncode(), readTimeout);
             } catch (Exception ex) {
                 String message = String
@@ -1313,7 +1293,7 @@ public class ClientWorker implements Closeable {
                         tenant = key[2];
                     }
                     try {
-                        String[] ct = getServerConfig(dataId, group, tenant, 3000L, true);
+                        String[] ct = getServerConfig(dataId, group, tenant, 3000L);
                         CacheData cache = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
                         cache.setContent(ct[0]);
                         if (null != ct[1]) {

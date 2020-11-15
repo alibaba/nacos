@@ -31,7 +31,6 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -78,25 +77,21 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             metadata.getClientVersion(), metadata.getLabels());
     
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
-    
-                    if (connectionManager.isOverLimit() || !ApplicationUtils.isStarted()) {
-                        //Not register to the connection manager if current server is over limit or server is starting.
+                    if (connectionManager.isOverLimit()) {
+                        //Not register to the connection manager if current server is over limit.
                         try {
                             connection.request(new ConnectResetRequest(), buildMeta());
                             connection.close();
                         } catch (Exception e) {
                             //Do nothing.
                         }
-                        return;
-                    }
-    
-                    //if connnection is already terminated,not register it.
-                    if (connection.isConnected()) {
+                    } else {
                         connectionManager.register(connectionId, connection);
                     }
-    
                 } else if (plainRequest.getBody() instanceof Response) {
+    
                     Response response = (Response) plainRequest.getBody();
+                    Loggers.RPC_DIGEST.debug(String.format("[%s] response receive :%s ", "grpc", response.toString()));
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
                 }
                 
@@ -104,7 +99,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             @Override
             public void onError(Throwable t) {
-                Loggers.REMOTE.error("grpc streamObserver error .", t);
+                t.printStackTrace();
             }
             
             @Override

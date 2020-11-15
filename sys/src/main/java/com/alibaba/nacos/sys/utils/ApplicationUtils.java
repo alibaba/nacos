@@ -85,8 +85,6 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     
     private static Boolean isStandalone = null;
     
-    private static boolean started = false;
-    
     private static String functionModeType = null;
     
     private static String contextPath = "";
@@ -122,14 +120,6 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     
     public static AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
         return applicationContext.getAutowireCapableBeanFactory();
-    }
-    
-    public static boolean isStarted() {
-        return started;
-    }
-    
-    public static void setStarted(boolean started) {
-        ApplicationUtils.started = started;
     }
     
     public static BeanFactory getParentBeanFactory() {

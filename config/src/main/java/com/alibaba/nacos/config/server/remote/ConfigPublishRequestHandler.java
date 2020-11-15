@@ -85,7 +85,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             ParamUtils.checkParam(configAdvanceInfo);
             
             if (AggrWhitelist.isAggrDataId(dataId)) {
-                Loggers.REMOTE_DIGEST
+                Loggers.RPC_DIGEST
                         .warn("[aggr-conflict] {} attemp to publish single data, {}, {}", srcIp, dataId, group);
                 throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
             }
@@ -115,7 +115,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
             return ConfigPubishResponse.buildSuccessResponse();
         } catch (Exception e) {
-            Loggers.REMOTE_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
+            Loggers.RPC_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
             return ConfigPubishResponse.buildFailResponse(e.getMessage());
         }
     }

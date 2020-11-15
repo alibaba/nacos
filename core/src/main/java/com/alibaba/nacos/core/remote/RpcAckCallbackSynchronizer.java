@@ -36,7 +36,7 @@ import java.util.function.Consumer;
 public class RpcAckCallbackSynchronizer {
     
     @SuppressWarnings("checkstyle:linelength")
-    public static final Map<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultRequestFuture>>()
+    private static final Map<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultRequestFuture>>()
             .maximumWeightedCapacity(1000000)
             .listener(new EvictionListener<String, Map<String, DefaultRequestFuture>>() {
                 @Override

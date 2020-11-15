@@ -119,9 +119,4 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     public void setTag(String tag) {
         this.tag = tag;
     }
-    
-    public boolean isNotify() {
-        String notify = getHeader("notify");
-        return Boolean.valueOf(notify);
-    }
 }

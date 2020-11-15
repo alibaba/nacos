@@ -116,19 +116,17 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                         String remoteIp = remoteAddress.getAddress().getHostAddress().toString();
                         int remotePort = remoteAddress.getPort();
                         int localPort = localAddress.getPort();
+    
                         Attributes attrWraper = transportAttrs.toBuilder()
                                 .set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid()).set(TRANS_KEY_CLIENT_IP, remoteIp)
                                 .set(TRANS_KEY_CLIENT_PORT, remotePort).set(TRANS_KEY_LOCAL_PORT, localPort).build();
-                        String connectionid = attrWraper.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info(" connection transportReady,connectionid = {} ", connectionid);
                         return attrWraper;
-    
                     }
     
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
                         String connectionid = transportAttrs.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info(" connection transportTerminated,connectionid = {} ", connectionid);
+                        Loggers.RPC.info(" connection transportTerminated,connectionid = {} ", connectionid);
                         connectionManager.unregister(connectionid);
                     }
                 }).build();

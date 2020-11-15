@@ -25,8 +25,8 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.SingletonRepository;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.core.utils.StringPool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -50,7 +50,7 @@ public class ConfigChangeBatchListenRequestHandler
     public ConfigChangeBatchListenResponse handle(ConfigBatchListenRequest request, RequestMeta requestMeta)
             throws NacosException {
         ConfigBatchListenRequest configChangeListenRequest = (ConfigBatchListenRequest) request;
-        String connectionId = StringPool.get(requestMeta.getConnectionId());
+        String connectionId = requestMeta.getConnectionId();
         List<String> changedGroups = null;
         String header = request.getHeader("Vipserver-Tag");
     
@@ -58,10 +58,9 @@ public class ConfigChangeBatchListenRequestHandler
         for (ConfigBatchListenRequest.ConfigListenContext listenContext : request.getConfigListenContexts()) {
             String groupKey = GroupKey2
                     .getKey(listenContext.getDataId(), listenContext.getGroup(), listenContext.getTenant());
-            groupKey = StringPool.get(groupKey);
-    
-            String md5 = StringPool.get(listenContext.getMd5());
-            
+            groupKey = SingletonRepository.DataIdGroupIdCache.getSingleton(groupKey);
+        
+            String md5 = listenContext.getMd5();
             if (configChangeListenRequest.isListen()) {
                 configChangeListenContext.addListen(groupKey, md5, connectionId);
                 boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, requestMeta.getClientIp(), header);

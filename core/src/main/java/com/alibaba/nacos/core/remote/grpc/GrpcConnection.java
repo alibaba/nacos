@@ -86,6 +86,7 @@ public class GrpcConnection extends Connection {
     
     private DefaultRequestFuture sendRequestInner(Request request, RequestMeta meta, RequestCallBack callBack)
             throws NacosException {
+        Loggers.RPC_DIGEST.debug(String.format("[%s] send request  : %s", "grpc", request.toString()));
         String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
         sendRequestNoAck(request, meta);
@@ -139,12 +140,7 @@ public class GrpcConnection extends Connection {
         try {
             streamObserver.onCompleted();
         } catch (Exception e) {
-            Loggers.REMOTE.debug(String.format("[%s] connection close exception  : %s", "grpc", e.getMessage()));
+            Loggers.RPC.debug(String.format("[%s] connection close exception  : %s", "grpc", e.getMessage()));
         }
-    }
-    
-    @Override
-    public boolean isConnected() {
-        return channel.isActive();
     }
 }

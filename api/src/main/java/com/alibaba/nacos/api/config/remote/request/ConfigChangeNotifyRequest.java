@@ -37,53 +37,9 @@ public class ConfigChangeNotifyRequest extends ServerPushRequest {
     
     private List<String> betaIps;
     
-    private String content;
-    
-    private String type;
-    
-    private boolean contentPush;
-    
-    public long lastModifiedTs;
-    
     @Override
     public String getModule() {
         return "config";
-    }
-    
-    /**
-     * Getter method for property <tt>contentPush</tt>.
-     *
-     * @return property value of contentPush
-     */
-    public boolean isContentPush() {
-        return contentPush;
-    }
-    
-    /**
-     * Setter method for property <tt>contentPush</tt>.
-     *
-     * @param contentPush value to be assigned to property contentPush
-     */
-    public void setContentPush(boolean contentPush) {
-        this.contentPush = contentPush;
-    }
-    
-    /**
-     * Getter method for property <tt>lastModifiedTs</tt>.
-     *
-     * @return property value of lastModifiedTs
-     */
-    public long getLastModifiedTs() {
-        return lastModifiedTs;
-    }
-    
-    /**
-     * Setter method for property <tt>lastModifiedTs</tt>.
-     *
-     * @param lastModifiedTs value to be assigned to property lastModifiedTs
-     */
-    public void setLastModifiedTs(long lastModifiedTs) {
-        this.lastModifiedTs = lastModifiedTs;
     }
     
     /**
@@ -190,41 +146,5 @@ public class ConfigChangeNotifyRequest extends ServerPushRequest {
      */
     public void setBetaIps(List<String> betaIps) {
         this.betaIps = betaIps;
-    }
-    
-    /**
-     * Getter method for property <tt>content</tt>.
-     *
-     * @return property value of content
-     */
-    public String getContent() {
-        return content;
-    }
-    
-    /**
-     * Setter method for property <tt>content</tt>.
-     *
-     * @param content value to be assigned to property content
-     */
-    public void setContent(String content) {
-        this.content = content;
-    }
-    
-    /**
-     * Getter method for property <tt>type</tt>.
-     *
-     * @return property value of type
-     */
-    public String getType() {
-        return type;
-    }
-    
-    /**
-     * Setter method for property <tt>type</tt>.
-     *
-     * @param type value to be assigned to property type
-     */
-    public void setType(String type) {
-        this.type = type;
     }
 }

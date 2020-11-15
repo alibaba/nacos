@@ -83,8 +83,7 @@ public class ConnectionManager {
         Connection connectionInner = connetions.put(connectionId, connection);
         if (connectionInner == null) {
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
-            Loggers.REMOTE
-                    .info("new connection registered successfully, connectionid = {},connection={} ", connectionId,
+            Loggers.RPC.info("new connection registered successfully, connectionid = {},connection={} ", connectionId,
                     connection);
         }
     }
@@ -98,7 +97,7 @@ public class ConnectionManager {
         Connection remove = this.connetions.remove(connectionId);
         if (remove != null) {
             remove.close();
-            Loggers.REMOTE.info(" connection unregistered successfully,connectionid = {} ", connectionId);
+            Loggers.RPC.info(" connection unregistered successfully,connectionid = {} ", connectionId);
             clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
         }
     }
@@ -163,9 +162,6 @@ public class ConnectionManager {
             public void run() {
                 try {
     
-                    Loggers.REMOTE.info("rpc ack size :{}", RpcAckCallbackSynchronizer.CALLBACK_CONTEXT.size());
-                    ;
-    
                     MetricsMonitor.getLongConnectionMonitor().set(connetions.size());
     
                     long currentStamp = System.currentTimeMillis();
@@ -194,7 +190,7 @@ public class ConnectionManager {
                                     connectResetRequest.setServerPort(split[1]);
                                 }
                                 connection.request(connectResetRequest, buildMeta());
-                                Loggers.REMOTE
+                                Loggers.RPC
                                         .info("expel connection ,send switch server response connectionid = {},connectResetRequest={} ",
                                                 expeledClientId, connectResetRequest);
                             }
@@ -202,7 +198,7 @@ public class ConnectionManager {
                         } catch (ConnectionAlreadyClosedException e) {
                             unregister(expeledClientId);
                         } catch (Exception e) {
-                            Loggers.REMOTE.error("error occurs when expel connetion :", expeledClientId, e);
+                            Loggers.RPC.error("error occurs when expel connetion :", expeledClientId, e);
                         }
                     }
                     
@@ -213,10 +209,10 @@ public class ConnectionManager {
                     }
                     
                 } catch (Exception e) {
-                    Loggers.REMOTE.error("error occurs when heathy check... ", e);
+                    Loggers.RPC.error("error occurs when heathy check... ", e);
                 }
             }
-        }, 1000L, 3000L, TimeUnit.MILLISECONDS);
+        }, 500L, 3000L, TimeUnit.MILLISECONDS);
         
     }
     
@@ -257,7 +253,7 @@ public class ConnectionManager {
             } catch (ConnectionAlreadyClosedException e) {
                 unregister(connectionId);
             } catch (Exception e) {
-                Loggers.REMOTE.error("error occurs when expel connetion :", connectionId, e);
+                Loggers.RPC.error("error occurs when expel connetion :", connectionId, e);
             }
         }
         
