@@ -53,7 +53,7 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
     @Override
     public List<PropertySource<?>> load(String name, Resource resource) throws IOException {
         holder = resource;
-        Map<String, ?> tmp = EnvUtils.loadProperties(resource);
+        Map<String, ?> tmp = EnvUtil.loadProperties(resource);
         properties.putAll(tmp);
         
         try {
@@ -61,7 +61,7 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
                 @Override
                 public void onChange(FileChangeEvent event) {
                     try {
-                        Map<String, ?> tmp1 = EnvUtils.loadProperties(holder);
+                        Map<String, ?> tmp1 = EnvUtil.loadProperties(holder);
                         properties.putAll(tmp1);
                     } catch (IOException ignore) {
                     
