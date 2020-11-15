@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.distributed.distro.task.execute;
 
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
-import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandler;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -30,39 +29,21 @@ import com.alibaba.nacos.core.utils.Loggers;
  */
 public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
     
-    private final DistroComponentHolder distroComponentHolder;
-    
     public DistroSyncChangeTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
-        super(distroKey);
-        this.distroComponentHolder = distroComponentHolder;
+        super(distroKey, distroComponentHolder);
     }
     
     @Override
-    public void run() {
-        Loggers.DISTRO.info("[DISTRO-START] {}", toString());
-        try {
-            String type = getDistroKey().getResourceType();
-            DistroData distroData = distroComponentHolder.findDataStorage(type).getDistroData(getDistroKey());
-            distroData.setType(DataOperation.CHANGE);
-            boolean result = distroComponentHolder.findTransportAgent(type).syncData(distroData, getDistroKey().getTargetServer());
-            if (!result) {
-                handleFailedTask();
-            }
-            Loggers.DISTRO.info("[DISTRO-END] {} result: {}", toString(), result);
-        } catch (Exception e) {
-            Loggers.DISTRO.warn("[DISTRO] Sync data change failed.", e);
-            handleFailedTask();
-        }
-    }
-    
-    private void handleFailedTask() {
+    protected boolean doExecute() {
         String type = getDistroKey().getResourceType();
-        DistroFailedTaskHandler failedTaskHandler = distroComponentHolder.findFailedTaskHandler(type);
-        if (null == failedTaskHandler) {
-            Loggers.DISTRO.warn("[DISTRO] Can't find failed task for type {}, so discarded", type);
-            return;
+        DistroData distroData = getDistroComponentHolder().findDataStorage(type).getDistroData(getDistroKey());
+        if (null != distroData) {
+            distroData.setType(DataOperation.CHANGE);
+            return getDistroComponentHolder().findTransportAgent(type)
+                    .syncData(distroData, getDistroKey().getTargetServer());
         }
-        failedTaskHandler.retry(getDistroKey(), DataOperation.CHANGE);
+        Loggers.DISTRO.warn("[DISTRO-END] {} with null data to sync, skip", toString());
+        return false;
     }
     
     @Override

@@ -28,6 +28,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -135,6 +136,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtils.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
+        this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE, ApplicationUtils
+                .getProperty(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE, ConnectionType.GRPC.getType()));
         serverList.put(self.getAddress(), self);
         
         // register NodeChangeEvent publisher to NotifyManager

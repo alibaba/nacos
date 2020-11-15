@@ -20,11 +20,29 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
+import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.http.HttpAgent;
+import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
+import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
+import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -32,10 +50,21 @@ import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
+import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -43,12 +72,16 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -81,6 +114,9 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
+        if (!cache.isListenSuccess()) {
+            agent.notifyListenConfig();
+        }
     }
     
     /**
@@ -96,7 +132,7 @@ public class ClientWorker implements Closeable {
         if (null != cache) {
             cache.removeListener(listener);
             if (cache.getListeners().isEmpty()) {
-                removeCache(dataId, group);
+                agent.removeCache(dataId, group);
             }
         }
     }
@@ -116,6 +152,9 @@ public class ClientWorker implements Closeable {
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         for (Listener listener : listeners) {
             cache.addListener(listener);
+        }
+        if (!cache.isListenSuccess()) {
+            agent.notifyListenConfig();
         }
     }
     
@@ -137,6 +176,10 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
+        // if current cache is already at listening status,do not notify.
+        if (!cache.isListenSuccess()) {
+            agent.notifyListenConfig();
+        }
     }
     
     /**
@@ -153,7 +196,7 @@ public class ClientWorker implements Closeable {
         if (null != cache) {
             cache.removeListener(listener);
             if (cache.getListeners().isEmpty()) {
-                removeCache(dataId, group, tenant);
+                agent.removeCache(dataId, group);
             }
         }
     }
@@ -180,6 +223,38 @@ public class ClientWorker implements Closeable {
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+    }
+    
+    /**
+     * remove config.
+     *
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @param tag    tag.
+     * @return success or not.
+     * @throws NacosException exception to throw.
+     */
+    public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
+        return agent.removeConfig(dataId, group, tenant, tag);
+    }
+    
+    /**
+     * publish config.
+     *
+     * @param dataId  dataId.
+     * @param group   group.
+     * @param tenant  tenant.
+     * @param appName appName.
+     * @param tag     tag.
+     * @param betaIps betaIps.
+     * @param content content.
+     * @return success or not.
+     * @throws NacosException exception throw.
+     */
+    public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
+            String content) throws NacosException {
+        return agent.publishConfig(dataId, group, tenant, appName, tag, betaIps, content);
     }
     
     /**
@@ -248,6 +323,8 @@ public class ClientWorker implements Closeable {
                 cache.setInitializing(true);
             } else {
                 cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
+                cache.setTaskId(taskId);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
                     String[] ct = getServerConfig(dataId, group, tenant, 3000L);
@@ -279,74 +356,20 @@ public class ClientWorker implements Closeable {
     
     public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
             throws NacosException {
-        String[] ct = new String[2];
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
-        
-        HttpRestResult<String> result = null;
-        try {
-            Map<String, String> params = new HashMap<String, String>(3);
-            if (StringUtils.isBlank(tenant)) {
-                params.put("dataId", dataId);
-                params.put("group", group);
-            } else {
-                params.put("dataId", dataId);
-                params.put("group", group);
-                params.put("tenant", tenant);
-            }
-            result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
-        } catch (Exception ex) {
-            String message = String
-                    .format("[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s",
-                            agent.getName(), dataId, group, tenant);
-            LOGGER.error(message, ex);
-            throw new NacosException(NacosException.SERVER_ERROR, ex);
-        }
-        
-        switch (result.getCode()) {
-            case HttpURLConnection.HTTP_OK:
-                LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.getData());
-                ct[0] = result.getData();
-                if (result.getHeader().getValue(CONFIG_TYPE) != null) {
-                    ct[1] = result.getHeader().getValue(CONFIG_TYPE);
-                } else {
-                    ct[1] = ConfigType.TEXT.getType();
-                }
-                return ct;
-            case HttpURLConnection.HTTP_NOT_FOUND:
-                LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
-                return ct;
-            case HttpURLConnection.HTTP_CONFLICT: {
-                LOGGER.error(
-                        "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
-                                + "tenant={}", agent.getName(), dataId, group, tenant);
-                throw new NacosException(NacosException.CONFLICT,
-                        "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
-            }
-            case HttpURLConnection.HTTP_FORBIDDEN: {
-                LOGGER.error("[{}] [sub-server-error] no right, dataId={}, group={}, tenant={}", agent.getName(),
-                        dataId, group, tenant);
-                throw new NacosException(result.getCode(), result.getMessage());
-            }
-            default: {
-                LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(),
-                        dataId, group, tenant, result.getCode());
-                throw new NacosException(result.getCode(),
-                        "http error, code=" + result.getCode() + ",dataId=" + dataId + ",group=" + group + ",tenant="
-                                + tenant);
-            }
-        }
+        return this.agent.queryConfig(dataId, group, tenant, readTimeout);
     }
     
-    private void checkLocalConfig(CacheData cacheData) {
+    private void checkLocalConfig(String agentName, CacheData cacheData) {
         final String dataId = cacheData.dataId;
         final String group = cacheData.group;
         final String tenant = cacheData.tenant;
-        File path = LocalConfigInfoProcessor.getFailoverFile(agent.getName(), dataId, group, tenant);
+        File path = LocalConfigInfoProcessor.getFailoverFile(agentName, dataId, group, tenant);
         
         if (!cacheData.isUseLocalConfigInfo() && path.exists()) {
-            String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
+            String content = LocalConfigInfoProcessor.getFailover(agentName, dataId, group, tenant);
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
@@ -354,14 +377,14 @@ public class ClientWorker implements Closeable {
             
             LOGGER.warn(
                     "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                    agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                    agentName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             return;
         }
         
         // If use local config info, then it doesn't notify business listener and notify after getting from server.
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
-            LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agent.getName(),
+            LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agentName,
                     dataId, group, tenant);
             return;
         }
@@ -369,14 +392,14 @@ public class ClientWorker implements Closeable {
         // When it changed.
         if (cacheData.isUseLocalConfigInfo() && path.exists() && cacheData.getLocalConfigInfoVersion() != path
                 .lastModified()) {
-            String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
+            String content = LocalConfigInfoProcessor.getFailover(agentName, dataId, group, tenant);
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
             LOGGER.warn(
                     "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                    agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                    agentName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
         }
     }
     
@@ -384,155 +407,22 @@ public class ClientWorker implements Closeable {
         return (null == group) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
-    /**
-     * Check config info.
-     */
-    public void checkConfigInfo() {
-        // Dispatch taskes.
-        int listenerSize = cacheMap.get().size();
-        // Round up the longingTaskCount.
-        int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
-        if (longingTaskCount > currentLongingTaskCount) {
-            for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
-                // The task list is no order.So it maybe has issues when changing.
-                executorService.execute(new LongPollingRunnable(i));
-            }
-            currentLongingTaskCount = longingTaskCount;
-        }
-    }
-    
-    /**
-     * Fetch the dataId list from server.
-     *
-     * @param cacheDatas              CacheDatas for config infomations.
-     * @param inInitializingCacheList initial cache lists.
-     * @return String include dataId and group (ps: it maybe null).
-     * @throws Exception Exception.
-     */
-    List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        for (CacheData cacheData : cacheDatas) {
-            if (!cacheData.isUseLocalConfigInfo()) {
-                sb.append(cacheData.dataId).append(WORD_SEPARATOR);
-                sb.append(cacheData.group).append(WORD_SEPARATOR);
-                if (StringUtils.isBlank(cacheData.tenant)) {
-                    sb.append(cacheData.getMd5()).append(LINE_SEPARATOR);
-                } else {
-                    sb.append(cacheData.getMd5()).append(WORD_SEPARATOR);
-                    sb.append(cacheData.getTenant()).append(LINE_SEPARATOR);
-                }
-                if (cacheData.isInitializing()) {
-                    // It updates when cacheData occours in cacheMap by first time.
-                    inInitializingCacheList
-                            .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
-                }
-            }
-        }
-        boolean isInitializingCacheList = !inInitializingCacheList.isEmpty();
-        return checkUpdateConfigStr(sb.toString(), isInitializingCacheList);
-    }
-    
-    /**
-     * Fetch the updated dataId list from server.
-     *
-     * @param probeUpdateString       updated attribute string value.
-     * @param isInitializingCacheList initial cache lists.
-     * @return The updated dataId list(ps: it maybe null).
-     * @throws IOException Exception.
-     */
-    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws Exception {
-        
-        Map<String, String> params = new HashMap<String, String>(2);
-        params.put(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
-        Map<String, String> headers = new HashMap<String, String>(2);
-        headers.put("Long-Pulling-Timeout", "" + timeout);
-        
-        // told server do not hang me up if new initializing cacheData added in
-        if (isInitializingCacheList) {
-            headers.put("Long-Pulling-Timeout-No-Hangup", "true");
-        }
-        
-        if (StringUtils.isBlank(probeUpdateString)) {
-            return Collections.emptyList();
-        }
-        
-        try {
-            // In order to prevent the server from handling the delay of the client's long task,
-            // increase the client's read timeout to avoid this problem.
-            
-            long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
-            HttpRestResult<String> result = agent
-                    .httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params, agent.getEncode(),
-                            readTimeoutMs);
-            
-            if (result.ok()) {
-                setHealthServer(true);
-                return parseUpdateDataIdResponse(result.getData());
-            } else {
-                setHealthServer(false);
-                LOGGER.error("[{}] [check-update] get changed dataId error, code: {}", agent.getName(),
-                        result.getCode());
-            }
-        } catch (Exception e) {
-            setHealthServer(false);
-            LOGGER.error("[" + agent.getName() + "] [check-update] get changed dataId exception", e);
-            throw e;
-        }
-        return Collections.emptyList();
-    }
-    
-    /**
-     * Get the groupKey list from the http response.
-     *
-     * @param response Http response.
-     * @return GroupKey List, (ps: it maybe null).
-     */
-    private List<String> parseUpdateDataIdResponse(String response) {
-        if (StringUtils.isBlank(response)) {
-            return Collections.emptyList();
-        }
-        
-        try {
-            response = URLDecoder.decode(response, "UTF-8");
-        } catch (Exception e) {
-            LOGGER.error("[" + agent.getName() + "] [polling-resp] decode modifiedDataIdsString error", e);
-        }
-        
-        List<String> updateList = new LinkedList<String>();
-        
-        for (String dataIdAndGroup : response.split(LINE_SEPARATOR)) {
-            if (!StringUtils.isBlank(dataIdAndGroup)) {
-                String[] keyArr = dataIdAndGroup.split(WORD_SEPARATOR);
-                String dataId = keyArr[0];
-                String group = keyArr[1];
-                if (keyArr.length == 2) {
-                    updateList.add(GroupKey.getKey(dataId, group));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}", agent.getName(), dataId,
-                            group);
-                } else if (keyArr.length == 3) {
-                    String tenant = keyArr[2];
-                    updateList.add(GroupKey.getKeyTenant(dataId, group, tenant));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", agent.getName(),
-                            dataId, group, tenant);
-                } else {
-                    LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", agent.getName(),
-                            dataIdAndGroup);
-                }
-            }
-        }
-        return updateList;
-    }
-    
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager,
-            final Properties properties) {
-        this.agent = agent;
+    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, final Properties properties)
+            throws NacosException {
         this.configFilterChainManager = configFilterChainManager;
         
-        // Initialize the timeout parameter
-        
         init(properties);
-        
+    
+        ServerListManager serverListManager = new ServerListManager(properties);
+        serverListManager.start();
+    
+        if (ParamUtils.useHttpSwitch()) {
+            agent = new ConfigHttpTransportClient(properties, serverListManager);
+        } else {
+            agent = new ConfigRpcTransportClient(properties, serverListManager);
+        }
+    
         this.executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -553,17 +443,30 @@ public class ClientWorker implements Closeable {
                         return t;
                     }
                 });
-        
-        this.executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkConfigInfo();
-                } catch (Throwable e) {
-                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-                }
+        agent.setExecutor(executorService);
+        agent.start();
+    
+    }
+    
+    private void refreshContentAndCheck(String groupKey) {
+        if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
+            CacheData cache = cacheMap.get().get(groupKey);
+            refreshContentAndCheck(cache);
+        }
+    }
+    
+    private void refreshContentAndCheck(CacheData cacheData) {
+        try {
+            String[] ct = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L);
+            cacheData.setContent(ct[0]);
+            if (null != ct[1]) {
+                cacheData.setType(ct[1]);
             }
-        }, 1L, 10L, TimeUnit.MILLISECONDS);
+            cacheData.checkListenerMd5();
+        } catch (Exception e) {
+            LOGGER.error("refresh content and check md5 fail ,dataid={},group={},tenant={} ", cacheData.dataId,
+                    cacheData.group, cacheData.tenant, e);
+        }
     }
     
     private void init(Properties properties) {
@@ -587,12 +490,770 @@ public class ClientWorker implements Closeable {
         LOGGER.info("{} do shutdown stop", className);
     }
     
+    public boolean isHealthServer() {
+        return isHealthServer;
+    }
+    
+    private void setHealthServer(boolean isHealthServer) {
+        this.isHealthServer = isHealthServer;
+    }
+    
+    final ScheduledExecutorService executor;
+    
+    final ScheduledExecutorService executorService;
+    
+    /**
+     * groupKey -> cacheData.
+     */
+    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
+            new HashMap<String, CacheData>());
+    
+    private final ConfigFilterChainManager configFilterChainManager;
+    
+    private boolean isHealthServer = true;
+    
+    private String uuid = UUID.randomUUID().toString();
+    
+    private long timeout;
+    
+    private ConfigTransportClient agent;
+    
+    private int taskPenaltyTime;
+    
+    private boolean enableRemoteSyncConfig = false;
+    
+    public class ConfigRpcTransportClient extends ConfigTransportClient {
+        
+        private BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<Object>(1);
+        
+        private Object bellItem = new Object();
+    
+        private Map<String, RpcClient> rpcClientMap = new HashMap<String, RpcClient>();
+        
+        public ConfigRpcTransportClient(Properties properties, ServerListManager serverListManager) {
+            super(properties, serverListManager);
+        }
+    
+        private ConnectionType getConectiontype() {
+            ConnectionType connectionType = ConnectionType.GRPC;
+            String connetionType = ParamUtils.configRemoteConnectionType();
+            if (StringUtils.isNotBlank(connetionType)) {
+                ConnectionType connectionType1 = ConnectionType.valueOf(connetionType);
+                if (connectionType1 != null) {
+                    connectionType = connectionType1;
+                }
+            }
+            return connectionType;
+        }
+    
+        private Map<String, String> getLabels() {
+    
+            Map<String, String> labels = new HashMap<String, String>(2, 1);
+            labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
+            labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
+            return labels;
+        }
+    
+        private void initHandlerRpcClient(final RpcClient rpcClientInner) {
+            /*
+             * Register Listen Change Handler
+             */
+            rpcClientInner.registerServerPushResponseHandler(new ServerRequestHandler() {
+                @Override
+                public Response requestReply(Request request, RequestMeta requestMeta) {
+                    if (request instanceof ConfigChangeNotifyRequest) {
+                        ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
+                        String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
+                                configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                        CacheData cacheData = cacheMap.get().get(groupKey);
+                        if (cacheData != null) {
+                            cacheData.setListenSuccess(false);
+                            notifyListenConfig();
+                        }
+                        return new ConfigChangeNotifyResponse();
+                    }
+                    return null;
+                }
+    
+            });
+        
+            rpcClientInner.registerConnectionListener(new ConnectionEventListener() {
+            
+                @Override
+                public void onConnected() {
+                    notifyListenConfig();
+                }
+            
+                @Override
+                public void onDisConnect() {
+                    String taskId = rpcClientInner.getLabels().get("taskId");
+                    LOGGER.info("clear listen context...");
+                    Collection<CacheData> values = cacheMap.get().values();
+                
+                    for (CacheData cacheData : values) {
+                        if (taskId != null && Integer.valueOf(taskId).equals(cacheData.getTaskId())) {
+                            cacheData.setListenSuccess(false);
+                            continue;
+                        }
+                        cacheData.setListenSuccess(false);
+                    }
+                }
+            
+            });
+        
+            rpcClientInner.init(new ServerListFactory() {
+                @Override
+                public String genNextServer() {
+                    return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
+    
+                }
+            
+                @Override
+                public String getCurrentServer() {
+                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServerAddr();
+                
+                }
+            
+                @Override
+                public List<String> getServerList() {
+                    return ConfigRpcTransportClient.super.serverListManager.serverUrls;
+                
+                }
+            });
+        }
+        
+        @Override
+        public void startIntenal() throws NacosException {
+            executor.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        while (true) {
+                            try {
+                                listenExecutebell.poll(5L, TimeUnit.SECONDS);
+                                executeConfigListen();
+                            } catch (Exception e) {
+                                LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
+                            }
+                        }
+                    } catch (Throwable e) {
+                        LOGGER.error("rpc listen task exception", e);
+                    }
+                }
+            }, 0L, TimeUnit.MILLISECONDS);
+    
+            // register server change subscriber.
+            NotifyCenter.registerSubscriber(new Subscriber() {
+                @Override
+                public void onEvent(Event event) {
+                    for (RpcClient rpcClient : rpcClientMap.values()) {
+                        RpcClient.ServerInfo currentServer = rpcClient.getCurrentServer();
+                        if (currentServer != null) {
+                            List<String> serverUrls = serverListManager.getServerUrls();
+                            String currentServerIp = currentServer.getServerIp();
+                            int currentServerPort = currentServer.getServerPort() - rpcClient.rpcPortOffset();
+                            String currentAddress = currentServerIp + ":" + currentServerPort;
+                            for (String server : serverUrls) {
+                                if (server.equals(currentAddress)) {
+                                    rpcClient.switchServerAsync();
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    
+                }
+    
+                @Override
+                public Class<? extends Event> subscribeType() {
+                    return ServerlistChangeEvent.class;
+                }
+            });
+            
+        }
+        
+        @Override
+        public String getName() {
+            return "config_rpc_client";
+        }
+        
+        @Override
+        public void notifyListenConfig() {
+            listenExecutebell.offer(bellItem);
+        }
+        
+        @Override
+        public void executeConfigListen() {
+    
+            Map<String, List<CacheData>> listenCachesMap = new HashMap<String, List<CacheData>>(16);
+            Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
+            
+            for (CacheData cache : cacheMap.get().values()) {
+                //get listen  config and remove listen  config
+                if (!CollectionUtils.isEmpty(cache.getListeners()) && !cache.isListenSuccess()) {
+                    if (!cache.isUseLocalConfigInfo()) {
+                        List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
+                        if (cacheDatas == null) {
+                            cacheDatas = new LinkedList<CacheData>();
+                            listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
+                        }
+                        cacheDatas.add(cache);
+                        
+                    }
+                } else if (CollectionUtils.isEmpty(cache.getListeners()) && cache.isListenSuccess()) {
+                    
+                    if (!cache.isUseLocalConfigInfo()) {
+                        List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
+                        if (cacheDatas == null) {
+                            cacheDatas = new LinkedList<CacheData>();
+                            removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
+                        }
+                        cacheDatas.add(cache);
+                        
+                    }
+                }
+            }
+    
+            if (!listenCachesMap.isEmpty()) {
+                for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
+                    String taskId = entry.getKey();
+                    List<CacheData> listenCaches = entry.getValue();
+    
+                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(listenCaches);
+                    configChangeListenRequest.setListen(true);
+                    try {
+                        RpcClient rpcClient = ensureRpcClient(taskId);
+    
+                        ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
+                                rpcClient, configChangeListenRequest);
+                        if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
+    
+                            if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedConfigs())) {
+                                for (ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
+                                        .getChangedConfigs()) {
+                                    refreshContentAndCheck(
+                                            GroupKey.getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
+                                                    changeConfig.getTenant()));
+                                }
+                            }
+                            for (CacheData cacheData : listenCaches) {
+                                cacheData.setListenSuccess(true);
+                            }
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("async listen config change error ", e);
+                    }
+                }
+            }
+    
+            if (!removeListenCachesMap.isEmpty()) {
+                for (Map.Entry<String, List<CacheData>> entry : removeListenCachesMap.entrySet()) {
+                    String taskId = entry.getKey();
+                    List<CacheData> removeListenCaches = entry.getValue();
+                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(removeListenCaches);
+                    configChangeListenRequest.setListen(false);
+                    try {
+                        RpcClient rpcClient = ensureRpcClient(taskId);
+                        boolean removeSuccess = unListenConfigChange(rpcClient, configChangeListenRequest);
+                        if (removeSuccess) {
+                            for (CacheData cacheData : removeListenCaches) {
+                                ClientWorker.this.removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
+                            }
+                        }
+    
+                    } catch (Exception e) {
+                        LOGGER.error("async remove listen config change error ", e);
+                    }
+                }
+            }
+        }
+    
+        private RpcClient ensureRpcClient(String taskId) throws NacosException {
+            Map<String, String> labels = getLabels();
+            Map<String, String> newlabels = new HashMap<String, String>(labels);
+            newlabels.put("taskId", taskId);
+        
+            RpcClient rpcClient = RpcClientFactory
+                    .createClient("config-" + taskId + "-" + uuid, getConectiontype(), newlabels);
+            if (rpcClient.isWaitInited()) {
+                initHandlerRpcClient(rpcClient);
+                rpcClient.start();
+            }
+        
+            return rpcClient;
+        }
+    
+        /**
+         * build config strings.
+         *
+         * @param caches caches to build config string.
+         * @return
+         */
+        private List<String> buildConfigStrs(List<CacheData> caches) {
+            StringBuilder listenConfigsBuilder = new StringBuilder();
+            List<String> configStrings = new ArrayList<String>();
+            int index = 0;
+            for (CacheData cache : caches) {
+                index++;
+                listenConfigsBuilder.append(cache.dataId).append(WORD_SEPARATOR);
+                listenConfigsBuilder.append(cache.group).append(WORD_SEPARATOR);
+                if (StringUtils.isBlank(cache.tenant)) {
+                    listenConfigsBuilder.append(cache.getMd5()).append(LINE_SEPARATOR);
+                } else {
+                    listenConfigsBuilder.append(cache.getMd5()).append(WORD_SEPARATOR);
+                    listenConfigsBuilder.append(cache.getTenant()).append(LINE_SEPARATOR);
+                }
+    
+                if (index >= 3000) {
+                    configStrings.add(listenConfigsBuilder.toString());
+                    listenConfigsBuilder = new StringBuilder();
+                    index = 0;
+                }
+            }
+    
+            if (listenConfigsBuilder.length() > 0) {
+                configStrings.add(listenConfigsBuilder.toString());
+        
+            }
+            return configStrings;
+        }
+    
+        /**
+         * build config string.
+         *
+         * @param caches caches to build config string.
+         * @return
+         */
+        private String buildConfigStr(List<CacheData> caches) {
+            StringBuilder listenConfigsBuilder = new StringBuilder();
+            List<String> configStrings = new ArrayList<String>();
+            for (CacheData cache : caches) {
+                listenConfigsBuilder.append(cache.dataId).append(WORD_SEPARATOR);
+                listenConfigsBuilder.append(cache.group).append(WORD_SEPARATOR);
+                if (StringUtils.isBlank(cache.tenant)) {
+                    listenConfigsBuilder.append(cache.getMd5()).append(LINE_SEPARATOR);
+                } else {
+                    listenConfigsBuilder.append(cache.getMd5()).append(WORD_SEPARATOR);
+                    listenConfigsBuilder.append(cache.getTenant()).append(LINE_SEPARATOR);
+                }
+    
+            }
+    
+            return listenConfigsBuilder.toString();
+        }
+    
+        /**
+         * build config string.
+         *
+         * @param caches caches to build config string.
+         * @return
+         */
+        private ConfigBatchListenRequest buildConfigRequest(List<CacheData> caches) {
+    
+            ConfigBatchListenRequest configChangeListenRequest = new ConfigBatchListenRequest();
+            for (CacheData cacheData : caches) {
+                configChangeListenRequest.addConfigListenContext(cacheData.group, cacheData.dataId, cacheData.tenant,
+                        cacheData.getMd5());
+            }
+            return configChangeListenRequest;
+        }
+        
+        @Override
+        public void removeCache(String dataId, String group) {
+            // Notify to rpc unlisten ,and remove cache if success.
+            notifyListenConfig();
+        }
+        
+        /**
+         * send cancel listen config change request .
+         *
+         * @param configChangeListenRequest request of remove listen config string.
+         */
+        private boolean unListenConfigChange(RpcClient rpcClient, ConfigBatchListenRequest configChangeListenRequest)
+                throws NacosException {
+            
+            ConfigChangeBatchListenResponse response = (ConfigChangeBatchListenResponse) requestProxy(rpcClient,
+                    configChangeListenRequest);
+            return response.isSuccess();
+        }
+        
+        @Override
+        public String[] queryConfig(String dataId, String group, String tenant, long readTimeous)
+                throws NacosException {
+            ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
+            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(getOneRunningClient(), request);
+            
+            String[] ct = new String[2];
+            if (response.isSuccess()) {
+                LocalConfigInfoProcessor.saveSnapshot(this.getName(), dataId, group, tenant, response.getContent());
+                ct[0] = response.getContent();
+                if (StringUtils.isNotBlank(response.getContentType())) {
+                    ct[1] = response.getContentType();
+                } else {
+                    ct[1] = ConfigType.TEXT.getType();
+                }
+                return ct;
+            } else if (response.getErrorCode() == ConfigQueryResponse.CONFIG_NOT_FOUND) {
+                LocalConfigInfoProcessor.saveSnapshot(this.getName(), dataId, group, tenant, null);
+                return ct;
+            } else if (response.getErrorCode() == ConfigQueryResponse.CONFIG_QUERY_CONFLICT) {
+                LOGGER.error(
+                        "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
+                                + "tenant={}", this.getName(), dataId, group, tenant);
+                throw new NacosException(NacosException.CONFLICT,
+                        "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
+            } else {
+                LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", this.getName(), dataId,
+                        group, tenant, response);
+                throw new NacosException(response.getErrorCode(),
+                        "http error, code=" + response.getErrorCode() + ",dataId=" + dataId + ",group=" + group
+                                + ",tenant=" + tenant);
+                
+            }
+        }
+    
+        private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
+            try {
+                request.putAllHeader(super.getSecurityHeaders());
+                request.putAllHeader(super.getSpasHeaders());
+            } catch (Exception e) {
+                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
+            }
+        
+            JsonObject asJsonObjectTemp = new Gson().toJsonTree(request).getAsJsonObject();
+            asJsonObjectTemp.remove("headers");
+            asJsonObjectTemp.remove("requestId");
+            boolean limit = Limiter.isLimit(request.getClass() + asJsonObjectTemp.toString());
+            if (limit) {
+                throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
+                        "More than client-side current limit threshold");
+            }
+            return rpcClientInner.request(request);
+        }
+    
+        RpcClient getOneRunningClient() throws NacosException {
+            return ensureRpcClient("0");
+        }
+        
+        @Override
+        public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
+                String betaIps, String content) throws NacosException {
+            try {
+                ConfigPublishRequest request = new ConfigPublishRequest(dataId, group, tenant, content);
+                request.putAdditonalParam("tag", tag);
+                request.putAdditonalParam("appName", appName);
+                request.putAdditonalParam("betaIps", betaIps);
+                ConfigPubishResponse response = (ConfigPubishResponse) requestProxy(getOneRunningClient(), request);
+                return response.isSuccess();
+            } catch (Exception e) {
+                LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
+                        this.getName(), dataId, group, tenant, "unkonw", e.getMessage());
+                return false;
+            }
+        }
+        
+        @Override
+        public boolean removeConfig(String dataid, String group, String tenat, String tag) throws NacosException {
+            ConfigRemoveRequest request = new ConfigRemoveRequest(dataid, group, tenat, tag);
+            ConfigRemoveResponse response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
+            return response.isSuccess();
+        }
+    }
+    
+    public class ConfigHttpTransportClient extends ConfigTransportClient {
+        
+        private static final long POST_TIMEOUT = 3000L;
+        
+        HttpAgent agent;
+        
+        private double currentLongingTaskCount = 0;
+        
+        public ConfigHttpTransportClient(Properties properties, ServerListManager serverListManager)
+                throws NacosException {
+            
+            super(properties, serverListManager);
+            agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
+            
+        }
+        
+        @Override
+        public void startIntenal() {
+            
+            executor.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        executeConfigListen();
+                    } catch (Throwable e) {
+                        LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
+                    }
+                }
+            }, 1L, 10L, TimeUnit.MILLISECONDS);
+        }
+        
+        @Override
+        public String getName() {
+            return agent.getName();
+        }
+        
+        @Override
+        public void notifyListenConfig() {
+            //Do nothing.
+        }
+        
+        @Override
+        public void executeConfigListen() {
+            // Dispatch taskes.
+            int listenerSize = cacheMap.get().size();
+            // Round up the longingTaskCount.
+            int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
+            if (longingTaskCount > currentLongingTaskCount) {
+                for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
+                    // The task list is no order.So it maybe has issues when changing.
+                    executorService.execute(new LongPollingRunnable(agent, i, this));
+                }
+                currentLongingTaskCount = longingTaskCount;
+            }
+        }
+        
+        @Override
+        public void removeCache(String dataId, String group) {
+            //remove cache directory in http model
+            ClientWorker.this.removeCache(dataId, group);
+        }
+        
+        @Override
+        public String[] queryConfig(String dataId, String group, String tenant, long readTimeout)
+                throws NacosException {
+            String[] ct = new String[2];
+            if (StringUtils.isBlank(group)) {
+                group = Constants.DEFAULT_GROUP;
+            }
+            
+            HttpRestResult<String> result = null;
+            try {
+                Map<String, String> params = new HashMap<String, String>(3);
+                if (StringUtils.isBlank(tenant)) {
+                    params.put("dataId", dataId);
+                    params.put("group", group);
+                } else {
+                    params.put("dataId", dataId);
+                    params.put("group", group);
+                    params.put("tenant", tenant);
+                }
+    
+                Map<String, String> headers = new HashMap<String, String>(16);
+                result = httpGet(Constants.CONFIG_CONTROLLER_PATH, headers, params, agent.getEncode(), readTimeout);
+            } catch (Exception ex) {
+                String message = String
+                        .format("[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s",
+                                agent.getName(), dataId, group, tenant);
+                LOGGER.error(message, ex);
+                throw new NacosException(NacosException.SERVER_ERROR, ex);
+            }
+            
+            switch (result.getCode()) {
+                case HttpURLConnection.HTTP_OK:
+                    LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.getData());
+                    ct[0] = result.getData();
+                    if (result.getHeader().getValue(CONFIG_TYPE) != null) {
+                        ct[1] = result.getHeader().getValue(CONFIG_TYPE);
+                    } else {
+                        ct[1] = ConfigType.TEXT.getType();
+                    }
+                    return ct;
+                case HttpURLConnection.HTTP_NOT_FOUND:
+                    LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
+                    return ct;
+                case HttpURLConnection.HTTP_CONFLICT: {
+                    LOGGER.error(
+                            "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
+                                    + "tenant={}", agent.getName(), dataId, group, tenant);
+                    throw new NacosException(NacosException.CONFLICT,
+                            "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
+                }
+                case HttpURLConnection.HTTP_FORBIDDEN: {
+                    LOGGER.error("[{}] [sub-server-error] no right, dataId={}, group={}, tenant={}", agent.getName(),
+                            dataId, group, tenant);
+                    throw new NacosException(result.getCode(), result.getMessage());
+                }
+                default: {
+                    LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(),
+                            dataId, group, tenant, result.getCode());
+                    throw new NacosException(result.getCode(),
+                            "http error, code=" + result.getCode() + ",dataId=" + dataId + ",group=" + group
+                                    + ",tenant=" + tenant);
+                }
+            }
+        }
+    
+        private void assembleHttpParams(Map<String, String> params, Map<String, String> headers) throws Exception {
+            Map<String, String> securityHeaders = super.getSecurityHeaders();
+            if (securityHeaders != null) {
+                //put security header to param
+                params.putAll(securityHeaders);
+                if (StringUtils.isNotBlank(super.tenant) && !params.containsKey(SpasAdapter.TENANT_KEY)) {
+                    params.put(SpasAdapter.TENANT_KEY, tenant);
+                }
+            }
+            Map<String, String> spasHeaders = super.getSpasHeaders();
+            if (spasHeaders != null) {
+                //put spasHeader to header.
+                headers.putAll(spasHeaders);
+            }
+            Map<String, String> commonHeader = super.getCommonHeader();
+            if (commonHeader != null) {
+                //put common headers
+                headers.putAll(commonHeader);
+            }
+            Map<String, String> signHeaders = SpasAdapter.getSignHeaders(params, super.secretKey);
+            if (signHeaders != null) {
+                headers.putAll(signHeaders);
+            }
+        
+        }
+        
+        @Override
+        public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
+                String betaIps, String content) throws NacosException {
+            group = null2defaultGroup(group);
+            ParamUtils.checkParam(dataId, group, content);
+            
+            ConfigRequest cr = new ConfigRequest();
+            cr.setDataId(dataId);
+            cr.setTenant(tenant);
+            cr.setGroup(group);
+            cr.setContent(content);
+            configFilterChainManager.doFilter(cr, null);
+            content = cr.getContent();
+            
+            String url = Constants.CONFIG_CONTROLLER_PATH;
+            Map<String, String> params = new HashMap<String, String>(6);
+            params.put("dataId", dataId);
+            params.put("group", group);
+            params.put("content", content);
+            if (StringUtils.isNotEmpty(tenant)) {
+                params.put("tenant", tenant);
+            }
+            if (StringUtils.isNotEmpty(appName)) {
+                params.put("appName", appName);
+            }
+            if (StringUtils.isNotEmpty(tag)) {
+                params.put("tag", tag);
+            }
+            Map<String, String> headers = new HashMap<String, String>(1);
+            if (StringUtils.isNotEmpty(betaIps)) {
+                headers.put("betaIps", betaIps);
+            }
+            
+            HttpRestResult<String> result = null;
+            try {
+    
+                result = httpPost(url, headers, params, encode, POST_TIMEOUT);
+            } catch (Exception ex) {
+                LOGGER.warn("[{}] [publish-single] exception, dataId={}, group={}, msg={}", agent.getName(), dataId,
+                        group, ex.toString());
+                return false;
+            }
+            
+            if (result.ok()) {
+                LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
+                        dataId, group, tenant, ContentUtils.truncateContent(content));
+                return true;
+            } else if (HttpURLConnection.HTTP_FORBIDDEN == result.getCode()) {
+                LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
+                        agent.getName(), dataId, group, tenant, result.getCode(), result.getMessage());
+                throw new NacosException(result.getCode(), result.getMessage());
+            } else {
+                LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
+                        agent.getName(), dataId, group, tenant, result.getCode(), result.getMessage());
+                return false;
+            }
+        }
+    
+        private HttpRestResult<String> httpPost(String path, Map<String, String> headers,
+                Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
+            if (headers == null) {
+                headers = new HashMap<String, String>(16);
+            }
+            assembleHttpParams(paramValues, headers);
+            return agent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
+        }
+    
+        private HttpRestResult<String> httpGet(String path, Map<String, String> headers,
+                Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
+            if (headers == null) {
+                headers = new HashMap<String, String>(16);
+            }
+            assembleHttpParams(paramValues, headers);
+            return agent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
+        }
+    
+        private HttpRestResult<String> httpDelete(String path, Map<String, String> headers,
+                Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
+            if (headers == null) {
+                headers = new HashMap<String, String>(16);
+            }
+            assembleHttpParams(paramValues, headers);
+            return agent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
+        }
+        
+        @Override
+        public boolean removeConfig(String dataId, String group, String tenat, String tag) throws NacosException {
+            
+            group = null2defaultGroup(group);
+            ParamUtils.checkKeyParam(dataId, group);
+            String url = Constants.CONFIG_CONTROLLER_PATH;
+            Map<String, String> params = new HashMap<String, String>(4);
+            params.put("dataId", dataId);
+            params.put("group", group);
+            
+            if (StringUtils.isNotEmpty(tenant)) {
+                params.put("tenant", tenant);
+            }
+            if (StringUtils.isNotEmpty(tag)) {
+                params.put("tag", tag);
+            }
+            
+            HttpRestResult<String> result = null;
+            try {
+                result = httpDelete(url, null, params, encode, POST_TIMEOUT);
+            } catch (Exception ex) {
+                LOGGER.warn("[remove] error, " + dataId + ", " + group + ", " + tenant + ", msg: " + ex.toString());
+                return false;
+            }
+            
+            if (result.ok()) {
+                LOGGER.info("[{}] [remove] ok, dataId={}, group={}, tenant={}", agent.getName(), dataId, group, tenant);
+                return true;
+            } else if (HttpURLConnection.HTTP_FORBIDDEN == result.getCode()) {
+                LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
+                        dataId, group, tenant, result.getCode(), result.getMessage());
+                throw new NacosException(result.getCode(), result.getMessage());
+            } else {
+                LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
+                        dataId, group, tenant, result.getCode(), result.getMessage());
+                return false;
+            }
+        }
+    
+    }
+    
+    /**
+     * config change task of http long polling .
+     */
     class LongPollingRunnable implements Runnable {
         
         private final int taskId;
         
-        public LongPollingRunnable(int taskId) {
+        private HttpAgent httpAgent;
+    
+        private ConfigTransportClient configTransportClient;
+    
+        public LongPollingRunnable(HttpAgent httpAgent, int taskId, ConfigTransportClient configTransportClient) {
             this.taskId = taskId;
+            this.httpAgent = httpAgent;
+            this.configTransportClient = configTransportClient;
         }
         
         @Override
@@ -606,7 +1267,7 @@ public class ClientWorker implements Closeable {
                     if (cacheData.getTaskId() == taskId) {
                         cacheDatas.add(cacheData);
                         try {
-                            checkLocalConfig(cacheData);
+                            checkLocalConfig(httpAgent.getName(), cacheData);
                             if (cacheData.isUseLocalConfigInfo()) {
                                 cacheData.checkListenerMd5();
                             }
@@ -617,7 +1278,8 @@ public class ClientWorker implements Closeable {
                 }
                 
                 // check server config
-                List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
+                List<String> changedGroupKeys = checkUpdateDataIds(httpAgent, configTransportClient, cacheDatas,
+                        inInitializingCacheList);
                 if (!CollectionUtils.isEmpty(changedGroupKeys)) {
                     LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
                 }
@@ -638,12 +1300,12 @@ public class ClientWorker implements Closeable {
                             cache.setType(ct[1]);
                         }
                         LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
-                                agent.getName(), dataId, group, tenant, cache.getMd5(),
+                                httpAgent.getName(), dataId, group, tenant, cache.getMd5(),
                                 ContentUtils.truncateContent(ct[0]), ct[1]);
                     } catch (NacosException ioe) {
                         String message = String
                                 .format("[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",
-                                        agent.getName(), dataId, group, tenant);
+                                        httpAgent.getName(), dataId, group, tenant);
                         LOGGER.error(message, ioe);
                     }
                 }
@@ -667,35 +1329,160 @@ public class ClientWorker implements Closeable {
         }
     }
     
-    public boolean isHealthServer() {
-        return isHealthServer;
-    }
-    
-    private void setHealthServer(boolean isHealthServer) {
-        this.isHealthServer = isHealthServer;
-    }
-    
-    final ScheduledExecutorService executor;
-    
-    final ScheduledExecutorService executorService;
     
     /**
-     * groupKey -> cacheData.
+     * Fetch the dataId list from server.
+     *
+     * @param cacheDatas              CacheDatas for config infomations.
+     * @param inInitializingCacheList initial cache lists.
+     * @return String include dataId and group (ps: it maybe null).
+     * @throws Exception Exception.
      */
-    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
-            new HashMap<String, CacheData>());
+    List<String> checkUpdateDataIds(HttpAgent httpAgent, ConfigTransportClient configTransportClient,
+            List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (CacheData cacheData : cacheDatas) {
+            if (!cacheData.isUseLocalConfigInfo()) {
+                sb.append(cacheData.dataId).append(WORD_SEPARATOR);
+                sb.append(cacheData.group).append(WORD_SEPARATOR);
+                if (StringUtils.isBlank(cacheData.tenant)) {
+                    sb.append(cacheData.getMd5()).append(LINE_SEPARATOR);
+                } else {
+                    sb.append(cacheData.getMd5()).append(WORD_SEPARATOR);
+                    sb.append(cacheData.getTenant()).append(LINE_SEPARATOR);
+                }
+                if (cacheData.isInitializing()) {
+                    // It updates when cacheData occours in cacheMap by first time.
+                    inInitializingCacheList
+                            .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
+                }
+            }
+        }
+        boolean isInitializingCacheList = !inInitializingCacheList.isEmpty();
+        return checkUpdateConfigStr(httpAgent, configTransportClient, sb.toString(), isInitializingCacheList);
+    }
     
-    private final HttpAgent agent;
+    /**
+     * Fetch the updated dataId list from server.
+     *
+     * @param probeUpdateString       updated attribute string value.
+     * @param isInitializingCacheList initial cache lists.
+     * @return The updated dataId list(ps: it maybe null).
+     * @throws IOException Exception.
+     */
+    List<String> checkUpdateConfigStr(HttpAgent httpAgent, ConfigTransportClient configTransportClient,
+            String probeUpdateString, boolean isInitializingCacheList) throws Exception {
+        
+        Map<String, String> params = new HashMap<String, String>(2);
+        params.put(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
+        Map<String, String> headers = new HashMap<String, String>(2);
+        headers.put("Long-Pulling-Timeout", "" + timeout);
     
-    private final ConfigFilterChainManager configFilterChainManager;
+        // told server do not hang me up if new initializing cacheData added in
+        if (isInitializingCacheList) {
+            headers.put("Long-Pulling-Timeout-No-Hangup", "true");
+        }
     
-    private boolean isHealthServer = true;
+        if (StringUtils.isBlank(probeUpdateString)) {
+            return Collections.emptyList();
+        }
     
-    private long timeout;
+        try {
+        
+            //assemble headers.
+            Map<String, String> securityHeaders = configTransportClient.getSecurityHeaders();
+            if (securityHeaders != null) {
+                //put security header to param
+                params.putAll(securityHeaders);
+            }
+            Map<String, String> spasHeaders = configTransportClient.getSpasHeaders();
+            if (spasHeaders != null) {
+                //put spasHeader to header.
+                headers.putAll(spasHeaders);
+            }
+            Map<String, String> commonHeader = configTransportClient.getCommonHeader();
+            if (commonHeader != null) {
+                //put common headers
+                headers.putAll(commonHeader);
+            }
+            Map<String, String> signHeaders = SpasAdapter.getSignHeaders(params, configTransportClient.secretKey);
+            if (signHeaders != null) {
+                headers.putAll(signHeaders);
+            }
+            
+            // In order to prevent the server from handling the delay of the client's long task,
+            // increase the client's read timeout to avoid this problem.
+        
+            long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
+            HttpRestResult<String> result = httpAgent
+                    .httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params, httpAgent.getEncode(),
+                            readTimeoutMs);
+        
+            if (result.ok()) {
+                setHealthServer(true);
+                return parseUpdateDataIdResponse(httpAgent, result.getData());
+            } else {
+                setHealthServer(false);
+                LOGGER.error("[{}] [check-update] get changed dataId error, code: {}", httpAgent.getName(),
+                        result.getCode());
+            }
+        } catch (Exception e) {
+            setHealthServer(false);
+            LOGGER.error("[" + httpAgent.getName() + "] [check-update] get changed dataId exception", e);
+            throw e;
+        }
+        return Collections.emptyList();
+    }
     
-    private double currentLongingTaskCount = 0;
+    /**
+     * Get the groupKey list from the http response.
+     *
+     * @param response Http response.
+     * @return GroupKey List, (ps: it maybe null).
+     */
+    private List<String> parseUpdateDataIdResponse(HttpAgent httpAgent, String response) {
+        if (StringUtils.isBlank(response)) {
+            return Collections.emptyList();
+        }
     
-    private int taskPenaltyTime;
+        try {
+            response = URLDecoder.decode(response, "UTF-8");
+        } catch (Exception e) {
+            LOGGER.error("[" + httpAgent.getName() + "] [polling-resp] decode modifiedDataIdsString error", e);
+        }
     
-    private boolean enableRemoteSyncConfig = false;
+        List<String> updateList = new LinkedList<String>();
+    
+        for (String dataIdAndGroup : response.split(LINE_SEPARATOR)) {
+            if (!StringUtils.isBlank(dataIdAndGroup)) {
+                String[] keyArr = dataIdAndGroup.split(WORD_SEPARATOR);
+                String dataId = keyArr[0];
+                String group = keyArr[1];
+                if (keyArr.length == 2) {
+                    updateList.add(GroupKey.getKey(dataId, group));
+                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}", httpAgent.getName(), dataId,
+                            group);
+                } else if (keyArr.length == 3) {
+                    String tenant = keyArr[2];
+                    updateList.add(GroupKey.getKeyTenant(dataId, group, tenant));
+                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}",
+                            httpAgent.getName(), dataId, group, tenant);
+                } else {
+                    LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", httpAgent.getName(),
+                            dataIdAndGroup);
+                }
+            }
+        }
+        return updateList;
+    }
+    
+    /**
+     * get client worker agent.
+     *
+     * @return
+     */
+    public String getAgentName() {
+        return this.agent.getName();
+    }
+    
 }

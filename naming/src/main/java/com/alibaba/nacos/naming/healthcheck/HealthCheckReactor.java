@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.healthcheck.heartbeat.BeatCheckTask;
+import com.alibaba.nacos.naming.healthcheck.interceptor.HealthCheckTaskInterceptWrapper;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 
@@ -50,8 +52,12 @@ public class HealthCheckReactor {
      *
      * @param task client beat check task
      */
-    public static void scheduleCheck(ClientBeatCheckTask task) {
-        futureMap.putIfAbsent(task.taskKey(), GlobalExecutor.scheduleNamingHealth(task, 5000, 5000, TimeUnit.MILLISECONDS));
+    public static void scheduleCheck(BeatCheckTask task) {
+        Runnable wrapperTask =
+                task instanceof NacosHealthCheckTask ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
+                        : task;
+        futureMap.putIfAbsent(task.taskKey(),
+                GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000, TimeUnit.MILLISECONDS));
     }
     
     /**
@@ -59,7 +65,7 @@ public class HealthCheckReactor {
      *
      * @param task client beat check task
      */
-    public static void cancelCheck(ClientBeatCheckTask task) {
+    public static void cancelCheck(BeatCheckTask task) {
         ScheduledFuture scheduledFuture = futureMap.get(task.taskKey());
         if (scheduledFuture == null) {
             return;

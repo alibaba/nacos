@@ -85,6 +85,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         }
     }
     
+    @Override
     public long currentEventSize() {
         return queue.size();
     }

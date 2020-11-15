@@ -99,6 +99,18 @@ public class ServiceInfo {
         this.hosts = hosts;
     }
     
+    public void addHost(Instance host) {
+        hosts.add(host);
+    }
+    
+    public void addAllHosts(List<? extends Instance> hosts) {
+        this.hosts.addAll(hosts);
+    }
+    
+    public List<Instance> getHosts() {
+        return new ArrayList<Instance>(hosts);
+    }
+    
     public boolean isValid() {
         return hosts != null;
     }
@@ -141,10 +153,6 @@ public class ServiceInfo {
     
     public void setCacheMillis(long cacheMillis) {
         this.cacheMillis = cacheMillis;
-    }
-    
-    public List<Instance> getHosts() {
-        return new ArrayList<Instance>(hosts);
     }
     
     /**

@@ -51,6 +51,14 @@ public class CacheData {
         this.isInitializing = isInitializing;
     }
     
+    public boolean isListenSuccess() {
+        return isListenSuccess;
+    }
+    
+    public void setListenSuccess(boolean listenSuccess) {
+        isListenSuccess = listenSuccess;
+    }
+    
     public String getMd5() {
         return md5;
     }
@@ -321,6 +329,8 @@ public class CacheData {
     private int taskId;
     
     private volatile boolean isInitializing = true;
+    
+    private volatile boolean isListenSuccess = false;
     
     private String type;
     

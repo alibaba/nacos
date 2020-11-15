@@ -37,4 +37,8 @@ public class Loggers {
     
     public static final Logger CLUSTER = LoggerFactory.getLogger("com.alibaba.nacos.core.cluster");
     
+    public static final Logger RPC = LoggerFactory.getLogger("com.alibaba.nacos.core.rpc");
+    
+    public static final Logger RPC_DIGEST = LoggerFactory.getLogger("com.alibaba.nacos.core.rpc.digest");
+    
 }

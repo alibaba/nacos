@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.NotThreadSafe;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Map utils.
@@ -153,5 +154,24 @@ public class MapUtils {
             return ret;
         }
         return val;
+    }
+    
+    /**
+     * Remove data from the map. Thread safety is related to whether the map is a thread safe map.
+     *
+     * @param map {@link Map}
+     * @param key key
+     * @param predicate if {@link Predicate#test(Object)} == true, will remove key
+     * @param <K> key type
+     * @param <V> value type
+     * @return value
+     */
+    public static <K, V> V removeKey(Map<K, V> map, K key, final Predicate<V> predicate) {
+        return map.computeIfPresent(key, new java.util.function.BiFunction<K, V, V>() {
+            @Override
+            public V apply(K k, V v) {
+                return predicate.test(v) ? null : v;
+            }
+        });
     }
 }

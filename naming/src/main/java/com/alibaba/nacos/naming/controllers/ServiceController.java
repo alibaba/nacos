@@ -39,6 +39,7 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -205,65 +206,25 @@ public class ServiceController {
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         
-        List<String> serviceNameList = serviceManager.getAllServiceNameList(namespaceId);
+        Map<String, Service> serviceMap = serviceManager.chooseServiceMap(namespaceId);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
-        if (serviceNameList == null || serviceNameList.isEmpty()) {
+        if (serviceMap == null || serviceMap.isEmpty()) {
             result.replace("doms", JacksonUtils.transferToJsonNode(Collections.emptyList()));
             result.put("count", 0);
             return result;
         }
         
+        serviceMap = ServiceUtil.selectServiceWithGroupName(serviceMap, groupName);
+        serviceMap = ServiceUtil.selectServiceBySelector(serviceMap, selectorString);
         if (!Constants.ALL_PATTERN.equals(groupName)) {
-            serviceNameList
-                    .removeIf(serviceName -> !serviceName.startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
+            serviceMap.entrySet()
+                    .removeIf(entry -> !entry.getKey().startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
         }
-        
-        if (StringUtils.isNotBlank(selectorString)) {
-            
-            JsonNode selectorJson = JacksonUtils.toObj(selectorString);
-            
-            SelectorType selectorType = SelectorType.valueOf(selectorJson.get("type").asText());
-            String expression = selectorJson.get("expression").asText();
-            
-            if (SelectorType.label.equals(selectorType) && StringUtils.isNotBlank(expression)) {
-                expression = StringUtils.deleteWhitespace(expression);
-                // Now we only support the following expression:
-                // INSTANCE.metadata.xxx = 'yyy' or
-                // SERVICE.metadata.xxx = 'yyy'
-                String[] terms = expression.split("=");
-                String[] factors = terms[0].split("\\.");
-                switch (factors[0]) {
-                    case "INSTANCE":
-                        serviceNameList = filterInstanceMetadata(namespaceId, serviceNameList,
-                                factors[factors.length - 1], terms[1].replace("'", ""));
-                        break;
-                    case "SERVICE":
-                        serviceNameList = filterServiceMetadata(namespaceId, serviceNameList,
-                                factors[factors.length - 1], terms[1].replace("'", ""));
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-        
-        int start = (pageNo - 1) * pageSize;
-        if (start < 0) {
-            start = 0;
-        }
-        
-        int end = start + pageSize;
-        if (end > serviceNameList.size()) {
-            end = serviceNameList.size();
-        }
-        
-        for (int i = start; i < end; i++) {
-            serviceNameList.set(i, serviceNameList.get(i).replace(groupName + Constants.SERVICE_INFO_SPLITER, ""));
-        }
-        
-        result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList.subList(start, end)));
+        List<String> serviceNameList = ServiceUtil.pageServiceName(pageNo, pageSize, serviceMap);
+    
+        result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
         result.put("count", serviceNameList.size());
         
         return result;
