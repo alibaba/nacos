@@ -20,9 +20,9 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.ProtoMessageUtil;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
@@ -70,7 +70,7 @@ class NacosStateMachine extends StateMachineAdapter {
     
     protected final JRaftServer server;
     
-    protected final LogProcessor processor;
+    protected final RequestProcessor processor;
     
     private final AtomicBoolean isLeader = new AtomicBoolean(false);
     
@@ -84,7 +84,7 @@ class NacosStateMachine extends StateMachineAdapter {
     
     private volatile String leaderIp = "unknown";
     
-    NacosStateMachine(JRaftServer server, LogProcessor4CP processor) {
+    NacosStateMachine(JRaftServer server, RequestProcessor4CP processor) {
         this.server = server;
         this.processor = processor;
         this.groupId = processor.group();

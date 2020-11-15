@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.consistency.cp;
 
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 
 import java.util.Collections;
@@ -28,7 +28,7 @@ import java.util.List;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public abstract class LogProcessor4CP extends LogProcessor {
+public abstract class RequestProcessor4CP extends RequestProcessor {
     
     
     /**

@@ -22,6 +22,8 @@ import com.alipay.sofa.jraft.rpc.RpcContext;
 import com.alipay.sofa.jraft.rpc.RpcProcessor;
 
 /**
+ * nacos request processor for {@link WriteRequest}.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosWriteRequestProcessor extends AbstractProcessor implements RpcProcessor<WriteRequest> {

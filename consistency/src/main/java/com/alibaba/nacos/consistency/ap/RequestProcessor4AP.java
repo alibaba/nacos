@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.consistency.ap;
 
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.RequestProcessor;
 
 /**
  * log processor for ap.
@@ -24,6 +24,6 @@ import com.alibaba.nacos.consistency.LogProcessor;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public abstract class LogProcessor4AP extends LogProcessor {
+public abstract class RequestProcessor4AP extends RequestProcessor {
 
 }

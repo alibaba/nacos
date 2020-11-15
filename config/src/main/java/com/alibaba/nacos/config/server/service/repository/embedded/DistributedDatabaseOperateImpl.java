@@ -48,7 +48,7 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
@@ -142,7 +142,7 @@ import java.util.stream.Collectors;
 @Conditional(ConditionDistributedEmbedStorage.class)
 @Component
 @SuppressWarnings({"unchecked"})
-public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements BaseDatabaseOperate {
+public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implements BaseDatabaseOperate {
     
     /**
      * The data import operation is dedicated key, which ACTS as an identifier.

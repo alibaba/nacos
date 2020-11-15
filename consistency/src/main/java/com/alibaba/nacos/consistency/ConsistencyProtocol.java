@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface ConsistencyProtocol<T extends Config, P extends LogProcessor> extends CommandOperations {
+public interface ConsistencyProtocol<T extends Config, P extends RequestProcessor> extends CommandOperations {
     
     /**
      * Consistency protocol initialization: perform initialization operations based on the incoming.
@@ -50,7 +50,7 @@ public interface ConsistencyProtocol<T extends Config, P extends LogProcessor> e
     /**
      * Add a log handler.
      *
-     * @param processors {@link LogProcessor}
+     * @param processors {@link RequestProcessor}
      */
     void addLogProcessors(Collection<P> processors);
     

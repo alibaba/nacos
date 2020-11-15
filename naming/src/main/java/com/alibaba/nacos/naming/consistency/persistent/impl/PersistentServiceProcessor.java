@@ -25,7 +25,7 @@ import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
@@ -68,7 +68,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Service
-public class PersistentServiceProcessor extends LogProcessor4CP implements PersistentConsistencyService {
+public class PersistentServiceProcessor extends RequestProcessor4CP implements PersistentConsistencyService {
     
     enum Op {
         /**

@@ -65,7 +65,13 @@ public class ProtoMessageUtil {
         
         throw new ConsistencyException("The current array cannot be serialized to the corresponding object");
     }
-
+    
+    /**
+     * convert Log to WriteRequest.
+     *
+     * @param log log
+     * @return {@link WriteRequest}
+     */
     public static WriteRequest convertToWriteRequest(Log log) {
         return WriteRequest.newBuilder().setKey(log.getKey()).setGroup(log.getGroup())
                 .setData(log.getData())
@@ -75,6 +81,12 @@ public class ProtoMessageUtil {
                 .build();
     }
     
+    /**
+     * convert Log to ReadRequest.
+     *
+     * @param request request
+     * @return {@link ReadRequest}
+     */
     public static ReadRequest convertToReadRequest(GetRequest request) {
         return ReadRequest.newBuilder()
                 .setGroup(request.getGroup())

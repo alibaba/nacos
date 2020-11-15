@@ -22,10 +22,10 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
@@ -135,7 +135,7 @@ public class JRaftServer {
     
     private Serializer serializer;
     
-    private Collection<LogProcessor4CP> processors = Collections.synchronizedSet(new HashSet<>());
+    private Collection<RequestProcessor4CP> processors = Collections.synchronizedSet(new HashSet<>());
     
     private String selfIp;
     
@@ -226,7 +226,7 @@ public class JRaftServer {
         }
     }
     
-    synchronized void createMultiRaftGroup(Collection<LogProcessor4CP> processors) {
+    synchronized void createMultiRaftGroup(Collection<RequestProcessor4CP> processors) {
         // There is no reason why the LogProcessor cannot be processed because of the synchronization
         if (!this.isStarted) {
             this.processors.addAll(processors);
@@ -235,7 +235,7 @@ public class JRaftServer {
         
         final String parentPath = Paths.get(ApplicationUtils.getNacosHome(), "data/protocol/raft").toString();
         
-        for (LogProcessor4CP processor : processors) {
+        for (RequestProcessor4CP processor : processors) {
             final String groupName = processor.group();
             if (multiRaftGroup.containsKey(groupName)) {
                 throw new DuplicateRaftGroupException(groupName);
@@ -289,7 +289,7 @@ public class JRaftServer {
             return future;
         }
         final Node node = tuple.node;
-        final LogProcessor processor = tuple.processor;
+        final RequestProcessor processor = tuple.processor;
         try {
             node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
                 @Override
@@ -540,7 +540,7 @@ public class JRaftServer {
     
     public static class RaftGroupTuple {
         
-        private LogProcessor processor;
+        private RequestProcessor processor;
         
         private Node node;
         
@@ -552,7 +552,7 @@ public class JRaftServer {
         public RaftGroupTuple() {
         }
         
-        public RaftGroupTuple(Node node, LogProcessor processor, RaftGroupService raftGroupService,
+        public RaftGroupTuple(Node node, RequestProcessor processor, RaftGroupService raftGroupService,
                 NacosStateMachine machine) {
             this.node = node;
             this.processor = processor;
@@ -564,7 +564,7 @@ public class JRaftServer {
             return node;
         }
         
-        public LogProcessor getProcessor() {
+        public RequestProcessor getProcessor() {
             return processor;
         }
         

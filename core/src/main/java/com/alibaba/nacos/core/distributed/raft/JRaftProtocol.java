@@ -26,7 +26,7 @@ import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
@@ -90,8 +90,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogProcessor4CP>
-        implements CPProtocol<RaftConfig, LogProcessor4CP> {
+public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, RequestProcessor4CP>
+        implements CPProtocol<RaftConfig, RequestProcessor4CP> {
     
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
@@ -159,7 +159,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     }
     
     @Override
-    public void addLogProcessors(Collection<LogProcessor4CP> processors) {
+    public void addLogProcessors(Collection<RequestProcessor4CP> processors) {
         raftServer.createMultiRaftGroup(processors);
     }
     
