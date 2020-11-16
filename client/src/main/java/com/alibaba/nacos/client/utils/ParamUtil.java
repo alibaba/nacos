@@ -33,42 +33,42 @@ import java.util.regex.Pattern;
  * @author nacos
  */
 public class ParamUtil {
-    
+
     private static final Logger LOGGER = LogUtils.logger(ParamUtil.class);
-    
+
     public static final boolean USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = true;
-    
+
     private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
-    
+
     private static String defaultContextPath;
-    
+
     private static String defaultNodesPath = "serverlist";
-    
+
     private static String appKey;
-    
+
     private static String appName;
-    
+
     private static final String DEFAULT_SERVER_PORT;
-    
+
     private static String clientVersion = "unknown";
-    
+
     private static int connectTimeout;
-    
+
     private static double perTaskConfigSize = 3000;
-    
+
     static {
         // 客户端身份信息
         appKey = System.getProperty("nacos.client.appKey", "");
-        
+
         defaultContextPath = System.getProperty("nacos.client.contextPath", "nacos");
-        
+
         appName = AppNameUtils.getAppName();
-        
+
         String defaultServerPortTmp = "8848";
-        
+
         DEFAULT_SERVER_PORT = System.getProperty("nacos.server.port", defaultServerPortTmp);
         LOGGER.info("[settings] [req-serv] nacos-server port:{}", DEFAULT_SERVER_PORT);
-        
+
         String tmp = "1000";
         try {
             tmp = System.getProperty("NACOS.CONNECT.TIMEOUT", "1000");
@@ -79,9 +79,9 @@ public class ParamUtil {
             throw new IllegalArgumentException(msg, e);
         }
         LOGGER.info("[settings] [http-client] connect timeout:{}", connectTimeout);
-        
+
         clientVersion = VersionUtils.version;
-        
+
         try {
             perTaskConfigSize = Double.valueOf(System.getProperty("PER_TASK_CONFIG_SIZE", "3000"));
             LOGGER.info("PER_TASK_CONFIG_SIZE: {}", perTaskConfigSize);
@@ -89,67 +89,67 @@ public class ParamUtil {
             LOGGER.error("[PER_TASK_CONFIG_SIZE] PER_TASK_CONFIG_SIZE invalid", t);
         }
     }
-    
+
     public static String getAppKey() {
         return appKey;
     }
-    
+
     public static void setAppKey(String appKey) {
         ParamUtil.appKey = appKey;
     }
-    
+
     public static String getAppName() {
         return appName;
     }
-    
+
     public static void setAppName(String appName) {
         ParamUtil.appName = appName;
     }
-    
+
     public static String getDefaultContextPath() {
         return defaultContextPath;
     }
-    
+
     public static void setDefaultContextPath(String defaultContextPath) {
         ParamUtil.defaultContextPath = defaultContextPath;
     }
-    
+
     public static String getClientVersion() {
         return clientVersion;
     }
-    
+
     public static void setClientVersion(String clientVersion) {
         ParamUtil.clientVersion = clientVersion;
     }
-    
+
     public static int getConnectTimeout() {
         return connectTimeout;
     }
-    
+
     public static void setConnectTimeout(int connectTimeout) {
         ParamUtil.connectTimeout = connectTimeout;
     }
-    
+
     public static double getPerTaskConfigSize() {
         return perTaskConfigSize;
     }
-    
+
     public static void setPerTaskConfigSize(double perTaskConfigSize) {
         ParamUtil.perTaskConfigSize = perTaskConfigSize;
     }
-    
+
     public static String getDefaultServerPort() {
         return DEFAULT_SERVER_PORT;
     }
-    
+
     public static String getDefaultNodesPath() {
         return defaultNodesPath;
     }
-    
+
     public static void setDefaultNodesPath(String defaultNodesPath) {
         ParamUtil.defaultNodesPath = defaultNodesPath;
     }
-    
+
     /**
      * Parse namespace from properties and environment.
      *
@@ -158,20 +158,13 @@ public class ParamUtil {
      */
     public static String parseNamespace(Properties properties) {
         String namespaceTmp = null;
-        
+
         String isUseCloudNamespaceParsing = properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
                 System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
                         String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
-        
+
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
-            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-                @Override
-                public String call() {
-                    return TenantUtil.getUserTenantForAcm();
-                }
-            });
-            
-            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(TenantUtil.getUserTenantForAcm(), new Callable<String>() {
                 @Override
                 public String call() {
                     String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
@@ -179,13 +172,13 @@ public class ParamUtil {
                 }
             });
         }
-        
+
         if (StringUtils.isBlank(namespaceTmp)) {
             namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
         return StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : StringUtils.EMPTY;
     }
-    
+
     /**
      * Parse end point rule.
      *
@@ -200,10 +193,10 @@ public class ParamUtil {
             if (StringUtils.isNotBlank(endpointUrlSource)) {
                 endpointUrl = endpointUrlSource;
             }
-            
+
             return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
         }
-        
+
         endpointUrl = endpointUrl.substring(endpointUrl.indexOf("${") + 2, endpointUrl.lastIndexOf("}"));
         int defStartOf = endpointUrl.indexOf(":");
         String defaultEndpointUrl = null;
@@ -211,7 +204,7 @@ public class ParamUtil {
             defaultEndpointUrl = endpointUrl.substring(defStartOf + 1);
             endpointUrl = endpointUrl.substring(0, defStartOf);
         }
-        
+
         String endpointUrlSource = TemplateUtils
                 .stringBlankAndThenExecute(System.getProperty(endpointUrl, System.getenv(endpointUrl)),
                         new Callable<String>() {
@@ -220,7 +213,7 @@ public class ParamUtil {
                                 return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
                             }
                         });
-        
+
         if (StringUtils.isBlank(endpointUrlSource)) {
             if (StringUtils.isNotBlank(defaultEndpointUrl)) {
                 endpointUrl = defaultEndpointUrl;
@@ -228,7 +221,7 @@ public class ParamUtil {
         } else {
             endpointUrl = endpointUrlSource;
         }
-        
+
         return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
     }
 }
