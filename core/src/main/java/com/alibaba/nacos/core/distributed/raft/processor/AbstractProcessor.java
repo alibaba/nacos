@@ -40,7 +40,7 @@ public abstract class AbstractProcessor {
         this.serializer = serializer;
     }
     
-    protected void handleRequest(final JRaftServer server, final String group, final RpcContext rpcCtx, Message log) {
+    protected void handleRequest(final JRaftServer server, final String group, final RpcContext rpcCtx, Message message) {
         try {
             final JRaftServer.RaftGroupTuple tuple = server.findTupleByGroup(group);
             if (Objects.isNull(tuple)) {
@@ -49,7 +49,7 @@ public abstract class AbstractProcessor {
                 return;
             }
             if (tuple.getNode().isLeader()) {
-                execute(server, rpcCtx, log, tuple);
+                execute(server, rpcCtx, message, tuple);
             } else {
                 rpcCtx.sendResponse(
                         Response.newBuilder().setSuccess(false).setErrMsg("Could not find leader : " + group).build());
@@ -60,7 +60,7 @@ public abstract class AbstractProcessor {
         }
     }
     
-    protected void execute(JRaftServer server, final RpcContext asyncCtx, final Message log,
+    protected void execute(JRaftServer server, final RpcContext asyncCtx, final Message message,
             final JRaftServer.RaftGroupTuple tuple) {
         FailoverClosure closure = new FailoverClosure() {
             
@@ -89,7 +89,7 @@ public abstract class AbstractProcessor {
             }
         };
         
-        server.applyOperation(tuple.getNode(), log, closure);
+        server.applyOperation(tuple.getNode(), message, closure);
     }
     
 }

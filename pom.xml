@@ -303,7 +303,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <excludes>**/istio/model/**,**/nacos/test/**</excludes>
+                    <excludes>**/istio/model/**,**/consistency/entity/**,**/nacos/test/**</excludes>
                 </configuration>
                 <executions>
                     <execution>
