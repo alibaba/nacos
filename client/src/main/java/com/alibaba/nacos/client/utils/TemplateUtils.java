@@ -27,7 +27,7 @@ import java.util.concurrent.Callable;
  * @date 2019-03-04 1:31 PM
  */
 public class TemplateUtils {
-    
+
     /**
      * Execute if string not empty.
      *
@@ -35,9 +35,9 @@ public class TemplateUtils {
      * @param runnable execute runnable
      */
     public static void stringNotEmptyAndThenExecute(String source, Runnable runnable) {
-        
+
         if (StringUtils.isNotEmpty(source)) {
-            
+
             try {
                 runnable.run();
             } catch (Exception e) {
@@ -45,7 +45,7 @@ public class TemplateUtils {
             }
         }
     }
-    
+
     /**
      * Execute if string empty.
      *
@@ -54,19 +54,19 @@ public class TemplateUtils {
      * @return result
      */
     public static String stringEmptyAndThenExecute(String source, Callable<String> callable) {
-        
+
         if (StringUtils.isEmpty(source)) {
-            
+
             try {
                 return callable.call();
             } catch (Exception e) {
                 LogUtils.NAMING_LOGGER.error("string empty and then execute cause an exception.", e);
             }
         }
-        
-        return source.trim();
+        // return EMPTY or throw an error in catch block
+        return StringUtils.isEmpty(source) ? StringUtils.EMPTY : source.trim();
     }
-    
+
     /**
      * Execute if string blank.
      *
@@ -75,16 +75,16 @@ public class TemplateUtils {
      * @return result
      */
     public static String stringBlankAndThenExecute(String source, Callable<String> callable) {
-        
+
         if (StringUtils.isBlank(source)) {
-            
+
             try {
                 return callable.call();
             } catch (Exception e) {
                 LogUtils.NAMING_LOGGER.error("string empty and then execute cause an exception.", e);
             }
         }
-        
-        return source.trim();
+        // return EMPTY or throw an error in catch block
+        return StringUtils.isBlank(source) ? StringUtils.EMPTY : source.trim();
     }
 }
