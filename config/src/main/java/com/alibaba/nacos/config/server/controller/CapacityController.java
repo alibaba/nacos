@@ -23,12 +23,11 @@ import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -72,7 +71,8 @@ public class CapacityController {
             restResult.setCode(200);
             Capacity capacity = capacityService.getCapacityWithDefault(group, tenant);
             if (capacity == null) {
-                LOGGER.warn("[getCapacity] Capacity does not exist and needs to be initialized group: {}, tenant: {}", group, tenant);
+                LOGGER.warn("[getCapacity] Capacity does not exist and needs to be initialized group: {}, tenant: {}",
+                        group, tenant);
                 capacityService.initCapacity(group, tenant);
                 capacity = capacityService.getCapacityWithDefault(group, tenant);
             }
@@ -129,11 +129,15 @@ public class CapacityController {
                     .insertOrUpdateCapacity(group, tenant, quota, maxSize, maxAggrCount, maxAggrSize);
             if (insertOrUpdateResult) {
                 setSuccessResult(response, restResult);
-                restResult.setMessage(String.format("Successfully updated %s for capacity information configuration for %s", targetFieldName, targetFieldValue));
+                restResult.setMessage(
+                        String.format("Successfully updated %s for capacity information configuration for %s",
+                                targetFieldName, targetFieldValue));
                 return restResult;
             }
             setFailResult(response, restResult, 500);
-            restResult.setMessage(String.format("%s failed to configure an update for capacity information for %s", targetFieldName, targetFieldValue));
+            restResult.setMessage(
+                    String.format("%s failed to configure an update for capacity information for %s", targetFieldName,
+                            targetFieldValue));
             return restResult;
         } catch (Exception e) {
             LOGGER.error("[updateCapacity] ", e);

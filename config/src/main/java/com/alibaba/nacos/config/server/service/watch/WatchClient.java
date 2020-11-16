@@ -21,7 +21,7 @@ import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import java.util.Map;
 
 /**
- * Configure the listening client base class
+ * Configure the listening client base class.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -34,17 +34,17 @@ public abstract class WatchClient {
     private final String identity;
     
     /**
-     * namespace
+     * namespace.
      */
     private final String namespace;
     
     /**
-     * [groupID#dataID, MD5(configContent)]
+     * [groupID#dataID, MD5(configContent)].
      */
     private final Map<String, String> watchKey;
     
     /**
-     * Manage your own manager {@link WatchClientManager}
+     * Manage your own manager {@link WatchClientManager}.
      */
     protected WatchClientManager clientManager;
     
@@ -56,7 +56,7 @@ public abstract class WatchClient {
     }
     
     /**
-     * Listens for the client's initialization
+     * Listens for the client's initialization.
      */
     protected abstract void init();
     
@@ -91,7 +91,7 @@ public abstract class WatchClient {
     protected abstract void notifyChangeEvent(LocalDataChangeEvent event);
     
     /**
-     * Listening protocol type
+     * Listening protocol type.
      *
      * @return protocol type
      */

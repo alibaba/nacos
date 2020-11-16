@@ -36,7 +36,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +44,8 @@ import java.util.concurrent.TimeUnit;
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
 /**
+ * Configure monitoring center. responsible for all client configuration monitoring operations.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Service
@@ -87,12 +88,12 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
                 if (isBeta && !CollectionUtils.contains(event.betaIps, clientSub.getIdentity())) {
                     continue;
                 }
-        
+                
                 // If published tag is not in the tag list, then it skipped.
                 if (StringUtils.isNotBlank(event.tag) && !event.tag.equals(clientSub.getTag())) {
                     continue;
                 }
-        
+                
                 clientManager.getRetainIps().put(clientSub.getIdentity(), changeTime);
                 clientSub.notifyChangeEvent(event);
             }
@@ -208,8 +209,8 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
         
         @Override
         public void run() {
-            MEMORY_LOG.info("[config-watch] client count " + clientManager.size());
-            MetricsMonitor.getLongPollingMonitor().set(clientManager.size());
+            MEMORY_LOG.info("[config-watch] client count " + clientManager.currentWatchClientCount());
+            MetricsMonitor.getLongPollingMonitor().set(clientManager.currentWatchClientCount());
         }
     }
     

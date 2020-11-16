@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import java.util.Map;
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+
+import java.util.Map;
 
 /**
  * Parameter validity check util.
@@ -38,7 +38,6 @@ public class ParamUtils {
     private static final String NAMESPACE_NULL_KEY = "null";
     
     private static final int NAMESPACE_MAX_LEN = 128;
-    
     
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
@@ -147,6 +146,13 @@ public class ParamUtils {
         }
     }
     
+    /**
+     * check integer is null, if null, return default value.
+     *
+     * @param arg parameter
+     * @param defaultVal defaultVal
+     * @return int
+     */
     public static int checkInteger(Integer arg, int defaultVal) {
         if (null == arg) {
             return defaultVal;
@@ -179,6 +185,7 @@ public class ParamUtils {
     
     /**
      * Treat the namespace(tenant) parameters with values of "public" and "null" as an empty string.
+     *
      * @param namespace namespace(tenant) id
      * @return java.lang.String A namespace(tenant) string processed
      */

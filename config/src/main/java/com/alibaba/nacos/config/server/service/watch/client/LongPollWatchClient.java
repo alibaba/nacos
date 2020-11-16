@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
- * HTTP long rotation configuration listening client
+ * HTTP long rotation configuration listening client.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -252,12 +252,14 @@ public class LongPollWatchClient extends WatchClient {
             return this;
         }
         
+        @SuppressWarnings("checkstyle:MissingJavadocMethod")
         public LongPollWatchClientBuilder context(final AsyncContext context) {
             this.context = context;
             this.context.setTimeout(0L);
             return this;
         }
         
+        @SuppressWarnings("checkstyle:MissingJavadocMethod")
         public LongPollWatchClient build() {
             LongPollWatchClient longPollWatchClient = new LongPollWatchClient(appName, address, namespace, watchKey,
                     context);

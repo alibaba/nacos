@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.common.utils.BiConsumer;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import org.apache.commons.lang3.StringUtils;
@@ -110,9 +109,8 @@ public class MD5Util {
     }
     
     /**
-     * Parse the transport protocol, which has two formats (W for field delimiter, L for each data delimiter)
-     * old: D w G w MD5 l
-     * new: D w G w MD5 w T l.
+     * Parse the transport protocol, which has two formats (W for field delimiter, L for each data delimiter) old: D w G
+     * w MD5 l new: D w G w MD5 w T l.
      *
      * @param configKeysString protocol
      * @return protocol message

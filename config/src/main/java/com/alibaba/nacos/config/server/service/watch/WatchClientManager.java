@@ -43,7 +43,12 @@ public final class WatchClientManager {
         return retainIps;
     }
     
-    public int size() {
+    /**
+     * current watch-client count.
+     *
+     * @return int
+     */
+    public int currentWatchClientCount() {
         int clientSize = 0;
         for (Map.Entry<String, Set<WatchClient>> entry : identity2ClientMap.entrySet()) {
             clientSize += entry.getValue().size();
@@ -73,6 +78,14 @@ public final class WatchClientManager {
         return identity2ClientMap.getOrDefault(address, Collections.emptySet());
     }
     
+    /**
+     * find watch-clients by namespace-group-dataId.
+     *
+     * @param namespace namespace
+     * @param groupID groupID
+     * @param dataID dataID
+     * @return Set&lt;WatchClient&gt;
+     */
     public Set<WatchClient> findClientsByGroupKey(final String namespace, final String groupID, final String dataID) {
         final String key = groupID + LINK_STR + dataID;
         Map<String, Set<WatchClient>> config2Clients = config2ClientMap.getOrDefault(namespace, Collections.emptyMap());
@@ -80,7 +93,7 @@ public final class WatchClientManager {
     }
     
     /**
-     * Traversal processing listener client
+     * Traversal processing listener client.
      *
      * @param clientConsumer {@link Consumer}
      */
@@ -89,7 +102,7 @@ public final class WatchClientManager {
     }
     
     /**
-     * remove watch client
+     * remove watch client.
      *
      * @param client {@link WatchClient}
      */

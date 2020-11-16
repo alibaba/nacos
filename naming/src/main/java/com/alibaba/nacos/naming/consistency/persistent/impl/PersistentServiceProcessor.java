@@ -25,11 +25,11 @@ import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
-import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.exception.ErrorCode;
@@ -68,7 +68,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Service
-public class PersistentServiceProcessor extends LogProcessor4CP implements PersistentConsistencyService {
+public class PersistentServiceProcessor extends RequestProcessor4CP implements PersistentConsistencyService {
     
     enum Op {
         /**
@@ -176,7 +176,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     }
     
     @Override
-    public Response onRequest(GetRequest request) {
+    public Response onRequest(ReadRequest request) {
         final List<byte[]> keys = serializer
                 .deserialize(request.getData().toByteArray(), TypeUtils.parameterize(List.class, byte[].class));
         final Lock lock = readLock;
@@ -195,24 +195,24 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     }
     
     @Override
-    public Response onApply(Log log) {
-        final byte[] data = log.getData().toByteArray();
-        final BatchWriteRequest request = serializer.deserialize(data, BatchWriteRequest.class);
-        final Op op = Op.valueOf(log.getOperation());
+    public Response onApply(WriteRequest request) {
+        final byte[] data = request.getData().toByteArray();
+        final BatchWriteRequest bwRequest = serializer.deserialize(data, BatchWriteRequest.class);
+        final Op op = Op.valueOf(request.getOperation());
         final Lock lock = readLock;
         lock.lock();
         try {
             switch (op) {
                 case Write:
-                    kvStorage.batchPut(request.getKeys(), request.getValues());
+                    kvStorage.batchPut(bwRequest.getKeys(), bwRequest.getValues());
                     break;
                 case Delete:
-                    kvStorage.batchDelete(request.getKeys());
+                    kvStorage.batchDelete(bwRequest.getKeys());
                     break;
                 default:
                     return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + op).build();
             }
-            publishValueChangeEvent(op, request);
+            publishValueChangeEvent(op, bwRequest);
             return Response.newBuilder().setSuccess(true).build();
         } catch (KvStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
@@ -249,10 +249,10 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         final BatchWriteRequest req = new BatchWriteRequest();
         Datum datum = Datum.createDatum(key, value);
         req.append(ByteUtils.toBytes(key), serializer.serialize(datum));
-        final Log log = Log.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
+        final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
                 .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Write.desc).build();
         try {
-            protocol.submit(log);
+            protocol.submit(request);
         } catch (Exception e) {
             throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }
@@ -262,10 +262,10 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     public void remove(String key) throws NacosException {
         final BatchWriteRequest req = new BatchWriteRequest();
         req.append(ByteUtils.toBytes(key), ByteUtils.EMPTY);
-        final Log log = Log.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
+        final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
                 .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Delete.desc).build();
         try {
-            protocol.submit(log);
+            protocol.submit(request);
         } catch (Exception e) {
             throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }
@@ -275,7 +275,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     public Datum get(String key) throws NacosException {
         final List<byte[]> keys = new ArrayList<>(1);
         keys.add(ByteUtils.toBytes(key));
-        final GetRequest req = GetRequest.newBuilder().setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
+        final ReadRequest req = ReadRequest.newBuilder().setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
                 .setData(ByteString.copyFrom(serializer.serialize(keys))).build();
         try {
             Response resp = protocol.getData(req);
