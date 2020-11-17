@@ -16,13 +16,11 @@
 
 package com.alibaba.nacos.config.server.auth;
 
-import com.alibaba.nacos.api.remote.request.Request;
+import javax.servlet.http.HttpServletRequest;
+
 import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
-import com.alibaba.nacos.common.utils.ReflectUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Config resource parser.
@@ -35,22 +33,11 @@ public class ConfigResourceParser implements ResourceParser {
     private static final String AUTH_CONFIG_PREFIX = "config/";
     
     @Override
-    public String parseName(Object requestObj) {
-    
-        String namespaceId = null;
-        String groupName = null;
-        String dataId = null;
-        if (requestObj instanceof HttpServletRequest) {
-            HttpServletRequest req = (HttpServletRequest) requestObj;
-            namespaceId = req.getParameter("tenant");
-            groupName = req.getParameter("group");
-            dataId = req.getParameter("dataId");
-        } else if (requestObj instanceof Request) {
-            Request request = (Request) requestObj;
-            namespaceId = (String) ReflectUtils.getFieldValue(request, "tenant", "");
-            groupName = (String) ReflectUtils.getFieldValue(request, "group", "");
-            dataId = (String) ReflectUtils.getFieldValue(request, "dataId", "");
-        }
+    public String parseName(Object request) {
+        HttpServletRequest req = (HttpServletRequest) request;
+        String namespaceId = req.getParameter("tenant");
+        String groupName = req.getParameter("group");
+        String dataId = req.getParameter("dataId");
         
         StringBuilder sb = new StringBuilder();
         

@@ -37,13 +37,5 @@ public enum DataOperation {
     /**
      * Data verify.
      */
-    VERIFY,
-    /**
-     * Data Snapshot.
-     */
-    SNAPSHOT,
-    /**
-     * Data query.
-     */
-    QUERY;
+    VERIFY;
 }

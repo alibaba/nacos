@@ -14,25 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.task.execute;
+package com.alibaba.nacos.naming.healthcheck.events;
 
-import com.alibaba.nacos.common.task.AbstractExecuteTask;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.naming.core.Instance;
+import org.springframework.context.ApplicationEvent;
 
 /**
- * Abstract distro execute task.
+ * Instance heart beat timeout event.
  *
- * @author xiweng.yy
+ * @author pbting
+ * @date 2019-05-28 8:29 PM
  */
-public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
+public class InstanceHeartbeatTimeoutEvent extends ApplicationEvent {
     
-    private final DistroKey distroKey;
+    private Instance instance;
     
-    protected AbstractDistroExecuteTask(DistroKey distroKey) {
-        this.distroKey = distroKey;
+    public InstanceHeartbeatTimeoutEvent(Object source, Instance instance) {
+        super(source);
+        this.instance = instance;
     }
     
-    protected DistroKey getDistroKey() {
-        return distroKey;
+    public void setInstance(Instance instance) {
+        this.instance = instance;
+    }
+    
+    public Instance getInstance() {
+        return instance;
     }
 }

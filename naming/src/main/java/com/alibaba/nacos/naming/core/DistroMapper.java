@@ -75,12 +75,12 @@ public class DistroMapper extends MemberChangeListener {
     }
     
     /**
-     * Judge whether current server is responsible for input tag.
+     * Judge whether current server is responsible for input service.
      *
-     * @param responsibleTag responsible tag, serviceName for v1 and ip:port for v2
+     * @param serviceName service name
      * @return true if input service is response, otherwise false
      */
-    public boolean responsible(String responsibleTag) {
+    public boolean responsible(String serviceName) {
         final List<String> servers = healthyList;
         
         if (!switchDomain.isDistroEnabled() || ApplicationUtils.getStandaloneMode()) {
@@ -98,17 +98,17 @@ public class DistroMapper extends MemberChangeListener {
             return true;
         }
         
-        int target = distroHash(responsibleTag) % servers.size();
+        int target = distroHash(serviceName) % servers.size();
         return target >= index && target <= lastIndex;
     }
     
     /**
-     * Calculate which other server response input tag.
+     * Calculate which other server response input service.
      *
-     * @param responsibleTag responsible tag, serviceName for v1 and ip:port for v2
+     * @param serviceName service name
      * @return server which response input service
      */
-    public String mapSrv(String responsibleTag) {
+    public String mapSrv(String serviceName) {
         final List<String> servers = healthyList;
         
         if (CollectionUtils.isEmpty(servers) || !switchDomain.isDistroEnabled()) {
@@ -116,7 +116,7 @@ public class DistroMapper extends MemberChangeListener {
         }
         
         try {
-            int index = distroHash(responsibleTag) % servers.size();
+            int index = distroHash(serviceName) % servers.size();
             return servers.get(index);
         } catch (Throwable e) {
             Loggers.SRV_LOG.warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + ApplicationUtils
@@ -125,8 +125,8 @@ public class DistroMapper extends MemberChangeListener {
         }
     }
     
-    private int distroHash(String responsibleTag) {
-        return Math.abs(responsibleTag.hashCode() % Integer.MAX_VALUE);
+    private int distroHash(String serviceName) {
+        return Math.abs(serviceName.hashCode() % Integer.MAX_VALUE);
     }
     
     @Override

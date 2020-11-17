@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.BiFunction;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.MapUtils;
@@ -28,10 +27,10 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -76,8 +75,8 @@ public class NotifyCenter {
         String shareBufferSizeProperty = "nacos.core.notify.share-buffer-size";
         shareBufferSize = Integer.getInteger(shareBufferSizeProperty, 1024);
         
-        final Collection<EventPublisher> publishers = NacosServiceLoader.load(EventPublisher.class);
-        Iterator<EventPublisher> iterator = publishers.iterator();
+        final ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
+        Iterator<EventPublisher> iterator = loader.iterator();
         
         if (iterator.hasNext()) {
             clazz = iterator.next().getClass();

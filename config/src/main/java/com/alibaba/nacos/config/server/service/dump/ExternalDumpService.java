@@ -20,7 +20,6 @@ import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -32,7 +31,6 @@ import javax.annotation.PostConstruct;
  */
 @Conditional(ConditionOnExternalStorage.class)
 @Component
-@DependsOn({"rpcConfigChangeNotifier"})
 public class ExternalDumpService extends DumpService {
     
     /**

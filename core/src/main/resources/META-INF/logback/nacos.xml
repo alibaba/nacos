@@ -84,42 +84,7 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-    
-    <appender name="rpc-core"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/rpc-core.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/rpc-core.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>
-            <maxHistory>7</maxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-    
-    <appender name="rpc-digest"
-        class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/rpc-digest.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/rpc-digest.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>
-            <maxHistory>7</maxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-    
-    
+
     <appender name="protocol-distro"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/protocol-distro.log</file>
@@ -180,16 +145,7 @@
         <level value="DEBUG"/>
         <appender-ref ref="core-auth"/>
     </logger>
-    <logger name="com.alibaba.nacos.core.rpc" additivity="false">
-        <level value="DEBUG"/>
-        <appender-ref ref="rpc-core"/>
-    </logger>
-    
-    <logger name="com.alibaba.nacos.core.rpc.digest" additivity="false">
-        <level value="DEBUG"/>
-        <appender-ref ref="rpc-digest"/>
-    </logger>
-    
+
     <logger name="com.alibaba.nacos.core.protocol.raft" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="protocol-raft"/>

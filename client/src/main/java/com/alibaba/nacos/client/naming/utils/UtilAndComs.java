@@ -25,8 +25,6 @@ import com.alibaba.nacos.common.utils.VersionUtils;
  */
 public class UtilAndComs {
     
-    // using  ClientCommonUtils#VERSION instead.
-    @Deprecated
     public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.version;
     
     public static String webContext = "/nacos";

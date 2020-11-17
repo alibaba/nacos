@@ -38,11 +38,6 @@ public class AddressServerAuthManager implements AuthManager {
     }
     
     @Override
-    public User loginRemote(Object request) throws AccessException {
-        return null;
-    }
-    
-    @Override
     public void auth(Permission permission, User user) throws AccessException {
     }
 }

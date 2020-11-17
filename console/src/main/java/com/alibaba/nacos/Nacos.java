@@ -35,4 +35,3 @@ public class Nacos {
         SpringApplication.run(Nacos.class, args);
     }
 }
-

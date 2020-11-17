@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
+import com.alibaba.nacos.core.utils.ReuseHttpRequest;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -66,9 +69,6 @@ public class DistroFilter implements Filter {
     @Autowired
     private ControllerMethodsCache controllerMethodsCache;
     
-    @Autowired
-    private DistroTagGenerator distroTagGenerator;
-    
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
     
@@ -77,7 +77,7 @@ public class DistroFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-        ReuseHttpServletRequest req = new ReuseHttpServletRequest((HttpServletRequest) servletRequest);
+        ReuseHttpRequest req = new ReuseHttpServletRequest((HttpServletRequest) servletRequest);
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
         
         String urlString = req.getRequestURI();
@@ -87,14 +87,22 @@ public class DistroFilter implements Filter {
         }
         
         try {
+            String path = new URI(req.getRequestURI()).getPath();
+            String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+            // For client under 0.8.0:
+            if (StringUtils.isBlank(serviceName)) {
+                serviceName = req.getParameter("dom");
+            }
+            
+            if (StringUtils.isNotBlank(serviceName)) {
+                serviceName = serviceName.trim();
+            }
             Method method = controllerMethodsCache.getMethod(req);
             
-            String path = new URI(req.getRequestURI()).getPath();
             if (method == null) {
                 throw new NoSuchMethodException(req.getMethod() + " " + path);
             }
             
-            String distroTag = distroTagGenerator.getResponsibleTag(req);
             String groupName = req.getParameter(CommonParams.GROUP_NAME);
             if (StringUtils.isBlank(groupName)) {
                 groupName = Constants.DEFAULT_GROUP;
@@ -108,7 +116,7 @@ public class DistroFilter implements Filter {
             }
             
             // proxy request to other server if necessary:
-            if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(distroTag)) {
+            if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(groupedServiceName)) {
                 
                 String userAgent = req.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
                 
@@ -120,7 +128,7 @@ public class DistroFilter implements Filter {
                     return;
                 }
                 
-                final String targetServer = distroMapper.mapSrv(distroTag);
+                final String targetServer = distroMapper.mapSrv(groupedServiceName);
                 
                 List<String> headerList = new ArrayList<>(16);
                 Enumeration<String> headers = req.getHeaderNames();
@@ -140,12 +148,12 @@ public class DistroFilter implements Filter {
                 try {
                     WebUtils.response(resp, data, result.getCode());
                 } catch (Exception ignore) {
-                    Loggers.SRV_LOG
-                            .warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(distroTag) + urlString);
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(groupedServiceName)
+                            + urlString);
                 }
             } else {
-                OverrideParameterRequestWrapper requestWrapper = distroTagGenerator
-                        .wrapperRequestWithTag(req, distroTag);
+                OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
+                requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
                 filterChain.doFilter(requestWrapper, resp);
             }
         } catch (AccessControlException e) {

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -92,32 +91,6 @@ public class MemberUtils {
         extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
         target.setExtendInfo(extendInfo);
         return target;
-    }
-    
-    /**
-     * get support member connection type.
-     *
-     * @param member member instance of server
-     * @return supported connection tyoe of the member.
-     */
-    public static ConnectionType getSupportedConnectionType(Member member) {
-        Map<String, Object> extendInfo = member.getExtendInfo();
-        if (extendInfo == null || !extendInfo.containsKey(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE)) {
-            return null;
-        } else {
-            String type = (String) extendInfo.get(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE);
-            return ConnectionType.getByType(type);
-        }
-    }
-    
-    /**
-     * check whether the member support long connection or not.
-     *
-     * @param member member instance of server.
-     * @return support long connection or not.
-     */
-    public static boolean isSupportedLongCon(Member member) {
-        return getSupportedConnectionType(member) != null;
     }
     
     public static int calculateRaftPort(Member member) {

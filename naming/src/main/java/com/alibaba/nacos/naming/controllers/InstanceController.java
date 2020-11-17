@@ -19,13 +19,14 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.NamingResponseCode;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
@@ -33,7 +34,6 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.push.ClientInfo;
@@ -91,13 +91,6 @@ public class InstanceController {
     @Autowired
     private ServiceManager serviceManager;
     
-    @Autowired
-    private InstanceOperatorClientImpl instanceService;
-    
-    /**
-     * Move to {@link com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl}.
-     */
-    @Deprecated
     private DataSource pushDataSource = new DataSource() {
         
         @Override
@@ -138,7 +131,7 @@ public class InstanceController {
         
         final Instance instance = parseInstance(request);
         
-        instanceService.registerInstance(namespaceId, serviceName, instance);
+        serviceManager.registerInstance(namespaceId, serviceName, instance);
         return "ok";
     }
     
@@ -158,7 +151,13 @@ public class InstanceController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         
-        instanceService.removeInstance(namespaceId, serviceName, instance);
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
+            Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
+            return "ok";
+        }
+        
+        serviceManager.removeInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
         return "ok";
     }
     
@@ -372,7 +371,7 @@ public class InstanceController {
      */
     @GetMapping("/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public Object list(HttpServletRequest request) throws Exception {
+    public ObjectNode list(HttpServletRequest request) throws Exception {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -382,18 +381,17 @@ public class InstanceController {
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
         int udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
-        boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
-        
+        String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
         boolean isCheck = Boolean.parseBoolean(WebUtils.optional(request, "isCheck", "false"));
         
         String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
-        String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
+        
         String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
         
-        Subscriber subscriber =
-                udpPort > 0 ? new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName,
-                        udpPort) : null;
-        return instanceService.listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
+        boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
+        
+        return doSrvIpxt(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant,
+                healthyOnly);
     }
     
     /**
@@ -484,11 +482,48 @@ public class InstanceController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
+        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clusterName, ip, port);
         
-        int resultCode = instanceService.handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat);
-        result.put(CommonParams.CODE, resultCode);
-        result.put(SwitchEntry.CLIENT_BEAT_INTERVAL,
-                instanceService.getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));
+        if (instance == null) {
+            if (clientBeat == null) {
+                result.put(CommonParams.CODE, NamingResponseCode.RESOURCE_NOT_FOUND);
+                return result;
+            }
+            
+            Loggers.SRV_LOG.warn("[CLIENT-BEAT] The instance has been removed for health mechanism, "
+                    + "perform data compensation operations, beat: {}, serviceName: {}", clientBeat, serviceName);
+            
+            instance = new Instance();
+            instance.setPort(clientBeat.getPort());
+            instance.setIp(clientBeat.getIp());
+            instance.setWeight(clientBeat.getWeight());
+            instance.setMetadata(clientBeat.getMetadata());
+            instance.setClusterName(clusterName);
+            instance.setServiceName(serviceName);
+            instance.setInstanceId(instance.getInstanceId());
+            instance.setEphemeral(clientBeat.isEphemeral());
+            
+            serviceManager.registerInstance(namespaceId, serviceName, instance);
+        }
+        
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        
+        if (service == null) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "service not found: " + serviceName + "@" + namespaceId);
+        }
+        if (clientBeat == null) {
+            clientBeat = new RsInfo();
+            clientBeat.setIp(ip);
+            clientBeat.setPort(port);
+            clientBeat.setCluster(clusterName);
+        }
+        service.processClientBeat(clientBeat);
+        
+        result.put(CommonParams.CODE, NamingResponseCode.OK);
+        if (instance.containsMetadata(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
+            result.put(SwitchEntry.CLIENT_BEAT_INTERVAL, instance.getInstanceHeartBeatInterval());
+        }
         result.put(SwitchEntry.LIGHT_BEAT_ENABLED, switchDomain.isLightBeatEnabled());
         return result;
     }
@@ -617,10 +652,7 @@ public class InstanceController {
      * @param healthyOnly whether only for healthy check
      * @return service full information with instances
      * @throws Exception any error during handle
-     * @deprecated will be replace by {@link com.alibaba.nacos.naming.core.InstanceOperator#listInstance(String, String,
-     * Subscriber, String, boolean)}
      */
-    @Deprecated
     public ObjectNode doSrvIpxt(String namespaceId, String serviceName, String agent, String clusters, String clientIP,
             int udpPort, String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
         

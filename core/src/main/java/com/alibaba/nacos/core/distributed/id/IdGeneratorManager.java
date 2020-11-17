@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.core.distributed.id;
 
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.consistency.IdGenerator;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -32,6 +31,7 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.UndefineMagicConstantRule")
 @Component
 public class IdGeneratorManager {
     
@@ -42,8 +42,8 @@ public class IdGeneratorManager {
     public IdGeneratorManager() {
         this.supplier = s -> {
             IdGenerator generator;
-            Collection<IdGenerator> idGenerators = NacosServiceLoader.load(IdGenerator.class);
-            Iterator<IdGenerator> iterator = idGenerators.iterator();
+            ServiceLoader<IdGenerator> loader = ServiceLoader.load(IdGenerator.class);
+            Iterator<IdGenerator> iterator = loader.iterator();
             if (iterator.hasNext()) {
                 generator = iterator.next();
             } else {

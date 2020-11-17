@@ -22,7 +22,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>1.4.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-2.0.0-SNAPSHOT</tag>
+        <tag>nacos-all-1.4.1-SNAPSHOT</tag>
     </scm>
 
     <mailingLists>
@@ -149,8 +149,8 @@
         <jackson-databind.version>2.10.4</jackson-databind.version>
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
-        <netty-all.version>4.1.51.Final</netty-all.version>
-        <!--<netty-common.version>4.1.31.Final</netty-common.version>-->
+        <netty-all.version>4.1.42.Final</netty-all.version>
+        <netty-common.version>4.1.31.Final</netty-common.version>
         <mina-core.version>2.0.0-RC1</mina-core.version>
         <guava.version>24.1.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
@@ -276,7 +276,6 @@
                         <exclude>**/istio/model/mcp/*.java</exclude>
                         <exclude>**/istio/model/naming/*.java</exclude>
                         <exclude>**/istio/model/*.java</exclude>
-                        <exclude>**/api/grpc/auto/*.java</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -304,7 +303,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <excludes>**/istio/model/**,**/nacos/test/**,**/api/grpc/auto/**</excludes>
+                    <excludes>**/istio/model/**,**/nacos/test/**</excludes>
                 </configuration>
                 <executions>
                     <execution>
@@ -771,8 +770,7 @@
                 <artifactId>commons-cli</artifactId>
                 <version>${commons-cli.version}</version>
             </dependency>
-    
-    
+
             <!-- Logging libs -->
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -942,12 +940,12 @@
                 <artifactId>netty-all</artifactId>
                 <version>${netty-all.version}</version>
             </dependency>
-    
-            <!--<dependency>-->
-            <!--<groupId>io.netty</groupId>-->
-            <!--<artifactId>netty-common</artifactId>-->
-            <!--<version>${netty-common.version}</version>-->
-            <!--</dependency>-->
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty-common.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.mina</groupId>
@@ -1004,108 +1002,7 @@
             </dependency>
 
             <!-- gRPC dependency end -->
-    
-            <!-- Rsocket -->
-    
-            <dependency>
-                <groupId>io.projectreactor</groupId>
-                <artifactId>reactor-core</artifactId>
-                <version>3.3.7.RELEASE</version>
-            </dependency>
-            <dependency>
-                <groupId>io.projectreactor.netty</groupId>
-                <artifactId>reactor-netty</artifactId>
-                <version>0.9.7.RELEASE</version>
-            </dependency>
-            <dependency>
-                <groupId>io.rsocket</groupId>
-                <artifactId>rsocket-core</artifactId>
-                <version>1.0.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-buffer</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-http</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-http2</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-handler</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-handler-proxy</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-resolver</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport-native-epoll</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport-native-unix-common</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.rsocket</groupId>
-                <artifactId>rsocket-transport-netty</artifactId>
-                <version>1.0.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-buffer</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-http</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-http2</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-handler</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-handler-proxy</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-resolver</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport-native-epoll</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport-native-unix-common</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-    
-            <!-- Rsocket -->
-    
+
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
@@ -1149,72 +1046,17 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    
-    <!--<distributionManagement>-->
-    <!--<snapshotRepository>-->
-    <!--&lt;!&ndash; 这里的ID一定要在maven setting文件中存在于server下的ID &ndash;&gt;-->
-    <!--<id>sona</id>-->
-    <!--<url>https://oss.sonatype.org/content/repositories/snapshots/</url>-->
-    <!--</snapshotRepository>-->
-    <!--<repository>-->
-    <!--<id>sona</id>-->
-    <!--<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
-    <!--</repository>-->
-    <!--</distributionManagement>-->
-    
-    <repositories>
-        <repository>
-            <id>central</id>
-            <url>http://mvnrepo.alibaba-inc.com/mvn/repository</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>snapshots</id>
-            <url>http://mvnrepo.alibaba-inc.com/mvn/repository</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>central</id>
-            <url>http://mvnrepo.alibaba-inc.com/mvn/repository</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-        <pluginRepository>
-            <id>snapshots</id>
-            <url>http://mvnrepo.alibaba-inc.com/mvn/repository</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
+
     <distributionManagement>
-        <repository>
-            <id>releases</id>
-            <url>http://mvnrepo.alibaba-inc.com/mvn/releases</url>
-        </repository>
         <snapshotRepository>
-            <id>snapshots</id>
-            <url>http://mvnrepo.alibaba-inc.com/mvn/snapshots</url>
+            <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->
+            <id>sona</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
+        <repository>
+            <id>sona</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
 </project>
 

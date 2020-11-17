@@ -37,7 +37,6 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * IO related tool methods.
@@ -102,29 +101,6 @@ public class IoUtils {
                 gis.close();
             }
         }
-    }
-    
-    /**
-     * Try compress by GZIP for string.
-     *
-     * @param str      strings to be compressed.
-     * @param encoding encoding.
-     * @return
-     */
-    public static byte[] tryCompress(String str, String encoding) {
-        if (str == null || str.length() == 0) {
-            return null;
-        }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GZIPOutputStream gzip;
-        try {
-            gzip = new GZIPOutputStream(out);
-            gzip.write(str.getBytes(encoding));
-            gzip.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return out.toByteArray();
     }
     
     private static BufferedReader toBufferedReader(Reader reader) {

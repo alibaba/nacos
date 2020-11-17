@@ -20,11 +20,12 @@ import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.healthcheck.heartbeat.BeatCheckTask;
+import com.alibaba.nacos.naming.healthcheck.events.InstanceHeartbeatTimeoutEvent;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -32,17 +33,16 @@ import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 
 /**
- * Client beat check task of service for version 1.x.
+ * Check and update statues of ephemeral instances, remove them if they have been expired.
  *
  * @author nkorange
  */
-public class ClientBeatCheckTask implements BeatCheckTask {
+public class ClientBeatCheckTask implements Runnable {
     
     private Service service;
     
@@ -68,7 +68,6 @@ public class ClientBeatCheckTask implements BeatCheckTask {
         return ApplicationUtils.getBean(SwitchDomain.class);
     }
     
-    @Override
     public String taskKey() {
         return KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName());
     }
@@ -98,6 +97,7 @@ public class ClientBeatCheckTask implements BeatCheckTask {
                                             service.getName(), UtilsAndCommons.LOCALHOST_SITE,
                                             instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
                             getPushService().serviceChanged(service);
+                            ApplicationUtils.publishEvent(new InstanceHeartbeatTimeoutEvent(this, instance));
                         }
                     }
                 }
@@ -149,17 +149,17 @@ public class ClientBeatCheckTask implements BeatCheckTask {
                                         instance.toJson(), result.getMessage(), result.getCode());
                     }
                 }
-                
+    
                 @Override
                 public void onError(Throwable throwable) {
                     Loggers.SRV_LOG
                             .error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJson(),
                                     throwable);
                 }
-                
+    
                 @Override
                 public void onCancel() {
-                
+        
                 }
             });
             

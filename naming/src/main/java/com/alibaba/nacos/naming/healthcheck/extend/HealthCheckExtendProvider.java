@@ -17,9 +17,8 @@
 package com.alibaba.nacos.naming.healthcheck.extend;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessor;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +28,9 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.SingletonBeanRegistry;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -44,9 +43,9 @@ public class HealthCheckExtendProvider implements BeanFactoryAware {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthCheckExtendProvider.class);
     
-    private final Collection<HealthCheckProcessor> processors = NacosServiceLoader.load(HealthCheckProcessor.class);
+    private ServiceLoader<HealthCheckProcessor> processorLoader = ServiceLoader.load(HealthCheckProcessor.class);
     
-    private final Collection<AbstractHealthChecker> checkers = NacosServiceLoader.load(AbstractHealthChecker.class);
+    private ServiceLoader<AbstractHealthChecker> checkerLoader = ServiceLoader.load(AbstractHealthChecker.class);
     
     private SingletonBeanRegistry registry;
     
@@ -55,8 +54,8 @@ public class HealthCheckExtendProvider implements BeanFactoryAware {
     }
     
     private void loadExtend() {
-        Iterator<HealthCheckProcessor> processorIt = processors.iterator();
-        Iterator<AbstractHealthChecker> healthCheckerIt = checkers.iterator();
+        Iterator<HealthCheckProcessor> processorIt = processorLoader.iterator();
+        Iterator<AbstractHealthChecker> healthCheckerIt = checkerLoader.iterator();
         
         Set<String> origin = new HashSet<>();
         for (HealthCheckType type : HealthCheckType.values()) {
