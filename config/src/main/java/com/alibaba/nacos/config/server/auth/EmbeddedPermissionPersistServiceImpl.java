@@ -54,7 +54,6 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         String sqlCountRows = "select count(*) from permissions where ";
         String sqlFetchRows = "select role,resource,action from permissions where ";
     
-    
         String where = " role= ? ";
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(role)) {

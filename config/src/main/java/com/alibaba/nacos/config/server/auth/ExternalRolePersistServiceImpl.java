@@ -88,7 +88,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         
         String sqlCountRows = "select count(*) from roles where ";
         String sqlFetchRows = "select role,username from roles where ";
-    
+        
         String where = " username= ? ";
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
@@ -98,9 +98,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         }
         
         try {
-             return helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
-                            pageSize, ROLE_INFO_ROW_MAPPER);
+            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                    ROLE_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -110,7 +109,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     /**
      * Execute add role operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param userName username string value.
      */
     public void addRole(String role, String userName) {
@@ -143,7 +142,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     /**
      * Execute delete role operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param username username string value.
      */
     public void deleteRole(String role, String username) {
@@ -159,7 +158,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     @Override
     public List<String> findRolesLikeRoleName(String role) {
         String sql = "SELECT role FROM roles WHERE role like '%' ? '%'";
-        List<String> users = this.jt.queryForList(sql, new String[]{role}, String.class);
+        List<String> users = this.jt.queryForList(sql, new String[] {role}, String.class);
         return users;
     }
     
