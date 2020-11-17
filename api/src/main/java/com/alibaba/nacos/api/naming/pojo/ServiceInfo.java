@@ -31,6 +31,7 @@ import java.util.List;
  * ServiceInfo.
  *
  * @author nkorange
+ * @author shizhengxing
  */
 @JsonInclude(Include.NON_NULL)
 public class ServiceInfo {
@@ -67,20 +68,30 @@ public class ServiceInfo {
         this.allIPs = allIPs;
     }
     
-    public ServiceInfo(String key) {
-        
-        int maxIndex = 2;
-        int clusterIndex = 1;
-        int serviceNameIndex = 0;
-        
-        String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (keys.length >= maxIndex) {
-            this.name = keys[serviceNameIndex];
-            this.clusters = keys[clusterIndex];
-        }
-        
-        this.name = keys[0];
-    }
+		/**
+		 * There is only one form of the key:groupName@@name@clusters.
+		 * This constuctor used by DiskCache.read(String) and FailoverReactor.FailoverFileReader,you should know that 'groupName'
+		 * must not be null,and 'clusters' can be null.
+		 */
+		public ServiceInfo(String key) {
+	
+				int maxIndex = 2;
+				int clusterIndex = 2;
+				int serviceNameIndex = 1;
+				int groupIndex = 0;
+		
+				String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
+				if (keys.length >= maxIndex + 1) {
+						this.groupName = keys[groupIndex];
+						this.name = keys[serviceNameIndex];
+						this.clusters = keys[clusterIndex];
+				} else if (keys.length == maxIndex) {
+						this.groupName = keys[groupIndex];
+						this.name = keys[serviceNameIndex];
+				} else {
+						throw new IllegalArgumentException("Cann't parse out 'groupName',but it must not be null!");
+				}
+		}
     
     public ServiceInfo(String name, String clusters) {
         this.name = name;
@@ -182,8 +193,17 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKey() {
-        return getKey(name, clusters);
-    }
+				String serviceName = getGroupedServiceName();
+				return getKey(serviceName, clusters);
+		}
+		
+		private String getGroupedServiceName(){
+				String serviceName = this.name;
+				if (!isEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+						serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+				}
+				return serviceName;    
+		}
     
     @JsonIgnore
     public static String getKey(String name, String clusters) {
@@ -197,11 +217,14 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKeyEncoded() {
-        try {
-            return getKey(URLEncoder.encode(name, "UTF-8"), clusters);
-        } catch (UnsupportedEncodingException e) {
-            return getKey();
-        }
+				String serviceName = getGroupedServiceName();
+				try {
+						serviceName = URLEncoder.encode(serviceName, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+				}
+		
+				String key = getKey(serviceName, clusters);
+				return key;
     }
     
     /**
