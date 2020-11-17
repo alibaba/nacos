@@ -38,6 +38,10 @@ import java.util.Set;
 @Service
 public class LongPollingService {
     
+    private static final int NEW_LISTEN_PACKET_LENGTH = 4;
+    
+    private static final int NEW_LISTEN_PACKET_NAMESPACE_INDEX = 3;
+    
     /**
      * Add LongPollingClient.
      *
@@ -56,8 +60,8 @@ public class LongPollingService {
         final Set<String> namespaces = new HashSet<>();
         clientMd5Map.forEach((key, md5Sign) -> {
             final String[] configMetadata = MD5Util.splitConfigKey(key);
-            if (configMetadata.length == 3) {
-                namespaces.add(ParamUtils.processNamespace(configMetadata[3]));
+            if (configMetadata.length == NEW_LISTEN_PACKET_LENGTH) {
+                namespaces.add(ParamUtils.processNamespace(configMetadata[NEW_LISTEN_PACKET_NAMESPACE_INDEX]));
             } else {
                 namespaces.add(ParamUtils.processNamespace(Constants.DEFAULT_NAMESPACE));
             }

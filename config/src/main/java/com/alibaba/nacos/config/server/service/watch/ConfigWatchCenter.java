@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -191,7 +192,7 @@ public class ConfigWatchCenter extends Subscriber<LocalDataChangeEvent> {
     public Map<String, Set<String>> collectApplicationSubscribeConfigInfos() {
         HashMap<String, Set<String>> app2GroupKeys = new HashMap<>(64);
         clientManager.forEach(client -> {
-            if (StringUtils.isEmpty(client.getAppName()) || "unknown".equalsIgnoreCase(client.getAppName())) {
+            if (StringUtils.isEmpty(client.getAppName()) || Constants.UNKNOWN_APP.equalsIgnoreCase(client.getAppName())) {
                 return;
             }
             Set<String> appSubscribeConfigs = app2GroupKeys.get(client.getAppName());

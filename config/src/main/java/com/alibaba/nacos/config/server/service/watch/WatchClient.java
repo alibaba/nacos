@@ -25,6 +25,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class WatchClient {
     
     private String tag;
@@ -88,6 +89,11 @@ public abstract class WatchClient {
         return watchKey;
     }
     
+    /**
+     * client receives a local configuration change event.
+     *
+     * @param event {@link LocalDataChangeEvent}
+     */
     protected abstract void notifyChangeEvent(LocalDataChangeEvent event);
     
     /**
