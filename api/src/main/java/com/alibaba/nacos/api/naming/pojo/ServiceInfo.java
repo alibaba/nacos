@@ -68,6 +68,11 @@ public class ServiceInfo {
         this.allIPs = allIPs;
     }
     
+   	/**
+		 * There is only one form of the key:groupName@@name@clusters.
+		 * This constuctor used by DiskCache.read(String) and FailoverReactor.FailoverFileReader,you should know that 'groupName'
+		 * must not be null,and 'clusters' can be null.
+		 */
     public ServiceInfo(String key) {
         int maxIndex = 2;
         int clusterIndex = 2;
@@ -83,7 +88,8 @@ public class ServiceInfo {
             this.groupName = keys[groupIndex];
             this.name = keys[serviceNameIndex];
         } else {
-            this.name = keys[0];
+        		//defensive programming
+            throw new IllegalArgumentException("Cann't parse out 'groupName',but it must not be null!");
         }
     }
     
@@ -187,12 +193,17 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKey() {
-        String serviceName = this.name;
-        if (!StringUtils.isBlank(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
-            serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
-        }
-        return getKey(serviceName, clusters);    
+				String serviceName = getGroupedServiceName();
+				return getKey(serviceName, clusters); 
     }
+    
+    private String getGroupedServiceName(){
+				String serviceName = this.name;
+				if (StringUtils.isNotEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+					serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+				}
+				return serviceName;
+		}
     
     @JsonIgnore
     public static String getKey(String name, String clusters) {
@@ -206,16 +217,14 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKeyEncoded() {
-        String serviceName;
-        try {
-            serviceName = URLEncoder.encode(this.name, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            serviceName = this.name;
-        }
-        if (!StringUtils.isBlank(groupName) && this.name.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
-            serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
-        }
-        return getKey(serviceName, clusters);
+				String serviceName = getGroupedServiceName();
+				try {
+					serviceName = URLEncoder.encode(serviceName, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+				}
+		
+				String key = getKey(serviceName, clusters);
+				return key;
     }
     
     /**
