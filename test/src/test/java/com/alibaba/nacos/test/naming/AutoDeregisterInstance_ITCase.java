@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -74,7 +74,7 @@ public class AutoDeregisterInstance_ITCase {
     }
 
     @After
-    public void destroy() {
+    public void destroy() throws Exception{
         NamingBase.destoryServer(port);
     }
 

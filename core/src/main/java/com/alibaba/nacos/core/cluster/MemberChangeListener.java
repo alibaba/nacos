@@ -16,31 +16,34 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 
 /**
+ * Node change listeners.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface MemberChangeListener extends Subscribe<MemberChangeEvent> {
-
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+public abstract class MemberChangeListener extends Subscriber<MembersChangeEvent> {
+    
     /**
-     * return NodeChangeEvent.class info
+     * return NodeChangeEvent.class info.
      *
-     * @return {@link MemberChangeEvent#getClass()}
+     * @return {@link MembersChangeEvent#getClass()}
      */
     @Override
-    default Class<? extends Event> subscribeType() {
-        return MemberChangeEvent.class;
+    public Class<? extends Event> subscribeType() {
+        return MembersChangeEvent.class;
     }
-
+    
     /**
-     * Whether to ignore expired events
+     * Whether to ignore expired events.
      *
      * @return default value is {@link Boolean#TRUE}
      */
     @Override
-    default boolean ignoreExpireEvent() {
+    public boolean ignoreExpireEvent() {
         return true;
     }
 }

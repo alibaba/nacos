@@ -19,7 +19,8 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
+import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.SmartApplicationListener;
 import org.springframework.stereotype.Component;
@@ -28,35 +29,56 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Inject the raft information from the naming module into the outlier information of the node
+ * Inject the raft information from the naming module into the outlier information of the node.
  *
+ * @deprecated will remove in 1.4.x
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Deprecated
 @Component
 public class RaftListener implements SmartApplicationListener {
-
-	private static final String GROUP = "naming";
-
-	@Autowired
-	private ServerMemberManager memberManager;
-
-	@Override
-	public boolean supportsEventType(
-			Class<? extends ApplicationEvent> eventType) {
-		boolean a = BaseRaftEvent.class.isAssignableFrom(eventType);
-		return a;
-	}
-
-	@Override
-	public void onApplicationEvent(ApplicationEvent event) {
-		if (event instanceof BaseRaftEvent) {
-			BaseRaftEvent raftEvent = (BaseRaftEvent) event;
-			RaftPeer local = raftEvent.getLocal();
-			String json = JacksonUtils.toJson(local);
-			Map map = JacksonUtils.toObj(json, HashMap.class);
-			Member self = memberManager.getSelf();
-			self.setExtendVal(GROUP, map);
-			memberManager.update(self);
-		}
-	}
+    
+    private static final String GROUP = "naming";
+    
+    private final ServerMemberManager memberManager;
+    
+    private final ClusterVersionJudgement versionJudgement;
+    
+    private volatile boolean stopUpdate = false;
+    
+    public RaftListener(ServerMemberManager memberManager, ClusterVersionJudgement versionJudgement) {
+        this.memberManager = memberManager;
+        this.versionJudgement = versionJudgement;
+        this.init();
+    }
+    
+    private void init() {
+        this.versionJudgement.registerObserver(isAllNewVersion -> {
+            stopUpdate = isAllNewVersion;
+            if (stopUpdate) {
+                Loggers.RAFT.warn("start to move old raft protocol metadata");
+                Member self = memberManager.getSelf();
+                self.delExtendVal(GROUP);
+                memberManager.update(self);
+            }
+        }, -2);
+    }
+    
+    @Override
+    public boolean supportsEventType(Class<? extends ApplicationEvent> eventType) {
+        return BaseRaftEvent.class.isAssignableFrom(eventType);
+    }
+    
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof BaseRaftEvent && !stopUpdate) {
+            BaseRaftEvent raftEvent = (BaseRaftEvent) event;
+            RaftPeer local = raftEvent.getLocal();
+            String json = JacksonUtils.toJson(local);
+            Map map = JacksonUtils.toObj(json, HashMap.class);
+            Member self = memberManager.getSelf();
+            self.setExtendVal(GROUP, map);
+            memberManager.update(self);
+        }
+    }
 }

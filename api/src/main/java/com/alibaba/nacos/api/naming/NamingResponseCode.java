@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.naming;
 
 import com.alibaba.nacos.api.common.ResponseCode;
@@ -20,16 +21,16 @@ import com.alibaba.nacos.api.common.ResponseCode;
 /**
  * Business response code of naming module
  *
- * Every code stays between 20001 to 29999.
+ * <p>Every code stays between 20001 to 29999.
  *
  * @author nkorange
  * @author 1.2.0
  */
 public class NamingResponseCode extends ResponseCode {
-
+    
     /**
-     * The requested resource is not found
+     * The requested resource is not found.
      */
     public static final int RESOURCE_NOT_FOUND = 20404;
-
+    
 }

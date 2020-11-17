@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.ephemeral;
 
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 
 /**
  * A type of consistency for ephemeral data.
- * <p>
- * This kind of consistency is not required to store data on disk or database, because the
- * ephemeral data always keeps a session with server and as long as the session still lives
- * the ephemeral data won't be lost.
- * <p>
- * What is required is that writing should always be successful even if network partition
- * happens. And when the network recovers, data of each partition is merged into one set,
- * so the cluster resumes to a consistent status.
+ *
+ * <p>This kind of consistency is not required to store data on disk or database, because the ephemeral data always
+ * keeps a session with server and as long as the session still lives the ephemeral data won't be lost.
+ *
+ * <p>What is required is that writing should always be successful even if network partition happens. And when the
+ * network recovers, data of each partition is merged into one set, so the cluster resumes to a consistent status.
  *
  * @author nkorange
  * @since 1.0.0
  */
 public interface EphemeralConsistencyService extends ConsistencyService {
+
 }

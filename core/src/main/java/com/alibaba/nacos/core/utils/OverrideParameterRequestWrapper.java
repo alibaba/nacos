@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.utils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -22,16 +23,16 @@ import java.util.Map;
 
 /**
  * A request wrapper to override the parameters.
- * <p>
- * Referenced article is https://blog.csdn.net/xieyuooo/article/details/8447301
+ *
+ * <p>Referenced article is https://blog.csdn.net/xieyuooo/article/details/8447301
  *
  * @author nkorange
  * @since 0.8.0
  */
 public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
-
+    
     private Map<String, String[]> params = new HashMap<>();
-
+    
     /**
      * Constructs a request object wrapping the given request.
      *
@@ -42,23 +43,39 @@ public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
         super(request);
         this.params.putAll(request.getParameterMap());
     }
-
+    
     public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request) {
         return new OverrideParameterRequestWrapper(request);
     }
-
+    
+    /**
+     * build OverrideParameterRequestWrapper and addParameter.
+     *
+     * @param request origin HttpServletRequest
+     * @param name    name
+     * @param value   value
+     * @return {@link OverrideParameterRequestWrapper}
+     */
     public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request, String name, String value) {
         OverrideParameterRequestWrapper requestWrapper = new OverrideParameterRequestWrapper(request);
         requestWrapper.addParameter(name, value);
         return requestWrapper;
     }
-
-    public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request, Map<String, String[]> appendParameters) {
+    
+    /**
+     * build OverrideParameterRequestWrapper and addParameter.
+     *
+     * @param request          origin HttpServletRequest
+     * @param appendParameters need to append to request
+     * @return {@link OverrideParameterRequestWrapper}
+     */
+    public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request,
+            Map<String, String[]> appendParameters) {
         OverrideParameterRequestWrapper requestWrapper = new OverrideParameterRequestWrapper(request);
         requestWrapper.params.putAll(appendParameters);
         return requestWrapper;
     }
-
+    
     @Override
     public String getParameter(String name) {
         String[] values = params.get(name);
@@ -67,21 +84,27 @@ public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
         }
         return values[0];
     }
-
+    
     @Override
     public Map<String, String[]> getParameterMap() {
         return params;
     }
-
+    
     @Override
     public String[] getParameterValues(String name) {
         return params.get(name);
     }
-
+    
+    /**
+     * addParameter.
+     *
+     * @param name  name
+     * @param value value
+     */
     public void addParameter(String name, String value) {
         if (value != null) {
-            params.put(name, new String[]{value});
+            params.put(name, new String[] {value});
         }
     }
-
+    
 }

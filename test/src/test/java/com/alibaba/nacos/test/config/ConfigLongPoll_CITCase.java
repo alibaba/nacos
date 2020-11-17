@@ -23,7 +23,9 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -47,6 +49,14 @@ public class ConfigLongPoll_CITCase {
     private int port;
 
     private ConfigService configService;
+    
+    @BeforeClass
+    @AfterClass
+    public static void cleanClientCache() throws Exception {
+        ConfigCleanUtils.cleanClientCache();
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigLongPoll_CITCase.class.getSimpleName());
+    
+    }
 
     @Before
     public void init() throws NacosException {

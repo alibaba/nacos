@@ -13,6 +13,7 @@ exemptLabels:
     - kind/performance
     - kind/proposal
     - kind/refactor
+    - kind/feature
     - kind/user experience
     - Soc2019
     - SoC2020

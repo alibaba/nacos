@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Group key util
+ * Group key util.
  *
  * @author Nacos
  */
 public class GroupKey2 {
-
-    static public String getKey(String dataId, String group) {
+    
+    public static String getKey(String dataId, String group) {
         StringBuilder sb = new StringBuilder();
         urlEncode(dataId, sb);
         sb.append('+');
         urlEncode(group, sb);
         return sb.toString();
     }
-
-    static public String getKey(String dataId, String group, String tenant) {
+    
+    public static String getKey(String dataId, String group, String tenant) {
         StringBuilder sb = new StringBuilder();
         urlEncode(dataId, sb);
         sb.append('+');
@@ -43,13 +44,16 @@ public class GroupKey2 {
         }
         return sb.toString();
     }
-
-    static public String[] parseKey(String groupKey) {
+    
+    /**
+     * Parse the group key.
+     */
+    public static String[] parseKey(String groupKey) {
         StringBuilder sb = new StringBuilder();
         String dataId = null;
         String group = null;
         String tenant = null;
-
+        
         for (int i = 0; i < groupKey.length(); ++i) {
             char c = groupKey.charAt(i);
             if ('+' == c) {
@@ -76,7 +80,7 @@ public class GroupKey2 {
                 sb.append(c);
             }
         }
-
+        
         if (StringUtils.isBlank(group)) {
             group = sb.toString();
             if (group.length() == 0) {
@@ -88,12 +92,12 @@ public class GroupKey2 {
                 throw new IllegalArgumentException("invalid groupkey:" + groupKey);
             }
         }
-
+        
         return new String[] {dataId, group, tenant};
     }
-
+    
     /**
-     * + -> %2B % -> %25
+     * + -> %2B % -> %25.
      */
     static void urlEncode(String str, StringBuilder sb) {
         for (int idx = 0; idx < str.length(); ++idx) {
@@ -107,5 +111,5 @@ public class GroupKey2 {
             }
         }
     }
-
+    
 }

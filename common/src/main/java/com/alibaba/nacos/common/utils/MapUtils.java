@@ -16,97 +16,142 @@
 
 package com.alibaba.nacos.common.utils;
 
+import com.alibaba.nacos.common.NotThreadSafe;
+
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Map;
 
 /**
+ * Map utils.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
 public class MapUtils {
-
-	/**
-	 * Null-safe check if the specified Dictionary is empty.
-	 * <p>
-	 * Null returns true.
-	 *
-	 * @param map  the collection to check, may be null
-	 * @return true if empty or null
-	 */
-	public static boolean isEmpty(Map map) {
-		return (map == null || map.isEmpty());
-	}
-
-	/**
-	 * Null-safe check if the specified Dictionary is not empty.
-	 * <p>
-	 * Null returns false.
-	 *
-	 * @param map  the collection to check, may be null
-	 * @return true if non-null and non-empty
-	 */
-	public static boolean isNotEmpty(Map map) {
-		return !isEmpty(map);
-	}
-
-	/**
-	 * Null-safe check if the specified Dictionary is empty.
-	 * <p>
-	 * Null returns true.
-	 *
-	 * @param coll  the collection to check, may be null
-	 * @return true if empty or null
-	 */
-	public static boolean isEmpty(Dictionary coll) {
-		return (coll == null || coll.isEmpty());
-	}
-
-	/**
-	 * Null-safe check if the specified Dictionary is not empty.
-	 * <p>
-	 * Null returns false.
-	 *
-	 * @param coll  the collection to check, may be null
-	 * @return true if non-null and non-empty
-	 */
-	public static boolean isNotEmpty(Dictionary coll) {
-		return !isEmpty(coll);
-	}
-
-	public static void putIfValNoNull(Map target, Object key, Object value) {
-		Objects.requireNonNull(key, "key");
-		if (value != null) {
-			target.put(key, value);
-		}
-	}
-
-	public static void putIfValNoEmpty(Map target, Object key, Object value) {
-		Objects.requireNonNull(key, "key");
-		if (value instanceof String) {
-			if (StringUtils.isNotEmpty((String) value)) {
-				target.put(key, value);
-			}
-			return;
-		}
-		if (value instanceof Collection) {
-			if (CollectionUtils.isNotEmpty((Collection) value)) {
-				target.put(key, value);
-			}
-			return;
-		}
-		if (value instanceof Map) {
-			if (isNotEmpty((Map) value)) {
-				target.put(key, value);
-			}
-			return;
-		}
-		if (value instanceof Dictionary) {
-			if (isNotEmpty((Dictionary) value)) {
-				target.put(key, value);
-			}
-			return;
-		}
-	}
-
+    
+    /**
+     * Null-safe check if the specified Dictionary is empty.
+     *
+     * <p>Null returns true.
+     *
+     * @param map the collection to check, may be null
+     * @return true if empty or null
+     */
+    public static boolean isEmpty(Map map) {
+        return (map == null || map.isEmpty());
+    }
+    
+    /**
+     * Null-safe check if the specified Dictionary is empty.
+     *
+     * <p>Null returns true.
+     *
+     * @param coll the collection to check, may be null
+     * @return true if empty or null
+     */
+    public static boolean isEmpty(Dictionary coll) {
+        return (coll == null || coll.isEmpty());
+    }
+    
+    /**
+     * Null-safe check if the specified Dictionary is not empty.
+     *
+     * <p>Null returns false.
+     *
+     * @param map the collection to check, may be null
+     * @return true if non-null and non-empty
+     */
+    public static boolean isNotEmpty(Map map) {
+        return !isEmpty(map);
+    }
+    
+    /**
+     * Null-safe check if the specified Dictionary is not empty.
+     *
+     * <p>Null returns false.
+     *
+     * @param coll the collection to check, may be null
+     * @return true if non-null and non-empty
+     */
+    public static boolean isNotEmpty(Dictionary coll) {
+        return !isEmpty(coll);
+    }
+    
+    /**
+     * Put into map if value is not null.
+     *
+     * @param target target map
+     * @param key    key
+     * @param value  value
+     */
+    public static void putIfValNoNull(Map target, Object key, Object value) {
+        Objects.requireNonNull(key, "key");
+        if (value != null) {
+            target.put(key, value);
+        }
+    }
+    
+    /**
+     * Put into map if value is not empty.
+     *
+     * @param target target map
+     * @param key    key
+     * @param value  value
+     */
+    public static void putIfValNoEmpty(Map target, Object key, Object value) {
+        Objects.requireNonNull(key, "key");
+        if (value instanceof String) {
+            if (StringUtils.isNotEmpty((String) value)) {
+                target.put(key, value);
+            }
+            return;
+        }
+        if (value instanceof Collection) {
+            if (CollectionUtils.isNotEmpty((Collection) value)) {
+                target.put(key, value);
+            }
+            return;
+        }
+        if (value instanceof Map) {
+            if (isNotEmpty((Map) value)) {
+                target.put(key, value);
+            }
+            return;
+        }
+        if (value instanceof Dictionary) {
+            if (isNotEmpty((Dictionary) value)) {
+                target.put(key, value);
+            }
+            return;
+        }
+    }
+    
+    /**
+     * ComputeIfAbsent lazy load.
+     *
+     * @param target          target Map data.
+     * @param key             map key.
+     * @param mappingFunction function which is need to be executed.
+     * @param param1          function's parameter value1.
+     * @param param2          function's parameter value1.
+     * @return
+     */
+    @NotThreadSafe
+    public static Object computeIfAbsent(Map target, Object key, BiFunction mappingFunction, Object param1,
+            Object param2) {
+        
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(mappingFunction, "mappingFunction");
+        Objects.requireNonNull(param1, "param1");
+        Objects.requireNonNull(param2, "param2");
+        
+        Object val = target.get(key);
+        if (val == null) {
+            Object ret = mappingFunction.apply(param1, param2);
+            target.put(key, ret);
+            return ret;
+        }
+        return val;
+    }
 }

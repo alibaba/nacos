@@ -24,33 +24,35 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * ReuseHttpRequest.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface ReuseHttpRequest extends HttpServletRequest {
-
-	/**
-	 * get request body
-	 *
-	 * @return object
-	 * @throws Exception
-	 */
-	Object getBody() throws Exception;
-
-	/**
-	 * Remove duplicate values from the array
-	 *
-	 * @param request {@link HttpServletRequest}
-	 * @return {@link Map<String, String[]>}
-	 */
-	default Map<String, String[]> toDuplication(HttpServletRequest request) {
-		Map<String, String[]> tmp = request.getParameterMap();
-		Map<String, String[]> result = new HashMap<>(tmp.size());
-		Set<String> set = new HashSet<>();
-		for (Map.Entry<String, String[]>  entry : tmp.entrySet()) {
-			set.addAll(Arrays.asList(entry.getValue()));
-			result.put(entry.getKey(), set.toArray(new String[0]));
-			set.clear();
-		}
-		return result;
-	}
+    
+    /**
+     * get request body.
+     *
+     * @return object
+     * @throws Exception exception
+     */
+    Object getBody() throws Exception;
+    
+    /**
+     * Remove duplicate values from the array.
+     *
+     * @param request {@link HttpServletRequest}
+     * @return {@link Map}
+     */
+    default Map<String, String[]> toDuplication(HttpServletRequest request) {
+        Map<String, String[]> tmp = request.getParameterMap();
+        Map<String, String[]> result = new HashMap<>(tmp.size());
+        Set<String> set = new HashSet<>();
+        for (Map.Entry<String, String[]> entry : tmp.entrySet()) {
+            set.addAll(Arrays.asList(entry.getValue()));
+            result.put(entry.getKey(), set.toArray(new String[0]));
+            set.clear();
+        }
+        return result;
+    }
 }

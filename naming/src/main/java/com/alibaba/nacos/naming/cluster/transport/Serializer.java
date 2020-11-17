@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.cluster.transport;
 
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -21,24 +22,24 @@ import com.alibaba.nacos.naming.pojo.Record;
 import java.util.Map;
 
 /**
- * Serializer specially for large map of data
+ * Serializer specially for large map of data.
  *
  * @author nkorange
  * @since 1.0.0
  */
 public interface Serializer {
-
+    
     /**
-     * Serialize  data with some kind of serializing protocol
+     * Serialize  data with some kind of serializing protocol.
      *
      * @param data data to serialize
      * @param <T>  type of data
      * @return byte array of serialized data
      */
     <T> byte[] serialize(T data);
-
+    
     /**
-     * Deserialize byte array data to target type
+     * Deserialize byte array data to target type.
      *
      * @param data  data to deserialize
      * @param clazz target type
@@ -46,9 +47,9 @@ public interface Serializer {
      * @return deserialized data map
      */
     <T> T deserialize(byte[] data, Class<T> clazz);
-
+    
     /**
-     * Deserialize byte array data to target type
+     * Deserialize byte array data to target type.
      *
      * @param <T>   target type
      * @param data  data to deserialize

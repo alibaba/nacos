@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.healthcheck;
 
 /**
+ * Health check processor.
+ *
  * @author nkorange
  */
 public interface HealthCheckProcessor {
-
+    
     /**
-     * Run check task for service
+     * Run check task for service.
      *
      * @param task check task
      */
     void process(HealthCheckTask task);
-
+    
     /**
-     * Get check task type, refer to enum HealthCheckType
+     * Get check task type, refer to enum HealthCheckType.
      *
      * @return check type
      */

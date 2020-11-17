@@ -21,8 +21,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.test.base.Params;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +63,13 @@ public class ConfigBeta_CITCase {
     String tenant = "dungu";
     String content = "test";
     String appName = "nacos";
+    
+    @BeforeClass
+    @AfterClass
+    public static void cleanClientCache() throws Exception {
+        ConfigCleanUtils.cleanClientCache();
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigBeta_CITCase.class.getSimpleName());
+    }
 
     @Before
     public void init() throws NacosException {
@@ -88,6 +97,7 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.POST);
+        System.out.println("publishBetaConfig : " + response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("true", response.getBody());
     }
@@ -112,6 +122,7 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.POST);
+        System.out.println("publishBetaConfig_no_content : " + response);
         Assert.assertFalse(response.getStatusCode().is2xxSuccessful());
     }
 
@@ -135,8 +146,8 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.POST);
+        System.out.println("publishBetaConfig_noBetaIps_beta post : " + response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        System.out.println(response.getBody());
         Assert.assertEquals("true", response.getBody());
 
         ResponseEntity<String> response1 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
@@ -147,6 +158,7 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.GET);
+        System.out.println("publishBetaConfig_noBetaIps_beta get : " + response);
         Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
         Assert.assertTrue(JacksonUtils.toObj(response1.getBody()).get("data").isNull());
     }
@@ -176,12 +188,13 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.POST);
+        System.out.println("publishBetaConfig_noBetaIps post : " + response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("true", response.getBody());
 
         ThreadUtils.sleep(10_000L);
 
-        ResponseEntity<String> response1 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=false",
+        response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=false",
             Params.newParams()
                 .appendParam("dataId", dataId)
                 .appendParam("group", groupId)
@@ -189,9 +202,9 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.GET);
-        System.out.println(response1);
-        Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals(content, response1.getBody());
+        System.out.println("publishBetaConfig_noBetaIps get : " + response);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals(content, response.getBody());
     }
 
     /**
@@ -215,10 +228,11 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.POST);
+        System.out.println("getBetaConfig post : " + response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("true", response.getBody());
 
-        ResponseEntity<String> response1 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
+        response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
             Params.newParams()
                 .appendParam("dataId", dataId)
                 .appendParam("group", group)
@@ -226,8 +240,9 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.GET);
-        Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response1.getBody()).get("data").get("dataId").asText());
+        System.out.println("getBetaConfig get : " + response);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response.getBody()).get("data").get("dataId").asText());
     }
 
     /**
@@ -252,10 +267,11 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.POST);
+        System.out.println("deleteBetaConfig post : " + response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("true", response.getBody());
 
-        ResponseEntity<String> response1 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
+        response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
             Params.newParams()
                 .appendParam("dataId", dataId)
                 .appendParam("group", group)
@@ -263,10 +279,11 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.GET);
-        Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response1.getBody()).get("data").get("dataId").asText());
-
-        ResponseEntity<String> response2 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
+        System.out.println("deleteBetaConfig get : " + response);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response.getBody()).get("data").get("dataId").asText());
+    
+        response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
             Params.newParams()
                 .appendParam("dataId", dataId)
                 .appendParam("group", group)
@@ -274,10 +291,11 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.DELETE);
-        Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("true", JacksonUtils.toObj(response2.getBody()).get("data").asText());
+        System.out.println("deleteBetaConfig delete : " + response);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("true", JacksonUtils.toObj(response.getBody()).get("data").asText());
 
-        ResponseEntity<String> response3 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
+        response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
             Params.newParams()
                 .appendParam("dataId", dataId)
                 .appendParam("group", group)
@@ -285,8 +303,9 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.GET);
-        Assert.assertTrue(response3.getStatusCode().is2xxSuccessful());
-        Assert.assertTrue(JacksonUtils.toObj(response3.getBody()).get("data").isNull());
+        System.out.println("deleteBetaConfig after delete then get : " + response);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertTrue(JacksonUtils.toObj(response.getBody()).get("data").isNull());
     }
 
 
@@ -312,10 +331,11 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.POST);
+        System.out.println("deleteBetaConfig_delete_beta_false post : " + response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("true", response.getBody());
 
-        ResponseEntity<String> response1 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
+        response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
             Params.newParams()
                 .appendParam("dataId", dataId)
                 .appendParam("group", group)
@@ -323,10 +343,11 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.GET);
-        Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response1.getBody()).get("data").get("dataId").asText());
+        System.out.println("deleteBetaConfig_delete_beta_false get : " + response);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response.getBody()).get("data").get("dataId").asText());
 
-        ResponseEntity<String> response2 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=false",
+        response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=false",
             Params.newParams()
                 .appendParam("dataId", dataId)
                 .appendParam("group", group)
@@ -334,10 +355,11 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.DELETE);
-        Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("true", response2.getBody());
+        System.out.println("deleteBetaConfig_delete_beta_false delete : " + response);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("true", response.getBody());
 
-        ResponseEntity<String> response3 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
+        response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
             Params.newParams()
                 .appendParam("dataId", dataId)
                 .appendParam("group", group)
@@ -345,8 +367,9 @@ public class ConfigBeta_CITCase {
                 .done(),
             String.class,
             HttpMethod.GET);
-        Assert.assertTrue(response3.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response3.getBody()).get("data").get("dataId").asText());
+        System.out.println("deleteBetaConfig_delete_beta_false after delete then get : " + response);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response.getBody()).get("data").get("dataId").asText());
     }
 
     <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {

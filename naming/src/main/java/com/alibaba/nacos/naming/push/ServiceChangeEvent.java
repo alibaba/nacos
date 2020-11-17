@@ -13,24 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.naming.core.Service;
 import org.springframework.context.ApplicationEvent;
 
 /**
+ * Service change event.
+ *
  * @author pbting
  * @date 2019-07-10 5:41 PM
  */
 public class ServiceChangeEvent extends ApplicationEvent {
-
+    
     private Service service;
-
+    
     public ServiceChangeEvent(Object source, Service service) {
         super(source);
         this.service = service;
     }
-
+    
     public Service getService() {
         return service;
     }

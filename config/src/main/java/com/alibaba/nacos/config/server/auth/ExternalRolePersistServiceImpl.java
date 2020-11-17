@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.ExternalStoragePersistServiceImpl;
+import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -33,118 +33,141 @@ import javax.annotation.PostConstruct;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
 
 /**
+ * Implemetation of ExternalRolePersistServiceImpl.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
 public class ExternalRolePersistServiceImpl implements RolePersistService {
-
-	@Autowired
-	private ExternalStoragePersistServiceImpl persistService;
-
-	private JdbcTemplate jt;
-
-	@PostConstruct
-	protected void init() {
-		jt = persistService.getJdbcTemplate();
-	}
-
-	public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-
-		PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-
-		String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
-		String sqlFetchRows
-				= "select role,username from roles where ";
-
-		String where = " 1=1 ";
-
-		try {
-			Page<RoleInfo> pageInfo = helper.fetchPage(sqlCountRows
-							+ where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-					pageSize, ROLE_INFO_ROW_MAPPER);
-			if (pageInfo == null) {
-				pageInfo = new Page<>();
-				pageInfo.setTotalCount(0);
-				pageInfo.setPageItems(new ArrayList<>());
-			}
-			return pageInfo;
-		} catch (CannotGetJdbcConnectionException e) {
-			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
-		}
-	}
-
-	public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
-
-		PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-
-		String sqlCountRows = "select count(*) from roles where ";
-		String sqlFetchRows
-				= "select role,username from roles where ";
-
-		String where = " username='" + username + "' ";
-
-		if (StringUtils.isBlank(username)) {
-			where = " 1=1 ";
-		}
-
-		try {
-			return helper.fetchPage(sqlCountRows
-							+ where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-					pageSize, ROLE_INFO_ROW_MAPPER);
-		} catch (CannotGetJdbcConnectionException e) {
-			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
-		}
-	}
-
-	public void addRole(String role, String userName) {
-
-		String sql = "INSERT into roles (role, username) VALUES (?, ?)";
-
-		try {
-			jt.update(sql, role, userName);
-		} catch (CannotGetJdbcConnectionException e) {
-			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
-		}
-	}
-
-	public void deleteRole(String role) {
-		String sql = "DELETE from roles WHERE role=?";
-		try {
-			jt.update(sql, role);
-		} catch (CannotGetJdbcConnectionException e) {
-			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
-		}
-	}
-
-	public void deleteRole(String role, String username) {
-		String sql = "DELETE from roles WHERE role=? and username=?";
-		try {
-			jt.update(sql, role, username);
-		} catch (CannotGetJdbcConnectionException e) {
-			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
-		}
-	}
-
-	private static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {
-		@Override
-		public RoleInfo mapRow(ResultSet rs, int rowNum)
-				throws SQLException {
-			RoleInfo roleInfo = new RoleInfo();
-			roleInfo.setRole(rs.getString("role"));
-			roleInfo.setUsername(rs.getString("username"));
-			return roleInfo;
-		}
-	}
-
-
+    
+    @Autowired
+    private ExternalStoragePersistServiceImpl persistService;
+    
+    private JdbcTemplate jt;
+    
+    @PostConstruct
+    protected void init() {
+        jt = persistService.getJdbcTemplate();
+    }
+    
+    public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
+        
+        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
+        
+        String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
+        String sqlFetchRows = "select role,username from roles where ";
+        
+        String where = " 1=1 ";
+        
+        try {
+            Page<RoleInfo> pageInfo = helper
+                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                            pageSize, ROLE_INFO_ROW_MAPPER);
+            if (pageInfo == null) {
+                pageInfo = new Page<>();
+                pageInfo.setTotalCount(0);
+                pageInfo.setPageItems(new ArrayList<>());
+            }
+            return pageInfo;
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
+    public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
+        
+        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
+        
+        String sqlCountRows = "select count(*) from roles where ";
+        String sqlFetchRows = "select role,username from roles where ";
+        
+        String where = " username='" + username + "' ";
+        
+        if (StringUtils.isBlank(username)) {
+            where = " 1=1 ";
+        }
+        
+        try {
+            return helper
+                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                            pageSize, ROLE_INFO_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
+    /**
+     * Execute add role operation.
+     *
+     * @param role role string value.
+     * @param userName username string value.
+     */
+    public void addRole(String role, String userName) {
+        
+        String sql = "INSERT into roles (role, username) VALUES (?, ?)";
+        
+        try {
+            jt.update(sql, role, userName);
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
+    /**
+     * Execute delete role operation.
+     *
+     * @param role role string value.
+     */
+    public void deleteRole(String role) {
+        String sql = "DELETE from roles WHERE role=?";
+        try {
+            jt.update(sql, role);
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
+    /**
+     * Execute delete role operation.
+     *
+     * @param role role string value.
+     * @param username username string value.
+     */
+    public void deleteRole(String role, String username) {
+        String sql = "DELETE from roles WHERE role=? and username=?";
+        try {
+            jt.update(sql, role, username);
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
+    @Override
+    public List<String> findRolesLikeRoleName(String role) {
+        String sql = "SELECT role FROM roles WHERE role like '%' ? '%'";
+        List<String> users = this.jt.queryForList(sql, new String[]{role}, String.class);
+        return users;
+    }
+    
+    private static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {
+        
+        @Override
+        public RoleInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+            RoleInfo roleInfo = new RoleInfo();
+            roleInfo.setRole(rs.getString("role"));
+            roleInfo.setUsername(rs.getString("username"));
+            return roleInfo;
+        }
+    }
 }

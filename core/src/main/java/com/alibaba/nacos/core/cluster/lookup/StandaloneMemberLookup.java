@@ -18,23 +18,23 @@ package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 
 import java.util.Collections;
 
 /**
- * Member node addressing mode in stand-alone mode
+ * Member node addressing mode in stand-alone mode.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class StandaloneMemberLookup extends AbstractMemberLookup {
-
-	@Override
-	public void start() {
-		if (start.compareAndSet(false, true)) {
-			String url = InetUtils.getSelfIp() + ":" + ApplicationUtils.getPort();
-			afterLookup(MemberUtils.readServerConf(Collections.singletonList(url)));
-		}
-	}
+    
+    @Override
+    public void start() {
+        if (start.compareAndSet(false, true)) {
+            String url = InetUtils.getSelfIP() + ":" + ApplicationUtils.getPort();
+            afterLookup(MemberUtils.readServerConf(Collections.singletonList(url)));
+        }
+    }
 }

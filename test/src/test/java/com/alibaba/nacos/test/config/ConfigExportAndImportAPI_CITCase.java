@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
-import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
+import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -56,7 +56,13 @@ public class ConfigExportAndImportAPI_CITCase {
     private String SERVER_ADDR = null;
 
     private HttpAgent agent = null;
-
+    
+    @BeforeClass
+    @AfterClass
+    public static void cleanClientCache() throws Exception {
+        ConfigCleanUtils.cleanClientCache();
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigExportAndImportAPI_CITCase.class.getSimpleName());
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -91,31 +97,44 @@ public class ConfigExportAndImportAPI_CITCase {
 
     @After
     public void cleanup() throws Exception{
-        HttpSimpleClient.HttpResult result;
+        HttpRestResult<String> result;
         try {
-            List<String> params2 = Arrays.asList("dataId", "testNoAppname1.yml", "group", "EXPORT_IMPORT_TEST_GROUP", "beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params2, agent.getEncode(), TIME_OUT);
-            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Map<String, String> params = new HashMap<>();
+            params.put("dataId", "testNoAppname1.yml");
+            params.put("group", "EXPORT_IMPORT_TEST_GROUP");
+            params.put("beta", "false");
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
 
-            List<String> params3 = Arrays.asList("dataId", "testNoAppname2.txt", "group", "TEST1_GROUP", "beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params3, agent.getEncode(), TIME_OUT);
-            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            params.put("dataId", "testNoAppname2.txt");
+            params.put("group", "TEST1_GROUP");
+            params.put("beta", "false");
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+    
+            params.put("dataId", "testHasAppname1.properties");
+            params.put("group", "EXPORT_IMPORT_TEST_GROUP");
+            params.put("beta", "false");
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
 
-            List<String> params4 = Arrays.asList("dataId", "testHasAppname1.properties", "group", "EXPORT_IMPORT_TEST_GROUP", "beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params4, agent.getEncode(), TIME_OUT);
-            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            params.put("dataId", "test1.yml");
+            params.put("group", "TEST_IMPORT");
+            params.put("beta", "false");
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
 
-            List<String> params5 = Arrays.asList("dataId", "test1.yml", "group", "TEST_IMPORT", "beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params5, agent.getEncode(), TIME_OUT);
-            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            params.put("dataId", "test2.txt");
+            params.put("group", "TEST_IMPORT");
+            params.put("beta", "false");
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
 
-            List<String> params6 = Arrays.asList("dataId", "test2.txt", "group", "TEST_IMPORT", "beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params6, agent.getEncode(), TIME_OUT);
-            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
-
-            List<String> params7 = Arrays.asList("dataId", "test3.properties", "group", "TEST_IMPORT", "beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params7, agent.getEncode(), TIME_OUT);
-            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            params.put("dataId", "test3.properties");
+            params.put("group", "TEST_IMPORT");
+            params.put("beta", "false");
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
         } catch (Exception e) {
             Assert.fail();
         }

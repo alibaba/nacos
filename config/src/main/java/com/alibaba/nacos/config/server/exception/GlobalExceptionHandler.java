@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -26,45 +27,44 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.io.IOException;
 
 /**
- * global exception handler
+ * Global exception handler.
  *
  * @author Nacos
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
-
+    
     /**
      * For IllegalArgumentException, we are returning void with status code as 400, so our error-page will be used in
      * this case.
      *
-     * @throws IllegalArgumentException
+     * @throws IllegalArgumentException IllegalArgumentException.
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgumentException(Exception ex) throws IOException {
         MetricsMonitor.getIllegalArgumentException().increment();
         return ResponseEntity.status(400).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-
+    
     /**
-     * For NacosException
+     * For NacosException.
      *
-     * @throws NacosException
+     * @throws NacosException NacosException.
      */
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<String> handleNacosException(NacosException ex) throws IOException {
         MetricsMonitor.getNacosException().increment();
         return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-
+    
     /**
-     * For DataAccessException
+     * For DataAccessException.
      *
-     * @throws DataAccessException
+     * @throws DataAccessException DataAccessException.
      */
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<String> handleDataAccessException(DataAccessException ex) throws DataAccessException {
         MetricsMonitor.getDbException().increment();
         return ResponseEntity.status(500).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-
 }
