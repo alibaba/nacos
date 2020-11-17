@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.consistency;
 
-import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 
 /**
  * Can be discovered through SPI or Spring, This interface is just a function definition interface. Different
@@ -27,23 +27,23 @@ import com.alibaba.nacos.consistency.entity.Response;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class LogProcessor {
+public abstract class RequestProcessor {
     
     /**
      * get data by key.
      *
-     * @param request request {@link GetRequest}
+     * @param request request {@link com.alibaba.nacos.consistency.entity.ReadRequest}
      * @return target type data
      */
-    public abstract Response onRequest(GetRequest request);
+    public abstract Response onRequest(ReadRequest request);
     
     /**
      * Process Submitted Log.
      *
-     * @param log {@link Log}
+     * @param log {@link WriteRequest}
      * @return {@link boolean}
      */
-    public abstract Response onApply(Log log);
+    public abstract Response onApply(WriteRequest log);
     
     /**
      * Irremediable errors that need to trigger business price cuts.
