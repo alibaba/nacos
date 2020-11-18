@@ -57,9 +57,9 @@ public class NamingMetadataOperateService {
         MetadataOperation<ServiceMetadata> operation = new MetadataOperation<>();
         operation.setNamespace(service.getNamespace());
         operation.setGroup(service.getGroup());
-        operation.setServiceName(service.getGroupedServiceName());
+        operation.setServiceName(service.getName());
         operation.setMetadata(serviceMetadata);
-        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA).setType(DataOperation.CHANGE.name())
+        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA).setOperation(DataOperation.CHANGE.name())
                 .setData(ByteString.copyFrom(serializer.serialize(operation))).build();
         submitMetadataOperation(operationLog);
     }
@@ -74,7 +74,7 @@ public class NamingMetadataOperateService {
         operation.setNamespace(service.getNamespace());
         operation.setGroup(service.getGroup());
         operation.setServiceName(service.getGroupedServiceName());
-        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA).setType(DataOperation.DELETE.name())
+        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA).setOperation(DataOperation.DELETE.name())
                 .setData(ByteString.copyFrom(serializer.serialize(operation))).build();
         submitMetadataOperation(operationLog);
     }

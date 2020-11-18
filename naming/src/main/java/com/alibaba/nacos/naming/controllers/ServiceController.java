@@ -32,7 +32,10 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.ServiceOperatorV1Impl;
+import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -44,7 +47,6 @@ import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,6 +88,12 @@ public class ServiceController {
     
     @Autowired
     private SubscribeManager subscribeManager;
+    
+    @Autowired
+    private ServiceOperatorV1Impl serviceOperatorV1;
+    
+    @Autowired
+    private ServiceOperatorV2Impl serviceOperatorV2;
     
     /**
      * Create a new service.
@@ -223,7 +231,7 @@ public class ServiceController {
                     .removeIf(entry -> !entry.getKey().startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
         }
         List<String> serviceNameList = ServiceUtil.pageServiceName(pageNo, pageSize, serviceMap);
-    
+        
         result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
         result.put("count", serviceNameList.size());
         
@@ -241,28 +249,17 @@ public class ServiceController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
-        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "service " + serviceName + " not found!");
-        }
-        
-        service.setProtectThreshold(protectThreshold);
-        
-        Map<String, String> metadataMap = UtilsAndCommons.parseMetadata(metadata);
-        service.setMetadata(metadataMap);
-        service.setSelector(parseSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
-        service.setLastModifiedMillis(System.currentTimeMillis());
-        service.recalculateChecksum();
-        service.validate();
-        
-        serviceManager.addOrReplaceService(service);
-        
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.setProtectThreshold(NumberUtils.toFloat(WebUtils.required(request, "protectThreshold")));
+        serviceMetadata.setExtendData(
+                UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
+        serviceMetadata.setSelector(parseSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
+        com.alibaba.nacos.naming.core.v2.pojo.Service service = com.alibaba.nacos.naming.core.v2.pojo.Service
+                .newService(namespaceId, NamingUtils.getGroupName(serviceName),
+                        NamingUtils.getServiceName(serviceName));
+        serviceOperatorV2.update(service, serviceMetadata);
         return "ok";
     }
     
