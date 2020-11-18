@@ -377,12 +377,8 @@ public class EnvUtil {
             String[] paths = path.split(",");
             path = paths[paths.length - 1].substring(FILE_PREFIX.length());
         }
-        String pathSplit = "/";
-        if (!path.endsWith(pathSplit)) {
-            path += pathSplit;
-        }
         try {
-            InputStream inputStream = new FileInputStream(Paths.get(path + "application.properties").toFile());
+            InputStream inputStream = new FileInputStream(Paths.get(path, "application.properties").toFile());
             return new InputStreamResource(inputStream);
         } catch (Exception ignore) {
         }
