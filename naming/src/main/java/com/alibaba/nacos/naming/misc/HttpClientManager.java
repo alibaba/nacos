@@ -168,7 +168,6 @@ public class HttpClientManager {
                     .setMaxConnTotal(-1).setMaxConnPerRoute(-1).setUserAgent("VIPServer").build();
         }
         
-        
         @Override
         protected Logger assignLogger() {
             return SRV_LOG;
