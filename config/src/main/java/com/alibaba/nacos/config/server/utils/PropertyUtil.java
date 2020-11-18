@@ -326,7 +326,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-        ApplicationUtils.injectEnvironment(configurableApplicationContext.getEnvironment());
         loadSetting();
     }
 }

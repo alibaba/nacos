@@ -46,7 +46,6 @@ public class StandaloneProfileApplicationListener
     public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
         
         ConfigurableEnvironment environment = event.getEnvironment();
-        ApplicationUtils.injectEnvironment(environment);
         
         if (environment.getProperty(STANDALONE_MODE_PROPERTY_NAME, boolean.class, false)) {
             environment.addActiveProfile(STANDALONE_SPRING_PROFILE);
