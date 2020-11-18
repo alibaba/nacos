@@ -363,7 +363,7 @@ public class EnvUtil {
     public static Resource getApplicationConfFileResource() {
         Resource customResource = getCustomFileResource();
         if (customResource == null) {
-            return getDefaultResource();
+            return getDefaultFileResource();
         }
         return customResource;
     }
@@ -388,7 +388,7 @@ public class EnvUtil {
         return null;
     }
     
-    private static Resource getDefaultResource() {
+    private static Resource getDefaultFileResource() {
         InputStream inputStream = EnvUtil.class.getResourceAsStream("/application.properties");
         return new InputStreamResource(inputStream);
     }
