@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -27,18 +28,15 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.misc.HttpClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
-import io.netty.channel.ConnectTimeoutException;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
@@ -162,9 +160,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
             Throwable cause = t;
             int maxStackDepth = 50;
             for (int deepth = 0; deepth < maxStackDepth && cause != null; deepth++) {
-                if (cause instanceof SocketTimeoutException || cause instanceof ConnectTimeoutException
-                        || cause instanceof org.apache.http.conn.ConnectTimeoutException
-                        || cause instanceof TimeoutException || cause.getCause() instanceof TimeoutException) {
+                if (HttpUtils.isTimeoutException(t)) {
                     
                     healthCheckCommon.checkFail(ip, task, "http:timeout:" + cause.getMessage());
                     healthCheckCommon.reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task,

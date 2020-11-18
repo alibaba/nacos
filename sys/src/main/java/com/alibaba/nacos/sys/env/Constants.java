@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.sys.env;
 
+import java.io.File;
+
 /**
  * Nacos common constants.
  *
@@ -63,4 +65,33 @@ public interface Constants {
     String NACOS_SERVER_HEADER = "Nacos-Server";
     
     String REQUEST_PATH_SEPARATOR = "-->";
+    
+    /**
+     * ============ naming persistent health check http env.
+     */
+    String NAMING_PERSISTENT = "nacos.naming.persistent";
+    
+    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP = NAMING_PERSISTENT + File.separator + "health_check.http";
+    
+    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP_CONNECTION_REQUEST_TIMEOUT =
+            NAMING_PERSISTENT_HEALTH_CHECK_HTTP + "." + "connection_request_timeout";
+    
+    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP_READ_TIMEOUT_MS =
+            NAMING_PERSISTENT_HEALTH_CHECK_HTTP + "." + "read_timeout_ms";
+    
+    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP_CON_TIMEOUT_MS =
+            NAMING_PERSISTENT_HEALTH_CHECK_HTTP + "." + "con_timeout_ms";
+    
+    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP_IO_THREAD_COUNT =
+            NAMING_PERSISTENT_HEALTH_CHECK_HTTP + "." + "io_thread_count";
+    
+    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP_MAX_REDIRECTS =
+            NAMING_PERSISTENT_HEALTH_CHECK_HTTP + "." + "max_redirects";
+    
+    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP_MAX_CONN_TOTAL =
+            NAMING_PERSISTENT_HEALTH_CHECK_HTTP + "." + "max_conn_total";
+    
+    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP_MAX_CONN_PER_ROUTE =
+            NAMING_PERSISTENT_HEALTH_CHECK_HTTP + "." + "max_conn_per_route";
+    
 }

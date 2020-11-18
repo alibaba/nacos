@@ -25,6 +25,8 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.sys.env.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 
 import java.util.concurrent.TimeUnit;
@@ -63,7 +65,8 @@ public class HttpClientManager {
         NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(SYNC_HTTP_CLIENT_FACTORY);
         APACHE_NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(APACHE_SYNC_HTTP_CLIENT_FACTORY);
         NACOS_ASYNC_REST_TEMPLATE = HttpClientBeanHolder.getNacosAsyncRestTemplate(ASYNC_HTTP_CLIENT_FACTORY);
-        PROCESSOR_NACOS_ASYNC_REST_TEMPLATE = HttpClientBeanHolder.getNacosAsyncRestTemplate(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY);
+        PROCESSOR_NACOS_ASYNC_REST_TEMPLATE = HttpClientBeanHolder
+                .getNacosAsyncRestTemplate(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY);
         
         ThreadUtils.addShutdownHook(new Runnable() {
             @Override
@@ -91,8 +94,8 @@ public class HttpClientManager {
     }
     
     /**
-     * To be compatible with the old version of http client request,
-     * this NacosAsyncRestTemplate is only used for HttpHealthCheckProcessor.
+     * To be compatible with the old version of http client request, this NacosAsyncRestTemplate is only used for
+     * HttpHealthCheckProcessor.
      *
      * @return NacosAsyncRestTemplate
      */
@@ -119,13 +122,10 @@ public class HttpClientManager {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(TIME_OUT_MILLIS)
-                    .setUserAgent(UtilsAndCommons.SERVER_VERSION)
-                    .setMaxConnTotal(-1)
-                    .setMaxConnPerRoute(128)
-                    .setMaxRedirects(0).build();
+                    .setReadTimeOutMillis(TIME_OUT_MILLIS).setUserAgent(UtilsAndCommons.SERVER_VERSION)
+                    .setMaxConnTotal(-1).setMaxConnPerRoute(128).setMaxRedirects(0).build();
         }
-    
+        
         @Override
         protected Logger assignLogger() {
             return SRV_LOG;
@@ -137,8 +137,7 @@ public class HttpClientManager {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(TIME_OUT_MILLIS)
-                    .setMaxRedirects(0).build();
+                    .setReadTimeOutMillis(TIME_OUT_MILLIS).setMaxRedirects(0).build();
         }
         
         @Override
@@ -148,16 +147,14 @@ public class HttpClientManager {
     }
     
     private static class ApacheSyncHttpClientFactory extends AbstractApacheHttpClientFactory {
-    
+        
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder()
-                    .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
+            return HttpClientConfig.builder().setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
                     .setMaxConnTotal(Runtime.getRuntime().availableProcessors() * 2)
-                    .setMaxConnPerRoute(Runtime.getRuntime().availableProcessors())
-                    .setMaxRedirects(0).build();
+                    .setMaxConnPerRoute(Runtime.getRuntime().availableProcessors()).setMaxRedirects(0).build();
         }
-    
+        
         @Override
         protected Logger assignLogger() {
             return SRV_LOG;
@@ -165,22 +162,43 @@ public class HttpClientManager {
     }
     
     private static class ProcessorHttpClientFactory extends AbstractHttpClientFactory {
-    
+        
+        private static final int CONNECTION_REQUEST_TIMEOUT = EnvUtil
+                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_CONNECTION_REQUEST_TIMEOUT, Integer.class,
+                        500);
+        
+        private static final int READ_TIME_OUT_MILLIS = EnvUtil
+                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_READ_TIMEOUT_MS, Integer.class, 500);
+        
+        private static final int CON_TIME_OUT_MILLIS = EnvUtil
+                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_CON_TIMEOUT_MS, Integer.class, 500);
+        
+        private static final int IO_THREAD_COUNT = EnvUtil
+                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_IO_THREAD_COUNT, Integer.class, 1);
+        
+        private static final int MAX_REDIRECTS = EnvUtil
+                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_MAX_REDIRECTS, Integer.class, 0);
+        
+        private static final int MAX_CONN_TOTAL = EnvUtil
+                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_MAX_CONN_TOTAL, Integer.class, -1);
+        
+        private static final int MAX_CONN_PER_ROUTE = EnvUtil
+                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_MAX_CONN_PER_ROUTE, Integer.class, -1);
+        
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder()
-                    .setConnectionRequestTimeout(500)
-                    .setReadTimeOutMillis(500)
-                    .setConTimeOutMillis(500)
-                    .setIoThreadCount(1)
+                    .setConnectionRequestTimeout(CONNECTION_REQUEST_TIMEOUT)
+                    .setReadTimeOutMillis(READ_TIME_OUT_MILLIS)
+                    .setConTimeOutMillis(CON_TIME_OUT_MILLIS)
+                    .setIoThreadCount(IO_THREAD_COUNT)
+                    .setMaxRedirects(MAX_REDIRECTS)
+                    .setMaxConnTotal(MAX_CONN_TOTAL)
+                    .setMaxConnPerRoute(MAX_CONN_PER_ROUTE)
                     .setContentCompressionEnabled(false)
-                    .setMaxRedirects(0)
-                    .setMaxConnTotal(-1)
-                    .setMaxConnPerRoute(-1)
-                    .setUserAgent("VIPServer")
-                    .build();
+                    .setUserAgent("VIPServer").build();
         }
-    
+        
         @Override
         protected Logger assignLogger() {
             return SRV_LOG;
