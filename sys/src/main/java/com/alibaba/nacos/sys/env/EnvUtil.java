@@ -382,7 +382,7 @@ public class EnvUtil {
             path += pathSplit;
         }
         try {
-            InputStream inputStream = new FileInputStream(new File(path + "application.properties"));
+            InputStream inputStream = new FileInputStream(Paths.get(path + "application.properties").toFile());
             return new InputStreamResource(inputStream);
         } catch (Exception ignore) {
         }
