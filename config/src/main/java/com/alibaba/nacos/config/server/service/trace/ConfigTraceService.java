@@ -199,5 +199,4 @@ public class ConfigTraceService {
                 requestIpAppName, ts, "pull", type, delayed, clientIp, sli);
     }
     
-    
 }

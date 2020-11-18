@@ -306,6 +306,7 @@ public abstract class ConfigTransportClient {
      * @param group       group.
      * @param tenat       tenat.
      * @param readTimeous readTimeous.
+     * @param notify query for notify sync.
      * @return content.
      * @throws NacosException throw where query fail .
      */
