@@ -25,8 +25,6 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.sys.env.Constants;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 
 import java.util.concurrent.TimeUnit;
@@ -163,41 +161,13 @@ public class HttpClientManager {
     
     private static class ProcessorHttpClientFactory extends AbstractHttpClientFactory {
         
-        private static final int CONNECTION_REQUEST_TIMEOUT = EnvUtil
-                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_CONNECTION_REQUEST_TIMEOUT, Integer.class,
-                        500);
-        
-        private static final int READ_TIME_OUT_MILLIS = EnvUtil
-                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_READ_TIMEOUT_MS, Integer.class, 500);
-        
-        private static final int CON_TIME_OUT_MILLIS = EnvUtil
-                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_CON_TIMEOUT_MS, Integer.class, 500);
-        
-        private static final int IO_THREAD_COUNT = EnvUtil
-                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_IO_THREAD_COUNT, Integer.class, 1);
-        
-        private static final int MAX_REDIRECTS = EnvUtil
-                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_MAX_REDIRECTS, Integer.class, 0);
-        
-        private static final int MAX_CONN_TOTAL = EnvUtil
-                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_MAX_CONN_TOTAL, Integer.class, -1);
-        
-        private static final int MAX_CONN_PER_ROUTE = EnvUtil
-                .getProperty(Constants.NAMING_PERSISTENT_HEALTH_CHECK_HTTP_MAX_CONN_PER_ROUTE, Integer.class, -1);
-        
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder()
-                    .setConnectionRequestTimeout(CONNECTION_REQUEST_TIMEOUT)
-                    .setReadTimeOutMillis(READ_TIME_OUT_MILLIS)
-                    .setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setIoThreadCount(IO_THREAD_COUNT)
-                    .setMaxRedirects(MAX_REDIRECTS)
-                    .setMaxConnTotal(MAX_CONN_TOTAL)
-                    .setMaxConnPerRoute(MAX_CONN_PER_ROUTE)
-                    .setContentCompressionEnabled(false)
-                    .setUserAgent("VIPServer").build();
+            return HttpClientConfig.builder().setConnectionRequestTimeout(500).setReadTimeOutMillis(500)
+                    .setConTimeOutMillis(500).setIoThreadCount(1).setContentCompressionEnabled(false).setMaxRedirects(0)
+                    .setMaxConnTotal(-1).setMaxConnPerRoute(-1).setUserAgent("VIPServer").build();
         }
+        
         
         @Override
         protected Logger assignLogger() {
