@@ -21,18 +21,21 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ServiceInfoTest {
 
     private ObjectMapper mapper;
 
     private ServiceInfo serviceInfo;
-
+ 
     @Before
     public void setUp() throws Exception {
         mapper = new ObjectMapper();
