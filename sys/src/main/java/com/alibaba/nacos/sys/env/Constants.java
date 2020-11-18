@@ -71,7 +71,7 @@ public interface Constants {
      */
     String NAMING_PERSISTENT = "nacos.naming.persistent";
     
-    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP = NAMING_PERSISTENT + File.separator + "health_check.http";
+    String NAMING_PERSISTENT_HEALTH_CHECK_HTTP = NAMING_PERSISTENT + "." + "health_check.http";
     
     String NAMING_PERSISTENT_HEALTH_CHECK_HTTP_CONNECTION_REQUEST_TIMEOUT =
             NAMING_PERSISTENT_HEALTH_CHECK_HTTP + "." + "connection_request_timeout";
