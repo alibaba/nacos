@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.sys.env;
 
-import java.io.File;
-
 /**
  * Nacos common constants.
  *
