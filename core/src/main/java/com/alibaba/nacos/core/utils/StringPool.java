@@ -34,9 +34,9 @@ public class StringPool {
             .expireAfterAccess(180, TimeUnit.SECONDS).build();
     
     /**
-     * get singleton string value from the pool
+     * get singleton string value from the pool.
      *
-     * @param key
+     * @param key key string to be pooled.
      * @return
      */
     public static String get(String key) {

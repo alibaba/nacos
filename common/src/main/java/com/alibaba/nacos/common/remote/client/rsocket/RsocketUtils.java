@@ -191,12 +191,6 @@ public class RsocketUtils {
         byte[] data = new byte[data1.remaining()];
         payload.data().readBytes(data);
         byte[] bytes = new byte[0];
-        //        try {
-        //            bytes = IoUtils.tryDecompress(data);
-        //        } catch (Exception e) {
-        //            e.printStackTrace();
-        //            return null;
-        //        }
         return new String(bytes);
     }
     
