@@ -1,0 +1,132 @@
+/*!
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+$animationDuration: 2s;
+
+// 品牌色
+$brandColor: #2e3034;
+$mobileWidth: 640px;
+// 页面主体最大宽度
+$contentWidth: 1280px;
+
+@keyframes slashStar {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.home-page {
+  .top-section {
+    position: relative;
+    height: 100vh;
+    .login-panel {
+      position: absolute;
+      right: 40px;
+      width: 480px;
+      height: 540px;
+      top: 90px;
+      border: 0px;
+      input,
+      input::-webkit-input-placeholder {
+        font-size: 16px;
+      }
+      .login-header {
+        width: 100%;
+        line-height: 45px;
+        font-size: 32px;
+        margin-top: 58px;
+        text-align: center;
+      }
+      .login-form {
+        width: 360px;
+        margin: 80px auto auto auto;
+        input {
+          height: 60px;
+        }
+        button {
+          width: 100%;
+          height: 60px;
+          font-size: 16px;
+          background: #4190ff 100%;
+          color: white;
+          border: 0px;
+        }
+      }
+    }
+    .animation {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #1be1f6;
+      &1 {
+        left: 15%;
+        top: 70%;
+        animation: slashStar $animationDuration ease-in-out 0.3s infinite;
+      }
+      &2 {
+        left: 34%;
+        top: 35%;
+        animation: slashStar $animationDuration ease-in-out 1.2s infinite;
+      }
+      &3 {
+        left: 53%;
+        top: 20%;
+        animation: slashStar $animationDuration ease-in-out 0.5s infinite;
+      }
+      &4 {
+        left: 72%;
+        top: 64%;
+        animation: slashStar $animationDuration ease-in-out 0.8s infinite;
+      }
+      &5 {
+        left: 87%;
+        top: 30%;
+        animation: slashStar $animationDuration ease-in-out 1.5s infinite;
+      }
+    }
+    .vertical-middle {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      margin-top: -47px;
+      transform: translateY(-50%);
+    }
+    .product-area {
+      width: 600px;
+      margin-left: 40px;
+    }
+    .product-logo {
+      display: block;
+      width: 257px;
+      height: 50px;
+      margin: 0;
+    }
+    .product-desc {
+      opacity: 0.8;
+      font-family: Avenir-Medium;
+      font-size: 24px;
+      color: #fff;
+      max-width: 780px;
+      margin: 12px auto 30px;
+      text-align: left;
+    }
+  }
+}

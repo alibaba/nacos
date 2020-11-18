@@ -13,28 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.utils;
 
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 /**
+ * Net utils.
+ *
  * @author xuanyin.zy
  */
 public class NetUtils {
-    private static String LOCAL_IP;
-
+    
+    private static String localIp;
+    
+    /**
+     * Get local ip.
+     *
+     * @return local ip
+     */
     public static String localIP() {
         try {
-            if (!StringUtils.isEmpty(LOCAL_IP)) {
-                return LOCAL_IP;
+            if (!StringUtils.isEmpty(localIp)) {
+                return localIp;
             }
-
-            String ip = System.getProperty("com.alibaba.nacos.client.naming.local.ip", InetAddress.getLocalHost().getHostAddress());
-
-            return LOCAL_IP = ip;
+            
+            String ip = System.getProperty("com.alibaba.nacos.client.naming.local.ip",
+                    InetAddress.getLocalHost().getHostAddress());
+            
+            return localIp = ip;
         } catch (UnknownHostException e) {
             return "resolve_failed";
         }

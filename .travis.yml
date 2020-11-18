@@ -1,8 +1,6 @@
 notifications:
   email:
     recipients:
-      - xchaos8@126.com
-      - nacos_dev@linux.alibaba.com
       - dev-nacos@googlegroups.com
       - mw_configcenter@list.alibaba-inc.com
   on_success: change
@@ -30,8 +28,13 @@ before_install:
 
 script:
   - mvn -B clean package apache-rat:check findbugs:findbugs -Dmaven.test.skip=true
-  - mvn -Prelease-nacos clean install -U
+  - mvn clean -Premove-test-data
+  - mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
+  - mvn clean -Premove-test-data
+  - mvn clean install -Pcit-test
+  - mvn clean -Premove-test-data
   - mvn clean package -Pit-test
+  - mvn clean -Premove-test-data
 after_success:
   - mvn clean package -Pit-test
   - mvn sonar:sonar -Psonar-apache

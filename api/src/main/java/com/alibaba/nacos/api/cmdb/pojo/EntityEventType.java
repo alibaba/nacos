@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.cmdb.pojo;
 
 /**
+ * CMDB entity event type.
+ *
  * @author nkorange
  * @since 0.7.0
  */
 public enum EntityEventType {
+    
     /**
-     *
+     * Add or update entity.
      */
     ENTITY_ADD_OR_UPDATE,
     /**
-     *
+     * Remove entity.
      */
     ENTITY_REMOVE
 }

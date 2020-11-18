@@ -13,34 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.cluster.transport.Serializer;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroHttpData;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -52,82 +51,93 @@ import java.util.Map;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
 public class DistroController {
-
+    
     @Autowired
-    private Serializer serializer;
-
-    @Autowired
-    private DistroConsistencyServiceImpl consistencyService;
-
-    @Autowired
-    private DataStore dataStore;
-
+    private DistroProtocol distroProtocol;
+    
     @Autowired
     private ServiceManager serviceManager;
-
+    
     @Autowired
     private SwitchDomain switchDomain;
-
-    @RequestMapping(value = "/datum", method = RequestMethod.PUT)
-    public ResponseEntity onSyncDatum(HttpServletRequest request) throws Exception {
-
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-
-        if (StringUtils.isBlank(entity)) {
+    
+    /**
+     * Synchronize datum.
+     *
+     * @param dataMap data map
+     * @return 'ok' if success
+     * @throws Exception if failed
+     */
+    @PutMapping("/datum")
+    public ResponseEntity onSyncDatum(@RequestBody Map<String, Datum<Instances>> dataMap) throws Exception {
+        
+        if (dataMap.isEmpty()) {
             Loggers.DISTRO.error("[onSync] receive empty entity!");
             throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
         }
-
-        Map<String, Datum<Instances>> dataMap =
-            serializer.deserializeMap(entity.getBytes(), Instances.class);
-
+        
         for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
             if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
                 String namespaceId = KeyBuilder.getNamespace(entry.getKey());
                 String serviceName = KeyBuilder.getServiceName(entry.getKey());
-                if (!serviceManager.containService(namespaceId, serviceName)
-                    && switchDomain.isDefaultInstanceEphemeral()) {
+                if (!serviceManager.containService(namespaceId, serviceName) && switchDomain
+                        .isDefaultInstanceEphemeral()) {
                     serviceManager.createEmptyService(namespaceId, serviceName, true);
                 }
-                consistencyService.onPut(entry.getKey(), entry.getValue().value);
+                DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(entry.getKey()), entry.getValue());
+                distroProtocol.onReceive(distroHttpData);
             }
         }
         return ResponseEntity.ok("ok");
     }
-
-    @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
-    public ResponseEntity syncChecksum(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String source = WebUtils.required(request, "source");
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-        Map<String, String> dataMap =
-            serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, String>>() {
-            });
-        consistencyService.onReceiveChecksums(dataMap, source);
+    
+    /**
+     * Checksum.
+     *
+     * @param source  source server
+     * @param dataMap checksum map
+     * @return 'ok'
+     */
+    @PutMapping("/checksum")
+    public ResponseEntity syncChecksum(@RequestParam String source, @RequestBody Map<String, String> dataMap) {
+        DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(source), dataMap);
+        distroProtocol.onVerify(distroHttpData);
         return ResponseEntity.ok("ok");
     }
-
-    @RequestMapping(value = "/datum", method = RequestMethod.GET)
-    public ResponseEntity get(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-        String keys = JSON.parseObject(entity).getString("keys");
+    
+    /**
+     * Get datum.
+     *
+     * @param body keys of data
+     * @return datum
+     * @throws Exception if failed
+     */
+    @GetMapping("/datum")
+    public ResponseEntity get(@RequestBody String body) throws Exception {
+        
+        JsonNode bodyNode = JacksonUtils.toObj(body);
+        String keys = bodyNode.get("keys").asText();
         String keySplitter = ",";
-        Map<String, Datum> datumMap = new HashMap<>(64);
+        DistroHttpCombinedKey distroKey = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, "");
         for (String key : keys.split(keySplitter)) {
-            Datum datum = consistencyService.get(key);
-            if (datum == null) {
-                continue;
-            }
-            datumMap.put(key, datum);
+            distroKey.getActualResourceTypes().add(key);
         }
-
-        String content = new String(serializer.serialize(datumMap), StandardCharsets.UTF_8);
-        return ResponseEntity.ok(content);
+        DistroData distroData = distroProtocol.onQuery(distroKey);
+        return ResponseEntity.ok(distroData.getContent());
     }
-
-    @RequestMapping(value = "/datums", method = RequestMethod.GET)
-    public ResponseEntity getAllDatums(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String content = new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8);
-        return ResponseEntity.ok(content);
+    
+    /**
+     * Get all datums.
+     *
+     * @return all datums
+     */
+    @GetMapping("/datums")
+    public ResponseEntity getAllDatums() {
+        DistroData distroData = distroProtocol.onSnapshot(KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
+        return ResponseEntity.ok(distroData.getContent());
+    }
+    
+    private DistroKey createDistroKey(String resourceKey) {
+        return new DistroKey(resourceKey, KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
     }
 }

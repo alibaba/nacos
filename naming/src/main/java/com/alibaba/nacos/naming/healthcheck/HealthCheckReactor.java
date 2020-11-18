@@ -13,47 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
+ * Health check reactor.
+ *
  * @author nacos
  */
+@SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class HealthCheckReactor {
-
-    private static final ScheduledExecutorService EXECUTOR;
-
+    
     private static Map<String, ScheduledFuture> futureMap = new ConcurrentHashMap<>();
-
-    static {
-
-        int processorCount = Runtime.getRuntime().availableProcessors();
-        EXECUTOR
-                = Executors
-                .newScheduledThreadPool(processorCount <= 1 ? 1 : processorCount / 2, new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread thread = new Thread(r);
-                        thread.setDaemon(true);
-                        thread.setName("com.alibaba.nacos.naming.health");
-                        return thread;
-                    }
-                });
-    }
-
+    
+    /**
+     * Schedule health check task.
+     *
+     * @param task health check task
+     * @return scheduled future
+     */
     public static ScheduledFuture<?> scheduleCheck(HealthCheckTask task) {
         task.setStartTime(System.currentTimeMillis());
-        return EXECUTOR.schedule(task, task.getCheckRTNormalized(), TimeUnit.MILLISECONDS);
+        return GlobalExecutor.scheduleNamingHealth(task, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
     }
-
+    
+    /**
+     * Schedule client beat check task with a delay.
+     *
+     * @param task client beat check task
+     */
     public static void scheduleCheck(ClientBeatCheckTask task) {
-        futureMap.putIfAbsent(task.taskKey(), EXECUTOR.scheduleWithFixedDelay(task, 5000, 5000, TimeUnit.MILLISECONDS));
+        futureMap.putIfAbsent(task.taskKey(), GlobalExecutor.scheduleNamingHealth(task, 5000, 5000, TimeUnit.MILLISECONDS));
     }
-
+    
+    /**
+     * Cancel client beat check task.
+     *
+     * @param task client beat check task
+     */
     public static void cancelCheck(ClientBeatCheckTask task) {
         ScheduledFuture scheduledFuture = futureMap.get(task.taskKey());
         if (scheduledFuture == null) {
@@ -61,13 +66,19 @@ public class HealthCheckReactor {
         }
         try {
             scheduledFuture.cancel(true);
+            futureMap.remove(task.taskKey());
         } catch (Exception e) {
             Loggers.EVT_LOG.error("[CANCEL-CHECK] cancel failed!", e);
         }
     }
-
-
+    
+    /**
+     * Schedule client beat check task without a delay.
+     *
+     * @param task health check task
+     * @return scheduled future
+     */
     public static ScheduledFuture<?> scheduleNow(Runnable task) {
-        return EXECUTOR.schedule(task, 0, TimeUnit.MILLISECONDS);
+        return GlobalExecutor.scheduleNamingHealth(task, 0, TimeUnit.MILLISECONDS);
     }
 }

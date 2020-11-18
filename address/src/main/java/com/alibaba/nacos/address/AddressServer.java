@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.address;
 
 import org.springframework.boot.SpringApplication;
@@ -26,8 +27,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication(scanBasePackages = "com.alibaba.nacos")
 public class AddressServer {
+    
     public static void main(String[] args) {
-
+        
         SpringApplication.run(AddressServer.class, args);
     }
 }

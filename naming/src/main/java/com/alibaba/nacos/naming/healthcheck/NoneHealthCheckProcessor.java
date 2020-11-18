@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.healthcheck;
 
 import org.springframework.stereotype.Component;
 
 /**
- * Health checker that does nothing
+ * Health checker that does nothing.
  *
  * @author nkorange
  * @since 1.0.0
  */
 @Component
 public class NoneHealthCheckProcessor implements HealthCheckProcessor {
-
+    
     public static final String TYPE = "NONE";
-
+    
     @Override
     public void process(HealthCheckTask task) {
     }
-
+    
     @Override
     public String getType() {
         return TYPE;
