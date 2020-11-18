@@ -251,13 +251,14 @@ public class ServiceController {
     public String update(HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.setProtectThreshold(NumberUtils.toFloat(WebUtils.required(request, "protectThreshold")));
+        serviceMetadata.setExtendData(
+                UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
+        serviceMetadata.setSelector(parseSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
         com.alibaba.nacos.naming.core.v2.pojo.Service service = com.alibaba.nacos.naming.core.v2.pojo.Service
                 .newService(namespaceId, NamingUtils.getGroupName(serviceName),
                         NamingUtils.getServiceName(serviceName));
-        ServiceMetadata serviceMetadata = new ServiceMetadata();
-        serviceMetadata.setProtectThreshold(NumberUtils.toFloat(WebUtils.required(request, "protectThreshold")));
-        serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
-        serviceMetadata.setSelector(parseSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
         serviceOperatorV2.update(service, serviceMetadata);
         return "ok";
     }

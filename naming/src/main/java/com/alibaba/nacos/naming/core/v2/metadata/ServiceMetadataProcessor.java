@@ -32,7 +32,6 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.Optional;
 
 /**
  * Service metadata processor.
