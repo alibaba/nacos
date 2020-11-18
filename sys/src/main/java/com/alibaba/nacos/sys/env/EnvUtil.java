@@ -361,22 +361,35 @@ public class EnvUtil {
     private static final String FILE_PREFIX = "file:";
     
     public static Resource getApplicationConfFileResource() {
-        String path = getProperty("spring.config.location", "/");
-        if (!path.endsWith("/")) {
-            path += "/";
+        Resource customResource = getCustomFileResource();
+        if (customResource == null) {
+            return getDefaultResource();
         }
-        InputStream inputStream = null;
+        return customResource;
+    }
+    
+    private static Resource getCustomFileResource() {
+        String path = getProperty("spring.config.location");
+        if (path == null) {
+            return null;
+        }
         if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
             String[] paths = path.split(",");
             path = paths[paths.length - 1].substring(FILE_PREFIX.length());
         }
+        if (!path.endsWith("/")) {
+            path += "/";
+        }
         try {
-            inputStream = new FileInputStream(new File(path + "application.properties"));
+            InputStream inputStream = new FileInputStream(new File(path + "application.properties"));
+            return new InputStreamResource(inputStream);
         } catch (Exception ignore) {
         }
-        if (inputStream == null) {
-            inputStream = EnvUtil.class.getResourceAsStream("/application.properties");
-        }
+        return null;
+    }
+    
+    private static Resource getDefaultResource() {
+        InputStream inputStream = EnvUtil.class.getResourceAsStream("/application.properties");
         return new InputStreamResource(inputStream);
     }
     
