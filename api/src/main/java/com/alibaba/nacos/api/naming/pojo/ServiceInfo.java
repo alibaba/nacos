@@ -69,16 +69,15 @@ public class ServiceInfo {
     }
     
     /**
-     * There is only one form of the key:groupName@@name@clusters.
-     * This constuctor used by DiskCache.read(String) and FailoverReactor.FailoverFileReader,you should know that 'groupName'
-     * must not be null,and 'clusters' can be null.
+     * There is only one form of the key:groupName@@name@clusters. This constuctor used by DiskCache.read(String) and
+     * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
      */
     public ServiceInfo(String key) {
         int maxIndex = 2;
         int clusterIndex = 2;
         int serviceNameIndex = 1;
         int groupIndex = 0;
-
+        
         String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
         if (keys.length >= maxIndex + 1) {
             this.groupName = keys[groupIndex];
@@ -92,7 +91,7 @@ public class ServiceInfo {
             throw new IllegalArgumentException("Cann't parse out 'groupName',but it must not be null!");
         }
     }
-
+    
     public ServiceInfo(String name, String clusters) {
         this.name = name;
         this.clusters = clusters;
@@ -196,14 +195,6 @@ public class ServiceInfo {
         String serviceName = getGroupedServiceName();
         return getKey(serviceName, clusters);
     }
-
-    private String getGroupedServiceName(){
-        String serviceName = this.name;
-        if (!isEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
-            serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
-        }
-        return serviceName;    
-    }
     
     @JsonIgnore
     public static String getKey(String name, String clusters) {
@@ -221,8 +212,17 @@ public class ServiceInfo {
         try {
             serviceName = URLEncoder.encode(serviceName, "UTF-8");
         } catch (UnsupportedEncodingException e) {
+            //do nothing
         }
         return getKey(serviceName, clusters);
+    }
+    
+    private String getGroupedServiceName() {
+        String serviceName = this.name;
+        if (!isEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+            serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+        }
+        return serviceName;
     }
     
     /**
