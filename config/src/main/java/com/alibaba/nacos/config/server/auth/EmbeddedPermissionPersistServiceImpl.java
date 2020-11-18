@@ -18,9 +18,9 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
+import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +28,8 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.PERMISSION_ROW_MAPPER;
 
@@ -51,15 +53,17 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         
         String sqlCountRows = "select count(*) from permissions where ";
         String sqlFetchRows = "select role,resource,action from permissions where ";
-        
-        String where = " role='" + role + "' ";
-        
-        if (StringUtils.isBlank(role)) {
+    
+        String where = " role= ? ";
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(role)) {
+            params = Collections.singletonList(role);
+        } else {
             where = " 1=1 ";
         }
         
         Page<PermissionInfo> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
                         pageSize, PERMISSION_ROW_MAPPER);
         
         if (pageInfo == null) {
