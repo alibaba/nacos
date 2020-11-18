@@ -16,23 +16,29 @@
 
 package com.alibaba.nacos.consistency.cp;
 
-import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ConsistencyProtocol;
+import com.alibaba.nacos.consistency.RequestProcessor;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
- * cp protocol.
+ * log processor for cp.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public interface CPProtocol<C extends Config, P extends RequestProcessor4CP> extends ConsistencyProtocol<C, P> {
+public abstract class RequestProcessor4CP extends RequestProcessor {
+    
     
     /**
-     * Returns whether this node is a leader node
+     * Discovery snapshot handler It is up to LogProcessor to decide which SnapshotOperate should be loaded and saved by
+     * itself.
      *
-     * @param group business module info
-     * @return is leader
+     * @return {@link List <SnapshotOperate>}
      */
-    boolean isLeader(String group);
+    public List<SnapshotOperation> loadSnapshotOperate() {
+        return Collections.emptyList();
+    }
     
 }

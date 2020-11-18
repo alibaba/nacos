@@ -14,31 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.cp;
+package com.alibaba.nacos.consistency.ap;
 
-import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
-
-import java.util.Collections;
-import java.util.List;
+import com.alibaba.nacos.consistency.RequestProcessor;
 
 /**
- * log processor for cp.
+ * log processor for ap.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public abstract class LogProcessor4CP extends LogProcessor {
-    
-    
-    /**
-     * Discovery snapshot handler It is up to LogProcessor to decide which SnapshotOperate should be loaded and saved by
-     * itself.
-     *
-     * @return {@link List <SnapshotOperate>}
-     */
-    public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.emptyList();
-    }
-    
+public abstract class RequestProcessor4AP extends RequestProcessor {
+
 }

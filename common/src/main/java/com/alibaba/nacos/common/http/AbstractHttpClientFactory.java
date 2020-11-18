@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.BiConsumer;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.apache.http.protocol.RequestContent;
 import org.slf4j.Logger;
 
 import javax.net.ssl.HostnameVerifier;
@@ -70,7 +71,9 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
         final RequestConfig requestConfig = getRequestConfig();
         return new NacosAsyncRestTemplate(assignLogger(), new DefaultAsyncHttpClientRequest(
-                HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig)
+                HttpAsyncClients.custom()
+                        .addInterceptorLast(new RequestContent(true))
+                        .setDefaultRequestConfig(requestConfig)
                         .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
                         .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
                         .setUserAgent(originalRequestConfig.getUserAgent()).build()));
