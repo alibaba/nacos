@@ -361,7 +361,10 @@ public class EnvUtil {
     private static final String FILE_PREFIX = "file:";
     
     public static Resource getApplicationConfFileResource() {
-        String path = getProperty("spring.config.location");
+        String path = getProperty("spring.config.location", "/");
+        if (!path.endsWith("/")) {
+            path += "/";
+        }
         InputStream inputStream = null;
         if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
             String[] paths = path.split(",");
