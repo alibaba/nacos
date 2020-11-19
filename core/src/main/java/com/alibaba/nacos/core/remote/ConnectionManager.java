@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +86,7 @@ public class ConnectionManager {
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
             Loggers.REMOTE
                     .info("new connection registered successfully, connectionid = {},connection={} ", connectionId,
-                    connection);
+                            connection);
         }
     }
     
@@ -119,15 +120,16 @@ public class ConnectionManager {
      * @param clientIp client ip.
      * @return
      */
-    public Connection getConnectionByIp(String clientIp) {
+    public List<Connection> getConnectionByIp(String clientIp) {
         Set<Map.Entry<String, Connection>> entries = connetions.entrySet();
+        List<Connection> connections = new ArrayList<>();
         for (Map.Entry<String, Connection> entry : entries) {
             Connection value = entry.getValue();
             if (clientIp.equals(value.getMetaInfo().clientIp)) {
-                return value;
+                connections.add(value);
             }
         }
-        return null;
+        return connections;
     }
     
     /**
