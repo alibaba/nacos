@@ -371,15 +371,14 @@ public class EnvUtil {
     
     private static Resource getCustomFileResource() {
         String customPath = getProperty("spring.config.location");
-        if (customPath == null) {
-            return getRelativePathResource(Paths.get(EnvUtil.getNacosHome(), "conf"));
-        }
+        
         if (StringUtils.isNotBlank(customPath) && customPath.contains(FILE_PREFIX)) {
             String[] paths = customPath.split(",");
             customPath = paths[paths.length - 1].substring(FILE_PREFIX.length());
             Path parentPath = Paths.get(customPath);
             return getRelativePathResource(parentPath);
         }
+        
         return getRelativePathResource(Paths.get(EnvUtil.getNacosHome(), "conf"));
     }
     
