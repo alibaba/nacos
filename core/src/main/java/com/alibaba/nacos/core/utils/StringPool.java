@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -40,8 +39,11 @@ public class StringPool {
      * @return
      */
     public static String get(String key) {
+        if (key == null) {
+            return key;
+        }
         String value = groupKeyCache.getIfPresent(key);
-        if (StringUtils.isBlank(value)) {
+        if (value == null) {
             groupKeyCache.put(key, key);
             value = groupKeyCache.getIfPresent(key);
         }

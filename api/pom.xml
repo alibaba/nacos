@@ -137,5 +137,10 @@
             <artifactId>protoc-gen-grpc-java</artifactId>
             <type>pom</type>
         </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+        </dependency>
+
     </dependencies>
 </project>
