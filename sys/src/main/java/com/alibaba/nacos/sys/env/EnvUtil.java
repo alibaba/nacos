@@ -363,7 +363,7 @@ public class EnvUtil {
     public static Resource getApplicationConfFileResource() {
         Resource customResource = getCustomFileResource();
         if (customResource == null) {
-            return getDefaultFileResource();
+            return getDefaultResource();
         }
         return customResource;
     }
@@ -371,7 +371,7 @@ public class EnvUtil {
     private static Resource getCustomFileResource() {
         String path = getProperty("spring.config.location");
         if (path == null) {
-            return null;
+            path = EnvUtil.getNacosHome() + "/conf";
         }
         if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
             String[] paths = path.split(",");
@@ -385,7 +385,7 @@ public class EnvUtil {
         return null;
     }
     
-    private static Resource getDefaultFileResource() {
+    private static Resource getDefaultResource() {
         InputStream inputStream = EnvUtil.class.getResourceAsStream("/application.properties");
         return new InputStreamResource(inputStream);
     }
