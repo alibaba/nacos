@@ -21,13 +21,14 @@ import com.alibaba.nacos.common.NotThreadSafe;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Map utils.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MapUtils {
+public class MapUtil {
     
     /**
      * Null-safe check if the specified Dictionary is empty.
@@ -137,8 +138,8 @@ public class MapUtils {
      * @return
      */
     @NotThreadSafe
-    public static Object computeIfAbsent(Map target, Object key, BiFunction mappingFunction, Object param1,
-            Object param2) {
+    public static <K, V> V computeIfAbsent(Map<K, V> target, K key, BiFunction<V, V, V> mappingFunction, V param1,
+            V param2) {
         
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(key, "key");
@@ -146,12 +147,26 @@ public class MapUtils {
         Objects.requireNonNull(param1, "param1");
         Objects.requireNonNull(param2, "param2");
         
-        Object val = target.get(key);
+        V val = target.get(key);
         if (val == null) {
-            Object ret = mappingFunction.apply(param1, param2);
+            V ret = mappingFunction.apply(param1, param2);
             target.put(key, ret);
             return ret;
         }
         return val;
+    }
+    
+    /**
+     * remove value, Thread safety depends on whether the Map is a thread-safe Map.
+     *
+     * @param map map
+     * @param key key
+     * @param removeJudge judge this key can be remove
+     * @param <K> key type
+     * @param <V> value type
+     * @return value
+     */
+    public static <K, V> V removeKey(Map<K, V> map, K key, Predicate<V> removeJudge) {
+        return map.computeIfPresent(key, (k, v) -> removeJudge.test(v) ? null : v);
     }
 }

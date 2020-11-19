@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http.param;
 
-import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.MapUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -70,7 +70,7 @@ public class Query {
      * @return this query
      */
     public Query initParams(Map<String, String> params) {
-        if (MapUtils.isNotEmpty(params)) {
+        if (MapUtil.isNotEmpty(params)) {
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 addParam(entry.getKey(), entry.getValue());
             }
