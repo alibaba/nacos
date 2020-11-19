@@ -31,18 +31,18 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ServiceInfoTest {
-
+    
     private ObjectMapper mapper;
-
+    
     private ServiceInfo serviceInfo;
- 
+    
     @Before
     public void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         serviceInfo = new ServiceInfo("G@@testName", "testClusters");
     }
-
+    
     @Test
     public void testSerialize() throws JsonProcessingException {
         String actual = mapper.writeValueAsString(serviceInfo);
@@ -58,10 +58,11 @@ public class ServiceInfoTest {
         assertFalse(actual.contains("key"));
         assertFalse(actual.contains("keyEncoded"));
     }
-
+    
     @Test
     public void testDeserialize() throws IOException {
-        String example = "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],\"lastRefTime\":0,\"checksum\":\"\",\"allIPs\":false,\"valid\":true,\"groupName\":\"\"}";
+        String example = "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],"
+                + "\"lastRefTime\":0,\"checksum\":\"\",\"allIPs\":false,\"valid\":true,\"groupName\":\"\"}";
         ServiceInfo actual = mapper.readValue(example, ServiceInfo.class);
         assertEquals("G@@testName", actual.getName());
         assertEquals("testClusters", actual.getClusters());
@@ -73,13 +74,13 @@ public class ServiceInfoTest {
         assertTrue(actual.isValid());
         assertFalse(actual.isAllIPs());
     }
-
+    
     @Test
     public void testGetKey() {
         String key = serviceInfo.getKey();
         assertEquals("G@@testName@@testClusters", key);
     }
-
+    
     @Test
     public void testGetKeyEncode() {
         String key = serviceInfo.getKeyEncoded();
@@ -91,14 +92,14 @@ public class ServiceInfoTest {
         }
         assertEquals(key, ServiceInfo.getKey(encodeName, "testClusters"));
     }
-
+    
     @Test
     public void testServiceInfoConstructor() {
         String key1 = "group@@name";
         String key2 = "group@@name@@c2";
         ServiceInfo s1 = new ServiceInfo(key1);
         ServiceInfo s2 = new ServiceInfo(key2);
-
+        
         assertEquals(key1, s1.getKey());
         assertEquals(key2, s2.getKey());
     }
