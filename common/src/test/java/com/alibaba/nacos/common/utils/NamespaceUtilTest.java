@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.utils;
+package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
