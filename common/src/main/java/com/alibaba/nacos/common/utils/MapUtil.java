@@ -138,8 +138,8 @@ public class MapUtil {
      * @return
      */
     @NotThreadSafe
-    public static <K, V> V computeIfAbsent(Map<K, V> target, K key, BiFunction<V, V, V> mappingFunction, V param1,
-            V param2) {
+    public static <K, C, V, T> V computeIfAbsent(Map<K, V> target, K key, BiFunction<C, T, V> mappingFunction, C param1,
+            T param2) {
         
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(key, "key");
