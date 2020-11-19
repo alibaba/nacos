@@ -62,7 +62,6 @@ public class LocalDataChangeEvent extends Event {
         
     }
     
-    
     public LocalDataChangeEvent(String groupKey, boolean isBeta, List<String> betaIps, String content, String type,
             long lastModifiedTs) {
         this.groupKey = groupKey;

@@ -128,7 +128,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     class RpcPushTask implements Runnable {
         
-        ConfigChangeNotifyRequest notifyRequet;
+        ConfigChangeNotifyRequest notifyRequest;
     
         int maxRetryTimes = -1;
         
@@ -144,9 +144,9 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             this(notifyRequet, -1, clientId, clientIp, appName);
         }
     
-        public RpcPushTask(ConfigChangeNotifyRequest notifyRequet, int maxRetryTimes, String clientId, String clientIp,
+        public RpcPushTask(ConfigChangeNotifyRequest notifyRequest, int maxRetryTimes, String clientId, String clientIp,
                 String appName) {
-            this.notifyRequet = notifyRequet;
+            this.notifyRequest = notifyRequest;
             this.maxRetryTimes = maxRetryTimes;
             this.clientId = clientId;
             this.clientIp = clientIp;
@@ -159,22 +159,16 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         
         @Override
         public void run() {
-            rpcPushService.pushWithCallback(clientId, notifyRequet, new AbstractPushCallBack(3000L) {
+            rpcPushService.pushWithCallback(clientId, notifyRequest, new AbstractPushCallBack(3000L) {
                 int retryTimes = tryTimes;
                 
                 @Override
                 public void onSuccess() {
-                    //                    Loggers.REMOTE_PUSH.warn("push success.dataId={},group={},tenant={},clientId={},tryTimes={}",
-                    //                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
-                    //                            retryTimes);
+    
                 }
                 
                 @Override
                 public void onFail(Throwable e) {
-                    //                    Loggers.REMOTE_PUSH.warn("push fail.dataId={},group={},tenant={},clientId={},tryTimes={},errorMessage={}",
-                    //                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
-                    //                            retryTimes, e.getMessage());
-                    //
                     push(RpcPushTask.this);
                 }
     
@@ -185,7 +179,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     }
     
     private void push(RpcPushTask retryTask) {
-        ConfigChangeNotifyRequest notifyRequet = retryTask.notifyRequet;
+        ConfigChangeNotifyRequest notifyRequet = retryTask.notifyRequest;
         if (retryTask.isOverTimes()) {
             Loggers.CORE
                     .warn("push callback retry fail over times .dataId={},group={},tenant={},clientId={},will unregister client.",

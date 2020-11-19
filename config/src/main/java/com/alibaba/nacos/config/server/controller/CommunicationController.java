@@ -19,7 +19,6 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
-import com.alibaba.nacos.config.server.remote.GroupKeyContext;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
@@ -37,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -107,9 +107,9 @@ public class CommunicationController {
         for (String connectionId : listenersClients) {
             Connection client = connectionManager.getConnection(connectionId);
             if (client != null) {
-                GroupKeyContext listenKey = configChangeListenContext.getListenKey(connectionId, groupKey);
-                if (listenKey != null) {
-                    lisentersGroupkeyStatus.put(client.getMetaInfo().getClientIp(), listenKey.getMd5());
+                String md5 = configChangeListenContext.getListenKeyMd5(connectionId, groupKey);
+                if (md5 != null) {
+                    lisentersGroupkeyStatus.put(client.getMetaInfo().getClientIp(), md5);
                 }
             }
         }
@@ -125,14 +125,11 @@ public class CommunicationController {
             @RequestParam("ip") String ip, ModelMap modelMap) {
     
         SampleResult result = longPollingService.getCollectSubscribleInfoByIp(ip);
-        Connection connectionByIp = connectionManager.getConnectionByIp(ip);
-        if (connectionByIp != null) {
-            Set<GroupKeyContext> listenKeys = configChangeListenContext
+        List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
+        for (Connection connectionByIp : connectionsByIp) {
+            Map<String, String> listenKeys = configChangeListenContext
                     .getListenKeys(connectionByIp.getMetaInfo().getConnectionId());
-            Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenKeys.size(), 1);
-            for (GroupKeyContext listenKey : listenKeys) {
-                lisentersGroupkeyStatus.put(listenKey.getGroupkey(), listenKey.getMd5());
-            }
+            Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenKeys);
             result.getLisentersGroupkeyStatus().putAll(lisentersGroupkeyStatus);
         }
         return result;

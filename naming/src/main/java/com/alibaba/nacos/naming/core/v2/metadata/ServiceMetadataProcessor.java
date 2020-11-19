@@ -32,7 +32,6 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.Optional;
 
 /**
  * Service metadata processor.
@@ -81,12 +80,7 @@ public class ServiceMetadataProcessor extends LogProcessor4CP {
     private void updateServiceMetadata(ByteString data) {
         MetadataOperation<ServiceMetadata> op = serializer.deserialize(data.toByteArray(), processType);
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
-        Optional<ServiceMetadata> serviceMetadata = namingMetadataManager.getServiceMetadata(service);
-        if (serviceMetadata.isPresent()) {
-            namingMetadataManager.updateServiceMetadata(service, serviceMetadata.get());
-        } else {
-            namingMetadataManager.updateServiceMetadata(service, op.getMetadata());
-        }
+        namingMetadataManager.updateServiceMetadata(service, op.getMetadata());
     }
     
     private void deleteServiceMetadata(ByteString data) {

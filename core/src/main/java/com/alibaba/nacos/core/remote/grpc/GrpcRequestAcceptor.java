@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
+import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
@@ -30,6 +31,7 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -53,6 +55,12 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
     
         String type = grpcRequest.getMetadata().getType();
+    
+        if (!ApplicationUtils.isStarted()) {
+            responseObserver.onNext(GrpcUtils.convert(new PlainBodyResponse("server is starting.")));
+            responseObserver.onCompleted();
+            return;
+        }
         
         if (ServerCheckRequest.class.getName().equals(type)) {
     

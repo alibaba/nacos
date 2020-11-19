@@ -31,7 +31,6 @@ import io.grpc.Grpc;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
@@ -39,6 +38,7 @@ import io.grpc.ServerInterceptors;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServerTransportFilter;
 import io.grpc.internal.ServerStream;
+import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
@@ -105,7 +105,8 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         };
     
         addServices(handlerRegistry, serverInterceptor);
-        server = ServerBuilder.forPort(getServicePort()).fallbackHandlerRegistry(handlerRegistry)
+    
+        server = NettyServerBuilder.forPort(getServicePort()).fallbackHandlerRegistry(handlerRegistry)
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {

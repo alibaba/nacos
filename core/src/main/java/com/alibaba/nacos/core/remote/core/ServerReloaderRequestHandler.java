@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.ServerReloadResponse;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.utils.RemoteUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -51,8 +52,8 @@ public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadReq
         if (sdkCount <= reloadCount) {
             response.setMessage("ignore");
         } else {
-            if (reloadCount * 1.1 < sdkCount) {
-                reloadCount = (int) (sdkCount * 0.9);
+            if (reloadCount * (1 + RemoteUtils.LOADER_FACTOR) < sdkCount) {
+                reloadCount = (int) (sdkCount * (1 - RemoteUtils.LOADER_FACTOR));
             }
             connectionManager.loadCount(reloadCount, null);
             response.setMessage("ok");

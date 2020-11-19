@@ -105,6 +105,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             @Override
             public void onError(Throwable t) {
                 Loggers.REMOTE.error("grpc streamObserver error .", t);
+                responseObserver.onCompleted();
             }
             
             @Override
