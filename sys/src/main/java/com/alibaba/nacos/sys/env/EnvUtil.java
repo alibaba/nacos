@@ -36,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -369,16 +370,22 @@ public class EnvUtil {
     }
     
     private static Resource getCustomFileResource() {
-        String path = getProperty("spring.config.location");
-        if (path == null) {
-            path = EnvUtil.getNacosHome() + "/conf";
+        String customPath = getProperty("spring.config.location");
+        if (customPath == null) {
+            return getRelativePathResource(Paths.get(EnvUtil.getNacosHome(), "conf"));
         }
-        if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
-            String[] paths = path.split(",");
-            path = paths[paths.length - 1].substring(FILE_PREFIX.length());
+        if (StringUtils.isNotBlank(customPath) && customPath.contains(FILE_PREFIX)) {
+            String[] paths = customPath.split(",");
+            customPath = paths[paths.length - 1].substring(FILE_PREFIX.length());
+            Path parentPath = Paths.get(customPath);
+            return getRelativePathResource(parentPath);
         }
+        return getRelativePathResource(Paths.get(EnvUtil.getNacosHome(), "conf"));
+    }
+    
+    private static Resource getRelativePathResource(Path parentPath) {
         try {
-            InputStream inputStream = new FileInputStream(Paths.get(path, "application.properties").toFile());
+            InputStream inputStream = new FileInputStream(parentPath.resolve("application.properties").toFile());
             return new InputStreamResource(inputStream);
         } catch (Exception ignore) {
         }
