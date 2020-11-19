@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
