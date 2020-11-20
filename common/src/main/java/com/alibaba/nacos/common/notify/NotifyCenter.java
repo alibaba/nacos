@@ -23,7 +23,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.BiFunction;
 import com.alibaba.nacos.common.utils.ClassUtils;
-import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -206,7 +206,7 @@ public class NotifyCenter {
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         synchronized (NotifyCenter.class) {
             // MapUtils.computeIfAbsent is a unsafe method.
-            MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
+            MapUtil.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
         }
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         publisher.addSubscriber(consumer);
@@ -320,7 +320,7 @@ public class NotifyCenter {
         final String topic = ClassUtils.getCanonicalName(eventType);
         synchronized (NotifyCenter.class) {
             // MapUtils.computeIfAbsent is a unsafe method.
-            MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, eventType, queueMaxSize);
+            MapUtil.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, eventType, queueMaxSize);
         }
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         return publisher;

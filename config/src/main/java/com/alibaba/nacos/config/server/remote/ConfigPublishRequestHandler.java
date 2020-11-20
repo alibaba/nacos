@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
-import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
@@ -36,7 +36,6 @@ import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
@@ -52,8 +51,11 @@ import java.util.Map;
 @Component
 public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishRequest, ConfigPubishResponse> {
     
-    @Autowired
-    private PersistService persistService;
+    private final PersistService persistService;
+    
+    public ConfigPublishRequestHandler(PersistService persistService) {
+        this.persistService = persistService;
+    }
     
     @Override
     @Secured(action = ActionTypes.WRITE, resource = "", parser = ConfigResourceParser.class)
@@ -76,12 +78,12 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             ParamUtils.checkParam(dataId, group, "datumId", content);
             ParamUtils.checkParam(tag);
             Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
-            MapUtils.putIfValNoNull(configAdvanceInfo, "config_tags", request.getAdditionParam("configTags"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "desc", request.getAdditionParam("desc"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "use", request.getAdditionParam("use"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "effect", request.getAdditionParam("effect"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "type", type);
-            MapUtils.putIfValNoNull(configAdvanceInfo, "schema", request.getAdditionParam("schema"));
+            MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", request.getAdditionParam("configTags"));
+            MapUtil.putIfValNoNull(configAdvanceInfo, "desc", request.getAdditionParam("desc"));
+            MapUtil.putIfValNoNull(configAdvanceInfo, "use", request.getAdditionParam("use"));
+            MapUtil.putIfValNoNull(configAdvanceInfo, "effect", request.getAdditionParam("effect"));
+            MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
+            MapUtil.putIfValNoNull(configAdvanceInfo, "schema", request.getAdditionParam("schema"));
             ParamUtils.checkParam(configAdvanceInfo);
             
             if (AggrWhitelist.isAggrDataId(dataId)) {

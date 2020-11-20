@@ -37,7 +37,6 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -63,8 +62,11 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     
     private static final int TRY_GET_LOCK_TIMES = 9;
     
-    @Autowired
-    private PersistService persistService;
+    private final PersistService persistService;
+    
+    public ConfigQueryRequestHandler(PersistService persistService) {
+        this.persistService = persistService;
+    }
     
     @Override
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)

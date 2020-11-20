@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.MapUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -37,12 +38,12 @@ public class ConfigChangeListenContext {
     /**
      * groupKey-> connnection set.
      */
-    private Map<String, Set<String>> groupKeyContext = new ConcurrentHashMap<String, Set<String>>();
+    private final Map<String, Set<String>> groupKeyContext = new ConcurrentHashMap<String, Set<String>>(128);
     
     /**
      * connectionId-> groupkey set.
      */
-    private Map<String, HashMap<String, String>> connectionIdContext = new ConcurrentHashMap<String, HashMap<String, String>>();
+    private final Map<String, HashMap<String, String>> connectionIdContext = new ConcurrentHashMap<String, HashMap<String, String>>(128);
     
     /**
      * add listen .
@@ -83,7 +84,7 @@ public class ConfigChangeListenContext {
         if (connectionIds != null) {
             connectionIds.remove(connectionId);
             if (connectionIds.isEmpty()) {
-                groupKeyContext.remove(listenKey);
+                MapUtil.removeKey(groupKeyContext, listenKey, CollectionUtils::isEmpty);
             }
         }
         
@@ -110,17 +111,16 @@ public class ConfigChangeListenContext {
         if (listenKeys != null) {
             for (Map.Entry<String, String> groupKey : listenKeys.entrySet()) {
             
-                Set<String> connetionIds = groupKeyContext.get(groupKey.getKey());
-                if (CollectionUtils.isNotEmpty(connetionIds)) {
-                    connetionIds.remove(connectionId);
+                Set<String> connectionIds = groupKeyContext.get(groupKey.getKey());
+                if (CollectionUtils.isNotEmpty(connectionIds)) {
+                    connectionIds.remove(connectionId);
                 } else {
-                    groupKeyContext.remove(groupKey.getKey());
+                    MapUtil.removeKey(groupKeyContext, groupKey.getKey(), CollectionUtils::isEmpty);
                 }
             
             }
         }
-    
-        connectionIdContext.remove(connectionId);
+        MapUtil.removeKey(connectionIdContext, connectionId, MapUtil::isEmpty);
     }
     
     /**

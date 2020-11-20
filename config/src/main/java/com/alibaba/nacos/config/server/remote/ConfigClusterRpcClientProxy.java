@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -33,8 +32,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class ConfigClusterRpcClientProxy {
     
-    @Autowired
-    ClusterRpcClientProxy clusterRpcClientProxy;
+    final ClusterRpcClientProxy clusterRpcClientProxy;
+    
+    public ConfigClusterRpcClientProxy(ClusterRpcClientProxy clusterRpcClientProxy) {
+        this.clusterRpcClientProxy = clusterRpcClientProxy;
+    }
     
     /**
      * sync config change request.
