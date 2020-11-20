@@ -164,9 +164,7 @@ public class EnvUtil {
         if (Objects.isNull(contextPath)) {
             contextPath = getProperty(Constants.WEB_CONTEXT_PATH, "/nacos");
             if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
-                return StringUtils.EMPTY;
-            } else {
-                return contextPath;
+                contextPath = StringUtils.EMPTY;
             }
         }
         return contextPath;
