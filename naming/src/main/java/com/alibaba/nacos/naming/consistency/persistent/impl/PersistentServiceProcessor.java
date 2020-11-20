@@ -46,7 +46,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.utils.Constants;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.stereotype.Service;
@@ -151,7 +151,7 @@ public class PersistentServiceProcessor extends RequestProcessor4CP implements P
                 .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
                         (o, arg) -> hasLeader = StringUtils.isNotBlank(String.valueOf(arg)));
         // If you choose to use the new RAFT protocol directly, there will be no compatible logical execution
-        if (ApplicationUtils.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
+        if (EnvUtil.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
             NotifyCenter.registerSubscriber(notifier);
             waitLeader();
             startNotify = true;

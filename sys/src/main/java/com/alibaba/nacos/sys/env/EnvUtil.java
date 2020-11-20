@@ -91,6 +91,10 @@ public class EnvUtil {
         EnvUtil.environment = environment;
     }
     
+    public static boolean containsProperty(String key) {
+        return environment.containsProperty(key);
+    }
+    
     public static String getProperty(String key) {
         return environment.getProperty(key);
     }
