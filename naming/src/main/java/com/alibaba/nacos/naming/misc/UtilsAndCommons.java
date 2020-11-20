@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 
@@ -120,7 +120,7 @@ public class UtilsAndCommons {
     public static final String PERSIST = "persist";
     
     public static final String DATA_BASE_DIR =
-            ApplicationUtils.getNacosHome() + File.separator + "data" + File.separator + "naming";
+            EnvUtil.getNacosHome() + File.separator + "data" + File.separator + "naming";
     
     public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos.naming";
     

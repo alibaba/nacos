@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,14 +48,14 @@ public class StandaloneProfileApplicationListener
         
         ConfigurableEnvironment environment = event.getEnvironment();
         ApplicationUtils.injectEnvironment(environment);
-        
+    
         if (environment.getProperty(STANDALONE_MODE_PROPERTY_NAME, boolean.class, false)) {
             environment.addActiveProfile(STANDALONE_SPRING_PROFILE);
         }
         
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Spring Environment's active profiles : {} in standalone mode : {}",
-                    Arrays.asList(environment.getActiveProfiles()), ApplicationUtils.getStandaloneMode());
+                    Arrays.asList(environment.getActiveProfiles()), EnvUtil.getStandaloneMode());
         }
         
     }

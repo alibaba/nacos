@@ -24,6 +24,7 @@ import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import org.junit.After;
@@ -64,7 +65,7 @@ public class ServerMemberManager_ITCase {
     public static void initClass() throws Exception {
         System.setProperty(Constants.NACOS_SERVER_IP, "127.0.0.1");
         System.setProperty("server.port", "8847");
-        ApplicationUtils.setIsStandalone(true);
+        EnvUtil.setIsStandalone(true);
         ApplicationUtils.injectEnvironment(new StandardEnvironment());
     }
     
