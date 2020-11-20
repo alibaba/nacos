@@ -24,7 +24,6 @@ import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.sun.management.OperatingSystemMXBean;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.Profiles;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 
@@ -90,22 +89,6 @@ public class EnvUtil {
     
     public static void setEnvironment(ConfigurableEnvironment environment) {
         EnvUtil.environment = environment;
-    }
-    
-    public static String[] getActiveProfiles() {
-        return environment.getActiveProfiles();
-    }
-    
-    public static String[] getDefaultProfiles() {
-        return environment.getDefaultProfiles();
-    }
-    
-    public static boolean acceptsProfiles(String... strings) {
-        return environment.acceptsProfiles(Profiles.of(strings));
-    }
-    
-    public static boolean acceptsProfiles(Profiles profiles) {
-        return environment.acceptsProfiles(profiles);
     }
     
     public static boolean containsProperty(String key) {
