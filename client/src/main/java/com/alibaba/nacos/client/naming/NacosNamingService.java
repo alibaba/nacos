@@ -28,13 +28,15 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
-import com.alibaba.nacos.client.naming.core.EventDispatcher;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -59,7 +61,7 @@ public class NacosNamingService implements NamingService {
     
     private ServiceInfoHolder serviceInfoHolder;
     
-    private EventDispatcher eventDispatcher;
+    private InstancesChangeNotifier changeNotifier;
     
     private NamingClientProxy clientProxy;
     
@@ -80,10 +82,11 @@ public class NacosNamingService implements NamingService {
         InitUtils.initWebRootContext();
         initLogName(properties);
         
-        this.eventDispatcher = new EventDispatcher();
-        this.serviceInfoHolder = new ServiceInfoHolder(eventDispatcher, namespace, properties);
-        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, properties,
-                eventDispatcher);
+        this.changeNotifier = new InstancesChangeNotifier();
+        NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
+        NotifyCenter.registerSubscriber(changeNotifier);
+        this.serviceInfoHolder = new ServiceInfoHolder(namespace, properties);
+        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, properties, changeNotifier);
     }
     
     private void initLogName(Properties properties) {
@@ -367,8 +370,12 @@ public class NacosNamingService implements NamingService {
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        eventDispatcher.addListener(clientProxy.subscribe(serviceName, groupName, StringUtils.join(clusters, ",")),
-                StringUtils.join(clusters, ","), listener);
+        if (null == listener) {
+            return;
+        }
+        String clusterString = StringUtils.join(clusters, ",");
+        changeNotifier.registerListener(NamingUtils.getGroupedName(serviceName, groupName), clusterString, listener);
+        clientProxy.subscribe(serviceName, groupName, clusterString);
     }
     
     @Override
@@ -391,8 +398,8 @@ public class NacosNamingService implements NamingService {
             throws NacosException {
         String fullServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         String clustersString = StringUtils.join(clusters, ",");
-        eventDispatcher.removeListener(fullServiceName, clustersString, listener);
-        if (!eventDispatcher.isSubscribed(fullServiceName, clustersString)) {
+        changeNotifier.deregisterListener(fullServiceName, clustersString, listener);
+        if (!changeNotifier.isSubscribed(fullServiceName, clustersString)) {
             clientProxy.unsubscribe(serviceName, groupName, clustersString);
         }
     }
@@ -421,7 +428,7 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public List<ServiceInfo> getSubscribeServices() {
-        return eventDispatcher.getSubscribeServices();
+        return changeNotifier.getSubscribeServices();
     }
     
     @Override
@@ -431,7 +438,6 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void shutDown() throws NacosException {
-        eventDispatcher.shutdown();
         serviceInfoHolder.shutdown();
         clientProxy.shutdown();
     }
