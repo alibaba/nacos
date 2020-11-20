@@ -139,7 +139,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     }
     
     private NamingClientProxy getExecuteClientProxy() {
-        return grpcClientProxy.isEnable() ? grpcClientProxy : httpClientProxy;
+        return grpcClientProxy;
     }
     
     @Override

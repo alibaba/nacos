@@ -165,21 +165,21 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     
     @Override
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
-        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceNameWithGroup, clusters,
+        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, groupName, serviceName, clusters,
                 true);
         SubscribeServiceResponse response = requestToServer(request, SubscribeServiceResponse.class);
-        namingGrpcConnectionEventListener.cacheSubscriberForRedo(serviceNameWithGroup, clusters);
+        namingGrpcConnectionEventListener
+                .cacheSubscriberForRedo(NamingUtils.getGroupedName(serviceName, groupName), clusters);
         return response.getServiceInfo();
     }
     
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
-        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceNameWithGroup, clusters,
+        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceName, groupName, clusters,
                 false);
         requestToServer(request, SubscribeServiceResponse.class);
-        namingGrpcConnectionEventListener.removeSubscriberForRedo(serviceNameWithGroup, clusters);
+        namingGrpcConnectionEventListener
+                .removeSubscriberForRedo(NamingUtils.getGroupedName(serviceName, groupName), clusters);
     }
     
     @Override
@@ -193,7 +193,8 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
         try {
-            Response response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            Response response =
+                    requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }
