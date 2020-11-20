@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -44,7 +43,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
     public void run() {
         try {
             ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
-            serviceInfo = ServiceUtil.filterInstances(serviceInfo, StringUtils.EMPTY, true);
+            serviceInfo = ServiceUtil.selectInstances(serviceInfo, true, true);
             for (String each : delayTaskEngine.getIndexesManager().getAllClientsSubscribeService(service)) {
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
                 delayTaskEngine.getPushExecuteService().doPush(each, subscriber, serviceInfo);
