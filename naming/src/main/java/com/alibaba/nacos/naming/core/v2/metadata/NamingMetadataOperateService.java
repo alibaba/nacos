@@ -54,13 +54,11 @@ public class NamingMetadataOperateService {
      * @param serviceMetadata metadata
      */
     public void updateServiceMetadata(Service service, ServiceMetadata serviceMetadata) {
-        MetadataOperation<ServiceMetadata> operation = new MetadataOperation<>();
-        operation.setNamespace(service.getNamespace());
-        operation.setGroup(service.getGroup());
-        operation.setServiceName(service.getName());
+        MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
         operation.setMetadata(serviceMetadata);
-        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA).setOperation(DataOperation.CHANGE.name())
-                .setData(ByteString.copyFrom(serializer.serialize(operation))).build();
+        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA)
+                .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
+                .build();
         submitMetadataOperation(operationLog);
     }
     
@@ -70,13 +68,51 @@ public class NamingMetadataOperateService {
      * @param service service of metadata
      */
     public void deleteServiceMetadata(Service service) {
-        MetadataOperation<ServiceMetadata> operation = new MetadataOperation<>();
-        operation.setNamespace(service.getNamespace());
-        operation.setGroup(service.getGroup());
-        operation.setServiceName(service.getGroupedServiceName());
-        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA).setOperation(DataOperation.DELETE.name())
-                .setData(ByteString.copyFrom(serializer.serialize(operation))).build();
+        MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
+        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA)
+                .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
+                .build();
         submitMetadataOperation(operationLog);
+    }
+    
+    /**
+     * Update instance metadata.
+     *
+     * @param service          service of metadata
+     * @param instanceId       instance Id
+     * @param instanceMetadata metadata
+     */
+    public void updateInstanceMetadata(Service service, String instanceId, InstanceMetadata instanceMetadata) {
+        MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
+        operation.setTag(instanceId);
+        operation.setMetadata(instanceMetadata);
+        Log operationLog = Log.newBuilder().setGroup(Constants.INSTANCE_METADATA)
+                .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
+                .build();
+        submitMetadataOperation(operationLog);
+    }
+    
+    /**
+     * Delete instance metadata.
+     *
+     * @param service    service of metadata
+     * @param instanceId instance Id
+     */
+    public void deleteInstanceMetadata(Service service, String instanceId) {
+        MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
+        operation.setTag(instanceId);
+        Log operationLog = Log.newBuilder().setGroup(Constants.INSTANCE_METADATA)
+                .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
+                .build();
+        submitMetadataOperation(operationLog);
+    }
+    
+    private <T> MetadataOperation<T> buildMetadataOperation(Service service) {
+        MetadataOperation<T> result = new MetadataOperation<>();
+        result.setNamespace(service.getNamespace());
+        result.setGroup(service.getGroup());
+        result.setServiceName(service.getName());
+        return result;
     }
     
     private void submitMetadataOperation(Log operationLog) {

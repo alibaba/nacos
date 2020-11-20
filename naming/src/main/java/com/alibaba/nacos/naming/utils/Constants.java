@@ -26,6 +26,8 @@ public final class Constants {
     
     public static final String SERVICE_METADATA = "naming_service_metadata";
     
+    public static final String INSTANCE_METADATA = "naming_instance_metadata";
+    
     public static final String NAMING_PERSISTENT_SERVICE_GROUP = "naming_persistent_service";
     
     public static final String NACOS_NAMING_USE_NEW_RAFT_FIRST = "nacos.naming.use-new-raft.first";
