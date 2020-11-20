@@ -20,10 +20,10 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
-import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -41,7 +41,7 @@ import java.util.Collections;
  * @author xiweng.yy
  */
 @Component
-public class InstanceMetadataProcessor extends LogProcessor4CP {
+public class InstanceMetadataProcessor extends RequestProcessor4CP {
     
     private final NamingMetadataManager namingMetadataManager;
     
@@ -58,22 +58,22 @@ public class InstanceMetadataProcessor extends LogProcessor4CP {
     }
     
     @Override
-    public Response onRequest(GetRequest request) {
+    public Response onRequest(ReadRequest request) {
         return null;
     }
     
     @Override
-    public Response onApply(Log log) {
-        switch (DataOperation.valueOf(log.getOperation())) {
+    public Response onApply(WriteRequest request) {
+        switch (DataOperation.valueOf(request.getOperation())) {
             case ADD:
             case CHANGE:
-                updateInstanceMetadata(log.getData());
+                updateInstanceMetadata(request.getData());
                 break;
             case DELETE:
-                deleteInstanceMetadata(log.getData());
+                deleteInstanceMetadata(request.getData());
                 break;
             default:
-                return Response.newBuilder().setSuccess(false).setErrMsg("Unsupported operation " + log.getOperation())
+                return Response.newBuilder().setSuccess(false).setErrMsg("Unsupported operation " + request.getOperation())
                         .build();
         }
         return Response.newBuilder().setSuccess(true).build();

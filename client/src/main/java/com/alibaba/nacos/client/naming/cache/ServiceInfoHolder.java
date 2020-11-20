@@ -23,8 +23,9 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
-import com.alibaba.nacos.client.naming.core.EventDispatcher;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -51,15 +52,12 @@ public class ServiceInfoHolder implements Closeable {
     
     private final ConcurrentMap<String, ServiceInfo> serviceInfoMap;
     
-    private final EventDispatcher eventDispatcher;
-    
     private final FailoverReactor failoverReactor;
     
     private String cacheDir;
     
-    public ServiceInfoHolder(EventDispatcher eventDispatcher, String namespace, Properties properties) {
+    public ServiceInfoHolder(String namespace, Properties properties) {
         initCacheDir(namespace);
-        this.eventDispatcher = eventDispatcher;
         if (isLoadCacheAtStart(properties)) {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
         } else {
@@ -142,7 +140,8 @@ public class ServiceInfoHolder implements Closeable {
         if (changed) {
             NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> "
                     + JacksonUtils.toJson(serviceInfo.getHosts()));
-            eventDispatcher.serviceChanged(serviceInfo);
+            NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+                    serviceInfo.getClusters(), serviceInfo.getHosts()));
             DiskCache.write(serviceInfo, cacheDir);
         }
         return serviceInfo;

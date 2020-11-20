@@ -172,6 +172,7 @@ public class NacosConfigService implements ConfigService {
         cr.setTenant(tenant);
         cr.setGroup(group);
         cr.setContent(content);
+        cr.setType(type);
         configFilterChainManager.doFilter(cr, null);
         content = cr.getContent();
     
