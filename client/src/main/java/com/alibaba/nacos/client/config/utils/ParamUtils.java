@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.IpUtils;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.List;
@@ -190,7 +190,7 @@ public class ParamUtils {
         }
         String[] ipsArr = betaIps.split(",");
         for (String ip : ipsArr) {
-            if (!IpUtils.isIpv4(ip)) {
+            if (!IPUtil.isIP(ip)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "betaIps invalid");
             }
         }

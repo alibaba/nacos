@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -46,7 +47,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
         String url = "http://" + serverIP + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service/status";
         
-        if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+        if (IPUtil.containsPort(serverIP)) {
             url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/service/status";
         }

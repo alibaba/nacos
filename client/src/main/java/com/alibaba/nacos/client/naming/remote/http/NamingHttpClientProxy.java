@@ -50,6 +50,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -474,8 +475,8 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
             url = curServer + api;
         } else {
-            if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
-                curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
+            if (!IPUtil.containsPort(curServer)) {
+                curServer = curServer + IPUtil.IP_PORT_SPLITER + serverPort;
             }
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }

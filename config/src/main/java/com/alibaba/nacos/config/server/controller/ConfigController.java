@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
@@ -134,6 +135,10 @@ public class ConfigController {
         final String srcIp = RequestUtil.getRemoteIp(request);
         final String requestIpApp = RequestUtil.getAppName(request);
         srcUser = RequestUtil.getSrcUserName(request);
+        //check type
+        if (!ConfigType.isValidType(type)) {
+            type = ConfigType.getDefaultType().getType();
+        }
         // check tenant
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);

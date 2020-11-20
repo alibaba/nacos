@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -55,15 +56,15 @@ public class ServiceInfoUpdateService implements Closeable {
     
     private final NamingClientProxy namingClientProxy;
     
-    private final EventDispatcher eventDispatcher;
+    private final InstancesChangeNotifier changeNotifier;
     
     public ServiceInfoUpdateService(Properties properties, ServiceInfoHolder serviceInfoHolder,
-            NamingClientProxy namingClientProxy, EventDispatcher eventDispatcher) {
+            NamingClientProxy namingClientProxy, InstancesChangeNotifier changeNotifier) {
         this.executor = new ScheduledThreadPoolExecutor(initPollingThreadCount(properties),
                 new NameThreadFactory("com.alibaba.nacos.client.naming.updater"));
         this.serviceInfoHolder = serviceInfoHolder;
         this.namingClientProxy = namingClientProxy;
-        this.eventDispatcher = eventDispatcher;
+        this.changeNotifier = changeNotifier;
     }
     
     private int initPollingThreadCount(Properties properties) {
@@ -155,7 +156,7 @@ public class ServiceInfoUpdateService implements Closeable {
             long delayTime = -1;
             
             try {
-                if (!eventDispatcher.isSubscribed(groupedServiceName, clusters) && !futureMap.containsKey(serviceKey)) {
+                if (!changeNotifier.isSubscribed(groupedServiceName, clusters) && !futureMap.containsKey(serviceKey)) {
                     NAMING_LOGGER
                             .info("update task is stopped, service:" + groupedServiceName + ", clusters:" + clusters);
                     return;

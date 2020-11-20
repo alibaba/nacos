@@ -173,22 +173,11 @@ public class InstanceController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        final String namespaceId = WebUtils
+        String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        NamingUtils.checkServiceNameFormat(serviceName);
-        final Instance instance = parseInstance(request);
-        
-        String agent = WebUtils.getUserAgent(request);
-        
-        ClientInfo clientInfo = new ClientInfo(agent);
-        
-        if (clientInfo.type == ClientInfo.ClientType.JAVA
-                && clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
-            serviceManager.updateInstance(namespaceId, serviceName, instance);
-        } else {
-            serviceManager.registerInstance(namespaceId, serviceName, instance);
-        }
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
+        instanceService.updateInstance(namespaceId, serviceName, groupName, parseInstance(request));
         return "ok";
     }
     

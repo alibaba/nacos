@@ -68,7 +68,6 @@ public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCh
     
     @Override
     public void doHealthCheck() {
-        // TODO add white list like v1 {@code marked}
         try {
             Collection<Service> services = client.getAllPublishedService();
             for (Service each : services) {

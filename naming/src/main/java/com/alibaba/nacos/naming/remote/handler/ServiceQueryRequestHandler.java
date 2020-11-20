@@ -50,7 +50,7 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
         String cluster = null == request.getCluster() ? "" : request.getCluster();
         boolean healthyOnly = request.isHealthyOnly();
         ServiceInfo result = serviceStorage.getData(service);
-        result = ServiceUtil.filterInstances(result, cluster, healthyOnly);
+        result = ServiceUtil.selectInstances(result, cluster, healthyOnly, true);
         return QueryServiceResponse.buildSuccessResponse(result);
     }
 }

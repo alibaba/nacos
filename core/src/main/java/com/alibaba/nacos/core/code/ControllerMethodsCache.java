@@ -21,11 +21,11 @@ import com.alibaba.nacos.core.auth.RequestMappingInfo;
 import com.alibaba.nacos.core.auth.RequestMappingInfo.RequestMappingInfoComparator;
 import com.alibaba.nacos.core.auth.condition.ParamRequestCondition;
 import com.alibaba.nacos.core.auth.condition.PathRequestCondition;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,9 +59,6 @@ public class ControllerMethodsCache {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ControllerMethodsCache.class);
     
-    @Value("${server.servlet.contextPath:/nacos}")
-    private String contextPath;
-    
     private ConcurrentMap<RequestMappingInfo, Method> methods = new ConcurrentHashMap<>();
     
     private final ConcurrentMap<String, List<RequestMappingInfo>> urlLookup = new ConcurrentHashMap<>();
@@ -72,7 +69,7 @@ public class ControllerMethodsCache {
             return null;
         }
         String httpMethod = request.getMethod();
-        String urlKey = httpMethod + REQUEST_PATH_SEPARATOR + path.replace(contextPath, "");
+        String urlKey = httpMethod + REQUEST_PATH_SEPARATOR + path.replaceFirst(ApplicationUtils.getContextPath(), "");
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
         if (CollectionUtils.isEmpty(requestMappingInfos)) {
             return null;
@@ -225,13 +222,5 @@ public class ControllerMethodsCache {
         }
         requestMappingInfos.add(requestMappingInfo);
         methods.put(requestMappingInfo, method);
-    }
-    
-    public String getContextPath() {
-        return contextPath;
-    }
-    
-    public void setContextPath(String contextPath) {
-        this.contextPath = contextPath;
     }
 }
