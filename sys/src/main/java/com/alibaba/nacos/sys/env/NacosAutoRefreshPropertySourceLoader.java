@@ -57,7 +57,7 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
         properties.putAll(tmp);
         
         try {
-            WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), new FileWatcher() {
+            WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
                 @Override
                 public void onChange(FileChangeEvent event) {
                     try {

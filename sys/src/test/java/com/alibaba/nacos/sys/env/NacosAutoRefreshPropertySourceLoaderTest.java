@@ -52,19 +52,19 @@ public class NacosAutoRefreshPropertySourceLoaderTest {
     
     @BeforeClass
     public static void before() throws URISyntaxException {
-        oldConfPath = ApplicationUtils.getConfFilePath();
-        ApplicationUtils.setConfFilePath(new File(ClassLoader.getSystemResource("application.properties").toURI()).getParent());
+        oldConfPath = EnvUtil.getConfPath();
+        EnvUtil.setConfPath(new File(ClassLoader.getSystemResource("application.properties").toURI()).getParent());
     }
     
     @AfterClass
     public static void after() {
-        ApplicationUtils.setConfFilePath(oldConfPath);
+        EnvUtil.setConfPath(oldConfPath);
     }
 
     @Test
     public void testConfigFileAutoRefresh() throws URISyntaxException, InterruptedException, NacosException, IOException {
         final URL url = ClassLoader.getSystemResource("application.properties");
-        ApplicationUtils.setContextPath(url.getPath());
+        EnvUtil.setContextPath(url.getPath());
         final String val1 = environment.getProperty("name");
         Assert.assertEquals("test-1", val1);
         final File file = new File(url.toURI());
@@ -72,7 +72,7 @@ public class NacosAutoRefreshPropertySourceLoaderTest {
         final String newVal = System.currentTimeMillis() + "-lessspring";
         DiskUtils.writeFile(file, ByteUtils.toBytes("\n" + newKey + "=" + newVal), true);
         CountDownLatch latch = new CountDownLatch(1);
-        WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), new FileWatcher() {
+        WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
             @Override
             public void onChange(FileChangeEvent event) {
                 latch.countDown();
