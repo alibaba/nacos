@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.AfterClass;
