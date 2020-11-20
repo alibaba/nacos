@@ -206,4 +206,27 @@ public class ServiceUtil {
     private static boolean checkHealthy(boolean healthyOnly, com.alibaba.nacos.api.naming.pojo.Instance instance) {
         return !healthyOnly || instance.isHealthy();
     }
+    
+    /**
+     * Filter instances which enabled.
+     *
+     * @param serviceInfo service info
+     * @return new service info
+     */
+    public static ServiceInfo filterEnabledInstances(ServiceInfo serviceInfo) {
+        ServiceInfo result = new ServiceInfo();
+        result.setName(serviceInfo.getName());
+        result.setGroupName(serviceInfo.getGroupName());
+        result.setCacheMillis(serviceInfo.getCacheMillis());
+        result.setLastRefTime(System.currentTimeMillis());
+        result.setClusters(serviceInfo.getClusters());
+        List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstance = new LinkedList<>();
+        for (com.alibaba.nacos.api.naming.pojo.Instance each : serviceInfo.getHosts()) {
+            if (each.isEnabled()) {
+                filteredInstance.add(each);
+            }
+        }
+        result.setHosts(filteredInstance);
+        return result;
+    }
 }
