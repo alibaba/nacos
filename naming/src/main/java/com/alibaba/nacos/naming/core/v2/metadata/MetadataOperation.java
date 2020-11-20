@@ -29,6 +29,11 @@ public class MetadataOperation<T> {
     
     private String serviceName;
     
+    /**
+     * If the metadata is cluster or instance, the tag should be added with the identity of cluster or instance.
+     */
+    private String tag;
+    
     private T metadata;
     
     public String getNamespace() {
@@ -53,6 +58,14 @@ public class MetadataOperation<T> {
     
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+    
+    public String getTag() {
+        return tag;
+    }
+    
+    public void setTag(String tag) {
+        this.tag = tag;
     }
     
     public T getMetadata() {
