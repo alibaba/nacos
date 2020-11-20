@@ -129,7 +129,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             clientOperationService.subscribeService(service, subscriber, subscriber.getAddrStr());
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
-        ServiceInfo result = ServiceUtil.filterInstances(serviceInfo, cluster, healthOnly);
+        ServiceInfo result = ServiceUtil.selectInstances(serviceInfo, cluster, healthOnly, true);
         // adapt for v1.x sdk
         result.setName(NamingUtils.getGroupedName(result.getName(), result.getGroupName()));
         return result;
