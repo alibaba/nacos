@@ -127,6 +127,8 @@ public class RaftCore implements Closeable {
     
     private final EventPublisher publisher;
     
+    private final RaftListener raftListener;
+    
     private boolean initialized = false;
     
     private volatile boolean stopWork = false;
@@ -136,7 +138,7 @@ public class RaftCore implements Closeable {
     private ScheduledFuture heartbeatTask = null;
     
     public RaftCore(RaftPeerSet peers, SwitchDomain switchDomain, GlobalConfig globalConfig, RaftProxy raftProxy,
-            RaftStore raftStore, ClusterVersionJudgement versionJudgement) {
+            RaftStore raftStore, ClusterVersionJudgement versionJudgement, RaftListener raftListener) {
         this.peers = peers;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
@@ -145,6 +147,7 @@ public class RaftCore implements Closeable {
         this.versionJudgement = versionJudgement;
         this.notifier = new PersistentNotifier(key -> null == getDatum(key) ? null : getDatum(key).value);
         this.publisher = NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
+        this.raftListener = raftListener;
     }
     
     /**
@@ -175,6 +178,7 @@ public class RaftCore implements Closeable {
             if (stopWork) {
                 try {
                     shutdown();
+                    raftListener.removeOldRaftMetadata();
                 } catch (NacosException e) {
                     throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
                 }

@@ -17,78 +17,35 @@
 package com.alibaba.nacos.naming.consistency.persistent.impl;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ByteUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.utils.Constants;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.protobuf.ByteString;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
- * In cluster mode, start the Raft protocol.
+ * Persistent service manipulation layer in stand-alone mode.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-@ConditionalOnProperty(value = "nacos.standalone", havingValue = "false")
+@ConditionalOnProperty(value = "nacos.standalone", havingValue = "true")
 @Service
-public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
+public class StandalonePersistentServiceProcessor extends BasePersistentServiceProcessor {
     
-    private final CPProtocol protocol;
-    
-    /**
-     * Is there a leader node currently.
-     */
-    private volatile boolean hasLeader = false;
-    
-    public PersistentServiceProcessor(ProtocolManager protocolManager, ClusterVersionJudgement versionJudgement)
-            throws Exception {
-        super(versionJudgement);
-        this.protocol = protocolManager.getCpProtocol();
-    }
-    
-    @Override
-    protected void afterConstruct() {
-        super.afterConstruct();
-        this.protocol.addLogProcessors(Collections.singletonList(this));
-        this.protocol.protocolMetaData()
-                .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
-                        (o, arg) -> hasLeader = StringUtils.isNotBlank(String.valueOf(arg)));
-        // If you choose to use the new RAFT protocol directly, there will be no compatible logical execution
-        if (ApplicationUtils.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
-            NotifyCenter.registerSubscriber(notifier);
-            waitLeader();
-            startNotify = true;
-        }
-    }
-    
-    private void waitLeader() {
-        while (!hasLeader && !hasError) {
-            Loggers.RAFT.info("Waiting Jraft leader vote ...");
-            try {
-                TimeUnit.MILLISECONDS.sleep(500);
-            } catch (InterruptedException ignored) {
-            }
-        }
+    public StandalonePersistentServiceProcessor(final ClusterVersionJudgement judgement) throws Exception {
+        super(judgement);
     }
     
     @Override
@@ -99,7 +56,7 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
         final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
                 .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Write.desc).build();
         try {
-            protocol.submit(request);
+            onApply(request);
         } catch (Exception e) {
             throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }
@@ -112,7 +69,7 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
         final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
                 .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Delete.desc).build();
         try {
-            protocol.submit(request);
+            onApply(request);
         } catch (Exception e) {
             throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }
@@ -120,12 +77,11 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
     
     @Override
     public Datum get(String key) throws NacosException {
-        final List<byte[]> keys = new ArrayList<>(1);
-        keys.add(ByteUtils.toBytes(key));
+        final List<byte[]> keys = Collections.singletonList(ByteUtils.toBytes(key));
         final ReadRequest req = ReadRequest.newBuilder().setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
                 .setData(ByteString.copyFrom(serializer.serialize(keys))).build();
         try {
-            Response resp = protocol.getData(req);
+            final Response resp = onRequest(req);
             if (resp.getSuccess()) {
                 BatchReadResponse response = serializer
                         .deserialize(resp.getData().toByteArray(), BatchReadResponse.class);
@@ -153,6 +109,6 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
     
     @Override
     public boolean isAvailable() {
-        return hasLeader && !hasError;
+        return !hasError;
     }
 }
