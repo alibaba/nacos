@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
@@ -139,12 +139,12 @@ public class ConfigController {
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
         Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
-        MapUtils.putIfValNoNull(configAdvanceInfo, "config_tags", configTags);
-        MapUtils.putIfValNoNull(configAdvanceInfo, "desc", desc);
-        MapUtils.putIfValNoNull(configAdvanceInfo, "use", use);
-        MapUtils.putIfValNoNull(configAdvanceInfo, "effect", effect);
-        MapUtils.putIfValNoNull(configAdvanceInfo, "type", type);
-        MapUtils.putIfValNoNull(configAdvanceInfo, "schema", schema);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configTags);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "desc", desc);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "use", use);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "effect", effect);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "schema", schema);
         ParamUtils.checkParam(configAdvanceInfo);
         
         if (AggrWhitelist.isAggrDataId(dataId)) {
