@@ -35,13 +35,13 @@ public class NamespaceUtilTest {
         String strAbc = "abc";
         String strdef123 = "def123";
         String strAbcHasSpace = "  abc  ";
-        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strPublic));
-        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strNull));
-        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strEmpty));
-        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(null));
-        Assert.assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbc));
-        Assert.assertEquals(strdef123, NamespaceUtil.processNamespaceParameter(strdef123));
-        Assert.assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbcHasSpace));
+        Assert.assertEquals(strEmpty, ParamUtils.processNamespace(strPublic));
+        Assert.assertEquals(strEmpty, ParamUtils.processNamespace(strNull));
+        Assert.assertEquals(strEmpty, ParamUtils.processNamespace(strEmpty));
+        Assert.assertEquals(strEmpty, ParamUtils.processNamespace(null));
+        Assert.assertEquals(strAbc, ParamUtils.processNamespace(strAbc));
+        Assert.assertEquals(strdef123, ParamUtils.processNamespace(strdef123));
+        Assert.assertEquals(strAbc, ParamUtils.processNamespace(strAbcHasSpace));
     }
     
 }

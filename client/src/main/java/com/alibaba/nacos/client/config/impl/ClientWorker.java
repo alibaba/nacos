@@ -416,11 +416,12 @@ public class ClientWorker implements Closeable {
                 sb.append(cacheData.dataId).append(WORD_SEPARATOR);
                 sb.append(cacheData.group).append(WORD_SEPARATOR);
                 if (StringUtils.isBlank(cacheData.tenant)) {
-                    sb.append(cacheData.getMd5()).append(LINE_SEPARATOR);
+                    sb.append(cacheData.getMd5());
                 } else {
                     sb.append(cacheData.getMd5()).append(WORD_SEPARATOR);
-                    sb.append(cacheData.getTenant()).append(LINE_SEPARATOR);
+                    sb.append(cacheData.getTenant());
                 }
+                sb.append(LINE_SEPARATOR);
                 if (cacheData.isInitializing()) {
                     // It updates when cacheData occours in cacheMap by first time.
                     inInitializingCacheList

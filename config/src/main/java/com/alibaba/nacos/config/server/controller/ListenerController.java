@@ -21,8 +21,8 @@ import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,7 +43,6 @@ public class ListenerController {
     
     private final ConfigSubService configSubService;
     
-    @Autowired
     public ListenerController(ConfigSubService configSubService) {
         this.configSubService = configSubService;
     }
@@ -57,6 +56,7 @@ public class ListenerController {
             @RequestParam(value = "tenant", required = false) String tenant,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap)
             throws Exception {
+        final String namespace = ParamUtils.processNamespace(tenant);
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
@@ -64,8 +64,8 @@ public class ListenerController {
         if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
             Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
             for (Map.Entry<String, String> config : status.entrySet()) {
-                if (!StringUtils.isBlank(tenant)) {
-                    if (config.getKey().contains(tenant)) {
+                if (!StringUtils.isBlank(namespace)) {
+                    if (config.getKey().contains(namespace)) {
                         configMd5Status.put(config.getKey(), config.getValue());
                     }
                 } else {

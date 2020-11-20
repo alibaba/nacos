@@ -51,6 +51,8 @@ public class Constants {
     
     public static final String DAILY_DOMAINNAME = "commonconfig.taobao.net";
     
+    public static final String DEFAULT_NAMESPACE = "";
+    
     public static final String NULL = "";
     
     public static final String DATAID = "dataId";

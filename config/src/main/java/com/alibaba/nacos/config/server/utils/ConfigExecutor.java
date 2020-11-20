@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.Config;
+import com.alibaba.nacos.config.server.service.watch.ConfigWatchCenter;
 import com.alibaba.nacos.core.utils.ClassUtils;
 
 import java.util.concurrent.Executor;
@@ -57,7 +58,8 @@ public final class ConfigExecutor {
                     new NameThreadFactory("com.alibaba.nacos.config.ConfigSubService"));
     
     private static final ScheduledExecutorService LONG_POLLING_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(ConfigWatchCenter.class),
+                    4,
                     new NameThreadFactory("com.alibaba.nacos.config.LongPolling"));
     
     public static void scheduleConfigTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {

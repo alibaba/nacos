@@ -22,20 +22,19 @@ import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.ServletException;
@@ -61,25 +60,28 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 @Service
 public class ConfigServletInner {
     
-    @Autowired
-    private LongPollingService longPollingService;
+    private final LongPollingService longPollingService;
     
-    @Autowired
-    private PersistService persistService;
+    private final PersistService persistService;
     
     private static final int TRY_GET_LOCK_TIMES = 9;
     
     private static final int START_LONG_POLLING_VERSION_NUM = 204;
     
+    public ConfigServletInner(LongPollingService longPollingService, PersistService persistService) {
+        this.longPollingService = longPollingService;
+        this.persistService = persistService;
+    }
+    
     /**
      * 轮询接口.
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
-            Map<String, String> clientMd5Map, int probeRequestSize) throws IOException {
+            Map<String, String> clientMd5Map) throws IOException {
         
         // Long polling.
         if (LongPollingService.isSupportLongPolling(request)) {
-            longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
+            longPollingService.addLongPollingClient(request, response, clientMd5Map);
             return HttpServletResponse.SC_OK + "";
         }
         

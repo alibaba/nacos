@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,8 +38,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(Constants.HISTORY_CONTROLLER_PATH)
 public class HistoryController {
     
-    @Autowired
-    protected PersistService persistService;
+    protected final PersistService persistService;
+    
+    public HistoryController(PersistService persistService) {
+        this.persistService = persistService;
+    }
     
     /**
      * Query the list history config.
@@ -58,14 +62,14 @@ public class HistoryController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "pageNo", required = false) Integer pageNo,
-            //
             @RequestParam(value = "pageSize", required = false) Integer pageSize, //
-            ModelMap modelMap) {
-        pageNo = null == pageNo ? 1 : pageNo;
-        pageSize = null == pageSize ? 100 : pageSize;
-        pageSize = Math.min(500, pageSize);
+            ModelMap modelMap) throws NacosException {
+        final String namespace = ParamUtils.processNamespace(tenant);
+        ParamUtils.checkParam(dataId, group, "datumId", "content");
+        pageNo = ParamUtils.checkInteger(pageNo, 1);
+        pageSize = ParamUtils.checkInteger(pageSize, 100);
         // configInfoBase has no appName field.
-        return persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
+        return persistService.findConfigHistory(dataId, group, namespace, pageNo, Math.min(500, pageSize));
     }
     
     /**

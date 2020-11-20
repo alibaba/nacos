@@ -117,13 +117,13 @@ public class MD5Util {
      */
     public static Map<String, String> getClientMd5Map(String configKeysString) {
         
-        Map<String, String> md5Map = new HashMap<String, String>(5);
+        Map<String, String> md5Map = new HashMap<>(5);
         
         if (null == configKeysString || "".equals(configKeysString)) {
             return md5Map;
         }
         int start = 0;
-        List<String> tmpList = new ArrayList<String>(3);
+        List<String> tmpList = new ArrayList<>(3);
         for (int i = start; i < configKeysString.length(); i++) {
             char c = configKeysString.charAt(i);
             if (c == WORD_SEPARATOR_CHAR) {
@@ -139,7 +139,6 @@ public class MD5Util {
                     endValue = configKeysString.substring(start, i);
                 }
                 start = i + 1;
-                
                 // If it is the old message, the last digit is MD5. The post-multi-tenant message is tenant
                 if (tmpList.size() == 2) {
                     String groupKey = GroupKey2.getKey(tmpList.get(0), tmpList.get(1));
@@ -159,6 +158,26 @@ public class MD5Util {
             }
         }
         return md5Map;
+    }
+    
+    /**
+     * Parse listener package.
+     *
+     * @param configKey protocol
+     * @return old: D w G w MD5 l or new: D w G w MD5 w T l.
+     */
+    public static String[] splitConfigKey(final String configKey) {
+        int start = 0;
+        int end = configKey.length();
+        List<String> result = new ArrayList<>();
+        for (int i = start; i < end; i++) {
+            char c = configKey.charAt(i);
+            if (c == WORD_SEPARATOR_CHAR) {
+                result.add(configKey.substring(start, i));
+                start = i + 1;
+            }
+        }
+        return result.toArray(new String[0]);
     }
     
     public static String toString(InputStream input, String encoding) throws IOException {
