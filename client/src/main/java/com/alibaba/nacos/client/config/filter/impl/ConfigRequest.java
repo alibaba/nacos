@@ -65,6 +65,14 @@ public class ConfigRequest implements IConfigRequest {
         param.put("content", content);
     }
     
+    public void getType() {
+        param.get("type");
+    }
+    
+    public void setType(String type) {
+        param.put("type", type);
+    }
+    
     @Override
     public Object getParameter(String key) {
         return param.get(key);

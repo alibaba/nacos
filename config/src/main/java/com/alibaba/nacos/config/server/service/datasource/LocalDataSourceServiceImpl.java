@@ -24,7 +24,13 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -36,13 +42,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * local data source.
@@ -121,7 +120,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     /**
      * Restore derby.
      *
-     * @param jdbcUrl jdbcUrl string value.
+     * @param jdbcUrl  jdbcUrl string value.
      * @param callable callable.
      * @throws Exception exception.
      */
@@ -145,14 +144,12 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     private synchronized void initialize(String jdbcUrl) {
-        HikariDataSource ds = new HikariDataSource();
-        ds.setDriverClassName(jdbcDriverName);
-        ds.setJdbcUrl(jdbcUrl);
-        ds.setUsername(userName);
-        ds.setPassword(password);
-        ds.setIdleTimeout(30_000L);
-        ds.setMaximumPoolSize(80);
-        ds.setConnectionTimeout(10000L);
+        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(ApplicationUtils.getEnvironment());
+        poolProperties.setDriverClassName(jdbcDriverName);
+        poolProperties.setJdbcUrl(jdbcUrl);
+        poolProperties.setUsername(userName);
+        poolProperties.setPassword(password);
+        HikariDataSource ds = poolProperties.getDataSource();
         DataSourceTransactionManager tm = new DataSourceTransactionManager();
         tm.setDataSource(ds);
         if (jdbcTemplateInit) {

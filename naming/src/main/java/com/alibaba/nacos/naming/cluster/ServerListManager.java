@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
@@ -124,10 +125,11 @@ public class ServerListManager extends MemberChangeListener {
                 Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
                 continue;
             }
-            
+    
+            String[] info = IPUtil.splitIPPortStr(params[1]);
             Member server = Optional.ofNullable(memberManager.find(params[1]))
-                    .orElse(Member.builder().ip(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0]).state(NodeState.UP)
-                            .port(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1])).build());
+                    .orElse(Member.builder().ip(info[0]).state(NodeState.UP)
+                            .port(Integer.parseInt(info[1])).build());
             
             server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
             server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
@@ -212,7 +214,7 @@ public class ServerListManager extends MemberChangeListener {
                 }
                 
                 if (allServers.size() > 0 && !ApplicationUtils.getLocalAddress()
-                        .contains(UtilsAndCommons.LOCAL_HOST_IP)) {
+                        .contains(IPUtil.localHostIP())) {
                     for (Member server : allServers) {
                         if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
                             continue;
