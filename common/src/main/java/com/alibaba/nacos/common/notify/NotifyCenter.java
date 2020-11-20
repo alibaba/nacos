@@ -171,7 +171,6 @@ public class NotifyCenter {
      * @param <T>      event type
      */
     public static <T> void registerSubscriber(final Subscriber consumer) {
-        final Class<? extends Event> cls = consumer.subscribeType();
         // If you want to listen to multiple events, you do it separately,
         // based on subclass's subscribeTypes method return list, it can register to publisher.
         if (consumer instanceof SmartSubscriber) {
@@ -187,16 +186,17 @@ public class NotifyCenter {
             return;
         }
         
-        if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
-            INSTANCE.sharePublisher.addSubscriber(consumer, cls);
+        final Class<? extends Event> subscribeType = consumer.subscribeType();
+        if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
+            INSTANCE.sharePublisher.addSubscriber(consumer, subscribeType);
             return;
         }
         
-        addSubscriber(consumer, consumer.subscribeType());
+        addSubscriber(consumer, subscribeType);
     }
     
     /**
-     * Add a subscriber to pusblisher.
+     * Add a subscriber to publisher.
      *
      * @param consumer      subscriber instance.
      * @param subscribeType subscribeType.
@@ -218,7 +218,6 @@ public class NotifyCenter {
      * @param consumer subscriber instance.
      */
     public static <T> void deregisterSubscriber(final Subscriber consumer) {
-        final Class<? extends Event> cls = consumer.subscribeType();
         if (consumer instanceof SmartSubscriber) {
             for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
                 if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
@@ -230,15 +229,16 @@ public class NotifyCenter {
             return;
         }
         
-        if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
-            INSTANCE.sharePublisher.removeSubscriber(consumer, cls);
+        final Class<? extends Event> subscribeType = consumer.subscribeType();
+        if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
+            INSTANCE.sharePublisher.removeSubscriber(consumer, subscribeType);
             return;
         }
         
-        if (removeSubscriber(consumer, consumer.subscribeType())) {
+        if (removeSubscriber(consumer, subscribeType)) {
             return;
         }
-        throw new NoSuchElementException("The subcriber has no event publisher");
+        throw new NoSuchElementException("The subscriber has no event publisher");
     }
     
     /**
@@ -251,12 +251,11 @@ public class NotifyCenter {
     private static boolean removeSubscriber(final Subscriber consumer, Class<? extends Event> subscribeType) {
         
         final String topic = ClassUtils.getCanonicalName(subscribeType);
-        if (INSTANCE.publisherMap.containsKey(topic)) {
-            EventPublisher publisher = INSTANCE.publisherMap.get(topic);
-            publisher.removeSubscriber(consumer);
+        EventPublisher eventPublisher = INSTANCE.publisherMap.get(topic);
+        if (eventPublisher != null) {
+            eventPublisher.removeSubscriber(consumer);
             return true;
         }
-        
         return false;
     }
     
@@ -282,16 +281,16 @@ public class NotifyCenter {
      * @param event     event instance.
      */
     private static boolean publishEvent(final Class<? extends Event> eventType, final Event event) {
-        final String topic = ClassUtils.getCanonicalName(eventType);
         if (ClassUtils.isAssignableFrom(SlowEvent.class, eventType)) {
             return INSTANCE.sharePublisher.publish(event);
         }
         
-        if (INSTANCE.publisherMap.containsKey(topic)) {
-            EventPublisher publisher = INSTANCE.publisherMap.get(topic);
+        final String topic = ClassUtils.getCanonicalName(eventType);
+        
+        EventPublisher publisher = INSTANCE.publisherMap.get(topic);
+        if (publisher != null) {
             return publisher.publish(event);
         }
-        
         LOGGER.warn("There are no [{}] publishers for this event, please register", topic);
         return false;
     }
@@ -322,8 +321,7 @@ public class NotifyCenter {
             // MapUtils.computeIfAbsent is a unsafe method.
             MapUtil.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, eventType, queueMaxSize);
         }
-        EventPublisher publisher = INSTANCE.publisherMap.get(topic);
-        return publisher;
+        return INSTANCE.publisherMap.get(topic);
     }
     
     /**

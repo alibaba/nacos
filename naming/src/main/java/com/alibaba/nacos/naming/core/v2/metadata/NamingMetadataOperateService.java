@@ -22,7 +22,7 @@ import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -56,7 +56,7 @@ public class NamingMetadataOperateService {
     public void updateServiceMetadata(Service service, ServiceMetadata serviceMetadata) {
         MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
         operation.setMetadata(serviceMetadata);
-        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA)
+        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.SERVICE_METADATA)
                 .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
                 .build();
         submitMetadataOperation(operationLog);
@@ -69,7 +69,7 @@ public class NamingMetadataOperateService {
      */
     public void deleteServiceMetadata(Service service) {
         MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
-        Log operationLog = Log.newBuilder().setGroup(Constants.SERVICE_METADATA)
+        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.SERVICE_METADATA)
                 .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
                 .build();
         submitMetadataOperation(operationLog);
@@ -86,7 +86,7 @@ public class NamingMetadataOperateService {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
         operation.setTag(instanceId);
         operation.setMetadata(instanceMetadata);
-        Log operationLog = Log.newBuilder().setGroup(Constants.INSTANCE_METADATA)
+        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
                 .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
                 .build();
         submitMetadataOperation(operationLog);
@@ -101,7 +101,7 @@ public class NamingMetadataOperateService {
     public void deleteInstanceMetadata(Service service, String instanceId) {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
         operation.setTag(instanceId);
-        Log operationLog = Log.newBuilder().setGroup(Constants.INSTANCE_METADATA)
+        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
                 .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
                 .build();
         submitMetadataOperation(operationLog);
@@ -115,7 +115,7 @@ public class NamingMetadataOperateService {
         return result;
     }
     
-    private void submitMetadataOperation(Log operationLog) {
+    private void submitMetadataOperation(WriteRequest operationLog) {
         try {
             Response response = cpProtocol.submit(operationLog);
             if (!response.getSuccess()) {

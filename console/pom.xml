@@ -83,7 +83,7 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <excludes>
-                    <exclude>static/console-fe/.vscode/**</exclude>
+                    <exclude>static/console-ui/.vscode/**</exclude>
                 </excludes>
             </resource>
         </resources>
