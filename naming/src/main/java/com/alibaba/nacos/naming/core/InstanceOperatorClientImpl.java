@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
@@ -129,7 +130,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             clientOperationService.subscribeService(service, subscriber, subscriber.getAddrStr());
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
-        ServiceInfo result = ServiceUtil.filterInstances(serviceInfo, cluster, healthOnly);
+        ServiceInfo result = ServiceUtil.selectInstances(serviceInfo, cluster, healthOnly, true);
         // adapt for v1.x sdk
         result.setName(NamingUtils.getGroupedName(result.getName(), result.getGroupName()));
         return result;
@@ -186,7 +187,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             return ConvertUtils.toLong(metadata.get().getExtendData().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));
         }
         String clientId = ip + ":" + port;
-        InstancePublishInfo instance = clientManager.getClient(clientId).getInstancePublishInfo(service);
+        Client client = clientManager.getClient(clientId);
+        InstancePublishInfo instance = null != client ? client.getInstancePublishInfo(service) : null;
         if (null != instance && instance.getExtendDatum().containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
             return ConvertUtils.toLong(instance.getExtendDatum().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));
         }

@@ -116,7 +116,7 @@ public class CatalogServiceV2Impl implements CatalogService {
             throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
-        ServiceInfo result = ServiceUtil.filterInstances(serviceInfo, clusterName, false);
+        ServiceInfo result = ServiceUtil.selectInstances(serviceInfo, clusterName);
         return result.getHosts();
     }
     
