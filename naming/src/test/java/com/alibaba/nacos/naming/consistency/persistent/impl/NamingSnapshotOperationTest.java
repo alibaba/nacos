@@ -41,7 +41,7 @@ public class NamingSnapshotOperationTest {
     
     static {
         RaftExecutor.init(new RaftConfig());
-        ApplicationUtils.injectEnvironment(new MockEnvironment());
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Mock

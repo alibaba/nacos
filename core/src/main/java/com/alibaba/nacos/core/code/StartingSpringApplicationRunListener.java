@@ -75,7 +75,6 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
-        ApplicationUtils.injectEnvironment(environment);
         EnvUtil.setEnvironment(environment);
         try {
             environment.getPropertySources().addLast(new OriginTrackedMapPropertySource("first_pre",
