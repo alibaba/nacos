@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.code;
 
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -56,7 +56,7 @@ public class LoggingSpringApplicationRunListener implements SpringApplicationRun
     
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
-        ApplicationUtils.injectEnvironment(environment);
+        EnvUtil.setEnvironment(environment);
         if (!environment.containsProperty(CONFIG_PROPERTY)) {
             System.setProperty(CONFIG_PROPERTY, DEFAULT_NACOS_LOGBACK_LOCATION);
             if (LOGGER.isInfoEnabled()) {
