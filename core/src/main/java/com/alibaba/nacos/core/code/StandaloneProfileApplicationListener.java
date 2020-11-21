@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.code;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
@@ -47,7 +46,7 @@ public class StandaloneProfileApplicationListener
     public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
         
         ConfigurableEnvironment environment = event.getEnvironment();
-        ApplicationUtils.injectEnvironment(environment);
+        EnvUtil.setEnvironment(environment);
     
         if (environment.getProperty(STANDALONE_MODE_PROPERTY_NAME, boolean.class, false)) {
             environment.addActiveProfile(STANDALONE_SPRING_PROFILE);

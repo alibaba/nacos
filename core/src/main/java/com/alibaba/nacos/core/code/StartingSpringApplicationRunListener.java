@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
@@ -75,7 +74,6 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
-        ApplicationUtils.injectEnvironment(environment);
         EnvUtil.setEnvironment(environment);
         try {
             environment.getPropertySources().addLast(new OriginTrackedMapPropertySource("first_pre",

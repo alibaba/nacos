@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -327,7 +326,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-        ApplicationUtils.injectEnvironment(configurableApplicationContext.getEnvironment());
+        EnvUtil.setEnvironment(configurableApplicationContext.getEnvironment());
         loadSetting();
     }
 }

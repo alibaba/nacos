@@ -61,7 +61,7 @@ public class MemberLookup_ITCase extends BaseTest {
 	@Before
 	public void before() throws Exception {
 		System.setProperty("nacos.home", path);
-		ApplicationUtils.injectEnvironment(new StandardEnvironment());
+		EnvUtil.setEnvironment(new StandardEnvironment());
 		EnvUtil.setIsStandalone(false);
 		System.out.println(EnvUtil.getStandaloneMode());
 
