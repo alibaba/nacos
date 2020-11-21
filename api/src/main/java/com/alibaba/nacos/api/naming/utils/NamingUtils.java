@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.utils.StringUtils;
  * @since 1.0.0
  */
 public class NamingUtils {
-    
+
     public static String getGroupedName(final String serviceName, final String groupName) {
         if (StringUtils.isBlank(serviceName)) {
             throw new IllegalArgumentException("Param 'serviceName' is illegal, serviceName is blank");
@@ -34,7 +34,7 @@ public class NamingUtils {
         final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         return resultGroupedName.intern();
     }
-    
+
     public static String getServiceName(final String serviceNameWithGroup) {
         if (StringUtils.isBlank(serviceNameWithGroup)) {
             return StringUtils.EMPTY;
@@ -44,7 +44,7 @@ public class NamingUtils {
         }
         return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[1];
     }
-    
+
     public static String getGroupName(final String serviceNameWithGroup) {
         if (StringUtils.isBlank(serviceNameWithGroup)) {
             return StringUtils.EMPTY;
@@ -54,7 +54,7 @@ public class NamingUtils {
         }
         return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[0];
     }
-    
+
     /**
      * check combineServiceName format. the serviceName can't be blank.
      * <pre>
@@ -72,5 +72,10 @@ public class NamingUtils {
             throw new IllegalArgumentException(
                     "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
         }
+    }
+
+    public static String getGroupedNameOptional(final String serviceName, final String groupName) {
+        final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+        return resultGroupedName.intern();
     }
 }
