@@ -22,7 +22,6 @@ import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.junit.After;
 import org.junit.Assert;
