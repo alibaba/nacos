@@ -65,10 +65,18 @@ public class NacosApplicationListener {
     
     private static volatile boolean starting;
     
+    /**
+     * {@link SpringApplicationRunListener#starting}.
+     */
     public static void starting() {
         starting = true;
     }
     
+    /**
+     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#environmentPrepared}.
+     *
+     * @param environment environment
+     */
     public static void environmentPrepared(ConfigurableEnvironment environment) {
         setUpLogConf(environment);
         
@@ -79,15 +87,30 @@ public class NacosApplicationListener {
         initSystemProperty();
     }
     
+    /**
+     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#contextLoaded}.
+     *
+     * @param context context
+     */
     public static void contextPrepared(ConfigurableApplicationContext context) {
         logClusterConf();
         logStarting();
     }
     
+    /**
+     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#contextLoaded}.
+     *
+     * @param context context
+     */
     public static void contextLoaded(ConfigurableApplicationContext context) {
     
     }
     
+    /**
+     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#started}.
+     *
+     * @param context context
+     */
     public static void started(ConfigurableApplicationContext context) {
         starting = false;
         
@@ -98,10 +121,21 @@ public class NacosApplicationListener {
         judgeStorageMode(context.getEnvironment());
     }
     
+    /**
+     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#running}.
+     *
+     * @param context context
+     */
     public static void running(ConfigurableApplicationContext context) {
         removePreProperties(context.getEnvironment());
     }
     
+    /**
+     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#failed}.
+     *
+     * @param context   context
+     * @param exception exception
+     */
     public static void failed(ConfigurableApplicationContext context, Throwable exception) {
         starting = false;
         
