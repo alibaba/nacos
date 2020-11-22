@@ -50,7 +50,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  */
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service
-public class EmbeddedStorageTenantCapacityPersistServiceImpl implements TenantCapacityPersistService{
+public class EmbeddedStorageTenantCapacityPersistServiceImpl implements TenantCapacityPersistService {
     
     private static final TenantCapacityRowMapper TENANT_CAPACITY_ROW_MAPPER = new TenantCapacityRowMapper();
     

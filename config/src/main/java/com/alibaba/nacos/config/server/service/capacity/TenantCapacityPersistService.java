@@ -124,5 +124,4 @@ public interface TenantCapacityPersistService {
      */
     boolean deleteTenantCapacity(final String tenant);
     
-    
 }

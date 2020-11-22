@@ -30,7 +30,7 @@ import java.util.List;
 public interface GroupCapacityPersistService {
     
     /**
-     * get GroupCapacity by groupId
+     * get GroupCapacity by groupId.
      *
      * @param groupId group Id
      * @return GroupCapacity
@@ -105,7 +105,7 @@ public interface GroupCapacityPersistService {
             Integer maxAggrSize);
     
     /**
-     * update Quota
+     * update Quota.
      *
      * @param group group string value.
      * @param quota quota int value.
@@ -114,7 +114,7 @@ public interface GroupCapacityPersistService {
     boolean updateQuota(String group, Integer quota);
     
     /**
-     * update Quota
+     * update Quota.
      *
      * @param group   group string value.
      * @param maxSize max size.
@@ -147,6 +147,5 @@ public interface GroupCapacityPersistService {
      * @return operate result.
      */
     boolean deleteGroupCapacity(final String group);
-    
     
 }
