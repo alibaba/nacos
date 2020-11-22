@@ -188,15 +188,15 @@ public class CapacityService {
     public boolean insertAndUpdateClusterUsage(CounterMode counterMode, boolean ignoreQuotaLimit) {
         Capacity capacity = groupCapacityPersistService.getClusterCapacity();
         if (capacity == null) {
-            insertGroupCapacity(GroupCapacityPersistService.CLUSTER);
+            insertGroupCapacity(EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER);
         }
-        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER, PropertyUtil.getDefaultClusterQuota(),
-                ignoreQuotaLimit);
+        return updateGroupUsage(counterMode, EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER,
+                PropertyUtil.getDefaultClusterQuota(), ignoreQuotaLimit);
     }
     
     public boolean updateClusterUsage(CounterMode counterMode) {
-        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER, PropertyUtil.getDefaultClusterQuota(),
-                false);
+        return updateGroupUsage(counterMode, EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER,
+                PropertyUtil.getDefaultClusterQuota(), false);
     }
     
     /**
@@ -336,7 +336,7 @@ public class CapacityService {
             if (isTenant) {
                 capacity.setQuota(PropertyUtil.getDefaultTenantQuota());
             } else {
-                if (GroupCapacityPersistService.CLUSTER.equals(group)) {
+                if (EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER.equals(group)) {
                     capacity.setQuota(PropertyUtil.getDefaultClusterQuota());
                 } else {
                     capacity.setQuota(PropertyUtil.getDefaultGroupQuota());
@@ -369,8 +369,8 @@ public class CapacityService {
         if (StringUtils.isNotBlank(tenant)) {
             return initTenantCapacity(tenant);
         }
-        if (GroupCapacityPersistService.CLUSTER.equals(group)) {
-            return insertGroupCapacity(GroupCapacityPersistService.CLUSTER);
+        if (EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER.equals(group)) {
+            return insertGroupCapacity(EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER);
         }
         // Group can expand capacity automatically.
         return initGroupCapacity(group);

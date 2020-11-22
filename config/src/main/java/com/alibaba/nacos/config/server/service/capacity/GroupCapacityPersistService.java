@@ -18,82 +18,31 @@ package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
-import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.google.common.collect.Lists;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.List;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * Group Capacity Service.
  *
- * @author hexu.hxy
- * @date 2018/03/05
+ * @author mai.jh
  */
-@Service
-public class GroupCapacityPersistService {
+public interface GroupCapacityPersistService {
     
-    static final String CLUSTER = "";
+    /**
+     * get GroupCapacity by groupId
+     *
+     * @param groupId group Id
+     * @return GroupCapacity
+     */
+    GroupCapacity getGroupCapacity(String groupId);
     
-    private static final GroupCapacityRowMapper GROUP_CAPACITY_ROW_MAPPER = new GroupCapacityRowMapper();
-    
-    private JdbcTemplate jdbcTemplate;
-    
-    private DataSourceService dataSourceService;
-    
-    @PostConstruct
-    public void init() {
-        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        this.jdbcTemplate = dataSourceService.getJdbcTemplate();
-    }
-    
-    private static final class GroupCapacityRowMapper implements RowMapper<GroupCapacity> {
-        
-        @Override
-        public GroupCapacity mapRow(ResultSet rs, int rowNum) throws SQLException {
-            GroupCapacity groupCapacity = new GroupCapacity();
-            groupCapacity.setId(rs.getLong("id"));
-            groupCapacity.setQuota(rs.getInt("quota"));
-            groupCapacity.setUsage(rs.getInt("usage"));
-            groupCapacity.setMaxSize(rs.getInt("max_size"));
-            groupCapacity.setMaxAggrCount(rs.getInt("max_aggr_count"));
-            groupCapacity.setMaxAggrSize(rs.getInt("max_aggr_size"));
-            groupCapacity.setGroup(rs.getString("group_id"));
-            return groupCapacity;
-        }
-    }
-    
-    public GroupCapacity getGroupCapacity(String groupId) {
-        String sql =
-                "SELECT id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, group_id FROM group_capacity "
-                        + "WHERE group_id=?";
-        List<GroupCapacity> list = jdbcTemplate.query(sql, new Object[] {groupId}, GROUP_CAPACITY_ROW_MAPPER);
-        if (list.isEmpty()) {
-            return null;
-        }
-        return list.get(0);
-    }
-    
-    public Capacity getClusterCapacity() {
-        return getGroupCapacity(CLUSTER);
-    }
+    /**
+     * get GroupCapacity.
+     *
+     * @return Capacity
+     */
+    Capacity getClusterCapacity();
     
     /**
      * Insert GroupCapacity into db.
@@ -101,61 +50,14 @@ public class GroupCapacityPersistService {
      * @param capacity capacity object instance.
      * @return operate result.
      */
-    public boolean insertGroupCapacity(final GroupCapacity capacity) {
-        String sql;
-        if (CLUSTER.equals(capacity.getGroup())) {
-            sql = "insert into group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
-                    + "gmt_create, gmt_modified) select ?, ?, count(*), ?, ?, ?, ?, ? from config_info;";
-        } else {
-            // Note: add "tenant_id = ''" condition.
-            sql = "insert into group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
-                    + "gmt_create, gmt_modified) select ?, ?, count(*), ?, ?, ?, ?, ? from config_info where "
-                    + "group_id=? and tenant_id = '';";
-        }
-        return insertGroupCapacity(sql, capacity);
-    }
+    boolean insertGroupCapacity(final GroupCapacity capacity);
     
-    private boolean insertGroupCapacity(final String sql, final GroupCapacity capacity) {
-        try {
-            GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
-            PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
-                @Override
-                public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-                    String group = capacity.getGroup();
-                    ps.setString(1, group);
-                    ps.setInt(2, capacity.getQuota());
-                    ps.setInt(3, capacity.getMaxSize());
-                    ps.setInt(4, capacity.getMaxAggrCount());
-                    ps.setInt(5, capacity.getMaxAggrSize());
-                    ps.setTimestamp(6, capacity.getGmtCreate());
-                    ps.setTimestamp(7, capacity.getGmtModified());
-                    if (!CLUSTER.equals(group)) {
-                        ps.setString(8, group);
-                    }
-                    return ps;
-                }
-            };
-            jdbcTemplate.update(preparedStatementCreator, generatedKeyHolder);
-            return generatedKeyHolder.getKey() != null;
-        } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error]", e);
-            throw e;
-        }
-    }
-    
-    public int getClusterUsage() {
-        Capacity clusterCapacity = getClusterCapacity();
-        if (clusterCapacity != null) {
-            return clusterCapacity.getUsage();
-        }
-        String sql = "SELECT count(*) FROM config_info";
-        Integer result = jdbcTemplate.queryForObject(sql, Integer.class);
-        if (result == null) {
-            throw new IllegalArgumentException("configInfoCount error");
-        }
-        return result.intValue();
-    }
+    /**
+     * get ClusterUsage.
+     *
+     * @return int
+     */
+    int getClusterUsage();
     
     /**
      * Increment UsageWithDefaultQuotaLimit.
@@ -163,19 +65,7 @@ public class GroupCapacityPersistService {
      * @param groupCapacity groupCapacity object instance.
      * @return operate result.
      */
-    public boolean incrementUsageWithDefaultQuotaLimit(GroupCapacity groupCapacity) {
-        String sql =
-                "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ? AND `usage` <"
-                        + " ? AND quota = 0";
-        try {
-            int affectRow = jdbcTemplate
-                    .update(sql, groupCapacity.getGmtModified(), groupCapacity.getGroup(), groupCapacity.getQuota());
-            return affectRow == 1;
-        } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error]", e);
-            throw e;
-        }
-    }
+    boolean incrementUsageWithDefaultQuotaLimit(GroupCapacity groupCapacity);
     
     /**
      * Increment UsageWithQuotaLimit.
@@ -183,18 +73,7 @@ public class GroupCapacityPersistService {
      * @param groupCapacity groupCapacity object instance.
      * @return operate result.
      */
-    public boolean incrementUsageWithQuotaLimit(GroupCapacity groupCapacity) {
-        String sql =
-                "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ? AND `usage` < "
-                        + "quota AND quota != 0";
-        try {
-            return jdbcTemplate.update(sql, groupCapacity.getGmtModified(), groupCapacity.getGroup()) == 1;
-        } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error]", e);
-            throw e;
-            
-        }
-    }
+    boolean incrementUsageWithQuotaLimit(GroupCapacity groupCapacity);
     
     /**
      * Increment Usage.
@@ -202,142 +81,64 @@ public class GroupCapacityPersistService {
      * @param groupCapacity groupCapacity object instance.
      * @return operate result.
      */
-    public boolean incrementUsage(GroupCapacity groupCapacity) {
-        String sql = "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ?";
-        try {
-            int affectRow = jdbcTemplate.update(sql, groupCapacity.getGmtModified(), groupCapacity.getGroup());
-            return affectRow == 1;
-        } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error]", e);
-            throw e;
-        }
-    }
+    boolean incrementUsage(GroupCapacity groupCapacity);
     
     /**
      * Decrement Usage.
+     *
      * @param groupCapacity groupCapacity object instance.
      * @return operate result.
      */
-    public boolean decrementUsage(GroupCapacity groupCapacity) {
-        String sql = "UPDATE group_capacity SET `usage` = `usage` - 1, gmt_modified = ? WHERE group_id = ? AND `usage` > 0";
-        try {
-            return jdbcTemplate.update(sql, groupCapacity.getGmtModified(), groupCapacity.getGroup()) == 1;
-        } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error]", e);
-            throw e;
-        }
-    }
+    boolean decrementUsage(GroupCapacity groupCapacity);
     
     /**
      * Update GroupCapacity.
      *
+     * @param group        group string value.
+     * @param quota        quota int value.
+     * @param maxSize      maxSize int value.
+     * @param maxAggrCount maxAggrCount int value.
+     * @param maxAggrSize  maxAggrSize int value.
+     * @return boolean
+     */
+    boolean updateGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
+            Integer maxAggrSize);
+    
+    /**
+     * update Quota
+     *
      * @param group group string value.
      * @param quota quota int value.
-     * @param maxSize maxSize int value.
-     * @param maxAggrCount maxAggrCount int value.
-     * @param maxAggrSize maxAggrSize int value.
-     * @return
+     * @return boolean
      */
-    public boolean updateGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
-            Integer maxAggrSize) {
-        List<Object> argList = Lists.newArrayList();
-        StringBuilder sql = new StringBuilder("update group_capacity set");
-        if (quota != null) {
-            sql.append(" quota = ?,");
-            argList.add(quota);
-        }
-        if (maxSize != null) {
-            sql.append(" max_size = ?,");
-            argList.add(maxSize);
-        }
-        if (maxAggrCount != null) {
-            sql.append(" max_aggr_count = ?,");
-            argList.add(maxAggrCount);
-        }
-        if (maxAggrSize != null) {
-            sql.append(" max_aggr_size = ?,");
-            argList.add(maxAggrSize);
-        }
-        sql.append(" gmt_modified = ?");
-        argList.add(TimeUtils.getCurrentTime());
-        
-        sql.append(" where group_id = ?");
-        argList.add(group);
-        try {
-            return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;
-        } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error]", e);
-            throw e;
-        }
-    }
+    boolean updateQuota(String group, Integer quota);
     
-    public boolean updateQuota(String group, Integer quota) {
-        return updateGroupCapacity(group, quota, null, null, null);
-    }
-    
-    public boolean updateMaxSize(String group, Integer maxSize) {
-        return updateGroupCapacity(group, null, maxSize, null, null);
-    }
+    /**
+     * update Quota
+     *
+     * @param group   group string value.
+     * @param maxSize max size.
+     * @return boolean
+     */
+    boolean updateMaxSize(String group, Integer maxSize);
     
     /**
      * Correct Usage.
      *
-     * @param group group string value.
+     * @param group       group string value.
      * @param gmtModified gmtModified.
      * @return operate result.
      */
-    public boolean correctUsage(String group, Timestamp gmtModified) {
-        String sql;
-        if (CLUSTER.equals(group)) {
-            sql = "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE "
-                    + "group_id = ?";
-            try {
-                return jdbcTemplate.update(sql, gmtModified, group) == 1;
-            } catch (CannotGetJdbcConnectionException e) {
-                FATAL_LOG.error("[db-error]", e);
-                throw e;
-            }
-        } else {
-            // Note: add "tenant_id = ''" condition.
-            sql = "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND "
-                    + "tenant_id = ''), gmt_modified = ? WHERE group_id = ?";
-            try {
-                return jdbcTemplate.update(sql, group, gmtModified, group) == 1;
-            } catch (CannotGetJdbcConnectionException e) {
-                FATAL_LOG.error("[db-error]", e);
-                throw e;
-            }
-        }
-    }
+    boolean correctUsage(String group, Timestamp gmtModified);
     
     /**
      * Get group capacity list, noly has id and groupId value.
      *
-     * @param lastId lastId long value.
+     * @param lastId   lastId long value.
      * @param pageSize pageSize long value.
      * @return GroupCapacity list.
      */
-    public List<GroupCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
-        String sql = "SELECT id, group_id FROM group_capacity WHERE id>? LIMIT ?";
-        
-        if (PropertyUtil.isEmbeddedStorage()) {
-            sql = "SELECT id, group_id FROM group_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
-        }
-        try {
-            return jdbcTemplate.query(sql, new Object[] {lastId, pageSize}, new RowMapper<GroupCapacity>() {
-                @Override
-                public GroupCapacity mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    GroupCapacity groupCapacity = new GroupCapacity();
-                    groupCapacity.setId(rs.getLong("id"));
-                    groupCapacity.setGroup(rs.getString("group_id"));
-                    return groupCapacity;
-                }
-            });
-        } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error]", e);
-            throw e;
-        }
-    }
+    List<GroupCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize);
     
     /**
      * Delete GroupCapacity.
@@ -345,22 +146,7 @@ public class GroupCapacityPersistService {
      * @param group group string value.
      * @return operate result.
      */
-    public boolean deleteGroupCapacity(final String group) {
-        try {
-            PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
-                @Override
-                public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    PreparedStatement ps = connection
-                            .prepareStatement("DELETE FROM group_capacity WHERE group_id = ?;");
-                    ps.setString(1, group);
-                    return ps;
-                }
-            };
-            return jdbcTemplate.update(preparedStatementCreator) == 1;
-        } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error]", e);
-            throw e;
-        }
-        
-    }
+    boolean deleteGroupCapacity(final String group);
+    
+    
 }
