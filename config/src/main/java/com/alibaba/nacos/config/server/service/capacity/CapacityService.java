@@ -38,6 +38,8 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.config.server.service.capacity.EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER;
+
 /**
  * Capacity service.
  *
@@ -188,14 +190,14 @@ public class CapacityService {
     public boolean insertAndUpdateClusterUsage(CounterMode counterMode, boolean ignoreQuotaLimit) {
         Capacity capacity = groupCapacityPersistService.getClusterCapacity();
         if (capacity == null) {
-            insertGroupCapacity(EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER);
+            insertGroupCapacity(CLUSTER);
         }
-        return updateGroupUsage(counterMode, EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER,
+        return updateGroupUsage(counterMode, CLUSTER,
                 PropertyUtil.getDefaultClusterQuota(), ignoreQuotaLimit);
     }
     
     public boolean updateClusterUsage(CounterMode counterMode) {
-        return updateGroupUsage(counterMode, EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER,
+        return updateGroupUsage(counterMode, CLUSTER,
                 PropertyUtil.getDefaultClusterQuota(), false);
     }
     
@@ -336,7 +338,7 @@ public class CapacityService {
             if (isTenant) {
                 capacity.setQuota(PropertyUtil.getDefaultTenantQuota());
             } else {
-                if (EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER.equals(group)) {
+                if (CLUSTER.equals(group)) {
                     capacity.setQuota(PropertyUtil.getDefaultClusterQuota());
                 } else {
                     capacity.setQuota(PropertyUtil.getDefaultGroupQuota());
@@ -369,8 +371,8 @@ public class CapacityService {
         if (StringUtils.isNotBlank(tenant)) {
             return initTenantCapacity(tenant);
         }
-        if (EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER.equals(group)) {
-            return insertGroupCapacity(EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER);
+        if (CLUSTER.equals(group)) {
+            return insertGroupCapacity(CLUSTER);
         }
         // Group can expand capacity automatically.
         return initGroupCapacity(group);

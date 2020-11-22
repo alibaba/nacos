@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.alibaba.nacos.config.server.service.capacity.EmbeddedStorageGroupCapacityPersistServiceImpl.CLUSTER;
+
 /**
  * External Storage Group Capacity Service.
  *
@@ -47,8 +49,6 @@ import java.util.stream.Collectors;
 @Conditional(value = ConditionOnExternalStorage.class)
 @Service
 public class ExternalStorageGroupCapacityPersistServiceImpl implements GroupCapacityPersistService {
-    
-    static final String CLUSTER = "";
     
     @Autowired
     private GroupCapacityRepository groupCapacityRepository;
