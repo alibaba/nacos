@@ -27,6 +27,20 @@ import com.alibaba.nacos.api.utils.StringUtils;
  */
 public class NamingUtils {
     
+    /**
+     * Returns a combined string with serviceName and groupName.
+     * serviceName can not be nil.
+     *
+     * In most cases, serviceName can not be nil. In other cases, for search or anything,
+     * See {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedNameOptional(String, String)}
+     *
+     * etc: serviceName | groupName | result
+     *      serviceA    | groupA    | serviceA@@groupA
+     *      nil         | groupA    | threw IllegalArgumentException
+     *
+     *
+     * @return 'serviceName@@groupName'
+     */
     public static String getGroupedName(final String serviceName, final String groupName) {
         if (StringUtils.isBlank(serviceName)) {
             throw new IllegalArgumentException("Param 'serviceName' is illegal, serviceName is blank");
@@ -74,6 +88,20 @@ public class NamingUtils {
         }
     }
     
+    /**
+     * Returns a combined string with serviceName and groupName.
+     * Such as 'serviceName@@groupName'
+     *
+     * This method works similar with {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName}
+     * But not verify any parameters.
+     *
+     * etc: serviceName | groupName | result
+     *      serviceA    | groupA    | serviceA@@groupA
+     *      nil         | groupA    | @@groupA
+     *      nil         | nil       | @@
+     *
+     * @return 'serviceName@@groupName'
+     */
     public static String getGroupedNameOptional(final String serviceName, final String groupName) {
         final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         return resultGroupedName.intern();
