@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.result.core;
+package com.alibaba.nacos.common.model.core;
 
 /**
  * IResultCode.
