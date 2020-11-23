@@ -35,7 +35,7 @@ public class NamingUtils {
      * See {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedNameOptional(String, String)}
      *
      * etc: serviceName | groupName | result
-     *      serviceA    | groupA    | serviceA@@groupA
+     *      serviceA    | groupA    | groupA@@serviceA
      *      nil         | groupA    | threw IllegalArgumentException
      *
      *
@@ -96,8 +96,8 @@ public class NamingUtils {
      * But not verify any parameters.
      *
      * etc: serviceName | groupName | result
-     *      serviceA    | groupA    | serviceA@@groupA
-     *      nil         | groupA    | @@groupA
+     *      serviceA    | groupA    | groupA@@serviceA
+     *      nil         | groupA    | groupA@@
      *      nil         | nil       | @@
      *
      * @return 'serviceName@@groupName'
