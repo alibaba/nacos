@@ -362,10 +362,7 @@ public class EnvUtil {
     
     public static Resource getApplicationConfFileResource() {
         Resource customResource = getCustomFileResource();
-        if (customResource == null) {
-            return getDefaultResource();
-        }
-        return customResource;
+        return customResource == null ? getDefaultResource() : customResource;
     }
     
     private static Resource getCustomFileResource() {
