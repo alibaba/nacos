@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.persistent.impl.PersistentServiceProcessor;
+import com.alibaba.nacos.naming.consistency.persistent.impl.BasePersistentServiceProcessor;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.stereotype.Component;
@@ -36,13 +36,13 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     
     private final RaftConsistencyServiceImpl oldPersistentConsistencyService;
     
-    private final PersistentServiceProcessor newPersistentConsistencyService;
+    private final BasePersistentServiceProcessor newPersistentConsistencyService;
     
     private volatile boolean switchNewPersistentService = false;
     
     public PersistentConsistencyServiceDelegateImpl(ClusterVersionJudgement versionJudgement,
             RaftConsistencyServiceImpl oldPersistentConsistencyService,
-            PersistentServiceProcessor newPersistentConsistencyService) {
+            BasePersistentServiceProcessor newPersistentConsistencyService) {
         this.versionJudgement = versionJudgement;
         this.oldPersistentConsistencyService = oldPersistentConsistencyService;
         this.newPersistentConsistencyService = newPersistentConsistencyService;
