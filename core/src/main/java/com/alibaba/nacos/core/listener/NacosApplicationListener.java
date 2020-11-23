@@ -22,6 +22,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * Nacos Application Listener, execute init process.
+ *
+ * @author horizonzy
+ * @since 1.4.1
  */
 public interface NacosApplicationListener {
     

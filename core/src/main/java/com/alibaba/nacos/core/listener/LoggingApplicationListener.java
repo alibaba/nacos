@@ -26,6 +26,9 @@ import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
 
 /**
  * For init logging configuration.
+ *
+ * @author horizonzy
+ * @since 1.4.1
  */
 public class LoggingApplicationListener implements NacosApplicationListener {
     
