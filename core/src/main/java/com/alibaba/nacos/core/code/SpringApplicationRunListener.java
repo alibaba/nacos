@@ -16,11 +16,17 @@
 
 package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.core.listener.LoggingApplicationListener;
+import com.alibaba.nacos.core.listener.NacosApplicationListener;
+import com.alibaba.nacos.core.listener.StartingApplicationListener;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.event.EventPublishingRunListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * {@link org.springframework.boot.SpringApplicationRunListener} before {@link EventPublishingRunListener} execution.
@@ -34,6 +40,13 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     
     private final String[] args;
     
+    private List<NacosApplicationListener> nacosApplicationListeners = new ArrayList<>();
+    
+    {
+        nacosApplicationListeners.add(new LoggingApplicationListener());
+        nacosApplicationListeners.add(new StartingApplicationListener());
+    }
+    
     public SpringApplicationRunListener(SpringApplication application, String[] args) {
         this.application = application;
         this.args = args;
@@ -41,37 +54,51 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     
     @Override
     public void starting() {
-        NacosApplicationListener.starting();
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.starting();
+        }
     }
     
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
-        NacosApplicationListener.environmentPrepared(environment);
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.environmentPrepared(environment);
+        }
     }
     
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
-        NacosApplicationListener.contextPrepared(context);
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.contextPrepared(context);
+        }
     }
     
     @Override
     public void contextLoaded(ConfigurableApplicationContext context) {
-        NacosApplicationListener.contextPrepared(context);
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.contextLoaded(context);
+        }
     }
     
     @Override
     public void started(ConfigurableApplicationContext context) {
-        NacosApplicationListener.started(context);
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.started(context);
+        }
     }
     
     @Override
     public void running(ConfigurableApplicationContext context) {
-        NacosApplicationListener.running(context);
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.running(context);
+        }
     }
     
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
-        NacosApplicationListener.failed(context, exception);
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.failed(context, exception);
+        }
     }
     
     /**

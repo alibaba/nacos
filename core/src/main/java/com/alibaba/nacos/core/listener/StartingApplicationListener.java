@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.code;
+package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
@@ -40,20 +40,15 @@ import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.springframework.boot.context.logging.LoggingApplicationListener.CONFIG_PROPERTY;
-import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
-
 /**
- * Nacos Application Listener, execute init process.
+ * init environment config.
  *
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
  * @since 0.5.0
  */
-public class NacosApplicationListener {
+public class StartingApplicationListener implements NacosApplicationListener {
     
-    private static final String DEFAULT_NACOS_LOGBACK_LOCATION = CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(NacosApplicationListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StartingApplicationListener.class);
     
     private static final String MODE_PROPERTY_KEY_STAND_MODE = "nacos.mode";
     
@@ -65,21 +60,13 @@ public class NacosApplicationListener {
     
     private static volatile boolean starting;
     
-    /**
-     * {@link SpringApplicationRunListener#starting}.
-     */
-    public static void starting() {
+    @Override
+    public void starting() {
         starting = true;
     }
     
-    /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#environmentPrepared}.
-     *
-     * @param environment environment
-     */
-    public static void environmentPrepared(ConfigurableEnvironment environment) {
-        setUpLogConf(environment);
-        
+    @Override
+    public void environmentPrepared(ConfigurableEnvironment environment) {
         injectEnvironment(environment);
         
         loadPreProperties(environment);
@@ -87,31 +74,20 @@ public class NacosApplicationListener {
         initSystemProperty();
     }
     
-    /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#contextLoaded}.
-     *
-     * @param context context
-     */
-    public static void contextPrepared(ConfigurableApplicationContext context) {
+    @Override
+    public void contextPrepared(ConfigurableApplicationContext context) {
         logClusterConf();
+        
         logStarting();
     }
     
-    /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#contextLoaded}.
-     *
-     * @param context context
-     */
-    public static void contextLoaded(ConfigurableApplicationContext context) {
+    @Override
+    public void contextLoaded(ConfigurableApplicationContext context) {
     
     }
     
-    /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#started}.
-     *
-     * @param context context
-     */
-    public static void started(ConfigurableApplicationContext context) {
+    @Override
+    public void started(ConfigurableApplicationContext context) {
         starting = false;
         
         closeExecutor();
@@ -121,22 +97,13 @@ public class NacosApplicationListener {
         judgeStorageMode(context.getEnvironment());
     }
     
-    /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#running}.
-     *
-     * @param context context
-     */
-    public static void running(ConfigurableApplicationContext context) {
+    @Override
+    public void running(ConfigurableApplicationContext context) {
         removePreProperties(context.getEnvironment());
     }
     
-    /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#failed}.
-     *
-     * @param context   context
-     * @param exception exception
-     */
-    public static void failed(ConfigurableApplicationContext context, Throwable exception) {
+    @Override
+    public void failed(ConfigurableApplicationContext context, Throwable exception) {
         starting = false;
         
         logFilePath();
@@ -152,17 +119,6 @@ public class NacosApplicationListener {
         
         LOGGER.error("Nacos failed to start, please see {} for more details.",
                 Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
-    }
-    
-    private static void setUpLogConf(ConfigurableEnvironment environment) {
-        if (!environment.containsProperty(CONFIG_PROPERTY)) {
-            System.setProperty(CONFIG_PROPERTY, DEFAULT_NACOS_LOGBACK_LOCATION);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("There is no property named \"{}\" in Spring Boot Environment, "
-                                + "and whose value is {} will be set into System's Properties", CONFIG_PROPERTY,
-                        DEFAULT_NACOS_LOGBACK_LOCATION);
-            }
-        }
     }
     
     private static void injectEnvironment(ConfigurableEnvironment environment) {
