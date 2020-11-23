@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.listener;
 
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;

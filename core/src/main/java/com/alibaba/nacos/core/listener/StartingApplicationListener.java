@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
@@ -56,9 +55,9 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private static final String LOCAL_IP_PROPERTY_KEY = "nacos.local.ip";
     
-    private static ScheduledExecutorService scheduledExecutorService;
+    private ScheduledExecutorService scheduledExecutorService;
     
-    private static volatile boolean starting;
+    private volatile boolean starting;
     
     @Override
     public void starting() {
@@ -118,15 +117,14 @@ public class StartingApplicationListener implements NacosApplicationListener {
         context.close();
         
         LOGGER.error("Nacos failed to start, please see {} for more details.",
-                Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
+                Paths.get(EnvUtil.getNacosHome(), "logs/nacos.log"));
     }
     
-    private static void injectEnvironment(ConfigurableEnvironment environment) {
-        ApplicationUtils.injectEnvironment(environment);
+    private void injectEnvironment(ConfigurableEnvironment environment) {
         EnvUtil.setEnvironment(environment);
     }
     
-    private static void loadPreProperties(ConfigurableEnvironment environment) {
+    private void loadPreProperties(ConfigurableEnvironment environment) {
         try {
             environment.getPropertySources().addLast(new OriginTrackedMapPropertySource("first_pre",
                     EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource())));
@@ -135,31 +133,31 @@ public class StartingApplicationListener implements NacosApplicationListener {
         }
     }
     
-    private static void initSystemProperty() {
-        if (ApplicationUtils.getStandaloneMode()) {
+    private void initSystemProperty() {
+        if (EnvUtil.getStandaloneMode()) {
             System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "stand alone");
         } else {
             System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "cluster");
         }
-        if (ApplicationUtils.getFunctionMode() == null) {
+        if (EnvUtil.getFunctionMode() == null) {
             System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, "All");
-        } else if (ApplicationUtils.FUNCTION_MODE_CONFIG.equals(ApplicationUtils.getFunctionMode())) {
-            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, ApplicationUtils.FUNCTION_MODE_CONFIG);
-        } else if (ApplicationUtils.FUNCTION_MODE_NAMING.equals(ApplicationUtils.getFunctionMode())) {
-            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, ApplicationUtils.FUNCTION_MODE_NAMING);
+        } else if (EnvUtil.FUNCTION_MODE_CONFIG.equals(EnvUtil.getFunctionMode())) {
+            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, EnvUtil.FUNCTION_MODE_CONFIG);
+        } else if (EnvUtil.FUNCTION_MODE_NAMING.equals(EnvUtil.getFunctionMode())) {
+            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, EnvUtil.FUNCTION_MODE_NAMING);
         }
         
         System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIP());
     }
     
-    private static void removePreProperties(ConfigurableEnvironment environment) {
+    private void removePreProperties(ConfigurableEnvironment environment) {
         environment.getPropertySources().remove("first_pre");
     }
     
-    private static void logClusterConf() {
-        if (!ApplicationUtils.getStandaloneMode()) {
+    private void logClusterConf() {
+        if (!EnvUtil.getStandaloneMode()) {
             try {
-                List<String> clusterConf = ApplicationUtils.readClusterConf();
+                List<String> clusterConf = EnvUtil.readClusterConf();
                 LOGGER.info("The server IP list of Nacos is {}", clusterConf);
             } catch (IOException e) {
                 LOGGER.error("read cluster conf fail", e);
@@ -167,26 +165,26 @@ public class StartingApplicationListener implements NacosApplicationListener {
         }
     }
     
-    private static void closeExecutor() {
+    private void closeExecutor() {
         if (scheduledExecutorService != null) {
             scheduledExecutorService.shutdownNow();
         }
     }
     
-    private static void logFilePath() {
+    private void logFilePath() {
         String[] dirNames = new String[] {"logs", "conf", "data"};
         for (String dirName : dirNames) {
-            LOGGER.info("Nacos Log files: {}", Paths.get(ApplicationUtils.getNacosHome(), dirName).toString());
+            LOGGER.info("Nacos Log files: {}", Paths.get(EnvUtil.getNacosHome(), dirName).toString());
             try {
-                DiskUtils.forceMkdir(new File(Paths.get(ApplicationUtils.getNacosHome(), dirName).toUri()));
+                DiskUtils.forceMkdir(new File(Paths.get(EnvUtil.getNacosHome(), dirName).toUri()));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
     }
     
-    private static void logStarting() {
-        if (!ApplicationUtils.getStandaloneMode()) {
+    private void logStarting() {
+        if (!EnvUtil.getStandaloneMode()) {
             
             scheduledExecutorService = ExecutorFactory
                     .newSingleScheduledExecutorService(new NameThreadFactory("com.alibaba.nacos.core.nacos-starting"));
@@ -199,7 +197,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
         }
     }
     
-    private static void judgeStorageMode(ConfigurableEnvironment env) {
+    private void judgeStorageMode(ConfigurableEnvironment env) {
         
         // External data sources are used by default in cluster mode
         boolean useExternalStorage = ("mysql".equalsIgnoreCase(env.getProperty("spring.datasource.platform", "")));
@@ -210,7 +208,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
         // default value is depend on ${nacos.standalone}
         
         if (!useExternalStorage) {
-            boolean embeddedStorage = ApplicationUtils.getStandaloneMode() || Boolean.getBoolean("embeddedStorage");
+            boolean embeddedStorage = EnvUtil.getStandaloneMode() || Boolean.getBoolean("embeddedStorage");
             // If the embedded data source storage is not turned on, it is automatically
             // upgraded to the external data source storage, as before
             if (!embeddedStorage) {
