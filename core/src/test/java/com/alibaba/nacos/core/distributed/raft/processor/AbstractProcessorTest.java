@@ -17,8 +17,8 @@
 package com.alibaba.nacos.core.distributed.raft.processor;
 
 import com.alibaba.nacos.consistency.SerializeFactory;
-import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alipay.sofa.jraft.Node;
@@ -64,7 +64,7 @@ public class AbstractProcessorTest {
             }
         };
         AbstractProcessor processor = new NacosLogProcessor(server, SerializeFactory.getDefault());
-        processor.execute(server, context, Log.newBuilder().build(), new JRaftServer.RaftGroupTuple());
+        processor.execute(server, context, WriteRequest.newBuilder().build(), new JRaftServer.RaftGroupTuple());
         
         Response response = reference.get();
         Assert.assertNotNull(response);

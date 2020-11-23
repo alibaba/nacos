@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.utils;
-
-import org.apache.commons.lang3.StringUtils;
+package com.alibaba.nacos.common.utils;
 
 /**
  * namespace(tenant) util.

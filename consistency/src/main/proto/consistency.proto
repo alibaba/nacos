@@ -14,16 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.ap;
+syntax = "proto3";
 
-import com.alibaba.nacos.consistency.LogProcessor;
+option java_multiple_files = true;
+option java_package = "com.alibaba.nacos.consistency.entity";
 
-/**
- * log processor for ap.
- *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- */
-@SuppressWarnings("all")
-public abstract class LogProcessor4AP extends LogProcessor {
-
+message WriteRequest {
+  string group = 1;
+  string key = 2;
+  bytes data = 3;
+  string type = 4;
+  string operation = 5;
+  map<string, string> extendInfo = 6;
 }
+
+message ReadRequest {
+  string group = 1;
+  bytes data = 2;
+  map<string, string> extendInfo = 3;
+}
+
+message Response {
+  bytes data = 1;
+  string errMsg = 2;
+  bool success = 3;
+}
+

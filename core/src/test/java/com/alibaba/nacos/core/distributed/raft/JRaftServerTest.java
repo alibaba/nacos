@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -41,7 +41,7 @@ public class JRaftServerTest {
     
     @BeforeClass
     public static void beforeClass() {
-        ApplicationUtils.injectEnvironment(new MockEnvironment());
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Before
@@ -81,25 +81,26 @@ public class JRaftServerTest {
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
                 Member.builder().ip("127.0.0.3").port(82).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(firstEvent));
-        Assert.assertTrue(changed.get());
+        Assert.assertFalse(changed.get());
         changed.set(false);
         
         Collection<Member> secondEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
-                Member.builder().ip("127.0.0.3").port(82).build(), Member.builder().ip("127.0.0.4").port(83).build());
+                Member.builder().ip("127.0.0.4").port(83).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(secondEvent));
         Assert.assertTrue(changed.get());
         changed.set(false);
         
         Collection<Member> thirdEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
-                Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
+                Member.builder().ip("127.0.0.2").port(81).build(),
                 Member.builder().ip("127.0.0.5").port(82).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(thirdEvent));
         Assert.assertTrue(changed.get());
         changed.set(false);
         
+        // remove Member.builder().ip("127.0.0.2").port(81).build()
         Collection<Member> fourEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
-                Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build());
+                Member.builder().ip("127.0.0.1").port(80).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fourEvent));
         Assert.assertTrue(changed.get());
         changed.set(false);
@@ -107,7 +108,7 @@ public class JRaftServerTest {
         Collection<Member> fiveEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.3").port(81).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fiveEvent));
-        Assert.assertTrue(changed.get());
+        Assert.assertFalse(changed.get());
         changed.set(false);
     }
 }
