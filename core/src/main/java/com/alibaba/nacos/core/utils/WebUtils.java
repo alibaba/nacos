@@ -113,6 +113,13 @@ public class WebUtils {
         try {
             value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
         } catch (UnsupportedEncodingException ignore) {
+        } catch (Exception ex) {
+            // If the value contains a special character without encoding (such as "[IPv6]"),
+            // a URLDecoder exception is thrown, which is ignored and the original value is returned
+            final String seq = "URLDecoder";
+            if (!StringUtils.contains(ex.toString(), seq)) {
+                throw ex;
+            }
         }
         return value.trim();
     }

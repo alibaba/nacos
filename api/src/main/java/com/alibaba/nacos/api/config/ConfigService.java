@@ -80,6 +80,18 @@ public interface ConfigService {
     boolean publishConfig(String dataId, String group, String content) throws NacosException;
     
     /**
+     * Publish config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param type    config type {@link ConfigType}
+     * @return Whether publish
+     * @throws NacosException NacosException
+     */
+    boolean publishConfig(String dataId, String group, String content, String type) throws NacosException;
+    
+    /**
      * Remove config.
      *
      * @param dataId dataId
