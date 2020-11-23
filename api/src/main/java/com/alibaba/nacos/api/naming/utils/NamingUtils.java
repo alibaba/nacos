@@ -39,7 +39,7 @@ public class NamingUtils {
      *      nil         | groupA    | threw IllegalArgumentException
      *
      *
-     * @return 'serviceName@@groupName'
+     * @return 'groupName@@serviceName'
      */
     public static String getGroupedName(final String serviceName, final String groupName) {
         if (StringUtils.isBlank(serviceName)) {
@@ -90,7 +90,7 @@ public class NamingUtils {
     
     /**
      * Returns a combined string with serviceName and groupName.
-     * Such as 'serviceName@@groupName'
+     * Such as 'groupName@@serviceName'
      *
      * This method works similar with {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName}
      * But not verify any parameters.
@@ -100,7 +100,7 @@ public class NamingUtils {
      *      nil         | groupA    | groupA@@
      *      nil         | nil       | @@
      *
-     * @return 'serviceName@@groupName'
+     * @return 'groupName@@serviceName'
      */
     public static String getGroupedNameOptional(final String serviceName, final String groupName) {
         final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
