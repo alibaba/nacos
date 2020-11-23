@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.modules.entity;
 
-import lombok.Data;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -36,7 +34,6 @@ import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_INFO_AGG
  */
 @Table(name = CONFIG_INFO_AGGR_TABLE_NAME)
 @Entity
-@Data
 public class ConfigInfoAggrEntity implements Serializable {
     
     @Id
@@ -65,4 +62,67 @@ public class ConfigInfoAggrEntity implements Serializable {
     @Column(name = "tenant_id")
     private String tenantId;
     
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public String getDataId() {
+        return dataId;
+    }
+    
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
+    }
+    
+    public String getGroupId() {
+        return groupId;
+    }
+    
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+    
+    public String getDatumId() {
+        return datumId;
+    }
+    
+    public void setDatumId(String datumId) {
+        this.datumId = datumId;
+    }
+    
+    public String getContent() {
+        return content;
+    }
+    
+    public void setContent(String content) {
+        this.content = content;
+    }
+    
+    public Date getGmtModified() {
+        return gmtModified;
+    }
+    
+    public void setGmtModified(Date gmtModified) {
+        this.gmtModified = gmtModified;
+    }
+    
+    public String getAppName() {
+        return appName;
+    }
+    
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+    
+    public String getTenantId() {
+        return tenantId;
+    }
+    
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
 }

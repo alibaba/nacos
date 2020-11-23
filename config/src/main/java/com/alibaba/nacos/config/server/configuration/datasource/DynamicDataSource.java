@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.configuration.datasource;
 import com.alibaba.nacos.config.server.configuration.NacosMultipleDataSourceProperties;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.zaxxer.hikari.HikariDataSource;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 
@@ -45,8 +45,9 @@ import java.util.stream.Collectors;
  *
  * @author Nacos
  */
-@Slf4j
 public class DynamicDataSource implements DataSource, InitializingBean {
+    
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DynamicDataSource.class);
     
     public static final String KEEPALIVE_SQL = "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'";
     
@@ -159,10 +160,10 @@ public class DynamicDataSource implements DataSource, InitializingBean {
                     if (!Objects.equals(currentDataSource, dataSource)) {
                         currentDataSource = dataSource;
                     }
-                    log.info("current data source :{}", dataSource.getPoolName());
+                    LOGGER.info("current data source :{}", dataSource.getPoolName());
                     break;
                 } catch (SQLException e) {
-                    log.error("{} was down, Error Code:{}", dataSource.getPoolName(), e.getMessage());
+                    LOGGER.error("{} was down, Error Code:{}", dataSource.getPoolName(), e.getMessage());
                 }
             }
         }

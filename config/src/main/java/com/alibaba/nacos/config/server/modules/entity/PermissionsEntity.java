@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.config.server.modules.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -33,11 +29,8 @@ import static com.alibaba.nacos.config.server.constant.Constants.PERMISSIONS_TAB
  *
  * @author Nacos
  */
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = PERMISSIONS_TABLE_NAME)
 @Entity
-@Data
 public class PermissionsEntity implements Serializable {
     
     
@@ -60,4 +53,36 @@ public class PermissionsEntity implements Serializable {
     @Column(name = "action")
     private String action;
     
+    public PermissionsEntity() {
+    }
+    
+    public PermissionsEntity(String role, String resource, String action) {
+        this.role = role;
+        this.resource = resource;
+        this.action = action;
+    }
+    
+    public String getRole() {
+        return role;
+    }
+    
+    public void setRole(String role) {
+        this.role = role;
+    }
+    
+    public String getResource() {
+        return resource;
+    }
+    
+    public void setResource(String resource) {
+        this.resource = resource;
+    }
+    
+    public String getAction() {
+        return action;
+    }
+    
+    public void setAction(String action) {
+        this.action = action;
+    }
 }

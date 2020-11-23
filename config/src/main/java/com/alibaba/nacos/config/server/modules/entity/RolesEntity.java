@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.config.server.modules.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -33,11 +29,8 @@ import static com.alibaba.nacos.config.server.constant.Constants.ROLES_TABLE_NAM
  *
  * @author Nacos
  */
-@AllArgsConstructor
-@NoArgsConstructor
 @Table(name = ROLES_TABLE_NAME)
 @Entity
-@Data
 public class RolesEntity implements Serializable {
     
     @Id
@@ -47,4 +40,27 @@ public class RolesEntity implements Serializable {
     @Column(name = "role")
     private String role;
     
+    public RolesEntity() {
+    }
+    
+    public RolesEntity(String username, String role) {
+        this.username = username;
+        this.role = role;
+    }
+    
+    public String getUsername() {
+        return username;
+    }
+    
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    public String getRole() {
+        return role;
+    }
+    
+    public void setRole(String role) {
+        this.role = role;
+    }
 }

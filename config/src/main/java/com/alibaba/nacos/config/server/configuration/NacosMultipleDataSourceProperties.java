@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.configuration.datasource.DataSourceType;
-import lombok.Data;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -30,7 +29,6 @@ import java.util.List;
  * @author Nacos
  */
 @Component
-@Data
 @ConfigurationProperties(prefix = "nacos.datasource")
 public class NacosMultipleDataSourceProperties {
     
@@ -38,11 +36,33 @@ public class NacosMultipleDataSourceProperties {
     
     private RelationalDataSource relational;
     
-    @Data
+    public DataSourceType getType() {
+        return type;
+    }
+    
+    public void setType(DataSourceType type) {
+        this.type = type;
+    }
+    
+    public RelationalDataSource getRelational() {
+        return relational;
+    }
+    
+    public void setRelational(RelationalDataSource relational) {
+        this.relational = relational;
+    }
+    
     public static class RelationalDataSource {
         
         private List<DataSourceProperties> dsList;
-        
+    
+        public List<DataSourceProperties> getDsList() {
+            return dsList;
+        }
+    
+        public void setDsList(List<DataSourceProperties> dsList) {
+            this.dsList = dsList;
+        }
     }
     
 }

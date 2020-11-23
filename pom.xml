@@ -174,7 +174,6 @@
         <ojdbc.version>19.3.0.0</ojdbc.version>
         <querydsl.version>4.2.1</querydsl.version>
         <hikariCP.version>3.4.1</hikariCP.version>
-        <lombok.version>1.18.12</lombok.version>
         <jraft-core.version>1.3.2</jraft-core.version>
         <rpc-grpc-impl.version>1.3.2</rpc-grpc-impl.version>
     </properties>
@@ -1046,13 +1045,6 @@
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct-processor</artifactId>
                 <version>${mapstruct.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <optional>true</optional>
-                <version>${lombok.version}</version>
             </dependency>
 
             <dependency>

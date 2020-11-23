@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.modules.entity;
 
-import lombok.Data;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -32,10 +30,16 @@ import static com.alibaba.nacos.config.server.constant.Constants.GROUP_CAPACITY_
  */
 @Table(name = GROUP_CAPACITY_TABLE_NAME)
 @Entity
-@Data
 public class GroupCapacityEntity extends CapacityEntity {
     
     @Column(name = "group_id")
     private String groupId;
     
+    public String getGroupId() {
+        return groupId;
+    }
+    
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
 }

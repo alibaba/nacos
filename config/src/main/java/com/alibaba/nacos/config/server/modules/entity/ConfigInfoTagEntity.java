@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.modules.entity;
 
-import lombok.Data;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -36,7 +34,6 @@ import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_INFO_TAG
  */
 @Table(name = CONFIG_INFO_TAG_TABLE_NAME)
 @Entity
-@Data
 public class ConfigInfoTagEntity implements Serializable {
     
     @Id
@@ -77,5 +74,99 @@ public class ConfigInfoTagEntity implements Serializable {
     @Column(name = "src_ip")
     private String srcIp;
     
+    public Long getId() {
+        return id;
+    }
     
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public String getDataId() {
+        return dataId;
+    }
+    
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
+    }
+    
+    public String getGroupId() {
+        return groupId;
+    }
+    
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+    
+    public String getTenantId() {
+        return tenantId;
+    }
+    
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+    
+    public String getTagId() {
+        return tagId;
+    }
+    
+    public void setTagId(String tagId) {
+        this.tagId = tagId;
+    }
+    
+    public String getAppName() {
+        return appName;
+    }
+    
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+    
+    public String getContent() {
+        return content;
+    }
+    
+    public void setContent(String content) {
+        this.content = content;
+    }
+    
+    public String getMd5() {
+        return md5;
+    }
+    
+    public void setMd5(String md5) {
+        this.md5 = md5;
+    }
+    
+    public Date getGmtCreate() {
+        return gmtCreate;
+    }
+    
+    public void setGmtCreate(Date gmtCreate) {
+        this.gmtCreate = gmtCreate;
+    }
+    
+    public Date getGmtModified() {
+        return gmtModified;
+    }
+    
+    public void setGmtModified(Date gmtModified) {
+        this.gmtModified = gmtModified;
+    }
+    
+    public String getSrcUser() {
+        return srcUser;
+    }
+    
+    public void setSrcUser(String srcUser) {
+        this.srcUser = srcUser;
+    }
+    
+    public String getSrcIp() {
+        return srcIp;
+    }
+    
+    public void setSrcIp(String srcIp) {
+        this.srcIp = srcIp;
+    }
 }

@@ -78,9 +78,10 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.google.common.base.Joiner;
 import com.querydsl.core.BooleanBuilder;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
@@ -119,11 +120,13 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author klw
  */
-@Slf4j
 @SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
 public class ExternalStoragePersistServiceImpl implements PersistService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExternalStoragePersistServiceImpl.class);
+    
     
     @Autowired
     private ConfigInfoRepository configInfoRepository;
@@ -177,7 +180,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
                     
                 } catch (CannotGetJdbcConnectionException e) {
-                    log.error("[db-error] " + e.toString(), e);
+                    LOGGER.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
                 return Boolean.TRUE;
@@ -206,7 +209,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             configInfoBeta.setTenantId(tenantTmp);
             configInfoBetaRepository.save(configInfoBeta);
         } catch (CannotGetJdbcConnectionException e) {
-            log.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -233,7 +236,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             configInfoTag.setSrcIp(srcIp);
             configInfoTagRepository.save(configInfoTag);
         } catch (CannotGetJdbcConnectionException e) {
-            log.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -264,7 +267,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     }
                     insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
                 } catch (CannotGetJdbcConnectionException e) {
-                    log.error("[db-error] " + e.toString(), e);
+                    LOGGER.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
                 return Boolean.TRUE;
@@ -299,7 +302,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             configInfoBeta.setSrcUser(srcUser);
             configInfoBetaRepository.save(configInfoBeta);
         } catch (CannotGetJdbcConnectionException e) {
-            log.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -330,7 +333,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             configInfoTag.setSrcIp(srcIp);
             configInfoTagRepository.save(configInfoTag);
         } catch (CannotGetJdbcConnectionException e) {
-            log.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -470,7 +473,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                         configInfoBetaRepository.deleteById(configInfo4Beta.getId());
                     }
                 } catch (CannotGetJdbcConnectionException e) {
-                    log.error("[db-error] " + e.toString(), e);
+                    LOGGER.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
                 return Boolean.TRUE;
@@ -1110,11 +1113,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), com.alibaba.nacos.api.common.Constants.ENCODE);
         ConfigInfoEntity configInfoEntity = ConfigInfoEntityMapStruct.INSTANCE.convertConfigInfoEntity(configInfo);
-        configInfoEntity.setCDesc(desc);
-        configInfoEntity.setCUse(use);
+        configInfoEntity.setcDesc(desc);
+        configInfoEntity.setcUse(use);
         configInfoEntity.setEffect(effect);
         configInfoEntity.setType(type);
-        configInfoEntity.setCSchema(schema);
+        configInfoEntity.setcSchema(schema);
         configInfoEntity.setMd5(md5Tmp);
         configInfoEntity.setGmtCreate(time);
         configInfoEntity.setGmtModified(time);
@@ -1263,11 +1266,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         
         configInfoEntity.setMd5(md5Tmp);
-        configInfoEntity.setCDesc(desc);
-        configInfoEntity.setCUse(use);
+        configInfoEntity.setcDesc(desc);
+        configInfoEntity.setcUse(use);
         configInfoEntity.setEffect(effect);
         configInfoEntity.setType(type);
-        configInfoEntity.setCSchema(schema);
+        configInfoEntity.setcSchema(schema);
         configInfoEntity.setGmtModified(time);
         configInfoRepository.save(configInfoEntity);
     }

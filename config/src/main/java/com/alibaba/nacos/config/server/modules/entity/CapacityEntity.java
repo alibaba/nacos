@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.modules.entity;
 
-import lombok.Data;
-
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -30,7 +28,6 @@ import java.util.Date;
  *
  * @author Nacos
  */
-@Data
 @MappedSuperclass
 public abstract class CapacityEntity {
     
@@ -63,4 +60,76 @@ public abstract class CapacityEntity {
     
     @Column(name = "gmt_modified")
     private Date gmtModified;
+    
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public Integer getQuota() {
+        return quota;
+    }
+    
+    public void setQuota(Integer quota) {
+        this.quota = quota;
+    }
+    
+    public Integer getUsage() {
+        return usage;
+    }
+    
+    public void setUsage(Integer usage) {
+        this.usage = usage;
+    }
+    
+    public Integer getMaxSize() {
+        return maxSize;
+    }
+    
+    public void setMaxSize(Integer maxSize) {
+        this.maxSize = maxSize;
+    }
+    
+    public Integer getMaxAggrCount() {
+        return maxAggrCount;
+    }
+    
+    public void setMaxAggrCount(Integer maxAggrCount) {
+        this.maxAggrCount = maxAggrCount;
+    }
+    
+    public Integer getMaxAggrSize() {
+        return maxAggrSize;
+    }
+    
+    public void setMaxAggrSize(Integer maxAggrSize) {
+        this.maxAggrSize = maxAggrSize;
+    }
+    
+    public Integer getMaxHistoryCount() {
+        return maxHistoryCount;
+    }
+    
+    public void setMaxHistoryCount(Integer maxHistoryCount) {
+        this.maxHistoryCount = maxHistoryCount;
+    }
+    
+    public Date getGmtCreate() {
+        return gmtCreate;
+    }
+    
+    public void setGmtCreate(Date gmtCreate) {
+        this.gmtCreate = gmtCreate;
+    }
+    
+    public Date getGmtModified() {
+        return gmtModified;
+    }
+    
+    public void setGmtModified(Date gmtModified) {
+        this.gmtModified = gmtModified;
+    }
 }

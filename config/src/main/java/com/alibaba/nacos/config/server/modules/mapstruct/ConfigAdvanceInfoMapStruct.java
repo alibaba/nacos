@@ -34,7 +34,7 @@ public interface ConfigAdvanceInfoMapStruct {
     ConfigAdvanceInfoMapStruct INSTANCE = Mappers.getMapper(ConfigAdvanceInfoMapStruct.class);
     
     @Mappings({@Mapping(target = "createUser", source = "srcUser"), @Mapping(target = "createIp", source = "srcIp"),
-            @Mapping(target = "desc", source = "CDesc"), @Mapping(target = "use", source = "CUse"),
-            @Mapping(target = "schema", source = "CSchema")})
+            @Mapping(target = "desc", source = "cDesc"), @Mapping(target = "use", source = "cUse"),
+            @Mapping(target = "schema", source = "cSchema")})
     ConfigAdvanceInfo convertConfigAdvanceInfo(ConfigInfoEntity configInfoEntity);
 }

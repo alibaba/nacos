@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.modules.entity;
 
-import lombok.Data;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -35,7 +33,6 @@ import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_TAGS_REL
  */
 @Table(name = CONFIG_TAGS_RELATION_TABLE_NAME)
 @Entity
-@Data
 public class ConfigTagsRelationEntity implements Serializable {
     
     @Id
@@ -61,5 +58,59 @@ public class ConfigTagsRelationEntity implements Serializable {
     @Column(name = "tenant_id")
     private String tenantId;
     
+    public Long getNid() {
+        return nid;
+    }
     
+    public void setNid(Long nid) {
+        this.nid = nid;
+    }
+    
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public String getTagName() {
+        return tagName;
+    }
+    
+    public void setTagName(String tagName) {
+        this.tagName = tagName;
+    }
+    
+    public String getTagType() {
+        return tagType;
+    }
+    
+    public void setTagType(String tagType) {
+        this.tagType = tagType;
+    }
+    
+    public String getDataId() {
+        return dataId;
+    }
+    
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
+    }
+    
+    public String getGroupId() {
+        return groupId;
+    }
+    
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+    
+    public String getTenantId() {
+        return tenantId;
+    }
+    
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
 }
