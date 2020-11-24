@@ -29,14 +29,14 @@ public class NamingUtils {
     
     /**
      * Returns a combined string with serviceName and groupName. serviceName can not be nil.
-     * <p>
-     * In most cases, serviceName can not be nil. In other cases, for search or anything, See {@link
+     *
+     * <p>In most cases, serviceName can not be nil. In other cases, for search or anything, See {@link
      * com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedNameOptional(String, String)}
-     * <p>
-     * etc:
-     * <p>serviceName | groupName | result </>
-     * <p>serviceA    | groupA    | groupA@@serviceA</>
-     * <p>nil         | groupA    | threw IllegalArgumentException</>
+     *
+     * <p>etc:
+     * <p>serviceName | groupName | result</p>
+     * <p>serviceA    | groupA    | groupA@@serviceA</p>
+     * <p>nil         | groupA    | threw IllegalArgumentException</p>
      *
      * @return 'groupName@@serviceName'
      */
@@ -87,18 +87,15 @@ public class NamingUtils {
         }
     }
     
-    
     /**
      * Returns a combined string with serviceName and groupName. Such as 'groupName@@serviceName'
-     * <p>
-     * This method works similar with {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName} But not
-     * verify any parameters.
-     * <p>
-     * etc:
-     * <p>serviceName | groupName | result</>
-     * <p>serviceA    | groupA    | groupA@@serviceA</>
-     * <p>nil         | groupA    | groupA@@</>
-     * <p>nil         | nil       | @@</>
+     * <p>This method works similar with {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName} But not verify any parameters.
+     *
+     * </p> etc:
+     * <p>serviceName | groupName | result</p>
+     * <p>serviceA    | groupA    | groupA@@serviceA</p>
+     * <p>nil         | groupA    | groupA@@</p>
+     * <p>nil         | nil       | @@</p>
      *
      * @return 'groupName@@serviceName'
      */
