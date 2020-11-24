@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
@@ -40,22 +41,22 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedRolePersistServiceImpl implements RolePersistService {
-
+    
     @Autowired
     private DatabaseOperate databaseOperate;
-
+    
     @Autowired
     private EmbeddedStoragePersistServiceImpl persistService;
-
+    
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-
+        
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-
+        
         String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
         String sqlFetchRows = "select role,username from roles where ";
-
+        
         String where = " 1=1 ";
-
+        
         Page<RoleInfo> pageInfo = helper
                 .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
                         pageSize, ROLE_INFO_ROW_MAPPER);
@@ -65,27 +66,29 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
             pageInfo.setPageItems(new ArrayList<>());
         }
         return pageInfo;
-
+        
     }
-
+    
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
-
+        
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-
+        
         String sqlCountRows = "select count(*) from roles where ";
         String sqlFetchRows = "select role,username from roles where ";
-
-        String where = " username='" + username + "' ";
-
-        if (StringUtils.isBlank(username)) {
+    
+        String where = " username= ? ";
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(username)) {
+            params = Collections.singletonList(username);
+        } else {
             where = " 1=1 ";
         }
-
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+        
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
                 pageSize, ROLE_INFO_ROW_MAPPER);
-
+        
     }
-
+    
     /**
      * Add user role.
      *
@@ -93,9 +96,9 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
      * @param userName username string value.
      */
     public void addRole(String role, String userName) {
-
+        
         String sql = "INSERT into roles (role, username) VALUES (?, ?)";
-
+        
         try {
             EmbeddedStorageContextUtils.addSqlContext(sql, role, userName);
             databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
@@ -103,7 +106,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
-
+    
     /**
      * Delete user role.
      *
@@ -118,7 +121,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
-
+    
     /**
      * Execute delete role sql operation.
      *
@@ -134,12 +137,12 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
-
+    
     @Override
     public List<String> findRolesLikeRoleName(String role) {
         String sql = "SELECT role FROM roles WHERE role like ? ";
-        List<String> users = databaseOperate.queryMany(sql, new String[]{"%" + role + "%"}, String.class);
+        List<String> users = databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
         return users;
     }
-
+    
 }

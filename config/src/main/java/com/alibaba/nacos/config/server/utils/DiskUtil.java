@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -107,9 +107,9 @@ public class DiskUtil {
     public static File targetFile(String dataId, String group, String tenant) {
         File file = null;
         if (StringUtils.isBlank(tenant)) {
-            file = new File(ApplicationUtils.getNacosHome(), BASE_DIR);
+            file = new File(EnvUtil.getNacosHome(), BASE_DIR);
         } else {
-            file = new File(ApplicationUtils.getNacosHome(), TENANT_BASE_DIR);
+            file = new File(EnvUtil.getNacosHome(), TENANT_BASE_DIR);
             file = new File(file, tenant);
         }
         file = new File(file, group);
@@ -123,9 +123,9 @@ public class DiskUtil {
     public static File targetBetaFile(String dataId, String group, String tenant) {
         File file = null;
         if (StringUtils.isBlank(tenant)) {
-            file = new File(ApplicationUtils.getNacosHome(), BETA_DIR);
+            file = new File(EnvUtil.getNacosHome(), BETA_DIR);
         } else {
-            file = new File(ApplicationUtils.getNacosHome(), TENANT_BETA_DIR);
+            file = new File(EnvUtil.getNacosHome(), TENANT_BETA_DIR);
             file = new File(file, tenant);
         }
         file = new File(file, group);
@@ -139,9 +139,9 @@ public class DiskUtil {
     public static File targetTagFile(String dataId, String group, String tenant, String tag) {
         File file = null;
         if (StringUtils.isBlank(tenant)) {
-            file = new File(ApplicationUtils.getNacosHome(), TAG_DIR);
+            file = new File(EnvUtil.getNacosHome(), TAG_DIR);
         } else {
-            file = new File(ApplicationUtils.getNacosHome(), TENANT_TAG_DIR);
+            file = new File(EnvUtil.getNacosHome(), TENANT_TAG_DIR);
             file = new File(file, tenant);
         }
         file = new File(file, group);
@@ -169,7 +169,7 @@ public class DiskUtil {
     }
     
     public static File heartBeatFile() {
-        return new File(ApplicationUtils.getNacosHome(), "status" + File.separator + "heartBeat.txt");
+        return new File(EnvUtil.getNacosHome(), "status" + File.separator + "heartBeat.txt");
     }
     
     public static String relativePath(String dataId, String group) {
@@ -180,13 +180,13 @@ public class DiskUtil {
      * Clear all config file.
      */
     public static void clearAll() {
-        File file = new File(ApplicationUtils.getNacosHome(), BASE_DIR);
+        File file = new File(EnvUtil.getNacosHome(), BASE_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info success.");
         } else {
             LogUtil.DEFAULT_LOG.warn("clear all config-info failed.");
         }
-        File fileTenant = new File(ApplicationUtils.getNacosHome(), TENANT_BASE_DIR);
+        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_BASE_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-tenant success.");
         } else {
@@ -198,13 +198,13 @@ public class DiskUtil {
      * Clear all beta config file.
      */
     public static void clearAllBeta() {
-        File file = new File(ApplicationUtils.getNacosHome(), BETA_DIR);
+        File file = new File(EnvUtil.getNacosHome(), BETA_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-beta success.");
         } else {
             LogUtil.DEFAULT_LOG.warn("clear all config-info-beta failed.");
         }
-        File fileTenant = new File(ApplicationUtils.getNacosHome(), TENANT_BETA_DIR);
+        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_BETA_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-beta-tenant success.");
         } else {
@@ -216,13 +216,13 @@ public class DiskUtil {
      * Clear all tag config file.
      */
     public static void clearAllTag() {
-        File file = new File(ApplicationUtils.getNacosHome(), TAG_DIR);
+        File file = new File(EnvUtil.getNacosHome(), TAG_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-tag success.");
         } else {
             LogUtil.DEFAULT_LOG.warn("clear all config-info-tag failed.");
         }
-        File fileTenant = new File(ApplicationUtils.getNacosHome(), TENANT_TAG_DIR);
+        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_TAG_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-tag-tenant success.");
         } else {

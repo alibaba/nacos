@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -53,7 +53,7 @@ import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -1116,16 +1116,26 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<String> getTenantIdList(int page, int pageSize) {
-        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?";
+        PaginationHelper<String> helper = createPaginationHelper();
+        
+        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?,?";
         int from = (page - 1) * pageSize;
-        return databaseOperate.queryMany(sql, new Object[] {from, pageSize}, String.class);
+        
+        Page<String> pageList = helper.fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize,
+                (resultSet, i) -> resultSet.getString("tenant_id"));
+        return pageList.getPageItems();
     }
     
     @Override
     public List<String> getGroupIdList(int page, int pageSize) {
-        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?, ?";
+        PaginationHelper<String> helper = createPaginationHelper();
+        
+        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?,?";
         int from = (page - 1) * pageSize;
-        return databaseOperate.queryMany(sql, new Object[] {from, pageSize}, String.class);
+        
+        Page<String> pageList = helper.fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize,
+                (resultSet, i) -> resultSet.getString("group_id"));
+        return pageList.getPageItems();
     }
     
     @Override
@@ -2060,6 +2070,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (select max(nid) from his_config_info where id = ?)";
+        return databaseOperate.queryOne(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
+    }
+    
+    @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
             String createResoure, final long time) {
         
@@ -2299,7 +2315,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         int skipCount = 0;
         List<Map<String, String>> failData = null;
         List<Map<String, String>> skipData = null;
-    
+        
         final BiConsumer<Boolean, Throwable> callFinally = (result, t) -> {
             if (t != null) {
                 throw new NacosRuntimeException(0, t);

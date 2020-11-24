@@ -16,20 +16,25 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.common.http.handler.RequestHandler;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 
 import java.io.UnsupportedEncodingException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -39,6 +44,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,7 +61,7 @@ public final class HttpUtils {
      * Init http header.
      *
      * @param requestBase requestBase {@link HttpRequestBase}
-     * @param header header
+     * @param header      header
      */
     public static void initRequestHeader(HttpRequestBase requestBase, Header header) {
         Iterator<Map.Entry<String, String>> iterator = header.iterator();
@@ -69,18 +75,25 @@ public final class HttpUtils {
      * Init http entity.
      *
      * @param requestBase requestBase {@link HttpRequestBase}
-     * @param body      body
-     * @param mediaType mediaType {@link ContentType}
+     * @param body        body
+     * @param header      request header
      * @throws Exception exception
      */
-    public static void initRequestEntity(HttpRequestBase requestBase, Object body, String mediaType) throws Exception {
+    public static void initRequestEntity(HttpRequestBase requestBase, Object body, Header header) throws Exception {
         if (body == null) {
             return;
         }
         if (requestBase instanceof HttpEntityEnclosingRequest) {
             HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
-            ContentType contentType = ContentType.create(mediaType);
-            StringEntity entity = new StringEntity(RequestHandler.parse(body), contentType);
+            MediaType mediaType = MediaType.valueOf(header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+            ContentType contentType = ContentType.create(mediaType.getType(), mediaType.getCharset());
+            HttpEntity entity;
+            if (body instanceof byte[]) {
+                entity = new ByteArrayEntity((byte[]) body, contentType);
+            } else {
+                entity = new StringEntity(body instanceof String ? (String) body : JacksonUtils.toJson(body),
+                        contentType);
+            }
             request.setEntity(entity);
         }
     }
@@ -89,11 +102,12 @@ public final class HttpUtils {
      * Init request from entity map.
      *
      * @param requestBase requestBase {@link HttpRequestBase}
-     * @param body    body map
-     * @param charset charset of entity
+     * @param body        body map
+     * @param charset     charset of entity
      * @throws Exception exception
      */
-    public static void initRequestFromEntity(HttpRequestBase requestBase, Map<String, String> body, String charset) throws Exception {
+    public static void initRequestFromEntity(HttpRequestBase requestBase, Map<String, String> body, String charset)
+            throws Exception {
         if (body == null || body.isEmpty()) {
             return;
         }
@@ -235,6 +249,17 @@ public final class HttpUtils {
         return new URI(url);
     }
     
+    /**
+     * HTTP request exception is a timeout exception.
+     *
+     * @param throwable http request throwable
+     * @return boolean
+     */
+    public static boolean isTimeoutException(Throwable throwable) {
+        return throwable instanceof SocketTimeoutException || throwable instanceof ConnectTimeoutException
+                || throwable instanceof TimeoutException || throwable.getCause() instanceof TimeoutException;
+    }
+    
     private static String innerDecode(String pre, String now, String encode) throws UnsupportedEncodingException {
         // Because the data may be encoded by the URL more than once,
         // it needs to be decoded recursively until it is fully successful
@@ -245,4 +270,5 @@ public final class HttpUtils {
         now = URLDecoder.decode(now, encode);
         return innerDecode(pre, now, encode);
     }
+    
 }

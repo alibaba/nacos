@@ -48,16 +48,16 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
-import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
@@ -142,7 +142,7 @@ import java.util.stream.Collectors;
 @Conditional(ConditionDistributedEmbedStorage.class)
 @Component
 @SuppressWarnings({"unchecked"})
-public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements BaseDatabaseOperate {
+public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implements BaseDatabaseOperate {
     
     /**
      * The data import operation is dedicated key, which ACTS as an identifier.
@@ -227,7 +227,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
-                    GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), cls);
             }
@@ -251,7 +251,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
-                    GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), cls);
             }
@@ -275,7 +275,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
-                    GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(),
                         ClassUtils.resolveGenericTypeByInterface(mapper.getClass()));
@@ -300,7 +300,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
-                    GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), List.class);
             }
@@ -324,7 +324,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
-                    GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), List.class);
             }
@@ -348,7 +348,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
-                    GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), List.class);
             }
@@ -362,12 +362,12 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
     /**
      * In some business situations, you need to avoid the timeout issue, so blockRead is used to determine this.
      *
-     * @param request   {@link GetRequest}
+     * @param request   {@link ReadRequest}
      * @param blockRead is async read operation
      * @return {@link Response}
      * @throws Exception Exception
      */
-    private Response innerRead(GetRequest request, boolean blockRead) throws Exception {
+    private Response innerRead(ReadRequest request, boolean blockRead) throws Exception {
         if (blockRead) {
             return (Response) protocol.aGetData(request).join();
         }
@@ -390,7 +390,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
                     if (submit) {
                         List<ModifyRequest> requests = batchUpdate.stream().map(ModifyRequest::new)
                                 .collect(Collectors.toList());
-                        CompletableFuture<Response> future = protocol.submitAsync(Log.newBuilder().setGroup(group())
+                        CompletableFuture<Response> future = protocol.submitAsync(WriteRequest.newBuilder().setGroup(group())
                                 .setData(ByteString.copyFrom(serializer.serialize(requests)))
                                 .putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString()).build());
                         futures.add(future);
@@ -427,19 +427,19 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             final String key =
                     System.currentTimeMillis() + "-" + group() + "-" + memberManager.getSelf().getAddress() + "-"
                             + MD5Utils.md5Hex(sqlContext.toString(), Constants.ENCODE);
-            Log log = Log.newBuilder().setGroup(group()).setKey(key)
+            WriteRequest request = WriteRequest.newBuilder().setGroup(group()).setKey(key)
                     .setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
                     .putAllExtendInfo(EmbeddedStorageContextUtils.getCurrentExtendInfo())
                     .setType(sqlContext.getClass().getCanonicalName()).build();
             if (Objects.isNull(consumer)) {
-                Response response = this.protocol.submit(log);
+                Response response = this.protocol.submit(request);
                 if (response.getSuccess()) {
                     return true;
                 }
                 LogUtil.DEFAULT_LOG.error("execute sql modify operation failed : {}", response.getErrMsg());
                 return false;
             } else {
-                this.protocol.submitAsync(log).whenComplete((BiConsumer<Response, Throwable>) (response, ex) -> {
+                this.protocol.submitAsync(request).whenComplete((BiConsumer<Response, Throwable>) (response, ex) -> {
                     String errMsg = Objects.isNull(ex) ? response.getErrMsg() : ExceptionUtil.getCause(ex).getMessage();
                     consumer.accept(response.getSuccess(),
                             StringUtils.isBlank(errMsg) ? null : new NJdbcException(errMsg));
@@ -462,7 +462,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
     
     @SuppressWarnings("all")
     @Override
-    public Response onRequest(final GetRequest request) {
+    public Response onRequest(final ReadRequest request) {
         final SelectRequest selectRequest = serializer
                 .deserialize(request.getData().toByteArray(), SelectRequest.class);
         
@@ -511,7 +511,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
     }
     
     @Override
-    public Response onApply(Log log) {
+    public Response onApply(WriteRequest log) {
         LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "onApply info : log : {}", log);
         final ByteString byteString = log.getData();
         Preconditions.checkArgument(byteString != null, "Log.getData() must not null");

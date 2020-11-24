@@ -27,6 +27,8 @@ import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.BiConsumer;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.apache.http.protocol.RequestContent;
+import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.slf4j.Logger;
 
 import javax.net.ssl.HostnameVerifier;
@@ -67,15 +69,28 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     
     @Override
     public NacosAsyncRestTemplate createNacosAsyncRestTemplate() {
-        RequestConfig requestConfig = getRequestConfig();
+        final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
         return new NacosAsyncRestTemplate(assignLogger(), new DefaultAsyncHttpClientRequest(
-                HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig).build()));
+                HttpAsyncClients.custom()
+                        .addInterceptorLast(new RequestContent(true))
+                        .setDefaultIOReactorConfig(getIoReactorConfig())
+                        .setDefaultRequestConfig(getRequestConfig())
+                        .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
+                        .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
+                        .setUserAgent(originalRequestConfig.getUserAgent()).build()));
+    }
+    
+    protected IOReactorConfig getIoReactorConfig() {
+        HttpClientConfig httpClientConfig = buildHttpClientConfig();
+        return IOReactorConfig.custom().setIoThreadCount(httpClientConfig.getIoThreadCount()).build();
     }
     
     protected RequestConfig getRequestConfig() {
         HttpClientConfig httpClientConfig = buildHttpClientConfig();
         return RequestConfig.custom().setConnectTimeout(httpClientConfig.getConTimeOutMillis())
                 .setSocketTimeout(httpClientConfig.getReadTimeOutMillis())
+                .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout())
+                .setContentCompressionEnabled(httpClientConfig.getContentCompressionEnabled())
                 .setMaxRedirects(httpClientConfig.getMaxRedirects()).build();
     }
     

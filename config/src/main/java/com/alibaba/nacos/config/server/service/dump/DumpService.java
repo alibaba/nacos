@@ -49,8 +49,8 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,7 +133,8 @@ public abstract class DumpService {
     
     protected void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
             DumpAllBetaProcessor dumpAllBetaProcessor, DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
-        TimerContext.start("CONFIG_DUMP_TO_FILE");
+        String dumpFileContext = "CONFIG_DUMP_TO_FILE";
+        TimerContext.start(dumpFileContext);
         try {
             LogUtil.DEFAULT_LOG.warn("DumpService start");
             
@@ -202,7 +203,7 @@ public abstract class DumpService {
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
                         e);
             }
-            if (!ApplicationUtils.getStandaloneMode()) {
+            if (!EnvUtil.getStandaloneMode()) {
                 Runnable heartbeat = () -> {
                     String heartBeatTime = TimeUtils.getCurrentTime().toString();
                     // write disk
@@ -229,7 +230,7 @@ public abstract class DumpService {
             
             ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
         } finally {
-            TimerContext.end(LogUtil.DUMP_LOG);
+            TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
         }
         
     }
@@ -304,7 +305,7 @@ public abstract class DumpService {
     private Boolean isQuickStart() {
         try {
             String val = null;
-            val = ApplicationUtils.getProperty("isQuickStart");
+            val = EnvUtil.getProperty("isQuickStart");
             if (val != null && TRUE_STR.equals(val)) {
                 isQuickStart = true;
             }
@@ -316,7 +317,7 @@ public abstract class DumpService {
     }
     
     private int getRetentionDays() {
-        String val = ApplicationUtils.getProperty("nacos.config.retention.days");
+        String val = EnvUtil.getProperty("nacos.config.retention.days");
         if (null == val) {
             return retentionDays;
         }
@@ -419,7 +420,7 @@ public abstract class DumpService {
                         }
                     } else {
                         // remove config info
-                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
+                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
                         LOGGER.warn(
                                 "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                                         + group);

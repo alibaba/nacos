@@ -1078,6 +1078,15 @@ public interface PersistService {
     ConfigHistoryInfo detailConfigHistory(Long nid);
     
     /**
+     * Get previous config detail.
+     *
+     * @param id id
+     * @return {@link ConfigHistoryInfo}
+     */
+    ConfigHistoryInfo detailPreviousConfigHistory(Long id);
+    
+    
+    /**
      * insert tenant info.
      *
      * @param kp            kp
@@ -1229,4 +1238,5 @@ public interface PersistService {
      * @return count by tenantId
      */
     int tenantInfoCountByTenantId(String tenantId);
+    
 }

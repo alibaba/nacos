@@ -17,7 +17,8 @@
 package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,14 +80,14 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     private long currentId;
     
     {
-        long workerId = ApplicationUtils.getProperty("nacos.core.snowflake.worker-id", Integer.class, -1);
+        long workerId = EnvUtil.getProperty("nacos.core.snowflake.worker-id", Integer.class, -1);
         
         if (workerId != -1) {
             this.workerId = workerId;
         } else {
             InetAddress address;
             try {
-                address = InetAddress.getLocalHost();
+                address = InetAddress.getByName(InetUtils.getSelfIP());
             } catch (final UnknownHostException e) {
                 throw new IllegalStateException("Cannot get LocalHost InetAddress, please check your network!", e);
             }

@@ -37,6 +37,8 @@ import java.util.Map;
  */
 public class Instances implements Record {
     
+    private static final long serialVersionUID = 5500823673993740145L;
+    
     private List<Instance> instanceList = new ArrayList<>();
     
     public List<Instance> getInstanceList() {

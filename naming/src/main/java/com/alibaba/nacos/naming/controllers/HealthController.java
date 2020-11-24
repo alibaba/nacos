@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -75,7 +75,7 @@ public class HealthController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("msg",
                 "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getServiceCount()
-                        + ", local port:" + ApplicationUtils.getPort());
+                        + ", local port:" + EnvUtil.getPort());
         return result;
     }
     

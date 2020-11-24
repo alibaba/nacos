@@ -21,7 +21,7 @@ package com.alibaba.nacos.common.task;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractExecuteTask implements NacosTask {
+public abstract class AbstractExecuteTask implements NacosTask, Runnable {
     
     @Override
     public boolean shouldProcess() {

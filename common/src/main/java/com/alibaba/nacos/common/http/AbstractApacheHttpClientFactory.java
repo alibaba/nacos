@@ -18,8 +18,8 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.protocol.RequestContent;
 
 /**
  * apache http client factory implements.
@@ -30,9 +30,16 @@ public abstract class AbstractApacheHttpClientFactory extends AbstractHttpClient
     
     @Override
     public final NacosRestTemplate createNacosRestTemplate() {
-        final RequestConfig requestConfig = getRequestConfig();
-        return new NacosRestTemplate(assignLogger(),
-                new DefaultHttpClientRequest(HttpClients.custom().setDefaultRequestConfig(requestConfig).build()));
+        final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
+        return new NacosRestTemplate(assignLogger(), new DefaultHttpClientRequest(
+                HttpClients.custom()
+                        .addInterceptorLast(new RequestContent(true))
+                        .setDefaultRequestConfig(getRequestConfig())
+                        .setUserAgent(originalRequestConfig.getUserAgent())
+                        .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
+                        .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
+                        .setConnectionTimeToLive(originalRequestConfig.getConnTimeToLive(),
+                                originalRequestConfig.getConnTimeToLiveTimeUnit()).build()));
     }
     
 }
