@@ -16,80 +16,89 @@
 
 package com.alibaba.nacos.core.code;
 
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.alibaba.nacos.core.listener.LoggingApplicationListener;
+import com.alibaba.nacos.core.listener.NacosApplicationListener;
+import com.alibaba.nacos.core.listener.StartingApplicationListener;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.boot.context.event.EventPublishingRunListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
-import static org.springframework.boot.context.logging.LoggingApplicationListener.CONFIG_PROPERTY;
-import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Logging {@link SpringApplicationRunListener} before {@link EventPublishingRunListener} execution.
+ * {@link org.springframework.boot.SpringApplicationRunListener} before {@link EventPublishingRunListener} execution.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
  */
-public class LoggingSpringApplicationRunListener implements SpringApplicationRunListener, Ordered {
-    
-    private static final String DEFAULT_NACOS_LOGBACK_LOCATION = CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingSpringApplicationRunListener.class);
+public class SpringApplicationRunListener implements org.springframework.boot.SpringApplicationRunListener, Ordered {
     
     private final SpringApplication application;
     
     private final String[] args;
     
-    public LoggingSpringApplicationRunListener(SpringApplication application, String[] args) {
+    private List<NacosApplicationListener> nacosApplicationListeners = new ArrayList<>();
+    
+    {
+        nacosApplicationListeners.add(new LoggingApplicationListener());
+        nacosApplicationListeners.add(new StartingApplicationListener());
+    }
+    
+    public SpringApplicationRunListener(SpringApplication application, String[] args) {
         this.application = application;
         this.args = args;
     }
     
     @Override
     public void starting() {
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.starting();
+        }
     }
     
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
-        ApplicationUtils.injectEnvironment(environment);
-        if (!environment.containsProperty(CONFIG_PROPERTY)) {
-            System.setProperty(CONFIG_PROPERTY, DEFAULT_NACOS_LOGBACK_LOCATION);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("There is no property named \"{}\" in Spring Boot Environment, "
-                                + "and whose value is {} will be set into System's Properties", CONFIG_PROPERTY,
-                        DEFAULT_NACOS_LOGBACK_LOCATION);
-            }
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.environmentPrepared(environment);
         }
     }
     
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
-    
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.contextPrepared(context);
+        }
     }
     
     @Override
     public void contextLoaded(ConfigurableApplicationContext context) {
-    
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.contextLoaded(context);
+        }
     }
     
     @Override
     public void started(ConfigurableApplicationContext context) {
-    
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.started(context);
+        }
     }
     
     @Override
     public void running(ConfigurableApplicationContext context) {
-    
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.running(context);
+        }
     }
     
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
-    
+        for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
+            nacosApplicationListener.failed(context, exception);
+        }
     }
     
     /**

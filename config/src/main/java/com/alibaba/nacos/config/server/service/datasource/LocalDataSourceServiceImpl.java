@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.lang3.StringUtils;
@@ -77,7 +77,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             if (!initialize) {
                 LogUtil.DEFAULT_LOG.info("use local db service for init");
                 final String jdbcUrl =
-                        "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), derbyBaseDir).toString()
+                        "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
                                 + ";create=true";
                 initialize(jdbcUrl);
                 initialize = true;
@@ -113,7 +113,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     public void cleanAndReopenDerby() throws Exception {
         doDerbyClean();
         final String jdbcUrl =
-                "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), derbyBaseDir).toString() + ";create=true";
+                "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString() + ";create=true";
         initialize(jdbcUrl);
     }
     
@@ -140,11 +140,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 throw e;
             }
         }
-        DiskUtils.deleteDirectory(Paths.get(ApplicationUtils.getNacosHome(), derbyBaseDir).toString());
+        DiskUtils.deleteDirectory(Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString());
     }
     
     private synchronized void initialize(String jdbcUrl) {
-        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(ApplicationUtils.getEnvironment());
+        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(EnvUtil.getEnvironment());
         poolProperties.setDriverClassName(jdbcDriverName);
         poolProperties.setJdbcUrl(jdbcUrl);
         poolProperties.setUsername(userName);
@@ -184,7 +184,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     @Override
     public String getCurrentDbUrl() {
-        return "jdbc:derby:" + ApplicationUtils.getNacosHome() + File.separator + derbyBaseDir + ";create=true";
+        return "jdbc:derby:" + EnvUtil.getNacosHome() + File.separator + derbyBaseDir + ";create=true";
     }
     
     @Override
@@ -208,8 +208,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         InputStream sqlFileIn = null;
         try {
             File file = new File(
-                    ApplicationUtils.getNacosHome() + File.separator + "conf" + File.separator + "schema.sql");
-            if (StringUtils.isBlank(ApplicationUtils.getNacosHome()) || !file.exists()) {
+                    EnvUtil.getNacosHome() + File.separator + "conf" + File.separator + "schema.sql");
+            if (StringUtils.isBlank(EnvUtil.getNacosHome()) || !file.exists()) {
                 ClassLoader classLoader = getClass().getClassLoader();
                 URL url = classLoader.getResource(sqlFile);
                 sqlFileIn = url.openStream();

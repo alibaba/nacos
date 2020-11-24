@@ -39,6 +39,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Unified filter to handle authentication and authorization.
@@ -56,6 +58,8 @@ public class AuthFilter implements Filter {
     
     @Autowired
     private ControllerMethodsCache methodsCache;
+    
+    private Map<Class<? extends ResourceParser>, ResourceParser> parserInstance = new ConcurrentHashMap<>();
     
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -96,7 +100,7 @@ public class AuthFilter implements Filter {
                 String resource = secured.resource();
                 
                 if (StringUtils.isBlank(resource)) {
-                    ResourceParser parser = secured.parser().newInstance();
+                    ResourceParser parser = getResourceParser(secured.parser());
                     resource = parser.parseName(req);
                 }
                 
@@ -123,5 +127,15 @@ public class AuthFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.getMessage());
             return;
         }
+    }
+    
+    private ResourceParser getResourceParser(Class<? extends ResourceParser> parseClass)
+            throws IllegalAccessException, InstantiationException {
+        ResourceParser parser = parserInstance.get(parseClass);
+        if (parser == null) {
+            parser = parseClass.newInstance();
+            parserInstance.put(parseClass, parser);
+        }
+        return parser;
     }
 }

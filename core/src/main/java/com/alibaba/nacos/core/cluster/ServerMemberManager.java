@@ -37,7 +37,7 @@ import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.Constants;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
@@ -123,7 +123,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap<>();
-        ApplicationUtils.setContextPath(servletContext.getContextPath());
+        EnvUtil.setContextPath(servletContext.getContextPath());
         MemberUtils.setManager(this);
         
         init();
@@ -131,7 +131,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     protected void init() throws NacosException {
         Loggers.CORE.info("Nacos-related cluster resource initialization");
-        this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
+        this.port = EnvUtil.getProperty("server.port", Integer.class, 8848);
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtils.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
@@ -163,7 +163,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private void registerClusterEvent() {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
-                ApplicationUtils.getProperty("nacos.member-change-event.queue.size", Integer.class, 128));
+                EnvUtil.getProperty("nacos.member-change-event.queue.size", Integer.class, 128));
         
         // The address information of this node needs to be dynamically modified
         // when registering the IP change of this node
@@ -172,7 +172,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             public void onEvent(InetUtils.IPChangeEvent event) {
                 String newAddress = event.getNewIP() + ":" + port;
                 ServerMemberManager.this.localAddress = newAddress;
-                ApplicationUtils.setLocalAddress(localAddress);
+                EnvUtil.setLocalAddress(localAddress);
                 
                 Member self = ServerMemberManager.this.self;
                 self.setIp(event.getNewIP());
@@ -378,11 +378,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
         getSelf().setState(NodeState.UP);
-        if (!ApplicationUtils.getStandaloneMode()) {
+        if (!EnvUtil.getStandaloneMode()) {
             GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
         }
-        ApplicationUtils.setPort(event.getWebServer().getPort());
-        ApplicationUtils.setLocalAddress(this.localAddress);
+        EnvUtil.setPort(event.getWebServer().getPort());
+        EnvUtil.setLocalAddress(this.localAddress);
         Loggers.CLUSTER.info("This node is ready to provide external services");
     }
     
@@ -450,7 +450,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Loggers.CLUSTER.debug("report the metadata to the node : {}", target.getAddress());
             
             final String url = HttpUtils
-                    .buildUrl(false, target.getAddress(), ApplicationUtils.getContextPath(), Commons.NACOS_CORE_CONTEXT,
+                    .buildUrl(false, target.getAddress(), EnvUtil.getContextPath(), Commons.NACOS_CORE_CONTEXT,
                             "/cluster/report");
             
             try {

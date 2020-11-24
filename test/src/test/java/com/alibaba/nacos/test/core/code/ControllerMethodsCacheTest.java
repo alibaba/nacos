@@ -19,7 +19,7 @@ package com.alibaba.nacos.test.core.code;
 import static org.junit.Assert.assertEquals;
 
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +40,7 @@ public class ControllerMethodsCacheTest {
     @Before
     public void setUp() throws Exception {
         methodsCache = new ControllerMethodsCache();
-        ApplicationUtils.setContextPath("/nacos");
+        EnvUtil.setContextPath("/nacos");
         methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");
     }
 
