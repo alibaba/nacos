@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -34,7 +35,6 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.result.ResultBuilder;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
@@ -284,7 +284,7 @@ public class ConfigController {
                                 null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
             }
         }
-        return ResultBuilder.buildSuccessResult(true);
+        return RestResultUtils.success(true);
     }
     
     @GetMapping("/catalog")
@@ -528,13 +528,13 @@ public class ConfigController {
         Map<String, Object> failedData = new HashMap<>(4);
         
         if (Objects.isNull(file)) {
-            return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
-            return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
+            return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }
         
         List<ConfigAllInfo> configInfoList = null;
@@ -549,7 +549,7 @@ public class ConfigController {
                     String[] metaDataItemArr = metaDataItem.split("=");
                     if (metaDataItemArr.length != 2) {
                         failedData.put("succCount", 0);
-                        return ResultBuilder.buildResult(ResultCodeEnum.METADATA_ILLEGAL, failedData);
+                        return RestResultUtils.buildResult(ResultCodeEnum.METADATA_ILLEGAL, failedData);
                     }
                     metaDataMap.put(metaDataItemArr[0], metaDataItemArr[1]);
                 }
@@ -561,7 +561,7 @@ public class ConfigController {
                     String[] groupAdnDataId = item.getItemName().split("/");
                     if (!item.getItemName().contains("/") || groupAdnDataId.length != 2) {
                         failedData.put("succCount", 0);
-                        return ResultBuilder.buildResult(ResultCodeEnum.DATA_VALIDATION_FAILED, failedData);
+                        return RestResultUtils.buildResult(ResultCodeEnum.DATA_VALIDATION_FAILED, failedData);
                     }
                     String group = groupAdnDataId[0];
                     String dataId = groupAdnDataId[1];
@@ -585,11 +585,11 @@ public class ConfigController {
         } catch (IOException e) {
             failedData.put("succCount", 0);
             LOGGER.error("parsing data failed", e);
-            return ResultBuilder.buildResult(ResultCodeEnum.PARSING_DATA_FAILED, failedData);
+            return RestResultUtils.buildResult(ResultCodeEnum.PARSING_DATA_FAILED, failedData);
         }
         if (configInfoList == null || configInfoList.isEmpty()) {
             failedData.put("succCount", 0);
-            return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
@@ -605,7 +605,7 @@ public class ConfigController {
                             requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
-        return ResultBuilder.buildSuccessResult("导入成功", saveResult);
+        return RestResultUtils.success("导入成功", saveResult);
     }
     
     /**
@@ -629,14 +629,14 @@ public class ConfigController {
         Map<String, Object> failedData = new HashMap<>(4);
         if (CollectionUtils.isEmpty(configBeansList)) {
             failedData.put("succCount", 0);
-            return ResultBuilder.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
+            return RestResultUtils.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
         }
         configBeansList.removeAll(Collections.singleton(null));
     
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
-            return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
+            return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }
         
         List<Long> idList = new ArrayList<>(configBeansList.size());
@@ -650,7 +650,7 @@ public class ConfigController {
         
         if (queryedDataList == null || queryedDataList.isEmpty()) {
             failedData.put("succCount", 0);
-            return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         
         List<ConfigAllInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
@@ -674,7 +674,7 @@ public class ConfigController {
         
         if (configInfoList4Clone.isEmpty()) {
             failedData.put("succCount", 0);
-            return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
@@ -690,7 +690,7 @@ public class ConfigController {
                             requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
-        return ResultBuilder.buildSuccessResult("Clone Completed Successfully", saveResult);
+        return RestResultUtils.success("Clone Completed Successfully", saveResult);
     }
     
 }

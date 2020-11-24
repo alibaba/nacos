@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.utils.IPUtil;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import org.springframework.util.StringUtils;
@@ -43,11 +43,11 @@ public class ServerStatusSynchronizer implements Synchronizer {
         
         params.put("serverStatus", msg.getData());
         
-        String url = "http://" + serverIP + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
+        String url = "http://" + serverIP + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
         
         if (IPUtil.containsPort(serverIP)) {
-            url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+            url = "http://" + serverIP + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/operator/server/status";
         }
         

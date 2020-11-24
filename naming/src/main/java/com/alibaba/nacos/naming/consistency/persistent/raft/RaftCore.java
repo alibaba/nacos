@@ -44,7 +44,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -614,7 +614,7 @@ public class RaftCore implements Closeable {
         
         private void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (ApplicationUtils.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
+            if (EnvUtil.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
                 return;
             }
             if (Loggers.RAFT.isDebugEnabled()) {
@@ -1009,9 +1009,9 @@ public class RaftCore implements Closeable {
      */
     public static String buildUrl(String ip, String api) {
         if (!IPUtil.containsPort(ip)) {
-            ip = ip + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
+            ip = ip + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        return "http://" + ip + ApplicationUtils.getContextPath() + api;
+        return "http://" + ip + EnvUtil.getContextPath() + api;
     }
     
     public Datum<?> getDatum(String key) {
