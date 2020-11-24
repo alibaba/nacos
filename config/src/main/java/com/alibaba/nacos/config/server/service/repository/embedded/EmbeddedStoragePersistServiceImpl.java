@@ -1119,8 +1119,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         PaginationHelper<String> helper = createPaginationHelper();
         
         String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?,?";
-        
         int from = (page - 1) * pageSize;
+        
         Page<String> pageList = helper.fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize,
                 (resultSet, i) -> resultSet.getString("tenant_id"));
         return pageList.getPageItems();
