@@ -127,7 +127,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ExternalStoragePersistServiceImpl.class);
     
-    
     @Autowired
     private ConfigInfoRepository configInfoRepository;
     

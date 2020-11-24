@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.configuration.datasource;
 import com.alibaba.nacos.config.server.configuration.NacosMultipleDataSourceProperties;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
@@ -36,7 +37,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  */
 public class DynamicDataSource implements DataSource, InitializingBean {
     
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DynamicDataSource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamicDataSource.class);
     
     public static final String KEEPALIVE_SQL = "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'";
     
@@ -141,7 +141,7 @@ public class DynamicDataSource implements DataSource, InitializingBean {
     }
     
     @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+    public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
         return currentDataSource.getParentLogger();
     }
     
