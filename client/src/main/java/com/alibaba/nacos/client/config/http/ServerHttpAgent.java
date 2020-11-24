@@ -24,6 +24,7 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.StsConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
@@ -247,9 +248,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     private String getUrl(String serverAddr, String relativePath) {
-        String contextPath = serverListMgr.getContentPath().startsWith("/") ? serverListMgr.getContentPath()
-                : "/" + serverListMgr.getContentPath();
-        return serverAddr + contextPath + relativePath;
+        return serverAddr + ContextPathUtil.normalizeContextPath(serverListMgr.getContentPath()) + relativePath;
     }
     
     private boolean isFail(HttpRestResult<String> result) {
