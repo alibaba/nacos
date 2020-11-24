@@ -28,8 +28,6 @@ import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.utils.Constants;
 import com.google.protobuf.ByteString;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,8 +38,6 @@ import java.util.List;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-@ConditionalOnProperty(value = "nacos.standalone", havingValue = "true")
-@Service
 public class StandalonePersistentServiceProcessor extends BasePersistentServiceProcessor {
     
     public StandalonePersistentServiceProcessor(final ClusterVersionJudgement judgement) throws Exception {
