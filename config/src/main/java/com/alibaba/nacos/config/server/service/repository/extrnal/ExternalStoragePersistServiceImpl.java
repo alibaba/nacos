@@ -1410,15 +1410,13 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
-        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (select max(nid) from his_config_info where id = ?) ";
-        try {
-            ConfigHistoryInfo historyInfo = jt
-                    .queryForObject(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
-            return historyInfo;
-        } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[detail-previous-config-history] error, id:{}", new Object[] {id}, e);
-            throw e;
+        HisConfigInfoEntity topHisConfigInfoEntity = hisConfigInfoRepository.findTopByIdOrderByNid(id);
+        if (topHisConfigInfoEntity != null) {
+            HisConfigInfoEntity hisConfigInfoEntity = hisConfigInfoRepository.findById(topHisConfigInfoEntity.getNid())
+                    .orElse(null);
+            return ConfigHistoryInfoMapStruct.INSTANCE.convertConfigHistoryInfo(hisConfigInfoEntity);
         }
+        return null;
     }
     
     @Override

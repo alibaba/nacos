@@ -1085,7 +1085,6 @@ public interface PersistService {
      */
     ConfigHistoryInfo detailPreviousConfigHistory(Long id);
     
-    
     /**
      * insert tenant info.
      *

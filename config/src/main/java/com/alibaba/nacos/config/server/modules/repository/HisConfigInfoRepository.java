@@ -28,4 +28,11 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface HisConfigInfoRepository
         extends PagingAndSortingRepository<HisConfigInfoEntity, Long>, QuerydslPredicateExecutor<HisConfigInfoEntity> {
     
+    /**
+     * find TopByIdOrderByNid.
+     *
+     * @param id
+     * @return HisConfigInfoEntity
+     */
+    HisConfigInfoEntity findTopByIdOrderByNid(Long id);
 }
