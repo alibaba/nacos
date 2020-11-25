@@ -1410,7 +1410,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
-        HisConfigInfoEntity topHisConfigInfoEntity = hisConfigInfoRepository.findTopByIdOrderByNid(id);
+        HisConfigInfoEntity topHisConfigInfoEntity = hisConfigInfoRepository.findTopByIdOrderByNidDesc(id);
         if (topHisConfigInfoEntity != null) {
             HisConfigInfoEntity hisConfigInfoEntity = hisConfigInfoRepository.findById(topHisConfigInfoEntity.getNid())
                     .orElse(null);

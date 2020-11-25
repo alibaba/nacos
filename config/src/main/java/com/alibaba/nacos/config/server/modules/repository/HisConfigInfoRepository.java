@@ -34,5 +34,5 @@ public interface HisConfigInfoRepository
      * @param id
      * @return HisConfigInfoEntity
      */
-    HisConfigInfoEntity findTopByIdOrderByNid(Long id);
+    HisConfigInfoEntity findTopByIdOrderByNidDesc(Long id);
 }
