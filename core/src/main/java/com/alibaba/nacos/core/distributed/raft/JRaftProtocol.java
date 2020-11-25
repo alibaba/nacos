@@ -26,11 +26,11 @@ import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
-import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
@@ -90,8 +90,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogProcessor4CP>
-        implements CPProtocol<RaftConfig, LogProcessor4CP> {
+public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, RequestProcessor4CP>
+        implements CPProtocol<RaftConfig, RequestProcessor4CP> {
     
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     
@@ -133,12 +133,14 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
                     final String leader = event.getLeader();
                     final Long term = event.getTerm();
                     final List<String> raftClusterInfo = event.getRaftClusterInfo();
+                    final String errMsg = event.getErrMsg();
                     
                     // Leader information needs to be selectively updated. If it is valid data,
                     // the information in the protocol metadata is updated.
                     MapUtils.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
                     MapUtils.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
                     MapUtils.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
+                    MapUtils.putIfValNoEmpty(properties, MetadataKey.ERR_MSG, errMsg);
                     
                     value.put(groupId, properties);
                     metaData.load(value);
@@ -157,31 +159,31 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     }
     
     @Override
-    public void addLogProcessors(Collection<LogProcessor4CP> processors) {
+    public void addLogProcessors(Collection<RequestProcessor4CP> processors) {
         raftServer.createMultiRaftGroup(processors);
     }
     
     @Override
-    public Response getData(GetRequest request) throws Exception {
+    public Response getData(ReadRequest request) throws Exception {
         CompletableFuture<Response> future = aGetData(request);
         return future.get(5_000L, TimeUnit.MILLISECONDS);
     }
     
     @Override
-    public CompletableFuture<Response> aGetData(GetRequest request) {
+    public CompletableFuture<Response> aGetData(ReadRequest request) {
         return raftServer.get(request);
     }
     
     @Override
-    public Response submit(Log data) throws Exception {
-        CompletableFuture<Response> future = submitAsync(data);
+    public Response submit(WriteRequest request) throws Exception {
+        CompletableFuture<Response> future = submitAsync(request);
         // Here you wait for 10 seconds, as long as possible, for the request to complete
         return future.get(10_000L, TimeUnit.MILLISECONDS);
     }
     
     @Override
-    public CompletableFuture<Response> submitAsync(Log data) {
-        return raftServer.commit(data.getGroup(), data, new CompletableFuture<>());
+    public CompletableFuture<Response> submitAsync(WriteRequest request) {
+        return raftServer.commit(request.getGroup(), request, new CompletableFuture<>());
     }
     
     @Override
@@ -198,6 +200,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     @Override
     public void shutdown() {
         if (initialized.get() && shutdowned.compareAndSet(false, true)) {
+            Loggers.RAFT.info("shutdown jraft server");
             raftServer.shutdown();
         }
     }

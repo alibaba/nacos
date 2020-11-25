@@ -90,7 +90,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
         conn.setConnectTimeout(this.httpClientConfig.getConTimeOutMillis());
         conn.setReadTimeout(this.httpClientConfig.getReadTimeOutMillis());
         conn.setRequestMethod(httpMethod);
-        if (body != null) {
+        if (body != null && !"".equals(body)) {
             String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
             String bodyStr = JacksonUtils.toJson(body);
             if (MediaType.APPLICATION_FORM_URLENCODED.equals(contentType)) {

@@ -17,8 +17,8 @@
 
 <Configuration status="WARN">
     <Appenders>
-        <RollingFile name="CONFIG_LOG_FILE" fileName="${sys:nacos.logging.path}/config.log"
-            filePattern="${sys:nacos.logging.path}/config.log.%d{yyyy-MM-dd}.%i">
+        <RollingFile name="CONFIG_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/config.log"
+            filePattern="${sys:JM.LOG.PATH}/nacos/config.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>
@@ -31,8 +31,8 @@
             <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
         </RollingFile>
         
-        <RollingFile name="NAMING_LOG_FILE" fileName="${sys:nacos.logging.path}/naming.log"
-            filePattern="${sys:nacos.logging.path}/naming.log.%d{yyyy-MM-dd}.%i">
+        <RollingFile name="NAMING_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/naming.log"
+            filePattern="${sys:JM.LOG.PATH}/nacos/naming.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>

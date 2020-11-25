@@ -20,7 +20,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -69,7 +69,7 @@ public class HealthController {
                 sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
             }
             if (!memberManager.isInIpList()) {
-                sb.append("server ip ").append(InetUtils.getSelfIp())
+                sb.append("server ip ").append(InetUtils.getSelfIP())
                         .append(" is not in the serverList of address server. ");
             }
         }

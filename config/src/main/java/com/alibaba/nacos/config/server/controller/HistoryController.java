@@ -28,9 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 /**
  * History management controller.
  *
@@ -39,45 +36,59 @@ import javax.servlet.http.HttpServletResponse;
 @RestController
 @RequestMapping(Constants.HISTORY_CONTROLLER_PATH)
 public class HistoryController {
-
+    
     @Autowired
     protected PersistService persistService;
-
+    
     /**
      * Query the list history config.
      *
-     * @param dataId dataId string value.
-     * @param group group string value.
-     * @param tenant tenant string value.
-     * @param appName appName string value.
-     * @param pageNo pageNo string value.
+     * @param dataId   dataId string value.
+     * @param group    group string value.
+     * @param tenant   tenant string value.
+     * @param appName  appName string value.
+     * @param pageNo   pageNo string value.
      * @param pageSize pageSize string value.
      * @param modelMap modeMap.
      * @return
      */
     @GetMapping(params = "search=accurate")
     public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId, //
-                                                     @RequestParam("group") String group, //
-                                                     @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-                                                     @RequestParam(value = "appName", required = false) String appName,
-                                                     @RequestParam(value = "pageNo", required = false) Integer pageNo,
-                                                     //
-                                                     @RequestParam(value = "pageSize", required = false) Integer pageSize, //
-                                                     ModelMap modelMap) {
+            @RequestParam("group") String group, //
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "appName", required = false) String appName,
+            @RequestParam(value = "pageNo", required = false) Integer pageNo,
+            //
+            @RequestParam(value = "pageSize", required = false) Integer pageSize, //
+            ModelMap modelMap) {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
         // configInfoBase has no appName field.
         return persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
     }
-
+    
     /**
-     * Query the detailed configuration history informations.
+     * Query the detailed configuration history information.
+     *
+     * @param nid history_config_info nid
+     * @return history config info
      */
     @GetMapping
-    public ConfigHistoryInfo getConfigHistoryInfo(HttpServletRequest request, HttpServletResponse response,
-                                                  @RequestParam("nid") Long nid, ModelMap modelMap) {
+    public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("nid") Long nid) {
         return persistService.detailConfigHistory(nid);
     }
-
+    
+    /**
+     * Query previous config history information.
+     *
+     * @param id config_info id
+     * @return history config info
+     * @since 1.4.0
+     */
+    @GetMapping(value = "/previous")
+    public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("id") Long id) {
+        return persistService.detailPreviousConfigHistory(id);
+    }
+    
 }

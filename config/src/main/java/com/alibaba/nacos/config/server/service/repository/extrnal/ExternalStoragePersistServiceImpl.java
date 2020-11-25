@@ -1409,6 +1409,17 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
+        HisConfigInfoEntity topHisConfigInfoEntity = hisConfigInfoRepository.findTopByIdOrderByNidDesc(id);
+        if (topHisConfigInfoEntity != null) {
+            HisConfigInfoEntity hisConfigInfoEntity = hisConfigInfoRepository.findById(topHisConfigInfoEntity.getNid())
+                    .orElse(null);
+            return ConfigHistoryInfoMapStruct.INSTANCE.convertConfigHistoryInfo(hisConfigInfoEntity);
+        }
+        return null;
+    }
+    
+    @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
             String createResoure, final long time) {
         TenantInfoEntity tenantInfo = new TenantInfoEntity();

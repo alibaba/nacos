@@ -17,39 +17,70 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.naming.utils.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
 
 /**
  * Use simplified Raft protocol to maintain the consistency status of Nacos cluster.
  *
  * @author nkorange
  * @since 1.0.0
+ * @deprecated will remove in 1.4.x
  */
+@Deprecated
 @DependsOn("ProtocolManager")
 @Service
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
     
-    @Autowired
-    private RaftCore raftCore;
+    private final RaftCore raftCore;
     
-    @Autowired
-    private RaftPeerSet peers;
+    private final RaftPeerSet peers;
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
+    
+    private volatile boolean stopWork = false;
+    
+    public RaftConsistencyServiceImpl(ClusterVersionJudgement versionJudgement, RaftCore raftCore,
+            SwitchDomain switchDomain) {
+        this.raftCore = raftCore;
+        this.peers = raftCore.getPeerSet();
+        this.switchDomain = switchDomain;
+        versionJudgement.registerObserver(isAllNewVersion -> {
+            stopWork = isAllNewVersion;
+            if (stopWork) {
+                try {
+                    this.raftCore.shutdown();
+                } catch (NacosException e) {
+                    throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+                }
+            }
+        }, 1000);
+    }
+    
+    @PostConstruct
+    protected void init() throws Exception {
+        if (EnvUtil.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
+            this.raftCore.shutdown();
+        }
+    }
     
     @Override
     public void put(String key, Record value) throws NacosException {
+        checkIsStopWork();
         try {
             raftCore.signalPublish(key, value);
         } catch (Exception e) {
@@ -61,16 +92,14 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @Override
     public void remove(String key) throws NacosException {
+        checkIsStopWork();
         try {
             if (KeyBuilder.matchInstanceListKey(key) && !raftCore.isLeader()) {
-                Datum datum = new Datum();
-                datum.key = key;
-                raftCore.onDelete(datum.key, peers.getLeader());
-                raftCore.unlistenAll(key);
-                return;
+                raftCore.onDelete(key, peers.getLeader());
+            } else {
+                raftCore.signalDelete(key);
             }
-            raftCore.signalDelete(key);
-            raftCore.unlistenAll(key);
+            raftCore.unListenAll(key);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft remove failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR, "Raft remove failed, key:" + key, e);
@@ -79,6 +108,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @Override
     public Datum get(String key) throws NacosException {
+        checkIsStopWork();
         return raftCore.getDatum(key);
     }
     
@@ -128,6 +158,12 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
             Loggers.RAFT.error("Raft onRemove failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR,
                     "Raft onRemove failed, datum:" + datum + ", source: " + source, e);
+        }
+    }
+    
+    private void checkIsStopWork() {
+        if (stopWork) {
+            throw new IllegalStateException("old raft protocol already stop work");
         }
     }
 }

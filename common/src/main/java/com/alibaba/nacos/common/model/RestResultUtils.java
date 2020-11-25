@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.model;
 
+import com.alibaba.nacos.common.model.core.IResultCode;
+
 /**
  * Rest result utils.
  *
@@ -29,6 +31,10 @@ public class RestResultUtils {
     
     public static <T> RestResult<T> success(T data) {
         return RestResult.<T>builder().withCode(200).withData(data).build();
+    }
+    
+    public static <T> RestResult<T> success(String msg, T data) {
+        return RestResult.<T>builder().withCode(200).withMsg(msg).withData(data).build();
     }
     
     public static <T> RestResult<T> success(int code, T data) {
@@ -54,5 +60,8 @@ public class RestResultUtils {
     public static <T> RestResult<T> failedWithMsg(int code, String errMsg) {
         return RestResult.<T>builder().withCode(code).withMsg(errMsg).build();
     }
-    
+
+    public static <T> RestResult<T> buildResult(IResultCode resultCode, T data) {
+        return RestResult.<T>builder().withCode(resultCode.getCode()).withMsg(resultCode.getCodeMsg()).withData(data).build();
+    }
 }

@@ -17,8 +17,9 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
@@ -39,8 +41,6 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class MemberUtils {
-    
-    private static final String SEMICOLON = ":";
     
     private static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
     
@@ -78,8 +78,8 @@ public class MemberUtils {
         
         String address = member;
         int port = defaultPort;
-        if (address.contains(SEMICOLON)) {
-            String[] info = address.split(SEMICOLON);
+        String[] info = IPUtil.splitIPPortStr(address);
+        if (info.length > 1) {
             address = info[0];
             port = Integer.parseInt(info[1]);
         }
@@ -142,7 +142,7 @@ public class MemberUtils {
         manager.getMemberAddressInfos().remove(member.getAddress());
         cloneMember.setState(NodeState.SUSPICIOUS);
         cloneMember.setFailAccessCnt(member.getFailAccessCnt() + 1);
-        int maxFailAccessCnt = ApplicationUtils.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
+        int maxFailAccessCnt = EnvUtil.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
         
         // If the number of consecutive failures to access the target node reaches
         // a maximum, or the link request is rejected, the state is directly down
@@ -165,7 +165,7 @@ public class MemberUtils {
             for (String member : simpleMembers(members)) {
                 builder.append(member).append(StringUtils.LF);
             }
-            ApplicationUtils.writeClusterConf(builder.toString());
+            EnvUtil.writeClusterConf(builder.toString());
         } catch (Throwable ex) {
             Loggers.CLUSTER.error("cluster member node persistence failed : {}", ExceptionUtil.getAllExceptionMsg(ex));
         }
@@ -236,40 +236,40 @@ public class MemberUtils {
     }
     
     /**
-     * Judge whether two member is full equals.
+     * Judge whether basic info has changed.
      *
      * @param actual   actual member
      * @param expected expected member
      * @return true if all content is same, otherwise false
      */
-    public static boolean fullEquals(Member actual, Member expected) {
+    public static boolean isBasicInfoChanged(Member actual, Member expected) {
         if (null == expected) {
             return null == actual;
         }
         if (!expected.getIp().equals(actual.getIp())) {
-            return false;
+            return true;
         }
         if (expected.getPort() != actual.getPort()) {
-            return false;
+            return true;
         }
         if (!expected.getAddress().equals(actual.getAddress())) {
-            return false;
+            return true;
         }
         if (!expected.getState().equals(actual.getState())) {
-            return false;
+            return true;
         }
-        return equalsExtendInfo(expected, actual);
+        return isBasicInfoChangedInExtendInfo(expected, actual);
     }
     
-    private static boolean equalsExtendInfo(Member expected, Member actual) {
-        for (String each : MemberMetaDataConstants.META_KEY_LIST_WITHOUT_LAST_REFRESH_TIME) {
+    private static boolean isBasicInfoChangedInExtendInfo(Member expected, Member actual) {
+        for (String each : MemberMetaDataConstants.BASIC_META_KEYS) {
             if (expected.getExtendInfo().containsKey(each) != actual.getExtendInfo().containsKey(each)) {
-                return false;
+                return true;
             }
-            if (null != expected.getExtendVal(each) && !expected.getExtendVal(each).equals(actual.getExtendVal(each))) {
-                return false;
+            if (!Objects.equals(expected.getExtendVal(each), actual.getExtendVal(each))) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 }

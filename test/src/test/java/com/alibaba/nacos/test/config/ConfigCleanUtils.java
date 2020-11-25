@@ -17,8 +17,9 @@
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -30,6 +31,17 @@ public class ConfigCleanUtils {
     
     public static void cleanClientCache() throws IOException {
         DiskUtils.deleteDirThenMkdir(LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
+    }
+    
+    /**
+     * Change test env to new nacos home.
+     *
+     * @param caseName test case name
+     */
+    public static void changeToNewTestNacosHome(String caseName) {
+        String userHome = System.getProperty("user.home");
+        String testNacosHome = userHome + File.separator + "nacos" + File.separator + caseName;
+        System.setProperty("nacos.home", testNacosHome);
     }
     
 }

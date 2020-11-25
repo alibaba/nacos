@@ -165,7 +165,7 @@ public class ClientInfo {
         
         public static final String CPP_CLIENT = "vip-client4cpp";
         
-        public static final String GO_CLIENT = "nacos-go-sdk";
+        public static final String GO_CLIENT = "Nacos-Go-Client";
         
     }
     

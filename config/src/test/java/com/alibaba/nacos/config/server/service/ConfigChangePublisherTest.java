@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -49,7 +49,7 @@ public class ConfigChangePublisherTest {
         });
         
         // nacos is standalone mode and use embedded storage
-        ApplicationUtils.setIsStandalone(true);
+        EnvUtil.setIsStandalone(true);
         PropertyUtil.setEmbeddedStorage(true);
         
         ConfigChangePublisher
@@ -59,7 +59,7 @@ public class ConfigChangePublisherTest {
         reference.set(null);
         
         // nacos is standalone mode and use external storage
-        ApplicationUtils.setIsStandalone(true);
+        EnvUtil.setIsStandalone(true);
         PropertyUtil.setEmbeddedStorage(false);
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
@@ -68,7 +68,7 @@ public class ConfigChangePublisherTest {
         reference.set(null);
         
         // nacos is cluster mode and use embedded storage
-        ApplicationUtils.setIsStandalone(false);
+        EnvUtil.setIsStandalone(false);
         PropertyUtil.setEmbeddedStorage(true);
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
@@ -77,7 +77,7 @@ public class ConfigChangePublisherTest {
         reference.set(null);
         
         // nacos is cluster mode and use external storage
-        ApplicationUtils.setIsStandalone(false);
+        EnvUtil.setIsStandalone(false);
         PropertyUtil.setEmbeddedStorage(false);
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.model.app;
 
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 
 /**
  * ApplicationInfo.
@@ -102,7 +102,7 @@ public class ApplicationInfo {
      */
     public boolean canCurrentServerOwnTheLock() {
         boolean currentOwnerIsMe =
-                subInfoCollectLockOwner == null || InetUtils.getSelfIp().equals(subInfoCollectLockOwner);
+                subInfoCollectLockOwner == null || InetUtils.getSelfIP().equals(subInfoCollectLockOwner);
         
         if (currentOwnerIsMe) {
             return true;
@@ -115,7 +115,7 @@ public class ApplicationInfo {
     }
     
     public String currentServer() {
-        return InetUtils.getSelfIp();
+        return InetUtils.getSelfIP();
     }
     
 }
