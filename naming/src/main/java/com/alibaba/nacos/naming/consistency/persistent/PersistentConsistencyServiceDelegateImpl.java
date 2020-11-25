@@ -17,11 +17,15 @@
 package com.alibaba.nacos.naming.consistency.persistent;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.impl.BasePersistentServiceProcessor;
+import com.alibaba.nacos.naming.consistency.persistent.impl.PersistentServiceProcessor;
+import com.alibaba.nacos.naming.consistency.persistent.impl.StandalonePersistentServiceProcessor;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.pojo.Record;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -41,11 +45,11 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     private volatile boolean switchNewPersistentService = false;
     
     public PersistentConsistencyServiceDelegateImpl(ClusterVersionJudgement versionJudgement,
-            RaftConsistencyServiceImpl oldPersistentConsistencyService,
-            BasePersistentServiceProcessor newPersistentConsistencyService) {
+            RaftConsistencyServiceImpl oldPersistentConsistencyService, ProtocolManager protocolManager)
+            throws Exception {
         this.versionJudgement = versionJudgement;
         this.oldPersistentConsistencyService = oldPersistentConsistencyService;
-        this.newPersistentConsistencyService = newPersistentConsistencyService;
+        this.newPersistentConsistencyService = createNewPersistentServiceProcessor(protocolManager, versionJudgement);
         init();
     }
     
@@ -87,5 +91,14 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     
     private PersistentConsistencyService switchOne() {
         return switchNewPersistentService ? newPersistentConsistencyService : oldPersistentConsistencyService;
+    }
+    
+    private BasePersistentServiceProcessor createNewPersistentServiceProcessor(ProtocolManager protocolManager,
+            ClusterVersionJudgement versionJudgement) throws Exception {
+        final BasePersistentServiceProcessor processor =
+                EnvUtil.getStandaloneMode() ? new StandalonePersistentServiceProcessor(versionJudgement)
+                        : new PersistentServiceProcessor(protocolManager, versionJudgement);
+        processor.afterConstruct();
+        return processor;
     }
 }
