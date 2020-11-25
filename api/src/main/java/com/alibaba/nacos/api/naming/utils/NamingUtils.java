@@ -100,7 +100,6 @@ public class NamingUtils {
      * @return 'groupName@@serviceName'
      */
     public static String getGroupedNameOptional(final String serviceName, final String groupName) {
-        final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
-        return resultGroupedName.intern();
+        return groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
     }
 }
