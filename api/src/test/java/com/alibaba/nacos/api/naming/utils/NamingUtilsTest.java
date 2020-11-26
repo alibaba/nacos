@@ -21,11 +21,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * NamingUtilsTest.
- * @author mark4z
- * @date 2020/11/25 13:35
- */
 public class NamingUtilsTest {
     
     @Test
