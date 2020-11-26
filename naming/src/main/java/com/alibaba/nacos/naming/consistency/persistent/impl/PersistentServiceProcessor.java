@@ -35,8 +35,6 @@ import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.utils.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.protobuf.ByteString;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,8 +47,6 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-@ConditionalOnProperty(value = "nacos.standalone", havingValue = "false")
-@Service
 public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
     
     private final CPProtocol protocol;
@@ -67,7 +63,7 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
     }
     
     @Override
-    protected void afterConstruct() {
+    public void afterConstruct() {
         super.afterConstruct();
         this.protocol.addLogProcessors(Collections.singletonList(this));
         this.protocol.protocolMetaData()
