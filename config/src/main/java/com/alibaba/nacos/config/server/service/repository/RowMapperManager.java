@@ -183,7 +183,7 @@ public final class RowMapperManager {
             int columnCount = metaData.getColumnCount();
             Map<String, Object> map = new LinkedHashMap<>(columnCount);
             for (int i = 1; i <= columnCount; i++) {
-                map.put(metaData.getColumnLabel(i).toLowerCase(), resultSet.getObject(i));
+                map.put(metaData.getColumnLabel(i), resultSet.getObject(i));
             }
             return map;
         }

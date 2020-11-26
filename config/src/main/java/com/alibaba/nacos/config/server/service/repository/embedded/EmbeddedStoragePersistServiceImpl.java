@@ -1126,7 +1126,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         Page<Map<String, Object>> pageList = helper
                 .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
         return pageList.getPageItems().stream()
-                .map(map -> String.valueOf(map.get("tenant_id")))
+                .map(map -> String.valueOf(map.get("TENANT_ID")))
                 .collect(Collectors.toList());
     }
     
@@ -1140,7 +1140,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         Page<Map<String, Object>> pageList = helper
                 .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
         return pageList.getPageItems().stream()
-                .map(map -> String.valueOf(map.get("group_id")))
+                .map(map -> String.valueOf(map.get("GROUP_ID")))
                 .collect(Collectors.toList());
     }
     
