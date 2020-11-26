@@ -121,11 +121,10 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
                 throw new NacosRuntimeException(ex.getErrCode(), ex.getErrMsg());
             }
         });
-        afterConstruct();
     }
     
     @SuppressWarnings("unchecked")
-    protected void afterConstruct() {
+    public void afterConstruct() {
         NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
         listenOldRaftClose();
     }

@@ -1116,16 +1116,26 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<String> getTenantIdList(int page, int pageSize) {
-        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?";
+        PaginationHelper<String> helper = createPaginationHelper();
+        
+        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?,?";
         int from = (page - 1) * pageSize;
-        return databaseOperate.queryMany(sql, new Object[] {from, pageSize}, String.class);
+        
+        Page<String> pageList = helper.fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize,
+                (resultSet, i) -> resultSet.getString("tenant_id"));
+        return pageList.getPageItems();
     }
     
     @Override
     public List<String> getGroupIdList(int page, int pageSize) {
-        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?, ?";
+        PaginationHelper<String> helper = createPaginationHelper();
+        
+        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?,?";
         int from = (page - 1) * pageSize;
-        return databaseOperate.queryMany(sql, new Object[] {from, pageSize}, String.class);
+        
+        Page<String> pageList = helper.fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize,
+                (resultSet, i) -> resultSet.getString("group_id"));
+        return pageList.getPageItems();
     }
     
     @Override

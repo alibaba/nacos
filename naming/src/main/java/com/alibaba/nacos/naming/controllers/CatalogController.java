@@ -187,7 +187,7 @@ public class CatalogController {
             @RequestParam(required = false) boolean hasIpCount) {
         
         String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ? StringUtils.EMPTY
-                : NamingUtils.getGroupedName(serviceName, groupName);
+                : NamingUtils.getGroupedNameOptional(serviceName, groupName);
         
         if (withInstances) {
             List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
