@@ -171,14 +171,14 @@ public class CatalogServiceV2Impl implements CatalogService {
     private Collection<Service> patternServices(String namespaceId, String group, String serviceName) {
         boolean noFilter = StringUtils.isBlank(serviceName) && StringUtils.isBlank(group);
         if (noFilter) {
-            return serviceStorage.getAllServicesOfNamespace(namespaceId);
+            return ServiceManager.getInstance().getSingletons(namespaceId);
         }
         Collection<Service> result = new LinkedList<>();
         StringJoiner regex = new StringJoiner(Constants.SERVICE_INFO_SPLITER);
         regex.add(getRegexString(group));
         regex.add(getRegexString(serviceName));
         String regexString = regex.toString();
-        for (Service each : serviceStorage.getAllServicesOfNamespace(namespaceId)) {
+        for (Service each : ServiceManager.getInstance().getSingletons(namespaceId)) {
             if (each.getGroupedServiceName().matches(regexString)) {
                 result.add(each);
             }
