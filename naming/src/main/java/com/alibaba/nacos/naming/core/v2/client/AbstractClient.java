@@ -63,10 +63,10 @@ public abstract class AbstractClient implements Client {
     }
     
     @Override
-    public boolean removeServiceInstance(Service service) {
-        publishers.remove(service);
+    public InstancePublishInfo removeServiceInstance(Service service) {
+        InstancePublishInfo result = publishers.remove(service);
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
-        return true;
+        return result;
     }
     
     @Override
