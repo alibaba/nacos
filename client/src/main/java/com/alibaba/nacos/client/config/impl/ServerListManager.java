@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -109,7 +110,9 @@ public class ServerListManager implements Closeable {
         this.isFixed = false;
         this.isStarted = false;
         this.name = CUSTOM_NAME + "-" + host + "-" + port;
-        this.addressServerUrl = String.format("http://%s:%d/%s/%s", host, port, this.contentPath, this.serverListName);
+        this.addressServerUrl = String
+                .format("http://%s:%d%s/%s", host, port, ContextPathUtil.normalizeContextPath(this.contentPath),
+                        this.serverListName);
     }
     
     public ServerListManager(String endpoint) throws NacosException {
@@ -128,8 +131,8 @@ public class ServerListManager implements Closeable {
         }
         if (StringUtils.isBlank(namespace)) {
             this.name = endpoint;
-            this.addressServerUrl = String
-                    .format("http://%s:%d/%s/%s", endpoint, this.endpointPort, this.contentPath, this.serverListName);
+            this.addressServerUrl = String.format("http://%s:%d%s/%s", endpoint, this.endpointPort,
+                    ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName);
         } else {
             if (StringUtils.isBlank(endpoint)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
@@ -137,9 +140,8 @@ public class ServerListManager implements Closeable {
             this.name = endpoint + "-" + namespace;
             this.namespace = namespace;
             this.tenant = namespace;
-            this.addressServerUrl = String
-                    .format("http://%s:%d/%s/%s?namespace=%s", endpoint, this.endpointPort, this.contentPath,
-                            this.serverListName, namespace);
+            this.addressServerUrl = String.format("http://%s:%d%s/%s?namespace=%s", endpoint, this.endpointPort,
+                    ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName, namespace);
         }
     }
     
@@ -183,16 +185,15 @@ public class ServerListManager implements Closeable {
             this.isFixed = false;
             if (StringUtils.isBlank(namespace)) {
                 this.name = endpoint;
-                this.addressServerUrl = String
-                        .format("http://%s:%d/%s/%s", this.endpoint, this.endpointPort, this.contentPath,
-                                this.serverListName);
+                this.addressServerUrl = String.format("http://%s:%d%s/%s", this.endpoint, this.endpointPort,
+                        ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName);
             } else {
                 this.namespace = namespace;
                 this.tenant = namespace;
                 this.name = this.endpoint + "-" + namespace;
                 this.addressServerUrl = String
-                        .format("http://%s:%d/%s/%s?namespace=%s", this.endpoint, this.endpointPort, this.contentPath,
-                                this.serverListName, namespace);
+                        .format("http://%s:%d%s/%s?namespace=%s", this.endpoint, this.endpointPort,
+                                ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName, namespace);
             }
         }
     }
