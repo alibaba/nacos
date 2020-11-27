@@ -110,14 +110,13 @@ public class AsyncNotifyService {
         
     }
     
-    private static final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getNacosAsyncRestTemplate();
+    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getNacosAsyncRestTemplate();
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AsyncNotifyService.class);
     
     private ServerMemberManager memberManager;
     
     private DelayNotifyProcessor delayNotifyProcessor = new DelayNotifyProcessor();
-    
     
     class AsyncTask implements Runnable {
         
@@ -148,7 +147,7 @@ public class AsyncNotifyService {
                                 task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_UNHEALTH,
                                 0, task.target);
                         // get delay time and set fail count to the task
-                        asyncTaskExecute(task);
+                        putTaskToDelayProcessor(task);
                     } else {
                         Header header = Header.newInstance();
                         header.addParam(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
@@ -164,7 +163,7 @@ public class AsyncNotifyService {
         }
     }
     
-    private void asyncTaskExecute(NotifySingleTask task) {
+    private void putTaskToDelayProcessor(NotifySingleTask task) {
         task.incDelayTime();
         delayNotifyProcessor.putTaskIfAbsent(task);
     }
@@ -195,7 +194,7 @@ public class AsyncNotifyService {
                         task.target);
                 
                 //get delay time and set fail count to the task
-                asyncTaskExecute(task);
+                putTaskToDelayProcessor(task);
                 
                 LogUtil.NOTIFY_LOG
                         .error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
@@ -216,7 +215,7 @@ public class AsyncNotifyService {
                             InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, task.target);
             
             //get delay time and set fail count to the task
-            asyncTaskExecute(task);
+            putTaskToDelayProcessor(task);
             LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified());
             
@@ -230,7 +229,7 @@ public class AsyncNotifyService {
                     task.getDataId(), task.getGroup(), task.getLastModified(), "CANCELED");
             
             //get delay time and set fail count to the task
-            asyncTaskExecute(task);
+            putTaskToDelayProcessor(task);
             LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified());
             
@@ -246,7 +245,7 @@ public class AsyncNotifyService {
         
         private static final int MAX_COUNT = 6;
         
-        private static final String _KEY_SPLITER = "_";
+        private static final String KEY_SPLITER = "_";
         
         private static final String URL_PATTERN =
                 "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
@@ -328,8 +327,8 @@ public class AsyncNotifyService {
         }
         
         private String getSingleTaskKey() {
-            return getTargetIP() + _KEY_SPLITER + getDataId() + _KEY_SPLITER + getGroup() + _KEY_SPLITER + getTenant()
-                    + _KEY_SPLITER + isBeta;
+            return getTargetIP() + KEY_SPLITER + getDataId() + KEY_SPLITER + getGroup() + KEY_SPLITER + getTenant()
+                    + KEY_SPLITER + isBeta;
         }
     }
     
