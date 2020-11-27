@@ -37,7 +37,6 @@ import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
@@ -45,7 +44,12 @@ import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -56,9 +60,19 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class AsyncNotifyService {
     
-    @Autowired
     public AsyncNotifyService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
+        
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.config.async.delay.notify");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+        executorService.scheduleWithFixedDelay(delayNotifyProcessor, 2000L, 2000L, TimeUnit.MILLISECONDS);
         
         // Register ConfigDataChangeEvent to NotifyCenter.
         NotifyCenter.registerToPublisher(ConfigDataChangeEvent.class, NotifyCenter.ringBufferSize);
@@ -93,18 +107,22 @@ public class AsyncNotifyService {
                 return ConfigDataChangeEvent.class;
             }
         });
+        
     }
     
-    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getNacosAsyncRestTemplate();
+    private static final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getNacosAsyncRestTemplate();
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AsyncNotifyService.class);
     
     private ServerMemberManager memberManager;
     
+    private DelayNotifyProcessor delayNotifyProcessor = new DelayNotifyProcessor();
+    
+    
     class AsyncTask implements Runnable {
         
         private Queue<NotifySingleTask> queue;
-    
+        
         private NacosAsyncRestTemplate restTemplate;
         
         public AsyncTask(NacosAsyncRestTemplate restTemplate, Queue<NotifySingleTask> queue) {
@@ -133,7 +151,8 @@ public class AsyncNotifyService {
                         asyncTaskExecute(task);
                     } else {
                         Header header = Header.newInstance();
-                        header.addParam(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(task.getLastModified()));
+                        header.addParam(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
+                                String.valueOf(task.getLastModified()));
                         header.addParam(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIP());
                         if (task.isBeta) {
                             header.addParam("isBeta", "true");
@@ -146,15 +165,12 @@ public class AsyncNotifyService {
     }
     
     private void asyncTaskExecute(NotifySingleTask task) {
-        int delay = getDelayTime(task);
-        Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
-        queue.add(task);
-        AsyncTask asyncTask = new AsyncTask(nacosAsyncRestTemplate, queue);
-        ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);
+        task.incDelayTime();
+        delayNotifyProcessor.putTaskIfAbsent(task);
     }
     
     class AsyncNotifyCallBack implements Callback<String> {
-    
+        
         private NotifySingleTask task;
         
         public AsyncNotifyCallBack(NotifySingleTask task) {
@@ -170,6 +186,7 @@ public class AsyncNotifyService {
                 ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
                         task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
                         task.target);
+                delayNotifyProcessor.removeTask(task);
             } else {
                 LOGGER.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}", task.target, task.getDataId(),
                         task.getGroup(), task.getLastModified(), result.getCode());
@@ -223,11 +240,13 @@ public class AsyncNotifyService {
     
     static class NotifySingleTask extends NotifyTask {
         
-        private String target;
+        private static final int MIN_RETRY_INTERVAL = 500;
         
-        public String url;
+        private static final int INCREASE_STEPS = 1000;
         
-        private boolean isBeta;
+        private static final int MAX_COUNT = 6;
+        
+        private static final String _KEY_SPLITER = "_";
         
         private static final String URL_PATTERN =
                 "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
@@ -235,6 +254,14 @@ public class AsyncNotifyService {
         private static final String URL_PATTERN_TENANT =
                 "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange"
                         + "?dataId={2}&group={3}&tenant={4}";
+        
+        private String target;
+        
+        public String url;
+        
+        private boolean isBeta;
+        
+        private int delayTime;
         
         private int failCount;
         
@@ -285,28 +312,47 @@ public class AsyncNotifyService {
             return target;
         }
         
-    }
-    
-    /**
-     * get delayTime and also set failCount to task; The failure time index increases, so as not to retry invalid tasks
-     * in the offline scene, which affects the normal synchronization.
-     *
-     * @param task notify task
-     * @return delay
-     */
-    private static int getDelayTime(NotifySingleTask task) {
-        int failCount = task.getFailCount();
-        int delay = MIN_RETRY_INTERVAL + failCount * failCount * INCREASE_STEPS;
-        if (failCount <= MAX_COUNT) {
-            task.setFailCount(failCount + 1);
+        public int getDelayTime() {
+            return delayTime;
         }
-        return delay;
+        
+        /**
+         * increase delayTime and also set failCount to task; The failure time index increases, so as not to retry
+         * invalid tasks in the offline scene, which affects the normal synchronization.
+         */
+        private void incDelayTime() {
+            this.delayTime = MIN_RETRY_INTERVAL + failCount * failCount * INCREASE_STEPS;
+            if (failCount <= MAX_COUNT) {
+                failCount++;
+            }
+        }
+        
+        private String getSingleTaskKey() {
+            return getTargetIP() + _KEY_SPLITER + getDataId() + _KEY_SPLITER + getGroup() + _KEY_SPLITER + getTenant()
+                    + _KEY_SPLITER + isBeta;
+        }
     }
     
-    private static final int MIN_RETRY_INTERVAL = 500;
-    
-    private static final int INCREASE_STEPS = 1000;
-    
-    private static final int MAX_COUNT = 6;
-    
+    class DelayNotifyProcessor implements Runnable {
+        
+        private Map<String, NotifySingleTask> delayNotifyTaskMap = new ConcurrentHashMap<>();
+        
+        private void putTaskIfAbsent(NotifySingleTask task) {
+            delayNotifyTaskMap.putIfAbsent(task.getSingleTaskKey(), task);
+        }
+        
+        private void removeTask(NotifySingleTask task) {
+            delayNotifyTaskMap.remove(task.getSingleTaskKey());
+        }
+        
+        @Override
+        public void run() {
+            for (NotifySingleTask task : delayNotifyTaskMap.values()) {
+                Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
+                queue.add(task);
+                AsyncTask asyncTask = new AsyncTask(nacosAsyncRestTemplate, queue);
+                ConfigExecutor.scheduleAsyncNotify(asyncTask, task.getDelayTime(), TimeUnit.MILLISECONDS);
+            }
+        }
+    }
 }
