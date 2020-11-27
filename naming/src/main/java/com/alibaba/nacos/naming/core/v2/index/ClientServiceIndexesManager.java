@@ -107,7 +107,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
             publisherIndexes.putIfAbsent(service, new ConcurrentHashSet<>());
         }
         publisherIndexes.get(service).add(clientId);
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
@@ -118,7 +118,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         if (publisherIndexes.get(service).isEmpty()) {
             publisherIndexes.remove(service);
         }
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     
     private void addSubscriberIndexes(Service service, String clientId) {

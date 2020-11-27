@@ -16,10 +16,19 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -29,15 +38,19 @@ import java.util.concurrent.ConcurrentMap;
  * @author xiweng.yy
  */
 @Component
-public class NamingMetadataManager {
+public class NamingMetadataManager extends SmartSubscriber {
     
     private final ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap;
     
     private final ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataMap;
     
+    private final Set<ExpiredMetadataInfo> expiredMetadataInfos;
+    
     public NamingMetadataManager() {
         serviceMetadataMap = new ConcurrentHashMap<>(1 << 10);
         instanceMetadataMap = new ConcurrentHashMap<>(1 << 10);
+        expiredMetadataInfos = new ConcurrentHashSet<>();
+        NotifyCenter.registerSubscriber(this);
     }
     
     /**
@@ -116,6 +129,7 @@ public class NamingMetadataManager {
      */
     public void removeServiceMetadata(Service service) {
         serviceMetadataMap.remove(service);
+        expiredMetadataInfos.remove(ExpiredMetadataInfo.newExpiredServiceMetadata(service));
     }
     
     /**
@@ -129,6 +143,64 @@ public class NamingMetadataManager {
         instanceMetadataMapForService.remove(instanceId);
         if (instanceMetadataMapForService.isEmpty()) {
             serviceMetadataMap.remove(service);
+        }
+        expiredMetadataInfos.remove(ExpiredMetadataInfo.newExpiredInstanceMetadata(service, instanceId));
+    }
+    
+    public Set<ExpiredMetadataInfo> getExpiredMetadataInfos() {
+        return expiredMetadataInfos;
+    }
+    
+    @Override
+    public List<Class<? extends Event>> subscribeTypes() {
+        List<Class<? extends Event>> result = new LinkedList<>();
+        result.add(MetadataEvent.InstanceMetadataEvent.class);
+        result.add(MetadataEvent.ServiceMetadataEvent.class);
+        result.add(ClientEvent.ClientDisconnectEvent.class);
+        return result;
+    }
+    
+    @Override
+    public void onEvent(Event event) {
+        if (event instanceof MetadataEvent.InstanceMetadataEvent) {
+            handleInstanceMetadataEvent((MetadataEvent.InstanceMetadataEvent) event);
+        } else if (event instanceof MetadataEvent.ServiceMetadataEvent) {
+            handleServiceMetadataEvent((MetadataEvent.ServiceMetadataEvent) event);
+        } else {
+            handleClientDisconnectEvent((ClientEvent.ClientDisconnectEvent) event);
+        }
+    }
+    
+    private void handleClientDisconnectEvent(ClientEvent.ClientDisconnectEvent event) {
+        for (Service each : event.getClient().getAllPublishedService()) {
+            String instanceId = event.getClient().getInstancePublishInfo(each).getIp();
+            updateExpiredInfo(true, ExpiredMetadataInfo.newExpiredInstanceMetadata(each, instanceId));
+        }
+    }
+    
+    private void handleServiceMetadataEvent(MetadataEvent.ServiceMetadataEvent event) {
+        Service service = event.getService();
+        if (!containServiceMetadata(service)) {
+            return;
+        }
+        updateExpiredInfo(event.isExpired(), ExpiredMetadataInfo.newExpiredServiceMetadata(service));
+    }
+    
+    private void handleInstanceMetadataEvent(MetadataEvent.InstanceMetadataEvent event) {
+        Service service = event.getService();
+        String instanceId = event.getInstanceId();
+        if (!containInstanceMetadata(service, instanceId)) {
+            return;
+        }
+        updateExpiredInfo(event.isExpired(),
+                ExpiredMetadataInfo.newExpiredInstanceMetadata(event.getService(), event.getInstanceId()));
+    }
+    
+    private void updateExpiredInfo(boolean expired, ExpiredMetadataInfo expiredMetadataInfo) {
+        if (expired) {
+            expiredMetadataInfos.add(expiredMetadataInfo);
+        } else {
+            expiredMetadataInfos.remove(expiredMetadataInfo);
         }
     }
 }

@@ -83,14 +83,14 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
         MetadataOperation<InstanceMetadata> op = serializer.deserialize(data.toByteArray(), processType);
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         namingMetadataManager.updateInstanceMetadata(service, op.getTag(), op.getMetadata());
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     
     private void deleteInstanceMetadata(ByteString data) {
         MetadataOperation<InstanceMetadata> op = serializer.deserialize(data.toByteArray(), processType);
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         namingMetadataManager.removeInstanceMetadata(service, op.getTag());
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, false));
     }
     
     @Override
