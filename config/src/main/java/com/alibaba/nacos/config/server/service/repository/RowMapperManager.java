@@ -41,6 +41,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
+import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -85,6 +87,10 @@ public final class RowMapperManager {
     public static final RoleInfoRowMapper ROLE_INFO_ROW_MAPPER = new RoleInfoRowMapper();
     
     public static final PermissionRowMapper PERMISSION_ROW_MAPPER = new PermissionRowMapper();
+    
+    public static final GroupCapacityRowMapper GROUP_CAPACITY_ROW_MAPPER = new GroupCapacityRowMapper();
+    
+    public static final TenantCapacityRowMapper TENANT_CAPACITY_ROW_MAPPER = new TenantCapacityRowMapper();
     
     public static final MapRowMapper MAP_ROW_MAPPER = new MapRowMapper();
     
@@ -165,6 +171,14 @@ public final class RowMapperManager {
         // PERMISSION_ROW_MAPPER
         
         mapperMap.put(PERMISSION_ROW_MAPPER.getClass().getCanonicalName(), PERMISSION_ROW_MAPPER);
+    
+        // GROUP_CAPACITY_ROW_MAPPER
+    
+        mapperMap.put(GROUP_CAPACITY_ROW_MAPPER.getClass().getCanonicalName(), GROUP_CAPACITY_ROW_MAPPER);
+    
+        // TENANT_CAPACITY_ROW_MAPPER
+    
+        mapperMap.put(TENANT_CAPACITY_ROW_MAPPER.getClass().getCanonicalName(), TENANT_CAPACITY_ROW_MAPPER);
         
         // MAP_ROW_MAPPER
         
@@ -569,6 +583,38 @@ public final class RowMapperManager {
             info.setAction(rs.getString("action"));
             info.setRole(rs.getString("role"));
             return info;
+        }
+    }
+    
+    public static final class GroupCapacityRowMapper implements RowMapper<GroupCapacity> {
+        
+        @Override
+        public GroupCapacity mapRow(ResultSet rs, int rowNum) throws SQLException {
+            GroupCapacity groupCapacity = new GroupCapacity();
+            groupCapacity.setId(rs.getLong("id"));
+            groupCapacity.setQuota(rs.getInt("quota"));
+            groupCapacity.setUsage(rs.getInt("usage"));
+            groupCapacity.setMaxSize(rs.getInt("max_size"));
+            groupCapacity.setMaxAggrCount(rs.getInt("max_aggr_count"));
+            groupCapacity.setMaxAggrSize(rs.getInt("max_aggr_size"));
+            groupCapacity.setGroup(rs.getString("group_id"));
+            return groupCapacity;
+        }
+    }
+    
+    public static final class TenantCapacityRowMapper implements RowMapper<TenantCapacity> {
+        
+        @Override
+        public TenantCapacity mapRow(ResultSet rs, int rowNum) throws SQLException {
+            TenantCapacity tenantCapacity = new TenantCapacity();
+            tenantCapacity.setId(rs.getLong("id"));
+            tenantCapacity.setQuota(rs.getInt("quota"));
+            tenantCapacity.setUsage(rs.getInt("usage"));
+            tenantCapacity.setMaxSize(rs.getInt("max_size"));
+            tenantCapacity.setMaxAggrCount(rs.getInt("max_aggr_count"));
+            tenantCapacity.setMaxAggrSize(rs.getInt("max_aggr_size"));
+            tenantCapacity.setTenant(rs.getString("tenant_id"));
+            return tenantCapacity;
         }
     }
     
