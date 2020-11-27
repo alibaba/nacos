@@ -86,7 +86,7 @@ public class NacosNamingService implements NamingService {
         this.namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
         initServerAddr(properties);
-        InitUtils.initWebRootContext();
+        InitUtils.initWebRootContext(properties);
         initCacheDir();
         initLogName(properties);
         

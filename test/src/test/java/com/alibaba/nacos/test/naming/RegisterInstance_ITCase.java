@@ -22,11 +22,11 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -43,23 +43,29 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class RegisterInstance_ITCase {
-
+    
     private NamingService naming;
-    private NamingService naming2;
+    
+    @Value("${server.servlet.context-path}")
+    private String contextPath;
+    
     @LocalServerPort
     private int port;
 
     @Before
     public void init() throws Exception {
 
-        NamingBase.prepareServer(port);
+        NamingBase.prepareServer(port, contextPath);
 
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            Properties properties = new Properties();
+            properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
+            properties.put(PropertyKeyConst.CONTEXT_PATH, contextPath);
+            naming = NamingFactory.createNamingService(properties);
         }
 
         while (true) {
@@ -77,6 +83,7 @@ public class RegisterInstance_ITCase {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:" + port);
         properties.put(PropertyKeyConst.NAMESPACE, "t3");
+        properties.put(PropertyKeyConst.CONTEXT_PATH, contextPath);
 
         naming = NamingFactory.createNamingService(properties);
         TimeUnit.SECONDS.sleep(10);
