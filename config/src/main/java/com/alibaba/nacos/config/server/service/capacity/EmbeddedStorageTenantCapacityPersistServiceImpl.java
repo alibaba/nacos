@@ -18,8 +18,6 @@ package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
-import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -27,15 +25,12 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.google.common.collect.Lists;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.TENANT_CAPACITY_ROW_MAPPER;
@@ -50,20 +45,10 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 @Service
 public class EmbeddedStorageTenantCapacityPersistServiceImpl implements TenantCapacityPersistService {
     
-    private JdbcTemplate jdbcTemplate;
-    
-    private DataSourceService dataSourceService;
-    
     private final DatabaseOperate databaseOperate;
     
     public EmbeddedStorageTenantCapacityPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
-    }
-    
-    @PostConstruct
-    public void init() {
-        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        this.jdbcTemplate = dataSourceService.getJdbcTemplate();
     }
     
     @Override
@@ -71,7 +56,7 @@ public class EmbeddedStorageTenantCapacityPersistServiceImpl implements TenantCa
         String sql =
                 "SELECT id, quota, usage, max_size, max_aggr_count, max_aggr_size, tenant_id FROM tenant_capacity "
                         + "WHERE tenant_id=?";
-        List<TenantCapacity> list = jdbcTemplate.query(sql, new Object[] {tenantId}, TENANT_CAPACITY_ROW_MAPPER);
+        List<TenantCapacity> list = databaseOperate.queryMany(sql, new Object[] {tenantId}, TENANT_CAPACITY_ROW_MAPPER);
         if (list.isEmpty()) {
             return null;
         }
@@ -177,15 +162,13 @@ public class EmbeddedStorageTenantCapacityPersistServiceImpl implements TenantCa
         }
         
         try {
-            return jdbcTemplate.query(sql, new Object[] {lastId, pageSize}, new RowMapper<TenantCapacity>() {
-                @Override
-                public TenantCapacity mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    TenantCapacity tenantCapacity = new TenantCapacity();
-                    tenantCapacity.setId(rs.getLong("id"));
-                    tenantCapacity.setTenant(rs.getString("tenant_id"));
-                    return tenantCapacity;
-                }
-            });
+            List<Map<String, Object>> list = databaseOperate.queryMany(sql, new Object[] {lastId, pageSize});
+            return list.stream().map(map -> {
+                TenantCapacity capacity = new TenantCapacity();
+                capacity.setId((Long) map.get("id"));
+                capacity.setTenant((String) map.get("tenant_id"));
+                return capacity;
+            }).collect(Collectors.toList());
         } catch (CannotGetJdbcConnectionException e) {
             FATAL_LOG.error("[db-error]", e);
             throw e;
