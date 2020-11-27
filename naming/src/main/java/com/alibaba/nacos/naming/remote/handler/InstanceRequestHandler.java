@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import org.springframework.stereotype.Component;
 
@@ -34,9 +35,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class InstanceRequestHandler extends RequestHandler<InstanceRequest, InstanceResponse> {
     
-    private final EphemeralClientOperationServiceImpl clientOperationService;
+    private final ClientOperationServiceProxy clientOperationService;
     
-    public InstanceRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
+    public InstanceRequestHandler(ClientOperationServiceProxy clientOperationService) {
         this.clientOperationService = clientOperationService;
     }
     

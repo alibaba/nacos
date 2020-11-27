@@ -265,4 +265,8 @@ public class Instance implements Serializable {
         return getMetadata().get(key);
     }
     
+    public String getSignKey() {
+        return ip + "_" + port + "_" + clusterName + "_" + serviceName;
+    }
+    
 }

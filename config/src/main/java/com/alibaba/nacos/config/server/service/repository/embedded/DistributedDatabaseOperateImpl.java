@@ -167,10 +167,10 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
     
     private ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
     
-    public DistributedDatabaseOperateImpl(ServerMemberManager memberManager, ProtocolManager protocolManager)
+    public DistributedDatabaseOperateImpl(ServerMemberManager memberManager)
             throws Exception {
         this.memberManager = memberManager;
-        this.protocol = protocolManager.getCpProtocol();
+        this.protocol = ProtocolManager.getCpProtocol();
         init();
     }
     

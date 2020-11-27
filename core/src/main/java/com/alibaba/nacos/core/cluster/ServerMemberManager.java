@@ -33,6 +33,7 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
@@ -149,6 +150,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         if (serverList.isEmpty()) {
             throw new NacosException(NacosException.SERVER_ERROR, "cannot get serverlist, so exit.");
         }
+    
+        ProtocolManager.init(this);
         
         Loggers.CORE.info("The cluster resource is initialized");
     }

@@ -28,10 +28,7 @@ import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -43,14 +40,13 @@ import java.util.Set;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-@Component(value = "ProtocolManager")
-public class ProtocolManager extends MemberChangeListener implements DisposableBean {
+public class ProtocolManager extends MemberChangeListener {
     
     private CPProtocol cpProtocol;
     
     private APProtocol apProtocol;
     
-    private final ServerMemberManager memberManager;
+    private ServerMemberManager memberManager;
     
     private boolean apInit = false;
     
@@ -58,9 +54,15 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     
     private Set<Member> oldMembers;
     
-    public ProtocolManager(ServerMemberManager memberManager) {
-        this.memberManager = memberManager;
-        NotifyCenter.registerSubscriber(this);
+    private static final ProtocolManager INSTANCE = new ProtocolManager();
+    
+    public static ProtocolManager getInstance() {
+        return INSTANCE;
+    }
+    
+    public static void init(ServerMemberManager memberManager) {
+        INSTANCE.memberManager = memberManager;
+        NotifyCenter.registerSubscriber(INSTANCE);
     }
     
     public static Set<String> toAPMembersInfo(Collection<Member> members) {
@@ -79,33 +81,32 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
         return nodes;
     }
     
-    public CPProtocol getCpProtocol() {
-        synchronized (this) {
-            if (!cpInit) {
-                initCPProtocol();
-                cpInit = true;
+    public static CPProtocol getCpProtocol() {
+        synchronized (INSTANCE) {
+            if (!INSTANCE.cpInit) {
+                INSTANCE.initCPProtocol();
+                INSTANCE.cpInit = true;
             }
         }
-        return cpProtocol;
+        return INSTANCE.cpProtocol;
     }
     
-    public APProtocol getApProtocol() {
-        synchronized (this) {
-            if (!apInit) {
-                initAPProtocol();
-                apInit = true;
+    public static  APProtocol getApProtocol() {
+        synchronized (INSTANCE) {
+            if (!INSTANCE.apInit) {
+                INSTANCE.initAPProtocol();
+                INSTANCE.apInit = true;
             }
         }
-        return apProtocol;
+        return INSTANCE.apProtocol;
     }
     
-    @PreDestroy
-    public void destroy() {
-        if (Objects.nonNull(apProtocol)) {
-            apProtocol.shutdown();
+    public static void destroy() {
+        if (Objects.nonNull(INSTANCE.apProtocol)) {
+            INSTANCE.apProtocol.shutdown();
         }
-        if (Objects.nonNull(cpProtocol)) {
-            cpProtocol.shutdown();
+        if (Objects.nonNull(INSTANCE.cpProtocol)) {
+            INSTANCE.cpProtocol.shutdown();
         }
     }
     

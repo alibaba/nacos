@@ -19,8 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.persistent.impl.PersistentServiceProcessor;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
+import com.alibaba.nacos.naming.core.PersistentServiceV1Operator;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.stereotype.Component;
 
@@ -32,60 +31,40 @@ import org.springframework.stereotype.Component;
 @Component("persistentConsistencyServiceDelegate")
 public class PersistentConsistencyServiceDelegateImpl implements PersistentConsistencyService {
     
-    private final ClusterVersionJudgement versionJudgement;
+    private final PersistentServiceV1Operator newPersistentConsistencyService;
     
-    private final RaftConsistencyServiceImpl oldPersistentConsistencyService;
-    
-    private final PersistentServiceProcessor newPersistentConsistencyService;
-    
-    private volatile boolean switchNewPersistentService = false;
-    
-    public PersistentConsistencyServiceDelegateImpl(ClusterVersionJudgement versionJudgement,
-            RaftConsistencyServiceImpl oldPersistentConsistencyService,
-            PersistentServiceProcessor newPersistentConsistencyService) {
-        this.versionJudgement = versionJudgement;
-        this.oldPersistentConsistencyService = oldPersistentConsistencyService;
+    public PersistentConsistencyServiceDelegateImpl(PersistentServiceV1Operator newPersistentConsistencyService) {
         this.newPersistentConsistencyService = newPersistentConsistencyService;
-        init();
-    }
-    
-    private void init() {
-        this.versionJudgement.registerObserver(isAllNewVersion -> switchNewPersistentService = isAllNewVersion, -1);
     }
     
     @Override
     public void put(String key, Record value) throws NacosException {
-        switchOne().put(key, value);
+        newPersistentConsistencyService.put(key, value);
     }
     
     @Override
     public void remove(String key) throws NacosException {
-        switchOne().remove(key);
+        newPersistentConsistencyService.remove(key);
     }
     
     @Override
     public Datum get(String key) throws NacosException {
-        return switchOne().get(key);
+        return newPersistentConsistencyService.get(key);
     }
     
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
-        oldPersistentConsistencyService.listen(key, listener);
         newPersistentConsistencyService.listen(key, listener);
     }
     
     @Override
     public void unListen(String key, RecordListener listener) throws NacosException {
         newPersistentConsistencyService.unListen(key, listener);
-        oldPersistentConsistencyService.unListen(key, listener);
     }
     
     @Override
     public boolean isAvailable() {
-        return switchOne().isAvailable();
+        return newPersistentConsistencyService.isAvailable();
     }
     
-    private PersistentConsistencyService switchOne() {
-        return switchNewPersistentService ? newPersistentConsistencyService : oldPersistentConsistencyService;
-    }
 }

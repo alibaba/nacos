@@ -117,8 +117,7 @@ public class MergeDatumService {
         if (ApplicationUtils.getStandaloneMode()) {
             return true;
         }
-        ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
-        return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+        return ProtocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
     }
     
     class MergeAllDataWorker extends Thread {

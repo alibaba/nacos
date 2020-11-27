@@ -43,8 +43,8 @@ public class CoreOpsController {
     
     private final IdGeneratorManager idGeneratorManager;
     
-    public CoreOpsController(ProtocolManager protocolManager, IdGeneratorManager idGeneratorManager) {
-        this.protocolManager = protocolManager;
+    public CoreOpsController(IdGeneratorManager idGeneratorManager) {
+        this.protocolManager = ProtocolManager.getInstance();
         this.idGeneratorManager = idGeneratorManager;
     }
     

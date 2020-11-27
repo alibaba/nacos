@@ -48,11 +48,11 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     private final Type processType;
     
     @SuppressWarnings("unchecked")
-    public ServiceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
+    public ServiceMetadataProcessor(NamingMetadataManager namingMetadataManager) {
         this.namingMetadataManager = namingMetadataManager;
         this.serializer = SerializeFactory.getSerializer("JSON");
         this.processType = TypeUtils.parameterize(MetadataOperation.class, ServiceMetadata.class);
-        protocolManager.getCpProtocol().addLogProcessors(Collections.singletonList(this));
+        ProtocolManager.getCpProtocol().addLogProcessors(Collections.singletonList(this));
     }
     
     @Override

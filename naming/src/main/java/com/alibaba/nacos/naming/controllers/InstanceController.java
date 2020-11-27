@@ -33,9 +33,9 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
@@ -48,7 +48,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -82,17 +81,13 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_META
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
 public class InstanceController {
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
-    @Autowired
-    private PushService pushService;
+    private final PushService pushService;
     
-    @Autowired
-    private ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
     
-    @Autowired
-    private InstanceOperatorClientImpl instanceService;
+    private final InstanceOperatorClientImpl instanceService;
     
     /**
      * Move to {@link com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl}.
@@ -118,6 +113,14 @@ public class InstanceController {
             return result.toString();
         }
     };
+    
+    public InstanceController(SwitchDomain switchDomain, PushService pushService, ServiceManager serviceManager,
+            InstanceOperatorClientImpl instanceService) {
+        this.switchDomain = switchDomain;
+        this.pushService = pushService;
+        this.serviceManager = serviceManager;
+        this.instanceService = instanceService;
+    }
     
     /**
      * Register new instance.
@@ -173,8 +176,7 @@ public class InstanceController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         instanceService.updateInstance(namespaceId, serviceName, groupName, parseInstance(request));

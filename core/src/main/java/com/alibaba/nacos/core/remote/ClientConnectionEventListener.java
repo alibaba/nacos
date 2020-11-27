@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.core.remote;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.annotation.PostConstruct;
-
 /**
  * ClientConnectionEventListener.
  *
@@ -34,12 +30,8 @@ public abstract class ClientConnectionEventListener {
      */
     private String name;
     
-    @Autowired
-    protected ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
-    
-    @PostConstruct
-    public void init() {
-        clientConnectionEventListenerRegistry.registerClientConnectionEventListener(this);
+    public ClientConnectionEventListener() {
+        ClientConnectionEventListenerRegistry.getInstance().registerClientConnectionEventListener(this);
     }
     
     /**

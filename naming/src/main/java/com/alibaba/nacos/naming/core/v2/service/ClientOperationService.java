@@ -16,8 +16,12 @@
 
 package com.alibaba.nacos.naming.core.v2.service;
 
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
 /**
@@ -62,4 +66,14 @@ public interface ClientOperationService {
      * @param clientId   id of client
      */
     void unsubscribeService(Service service, Subscriber subscriber, String clientId);
+    
+    default InstancePublishInfo getPublishInfo(Instance instance) {
+        InstancePublishInfo result = new InstancePublishInfo(instance.getIp(), instance.getPort());
+        result.getExtendDatum().putAll(instance.getMetadata());
+        String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
+                : instance.getClusterName();
+        result.setHealthy(instance.isHealthy());
+        result.getExtendDatum().put(CommonParams.CLUSTER_NAME, clusterName);
+        return result;
+    }
 }

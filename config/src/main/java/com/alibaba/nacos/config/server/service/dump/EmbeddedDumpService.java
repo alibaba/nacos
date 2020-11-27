@@ -65,12 +65,10 @@ public class EmbeddedDumpService extends DumpService {
      *
      * @param persistService  {@link PersistService}
      * @param memberManager   {@link ServerMemberManager}
-     * @param protocolManager {@link ProtocolManager}
      */
-    public EmbeddedDumpService(PersistService persistService, ServerMemberManager memberManager,
-            ProtocolManager protocolManager) {
+    public EmbeddedDumpService(PersistService persistService, ServerMemberManager memberManager) {
         super(persistService, memberManager);
-        this.protocolManager = protocolManager;
+        this.protocolManager = ProtocolManager.getInstance();
     }
     
     @PostConstruct

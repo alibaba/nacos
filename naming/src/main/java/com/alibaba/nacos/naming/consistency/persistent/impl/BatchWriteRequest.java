@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent.impl;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * batch write request.
@@ -52,5 +53,27 @@ public class BatchWriteRequest implements Serializable {
     public void append(byte[] key, byte[] value) {
         keys.add(key);
         values.add(value);
+    }
+    
+    /**
+     * Traversal the internal key-value structure.
+     *
+     * @param consumer {@link ForEach}
+     */
+    public void forEachWithCompleteSign(ForEach consumer) {
+        int len = keys.size();
+        for (int i = 0; i < len; i++) {
+            final byte[] key = keys.get(i);
+            final byte[] value = values.get(i);
+            consumer.accept(key, value);
+        }
+        consumer.finished();
+    }
+    
+    public interface ForEach {
+        
+        void accept(byte[] key, byte[] value);
+        
+        void finished();
     }
 }

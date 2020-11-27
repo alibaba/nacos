@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -38,11 +39,16 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     @Override
-    public void update(Service service, ServiceMetadata metadata) throws NacosException {
+    public void updateServiceMetadata(Service service, ServiceMetadata metadata) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     String.format("service %s not found!", service.getGroupedServiceName()));
         }
         metadataOperateService.updateServiceMetadata(service, metadata);
+    }
+    
+    @Override
+    public void updateClusterMetadata(Service service, ClusterMetadata metadata) throws NacosException {
+    
     }
 }

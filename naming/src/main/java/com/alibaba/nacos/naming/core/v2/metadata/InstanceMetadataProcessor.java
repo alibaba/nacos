@@ -40,6 +40,7 @@ import java.util.Collections;
  *
  * @author xiweng.yy
  */
+@SuppressWarnings("unchecked")
 @Component
 public class InstanceMetadataProcessor extends RequestProcessor4CP {
     
@@ -50,11 +51,11 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     private final Type processType;
     
     @SuppressWarnings("unchecked")
-    public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
+    public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager) {
         this.namingMetadataManager = namingMetadataManager;
         this.serializer = SerializeFactory.getSerializer("JSON");
         this.processType = TypeUtils.parameterize(MetadataOperation.class, InstanceMetadata.class);
-        protocolManager.getCpProtocol().addLogProcessors(Collections.singletonList(this));
+        ProtocolManager.getCpProtocol().addLogProcessors(Collections.singletonList(this));
     }
     
     @Override

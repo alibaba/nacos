@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,12 +34,15 @@ public class ServiceManager {
     
     private static final ServiceManager INSTANCE = new ServiceManager();
     
-    private final ConcurrentHashMap<Service, Service> singletonRepository;
+    private final Map<Service, Service> ephemeralServiceRepository;
+    
+    private final Map<Service, Service> persistentServiceRepository;
     
     private final ConcurrentHashMap<String, Set<Service>> namespaceSingletonMaps;
     
     private ServiceManager() {
-        singletonRepository = new ConcurrentHashMap<>(1 << 10);
+        ephemeralServiceRepository = new ConcurrentHashMap<>(1 << 10);
+        persistentServiceRepository = new ConcurrentHashMap<>(1 << 10);
         namespaceSingletonMaps = new ConcurrentHashMap<>(1 << 2);
     }
     
@@ -57,8 +61,9 @@ public class ServiceManager {
      * @return if service is exist, return exist service, otherwise return new service
      */
     public Service getSingleton(Service service) {
-        singletonRepository.putIfAbsent(service, service);
-        Service result = singletonRepository.get(service);
+        Map<Service, Service> repository = switchOneRepository(service.isEphemeral());
+        repository.putIfAbsent(service, service);
+        Service result = repository.get(service);
         if (!namespaceSingletonMaps.containsKey(result.getNamespace())) {
             namespaceSingletonMaps.putIfAbsent(result.getNamespace(), new ConcurrentHashSet<>());
             namespaceSingletonMaps.get(result.getNamespace()).add(result);
@@ -85,7 +90,7 @@ public class ServiceManager {
      * @return singleton service if exist, otherwise null optional
      */
     public Optional<Service> getSingletonIfExist(Service service) {
-        return Optional.ofNullable(singletonRepository.get(service));
+        return Optional.ofNullable(switchOneRepository(service.isEphemeral()).get(service));
     }
     
     /**
@@ -95,14 +100,18 @@ public class ServiceManager {
      * @return removed service
      */
     public Service removeSingleton(Service service) {
-        return singletonRepository.remove(service);
+        return switchOneRepository(service.isEphemeral()).remove(service);
     }
     
     public boolean containSingleton(Service service) {
-        return singletonRepository.containsKey(service);
+        return switchOneRepository(service.isEphemeral()).containsKey(service);
     }
     
     public int size() {
-        return singletonRepository.size();
+        return ephemeralServiceRepository.size() + persistentServiceRepository.size();
+    }
+    
+    public Map<Service, Service> switchOneRepository(boolean ephemeral) {
+        return ephemeral ? ephemeralServiceRepository : persistentServiceRepository;
     }
 }
