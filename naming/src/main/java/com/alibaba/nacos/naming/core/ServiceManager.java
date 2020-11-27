@@ -29,6 +29,7 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
+import com.alibaba.nacos.naming.core.v2.cleaner.EmptyServiceAutoCleaner;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Message;
@@ -67,7 +68,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
@@ -103,8 +103,6 @@ public class ServiceManager implements RecordListener<Service> {
     private final PushService pushService;
     
     private final RaftPeerSet raftPeerSet;
-    
-    private int maxFinalizeCount = 3;
     
     private final Object putServiceLock = new Object();
     
@@ -146,7 +144,7 @@ public class ServiceManager implements RecordListener<Service> {
             // the possibility that the service cache information may just be deleted
             // and then created due to the heartbeat mechanism
             
-            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoClean(), cleanEmptyServiceDelay,
+            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoCleaner(this, distroMapper), cleanEmptyServiceDelay,
                     cleanEmptyServicePeriod);
         }
         
@@ -1023,58 +1021,6 @@ public class ServiceManager implements RecordListener<Service> {
                 return;
             }
             serviceName2Checksum.put(serviceName, checksum);
-        }
-    }
-    
-    private class EmptyServiceAutoClean implements Runnable {
-        
-        @Override
-        public void run() {
-            
-            // Parallel flow opening threshold
-            
-            int parallelSize = 100;
-            
-            serviceMap.forEach((namespace, stringServiceMap) -> {
-                Stream<Map.Entry<String, Service>> stream = null;
-                if (stringServiceMap.size() > parallelSize) {
-                    stream = stringServiceMap.entrySet().parallelStream();
-                } else {
-                    stream = stringServiceMap.entrySet().stream();
-                }
-                stream.filter(entry -> {
-                    final String serviceName = entry.getKey();
-                    return distroMapper.responsible(serviceName);
-                }).forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceName, service) -> {
-                    if (service.isEmpty()) {
-                        
-                        // To avoid violent Service removal, the number of times the Service
-                        // experiences Empty is determined by finalizeCnt, and if the specified
-                        // value is reached, it is removed
-                        
-                        if (service.getFinalizeCount() > maxFinalizeCount) {
-                            Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned", namespace,
-                                    serviceName);
-                            try {
-                                easyRemoveService(namespace, serviceName);
-                            } catch (Exception e) {
-                                Loggers.SRV_LOG.error("namespace : {}, [{}] services are automatically clean has "
-                                        + "error : {}", namespace, serviceName, e);
-                            }
-                        }
-                        
-                        service.setFinalizeCount(service.getFinalizeCount() + 1);
-                        
-                        Loggers.SRV_LOG
-                                .debug("namespace : {}, [{}] The number of times the current service experiences "
-                                                + "an empty instance is : {}", namespace, serviceName,
-                                        service.getFinalizeCount());
-                    } else {
-                        service.setFinalizeCount(0);
-                    }
-                    return service;
-                }));
-            });
         }
     }
     
