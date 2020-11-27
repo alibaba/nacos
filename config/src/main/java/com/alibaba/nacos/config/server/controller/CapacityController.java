@@ -101,13 +101,13 @@ public class CapacityController {
             capacityService.initAllCapacity();
             RestResult<Boolean> restResult = new RestResult<Boolean>();
             setFailResult(response, restResult, 400);
-            restResult.setMessage("参数group和tenant不能同时为空");
+            restResult.setMessage("Parameters Group and Tenant cannot both be empty");
             return restResult;
         }
         if (quota == null && maxSize == null && maxAggrCount == null && maxAggrSize == null) {
             RestResult<Boolean> restResult = new RestResult<Boolean>();
             setFailResult(response, restResult, 400);
-            restResult.setMessage("参数quota、maxSize、maxAggrCount、maxAggrSize不能同时为空");
+            restResult.setMessage("Parameters quota, maxSize, maxAggrCount, and maxAggrSize cannot both be null");
             return restResult;
         }
         String targetFieldName;
@@ -122,7 +122,7 @@ public class CapacityController {
         RestResult<Boolean> restResult = new RestResult<Boolean>();
         if (StringUtils.isBlank(targetFieldValue)) {
             setFailResult(response, restResult, 400);
-            restResult.setMessage(String.format("参数%s为空", targetFieldName));
+            restResult.setMessage(String.format("Parameter %s is null", targetFieldName));
             return restResult;
         }
         try {
@@ -130,11 +130,11 @@ public class CapacityController {
                     .insertOrUpdateCapacity(group, tenant, quota, maxSize, maxAggrCount, maxAggrSize);
             if (insertOrUpdateResult) {
                 setSuccessResult(response, restResult);
-                restResult.setMessage(String.format("成功更新%s为%s的容量信息配置", targetFieldName, targetFieldValue));
+                restResult.setMessage(String.format("Successfully updated %s for capacity information config for %s", targetFieldName, targetFieldValue));
                 return restResult;
             }
             setFailResult(response, restResult, 500);
-            restResult.setMessage(String.format("%s为%s的容量信息配置更新失败", targetFieldName, targetFieldValue));
+            restResult.setMessage(String.format("%s failed to configure an update for capacity information for %s", targetFieldName, targetFieldValue));
             return restResult;
         } catch (Exception e) {
             LOGGER.error("[updateCapacity] ", e);
