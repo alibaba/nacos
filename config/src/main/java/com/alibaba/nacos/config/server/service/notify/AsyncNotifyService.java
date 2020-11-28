@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class AsyncNotifyService {
     
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public AsyncNotifyService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
         
