@@ -60,6 +60,10 @@ public final class ConfigExecutor {
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
                     new NameThreadFactory("com.alibaba.nacos.config.LongPolling"));
     
+    private static final ScheduledExecutorService ASYNC_DELAY_NOTIFY_PROCESSOR_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
+                    new NameThreadFactory("com.alibaba.nacos.config.AsyncDelayNotifyProcessor"));
+    
     public static void scheduleConfigTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
@@ -98,5 +102,10 @@ public final class ConfigExecutor {
     
     public static void executeLongPolling(Runnable runnable) {
         LONG_POLLING_EXECUTOR.execute(runnable);
+    }
+    
+    public static void executeAsyncDelayNotifyProcessor(Runnable runnable, long initialDelay, long period,
+            TimeUnit unit) {
+        ASYNC_DELAY_NOTIFY_PROCESSOR_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, period, unit);
     }
 }

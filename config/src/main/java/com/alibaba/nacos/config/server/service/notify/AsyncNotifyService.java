@@ -60,20 +60,10 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class AsyncNotifyService {
     
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public AsyncNotifyService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
         
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.config.async.delay.notify");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-        executorService.scheduleWithFixedDelay(delayNotifyProcessor, 2000L, 2000L, TimeUnit.MILLISECONDS);
+        ConfigExecutor.executeAsyncDelayNotifyProcessor(asyncDelayNotifyProcessor, 2000L, 2000L, TimeUnit.MILLISECONDS);
         
         // Register ConfigDataChangeEvent to NotifyCenter.
         NotifyCenter.registerToPublisher(ConfigDataChangeEvent.class, NotifyCenter.ringBufferSize);
@@ -117,7 +107,7 @@ public class AsyncNotifyService {
     
     private ServerMemberManager memberManager;
     
-    private DelayNotifyProcessor delayNotifyProcessor = new DelayNotifyProcessor();
+    private AsyncDelayNotifyProcessor asyncDelayNotifyProcessor = new AsyncDelayNotifyProcessor();
     
     class AsyncTask implements Runnable {
         
@@ -165,8 +155,11 @@ public class AsyncNotifyService {
     }
     
     private void putTaskToDelayProcessor(NotifySingleTask task) {
-        task.incDelayTime();
-        delayNotifyProcessor.putTaskIfAbsent(task);
+        asyncDelayNotifyProcessor.addTask(task);
+    }
+    
+    private void removeTaskFromDelayProcessor(NotifySingleTask task) {
+        asyncDelayNotifyProcessor.removeTask(task);
     }
     
     class AsyncNotifyCallBack implements Callback<String> {
@@ -186,7 +179,7 @@ public class AsyncNotifyService {
                 ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
                         task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
                         task.target);
-                delayNotifyProcessor.removeTask(task);
+                removeTaskFromDelayProcessor(task);
             } else {
                 LOGGER.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}", task.target, task.getDataId(),
                         task.getGroup(), task.getLastModified(), result.getCode());
@@ -333,12 +326,16 @@ public class AsyncNotifyService {
         }
     }
     
-    class DelayNotifyProcessor implements Runnable {
+    class AsyncDelayNotifyProcessor implements Runnable {
         
         private Map<String, NotifySingleTask> delayNotifyTaskMap = new ConcurrentHashMap<>();
         
-        private void putTaskIfAbsent(NotifySingleTask task) {
-            delayNotifyTaskMap.putIfAbsent(task.getSingleTaskKey(), task);
+        private void addTask(NotifySingleTask task) {
+            NotifySingleTask existTask = delayNotifyTaskMap.putIfAbsent(task.getSingleTaskKey(), task);
+            //if the task exist, increase delay time
+            if (existTask != null) {
+                existTask.incDelayTime();
+            }
         }
         
         private void removeTask(NotifySingleTask task) {
