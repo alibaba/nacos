@@ -24,6 +24,8 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -127,8 +129,9 @@ public class CatalogController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     @RequestMapping(value = "/instances")
     public ObjectNode instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam String clusterName, @RequestParam(required = false) String metadata,
-            @RequestParam(name = "pageNo") int page, @RequestParam int pageSize) throws NacosException {
+            @RequestParam String serviceName, @RequestParam String clusterName,
+            @RequestParam(required = false) String metadata, @RequestParam(name = "pageNo") int page,
+            @RequestParam int pageSize) throws NacosException {
         
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -139,14 +142,14 @@ public class CatalogController {
             throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
         }
         
-        Map<String, String> matadataFilter = null;
+        Map<String, String> metadataFilter = null;
         if (StringUtils.isNotEmpty(metadata)) {
-            matadataFilter = UtilsAndCommons.parseMetadata(metadata);
+            metadataFilter = UtilsAndCommons.parseMetadata(metadata);
         }
         
         List<Instance> instances = service.getClusterMap().get(clusterName).allIPs();
         
-        instances = filterInstance(instances, matadataFilter);
+        instances = filterInstance(instances, metadataFilter);
         
         int start = (page - 1) * pageSize;
         int end = page * pageSize;
@@ -315,13 +318,13 @@ public class CatalogController {
     }
     
     private List<Instance> filterInstance(List<Instance> instances, Map<String, String> metadata) {
-        if (metadata == null) {
+        if (MapUtils.isEmpty(metadata)) {
             return instances;
         }
         return instances.stream().filter(instance -> {
             for (Map.Entry<String, String> entry : metadata.entrySet()) {
-                if (!instance.getMetadata().containsKey(entry.getKey()) || !instance.getMetadata().get(entry.getKey())
-                        .equals(entry.getValue())) {
+                if (!instance.getMetadata().containsKey(entry.getKey()) || !Objects
+                        .equals(instance.getMetadata().get(entry.getKey()), entry.getValue())) {
                     return false;
                 }
             }
