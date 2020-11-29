@@ -71,7 +71,7 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
                 service.getGroupedServiceName());
         Collection<String> registeredService = clientServiceIndexesManager.getAllClientsRegisteredService(service);
         if (isTimeExpired(service) && registeredService.isEmpty()) {
-            clientServiceIndexesManager.removePublisherIndexes(service);
+            clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
             ServiceManager.getInstance().removeSingleton(service);
             NotifyCenter.publishEvent(new ServiceEvent.ServiceRemovedEvent(service));
         }

@@ -58,13 +58,15 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         return subscriberIndexes.containsKey(service) ? subscriberIndexes.get(service) : new ConcurrentHashSet<>();
     }
     
-    public void removePublisherIndexes(Service service) {
+    /**
+     * Clear the service index without instances.
+     * @param service The service of the Nacos.
+     */
+    public void removePublisherIndexesByEmptyService(Service service) {
         if (publisherIndexes.get(service).isEmpty()) {
-            
             publisherIndexes.remove(service);
         }
     }
-    
     
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
@@ -74,7 +76,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         result.add(ClientOperationEvent.ClientSubscribeServiceEvent.class);
         result.add(ClientOperationEvent.ClientUnsubscribeServiceEvent.class);
         result.add(ClientEvent.ClientDisconnectEvent.class);
-        result.add(ServiceEvent.ServiceRemovedEvent.class);
         return result;
     }
     
@@ -86,7 +87,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
             handleClientOperation((ClientOperationEvent) event);
         }
     }
-    
     
     private void handleClientDisconnect(ClientEvent.ClientDisconnectEvent event) {
         Client client = event.getClient();
