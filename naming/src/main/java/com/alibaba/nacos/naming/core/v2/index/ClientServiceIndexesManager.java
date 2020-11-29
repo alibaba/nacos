@@ -58,6 +58,14 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         return subscriberIndexes.containsKey(service) ? subscriberIndexes.get(service) : new ConcurrentHashSet<>();
     }
     
+    public void removePublisherIndexes(Service service) {
+        if (publisherIndexes.get(service).isEmpty()) {
+            
+            publisherIndexes.remove(service);
+        }
+    }
+    
+    
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> result = new LinkedList<>();
@@ -66,6 +74,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         result.add(ClientOperationEvent.ClientSubscribeServiceEvent.class);
         result.add(ClientOperationEvent.ClientUnsubscribeServiceEvent.class);
         result.add(ClientEvent.ClientDisconnectEvent.class);
+        result.add(ServiceEvent.ServiceRemovedEvent.class);
         return result;
     }
     
@@ -73,10 +82,11 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     public void onEvent(Event event) {
         if (event instanceof ClientEvent.ClientDisconnectEvent) {
             handleClientDisconnect((ClientEvent.ClientDisconnectEvent) event);
-        } else {
+        } else if (event instanceof ClientOperationEvent) {
             handleClientOperation((ClientOperationEvent) event);
         }
     }
+    
     
     private void handleClientDisconnect(ClientEvent.ClientDisconnectEvent event) {
         Client client = event.getClient();
@@ -103,9 +113,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void addPublisherIndexes(Service service, String clientId) {
-        if (!publisherIndexes.containsKey(service)) {
-            publisherIndexes.putIfAbsent(service, new ConcurrentHashSet<>());
-        }
+        publisherIndexes.computeIfAbsent(service, (key) -> new ConcurrentHashSet<>());
         publisherIndexes.get(service).add(clientId);
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
@@ -122,9 +130,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void addSubscriberIndexes(Service service, String clientId) {
-        if (!subscriberIndexes.containsKey(service)) {
-            subscriberIndexes.putIfAbsent(service, new ConcurrentHashSet<>());
-        }
+        subscriberIndexes.computeIfAbsent(service, (key) -> new ConcurrentHashSet<>());
         subscriberIndexes.get(service).add(clientId);
     }
     

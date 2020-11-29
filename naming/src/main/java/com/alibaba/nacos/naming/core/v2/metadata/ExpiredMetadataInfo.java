@@ -37,18 +37,22 @@ public class ExpiredMetadataInfo {
     
     private final long createTime;
     
-    private ExpiredMetadataInfo(Service service, String instanceId) {
+    private ExpiredMetadataInfo(Service service, String instanceId, Long createTime) {
         this.service = service;
         this.instanceId = instanceId;
-        createTime = System.currentTimeMillis();
+        this.createTime = createTime;
+    }
+    
+    public static ExpiredMetadataInfo newExpiredServiceMetadata(Service service, Long createTime) {
+        return new ExpiredMetadataInfo(service, null, createTime);
     }
     
     public static ExpiredMetadataInfo newExpiredServiceMetadata(Service service) {
-        return new ExpiredMetadataInfo(service, null);
+        return new ExpiredMetadataInfo(service, null, System.currentTimeMillis());
     }
     
     public static ExpiredMetadataInfo newExpiredInstanceMetadata(Service service, String instanceId) {
-        return new ExpiredMetadataInfo(service, instanceId);
+        return new ExpiredMetadataInfo(service, instanceId, System.currentTimeMillis());
     }
     
     public Service getService() {
