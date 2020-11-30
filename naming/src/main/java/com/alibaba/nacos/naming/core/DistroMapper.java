@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -66,7 +66,7 @@ public class DistroMapper extends MemberChangeListener {
     @PostConstruct
     public void init() {
         NotifyCenter.registerSubscriber(this);
-        this.healthyList = MemberUtils.simpleMembers(memberManager.allMembers());
+        this.healthyList = MemberUtil.simpleMembers(memberManager.allMembers());
     }
     
     public boolean responsible(Cluster cluster, Instance instance) {
@@ -133,7 +133,7 @@ public class DistroMapper extends MemberChangeListener {
     public void onEvent(MembersChangeEvent event) {
         // Here, the node list must be sorted to ensure that all nacos-server's
         // node list is in the same order
-        List<String> list = MemberUtils.simpleMembers(MemberUtils
+        List<String> list = MemberUtil.simpleMembers(MemberUtil
                 .selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
         Collections.sort(list);
         Collection<String> old = healthyList;
