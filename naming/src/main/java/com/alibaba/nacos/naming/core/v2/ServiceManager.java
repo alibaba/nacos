@@ -88,6 +88,10 @@ public class ServiceManager {
         return Optional.ofNullable(singletonRepository.get(service));
     }
     
+    public Set<String> getAllNamespaces() {
+        return namespaceSingletonMaps.keySet();
+    }
+    
     /**
      * Remove singleton service.
      *
@@ -95,6 +99,7 @@ public class ServiceManager {
      * @return removed service
      */
     public Service removeSingleton(Service service) {
+        namespaceSingletonMaps.get(service.getNamespace()).remove(service);
         return singletonRepository.remove(service);
     }
     
