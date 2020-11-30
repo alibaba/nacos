@@ -35,6 +35,7 @@ import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
+import com.alibaba.nacos.core.remote.core.ServerReloaderRequestHandler;
 import com.alibaba.nacos.core.utils.RemoteUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +77,9 @@ public class ServerLoaderController {
     
     @Autowired
     private ClusterRpcClientProxy clusterRpcClientProxy;
+    
+    @Autowired
+    private ServerReloaderRequestHandler serverReloaderRequestHandler;
     
     @Autowired
     private ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
@@ -184,15 +188,9 @@ public class ServerLoaderController {
             }
         }
         
-        List<ServerLoaderMetris> responseList = new LinkedList<ServerLoaderMetris>();
-        
         try {
-            ServerLoaderInfoResponse handle = serverLoaderInfoRequestHandler
-                    .handle(new ServerLoaderInfoRequest(), new RequestMeta());
-            ServerLoaderMetris metris = new ServerLoaderMetris();
-            metris.setAddress(serverMemberManager.getSelf().getAddress());
-            metris.setMetric(handle.getLoaderMetrics());
-            responseList.add(metris);
+            serverReloaderRequestHandler.handle(serverLoaderInfoRequest, new RequestMeta());
+            
         } catch (NacosException e) {
             e.printStackTrace();
         }
@@ -206,9 +204,9 @@ public class ServerLoaderController {
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.READ)
     @GetMapping("/clustermetric")
     public ResponseEntity clusterLoader() {
-    
+        
         Map<String, Object> serverLoadMetrics = getServerLoadMetrics();
-    
+        
         return ResponseEntity.ok().body(serverLoadMetrics);
     }
     
