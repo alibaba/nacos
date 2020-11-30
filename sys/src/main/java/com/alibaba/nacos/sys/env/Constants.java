@@ -48,7 +48,23 @@ public interface Constants {
      * the root context path.
      */
     String ROOT_WEB_CONTEXT_PATH = "/";
+    /**
+     * Time interval to clear empty services, unit: millisecond. default: 60000 ms.
+     */
+    String EMPTY_SERVICE_CLEAN_INTERVAL = "empty.service.clean.interval";
     
+    /**
+     * Expiration time of empty service, unit: millisecond. default: 60000 ms.
+     */
+    String EMPTY_SERVICE_EXPIRED_TIME = "empty.service.expired.time";
+    /**
+     * Time interval to clear expired metadata, unit: millisecond. default: 5000 ms.
+     */
+    String EXPIRED_METADATA_CLEAN_INTERVAL = "expired.metadata.clean.interval";
+    /**
+     * Expiration time of expired metadata, unit: millisecond. default: 60000 ms.
+     */
+    String EXPIRED_METADATA_EXPIRED_TIME = "expired.metadata.expired.time";
     String NACOS_SERVER_IP = "nacos.server.ip";
     
     String USE_ONLY_SITE_INTERFACES = "nacos.inetutils.use-only-site-local-interfaces";

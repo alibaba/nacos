@@ -42,6 +42,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.sys.env.Constants.EMPTY_SERVICE_CLEAN_INTERVAL;
+import static com.alibaba.nacos.sys.env.Constants.EMPTY_SERVICE_EXPIRED_TIME;
+import static com.alibaba.nacos.sys.env.Constants.EXPIRED_METADATA_CLEAN_INTERVAL;
+import static com.alibaba.nacos.sys.env.Constants.EXPIRED_METADATA_EXPIRED_TIME;
+
 /**
  * Its own configuration information manipulation tool class.
  *
@@ -71,6 +76,14 @@ public class EnvUtil {
     private static String functionModeType = null;
     
     private static String contextPath = null;
+    
+    private static Long emptyServiceCleanInterval;
+    
+    private static Long emptyServiceExpiredTime;
+    
+    private static Long expiredMetadataCleanInterval;
+    
+    private static Long expiredMetadataExpiredTime;
     
     @JustForTest
     private static String confPath = "";
@@ -121,6 +134,34 @@ public class EnvUtil {
     
     public static String resolveRequiredPlaceholders(String text) throws IllegalArgumentException {
         return environment.resolveRequiredPlaceholders(text);
+    }
+    
+    public static Long getEmptyServiceCleanInterval() {
+        if (Objects.isNull(emptyServiceCleanInterval)) {
+            emptyServiceCleanInterval = getProperty(EMPTY_SERVICE_CLEAN_INTERVAL, Long.class, 60000L);
+        }
+        return emptyServiceCleanInterval;
+    }
+    
+    public static Long getEmptyServiceExpiredTime() {
+        if (Objects.isNull(emptyServiceExpiredTime)) {
+            emptyServiceExpiredTime = getProperty(EMPTY_SERVICE_EXPIRED_TIME, Long.class, 60000L);
+        }
+        return emptyServiceExpiredTime;
+    }
+    
+    public static Long getExpiredMetadataCleanInterval() {
+        if (Objects.isNull(expiredMetadataCleanInterval)) {
+            expiredMetadataCleanInterval = getProperty(EXPIRED_METADATA_CLEAN_INTERVAL, Long.class, 5000L);
+        }
+        return expiredMetadataCleanInterval;
+    }
+    
+    public static Long getExpiredMetadataExpiredTime() {
+        if (Objects.isNull(expiredMetadataExpiredTime)) {
+            expiredMetadataExpiredTime = getProperty(EXPIRED_METADATA_EXPIRED_TIME, Long.class, 60000L);
+        }
+        return expiredMetadataExpiredTime;
     }
     
     public static List<String> getPropertyList(String key) {
