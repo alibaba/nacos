@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.metadata;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author xiweng.yy
  */
-public class ServiceMetadata {
+public class ServiceMetadata implements Serializable {
+    
+    private static final long serialVersionUID = -6605609934135069566L;
     
     /**
      * protect threshold.

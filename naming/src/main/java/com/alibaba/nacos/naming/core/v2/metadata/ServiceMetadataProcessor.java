@@ -23,15 +23,17 @@ import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.Constants;
-import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Service metadata processor.
@@ -47,12 +49,23 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     
     private final Type processType;
     
+    private final ReentrantReadWriteLock lock;
+    
+    private final ReentrantReadWriteLock.ReadLock readLock;
+    
     @SuppressWarnings("unchecked")
     public ServiceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
         this.namingMetadataManager = namingMetadataManager;
         this.serializer = SerializeFactory.getSerializer("JSON");
         this.processType = TypeUtils.parameterize(MetadataOperation.class, ServiceMetadata.class);
+        this.lock = new ReentrantReadWriteLock();
+        this.readLock = lock.readLock();
         protocolManager.getCpProtocol().addLogProcessors(Collections.singletonList(this));
+    }
+    
+    @Override
+    public List<SnapshotOperation> loadSnapshotOperate() {
+        return Collections.singletonList(new ServiceMetadataSnapshotOperation(namingMetadataManager, lock));
     }
     
     @Override
@@ -62,29 +75,35 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     
     @Override
     public Response onApply(WriteRequest request) {
-        switch (DataOperation.valueOf(request.getOperation())) {
-            case ADD:
-            case CHANGE:
-                updateServiceMetadata(request.getData());
-                break;
-            case DELETE:
-                deleteServiceMetadata(request.getData());
-                break;
-            default:
-                return Response.newBuilder().setSuccess(false).setErrMsg("Unsupported operation " + request.getOperation())
-                        .build();
+        MetadataOperation<ServiceMetadata> op = serializer.deserialize(request.getData().toByteArray(), processType);
+        readLock.lock();
+        try {
+            switch (DataOperation.valueOf(request.getOperation())) {
+                case ADD:
+                case CHANGE:
+                    updateServiceMetadata(op);
+                    break;
+                case DELETE:
+                    deleteServiceMetadata(op);
+                    break;
+                default:
+                    return Response.newBuilder().setSuccess(false)
+                            .setErrMsg("Unsupported operation " + request.getOperation()).build();
+            }
+            return Response.newBuilder().setSuccess(true).build();
+        } catch (Exception e) {
+            return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
+        } finally {
+            readLock.unlock();
         }
-        return Response.newBuilder().setSuccess(true).build();
     }
     
-    private void updateServiceMetadata(ByteString data) {
-        MetadataOperation<ServiceMetadata> op = serializer.deserialize(data.toByteArray(), processType);
+    private void updateServiceMetadata(MetadataOperation<ServiceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         namingMetadataManager.updateServiceMetadata(service, op.getMetadata());
     }
     
-    private void deleteServiceMetadata(ByteString data) {
-        MetadataOperation<ServiceMetadata> op = serializer.deserialize(data.toByteArray(), processType);
+    private void deleteServiceMetadata(MetadataOperation<ServiceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         namingMetadataManager.removeServiceMetadata(service);
     }
