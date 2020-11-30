@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.metadata;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,8 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author xiweng.yy
  */
-public class ClusterMetadata {
-
+public class ClusterMetadata implements Serializable {
+    
+    private static final long serialVersionUID = -80030989533083615L;
+    
     private int healthyCheckPort = 80;
     
     private String healthyCheckType = Tcp.TYPE;

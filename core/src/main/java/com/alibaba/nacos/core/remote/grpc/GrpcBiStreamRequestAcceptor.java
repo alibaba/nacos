@@ -30,8 +30,8 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
-import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -60,7 +60,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
-    
+                
                 String connectionId = CONTEXT_KEY_CONN_ID.get();
                 Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
                 String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
@@ -76,9 +76,9 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(metadata.getConnectionId(),
                             metadata.getClientIp(), metadata.getClientPort(), localPort, ConnectionType.GRPC.getType(),
                             metadata.getClientVersion(), metadata.getLabels());
-    
+                    
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
-    
+                    
                     if (connectionManager.isOverLimit() || !ApplicationUtils.isStarted()) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {
@@ -89,12 +89,10 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         }
                         return;
                     }
-    
-                    //if connnection is already terminated,not register it.
-                    if (connection.isConnected()) {
-                        connectionManager.register(connectionId, connection);
-                    }
-    
+                    
+                    //if connection is already terminated,not register it.
+                    connectionManager.register(connectionId, connection);
+                    
                 } else if (plainRequest.getBody() instanceof Response) {
                     Response response = (Response) plainRequest.getBody();
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
@@ -104,8 +102,16 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             @Override
             public void onError(Throwable t) {
-                Loggers.REMOTE.error("grpc streamObserver error .", t);
-                responseObserver.onCompleted();
+                if (responseObserver instanceof ServerCallStreamObserver) {
+                    ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) responseObserver);
+                    if (serverCallStreamObserver.isCancelled()) {
+                        //client close the stream.
+                        return;
+                    } else {
+                        serverCallStreamObserver.onCompleted();
+                    }
+                }
+                
             }
             
             @Override

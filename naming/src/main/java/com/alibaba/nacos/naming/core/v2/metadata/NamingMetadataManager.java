@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -145,6 +146,37 @@ public class NamingMetadataManager extends SmartSubscriber {
             serviceMetadataMap.remove(service);
         }
         expiredMetadataInfos.remove(ExpiredMetadataInfo.newExpiredInstanceMetadata(service, instanceId));
+    }
+    
+    /**
+     * Get service metadata snapshot.
+     *
+     * @return service metadata snapshot
+     */
+    public Map<Service, ServiceMetadata> getServiceMetadataSnapshot() {
+        ConcurrentMap<Service, ServiceMetadata> result = new ConcurrentHashMap<>(serviceMetadataMap.size());
+        result.putAll(serviceMetadataMap);
+        return result;
+    }
+    
+    /**
+     * Get instance metadata snapshot.
+     *
+     * @return service metadata snapshot
+     */
+    public Map<Service, ConcurrentMap<String, InstanceMetadata>> getInstanceMetadataSnapshot() {
+        ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> result = new ConcurrentHashMap<>(
+                instanceMetadataMap.size());
+        result.putAll(instanceMetadataMap);
+        return result;
+    }
+    
+    public void loadServiceMetadataSnapshot(Map<Service, ServiceMetadata> snapshot) {
+        serviceMetadataMap.putAll(snapshot);
+    }
+    
+    public void loadInstanceMetadataSnapshot(Map<Service, ConcurrentMap<String, InstanceMetadata>> snapshot) {
+        instanceMetadataMap.putAll(snapshot);
     }
     
     public Set<ExpiredMetadataInfo> getExpiredMetadataInfos() {

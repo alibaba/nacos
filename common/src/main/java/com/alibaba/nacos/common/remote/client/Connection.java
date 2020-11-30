@@ -40,6 +40,11 @@ public abstract class Connection implements Requester {
         this.serverInfo = serverInfo;
     }
     
+    @Override
+    public boolean isBusy() {
+        return false;
+    }
+    
     /**
      * Getter method for property <tt>abandon</tt>.
      *
