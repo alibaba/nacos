@@ -57,15 +57,4 @@ public class ServiceEvent extends SlowEvent {
         }
     }
     
-    /**
-     * Service data changed event.
-     */
-    public static class ServiceRemovedEvent extends ServiceEvent {
-        
-        private static final long serialVersionUID = 2123694271992630822L;
-        
-        public ServiceRemovedEvent(Service service) {
-            super(service);
-        }
-    }
 }

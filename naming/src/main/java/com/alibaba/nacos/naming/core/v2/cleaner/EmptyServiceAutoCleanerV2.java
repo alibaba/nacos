@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.core.v2.cleaner;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
-import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
+import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -73,7 +73,7 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
         if (isTimeExpired(service) && registeredService.isEmpty()) {
             clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
             ServiceManager.getInstance().removeSingleton(service);
-            NotifyCenter.publishEvent(new ServiceEvent.ServiceRemovedEvent(service));
+            NotifyCenter.publishEvent(new MetadataEvent.ServiceMetadataEvent(service, true));
         }
     }
     

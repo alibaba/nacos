@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
-import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.springframework.stereotype.Component;
 
@@ -158,7 +157,6 @@ public class NamingMetadataManager extends SmartSubscriber {
         result.add(MetadataEvent.InstanceMetadataEvent.class);
         result.add(MetadataEvent.ServiceMetadataEvent.class);
         result.add(ClientEvent.ClientDisconnectEvent.class);
-        result.add(ServiceEvent.ServiceRemovedEvent.class);
         return result;
     }
     
@@ -168,19 +166,9 @@ public class NamingMetadataManager extends SmartSubscriber {
             handleInstanceMetadataEvent((MetadataEvent.InstanceMetadataEvent) event);
         } else if (event instanceof MetadataEvent.ServiceMetadataEvent) {
             handleServiceMetadataEvent((MetadataEvent.ServiceMetadataEvent) event);
-        } else if (event instanceof ServiceEvent.ServiceRemovedEvent) {
-            handleServiceRemovedEvent((ServiceEvent.ServiceRemovedEvent) event);
-        } else {
+        }  else {
             handleClientDisconnectEvent((ClientEvent.ClientDisconnectEvent) event);
         }
-    }
-    
-    private void handleServiceRemovedEvent(ServiceEvent.ServiceRemovedEvent event) {
-        Service service = event.getService();
-        if (!containServiceMetadata(service)) {
-            return;
-        }
-        updateExpiredInfo(true, ExpiredMetadataInfo.newExpiredServiceMetadata(service, Long.MAX_VALUE));
     }
     
     private void handleClientDisconnectEvent(ClientEvent.ClientDisconnectEvent event) {
