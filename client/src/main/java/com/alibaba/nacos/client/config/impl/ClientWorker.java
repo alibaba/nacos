@@ -64,7 +64,6 @@ import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
  *
  * @author Nacos
  */
-@SuppressWarnings("checkstyle:EmptyLineSeparator")
 public class ClientWorker implements Closeable {
 
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
@@ -111,7 +110,7 @@ public class ClientWorker implements Closeable {
      * @throws NacosException nacos exception
      */
     public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners)
-        throws NacosException {
+            throws NacosException {
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
@@ -246,9 +245,8 @@ public class ClientWorker implements Closeable {
         return cacheMap.get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
 
-    @SuppressWarnings("checkstyle:Indentation")
     public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
-        throws NacosException {
+            throws NacosException {
         String[] ct = new String[2];
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
@@ -268,8 +266,8 @@ public class ClientWorker implements Closeable {
             result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
         } catch (Exception ex) {
             String message = String
-                .format("[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s",
-                    agent.getName(), dataId, group, tenant);
+                    .format("[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s",
+                            agent.getName(), dataId, group, tenant);
             LOGGER.error(message, ex);
             throw new NacosException(NacosException.SERVER_ERROR, ex);
         }
@@ -289,27 +287,26 @@ public class ClientWorker implements Closeable {
                 return ct;
             case HttpURLConnection.HTTP_CONFLICT: {
                 LOGGER.error(
-                    "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
-                        + "tenant={}", agent.getName(), dataId, group, tenant);
+                        "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
+                                + "tenant={}", agent.getName(), dataId, group, tenant);
                 throw new NacosException(NacosException.CONFLICT,
-                    "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
+                        "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
             }
             case HttpURLConnection.HTTP_FORBIDDEN: {
                 LOGGER.error("[{}] [sub-server-error] no right, dataId={}, group={}, tenant={}", agent.getName(),
-                    dataId, group, tenant);
+                        dataId, group, tenant);
                 throw new NacosException(result.getCode(), result.getMessage());
             }
             default: {
                 LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(),
-                    dataId, group, tenant, result.getCode());
+                        dataId, group, tenant, result.getCode());
                 throw new NacosException(result.getCode(),
-                    "http error, code=" + result.getCode() + ",dataId=" + dataId + ",group=" + group + ",tenant="
-                        + tenant);
+                        "http error, code=" + result.getCode() + ",dataId=" + dataId + ",group=" + group + ",tenant="
+                                + tenant);
             }
         }
     }
 
-    @SuppressWarnings("checkstyle:Indentation")
     private void checkLocalConfig(CacheData cacheData) {
         final String dataId = cacheData.dataId;
         final String group = cacheData.group;
@@ -324,8 +321,8 @@ public class ClientWorker implements Closeable {
             cacheData.setContent(content);
 
             LOGGER.warn(
-                "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                    "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
+                    agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             return;
         }
 
@@ -333,21 +330,21 @@ public class ClientWorker implements Closeable {
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
             LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agent.getName(),
-                dataId, group, tenant);
+                    dataId, group, tenant);
             return;
         }
 
         // When it changed.
         if (cacheData.isUseLocalConfigInfo() && path.exists() && cacheData.getLocalConfigInfoVersion() != path
-            .lastModified()) {
+                .lastModified()) {
             String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
             LOGGER.warn(
-                "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                    "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
+                    agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
         }
     }
 
@@ -395,7 +392,7 @@ public class ClientWorker implements Closeable {
                 if (cacheData.isInitializing()) {
                     // It updates when cacheData occours in cacheMap by first time.
                     inInitializingCacheList
-                        .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
+                            .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
                 }
             }
         }
@@ -411,7 +408,6 @@ public class ClientWorker implements Closeable {
      * @return The updated dataId list(ps: it maybe null).
      * @throws IOException Exception.
      */
-    @SuppressWarnings("checkstyle:Indentation")
     List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws Exception {
 
         Map<String, String> params = new HashMap<String, String>(2);
@@ -434,8 +430,8 @@ public class ClientWorker implements Closeable {
 
             long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
             HttpRestResult<String> result = agent
-                .httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params, agent.getEncode(),
-                    readTimeoutMs);
+                    .httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params, agent.getEncode(),
+                            readTimeoutMs);
 
             if (result.ok()) {
                 setHealthServer(true);
@@ -443,7 +439,7 @@ public class ClientWorker implements Closeable {
             } else {
                 setHealthServer(false);
                 LOGGER.error("[{}] [check-update] get changed dataId error, code: {}", agent.getName(),
-                    result.getCode());
+                        result.getCode());
             }
         } catch (Exception e) {
             setHealthServer(false);
@@ -459,7 +455,6 @@ public class ClientWorker implements Closeable {
      * @param response Http response.
      * @return GroupKey List, (ps: it maybe null).
      */
-    @SuppressWarnings("checkstyle:Indentation")
     private List<String> parseUpdateDataIdResponse(String response) {
         if (StringUtils.isBlank(response)) {
             return Collections.emptyList();
@@ -481,15 +476,15 @@ public class ClientWorker implements Closeable {
                 if (keyArr.length == 2) {
                     updateList.add(GroupKey.getKey(dataId, group));
                     LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}", agent.getName(), dataId,
-                        group);
+                            group);
                 } else if (keyArr.length == 3) {
                     String tenant = keyArr[2];
                     updateList.add(GroupKey.getKeyTenant(dataId, group, tenant));
                     LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", agent.getName(),
-                        dataId, group, tenant);
+                            dataId, group, tenant);
                 } else {
                     LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", agent.getName(),
-                        dataIdAndGroup);
+                            dataIdAndGroup);
                 }
             }
         }
@@ -517,15 +512,15 @@ public class ClientWorker implements Closeable {
         });
 
         this.executorService = Executors
-            .newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r);
-                    t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
-                    t.setDaemon(true);
-                    return t;
-                }
-            });
+                .newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread t = new Thread(r);
+                        t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
+                        t.setDaemon(true);
+                        return t;
+                    }
+                });
 
         this.executor.scheduleWithFixedDelay(new Runnable() {
             @Override
@@ -542,13 +537,13 @@ public class ClientWorker implements Closeable {
     private void init(Properties properties) {
 
         timeout = Math.max(ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
-            Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
+                Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
 
         taskPenaltyTime = ConvertUtils
-            .toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
+                .toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
 
         this.enableRemoteSyncConfig = Boolean
-            .parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+                .parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
     }
 
     @Override
@@ -568,7 +563,6 @@ public class ClientWorker implements Closeable {
             this.taskId = taskId;
         }
 
-        @SuppressWarnings("checkstyle:Indentation")
         @Override
         public void run() {
 
@@ -612,18 +606,18 @@ public class ClientWorker implements Closeable {
                             cache.setType(ct[1]);
                         }
                         LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
-                            agent.getName(), dataId, group, tenant, cache.getMd5(),
-                            ContentUtils.truncateContent(ct[0]), ct[1]);
+                                agent.getName(), dataId, group, tenant, cache.getMd5(),
+                                ContentUtils.truncateContent(ct[0]), ct[1]);
                     } catch (NacosException ioe) {
                         String message = String
-                            .format("[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",
-                                agent.getName(), dataId, group, tenant);
+                                .format("[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",
+                                        agent.getName(), dataId, group, tenant);
                         LOGGER.error(message, ioe);
                     }
                 }
                 for (CacheData cacheData : cacheDatas) {
                     if (!cacheData.isInitializing() || inInitializingCacheList
-                        .contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant))) {
+                            .contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant))) {
                         cacheData.checkListenerMd5();
                         cacheData.setInitializing(false);
                     }
@@ -657,6 +651,7 @@ public class ClientWorker implements Closeable {
      * groupKey -> cacheData.
      */
     private final ConcurrentHashMap<String, CacheData> cacheMap = new ConcurrentHashMap<String, CacheData>();
+
     private final HttpAgent agent;
 
     private final ConfigFilterChainManager configFilterChainManager;
