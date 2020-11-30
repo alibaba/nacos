@@ -58,8 +58,7 @@ import java.util.concurrent.Executor;
  */
 public abstract class BaseGrpcServer extends BaseRpcServer {
     
-    
-    private static Executor GRPC_EXECUTOR;
+    private static Executor grpcExecutor;
     
     private Server server;
     
@@ -112,11 +111,11 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     
         addServices(handlerRegistry, serverInterceptor);
     
-        GRPC_EXECUTOR = ExecutorFactory.Managed
+        grpcExecutor = ExecutorFactory.Managed
                 .newCustomerThreadExecutor("core", Runtime.getRuntime().availableProcessors(),
                         Runtime.getRuntime().availableProcessors() * 4, 10000,
                         new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-executor-%d").build());
-        server = ServerBuilder.forPort(getServicePort()).executor(GRPC_EXECUTOR)
+        server = ServerBuilder.forPort(getServicePort()).executor(grpcExecutor)
                 .fallbackHandlerRegistry(handlerRegistry).addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
@@ -130,17 +129,17 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                         Attributes attrWraper = transportAttrs.toBuilder()
                                 .set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid()).set(TRANS_KEY_CLIENT_IP, remoteIp)
                                 .set(TRANS_KEY_CLIENT_PORT, remotePort).set(TRANS_KEY_LOCAL_PORT, localPort).build();
-                        String connectionid = attrWraper.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info(" connection transportReady,connectionid = {} ", connectionid);
+                        String connectionId = attrWraper.get(TRANS_KEY_CONN_ID);
+                        Loggers.REMOTE.info(" connection transportReady,connectionId = {} ", connectionId);
                         return attrWraper;
     
                     }
                 
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
-                        String connectionid = transportAttrs.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info(" connection transportTerminated,connectionid = {} ", connectionid);
-                        connectionManager.unregister(connectionid);
+                        String connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
+                        Loggers.REMOTE.info(" connection transportTerminated,connectionId = {} ", connectionId);
+                        connectionManager.unregister(connectionId);
                     }
                 }).build();
         server.start();

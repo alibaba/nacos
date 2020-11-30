@@ -52,9 +52,7 @@ public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadReq
         if (sdkCount <= reloadCount) {
             response.setMessage("ignore");
         } else {
-            if (reloadCount * (1 + RemoteUtils.LOADER_FACTOR) < sdkCount) {
-                reloadCount = (int) (sdkCount * (1 - RemoteUtils.LOADER_FACTOR));
-            }
+            reloadCount = (int) Math.max(reloadCount, sdkCount * (1 - RemoteUtils.LOADER_FACTOR));
             connectionManager.loadCount(reloadCount, null);
             response.setMessage("ok");
         }

@@ -27,27 +27,27 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
-    
+
     private final ConnectionMetaInfo metaInfo;
-    
+
     public Connection(ConnectionMetaInfo metaInfo) {
         this.metaInfo = metaInfo;
     }
-    
+
     /**
      * check is connected.
      *
      * @return
      */
     public abstract boolean isConnected();
-    
+
     /**
      * Update last Active Time to now.
      */
     public void freshActiveTime() {
         metaInfo.setLastActiveTime(System.currentTimeMillis());
     }
-    
+
     /**
      * Getter method for property <tt>metaInfo</tt>.
      *
@@ -56,7 +56,12 @@ public abstract class Connection implements Requester {
     public ConnectionMetaInfo getMetaInfo() {
         return metaInfo;
     }
-    
+
+    @Override
+    public boolean isBusy() {
+        return false;
+    }
+
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);

@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.response.AbstractPushCallBack;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -33,7 +34,6 @@ import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -67,35 +67,33 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
      * @param notifyRequet notifyRequet
      */
     public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequet) {
-    
+        
         Set<String> listeners = configChangeListenContext.getListeners(groupKey);
-        if (listeners == null || listeners.isEmpty()) {
+        if (CollectionUtils.isEmpty(listeners)) {
             return;
         }
-        Set<String> clients = new HashSet<>(listeners);
+        
         int notifyCount = 0;
-        if (!CollectionUtils.isEmpty(clients)) {
-            for (final String client : clients) {
-                Connection connection = connectionManager.getConnection(client);
-                if (connection == null) {
+        for (final String client : listeners) {
+            Connection connection = connectionManager.getConnection(client);
+            if (connection == null) {
+                continue;
+            }
+            
+            if (notifyRequet.isBeta()) {
+                List<String> betaIps = notifyRequet.getBetaIps();
+                if (betaIps != null && !betaIps.contains(connection.getMetaInfo().getClientIp())) {
                     continue;
                 }
-    
-                if (notifyRequet.isBeta()) {
-                    List<String> betaIps = notifyRequet.getBetaIps();
-                    if (betaIps != null && !betaIps.contains(connection.getMetaInfo().getClientIp())) {
-                        continue;
-                    }
-                }
-    
-                RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequet, 50, client,
-                        connection.getMetaInfo().getClientIp(), connection.getMetaInfo().getConnectionId());
-                push(rpcPushRetryTask);
-                notifyCount++;
             }
+            
+            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequet, 50, client,
+                    connection.getMetaInfo().getClientIp(), connection.getMetaInfo().getConnectionId());
+            push(rpcPushRetryTask);
+            notifyCount++;
         }
-    
-        Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", clients == null ? 0 : notifyCount, groupKey);
+        
+        Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", notifyCount, groupKey);
     }
     
     @Override
@@ -129,21 +127,21 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     class RpcPushTask implements Runnable {
         
         ConfigChangeNotifyRequest notifyRequet;
-    
+        
         int maxRetryTimes = -1;
         
         int tryTimes = 0;
         
         String clientId;
-    
+        
         String clientIp;
-    
+        
         String appName;
-    
+        
         public RpcPushTask(ConfigChangeNotifyRequest notifyRequet, String clientId, String clientIp, String appName) {
             this(notifyRequet, -1, clientId, clientIp, appName);
         }
-    
+        
         public RpcPushTask(ConfigChangeNotifyRequest notifyRequet, int maxRetryTimes, String clientId, String clientIp,
                 String appName) {
             this.notifyRequet = notifyRequet;
@@ -164,14 +162,17 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 
                 @Override
                 public void onSuccess() {
-    
+                
                 }
                 
                 @Override
                 public void onFail(Throwable e) {
+                    if (e instanceof ConnectionAlreadyClosedException) {
+                        Loggers.CORE.warn(e.getMessage());
+                    }
                     push(RpcPushTask.this);
                 }
-    
+                
             }, ConfigExecutor.getClientConfigNotifierServiceExecutor());
             
             tryTimes++;

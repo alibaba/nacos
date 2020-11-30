@@ -30,7 +30,7 @@ import java.util.Map;
  * @version $Id: Requester.java, v 0.1 2020年09月11日 4:05 PM liuzunfei Exp $
  */
 public interface Requester {
-    
+
     /**
      * send request. default time out 3 seconds.
      *
@@ -40,7 +40,7 @@ public interface Requester {
      * @throws NacosException exception throw.
      */
     public Response request(Request request, RequestMeta requestMeta) throws NacosException;
-    
+
     /**
      * send request.
      *
@@ -51,7 +51,7 @@ public interface Requester {
      * @throws NacosException exception throw.
      */
     public Response request(Request request, RequestMeta requestMeta, long timeoutMills) throws NacosException;
-    
+
     /**
      * send request.
      *
@@ -61,7 +61,7 @@ public interface Requester {
      * @throws NacosException exception throw.
      */
     public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException;
-    
+
     /**
      * send aync request. =    * @param request request.
      *
@@ -71,16 +71,22 @@ public interface Requester {
      */
     public void asyncRequest(Request request, RequestMeta requestMeta, RequestCallBack requestCallBack)
             throws NacosException;
-    
+
     /**
      * get connection labels.
      *
      * @return labels.
      */
     public Map<String, String> getLabels();
-    
+
     /**
      * close connection.
      */
     public void close();
+
+    /**
+     * check this requester is busy.
+     * @return
+     */
+    public boolean isBusy();
 }

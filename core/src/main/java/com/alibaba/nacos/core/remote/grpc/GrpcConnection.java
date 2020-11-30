@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.common.remote.exception.ConnectionBusyException;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
 import java.util.Map;
@@ -58,7 +60,13 @@ public class GrpcConnection extends Connection {
     
     private void sendRequestNoAck(Request request, RequestMeta meta) throws NacosException {
         try {
-            streamObserver.onNext(GrpcUtils.convert(request, wrapMeta(meta)));
+            //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
+            synchronized (streamObserver) {
+                if (this.isBusy()) {
+                    throw new ConnectionBusyException(this.getMetaInfo().getConnectionId() + ",connection busy.");
+                }
+                streamObserver.onNext(GrpcUtils.convert(request, wrapMeta(meta)));
+            }
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
                 throw new ConnectionAlreadyClosedException(e);
@@ -89,14 +97,15 @@ public class GrpcConnection extends Connection {
         String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
         sendRequestNoAck(request, meta);
+        
         DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(getMetaInfo().getConnectionId(), requestId,
-                callBack,
-                new DefaultRequestFuture.TimeoutInnerTrigger() {
+                callBack, new DefaultRequestFuture.TimeoutInnerTrigger() {
                     @Override
                     public void triggerOnTimeout() {
                         RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), requestId);
                     }
                 });
+        
         RpcAckCallbackSynchronizer.syncCallback(getMetaInfo().getConnectionId(), requestId, defaultPushFuture);
         return defaultPushFuture;
     }
@@ -137,14 +146,35 @@ public class GrpcConnection extends Connection {
     @Override
     public void close() {
         try {
-            streamObserver.onCompleted();
+            if (isConnected()) {
+                closeBiStream();
+                channel.close();
+            }
+            
         } catch (Exception e) {
             Loggers.REMOTE.debug(String.format("[%s] connection close exception  : %s", "grpc", e.getMessage()));
         }
     }
     
+    private void closeBiStream() {
+        if (streamObserver instanceof ServerCallStreamObserver) {
+            ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) streamObserver);
+            if (!serverCallStreamObserver.isCancelled()) {
+                serverCallStreamObserver.onCompleted();
+            }
+        }
+    }
+    
+    @Override
+    public boolean isBusy() {
+        if (streamObserver instanceof ServerCallStreamObserver) {
+            return !((ServerCallStreamObserver) streamObserver).isReady();
+        }
+        return false;
+    }
+    
     @Override
     public boolean isConnected() {
-        return channel.isActive();
+        return channel != null && channel.isOpen() && channel.isActive();
     }
 }

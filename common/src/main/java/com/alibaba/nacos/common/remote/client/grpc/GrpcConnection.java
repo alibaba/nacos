@@ -78,8 +78,7 @@ public class GrpcConnection extends Connection {
         try {
             grpcResponse = requestFuture.get(timeouts, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            throw new NacosException(NacosException.SERVER_ERROR, e);
         }
         
         Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
@@ -101,13 +100,7 @@ public class GrpcConnection extends Connection {
             @Override
             public Response get() throws InterruptedException, ExecutionException {
                 Payload grpcResponse = null;
-                try {
-                    grpcResponse = requestFuture.get();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-                
+                grpcResponse = requestFuture.get();
                 Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
                 return response;
             }
@@ -143,7 +136,7 @@ public class GrpcConnection extends Connection {
             throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
-    
+        
         //set callback .
         Futures.addCallback(requestFuture, new FutureCallback<Payload>() {
             @Override
@@ -177,6 +170,10 @@ public class GrpcConnection extends Connection {
     
     @Override
     public void close() {
+        if (this.payloadStreamObserver != null) {
+            payloadStreamObserver.onCompleted();
+        }
+        
         if (this.channel != null && !channel.isShutdown()) {
             this.channel.shutdownNow();
         }
