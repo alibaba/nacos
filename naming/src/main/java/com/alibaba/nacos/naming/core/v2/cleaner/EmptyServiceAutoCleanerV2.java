@@ -70,7 +70,7 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
         Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned", service.getNamespace(),
                 service.getGroupedServiceName());
         Collection<String> registeredService = clientServiceIndexesManager.getAllClientsRegisteredService(service);
-        if (isTimeExpired(service) && registeredService.isEmpty()) {
+        if (registeredService.isEmpty() && isTimeExpired(service)) {
             clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
             ServiceManager.getInstance().removeSingleton(service);
             NotifyCenter.publishEvent(new MetadataEvent.ServiceMetadataEvent(service, true));
