@@ -24,9 +24,9 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.core.ServiceInfoUpdateService;
+import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 
@@ -53,9 +53,9 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     private final NamingGrpcClientProxy grpcClientProxy;
     
     public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder, Properties properties,
-            EventDispatcher eventDispatcher) throws NacosException {
+            InstancesChangeNotifier changeNotifier) throws NacosException {
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
-                eventDispatcher);
+                changeNotifier);
         this.serverListManager = new ServerListManager(properties);
         this.serviceInfoHolder = serviceInfoHolder;
         this.httpClientProxy = new NamingHttpClientProxy(namespace, serverListManager, properties, serviceInfoHolder);
@@ -139,7 +139,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     }
     
     private NamingClientProxy getExecuteClientProxy() {
-        return grpcClientProxy.isEnable() ? grpcClientProxy : httpClientProxy;
+        return grpcClientProxy;
     }
     
     @Override

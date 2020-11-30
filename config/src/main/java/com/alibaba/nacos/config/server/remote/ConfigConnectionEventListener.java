@@ -19,7 +19,6 @@ package com.alibaba.nacos.config.server.remote;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,8 +30,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConfigConnectionEventListener extends ClientConnectionEventListener {
     
-    @Autowired
-    ConfigChangeListenContext configChangeListenContext;
+    final ConfigChangeListenContext configChangeListenContext;
+    
+    public ConfigConnectionEventListener(ConfigChangeListenContext configChangeListenContext) {
+        this.configChangeListenContext = configChangeListenContext;
+    }
     
     @Override
     public void clientConnected(Connection connect) {

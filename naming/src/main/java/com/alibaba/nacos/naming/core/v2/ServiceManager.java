@@ -16,8 +16,12 @@
 
 package com.alibaba.nacos.naming.core.v2;
 
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -31,23 +35,61 @@ public class ServiceManager {
     
     private final ConcurrentHashMap<Service, Service> singletonRepository;
     
+    private final ConcurrentHashMap<String, Set<Service>> namespaceSingletonMaps;
+    
     private ServiceManager() {
         singletonRepository = new ConcurrentHashMap<>(1 << 10);
+        namespaceSingletonMaps = new ConcurrentHashMap<>(1 << 2);
     }
     
     public static ServiceManager getInstance() {
         return INSTANCE;
     }
     
+    public Set<Service> getSingletons(String namespace) {
+        return namespaceSingletonMaps.getOrDefault(namespace, new HashSet<>(1));
+    }
+    
     /**
-     * Get singleton service.
+     * Get singleton service. Put to manager if no singleton.
      *
      * @param service new service
      * @return if service is exist, return exist service, otherwise return new service
      */
     public Service getSingleton(Service service) {
-        Service previous = singletonRepository.putIfAbsent(service, service);
-        return (null == previous) ? service : previous;
+        singletonRepository.putIfAbsent(service, service);
+        Service result = singletonRepository.get(service);
+        if (!namespaceSingletonMaps.containsKey(result.getNamespace())) {
+            namespaceSingletonMaps.putIfAbsent(result.getNamespace(), new ConcurrentHashSet<>());
+            namespaceSingletonMaps.get(result.getNamespace()).add(result);
+        }
+        return result;
+    }
+    
+    /**
+     * Get singleton service if Exist.
+     *
+     * @param namespace namespace of service
+     * @param group     group of service
+     * @param name      name of service
+     * @return singleton service if exist, otherwise null optional
+     */
+    public Optional<Service> getSingletonIfExist(String namespace, String group, String name) {
+        return getSingletonIfExist(Service.newService(namespace, group, name));
+    }
+    
+    /**
+     * Get singleton service if Exist.
+     *
+     * @param service service template
+     * @return singleton service if exist, otherwise null optional
+     */
+    public Optional<Service> getSingletonIfExist(Service service) {
+        return Optional.ofNullable(singletonRepository.get(service));
+    }
+    
+    public Set<String> getAllNamespaces() {
+        return namespaceSingletonMaps.keySet();
     }
     
     /**
@@ -57,6 +99,7 @@ public class ServiceManager {
      * @return removed service
      */
     public Service removeSingleton(Service service) {
+        namespaceSingletonMaps.get(service.getNamespace()).remove(service);
         return singletonRepository.remove(service);
     }
     

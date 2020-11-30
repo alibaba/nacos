@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.selector;
 
-import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
@@ -58,5 +58,5 @@ public interface Selector {
      * @param providers candidate provider addresses
      * @return selected provider addresses
      */
-    List<Instance> select(String consumer, List<Instance> providers);
+    <T extends Instance> List<T> select(String consumer, List<T> providers);
 }

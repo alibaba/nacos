@@ -170,14 +170,71 @@ public class ServiceUtil {
     }
     
     /**
-     * Filter instance of service info.
+     * Select healthy instance of service info.
+     *
+     * @param serviceInfo original service info
+     * @return new service info
+     */
+    public static ServiceInfo selectHealthyInstances(ServiceInfo serviceInfo) {
+        return selectInstances(serviceInfo, true, false);
+    }
+    
+    /**
+     * Select healthy instance of service info.
+     *
+     * @param serviceInfo original service info
+     * @return new service info
+     */
+    public static ServiceInfo selectEnabledInstances(ServiceInfo serviceInfo) {
+        return selectInstances(serviceInfo, false, true);
+    }
+    
+    /**
+     * Select instance of service info.
      *
      * @param serviceInfo original service info
      * @param cluster     cluster of instances
-     * @param healthyOnly whether only filter instance which healthy
      * @return new service info
      */
-    public static ServiceInfo filterInstances(ServiceInfo serviceInfo, String cluster, boolean healthyOnly) {
+    public static ServiceInfo selectInstances(ServiceInfo serviceInfo, String cluster) {
+        return selectInstances(serviceInfo, cluster, false, false);
+    }
+    
+    /**
+     * Select instance of service info.
+     *
+     * @param serviceInfo original service info
+     * @param healthyOnly whether only select instance which healthy
+     * @param enableOnly  whether only select instance which enabled
+     * @return new service info
+     */
+    public static ServiceInfo selectInstances(ServiceInfo serviceInfo, boolean healthyOnly, boolean enableOnly) {
+        return selectInstances(serviceInfo, StringUtils.EMPTY, healthyOnly, enableOnly);
+    }
+    
+    /**
+     * Select instance of service info.
+     *
+     * @param serviceInfo original service info
+     * @param cluster     cluster of instances
+     * @param healthyOnly whether only select instance which healthy
+     * @return new service info
+     */
+    public static ServiceInfo selectInstances(ServiceInfo serviceInfo, String cluster, boolean healthyOnly) {
+        return selectInstances(serviceInfo, cluster, healthyOnly, false);
+    }
+    
+    /**
+     * Select instance of service info.
+     *
+     * @param serviceInfo original service info
+     * @param cluster     cluster of instances
+     * @param healthyOnly whether only select instance which healthy
+     * @param enableOnly  whether only select instance which enabled
+     * @return new service info
+     */
+    public static ServiceInfo selectInstances(ServiceInfo serviceInfo, String cluster, boolean healthyOnly,
+            boolean enableOnly) {
         ServiceInfo result = new ServiceInfo();
         result.setName(serviceInfo.getName());
         result.setGroupName(serviceInfo.getGroupName());
@@ -188,7 +245,7 @@ public class ServiceUtil {
                 Arrays.asList(cluster.split(","))) : new HashSet<>();
         List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstance = new LinkedList<>();
         for (com.alibaba.nacos.api.naming.pojo.Instance each : serviceInfo.getHosts()) {
-            if (checkCluster(clusterSets, each) && checkHealthy(healthyOnly, each)) {
+            if (checkCluster(clusterSets, each) && checkHealthy(healthyOnly, each) && checkEnabled(enableOnly, each)) {
                 filteredInstance.add(each);
             }
         }
@@ -205,5 +262,9 @@ public class ServiceUtil {
     
     private static boolean checkHealthy(boolean healthyOnly, com.alibaba.nacos.api.naming.pojo.Instance instance) {
         return !healthyOnly || instance.isHealthy();
+    }
+    
+    private static boolean checkEnabled(boolean enableOnly, com.alibaba.nacos.api.naming.pojo.Instance instance) {
+        return !enableOnly || instance.isEnabled();
     }
 }

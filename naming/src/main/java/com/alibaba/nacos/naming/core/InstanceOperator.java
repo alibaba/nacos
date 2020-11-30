@@ -50,6 +50,18 @@ public interface InstanceOperator {
     void removeInstance(String namespaceId, String serviceName, Instance instance) throws NacosException;
     
     /**
+     * Update instance information. Due to the basic information can't be changed, so this update should only update
+     * metadata.
+     *
+     * @param namespaceId namespace
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param instance    instance
+     * @throws NacosException nacos exception when update failed
+     */
+    void updateInstance(String namespaceId, String serviceName, String groupName, Instance instance) throws NacosException;
+    
+    /**
      * Get all instance of input service.
      *
      * @param namespaceId namespace

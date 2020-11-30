@@ -30,9 +30,9 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.NumberUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -177,7 +177,7 @@ public abstract class RpcClient implements Closeable {
         }
         this.serverListFactory = serverListFactory;
         rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
-    
+        
         LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init , ServerListFactory ={}",
                 serverListFactory.getClass().getName());
     }
@@ -211,7 +211,7 @@ public abstract class RpcClient implements Closeable {
                 return t;
             }
         });
-    
+        
         // connect event consumer.
         executorService.submit(new Runnable() {
             @Override
@@ -231,20 +231,20 @@ public abstract class RpcClient implements Closeable {
                 }
             }
         });
-    
+        
         //connect to server ,try to connect to server sync once, aync starting if fail.
         Connection connectToServer = null;
         rpcClientStatus.set(RpcClientStatus.STARTING);
-    
+        
         int startUpretyTimes = 3;
         while (startUpretyTimes > 0 && connectToServer == null) {
             try {
                 startUpretyTimes--;
                 ServerInfo serverInfo = nextRpcServer();
-    
+                
                 LoggerUtils.printIfInfoEnabled(LOGGER,
                         String.format("[%s]try to  connect to server on start up,server : %s", name, serverInfo));
-    
+                
                 connectToServer = connectToServer(serverInfo);
             } catch (Exception e) {
                 LoggerUtils.printIfWarnEnabled(LOGGER, String.format(
@@ -252,7 +252,7 @@ public abstract class RpcClient implements Closeable {
                         e.getMessage(), startUpretyTimes));
             }
         }
-    
+        
         if (connectToServer != null) {
             LoggerUtils.printIfInfoEnabled(LOGGER, String.format("[%s]success to connect to server on start up", name));
             this.currentConnetion = connectToServer;
@@ -261,21 +261,21 @@ public abstract class RpcClient implements Closeable {
         } else {
             switchServerAsync();
         }
-    
+        
         registerServerPushResponseHandler(new ServerRequestHandler() {
             @Override
             public Response requestReply(Request request, RequestMeta requestMeta) {
                 if (request instanceof ConnectResetRequest) {
-    
+                    
                     try {
                         synchronized (this) {
                             if (isRunning()) {
                                 ConnectResetRequest connectResetRequest = (ConnectResetRequest) request;
-                                if (StringUtils.isNotBlank(connectResetRequest.getServerIp()) && NumberUtils
+                                if (StringUtils.isNotBlank(connectResetRequest.getServerIp()) && NumberUtil
                                         .isDigits(connectResetRequest.getServerPort())) {
-    
+                                    
                                     ServerInfo serverInfo = new ServerInfo();
-    
+                                    
                                     serverInfo.setServerIp(connectResetRequest.getServerIp());
                                     serverInfo.setServerPort(
                                             Integer.valueOf(connectResetRequest.getServerPort()) + rpcPortOffset());
@@ -292,7 +292,7 @@ public abstract class RpcClient implements Closeable {
                 }
                 return null;
             }
-        
+            
         });
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -302,7 +302,7 @@ public abstract class RpcClient implements Closeable {
                 } catch (NacosException e) {
                     e.printStackTrace();
                 }
-    
+                
             }
         });
         
@@ -335,9 +335,9 @@ public abstract class RpcClient implements Closeable {
         executorService.submit(new Runnable() {
             @Override
             public void run() {
-    
+                
                 try {
-        
+                    
                     AtomicReference<ServerInfo> recommendServer = new AtomicReference<ServerInfo>(recommendServerInfo);
                     //only one thread can execute switching meantime.
                     boolean innerLock = switchingLock.tryLock();
@@ -347,7 +347,7 @@ public abstract class RpcClient implements Closeable {
                     switchingFlag.compareAndSet(false, true);
                     // loop until start client success.
                     boolean switchSuccess = false;
-        
+                    
                     int reConnectTimes = 0;
                     int retryTurns = 0;
                     Exception lastException = null;
@@ -375,12 +375,12 @@ public abstract class RpcClient implements Closeable {
                                         .add(new ConnectionEvent(ConnectionEvent.CONNECTED));
                                 return;
                             }
-    
+                            
                             //close connetion if client is already shutdown.
                             if (isShutdwon()) {
                                 closeConnection(connectNew);
                             }
-    
+                            
                             lastException = null;
                             
                         } catch (Exception e) {
@@ -388,7 +388,7 @@ public abstract class RpcClient implements Closeable {
                         } finally {
                             recommendServer.set(null);
                         }
-    
+                        
                         if (reConnectTimes > 0
                                 && reConnectTimes % RpcClient.this.serverListFactory.getServerList().size() == 0) {
                             LoggerUtils.printIfInfoEnabled(LOGGER, String.format(
@@ -396,21 +396,21 @@ public abstract class RpcClient implements Closeable {
                                     reConnectTimes, serverInfo));
                             retryTurns++;
                         }
-    
+                        
                         reConnectTimes++;
-                    
+                        
                         try {
                             //sleep 100 millsecond to switch next server.
                             if (!isRunning()) {
                                 // first round ,try servers at a delay 100ms;sencond round ,200ms; max delays 1s. to be reconsidered.基本上会快速收敛到几个可用的IP
-                                Thread.sleep(NumberUtils.min(retryTurns + 1, 10) * 100L);
+                                Thread.sleep(Math.min(retryTurns + 1, 10) * 100L);
                             }
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                             // Do  nothing.
                         }
                     }
-        
+                    
                     if (isShutdwon()) {
                         LoggerUtils.printIfInfoEnabled(LOGGER,
                                 String.format("[%s]- client is shutdown ,stop reconnect to server", name));
@@ -526,7 +526,7 @@ public abstract class RpcClient implements Closeable {
      */
     public void asyncRequest(Request request, RequestCallBack callback) throws NacosException {
         int retryTimes = 3;
-    
+        
         Exception exceptionToThrow = null;
         while (retryTimes > 0) {
             try {
@@ -541,7 +541,7 @@ public abstract class RpcClient implements Closeable {
                 exceptionToThrow = e;
             }
             retryTimes--;
-    
+            
         }
         if (exceptionToThrow != null) {
             throw new NacosException(SERVER_ERROR, exceptionToThrow);
@@ -595,7 +595,7 @@ public abstract class RpcClient implements Closeable {
      * @param connectionEventListener connectionEventListener
      */
     public synchronized void registerConnectionListener(ConnectionEventListener connectionEventListener) {
-    
+        
         LoggerUtils.printIfInfoEnabled(LOGGER, "Registry connection listener to current client:{}",
                 connectionEventListener.getClass().getName());
         this.connectionEventListeners.add(connectionEventListener);
@@ -670,7 +670,7 @@ public abstract class RpcClient implements Closeable {
         protected int serverPort;
         
         public ServerInfo() {
-    
+        
         }
         
         /**
@@ -690,7 +690,7 @@ public abstract class RpcClient implements Closeable {
         public void setServerPort(int serverPort) {
             this.serverPort = serverPort;
         }
-    
+        
         /**
          * Getter method for property <tt>serverIp</tt>.
          *
@@ -708,7 +708,7 @@ public abstract class RpcClient implements Closeable {
         public int getServerPort() {
             return serverPort;
         }
-    
+        
         @Override
         public String toString() {
             return "ServerInfo{" + "serverIp='" + serverIp + '\'' + ", serverPort=" + serverPort + '}';
