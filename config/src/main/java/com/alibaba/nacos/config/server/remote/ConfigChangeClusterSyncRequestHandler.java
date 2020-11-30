@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,8 +34,11 @@ import org.springframework.stereotype.Component;
 public class ConfigChangeClusterSyncRequestHandler
         extends RequestHandler<ConfigChangeClusterSyncRequest, ConfigChangeClusterSyncResponse> {
     
-    @Autowired
-    private DumpService dumpService;
+    private final DumpService dumpService;
+    
+    public ConfigChangeClusterSyncRequestHandler(DumpService dumpService) {
+        this.dumpService = dumpService;
+    }
     
     @Override
     public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,

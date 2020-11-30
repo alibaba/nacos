@@ -46,7 +46,15 @@ public class ServiceEvent extends SlowEvent {
         private static final long serialVersionUID = 2123694271992630822L;
         
         public ServiceChangedEvent(Service service) {
+            this(service, false);
+        }
+        
+        public ServiceChangedEvent(Service service, boolean incrementRevision) {
             super(service);
+            if (incrementRevision) {
+                service.incrementRevision();
+            }
         }
     }
+    
 }

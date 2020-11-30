@@ -53,12 +53,12 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     public SubscribeServiceResponse handle(SubscribeServiceRequest request, RequestMeta meta) throws NacosException {
         String namespaceId = request.getNamespace();
         String serviceName = request.getServiceName();
-        String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
-        String groupName = NamingUtils.getGroupName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup, true);
+        String groupName = request.getGroupName();
+        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
+        Service service = Service.newService(namespaceId, groupName, serviceName, true);
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), "unknown",
-                meta.getClientIp(), namespaceId, serviceName, 0);
+                meta.getClientIp(), namespaceId, groupedServiceName, 0);
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
         } else {

@@ -29,6 +29,7 @@ import org.springframework.util.Assert;
  * @Description: util for generating {@link RestResult}
  * @date 2019/6/28 14:47
  */
+@Deprecated
 public class ResultBuilder {
     
     /**

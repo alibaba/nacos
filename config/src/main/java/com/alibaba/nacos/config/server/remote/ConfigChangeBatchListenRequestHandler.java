@@ -27,7 +27,6 @@ import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.StringPool;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -42,8 +41,11 @@ import java.util.List;
 public class ConfigChangeBatchListenRequestHandler
         extends RequestHandler<ConfigBatchListenRequest, ConfigChangeBatchListenResponse> {
     
-    @Autowired
-    ConfigChangeListenContext configChangeListenContext;
+    final ConfigChangeListenContext configChangeListenContext;
+    
+    public ConfigChangeBatchListenRequestHandler(ConfigChangeListenContext configChangeListenContext) {
+        this.configChangeListenContext = configChangeListenContext;
+    }
     
     @Override
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)

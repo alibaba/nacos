@@ -20,16 +20,17 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
+import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -54,20 +55,24 @@ public class ServiceStorage {
     
     private final SwitchDomain switchDomain;
     
+    private final NamingMetadataManager metadataManager;
+    
     private final ConcurrentMap<Service, ServiceInfo> serviceDataIndexes;
     
     private final ConcurrentMap<Service, Set<String>> serviceClusterIndex;
     
-    private final ConcurrentMap<String, Set<Service>> namespaceServiceIndex;
-    
     public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager, ClientManagerDelegate clientManager,
-            SwitchDomain switchDomain) {
+            SwitchDomain switchDomain, NamingMetadataManager metadataManager) {
         this.serviceIndexesManager = serviceIndexesManager;
         this.clientManager = clientManager;
         this.switchDomain = switchDomain;
+        this.metadataManager = metadataManager;
         this.serviceDataIndexes = new ConcurrentHashMap<>();
         this.serviceClusterIndex = new ConcurrentHashMap<>();
-        this.namespaceServiceIndex = new ConcurrentHashMap<>();
+    }
+    
+    public Set<String> getClusters(Service service) {
+        return serviceClusterIndex.getOrDefault(service, new HashSet<>());
     }
     
     public ServiceInfo getData(Service service) {
@@ -75,34 +80,38 @@ public class ServiceStorage {
     }
     
     public ServiceInfo getPushData(Service service) {
+        ServiceInfo result = emptyServiceInfo(service);
+        if (!ServiceManager.getInstance().containSingleton(service)) {
+            return result;
+        }
+        result.setHosts(getAllInstancesFromIndex(service));
+        serviceDataIndexes.put(service, result);
+        return result;
+    }
+    
+    private ServiceInfo emptyServiceInfo(Service service) {
         ServiceInfo result = new ServiceInfo();
         result.setName(service.getName());
         result.setGroupName(service.getGroup());
         result.setLastRefTime(System.currentTimeMillis());
         result.setCacheMillis(switchDomain.getDefaultPushCacheMillis());
-        List<Instance> instances = new LinkedList<>();
+        return result;
+    }
+    
+    private List<Instance> getAllInstancesFromIndex(Service service) {
+        List<Instance> result = new LinkedList<>();
         Set<String> clusters = new HashSet<>();
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
             Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(each, service);
             if (instancePublishInfo.isPresent()) {
                 Instance instance = parseInstance(service, instancePublishInfo.get());
-                instances.add(instance);
+                result.add(instance);
                 clusters.add(instance.getClusterName());
             }
         }
-        result.setHosts(instances);
-        serviceDataIndexes.put(service, result);
+        // cache clusters of this service
         serviceClusterIndex.put(service, clusters);
-        updateNamespaceIndex(service);
         return result;
-    }
-    
-    public Set<String> getClusters(Service service) {
-        return serviceClusterIndex.getOrDefault(service, new HashSet<>());
-    }
-    
-    public Collection<Service> getAllServicesOfNamespace(String namespace) {
-        return namespaceServiceIndex.getOrDefault(namespace, new ConcurrentHashSet<>());
     }
     
     private Optional<InstancePublishInfo> getInstanceInfo(String clientId, Service service) {
@@ -126,16 +135,17 @@ public class ServiceStorage {
                 instanceMetadata.put(entry.getKey(), entry.getValue().toString());
             }
         }
+        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, instancePublishInfo.getIp());
+        if (metadata.isPresent()) {
+            result.setEnabled(metadata.get().isEnabled());
+            result.setWeight(metadata.get().getWeight());
+            for (Map.Entry<String, Object> entry : metadata.get().getExtendData().entrySet()) {
+                instanceMetadata.put(entry.getKey(), entry.getValue().toString());
+            }
+        }
         result.setMetadata(instanceMetadata);
         result.setEphemeral(service.isEphemeral());
         result.setHealthy(instancePublishInfo.isHealthy());
         return result;
-    }
-    
-    private void updateNamespaceIndex(Service service) {
-        if (!namespaceServiceIndex.containsKey(service.getNamespace())) {
-            namespaceServiceIndex.putIfAbsent(service.getNamespace(), new ConcurrentHashSet<>());
-        }
-        namespaceServiceIndex.get(service.getNamespace()).add(service);
     }
 }

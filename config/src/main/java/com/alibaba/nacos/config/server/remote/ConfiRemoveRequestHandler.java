@@ -32,7 +32,6 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
@@ -46,8 +45,11 @@ import java.sql.Timestamp;
 @Component
 public class ConfiRemoveRequestHandler extends RequestHandler<ConfigRemoveRequest, ConfigRemoveResponse> {
     
-    @Autowired
-    private PersistService persistService;
+    private final PersistService persistService;
+    
+    public ConfiRemoveRequestHandler(PersistService persistService) {
+        this.persistService = persistService;
+    }
     
     @Override
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)

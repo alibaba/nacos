@@ -71,9 +71,9 @@ public interface Client {
      * Remove service instance from client.
      *
      * @param service service of instance
-     * @return true if remove successfully, otherwise false
+     * @return instance info if exist, otherwise {@code null}
      */
-    boolean removeServiceInstance(Service service);
+    InstancePublishInfo removeServiceInstance(Service service);
     
     /**
      * Get instance info of service from client.

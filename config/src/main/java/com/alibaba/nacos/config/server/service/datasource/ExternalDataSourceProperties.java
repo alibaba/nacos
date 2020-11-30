@@ -13,20 +13,18 @@
 
 package com.alibaba.nacos.config.server.service.datasource;
 
-import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Preconditions;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 
-import com.google.common.base.Preconditions;
-import com.zaxxer.hikari.HikariDataSource;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
 
 /**
  * Properties of external DataSource.
@@ -37,15 +35,7 @@ public class ExternalDataSourceProperties {
     
     private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
     
-    public static final long CONNECTION_TIMEOUT_MS = 3000L;
-    
-    public static final long VALIDATION_TIMEOUT = 10L;
-    
-    public static final String TEST_QUERY = "SELECT 1 FROM dual";
-    
-    public static final int DEFAULT_MAX_POOL_SIZE = 20;
-    
-    public static final int DEFAULT_MINIMUM_IDLE = 20;
+    private static final String TEST_QUERY = "SELECT 1";
     
     private Integer num;
     
@@ -54,10 +44,6 @@ public class ExternalDataSourceProperties {
     private List<String> user = new ArrayList<>();
     
     private List<String> password = new ArrayList<>();
-    
-    private List<Integer> maxPoolSize = new ArrayList<>();
-    
-    private List<Integer> minIdle = new ArrayList<>();
     
     public void setNum(Integer num) {
         this.num = num;
@@ -73,14 +59,6 @@ public class ExternalDataSourceProperties {
     
     public void setPassword(List<String> password) {
         this.password = password;
-    }
-    
-    public void setMaxPoolSize(List<Integer> maxPoolSize) {
-        this.maxPoolSize = maxPoolSize;
-    }
-    
-    public void setMinIdle(List<Integer> minIdle) {
-        this.minIdle = minIdle;
     }
     
     /**
@@ -99,16 +77,12 @@ public class ExternalDataSourceProperties {
         for (int index = 0; index < num; index++) {
             int currentSize = index + 1;
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
-            HikariDataSource ds = new HikariDataSource();
-            ds.setDriverClassName(JDBC_DRIVER_NAME);
-            ds.setJdbcUrl(url.get(index).trim());
-            ds.setUsername(getOrDefault(user, index, user.get(0)).trim());
-            ds.setPassword(getOrDefault(password, index, password.get(0)).trim());
-            ds.setConnectionTimeout(CONNECTION_TIMEOUT_MS);
-            ds.setMaximumPoolSize(getOrDefault(maxPoolSize, index, DEFAULT_MAX_POOL_SIZE));
-            ds.setMinimumIdle(getOrDefault(minIdle, index, DEFAULT_MINIMUM_IDLE));
-            // Check the connection pool every 10 minutes
-            ds.setValidationTimeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT));
+            DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
+            poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
+            poolProperties.setJdbcUrl(url.get(index).trim());
+            poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
+            poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
+            HikariDataSource ds = poolProperties.getDataSource();
             ds.setConnectionTestQuery(TEST_QUERY);
             dataSources.add(ds);
             callback.accept(ds);
