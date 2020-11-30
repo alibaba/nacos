@@ -30,6 +30,10 @@ public class RemoteException extends NacosRuntimeException {
         super(errorCode);
     }
     
+    public RemoteException(int errorCode, String msg) {
+        super(errorCode, msg);
+    }
+    
     public RemoteException(int errorCode, Throwable throwable) {
         super(errorCode, throwable);
     }

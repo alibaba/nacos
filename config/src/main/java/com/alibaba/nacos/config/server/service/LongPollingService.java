@@ -399,7 +399,7 @@ public class LongPollingService {
                     try {
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
                         
-                        // Delete subsciber's relations.
+                        // Delete subscriber's relations.
                         allSubs.remove(ClientLongPolling.this);
                         
                         if (isFixedPolling()) {

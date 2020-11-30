@@ -83,4 +83,11 @@ public interface Requester {
      * close connection.
      */
     public void close();
+    
+    /**
+     * check this requester is busy.
+     *
+     * @return
+     */
+    public boolean isBusy();
 }
