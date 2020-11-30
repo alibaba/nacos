@@ -305,7 +305,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <excludes>**/istio/model/**,**/nacos/test/**,**/api/grpc/auto/**</excludes>
+                    <excludes>**/istio/model/**,**/nacos/test/**,**/api/grpc/auto/**,**/consistency/entity/**</excludes>
                 </configuration>
                 <executions>
                     <execution>

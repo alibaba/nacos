@@ -56,7 +56,7 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     @SuppressWarnings("unchecked")
     public ServiceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
         this.namingMetadataManager = namingMetadataManager;
-        this.serializer = SerializeFactory.getSerializer("JSON");
+        this.serializer = SerializeFactory.getDefault();
         this.processType = TypeUtils.parameterize(MetadataOperation.class, ServiceMetadata.class);
         this.lock = new ReentrantReadWriteLock();
         this.readLock = lock.readLock();

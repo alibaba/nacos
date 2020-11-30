@@ -69,7 +69,7 @@ public abstract class AbstractMetadataSnapshotOperation extends AbstractSnapshot
             }
         }
         loadSnapshot(snapshotBytes);
-        return false;
+        return true;
     }
     
     /**
@@ -92,9 +92,4 @@ public abstract class AbstractMetadataSnapshotOperation extends AbstractSnapshot
      * @param snapshotBytes snapshot bytes
      */
     protected abstract void loadSnapshot(byte[] snapshotBytes);
-    
-    @Override
-    public boolean onSnapshotLoad(Reader reader) {
-        return false;
-    }
 }

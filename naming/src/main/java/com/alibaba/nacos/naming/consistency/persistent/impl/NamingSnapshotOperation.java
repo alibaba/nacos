@@ -67,7 +67,7 @@ public class NamingSnapshotOperation extends AbstractSnapshotOperation {
         
         final LocalFileMeta meta = new LocalFileMeta();
         meta.append(CHECK_SUM_KEY, Long.toHexString(checksum.getValue()));
-        return false;
+        return writer.addFile(snapshotArchive, meta);
     }
     
     @Override

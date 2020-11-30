@@ -44,7 +44,7 @@ public class NamingMetadataOperateService {
     
     public NamingMetadataOperateService(ProtocolManager protocolManager) {
         this.cpProtocol = protocolManager.getCpProtocol();
-        this.serializer = SerializeFactory.getSerializer("JSON");
+        this.serializer = SerializeFactory.getDefault();
     }
     
     /**

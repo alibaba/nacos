@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -42,7 +43,7 @@ import java.util.List;
  * @since 0.7.0
  */
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = NoneSelector.class)
-public interface Selector {
+public interface Selector extends Serializable {
     
     /**
      * Get the type of this selector.

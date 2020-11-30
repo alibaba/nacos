@@ -58,7 +58,7 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     @SuppressWarnings("unchecked")
     public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
         this.namingMetadataManager = namingMetadataManager;
-        this.serializer = SerializeFactory.getSerializer("JSON");
+        this.serializer = SerializeFactory.getDefault();
         this.processType = TypeUtils.parameterize(MetadataOperation.class, InstanceMetadata.class);
         this.lock = new ReentrantReadWriteLock();
         this.readLock = lock.readLock();

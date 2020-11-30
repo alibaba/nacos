@@ -29,6 +29,8 @@ public class Mysql extends AbstractHealthChecker {
     
     public static final String TYPE = "MYSQL";
     
+    private static final long serialVersionUID = 7928108094599401491L;
+    
     private String user;
     
     private String pwd;
