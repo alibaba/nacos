@@ -40,7 +40,7 @@ public class ExpiredMetadataInfo {
     private ExpiredMetadataInfo(Service service, String instanceId) {
         this.service = service;
         this.instanceId = instanceId;
-        createTime = System.currentTimeMillis();
+        this.createTime = System.currentTimeMillis();
     }
     
     public static ExpiredMetadataInfo newExpiredServiceMetadata(Service service) {
