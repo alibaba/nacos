@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.pojo;
 
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -26,7 +27,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author xiweng.yy
  */
-public class Service {
+public class Service implements Serializable {
+    
+    private static final long serialVersionUID = -990509089519499344L;
     
     private final String namespace;
     

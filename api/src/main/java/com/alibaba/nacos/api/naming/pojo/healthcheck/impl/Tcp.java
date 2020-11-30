@@ -28,6 +28,8 @@ public class Tcp extends AbstractHealthChecker {
     
     public static final String TYPE = "TCP";
     
+    private static final long serialVersionUID = -9116042038157496294L;
+    
     public Tcp() {
         super(TYPE);
     }
