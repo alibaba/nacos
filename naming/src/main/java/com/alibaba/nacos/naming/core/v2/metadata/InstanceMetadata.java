@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,7 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author xiweng.yy
  */
-public class InstanceMetadata {
+public class InstanceMetadata implements Serializable {
+    
+    private static final long serialVersionUID = -8477858617353459226L;
     
     /**
      * instance weight.
