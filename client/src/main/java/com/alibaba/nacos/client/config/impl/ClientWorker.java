@@ -64,6 +64,7 @@ import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
  *
  * @author Nacos
  */
+@SuppressWarnings("checkstyle:EmptyLineSeparator")
 public class ClientWorker implements Closeable {
 
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
@@ -245,6 +246,7 @@ public class ClientWorker implements Closeable {
         return cacheMap.get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
 
+    @SuppressWarnings("checkstyle:Indentation")
     public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
         throws NacosException {
         String[] ct = new String[2];
@@ -307,6 +309,7 @@ public class ClientWorker implements Closeable {
         }
     }
 
+    @SuppressWarnings("checkstyle:Indentation")
     private void checkLocalConfig(CacheData cacheData) {
         final String dataId = cacheData.dataId;
         final String group = cacheData.group;
@@ -408,6 +411,7 @@ public class ClientWorker implements Closeable {
      * @return The updated dataId list(ps: it maybe null).
      * @throws IOException Exception.
      */
+    @SuppressWarnings("checkstyle:Indentation")
     List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws Exception {
 
         Map<String, String> params = new HashMap<String, String>(2);
@@ -455,6 +459,7 @@ public class ClientWorker implements Closeable {
      * @param response Http response.
      * @return GroupKey List, (ps: it maybe null).
      */
+    @SuppressWarnings("checkstyle:Indentation")
     private List<String> parseUpdateDataIdResponse(String response) {
         if (StringUtils.isBlank(response)) {
             return Collections.emptyList();
@@ -563,6 +568,7 @@ public class ClientWorker implements Closeable {
             this.taskId = taskId;
         }
 
+        @SuppressWarnings("checkstyle:Indentation")
         @Override
         public void run() {
 
