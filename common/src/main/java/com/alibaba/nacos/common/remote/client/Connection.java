@@ -29,22 +29,22 @@ import java.util.Map;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
-
+    
     private boolean abandon = false;
-
+    
     protected RpcClient.ServerInfo serverInfo;
-
+    
     protected Map<String, String> labels = new HashMap<String, String>();
-
+    
     public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
     }
-
+    
     @Override
     public boolean isBusy() {
         return false;
     }
-
+    
     /**
      * Getter method for property <tt>abandon</tt>.
      *
@@ -53,7 +53,7 @@ public abstract class Connection implements Requester {
     public boolean isAbandon() {
         return abandon;
     }
-
+    
     /**
      * Setter method for property <tt>abandon</tt>. connection event will be ignored if connection is abandoned.
      *
@@ -62,7 +62,7 @@ public abstract class Connection implements Requester {
     public void setAbandon(boolean abandon) {
         this.abandon = abandon;
     }
-
+    
     /**
      * Getter method for property <tt>labels</tt>.
      *
@@ -72,7 +72,7 @@ public abstract class Connection implements Requester {
     public Map<String, String> getLabels() {
         return labels;
     }
-
+    
     /**
      * Setter method for property <tt>labels</tt>.
      *
@@ -81,7 +81,7 @@ public abstract class Connection implements Requester {
     public void putLabels(Map<String, String> labels) {
         this.labels = labels;
     }
-
+    
     /**
      * Setter method for property <tt>labels</tt>.
      */

@@ -29,27 +29,27 @@ import java.util.concurrent.TimeoutException;
  * @version $Id: DefaultRequestFuture.java, v 0.1 2020年09月01日 6:42 PM liuzunfei Exp $
  */
 public class DefaultRequestFuture implements RequestFuture {
-
+    
     private long timeStamp;
-
+    
     private volatile boolean isDone = false;
-
+    
     private boolean isSuccess;
-
+    
     private RequestCallBack requestCallBack;
-
+    
     private Exception exception;
-
+    
     private String requestId;
-
+    
     private String connectionId;
-
+    
     private Response response;
-
+    
     private ScheduledFuture timeoutFuture;
-
+    
     TimeoutInnerTrigger timeoutInnerTrigger;
-
+    
     /**
      * Getter method for property <tt>requestCallBack</tt>.
      *
@@ -58,7 +58,7 @@ public class DefaultRequestFuture implements RequestFuture {
     public RequestCallBack getRequestCallBack() {
         return requestCallBack;
     }
-
+    
     /**
      * Getter method for property <tt>timeStamp</tt>.
      *
@@ -67,27 +67,27 @@ public class DefaultRequestFuture implements RequestFuture {
     public long getTimeStamp() {
         return timeStamp;
     }
-
+    
     public DefaultRequestFuture() {
     }
-
+    
     public DefaultRequestFuture(String connectionId, String requestId) {
         this(connectionId, requestId, null, null);
     }
-
+    
     public DefaultRequestFuture(String connectionId, String requestId, RequestCallBack requestCallBack,
-                                TimeoutInnerTrigger timeoutInnerTrigger) {
+            TimeoutInnerTrigger timeoutInnerTrigger) {
         this.timeStamp = System.currentTimeMillis();
         this.requestCallBack = requestCallBack;
         this.requestId = requestId;
         this.connectionId = connectionId;
         if (requestCallBack != null) {
             this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SHEDULER
-                .schedule(new TimeoutHandler(), requestCallBack.getTimeout(), TimeUnit.MILLISECONDS);
+                    .schedule(new TimeoutHandler(), requestCallBack.getTimeout(), TimeUnit.MILLISECONDS);
         }
         this.timeoutInnerTrigger = timeoutInnerTrigger;
     }
-
+    
     public void setResponse(final Response response) {
         isDone = true;
         this.response = response;
@@ -98,12 +98,12 @@ public class DefaultRequestFuture implements RequestFuture {
         synchronized (this) {
             notifyAll();
         }
-
+        
         if (requestCallBack != null) {
             requestCallBack.getExcutor().execute(new CallBackHandler());
         }
     }
-
+    
     public void setFailResult(Exception e) {
         isDone = true;
         isSuccess = false;
@@ -111,21 +111,21 @@ public class DefaultRequestFuture implements RequestFuture {
         synchronized (this) {
             notifyAll();
         }
-
+        
         if (requestCallBack != null) {
             requestCallBack.onException(e);
         }
     }
-
+    
     public String getRequestId() {
         return this.requestId;
     }
-
+    
     @Override
     public boolean isDone() {
         return isDone;
     }
-
+    
     @Override
     public Response get() throws InterruptedException {
         synchronized (this) {
@@ -135,7 +135,7 @@ public class DefaultRequestFuture implements RequestFuture {
         }
         return response;
     }
-
+    
     @Override
     public Response get(long timeout) throws TimeoutException, InterruptedException {
         if (timeout < 0) {
@@ -154,7 +154,7 @@ public class DefaultRequestFuture implements RequestFuture {
                 }
             }
         }
-
+        
         if (isDone) {
             return response;
         } else {
@@ -164,9 +164,9 @@ public class DefaultRequestFuture implements RequestFuture {
             throw new TimeoutException();
         }
     }
-
+    
     class CallBackHandler implements Runnable {
-
+        
         @Override
         public void run() {
             if (exception != null) {
@@ -176,27 +176,27 @@ public class DefaultRequestFuture implements RequestFuture {
             }
         }
     }
-
+    
     class TimeoutHandler implements Runnable {
-
+        
         public TimeoutHandler() {
         }
-
+        
         @Override
         public void run() {
             setFailResult(new TimeoutException("Timeout After " + requestCallBack.getTimeout() + " millseconds."));
         }
     }
-
+    
     public interface TimeoutInnerTrigger {
-
+        
         /**
          * triggered on timeout .
          */
         public void triggerOnTimeout();
-
+        
     }
-
+    
     /**
      * Getter method for property <tt>connectionId</tt>.
      *
@@ -205,7 +205,7 @@ public class DefaultRequestFuture implements RequestFuture {
     public String getConnectionId() {
         return connectionId;
     }
-
+    
     /**
      * Setter method for property <tt>timeoutFuture</tt>.
      *
@@ -214,5 +214,5 @@ public class DefaultRequestFuture implements RequestFuture {
     public void setTimeoutFuture(ScheduledFuture timeoutFuture) {
         this.timeoutFuture = timeoutFuture;
     }
-
+    
 }

@@ -35,17 +35,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class ConfigChangeListenContext {
-
+    
     /**
      * groupKey-> connection set.
      */
     private ConcurrentHashMap<String, HashSet<String>> groupKeyContext = new ConcurrentHashMap<String, HashSet<String>>();
-
+    
     /**
      * connectionId-> group key set.
      */
     private ConcurrentHashMap<String, HashMap<String, String>> connectionIdContext = new ConcurrentHashMap<String, HashMap<String, String>>();
-
+    
     /**
      * add listen.
      *
@@ -60,7 +60,7 @@ public class ConfigChangeListenContext {
             listenClients = groupKeyContext.get(groupKey);
         }
         listenClients.add(connectionId);
-
+        
         // 2.add connectionIdContext
         HashMap<String, String> groupKeys = connectionIdContext.get(connectionId);
         if (groupKeys == null) {
@@ -68,9 +68,9 @@ public class ConfigChangeListenContext {
             groupKeys = connectionIdContext.get(connectionId);
         }
         groupKeys.put(groupKey, md5);
-
+        
     }
-
+    
     /**
      * remove listen context for connection id .
      *
@@ -78,7 +78,7 @@ public class ConfigChangeListenContext {
      * @param connectionId connection id.
      */
     public synchronized void removeListen(String groupKey, String connectionId) {
-
+        
         //1. remove groupKeyContext
         Set<String> connectionIds = groupKeyContext.get(groupKey);
         if (connectionIds != null) {
@@ -87,14 +87,14 @@ public class ConfigChangeListenContext {
                 groupKeyContext.remove(groupKey);
             }
         }
-
+        
         //2.remove connectionIdContext
         HashMap<String, String> groupKeys = connectionIdContext.get(connectionId);
         if (groupKeys != null) {
             groupKeys.remove(groupKey);
         }
     }
-
+    
     /**
      * get listeners of the group key.
      *
@@ -102,7 +102,7 @@ public class ConfigChangeListenContext {
      * @return the copy of listeners, may be return null.
      */
     public synchronized Set<String> getListeners(String groupKey) {
-    
+        
         HashSet<String> strings = groupKeyContext.get(groupKey);
         if (CollectionUtils.isNotEmpty(strings)) {
             Set<String> listenConnections = new HashSet<String>();
@@ -111,9 +111,10 @@ public class ConfigChangeListenContext {
         }
         return null;
     }
-
+    
     /**
      * copy collections.
+     *
      * @param src  may be modified concurrently
      * @param dest dest collection
      */
@@ -123,32 +124,32 @@ public class ConfigChangeListenContext {
             dest.add(iterator.next());
         }
     }
-
+    
     /**
      * remove the context related to the connection id.
      *
      * @param connectionId connectionId.
      */
     public synchronized void clearContextForConnectionId(final String connectionId) {
-
+        
         Map<String, String> listenKeys = getListenKeys(connectionId);
-
+        
         if (listenKeys != null) {
             for (Map.Entry<String, String> groupKey : listenKeys.entrySet()) {
-
+                
                 Set<String> connectionIds = groupKeyContext.get(groupKey.getKey());
                 if (CollectionUtils.isNotEmpty(connectionIds)) {
                     connectionIds.remove(connectionId);
                 } else {
                     groupKeyContext.remove(groupKey.getKey());
                 }
-
+                
             }
         }
-
+        
         connectionIdContext.remove(connectionId);
     }
-
+    
     /**
      * get listen keys.
      *
@@ -159,7 +160,7 @@ public class ConfigChangeListenContext {
         Map<String, String> copy = new HashMap<String, String>(connectionIdContext.get(connectionId));
         return copy;
     }
-
+    
     /**
      * get md5.
      *
@@ -170,5 +171,5 @@ public class ConfigChangeListenContext {
         Map<String, String> groupKeyContexts = connectionIdContext.get(connectionId);
         return groupKeyContexts == null ? null : groupKeyContexts.get(groupKey);
     }
-
+    
 }
