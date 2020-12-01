@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,6 +31,8 @@ import org.springframework.mock.web.MockServletContext;
 
 import java.net.ConnectException;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -123,9 +128,9 @@ public class MemberUtilTest {
         final Member search1 = memberManager.find(remote.getAddress());
         Assert.assertEquals(3, search1.getFailAccessCnt());
         Assert.assertEquals(NodeState.SUSPICIOUS, search1.getState());
-    
+        
         MemberUtil.onFail(remote);
-    
+        
         final Member search2 = memberManager.find(remote.getAddress());
         Assert.assertEquals(4, search2.getFailAccessCnt());
         Assert.assertEquals(NodeState.DOWN, search2.getState());
@@ -147,10 +152,47 @@ public class MemberUtilTest {
         final Member search1 = memberManager.find(remote.getAddress());
         Assert.assertEquals(2, search1.getFailAccessCnt());
         Assert.assertEquals(NodeState.DOWN, search1.getState());
-    
+        
         MemberUtil.onSuccess(remote);
         final Member search2 = memberManager.find(remote.getAddress());
         Assert.assertEquals(0, search2.getFailAccessCnt());
         Assert.assertEquals(NodeState.UP, search2.getState());
+    }
+    
+    @Test
+    public void testMemberOnFailListener() {
+        final AtomicBoolean received = new AtomicBoolean(false);
+        final AtomicReference<MembersChangeEvent> reference = new AtomicReference<>();
+        
+        NotifyCenter.registerSubscriber(new MemberChangeListener() {
+            @Override
+            public void onEvent(MembersChangeEvent event) {
+                reference.set(event);
+                received.set(true);
+            }
+        });
+        
+        final Member remote = buildMember();
+        memberManager.memberJoin(Collections.singletonList(remote));
+        
+        remote.setFailAccessCnt(1);
+        MemberUtil.onFail(remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
+        ThreadUtils.sleep(4000);
+        Assert.assertTrue(received.get());
+        final MembersChangeEvent event1 = reference.get();
+        final Member member1 = event1.getMembers().stream().filter(member -> StringUtils.equals(remote.getAddress(), member.getAddress()))
+                .findFirst().orElseThrow(() -> new AssertionError("member is null"));
+        Assert.assertEquals(2, member1.getFailAccessCnt());
+        Assert.assertEquals(NodeState.DOWN, member1.getState());
+        received.set(false);
+        
+        MemberUtil.onSuccess(remote);
+        ThreadUtils.sleep(4000);
+        Assert.assertTrue(received.get());
+        final MembersChangeEvent event2 = reference.get();
+        final Member member2 = event2.getMembers().stream().filter(member -> StringUtils.equals(remote.getAddress(), member.getAddress()))
+                .findFirst().orElseThrow(() -> new AssertionError("member is null"));
+        Assert.assertEquals(0, member2.getFailAccessCnt());
+        Assert.assertEquals(NodeState.UP, member2.getState());
     }
 }

@@ -215,12 +215,16 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             MemberUtil.copy(newMember, member);
             if (isPublishChangeEvent) {
                 // member basic data changes and all listeners need to be notified
-                NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
+                notifyMemberChange();
             }
             return member;
         });
         
         return true;
+    }
+    
+    void notifyMemberChange() {
+        NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
     }
     
     /**

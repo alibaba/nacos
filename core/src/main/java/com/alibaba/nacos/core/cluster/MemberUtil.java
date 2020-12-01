@@ -121,7 +121,7 @@ public class MemberUtil {
         manager.getMemberAddressInfos().add(member.getAddress());
         member.setState(NodeState.UP);
         member.setFailAccessCnt(0);
-        manager.update(member);
+        manager.notifyMemberChange();
     }
     
     public static void onFail(Member member) {
@@ -147,7 +147,7 @@ public class MemberUtil {
                 .containsIgnoreCase(ex.getMessage(), TARGET_MEMBER_CONNECT_REFUSE_ERRMSG)) {
             member.setState(NodeState.DOWN);
         }
-        manager.update(member);
+        manager.notifyMemberChange();
     }
     
     /**
