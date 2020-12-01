@@ -93,6 +93,10 @@ public class ServiceManager {
         return Optional.ofNullable(switchOneRepository(service.isEphemeral()).get(service));
     }
     
+    public Set<String> getAllNamespaces() {
+        return namespaceSingletonMaps.keySet();
+    }
+    
     /**
      * Remove singleton service.
      *
@@ -100,6 +104,7 @@ public class ServiceManager {
      * @return removed service
      */
     public Service removeSingleton(Service service) {
+        namespaceSingletonMaps.get(service.getNamespace()).remove(service);
         return switchOneRepository(service.isEphemeral()).remove(service);
     }
     

@@ -24,16 +24,18 @@ import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.Constants;
-import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Instance metadata processor.
@@ -50,12 +52,23 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     
     private final Type processType;
     
+    private final ReentrantReadWriteLock lock;
+    
+    private final ReentrantReadWriteLock.ReadLock readLock;
+    
     @SuppressWarnings("unchecked")
     public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager) {
         this.namingMetadataManager = namingMetadataManager;
-        this.serializer = SerializeFactory.getSerializer("JSON");
+        this.serializer = SerializeFactory.getDefault();
         this.processType = TypeUtils.parameterize(MetadataOperation.class, InstanceMetadata.class);
+        this.lock = new ReentrantReadWriteLock();
+        this.readLock = lock.readLock();
         ProtocolManager.getCpProtocol().addLogProcessors(Collections.singletonList(this));
+    }
+    
+    @Override
+    public List<SnapshotOperation> loadSnapshotOperate() {
+        return Collections.singletonList(new InstanceMetadataSnapshotOperation(namingMetadataManager, lock));
     }
     
     @Override
@@ -65,33 +78,39 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     
     @Override
     public Response onApply(WriteRequest request) {
-        switch (DataOperation.valueOf(request.getOperation())) {
-            case ADD:
-            case CHANGE:
-                updateInstanceMetadata(request.getData());
-                break;
-            case DELETE:
-                deleteInstanceMetadata(request.getData());
-                break;
-            default:
-                return Response.newBuilder().setSuccess(false).setErrMsg("Unsupported operation " + request.getOperation())
-                        .build();
+        MetadataOperation<InstanceMetadata> op = serializer.deserialize(request.getData().toByteArray(), processType);
+        readLock.lock();
+        try {
+            switch (DataOperation.valueOf(request.getOperation())) {
+                case ADD:
+                case CHANGE:
+                    updateInstanceMetadata(op);
+                    break;
+                case DELETE:
+                    deleteInstanceMetadata(op);
+                    break;
+                default:
+                    return Response.newBuilder().setSuccess(false)
+                            .setErrMsg("Unsupported operation " + request.getOperation()).build();
+            }
+            return Response.newBuilder().setSuccess(true).build();
+        } catch (Exception e) {
+            return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
+        } finally {
+            readLock.unlock();
         }
-        return Response.newBuilder().setSuccess(true).build();
     }
     
-    private void updateInstanceMetadata(ByteString data) {
-        MetadataOperation<InstanceMetadata> op = serializer.deserialize(data.toByteArray(), processType);
+    private void updateInstanceMetadata(MetadataOperation<InstanceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         namingMetadataManager.updateInstanceMetadata(service, op.getTag(), op.getMetadata());
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     
-    private void deleteInstanceMetadata(ByteString data) {
-        MetadataOperation<InstanceMetadata> op = serializer.deserialize(data.toByteArray(), processType);
+    private void deleteInstanceMetadata(MetadataOperation<InstanceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         namingMetadataManager.removeInstanceMetadata(service, op.getTag());
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, false));
     }
     
     @Override

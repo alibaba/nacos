@@ -16,12 +16,16 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
+import java.io.Serializable;
+
 /**
  * Metadata operation.
  *
  * @author xiweng.yy
  */
-public class MetadataOperation<T> {
+public class MetadataOperation<T> implements Serializable {
+    
+    private static final long serialVersionUID = -111405695252896706L;
     
     private String namespace;
     

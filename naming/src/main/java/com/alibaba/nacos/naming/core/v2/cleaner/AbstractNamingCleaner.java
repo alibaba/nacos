@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote.exception;
+package com.alibaba.nacos.naming.core.v2.cleaner;
 
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.naming.misc.Loggers;
 
 /**
- * super exception in remote module.
+ * Abstract Nacos naming cleaner.
  *
- * @author liuzunfei
- * @version $Id: RemoteException.java, v 0.1 2020年07月22日 7:24 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public class RemoteException extends NacosRuntimeException {
+public abstract class AbstractNamingCleaner extends AbstractExecuteTask implements NamingCleaner {
     
-    public RemoteException(int errorCode) {
-        super(errorCode);
-    }
-    
-    public RemoteException(int errorCode, String msg) {
-        super(errorCode, msg);
-    }
-    
-    public RemoteException(int errorCode, Throwable throwable) {
-        super(errorCode, throwable);
+    @Override
+    public void run() {
+        try {
+            doClean();
+        } catch (Exception e) {
+            Loggers.SRV_LOG.error("Clean {} fail. ", getType(), e);
+        }
     }
 }
