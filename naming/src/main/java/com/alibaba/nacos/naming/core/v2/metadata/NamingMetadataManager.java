@@ -206,26 +206,26 @@ public class NamingMetadataManager extends SmartSubscriber {
     private void handleClientDisconnectEvent(ClientEvent.ClientDisconnectEvent event) {
         for (Service each : event.getClient().getAllPublishedService()) {
             String instanceId = event.getClient().getInstancePublishInfo(each).getInstanceId();
-            updateExpiredInfo(true, ExpiredMetadataInfo.newExpiredInstanceMetadata(each, instanceId));
+            if (containInstanceMetadata(each, instanceId)) {
+                updateExpiredInfo(true, ExpiredMetadataInfo.newExpiredInstanceMetadata(each, instanceId));
+            }
         }
     }
     
     private void handleServiceMetadataEvent(MetadataEvent.ServiceMetadataEvent event) {
         Service service = event.getService();
-        if (!containServiceMetadata(service)) {
-            return;
+        if (containServiceMetadata(service)) {
+            updateExpiredInfo(event.isExpired(), ExpiredMetadataInfo.newExpiredServiceMetadata(service));
         }
-        updateExpiredInfo(event.isExpired(), ExpiredMetadataInfo.newExpiredServiceMetadata(service));
     }
     
     private void handleInstanceMetadataEvent(MetadataEvent.InstanceMetadataEvent event) {
         Service service = event.getService();
         String instanceId = event.getInstanceId();
-        if (!containInstanceMetadata(service, instanceId)) {
-            return;
+        if (containInstanceMetadata(service, instanceId)) {
+            updateExpiredInfo(event.isExpired(),
+                    ExpiredMetadataInfo.newExpiredInstanceMetadata(event.getService(), event.getInstanceId()));
         }
-        updateExpiredInfo(event.isExpired(),
-                ExpiredMetadataInfo.newExpiredInstanceMetadata(event.getService(), event.getInstanceId()));
     }
     
     private void updateExpiredInfo(boolean expired, ExpiredMetadataInfo expiredMetadataInfo) {

@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
@@ -382,7 +381,7 @@ public class NacosNamingService implements NamingService {
             return;
         }
         String clusterString = StringUtils.join(clusters, ",");
-        changeNotifier.registerListener(NamingUtils.getGroupedName(serviceName, groupName), clusterString, listener);
+        changeNotifier.registerListener(groupName, serviceName, clusterString, listener);
         clientProxy.subscribe(serviceName, groupName, clusterString);
     }
     
@@ -404,10 +403,9 @@ public class NacosNamingService implements NamingService {
     @Override
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        String fullServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         String clustersString = StringUtils.join(clusters, ",");
-        changeNotifier.deregisterListener(fullServiceName, clustersString, listener);
-        if (!changeNotifier.isSubscribed(fullServiceName, clustersString)) {
+        changeNotifier.deregisterListener(groupName, serviceName, clustersString, listener);
+        if (!changeNotifier.isSubscribed(groupName, serviceName, clustersString)) {
             clientProxy.unsubscribe(serviceName, groupName, clustersString);
         }
     }
