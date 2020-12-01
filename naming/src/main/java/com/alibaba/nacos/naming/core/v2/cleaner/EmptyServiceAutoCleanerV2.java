@@ -21,6 +21,7 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 
@@ -42,9 +43,8 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
     
     public EmptyServiceAutoCleanerV2(ClientServiceIndexesManager clientServiceIndexesManager) {
         this.clientServiceIndexesManager = clientServiceIndexesManager;
-        // TODO get internal from config
-        GlobalExecutor.scheduleExpiredClientCleaner(this, TimeUnit.SECONDS.toMillis(30), TimeUnit.SECONDS.toMillis(20),
-                TimeUnit.MILLISECONDS);
+        GlobalExecutor.scheduleExpiredClientCleaner(this, TimeUnit.SECONDS.toMillis(30),
+                GlobalConfig.getEmptyServiceCleanInterval(), TimeUnit.MILLISECONDS);
         
     }
     
@@ -79,7 +79,6 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
     
     private boolean isTimeExpired(Service service) {
         long currentTimeMillis = System.currentTimeMillis();
-        // TODO get expired time from config
-        return currentTimeMillis - service.getLastUpdatedTime() >= TimeUnit.MINUTES.toMillis(1);
+        return currentTimeMillis - service.getLastUpdatedTime() >= GlobalConfig.getEmptyServiceExpiredTime();
     }
 }
