@@ -122,20 +122,20 @@ public class ServiceStorage {
         return Optional.ofNullable(client.getInstancePublishInfo(service));
     }
     
-    private Instance parseInstance(Service service, InstancePublishInfo instancePublishInfo) {
+    private Instance parseInstance(Service service, InstancePublishInfo instanceInfo) {
         Instance result = new Instance();
-        result.setIp(instancePublishInfo.getIp());
-        result.setPort(instancePublishInfo.getPort());
+        result.setIp(instanceInfo.getIp());
+        result.setPort(instanceInfo.getPort());
         result.setServiceName(NamingUtils.getGroupedName(service.getName(), service.getGroup()));
-        Map<String, String> instanceMetadata = new HashMap<>(instancePublishInfo.getExtendDatum().size());
-        for (Map.Entry<String, Object> entry : instancePublishInfo.getExtendDatum().entrySet()) {
+        Map<String, String> instanceMetadata = new HashMap<>(instanceInfo.getExtendDatum().size());
+        for (Map.Entry<String, Object> entry : instanceInfo.getExtendDatum().entrySet()) {
             if (CommonParams.CLUSTER_NAME.equals(entry.getKey())) {
                 result.setClusterName(entry.getValue().toString());
             } else {
                 instanceMetadata.put(entry.getKey(), entry.getValue().toString());
             }
         }
-        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, instancePublishInfo.getIp());
+        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, instanceInfo.getInstanceId());
         if (metadata.isPresent()) {
             result.setEnabled(metadata.get().isEnabled());
             result.setWeight(metadata.get().getWeight());
@@ -145,7 +145,7 @@ public class ServiceStorage {
         }
         result.setMetadata(instanceMetadata);
         result.setEphemeral(service.isEphemeral());
-        result.setHealthy(instancePublishInfo.isHealthy());
+        result.setHealthy(instanceInfo.isHealthy());
         return result;
     }
 }

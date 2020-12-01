@@ -205,7 +205,7 @@ public class NamingMetadataManager extends SmartSubscriber {
     
     private void handleClientDisconnectEvent(ClientEvent.ClientDisconnectEvent event) {
         for (Service each : event.getClient().getAllPublishedService()) {
-            String instanceId = event.getClient().getInstancePublishInfo(each).getIp();
+            String instanceId = event.getClient().getInstancePublishInfo(each).getInstanceId();
             updateExpiredInfo(true, ExpiredMetadataInfo.newExpiredInstanceMetadata(each, instanceId));
         }
     }
