@@ -156,7 +156,7 @@ public class ServiceInfoUpdateService implements Closeable {
             long delayTime = -1;
             
             try {
-                if (!changeNotifier.isSubscribed(groupedServiceName, clusters) && !futureMap.containsKey(serviceKey)) {
+                if (!changeNotifier.isSubscribed(groupName, serviceName, clusters) && !futureMap.containsKey(serviceKey)) {
                     NAMING_LOGGER
                             .info("update task is stopped, service:" + groupedServiceName + ", clusters:" + clusters);
                     return;

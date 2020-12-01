@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.pojo;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -25,6 +27,8 @@ import java.util.Objects;
  * @author nicholas
  */
 public class Subscriber implements Serializable {
+    
+    private static final long serialVersionUID = -6256968317172033867L;
     
     private String addrStr;
     
@@ -40,7 +44,15 @@ public class Subscriber implements Serializable {
     
     private String serviceName;
     
-    public Subscriber(String addrStr, String agent, String app, String ip, String namespaceId, String serviceName, int port) {
+    private String cluster;
+    
+    public Subscriber(String addrStr, String agent, String app, String ip, String namespaceId, String serviceName,
+            int port) {
+        this(addrStr, agent, app, ip, namespaceId, serviceName, port, StringUtils.EMPTY);
+    }
+    
+    public Subscriber(String addrStr, String agent, String app, String ip, String namespaceId, String serviceName,
+            int port, String clusters) {
         this.addrStr = addrStr;
         this.agent = agent;
         this.app = app;
@@ -48,6 +60,7 @@ public class Subscriber implements Serializable {
         this.port = port;
         this.namespaceId = namespaceId;
         this.serviceName = serviceName;
+        this.cluster = clusters;
     }
     
     public String getAddrStr() {
@@ -104,6 +117,14 @@ public class Subscriber implements Serializable {
     
     public void setPort(int port) {
         this.port = port;
+    }
+    
+    public String getCluster() {
+        return cluster;
+    }
+    
+    public void setCluster(String cluster) {
+        this.cluster = cluster;
     }
     
     @Override

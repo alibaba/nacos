@@ -23,11 +23,13 @@ import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -56,9 +58,9 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         String groupName = request.getGroupName();
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
-        ServiceInfo serviceInfo = serviceStorage.getData(service);
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), "unknown",
-                meta.getClientIp(), namespaceId, groupedServiceName, 0);
+                meta.getClientIp(), namespaceId, groupedServiceName, 0, request.getClusters());
+        ServiceInfo serviceInfo = handleClusterData(serviceStorage.getData(service), subscriber);
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
         } else {
@@ -67,4 +69,16 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
     }
     
+    /**
+     * For adapt push cluster feature. Will be remove after 2.1.x.
+     *
+     * @param data       original data
+     * @param subscriber subscriber information
+     * @return cluster filtered data
+     */
+    @Deprecated
+    private ServiceInfo handleClusterData(ServiceInfo data, Subscriber subscriber) {
+        return StringUtils.isBlank(subscriber.getCluster()) ? data
+                : ServiceUtil.selectInstances(data, subscriber.getCluster());
+    }
 }

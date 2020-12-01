@@ -59,10 +59,8 @@ public class ServiceManager {
     public Service getSingleton(Service service) {
         singletonRepository.putIfAbsent(service, service);
         Service result = singletonRepository.get(service);
-        if (!namespaceSingletonMaps.containsKey(result.getNamespace())) {
-            namespaceSingletonMaps.putIfAbsent(result.getNamespace(), new ConcurrentHashSet<>());
-            namespaceSingletonMaps.get(result.getNamespace()).add(result);
-        }
+        namespaceSingletonMaps.computeIfAbsent(result.getNamespace(), (namespace) -> new ConcurrentHashSet<>());
+        namespaceSingletonMaps.get(result.getNamespace()).add(result);
         return result;
     }
     

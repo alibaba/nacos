@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.core.v2.pojo;
 
+import com.alibaba.nacos.common.utils.IPUtil;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -31,9 +33,9 @@ public class InstancePublishInfo {
     
     private int port;
     
-    private Map<String, Object> extendDatum;
-    
     private boolean healthy;
+    
+    private Map<String, Object> extendDatum;
     
     public InstancePublishInfo() {
     }
@@ -74,6 +76,10 @@ public class InstancePublishInfo {
     
     public void setHealthy(boolean healthy) {
         this.healthy = healthy;
+    }
+    
+    public String getInstanceId() {
+        return ip + IPUtil.IP_PORT_SPLITER + port;
     }
     
     @Override

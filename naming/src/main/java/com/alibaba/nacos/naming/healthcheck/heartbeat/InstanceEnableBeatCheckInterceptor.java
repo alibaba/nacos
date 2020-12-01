@@ -36,7 +36,7 @@ public class InstanceEnableBeatCheckInterceptor extends AbstractBeatCheckInterce
     public boolean intercept(InstanceBeatCheckTask object) {
         NamingMetadataManager metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
         HeartBeatInstancePublishInfo instance = object.getInstancePublishInfo();
-        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(object.getService(), instance.getIp());
+        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(object.getService(), instance.getInstanceId());
         if (metadata.isPresent() && metadata.get().getExtendData().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
             return ConvertUtils.toBoolean(metadata.get().getExtendData().get(UtilsAndCommons.ENABLE_CLIENT_BEAT).toString());
         }
