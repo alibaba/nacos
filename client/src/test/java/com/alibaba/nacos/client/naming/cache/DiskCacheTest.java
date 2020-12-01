@@ -41,7 +41,7 @@ public class DiskCacheTest {
     @Before
     public void setUp() throws Exception {
         System.out.println(CACHE_DIR);
-        serviceInfo = new ServiceInfo("testName", "testClusters");
+        serviceInfo = new ServiceInfo("G@@testName", "testClusters");
         instance = new Instance();
         instance.setClusterName("testClusters");
         instance.setIp("1.1.1.1");
@@ -66,8 +66,8 @@ public class DiskCacheTest {
         DiskCache.write(serviceInfo, CACHE_DIR);
         Map<String, ServiceInfo> actual = DiskCache.read(CACHE_DIR);
         assertEquals(1, actual.size());
-        assertTrue(actual.containsKey(serviceInfo.getKeyEncoded()));
-        assertServiceInfo(actual.get(serviceInfo.getKeyEncoded()), serviceInfo);
+        assertTrue(actual.containsKey(serviceInfo.getKey()));
+        assertServiceInfo(actual.get(serviceInfo.getKey()), serviceInfo);
     }
     
     private void assertServiceInfo(ServiceInfo actual, ServiceInfo expected) {

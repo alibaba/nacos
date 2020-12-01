@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -59,6 +60,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -176,7 +178,7 @@ public class ServiceManager implements RecordListener<Service> {
         } catch (Exception e) {
             toBeUpdatedServicesQueue.poll();
             toBeUpdatedServicesQueue.add(new ServiceKey(namespaceId, serviceName, serverIP, checksum));
-            Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add service to be updatd to queue.", e);
+            Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add service to be updated to queue.", e);
         } finally {
             lock.unlock();
         }
@@ -234,10 +236,14 @@ public class ServiceManager implements RecordListener<Service> {
         
         if (service != null) {
             service.destroy();
-            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
+            String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
+            String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
+            consistencyService.remove(ephemeralInstanceListKey);
+            consistencyService.remove(persistInstanceListKey);
             
-            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
-            
+            // remove listeners of key to avoid mem leak
+            consistencyService.unListen(ephemeralInstanceListKey, service);
+            consistencyService.unListen(persistInstanceListKey, service);
             consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
             Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
         }
@@ -786,7 +792,7 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         Map<String, Instance> instanceMap;
-        if (datum != null) {
+        if (datum != null && null != datum.value) {
             instanceMap = setValid(((Instances) datum.value).getInstanceList(), currentInstances);
         } else {
             instanceMap = new HashMap<>(ips.length);
@@ -863,7 +869,7 @@ public class ServiceManager implements RecordListener<Service> {
         if (!serviceMap.containsKey(service.getNamespaceId())) {
             synchronized (putServiceLock) {
                 if (!serviceMap.containsKey(service.getNamespaceId())) {
-                    serviceMap.put(service.getNamespaceId(), new ConcurrentHashMap<>(16));
+                    serviceMap.put(service.getNamespaceId(), new ConcurrentSkipListMap<>());
                 }
             }
         }
@@ -951,8 +957,8 @@ public class ServiceManager implements RecordListener<Service> {
                 contained = false;
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
-                    if (containedInstance.contains(":")) {
-                        if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), containedInstance)) {
+                    if (IPUtil.containsPort(containedInstance)) {
+                        if (StringUtils.equals(instance.getIp() +  IPUtil.IP_PORT_SPLITER + instance.getPort(), containedInstance)) {
                             contained = true;
                             break;
                         }

@@ -27,6 +27,19 @@ import com.alibaba.nacos.api.utils.StringUtils;
  */
 public class NamingUtils {
     
+    /**
+     * Returns a combined string with serviceName and groupName. serviceName can not be nil.
+     *
+     * <p>In most cases, serviceName can not be nil. In other cases, for search or anything, See {@link
+     * com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedNameOptional(String, String)}
+     *
+     * <p>etc:
+     * <p>serviceName | groupName | result</p>
+     * <p>serviceA    | groupA    | groupA@@serviceA</p>
+     * <p>nil         | groupA    | threw IllegalArgumentException</p>
+     *
+     * @return 'groupName@@serviceName'
+     */
     public static String getGroupedName(final String serviceName, final String groupName) {
         if (StringUtils.isBlank(serviceName)) {
             throw new IllegalArgumentException("Param 'serviceName' is illegal, serviceName is blank");
@@ -56,9 +69,7 @@ public class NamingUtils {
     }
     
     /**
-     * check combineServiceName format. the serviceName can't be blank. some relational logic in {@link
-     * com.alibaba.nacos.naming.web.DistroFilter#doFilter}, it will handle combineServiceName in some case, you should
-     * know it.
+     * check combineServiceName format. the serviceName can't be blank.
      * <pre>
      * serviceName = "@@"; the length = 0; illegal
      * serviceName = "group@@"; the length = 1; illegal
@@ -74,5 +85,21 @@ public class NamingUtils {
             throw new IllegalArgumentException(
                     "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
         }
+    }
+    
+    /**
+     * Returns a combined string with serviceName and groupName. Such as 'groupName@@serviceName'
+     * <p>This method works similar with {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName} But not verify any parameters.
+     *
+     * </p> etc:
+     * <p>serviceName | groupName | result</p>
+     * <p>serviceA    | groupA    | groupA@@serviceA</p>
+     * <p>nil         | groupA    | groupA@@</p>
+     * <p>nil         | nil       | @@</p>
+     *
+     * @return 'groupName@@serviceName'
+     */
+    public static String getGroupedNameOptional(final String serviceName, final String groupName) {
+        return groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
     }
 }
