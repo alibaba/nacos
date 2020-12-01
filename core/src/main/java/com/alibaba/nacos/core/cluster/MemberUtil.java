@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +30,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
@@ -118,10 +118,13 @@ public class MemberUtil {
      * @param member {@link Member}
      */
     public static void onSuccess(Member member) {
+        final NodeState old = member.getState();
         manager.getMemberAddressInfos().add(member.getAddress());
         member.setState(NodeState.UP);
         member.setFailAccessCnt(0);
-        manager.notifyMemberChange();
+        if (!Objects.equals(old, member.getState())) {
+            manager.notifyMemberChange();
+        }
     }
     
     public static void onFail(Member member) {
@@ -137,6 +140,7 @@ public class MemberUtil {
      */
     public static void onFail(Member member, Throwable ex) {
         manager.getMemberAddressInfos().remove(member.getAddress());
+        final NodeState old = member.getState();
         member.setState(NodeState.SUSPICIOUS);
         member.setFailAccessCnt(member.getFailAccessCnt() + 1);
         int maxFailAccessCnt = EnvUtil.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
@@ -147,7 +151,9 @@ public class MemberUtil {
                 .containsIgnoreCase(ex.getMessage(), TARGET_MEMBER_CONNECT_REFUSE_ERRMSG)) {
             member.setState(NodeState.DOWN);
         }
-        manager.notifyMemberChange();
+        if (!Objects.equals(old, member.getState())) {
+            manager.notifyMemberChange();
+        }
     }
     
     /**

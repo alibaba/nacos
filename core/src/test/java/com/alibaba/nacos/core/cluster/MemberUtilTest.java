@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -31,6 +32,7 @@ import org.springframework.mock.web.MockServletContext;
 
 import java.net.ConnectException;
 import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -54,7 +56,18 @@ public class MemberUtilTest {
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
+        final CountDownLatch latch = new CountDownLatch(1);
+        Subscriber<MembersChangeEvent> subscriber = new MemberChangeListener() {
+            @Override
+            public void onEvent(MembersChangeEvent event) {
+                latch.countDown();
+            }
+        };
+        NotifyCenter.registerSubscriber(subscriber);
+    
         memberManager = new ServerMemberManager(new MockServletContext());
+        latch.await();
+        NotifyCenter.deregisterSubscriber(subscriber);
         originalMember = buildMember();
     }
     
@@ -160,7 +173,8 @@ public class MemberUtilTest {
     }
     
     @Test
-    public void testMemberOnFailListener() {
+    public void testMemberOnFailListener() throws InterruptedException {
+        
         final AtomicBoolean received = new AtomicBoolean(false);
         final AtomicReference<MembersChangeEvent> reference = new AtomicReference<>();
         
@@ -195,4 +209,45 @@ public class MemberUtilTest {
         Assert.assertEquals(0, member2.getFailAccessCnt());
         Assert.assertEquals(NodeState.UP, member2.getState());
     }
+    
+    @Test
+    public void testMemberOnSuccessWhenMemberAlreadyUP() {
+        final AtomicBoolean received = new AtomicBoolean(false);
+        
+        NotifyCenter.registerSubscriber(new MemberChangeListener() {
+            @Override
+            public void onEvent(MembersChangeEvent event) {
+                received.set(true);
+            }
+        });
+        
+        final Member remote = buildMember();
+        memberManager.updateMember(remote);
+        
+        MemberUtil.onSuccess(remote);
+        ThreadUtils.sleep(4000);
+        Assert.assertFalse(received.get());
+    }
+    
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+    @Test
+    public void testMemberOnFailWhenMemberAlreadyNOUP() {
+        final AtomicBoolean received = new AtomicBoolean(false);
+        
+        NotifyCenter.registerSubscriber(new MemberChangeListener() {
+            @Override
+            public void onEvent(MembersChangeEvent event) {
+                received.set(true);
+            }
+        });
+        
+        final Member remote = buildMember();
+        remote.setState(NodeState.SUSPICIOUS);
+        memberManager.updateMember(remote);
+        
+        MemberUtil.onFail(remote);
+        ThreadUtils.sleep(4000);
+        Assert.assertFalse(received.get());
+    }
+
 }
