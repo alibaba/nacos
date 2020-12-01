@@ -18,15 +18,20 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
+import static com.alibaba.nacos.naming.utils.Constants.DATA_WARMUP;
+import static com.alibaba.nacos.naming.utils.Constants.DISTRO_BATCH_SYNC_KEY_COUNT;
+import static com.alibaba.nacos.naming.utils.Constants.DISTRO_SYNC_RETRY_DELAY;
+import static com.alibaba.nacos.naming.utils.Constants.DISTRO_TASK_DISPATCH_PERIOD;
 import static com.alibaba.nacos.naming.utils.Constants.EMPTY_SERVICE_CLEAN_INTERVAL;
 import static com.alibaba.nacos.naming.utils.Constants.EMPTY_SERVICE_EXPIRED_TIME;
 import static com.alibaba.nacos.naming.utils.Constants.EXPIRED_METADATA_CLEAN_INTERVAL;
 import static com.alibaba.nacos.naming.utils.Constants.EXPIRED_METADATA_EXPIRED_TIME;
+import static com.alibaba.nacos.naming.utils.Constants.EXPIRE_INSTANCE;
+import static com.alibaba.nacos.naming.utils.Constants.LOAD_DATA_RETRY_DELAY_MILLIS;
 
 /**
  * Stores some configurations for Distro protocol.
@@ -39,67 +44,47 @@ public class GlobalConfig {
     
     private final DistroConfig distroConfig;
     
-    @Value("${nacos.naming.distro.taskDispatchPeriod:2000}")
-    private int taskDispatchPeriod = 2000;
-    
-    @Value("${nacos.naming.distro.batchSyncKeyCount:1000}")
-    private int batchSyncKeyCount = 1000;
-    
-    @Value("${nacos.naming.distro.syncRetryDelay:5000}")
-    private long syncRetryDelay = 5000L;
-    
-    @Value("${nacos.naming.data.warmup:false}")
-    private boolean dataWarmup = false;
-    
-    @Value("${nacos.naming.expireInstance:true}")
-    private boolean expireInstance = true;
-    
-    @Value("${nacos.naming.clean.loadDataRetryDelayMillis:60000L}")
-    private long loadDataRetryDelayMillis = 30000;
-    
     public GlobalConfig(DistroConfig distroConfig) {
         this.distroConfig = distroConfig;
     }
     
     @PostConstruct
     public void printGlobalConfig() {
-        Loggers.SRV_LOG.info(toString());
         overrideDistroConfiguration();
     }
     
     private void overrideDistroConfiguration() {
-        distroConfig.setSyncDelayMillis(taskDispatchPeriod);
-        distroConfig.setSyncRetryDelayMillis(syncRetryDelay);
-        distroConfig.setLoadDataRetryDelayMillis(loadDataRetryDelayMillis);
+        distroConfig.setSyncDelayMillis(getTaskDispatchPeriod());
+        distroConfig.setSyncRetryDelayMillis(getSyncRetryDelay());
+        distroConfig.setLoadDataRetryDelayMillis(getLoadDataRetryDelayMillis());
     }
     
     public int getTaskDispatchPeriod() {
-        return taskDispatchPeriod;
+        return EnvUtil.getProperty(DISTRO_TASK_DISPATCH_PERIOD, Integer.class, 2000);
     }
     
     public int getBatchSyncKeyCount() {
-        return batchSyncKeyCount;
+        return EnvUtil.getProperty(DISTRO_BATCH_SYNC_KEY_COUNT, Integer.class, 1000);
     }
     
     public long getSyncRetryDelay() {
-        return syncRetryDelay;
+        return EnvUtil.getProperty(DISTRO_SYNC_RETRY_DELAY, Long.class, 5000L);
     }
     
     public boolean isDataWarmup() {
-        return dataWarmup;
+        return EnvUtil.getProperty(DATA_WARMUP, Boolean.class, false);
     }
     
     public boolean isExpireInstance() {
-        return expireInstance;
+        return EnvUtil.getProperty(EXPIRE_INSTANCE, Boolean.class, true);
     }
     
     public long getLoadDataRetryDelayMillis() {
-        return loadDataRetryDelayMillis;
+        return EnvUtil.getProperty(LOAD_DATA_RETRY_DELAY_MILLIS, Long.class, 60000L);
     }
     
     public static Long getEmptyServiceCleanInterval() {
         return EnvUtil.getProperty(EMPTY_SERVICE_CLEAN_INTERVAL, Long.class, 60000L);
-        
     }
     
     public static Long getEmptyServiceExpiredTime() {
@@ -114,10 +99,4 @@ public class GlobalConfig {
         return EnvUtil.getProperty(EXPIRED_METADATA_EXPIRED_TIME, Long.class, 60000L);
     }
     
-    @Override
-    public String toString() {
-        return "GlobalConfig{" + "taskDispatchPeriod=" + taskDispatchPeriod + ", batchSyncKeyCount=" + batchSyncKeyCount
-                + ", syncRetryDelay=" + syncRetryDelay + ", dataWarmup=" + dataWarmup + ", expireInstance="
-                + expireInstance + ", loadDataRetryDelayMillis=" + loadDataRetryDelayMillis + '}';
-    }
 }
