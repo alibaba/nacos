@@ -381,7 +381,7 @@ public class InstanceController {
         
         Subscriber subscriber =
                 udpPort > 0 ? new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName,
-                        udpPort) : null;
+                        udpPort, clusters) : null;
         return instanceService.listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
     }
     

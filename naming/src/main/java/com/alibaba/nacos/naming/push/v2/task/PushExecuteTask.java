@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -46,11 +47,24 @@ public class PushExecuteTask extends AbstractExecuteTask {
             serviceInfo = ServiceUtil.selectInstances(serviceInfo, true, true);
             for (String each : delayTaskEngine.getIndexesManager().getAllClientsSubscribeService(service)) {
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
-                delayTaskEngine.getPushExecuteService().doPush(each, subscriber, serviceInfo);
+                delayTaskEngine.getPushExecuteService().doPush(each, subscriber, handleClusterData(serviceInfo, subscriber));
             }
         } catch (Exception e) {
             Loggers.PUSH.error("Push task for service" + service.getGroupedServiceName() + " execute failed ", e);
             delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L));
         }
+    }
+    
+    /**
+     * For adapt push cluster feature. Will be remove after 2.1.x.
+     *
+     * @param data       original data
+     * @param subscriber subscriber information
+     * @return cluster filtered data
+     */
+    @Deprecated
+    private ServiceInfo handleClusterData(ServiceInfo data, Subscriber subscriber) {
+        return StringUtils.isBlank(subscriber.getCluster()) ? data
+                : ServiceUtil.selectInstances(data, subscriber.getCluster());
     }
 }

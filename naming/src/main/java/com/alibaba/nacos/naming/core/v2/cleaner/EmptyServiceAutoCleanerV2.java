@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.Set;
@@ -35,6 +36,7 @@ import java.util.stream.Stream;
  *
  * @author xiweng.yy
  */
+@Component
 public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
     
     private static final String EMPTY_SERVICE = "emptyService";
@@ -67,10 +69,10 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
     }
     
     private void cleanEmptyService(Service service) {
-        Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned", service.getNamespace(),
-                service.getGroupedServiceName());
         Collection<String> registeredService = clientServiceIndexesManager.getAllClientsRegisteredService(service);
         if (registeredService.isEmpty() && isTimeExpired(service)) {
+            Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned", service.getNamespace(),
+                    service.getGroupedServiceName());
             clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
             ServiceManager.getInstance().removeSingleton(service);
             NotifyCenter.publishEvent(new MetadataEvent.ServiceMetadataEvent(service, true));

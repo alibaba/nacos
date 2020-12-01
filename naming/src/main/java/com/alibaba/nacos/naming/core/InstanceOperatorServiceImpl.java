@@ -63,7 +63,8 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             ServiceInfo result = new ServiceInfo(client.getServiceName(), client.getClusters());
             try {
                 Subscriber subscriber = new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(),
-                        client.getIp(), client.getNamespaceId(), client.getServiceName(), client.getPort());
+                        client.getIp(), client.getNamespaceId(), client.getServiceName(), client.getPort(),
+                        client.getClusters());
                 result = listInstance(client.getNamespaceId(), client.getServiceName(), subscriber,
                         client.getClusters(), false);
             } catch (Exception e) {
@@ -101,7 +102,8 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     }
     
     @Override
-    public void updateInstance(String namespaceId, String serviceName, String groupName, Instance instance) throws NacosException {
+    public void updateInstance(String namespaceId, String serviceName, String groupName, Instance instance)
+            throws NacosException {
         com.alibaba.nacos.naming.core.Instance coreInstance = (com.alibaba.nacos.naming.core.Instance) instance;
         String groupedServiceName = NamingUtils.getGroupedName(groupName, serviceName);
         serviceManager.updateInstance(namespaceId, groupedServiceName, coreInstance);

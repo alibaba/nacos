@@ -72,8 +72,12 @@ public class ClientConnectionEventListenerRegistry {
         executorService.schedule(new Runnable() {
             @Override
             public void run() {
-                for (ClientConnectionEventListener clientConnectionEventListener : clientConnectionEventListeners) {
-                    clientConnectionEventListener.clientDisConnected(connection);
+                for (ClientConnectionEventListener each : clientConnectionEventListeners) {
+                    try {
+                        each.clientDisConnected(connection);
+                    } catch (Exception e) {
+                        Loggers.REMOTE.info("[NotifyClientDisConnected] failed for listener {}", each.getName(), e);
+                    }
                 }
             }
         }, 0L, TimeUnit.MILLISECONDS);

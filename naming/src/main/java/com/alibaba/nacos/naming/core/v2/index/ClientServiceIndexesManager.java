@@ -60,10 +60,11 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     
     /**
      * Clear the service index without instances.
+     *
      * @param service The service of the Nacos.
      */
     public void removePublisherIndexesByEmptyService(Service service) {
-        if (publisherIndexes.get(service).isEmpty()) {
+        if (publisherIndexes.containsKey(service) && publisherIndexes.get(service).isEmpty()) {
             publisherIndexes.remove(service);
         }
     }
@@ -123,9 +124,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
             return;
         }
         publisherIndexes.get(service).remove(clientId);
-        if (publisherIndexes.get(service).isEmpty()) {
-            publisherIndexes.remove(service);
-        }
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     

@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
@@ -214,13 +213,15 @@ public class NacosNamingService implements NamingService {
     @Override
     public List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters,
             boolean subscribe) throws NacosException {
-        
         ServiceInfo serviceInfo;
+        String clusterString = StringUtils.join(clusters, ",");
         if (subscribe) {
-            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, StringUtils.join(clusters, ","));
+            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
+            if (null == serviceInfo) {
+                serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
+            }
         } else {
-            serviceInfo = clientProxy
-                    .queryInstancesOfService(serviceName, groupName, StringUtils.join(clusters, ","), 0, false);
+            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
         }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
@@ -274,11 +275,14 @@ public class NacosNamingService implements NamingService {
             boolean subscribe) throws NacosException {
         
         ServiceInfo serviceInfo;
+        String clusterString = StringUtils.join(clusters, ",");
         if (subscribe) {
-            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, StringUtils.join(clusters, ","));
+            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
+            if (null == serviceInfo) {
+                serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
+            }
         } else {
-            serviceInfo = clientProxy
-                    .queryInstancesOfService(serviceName, groupName, StringUtils.join(clusters, ","), 0, false);
+            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
         }
         return selectInstances(serviceInfo, healthy);
     }
@@ -341,13 +345,16 @@ public class NacosNamingService implements NamingService {
     @Override
     public Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters,
             boolean subscribe) throws NacosException {
-        
+        String clusterString = StringUtils.join(clusters, ",");
         if (subscribe) {
-            return Balancer.RandomByWeight.selectHost(
-                    serviceInfoHolder.getServiceInfo(serviceName, groupName, StringUtils.join(clusters, ",")));
+            ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
+            if (null == serviceInfo) {
+                serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
+            }
+            return Balancer.RandomByWeight.selectHost(serviceInfo);
         } else {
             ServiceInfo serviceInfo = clientProxy
-                    .queryInstancesOfService(serviceName, groupName, StringUtils.join(clusters, ","), 0, false);
+                    .queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
             return Balancer.RandomByWeight.selectHost(serviceInfo);
         }
     }
@@ -374,7 +381,7 @@ public class NacosNamingService implements NamingService {
             return;
         }
         String clusterString = StringUtils.join(clusters, ",");
-        changeNotifier.registerListener(NamingUtils.getGroupedName(serviceName, groupName), clusterString, listener);
+        changeNotifier.registerListener(groupName, serviceName, clusterString, listener);
         clientProxy.subscribe(serviceName, groupName, clusterString);
     }
     
@@ -396,10 +403,9 @@ public class NacosNamingService implements NamingService {
     @Override
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        String fullServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         String clustersString = StringUtils.join(clusters, ",");
-        changeNotifier.deregisterListener(fullServiceName, clustersString, listener);
-        if (!changeNotifier.isSubscribed(fullServiceName, clustersString)) {
+        changeNotifier.deregisterListener(groupName, serviceName, clustersString, listener);
+        if (!changeNotifier.isSubscribed(groupName, serviceName, clustersString)) {
             clientProxy.unsubscribe(serviceName, groupName, clustersString);
         }
     }
