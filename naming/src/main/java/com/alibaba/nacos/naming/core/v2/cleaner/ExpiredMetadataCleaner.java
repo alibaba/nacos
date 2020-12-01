@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.cleaner;
 import com.alibaba.nacos.naming.core.v2.metadata.ExpiredMetadataInfo;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
@@ -43,8 +44,8 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
             NamingMetadataOperateService metadataOperateService) {
         this.metadataManager = metadataManager;
         this.metadataOperateService = metadataOperateService;
-        // TODO get internal from config
-        GlobalExecutor.scheduleExpiredClientCleaner(this, 5000, 5000, TimeUnit.MILLISECONDS);
+        GlobalExecutor.scheduleExpiredClientCleaner(this, 5000, GlobalConfig.getExpiredMetadataCleanInterval(),
+                TimeUnit.MILLISECONDS);
     }
     
     @Override
@@ -56,8 +57,7 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
     public void doClean() {
         long currentTime = System.currentTimeMillis();
         for (ExpiredMetadataInfo each : metadataManager.getExpiredMetadataInfos()) {
-            // TODO get expired time from config
-            if (currentTime - each.getCreateTime() > TimeUnit.MINUTES.toMillis(1)) {
+            if (currentTime - each.getCreateTime() > GlobalConfig.getExpiredMetadataExpiredTime()) {
                 removeExpiredMetadata(each);
             }
         }

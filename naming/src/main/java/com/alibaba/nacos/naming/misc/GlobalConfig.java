@@ -17,10 +17,16 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+
+import static com.alibaba.nacos.naming.utils.Constants.EMPTY_SERVICE_CLEAN_INTERVAL;
+import static com.alibaba.nacos.naming.utils.Constants.EMPTY_SERVICE_EXPIRED_TIME;
+import static com.alibaba.nacos.naming.utils.Constants.EXPIRED_METADATA_CLEAN_INTERVAL;
+import static com.alibaba.nacos.naming.utils.Constants.EXPIRED_METADATA_EXPIRED_TIME;
 
 /**
  * Stores some configurations for Distro protocol.
@@ -48,7 +54,7 @@ public class GlobalConfig {
     @Value("${nacos.naming.expireInstance:true}")
     private boolean expireInstance = true;
     
-    @Value("${nacos.naming.distro.loadDataRetryDelayMillis:30000}")
+    @Value("${nacos.naming.clean.loadDataRetryDelayMillis:60000L}")
     private long loadDataRetryDelayMillis = 30000;
     
     public GlobalConfig(DistroConfig distroConfig) {
@@ -89,6 +95,23 @@ public class GlobalConfig {
     
     public long getLoadDataRetryDelayMillis() {
         return loadDataRetryDelayMillis;
+    }
+    
+    public static Long getEmptyServiceCleanInterval() {
+        return EnvUtil.getProperty(EMPTY_SERVICE_CLEAN_INTERVAL, Long.class, 60000L);
+        
+    }
+    
+    public static Long getEmptyServiceExpiredTime() {
+        return EnvUtil.getProperty(EMPTY_SERVICE_EXPIRED_TIME, Long.class, 60000L);
+    }
+    
+    public static Long getExpiredMetadataCleanInterval() {
+        return EnvUtil.getProperty(EXPIRED_METADATA_CLEAN_INTERVAL, Long.class, 5000L);
+    }
+    
+    public static Long getExpiredMetadataExpiredTime() {
+        return EnvUtil.getProperty(EXPIRED_METADATA_EXPIRED_TIME, Long.class, 60000L);
     }
     
     @Override
