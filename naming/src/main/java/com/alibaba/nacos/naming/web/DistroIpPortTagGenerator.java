@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 
 /**
@@ -40,10 +39,5 @@ public class DistroIpPortTagGenerator implements DistroTagGenerator {
         }
         port = StringUtils.isBlank(port) ? "0" : port.trim();
         return ip + ":" + port;
-    }
-    
-    @Override
-    public OverrideParameterRequestWrapper wrapperRequestWithTag(ReuseHttpServletRequest request, String tag) {
-        return OverrideParameterRequestWrapper.buildRequest(request);
     }
 }

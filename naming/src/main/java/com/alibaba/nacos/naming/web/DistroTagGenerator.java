@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.web;
 
-import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 
 /**
@@ -33,13 +32,4 @@ public interface DistroTagGenerator {
      * @return responsible tag for distro.
      */
     String getResponsibleTag(ReuseHttpServletRequest request);
-    
-    /**
-     * Wrapper a new request with tag.
-     *
-     * @param request original request
-     * @param tag     tag
-     * @return request wrapper
-     */
-    OverrideParameterRequestWrapper wrapperRequestWithTag(ReuseHttpServletRequest request, String tag);
 }
