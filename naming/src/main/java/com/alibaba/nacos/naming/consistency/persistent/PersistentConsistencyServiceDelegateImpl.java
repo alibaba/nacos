@@ -17,15 +17,11 @@
 package com.alibaba.nacos.naming.consistency.persistent;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.persistent.impl.BasePersistentServiceProcessor;
 import com.alibaba.nacos.naming.consistency.persistent.impl.PersistentServiceProcessor;
-import com.alibaba.nacos.naming.consistency.persistent.impl.StandalonePersistentServiceProcessor;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,16 +36,16 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     
     private final RaftConsistencyServiceImpl oldPersistentConsistencyService;
     
-    private final BasePersistentServiceProcessor newPersistentConsistencyService;
+    private final PersistentServiceProcessor newPersistentConsistencyService;
     
     private volatile boolean switchNewPersistentService = false;
     
     public PersistentConsistencyServiceDelegateImpl(ClusterVersionJudgement versionJudgement,
-            RaftConsistencyServiceImpl oldPersistentConsistencyService, ProtocolManager protocolManager)
-            throws Exception {
+            RaftConsistencyServiceImpl oldPersistentConsistencyService,
+            PersistentServiceProcessor newPersistentConsistencyService) {
         this.versionJudgement = versionJudgement;
         this.oldPersistentConsistencyService = oldPersistentConsistencyService;
-        this.newPersistentConsistencyService = createNewPersistentServiceProcessor(protocolManager, versionJudgement);
+        this.newPersistentConsistencyService = newPersistentConsistencyService;
         init();
     }
     
@@ -91,14 +87,5 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     
     private PersistentConsistencyService switchOne() {
         return switchNewPersistentService ? newPersistentConsistencyService : oldPersistentConsistencyService;
-    }
-    
-    private BasePersistentServiceProcessor createNewPersistentServiceProcessor(ProtocolManager protocolManager,
-            ClusterVersionJudgement versionJudgement) throws Exception {
-        final BasePersistentServiceProcessor processor =
-                EnvUtil.getStandaloneMode() ? new StandalonePersistentServiceProcessor(versionJudgement)
-                        : new PersistentServiceProcessor(protocolManager, versionJudgement);
-        processor.afterConstruct();
-        return processor;
     }
 }

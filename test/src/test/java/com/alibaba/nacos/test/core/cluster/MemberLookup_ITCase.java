@@ -24,7 +24,6 @@ import com.alibaba.nacos.core.cluster.lookup.FileConfigMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.StandaloneMemberLookup;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -61,9 +60,9 @@ public class MemberLookup_ITCase extends BaseTest {
 	@Before
 	public void before() throws Exception {
 		System.setProperty("nacos.home", path);
-		EnvUtil.setEnvironment(new StandardEnvironment());
-		EnvUtil.setIsStandalone(false);
-		System.out.println(EnvUtil.getStandaloneMode());
+		ApplicationUtils.injectEnvironment(new StandardEnvironment());
+		ApplicationUtils.setIsStandalone(false);
+		System.out.println(ApplicationUtils.getStandaloneMode());
 
 		System.out.println(Arrays.toString(LookupFactory.LookupType.values()));
 		DiskUtils.forceMkdir(path);
@@ -108,14 +107,14 @@ public class MemberLookup_ITCase extends BaseTest {
 
 	@Test
 	public void test_b_lookup_standalone() throws Exception {
-		EnvUtil.setIsStandalone(true);
+		ApplicationUtils.setIsStandalone(true);
 		try {
 			LookupFactory.createLookUp(memberManager);
 		}
 		catch (Throwable ignore) {
 
 		} finally {
-			EnvUtil.setIsStandalone(false);
+			ApplicationUtils.setIsStandalone(false);
 		}
 		MemberLookup lookup = LookupFactory.getLookUp();
 		System.out.println(lookup);
@@ -124,10 +123,10 @@ public class MemberLookup_ITCase extends BaseTest {
 
 	@Test
 	public void test_c_lookup_address_server() throws Exception {
-		EnvUtil.setIsStandalone(false);
-		System.out.println(EnvUtil.getClusterConfFilePath());
+		ApplicationUtils.setIsStandalone(false);
+		System.out.println(ApplicationUtils.getClusterConfFilePath());
 		DiskUtils.deleteFile(Paths.get(path, "conf").toString(), "cluster.conf");
-		System.out.println(new File(EnvUtil.getClusterConfFilePath()).exists());
+		System.out.println(new File(ApplicationUtils.getClusterConfFilePath()).exists());
 		try {
 			LookupFactory.createLookUp(memberManager);
 		}

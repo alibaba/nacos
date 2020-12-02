@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,7 +41,7 @@ public class MemberUtilsTest {
     
     @Before
     public void setUp() {
-        EnvUtil.setEnvironment(environment);
+        ApplicationUtils.injectEnvironment(environment);
         originalMember = buildMember();
     }
     

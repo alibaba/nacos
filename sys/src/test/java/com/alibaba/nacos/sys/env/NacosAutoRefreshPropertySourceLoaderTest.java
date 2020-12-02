@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.AfterClass;
@@ -51,19 +52,19 @@ public class NacosAutoRefreshPropertySourceLoaderTest {
     
     @BeforeClass
     public static void before() throws URISyntaxException {
-        oldConfPath = EnvUtil.getConfPath();
-        EnvUtil.setConfPath(new File(ClassLoader.getSystemResource("application.properties").toURI()).getParent());
+        oldConfPath = ApplicationUtils.getConfFilePath();
+        ApplicationUtils.setConfFilePath(new File(ClassLoader.getSystemResource("application.properties").toURI()).getParent());
     }
     
     @AfterClass
     public static void after() {
-        EnvUtil.setConfPath(oldConfPath);
+        ApplicationUtils.setConfFilePath(oldConfPath);
     }
 
     @Test
     public void testConfigFileAutoRefresh() throws URISyntaxException, InterruptedException, NacosException, IOException {
         final URL url = ClassLoader.getSystemResource("application.properties");
-        EnvUtil.setContextPath(url.getPath());
+        ApplicationUtils.setContextPath(url.getPath());
         final String val1 = environment.getProperty("name");
         Assert.assertEquals("test-1", val1);
         final File file = new File(url.toURI());
@@ -71,7 +72,7 @@ public class NacosAutoRefreshPropertySourceLoaderTest {
         final String newVal = System.currentTimeMillis() + "-lessspring";
         DiskUtils.writeFile(file, ByteUtils.toBytes("\n" + newKey + "=" + newVal), true);
         CountDownLatch latch = new CountDownLatch(1);
-        WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
+        WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), new FileWatcher() {
             @Override
             public void onChange(FileChangeEvent event) {
                 latch.countDown();

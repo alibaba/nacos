@@ -44,7 +44,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -127,8 +127,6 @@ public class RaftCore implements Closeable {
     
     private final EventPublisher publisher;
     
-    private final RaftListener raftListener;
-    
     private boolean initialized = false;
     
     private volatile boolean stopWork = false;
@@ -138,7 +136,7 @@ public class RaftCore implements Closeable {
     private ScheduledFuture heartbeatTask = null;
     
     public RaftCore(RaftPeerSet peers, SwitchDomain switchDomain, GlobalConfig globalConfig, RaftProxy raftProxy,
-            RaftStore raftStore, ClusterVersionJudgement versionJudgement, RaftListener raftListener) {
+            RaftStore raftStore, ClusterVersionJudgement versionJudgement) {
         this.peers = peers;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
@@ -147,7 +145,6 @@ public class RaftCore implements Closeable {
         this.versionJudgement = versionJudgement;
         this.notifier = new PersistentNotifier(key -> null == getDatum(key) ? null : getDatum(key).value);
         this.publisher = NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
-        this.raftListener = raftListener;
     }
     
     /**
@@ -178,7 +175,6 @@ public class RaftCore implements Closeable {
             if (stopWork) {
                 try {
                     shutdown();
-                    raftListener.removeOldRaftMetadata();
                 } catch (NacosException e) {
                     throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
                 }
@@ -614,7 +610,7 @@ public class RaftCore implements Closeable {
         
         private void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (EnvUtil.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
+            if (ApplicationUtils.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
                 return;
             }
             if (Loggers.RAFT.isDebugEnabled()) {
@@ -1009,9 +1005,9 @@ public class RaftCore implements Closeable {
      */
     public static String buildUrl(String ip, String api) {
         if (!IPUtil.containsPort(ip)) {
-            ip = ip + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            ip = ip + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        return "http://" + ip + EnvUtil.getContextPath() + api;
+        return "http://" + ip + ApplicationUtils.getContextPath() + api;
     }
     
     public Datum<?> getDatum(String key) {

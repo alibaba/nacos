@@ -14,35 +14,49 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.listener;
+package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringApplicationRunListener;
+import org.springframework.boot.context.event.EventPublishingRunListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import static org.springframework.boot.context.logging.LoggingApplicationListener.CONFIG_PROPERTY;
 import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
 
 /**
- * For init logging configuration.
+ * Logging {@link SpringApplicationRunListener} before {@link EventPublishingRunListener} execution.
  *
- * @author horizonzy
- * @since 1.4.1
+ * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
+ * @since 0.2.2
  */
-public class LoggingApplicationListener implements NacosApplicationListener {
+public class LoggingSpringApplicationRunListener implements SpringApplicationRunListener, Ordered {
     
     private static final String DEFAULT_NACOS_LOGBACK_LOCATION = CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingApplicationListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingSpringApplicationRunListener.class);
+    
+    private final SpringApplication application;
+    
+    private final String[] args;
+    
+    public LoggingSpringApplicationRunListener(SpringApplication application, String[] args) {
+        this.application = application;
+        this.args = args;
+    }
     
     @Override
     public void starting() {
-    
     }
     
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
+        ApplicationUtils.injectEnvironment(environment);
         if (!environment.containsProperty(CONFIG_PROPERTY)) {
             System.setProperty(CONFIG_PROPERTY, DEFAULT_NACOS_LOGBACK_LOCATION);
             if (LOGGER.isInfoEnabled()) {
@@ -76,5 +90,15 @@ public class LoggingApplicationListener implements NacosApplicationListener {
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
     
+    }
+    
+    /**
+     * Before {@link EventPublishingRunListener}.
+     *
+     * @return HIGHEST_PRECEDENCE
+     */
+    @Override
+    public int getOrder() {
+        return HIGHEST_PRECEDENCE;
     }
 }

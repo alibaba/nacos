@@ -27,7 +27,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -101,7 +101,7 @@ public class HttpClient {
         header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
-        header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, EnvUtil.getLocalAddress());
+        header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, ApplicationUtils.getLocalAddress());
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
         
         HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)

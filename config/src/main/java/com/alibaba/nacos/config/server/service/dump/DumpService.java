@@ -49,7 +49,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
@@ -203,7 +203,7 @@ public abstract class DumpService {
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
                         e);
             }
-            if (!EnvUtil.getStandaloneMode()) {
+            if (!ApplicationUtils.getStandaloneMode()) {
                 Runnable heartbeat = () -> {
                     String heartBeatTime = TimeUtils.getCurrentTime().toString();
                     // write disk
@@ -305,7 +305,7 @@ public abstract class DumpService {
     private Boolean isQuickStart() {
         try {
             String val = null;
-            val = EnvUtil.getProperty("isQuickStart");
+            val = ApplicationUtils.getProperty("isQuickStart");
             if (val != null && TRUE_STR.equals(val)) {
                 isQuickStart = true;
             }
@@ -317,7 +317,7 @@ public abstract class DumpService {
     }
     
     private int getRetentionDays() {
-        String val = EnvUtil.getProperty("nacos.config.retention.days");
+        String val = ApplicationUtils.getProperty("nacos.config.retention.days");
         if (null == val) {
             return retentionDays;
         }

@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -116,7 +116,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     public synchronized void reload() throws IOException {
         try {
             dataSourceList = new ExternalDataSourceProperties()
-                    .build(EnvUtil.getEnvironment(), (dataSource) -> {
+                    .build(ApplicationUtils.getEnvironment(), (dataSource) -> {
                         JdbcTemplate jdbcTemplate = new JdbcTemplate();
                         jdbcTemplate.setQueryTimeout(queryTimeout);
                         jdbcTemplate.setDataSource(dataSource);

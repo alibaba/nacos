@@ -21,15 +21,12 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.utils.Constants;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.SmartApplicationListener;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Inject the raft information from the naming module into the outlier information of the node.
@@ -41,20 +38,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Component
 public class RaftListener implements SmartApplicationListener {
     
+    private static final String GROUP = "naming";
+    
     private final ServerMemberManager memberManager;
     
     private final ClusterVersionJudgement versionJudgement;
     
     private volatile boolean stopUpdate = false;
-    
-    /**
-     * Avoid multithreading mode. Old Raft information data cannot be properly removed.
-     */
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     
     public RaftListener(ServerMemberManager memberManager, ClusterVersionJudgement versionJudgement) {
         this.memberManager = memberManager;
@@ -64,15 +54,12 @@ public class RaftListener implements SmartApplicationListener {
     
     private void init() {
         this.versionJudgement.registerObserver(isAllNewVersion -> {
-            final Lock lock = this.writeLock;
-            lock.lock();
-            try {
-                stopUpdate = isAllNewVersion;
-                if (stopUpdate) {
-                    removeOldRaftMetadata();
-                }
-            } finally {
-                lock.unlock();
+            stopUpdate = isAllNewVersion;
+            if (stopUpdate) {
+                Loggers.RAFT.warn("start to move old raft protocol metadata");
+                Member self = memberManager.getSelf();
+                self.delExtendVal(GROUP);
+                memberManager.update(self);
             }
         }, -2);
     }
@@ -84,30 +71,14 @@ public class RaftListener implements SmartApplicationListener {
     
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        final Lock lock = readLock;
-        lock.lock();
-        try {
-            if (event instanceof BaseRaftEvent && !stopUpdate) {
-                BaseRaftEvent raftEvent = (BaseRaftEvent) event;
-                RaftPeer local = raftEvent.getLocal();
-                String json = JacksonUtils.toJson(local);
-                Map map = JacksonUtils.toObj(json, HashMap.class);
-                Member self = memberManager.getSelf();
-                self.setExtendVal(Constants.OLD_NAMING_RAFT_GROUP, map);
-                memberManager.update(self);
-            }
-            if (stopUpdate) {
-                removeOldRaftMetadata();
-            }
-        } finally {
-            lock.unlock();
+        if (event instanceof BaseRaftEvent && !stopUpdate) {
+            BaseRaftEvent raftEvent = (BaseRaftEvent) event;
+            RaftPeer local = raftEvent.getLocal();
+            String json = JacksonUtils.toJson(local);
+            Map map = JacksonUtils.toObj(json, HashMap.class);
+            Member self = memberManager.getSelf();
+            self.setExtendVal(GROUP, map);
+            memberManager.update(self);
         }
-    }
-    
-    void removeOldRaftMetadata() {
-        Loggers.RAFT.warn("start to move old raft protocol metadata");
-        Member self = memberManager.getSelf();
-        self.delExtendVal(Constants.OLD_NAMING_RAFT_GROUP);
-        memberManager.update(self);
     }
 }

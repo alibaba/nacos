@@ -143,8 +143,8 @@ public class GlobalExecutor {
         NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
     }
     
-    public static ScheduledFuture submitClusterVersionJudge(Runnable runnable, long delay) {
-        return NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    public static void submitClusterVersionJudge(Runnable runnable, long delay) {
+        NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
     public static void submitDistroNotifyTask(Runnable runnable) {

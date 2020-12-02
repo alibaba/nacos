@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.utils;
+package com.alibaba.nacos.config.server.utils;
 
 import org.junit.Assert;
 import org.junit.Test;

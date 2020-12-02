@@ -36,7 +36,6 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.HashSet;
@@ -73,7 +72,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     @Override
     public void onEvent(Event event) {
-        if (EnvUtil.getStandaloneMode()) {
+        if (ApplicationUtils.getStandaloneMode()) {
             return;
         }
         ClientEvent clientEvent = (ClientEvent) event;
