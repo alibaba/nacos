@@ -33,7 +33,7 @@ public interface InstanceOperator {
      * Register an instance to a service in AP mode.
      *
      * @param namespaceId id of namespace
-     * @param serviceName service name
+     * @param serviceName grouped service name group@@service
      * @param instance    instance to register
      * @throws NacosException nacos exception when register failed
      */
@@ -43,7 +43,7 @@ public interface InstanceOperator {
      * Remove instance from service.
      *
      * @param namespaceId namespace
-     * @param serviceName service name
+     * @param serviceName grouped service name group@@service
      * @param instance    instance
      * @throws NacosException nacos exception when remove failed
      */
@@ -54,18 +54,17 @@ public interface InstanceOperator {
      * metadata.
      *
      * @param namespaceId namespace
-     * @param serviceName service name
-     * @param groupName   group name
+     * @param serviceName grouped service name group@@service
      * @param instance    instance
      * @throws NacosException nacos exception when update failed
      */
-    void updateInstance(String namespaceId, String serviceName, String groupName, Instance instance) throws NacosException;
+    void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException;
     
     /**
      * Get all instance of input service.
      *
      * @param namespaceId namespace
-     * @param serviceName service name
+     * @param serviceName grouped service name group@@service
      * @param subscriber  subscriber info
      * @param cluster     cluster of instances
      * @param healthOnly  whether only return health instances
@@ -79,7 +78,7 @@ public interface InstanceOperator {
      * Handle beat request.
      *
      * @param namespaceId namespace
-     * @param serviceName service name
+     * @param serviceName grouped service name group@@service
      * @param ip          ip of instance
      * @param port        port of instance
      * @param cluster     cluster of instance
@@ -94,7 +93,7 @@ public interface InstanceOperator {
      * Get heart beat interval for specified instance.
      *
      * @param namespaceId namespace
-     * @param serviceName service name
+     * @param serviceName grouped service name group@@service
      * @param ip          ip of instance
      * @param port        port of instance
      * @param cluster     cluster of instance

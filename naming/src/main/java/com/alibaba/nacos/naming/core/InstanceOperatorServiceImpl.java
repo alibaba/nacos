@@ -102,11 +102,10 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     }
     
     @Override
-    public void updateInstance(String namespaceId, String serviceName, String groupName, Instance instance)
+    public void updateInstance(String namespaceId, String serviceName, Instance instance)
             throws NacosException {
         com.alibaba.nacos.naming.core.Instance coreInstance = (com.alibaba.nacos.naming.core.Instance) instance;
-        String groupedServiceName = NamingUtils.getGroupedName(groupName, serviceName);
-        serviceManager.updateInstance(namespaceId, groupedServiceName, coreInstance);
+        serviceManager.updateInstance(namespaceId, serviceName, coreInstance);
     }
     
     @Override

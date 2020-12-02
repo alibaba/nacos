@@ -102,8 +102,10 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     @Override
-    public void updateInstance(String namespaceId, String serviceName, String groupName, Instance instance) throws NacosException {
-        Service service = Service.newService(namespaceId, groupName, serviceName, instance.isEphemeral());
+    public void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+        String groupName = NamingUtils.getGroupName(serviceName);
+        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
+        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped, instance.isEphemeral());
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "service not found, namespace: " + namespaceId + ", service: " + service);
