@@ -996,7 +996,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoAggrEntity qConfigInfo = QConfigInfoAggrEntity.configInfoAggrEntity;
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         BooleanExpression predicate = qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group))
-                .and(qConfigInfo.content.eq(tenantTmp));
+                .and(qConfigInfo.tenantId.eq(tenantTmp));
         if (isIn) {
             predicate.and(qConfigInfo.datumId.in(datumIds));
         } else {
