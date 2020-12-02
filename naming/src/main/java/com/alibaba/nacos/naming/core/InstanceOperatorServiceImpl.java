@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -102,8 +101,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     }
     
     @Override
-    public void updateInstance(String namespaceId, String serviceName, Instance instance)
-            throws NacosException {
+    public void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
         com.alibaba.nacos.naming.core.Instance coreInstance = (com.alibaba.nacos.naming.core.Instance) instance;
         serviceManager.updateInstance(namespaceId, serviceName, coreInstance);
     }
