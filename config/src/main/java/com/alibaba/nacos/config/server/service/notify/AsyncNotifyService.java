@@ -174,9 +174,9 @@ public class AsyncNotifyService {
         private String target;
         
         public String url;
-    
+        
         private Header header;
-    
+        
         private boolean isBeta;
         
         private int failCount;
@@ -367,8 +367,11 @@ public class AsyncNotifyService {
         
         private void addTask(NotifySingleTask task) {
             //sign the task is retry task. When it execute, just request once http invoke.
-            task.setRetry(true);
-            task.initStartTimestamp();
+            if (!task.isRetry()) {
+                task.setRetry(true);
+                task.initStartTimestamp();
+            }
+            
             NotifySingleTask existTask = delayNotifyTaskMap.putIfAbsent(task.getSingleTaskKey(), task);
             //if the task exist, should extend it's start timestamp.
             if (existTask != null) {
