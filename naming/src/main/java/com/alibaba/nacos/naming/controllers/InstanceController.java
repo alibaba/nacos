@@ -176,8 +176,8 @@ public class InstanceController {
         String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
-        instanceService.updateInstance(namespaceId, serviceName, groupName, parseInstance(request));
+        NamingUtils.checkServiceNameFormat(serviceName);
+        instanceService.updateInstance(namespaceId, serviceName, parseInstance(request));
         return "ok";
     }
     

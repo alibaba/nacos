@@ -132,9 +132,7 @@ public class DistroFilter implements Filter {
                             .warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(distroTag) + urlString);
                 }
             } else {
-                OverrideParameterRequestWrapper requestWrapper = distroTagGenerator
-                        .wrapperRequestWithTag(req, distroTag);
-                filterChain.doFilter(requestWrapper, resp);
+                filterChain.doFilter(req, resp);
             }
         } catch (AccessControlException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));

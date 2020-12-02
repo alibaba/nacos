@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 
@@ -32,10 +31,6 @@ public class DistroServiceNameTagGenerator implements DistroTagGenerator {
     @Override
     public String getResponsibleTag(ReuseHttpServletRequest request) {
         String serviceName = request.getParameter(CommonParams.SERVICE_NAME);
-        // For client under 0.8.0:
-        if (StringUtils.isBlank(serviceName)) {
-            serviceName = request.getParameter("dom");
-        }
         
         if (StringUtils.isNotBlank(serviceName)) {
             serviceName = serviceName.trim();
@@ -51,12 +46,5 @@ public class DistroServiceNameTagGenerator implements DistroTagGenerator {
             groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         }
         return groupedServiceName;
-    }
-    
-    @Override
-    public OverrideParameterRequestWrapper wrapperRequestWithTag(ReuseHttpServletRequest request, String tag) {
-        OverrideParameterRequestWrapper result = OverrideParameterRequestWrapper.buildRequest(request);
-        result.addParameter(CommonParams.SERVICE_NAME, tag);
-        return result;
     }
 }

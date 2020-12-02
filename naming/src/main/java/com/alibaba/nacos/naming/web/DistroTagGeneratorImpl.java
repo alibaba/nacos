@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.web;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import org.springframework.stereotype.Component;
 
@@ -46,17 +45,12 @@ public class DistroTagGeneratorImpl implements DistroTagGenerator {
         return getTagGenerator().getResponsibleTag(request);
     }
     
-    @Override
-    public OverrideParameterRequestWrapper wrapperRequestWithTag(ReuseHttpServletRequest request, String tag) {
-        return getTagGenerator().wrapperRequestWithTag(request, tag);
-    }
-    
     /**
      * Get tag generator according to cluster member ability.
      *
      * <p>
-     * If all member is upper than 2.x. Using {@link DistroIpPortTagGenerator}.
-     * Otherwise use 1.x {@link DistroServiceNameTagGenerator}.
+     * If all member is upper than 2.x. Using {@link DistroIpPortTagGenerator}. Otherwise use 1.x {@link
+     * DistroServiceNameTagGenerator}.
      * </p>
      *
      * @return actual tag generator
