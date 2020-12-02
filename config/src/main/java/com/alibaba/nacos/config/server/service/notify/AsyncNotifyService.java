@@ -286,7 +286,7 @@ public class AsyncNotifyService {
         /**
          * <pre>
          * if the task is already retry task, just put it to processor again.
-         * if the task is first time notify task, should retry 3 times to request, if all failed, put it to processor.
+         * if the task is first time notify task, should retry 2 times to request, if all failed, put it to processor.
          * </pre>
          */
         private void callbackError() {
