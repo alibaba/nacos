@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
@@ -44,11 +44,11 @@ public class ServiceStatusSynchronizer implements Synchronizer {
         params.put("statuses", msg.getData());
         params.put("clientIP", NetUtils.localServer());
         
-        String url = "http://" + serverIP + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
+        String url = "http://" + serverIP + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service/status";
         
         if (IPUtil.containsPort(serverIP)) {
-            url = "http://" + serverIP + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+            url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/service/status";
         }
         
@@ -95,7 +95,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
                 Loggers.SRV_LOG.debug("[STATUS-SYNCHRONIZE] sync service status from: {}, service: {}", serverIP, key);
             }
             result = NamingProxy
-                    .reqApi(EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/"
+                    .reqApi(ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/"
                             + "statuses", params, serverIP);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get service status from " + serverIP, e);

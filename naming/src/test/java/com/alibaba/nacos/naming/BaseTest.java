@@ -25,7 +25,6 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -83,7 +82,7 @@ public class BaseTest {
     
     @Before
     public void before() {
-        EnvUtil.setEnvironment(environment);
+        ApplicationUtils.injectEnvironment(environment);
         ApplicationUtils.injectContext(context);
     }
     

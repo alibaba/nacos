@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
@@ -46,11 +46,11 @@ public class Member implements Comparable<Member>, Cloneable {
     public Member() {
         String prefix = "nacos.core.member.meta.";
         extendInfo.put(MemberMetaDataConstants.SITE_KEY,
-                EnvUtil.getProperty(prefix + MemberMetaDataConstants.SITE_KEY, "unknow"));
+                ApplicationUtils.getProperty(prefix + MemberMetaDataConstants.SITE_KEY, "unknow"));
         extendInfo.put(MemberMetaDataConstants.AD_WEIGHT,
-                EnvUtil.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
+                ApplicationUtils.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
         extendInfo.put(MemberMetaDataConstants.WEIGHT,
-                EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
+                ApplicationUtils.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
     }
     
     public static MemberBuilder builder() {

@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,7 +59,7 @@ public class ServerMemberManagerTest {
     public void setUp() throws Exception {
         when(environment.getProperty("server.port", Integer.class, 8848)).thenReturn(8848);
         when(environment.getProperty("nacos.member-change-event.queue.size", Integer.class, 128)).thenReturn(128);
-        EnvUtil.setEnvironment(environment);
+        ApplicationUtils.injectEnvironment(environment);
         when(servletContext.getContextPath()).thenReturn("");
         serverMemberManager = new ServerMemberManager(servletContext);
         serverMemberManager.updateMember(Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP).build());

@@ -29,7 +29,7 @@ import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.service.repository.embedded.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
@@ -186,7 +186,7 @@ public class BaseClusterTest extends HttpClient4Test {
     private static void run(final int index, final CountDownLatch latch, final Class<?> cls) {
         Runnable runnable = () -> {
             try {
-                EnvUtil.setIsStandalone(false);
+                ApplicationUtils.setIsStandalone(false);
                 
                 final String path = Paths.get(System.getProperty("user.home"), "/nacos-" + index + "/").toString();
                 DiskUtils.deleteDirectory(path);

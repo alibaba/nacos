@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -101,7 +101,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     /**
      * Inline storage value = ${nacos.standalone}.
      */
-    private static boolean embeddedStorage = EnvUtil.getStandaloneMode();
+    private static boolean embeddedStorage = ApplicationUtils.getStandaloneMode();
     
     /**
      * Getter method for property <tt>pushContent</tt>.
@@ -242,7 +242,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
     
     public static boolean isStandaloneMode() {
-        return EnvUtil.getStandaloneMode();
+        return ApplicationUtils.getStandaloneMode();
     }
     
     public static boolean isUseExternalDB() {
@@ -262,7 +262,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     // if use raft+derby, Reduce leader read pressure
     
     public static boolean isDirectRead() {
-        return EnvUtil.getStandaloneMode() && isEmbeddedStorage();
+        return ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
     }
     
     public static void setEmbeddedStorage(boolean embeddedStorage) {
@@ -271,15 +271,15 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     private void loadSetting() {
         try {
-            setNotifyConnectTimeout(Integer.parseInt(EnvUtil.getProperty("notifyConnectTimeout", "100")));
+            setNotifyConnectTimeout(Integer.parseInt(ApplicationUtils.getProperty("notifyConnectTimeout", "100")));
             LOGGER.info("notifyConnectTimeout:{}", notifyConnectTimeout);
-            setNotifySocketTimeout(Integer.parseInt(EnvUtil.getProperty("notifySocketTimeout", "200")));
+            setNotifySocketTimeout(Integer.parseInt(ApplicationUtils.getProperty("notifySocketTimeout", "200")));
             LOGGER.info("notifySocketTimeout:{}", notifySocketTimeout);
-            setHealthCheck(Boolean.parseBoolean(EnvUtil.getProperty("isHealthCheck", "true")));
+            setHealthCheck(Boolean.parseBoolean(ApplicationUtils.getProperty("isHealthCheck", "true")));
             LOGGER.info("isHealthCheck:{}", isHealthCheck);
-            setMaxHealthCheckFailCount(Integer.parseInt(EnvUtil.getProperty("maxHealthCheckFailCount", "12")));
+            setMaxHealthCheckFailCount(Integer.parseInt(ApplicationUtils.getProperty("maxHealthCheckFailCount", "12")));
             LOGGER.info("maxHealthCheckFailCount:{}", maxHealthCheckFailCount);
-            setMaxContent(Integer.parseInt(EnvUtil.getProperty("maxContent", String.valueOf(maxContent))));
+            setMaxContent(Integer.parseInt(ApplicationUtils.getProperty("maxContent", String.valueOf(maxContent))));
             LOGGER.info("maxContent:{}", maxContent);
             // 容量管理
             setManageCapacity(getBoolean("isManageCapacity", isManageCapacity));
@@ -339,15 +339,16 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
     
     public String getProperty(String key) {
-        return EnvUtil.getProperty(key);
+        return ApplicationUtils.getProperty(key);
     }
     
     public String getProperty(String key, String defaultValue) {
-        return EnvUtil.getProperty(key, defaultValue);
+        return ApplicationUtils.getProperty(key, defaultValue);
     }
     
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+        ApplicationUtils.injectEnvironment(configurableApplicationContext.getEnvironment());
         loadSetting();
     }
 }

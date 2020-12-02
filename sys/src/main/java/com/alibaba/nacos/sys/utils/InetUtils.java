@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
 import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.sys.env.Constants;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,12 +64,12 @@ public class InetUtils {
     static {
         NotifyCenter.registerToSharePublisher(IPChangeEvent.class);
         
-        useOnlySiteLocalInterface = Boolean.parseBoolean(EnvUtil.getProperty(USE_ONLY_SITE_INTERFACES));
+        useOnlySiteLocalInterface = Boolean.parseBoolean(ApplicationUtils.getProperty(USE_ONLY_SITE_INTERFACES));
         
-        List<String> networks = EnvUtil.getPropertyList(Constants.PREFERRED_NETWORKS);
+        List<String> networks = ApplicationUtils.getPropertyList(Constants.PREFERRED_NETWORKS);
         PREFERRED_NETWORKS.addAll(networks);
         
-        List<String> interfaces = EnvUtil.getPropertyList(Constants.IGNORED_INTERFACES);
+        List<String> interfaces = ApplicationUtils.getPropertyList(Constants.IGNORED_INTERFACES);
         IGNORED_INTERFACES.addAll(interfaces);
         
         final long delayMs = Long.getLong("nacos.core.inet.auto-refresh", 30_000L);
@@ -80,7 +79,7 @@ public class InetUtils {
             public void run() {
                 String nacosIP = System.getProperty(NACOS_SERVER_IP);
                 if (StringUtils.isBlank(nacosIP)) {
-                    nacosIP = EnvUtil.getProperty(IP_ADDRESS);
+                    nacosIP = ApplicationUtils.getProperty(IP_ADDRESS);
                 }
                 if (!StringUtils.isBlank(nacosIP)) {
                     if (!(IPUtil.isIP(nacosIP) || isDomain(nacosIP))) {
@@ -93,7 +92,7 @@ public class InetUtils {
                     
                     if (!preferHostnameOverIP) {
                         preferHostnameOverIP = Boolean
-                                .parseBoolean(EnvUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
+                                .parseBoolean(ApplicationUtils.getProperty(PREFER_HOSTNAME_OVER_IP));
                     }
                     
                     if (preferHostnameOverIP) {

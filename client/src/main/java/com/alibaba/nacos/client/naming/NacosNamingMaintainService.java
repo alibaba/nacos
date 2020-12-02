@@ -60,7 +60,7 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         ValidatorUtils.checkInitParam(properties);
         namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
-        InitUtils.initWebRootContext(properties);
+        InitUtils.initWebRootContext();
         ServerListManager serverListManager = new ServerListManager(properties);
         serverProxy = new NamingHttpClientProxy(namespace, serverListManager, properties, null);
     }

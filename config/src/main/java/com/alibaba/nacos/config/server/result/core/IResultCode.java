@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.utils;
-
-import com.alibaba.nacos.common.utils.StringUtils;
+package com.alibaba.nacos.config.server.result.core;
 
 /**
- * Context path Util.
+ * IResultCode.
  *
- * @author Wei.Wang
+ * @author klw
+ * @ClassName: IResultCode
+ * @Description: result code enum needs to be implemented this interface
+ * @date 2019/6/28 14:44
  */
-public class ContextPathUtil {
-    
-    private static final String ROOT_WEB_CONTEXT_PATH = "/";
+@Deprecated
+public interface IResultCode {
     
     /**
-     * normalize context path.
+     * Get the result code.
      *
-     * @param contextPath origin context path
-     * @return normalized context path
+     * @return code value.
      */
-    public static String normalizeContextPath(String contextPath) {
-        if (StringUtils.isBlank(contextPath) || ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
-            return StringUtils.EMPTY;
-        }
-        return contextPath.startsWith("/") ? contextPath : "/" + contextPath;
-    }
+    int getCode();
+    
+    /**
+     * Get the result code's message.
+     *
+     * @return code's message.
+     */
+    String getCodeMsg();
 }

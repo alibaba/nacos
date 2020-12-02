@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.env.OriginTrackedMapPropertySource;
 import org.springframework.boot.env.PropertySourceLoader;
@@ -56,7 +57,7 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
         properties.putAll(tmp);
         
         try {
-            WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
+            WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), new FileWatcher() {
                 @Override
                 public void onChange(FileChangeEvent event) {
                     try {

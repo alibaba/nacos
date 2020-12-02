@@ -22,7 +22,7 @@ import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.apache.commons.collections.CollectionUtils;
@@ -83,7 +83,7 @@ public class DistroMapper extends MemberChangeListener {
     public boolean responsible(String responsibleTag) {
         final List<String> servers = healthyList;
         
-        if (!switchDomain.isDistroEnabled() || EnvUtil.getStandaloneMode()) {
+        if (!switchDomain.isDistroEnabled() || ApplicationUtils.getStandaloneMode()) {
             return true;
         }
         
@@ -92,8 +92,8 @@ public class DistroMapper extends MemberChangeListener {
             return false;
         }
         
-        int index = servers.indexOf(EnvUtil.getLocalAddress());
-        int lastIndex = servers.lastIndexOf(EnvUtil.getLocalAddress());
+        int index = servers.indexOf(ApplicationUtils.getLocalAddress());
+        int lastIndex = servers.lastIndexOf(ApplicationUtils.getLocalAddress());
         if (lastIndex < 0 || index < 0) {
             return true;
         }
@@ -112,16 +112,16 @@ public class DistroMapper extends MemberChangeListener {
         final List<String> servers = healthyList;
         
         if (CollectionUtils.isEmpty(servers) || !switchDomain.isDistroEnabled()) {
-            return EnvUtil.getLocalAddress();
+            return ApplicationUtils.getLocalAddress();
         }
         
         try {
             int index = distroHash(responsibleTag) % servers.size();
             return servers.get(index);
         } catch (Throwable e) {
-            Loggers.SRV_LOG.warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + EnvUtil
+            Loggers.SRV_LOG.warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + ApplicationUtils
                     .getLocalAddress(), e);
-            return EnvUtil.getLocalAddress();
+            return ApplicationUtils.getLocalAddress();
         }
     }
     

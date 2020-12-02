@@ -41,7 +41,7 @@ import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
@@ -50,7 +50,6 @@ import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.closure.ReadIndexClosure;
 import com.alipay.sofa.jraft.conf.Configuration;
-import com.alipay.sofa.jraft.core.CliServiceImpl;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.entity.Task;
 import com.alipay.sofa.jraft.error.RaftError;
@@ -191,8 +190,9 @@ public class JRaftServer {
         
         CliOptions cliOptions = new CliOptions();
         
+        this.cliClientService = new CliClientServiceImpl();
+        this.cliClientService.init(cliOptions);
         this.cliService = RaftServiceFactory.createAndInitCliService(cliOptions);
-        this.cliClientService = (CliClientServiceImpl) ((CliServiceImpl) this.cliService).getCliClientService();
     }
     
     synchronized void start() {
@@ -233,7 +233,7 @@ public class JRaftServer {
             return;
         }
         
-        final String parentPath = Paths.get(EnvUtil.getNacosHome(), "data/protocol/raft").toString();
+        final String parentPath = Paths.get(ApplicationUtils.getNacosHome(), "data/protocol/raft").toString();
         
         for (RequestProcessor4CP processor : processors) {
             final String groupName = processor.group();

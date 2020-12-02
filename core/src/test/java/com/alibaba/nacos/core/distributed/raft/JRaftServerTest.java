@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -41,7 +41,7 @@ public class JRaftServerTest {
     
     @BeforeClass
     public static void beforeClass() {
-        EnvUtil.setEnvironment(new MockEnvironment());
+        ApplicationUtils.injectEnvironment(new MockEnvironment());
     }
     
     @Before

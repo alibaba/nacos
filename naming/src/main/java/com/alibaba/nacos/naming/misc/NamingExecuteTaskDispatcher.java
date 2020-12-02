@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.task.engine.NacosExecuteTaskExecuteEngine;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 /**
  * Naming execute task dispatcher.
@@ -32,7 +32,7 @@ public class NamingExecuteTaskDispatcher {
     private final NacosExecuteTaskExecuteEngine executeEngine;
     
     private NamingExecuteTaskDispatcher() {
-        executeEngine = new NacosExecuteTaskExecuteEngine(EnvUtil.FUNCTION_MODE_NAMING, Loggers.SRV_LOG);
+        executeEngine = new NacosExecuteTaskExecuteEngine(ApplicationUtils.FUNCTION_MODE_NAMING, Loggers.SRV_LOG);
     }
     
     public static NamingExecuteTaskDispatcher getInstance() {

@@ -22,7 +22,6 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -65,11 +64,6 @@ public class ClusterVersionJudgement {
     }
     
     protected void runVersionListener() {
-        // Single machine mode, do upgrade operation directly.
-        if (EnvUtil.getStandaloneMode()) {
-            notifyAllListener();
-            return;
-        }
         try {
             judge();
         } finally {
@@ -78,7 +72,6 @@ public class ClusterVersionJudgement {
     }
     
     protected void judge() {
-        
         Collection<Member> members = memberManager.allMembers();
         final String oldVersion = "1.4.0";
         boolean allMemberIsNewVersion = true;
@@ -90,17 +83,13 @@ public class ClusterVersionJudgement {
         }
         // can only trigger once
         if (allMemberIsNewVersion && !this.allMemberIsNewVersion) {
-            notifyAllListener();
+            this.allMemberIsNewVersion = true;
+            Collections.sort(observers);
+            for (ConsumerWithPriority consumer : observers) {
+                consumer.consumer.accept(true);
+            }
+            observers.clear();
         }
-    }
-    
-    private void notifyAllListener() {
-        this.allMemberIsNewVersion = true;
-        Collections.sort(observers);
-        for (ConsumerWithPriority consumer : observers) {
-            consumer.consumer.accept(true);
-        }
-        observers.clear();
     }
     
     public boolean allMemberIsNewVersion() {

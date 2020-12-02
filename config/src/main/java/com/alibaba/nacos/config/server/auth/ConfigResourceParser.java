@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ReflectUtils;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,7 +42,7 @@ public class ConfigResourceParser implements ResourceParser {
         String dataId = null;
         if (requestObj instanceof HttpServletRequest) {
             HttpServletRequest req = (HttpServletRequest) requestObj;
-            namespaceId = namespaceId = NamespaceUtil.processNamespaceParameter(req.getParameter("tenant"));
+            namespaceId = req.getParameter("tenant");
             groupName = req.getParameter("group");
             dataId = req.getParameter("dataId");
         } else if (requestObj instanceof Request) {

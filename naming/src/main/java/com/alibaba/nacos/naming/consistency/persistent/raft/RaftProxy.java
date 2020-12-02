@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.common.utils.IPUtil;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import org.springframework.http.HttpMethod;
@@ -46,9 +46,9 @@ public class RaftProxy {
     public void proxyGet(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
         if (!IPUtil.containsPort(server)) {
-            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            server = server + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         
         RestResult<String> result = HttpClient.httpGet(url, null, params);
         if (!result.ok()) {
@@ -68,9 +68,9 @@ public class RaftProxy {
     public void proxy(String server, String api, Map<String, String> params, HttpMethod method) throws Exception {
         // do proxy
         if (!IPUtil.containsPort(server)) {
-            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            server = server + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         RestResult<String> result;
         switch (method) {
             case GET:
@@ -104,9 +104,9 @@ public class RaftProxy {
             throws Exception {
         // do proxy
         if (!IPUtil.containsPort(server)) {
-            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            server = server + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         
         RestResult<String> result = HttpClient.httpPostLarge(url, headers, content);
         if (!result.ok()) {
