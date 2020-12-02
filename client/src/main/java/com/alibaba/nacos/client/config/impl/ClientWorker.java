@@ -182,8 +182,12 @@ public class ClientWorker implements Closeable {
      */
     public CacheData addCacheDataIfAbsent(String dataId, String group) {
         String key = GroupKey.getKey(dataId, group);
-        
-        CacheData cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
+        CacheData cacheData = cacheMap.get(key);
+        if (cacheData != null) {
+            return cacheData;
+        }
+    
+        cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
         // multiple listeners on the same dataid+group and race condition
         CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
         
@@ -212,8 +216,12 @@ public class ClientWorker implements Closeable {
      */
     public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
         String key = GroupKey.getKeyTenant(dataId, group, tenant);
-        
-        CacheData cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+        CacheData cacheData = cacheMap.get(key);
+        if (cacheData != null) {
+            return cacheData;
+        }
+    
+        cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
         // multiple listeners on the same dataid+group and race condition
         CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
         if (lastCacheData == null) {
