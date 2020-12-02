@@ -49,7 +49,7 @@ public class LogUtil {
      */
     public static final Logger DUMP_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.dumpLog");
     
-    public static final Logger MEMORY_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.monitorLog");
+    public static final Logger MONITOR_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.monitorLog");
     
     public static final Logger CLIENT_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.clientLog");
     
@@ -76,7 +76,7 @@ public class LogUtil {
                 ((ch.qos.logback.classic.Logger) DUMP_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-memory":
-                ((ch.qos.logback.classic.Logger) MEMORY_LOG).setLevel(Level.valueOf(level));
+                ((ch.qos.logback.classic.Logger) MONITOR_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-client-request":
                 ((ch.qos.logback.classic.Logger) CLIENT_LOG).setLevel(Level.valueOf(level));

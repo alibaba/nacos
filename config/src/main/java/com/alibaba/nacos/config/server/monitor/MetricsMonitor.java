@@ -45,6 +45,8 @@ public class MetricsMonitor {
     
     private static AtomicInteger dumpTask = new AtomicInteger();
     
+    private static AtomicInteger delayNotifyTask = new AtomicInteger();
+    
     static {
         List<Tag> tags = new ArrayList<Tag>();
         tags.add(new ImmutableTag("module", "config"));
@@ -76,6 +78,13 @@ public class MetricsMonitor {
         tags.add(new ImmutableTag("name", "dumpTask"));
         
         Metrics.gauge("nacos_monitor", tags, dumpTask);
+    
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "delayNotifyTask"));
+    
+        Metrics.gauge("nacos_monitor", tags, delayNotifyTask);
+        
     }
     
     public static AtomicInteger getConfigMonitor() {
@@ -100,6 +109,10 @@ public class MetricsMonitor {
     
     public static AtomicInteger getDumpTaskMonitor() {
         return dumpTask;
+    }
+    
+    public static AtomicInteger getDelayNotifyTaskMonitor() {
+        return delayNotifyTask;
     }
     
     public static Timer getNotifyRtTimer() {

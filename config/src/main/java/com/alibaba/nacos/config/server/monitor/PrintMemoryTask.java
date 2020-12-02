@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.monitor;
 import com.alibaba.nacos.config.server.service.ClientTrackService;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.MONITOR_LOG;
 
 /**
  * Print memory task.
@@ -33,7 +33,7 @@ public class PrintMemoryTask implements Runnable {
         int groupCount = ConfigCacheService.groupCount();
         int subClientCount = ClientTrackService.subscribeClientCount();
         long subCount = ClientTrackService.subscriberCount();
-        MEMORY_LOG.info("groupCount = {}, subscriberClientCount = {}, subscriberCount = {}", groupCount, subClientCount,
+        MONITOR_LOG.info("groupCount = {}, subscriberClientCount = {}, subscriberCount = {}", groupCount, subClientCount,
                 subCount);
         MetricsMonitor.getConfigCountMonitor().set(groupCount);
     }

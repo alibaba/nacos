@@ -51,7 +51,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.MONITOR_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
@@ -384,7 +384,7 @@ public class LongPollingService {
         
         @Override
         public void run() {
-            MEMORY_LOG.info("[long-pulling] client count " + allSubs.size());
+            MONITOR_LOG.info("[long-pulling] client count " + allSubs.size());
             MetricsMonitor.getLongPollingMonitor().set(allSubs.size());
         }
     }

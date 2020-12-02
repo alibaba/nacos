@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.monitor;
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.MONITOR_LOG;
 
 /**
  * NotifyTaskQueueMonitorTask.
@@ -37,7 +37,7 @@ public class NotifyTaskQueueMonitorTask implements Runnable {
     @Override
     public void run() {
         int size = ConfigExecutor.asyncNotifyQueueSize();
-        MEMORY_LOG.info("toNotifyTaskSize = {}", size);
+        MONITOR_LOG.info("toNotifyTaskSize = {}", size);
         MetricsMonitor.getNotifyTaskMonitor().set(size);
     }
 }
