@@ -143,10 +143,7 @@ public class CatalogController {
             @RequestParam(name = "serviceNameParam", defaultValue = StringUtils.EMPTY) String serviceName,
             @RequestParam(name = "groupNameParam", defaultValue = StringUtils.EMPTY) String groupName,
             @RequestParam(name = "instance", defaultValue = StringUtils.EMPTY) String containedInstance,
-            @RequestParam(required = false) boolean hasIpCount) {
-        
-        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ? StringUtils.EMPTY
-                : NamingUtils.getGroupedNameOptional(serviceName, groupName);
+            @RequestParam(required = false) boolean hasIpCount) throws NacosException {
         
         if (withInstances) {
             return catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
