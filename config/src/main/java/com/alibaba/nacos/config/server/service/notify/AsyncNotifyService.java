@@ -388,8 +388,6 @@ public class AsyncNotifyService {
                 if (current < task.getStartTimestamp()) {
                     continue;
                 }
-                task.incFailCount();
-                task.resetStartTimestamp();
                 Queue<NotifySingleTask> queue = new LinkedList<>();
                 queue.add(task);
                 AsyncTask asyncTask = new AsyncTask(queue);
