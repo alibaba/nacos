@@ -108,7 +108,7 @@ public class RaftOptionsBuilder {
         String readOnySafe = "ReadOnlySafe";
         String readOnlyLeaseBased = "ReadOnlyLeaseBased";
         
-        String val = config.getVal(RaftSysConstants.DEFAULT_READ_INDEX_TYPE);
+        String val = config.getVal(RaftSysConstants.RAFT_READ_INDEX_TYPE);
         
         if (StringUtils.isBlank(val) || StringUtils.equals(readOnySafe, val)) {
             return ReadOnlyOption.ReadOnlySafe;
@@ -117,8 +117,8 @@ public class RaftOptionsBuilder {
         if (StringUtils.equals(readOnlyLeaseBased, val)) {
             return ReadOnlyOption.ReadOnlyLeaseBased;
         }
-        throw new IllegalArgumentException(
-                "Illegal Raft system parameters => " + RaftSysConstants.DEFAULT_READ_INDEX_TYPE + " : [" + val + "]");
+        throw new IllegalArgumentException("Illegal Raft system parameters => ReadOnlyOption" + " : [" + val
+                + "], should be 'ReadOnlySafe' or 'ReadOnlyLeaseBased'");
         
     }
     

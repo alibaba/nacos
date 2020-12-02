@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -38,13 +39,13 @@ public class NamingResourceParser implements ResourceParser {
     
     @Override
     public String parseName(Object requestObj) {
-    
+        
         String namespaceId = null;
         String serviceName = null;
         String groupName = null;
         if (requestObj instanceof HttpServletRequest) {
             HttpServletRequest req = (HttpServletRequest) requestObj;
-            namespaceId = req.getParameter(CommonParams.NAMESPACE_ID);
+            namespaceId = NamespaceUtil.processNamespaceParameter(req.getParameter(CommonParams.NAMESPACE_ID));
             serviceName = req.getParameter(CommonParams.SERVICE_NAME);
             groupName = req.getParameter(CommonParams.GROUP_NAME);
         } else if (requestObj instanceof Request) {

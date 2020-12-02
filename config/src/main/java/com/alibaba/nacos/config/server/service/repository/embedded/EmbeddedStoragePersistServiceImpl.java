@@ -72,6 +72,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -88,6 +89,7 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_LIST_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.TENANT_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.MAP_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
@@ -1116,16 +1118,30 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<String> getTenantIdList(int page, int pageSize) {
-        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?";
+        PaginationHelper<Map<String, Object>> helper = createPaginationHelper();
+        
+        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?,?";
         int from = (page - 1) * pageSize;
-        return databaseOperate.queryMany(sql, new Object[] {from, pageSize}, String.class);
+        
+        Page<Map<String, Object>> pageList = helper
+                .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
+        return pageList.getPageItems().stream()
+                .map(map -> String.valueOf(map.get("TENANT_ID")))
+                .collect(Collectors.toList());
     }
     
     @Override
     public List<String> getGroupIdList(int page, int pageSize) {
-        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?, ?";
+        PaginationHelper<Map<String, Object>> helper = createPaginationHelper();
+        
+        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?,?";
         int from = (page - 1) * pageSize;
-        return databaseOperate.queryMany(sql, new Object[] {from, pageSize}, String.class);
+        
+        Page<Map<String, Object>> pageList = helper
+                .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
+        return pageList.getPageItems().stream()
+                .map(map -> String.valueOf(map.get("GROUP_ID")))
+                .collect(Collectors.toList());
     }
     
     @Override

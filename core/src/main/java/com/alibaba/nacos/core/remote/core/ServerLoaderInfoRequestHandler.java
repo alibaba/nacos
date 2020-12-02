@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -51,8 +51,8 @@ public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderI
         serverLoaderInfoResponse
                 .putMetricsValue("sdkConCount", String.valueOf(connectionManager.currentClientsCount(filter)));
         serverLoaderInfoResponse.putMetricsValue("countLimit", String.valueOf(connectionManager.countLimited()));
-        serverLoaderInfoResponse.putMetricsValue("load", String.valueOf(ApplicationUtils.getLoad()));
-        serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(ApplicationUtils.getCPU()));
+        serverLoaderInfoResponse.putMetricsValue("load", String.valueOf(EnvUtil.getLoad()));
+        serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(EnvUtil.getCPU()));
         
         return serverLoaderInfoResponse;
     }
