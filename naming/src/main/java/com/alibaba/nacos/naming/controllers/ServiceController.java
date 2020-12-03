@@ -42,7 +42,6 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
-import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -61,7 +60,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -213,28 +211,11 @@ public class ServiceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
-        
-        Map<String, Service> serviceMap = serviceManager.chooseServiceMap(namespaceId);
-        
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
-        if (serviceMap == null || serviceMap.isEmpty()) {
-            result.replace("doms", JacksonUtils.transferToJsonNode(Collections.emptyList()));
-            result.put("count", 0);
-            return result;
-        }
-        
-        serviceMap = ServiceUtil.selectServiceWithGroupName(serviceMap, groupName);
-        serviceMap = ServiceUtil.selectServiceBySelector(serviceMap, selectorString);
-        if (!Constants.ALL_PATTERN.equals(groupName)) {
-            serviceMap.entrySet()
-                    .removeIf(entry -> !entry.getKey().startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
-        }
-        List<String> serviceNameList = ServiceUtil.pageServiceName(pageNo, pageSize, serviceMap);
-        
+        List<String> serviceNameList = serviceOperatorV2
+                .listService(namespaceId, groupName, selectorString, pageSize, pageNo);
         result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
         result.put("count", serviceNameList.size());
-        
         return result;
         
     }

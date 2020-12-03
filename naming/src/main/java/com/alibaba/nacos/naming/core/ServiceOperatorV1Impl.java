@@ -16,10 +16,16 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import org.springframework.stereotype.Component;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of service operator for v1.x.
@@ -49,5 +55,21 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
         serviceV1.recalculateChecksum();
         serviceV1.validate();
         serviceManager.addOrReplaceService(serviceV1);
+    }
+    
+    @Override
+    public List<String> listService(String namespaceId, String groupName, String selector, int pageSize, int pageNo)
+            throws NacosException {
+        Map<String, com.alibaba.nacos.naming.core.Service> serviceMap = serviceManager.chooseServiceMap(namespaceId);
+        if (serviceMap == null || serviceMap.isEmpty()) {
+            return Collections.emptyList();
+        }
+        serviceMap = ServiceUtil.selectServiceWithGroupName(serviceMap, groupName);
+        serviceMap = ServiceUtil.selectServiceBySelector(serviceMap, selector);
+        if (!Constants.ALL_PATTERN.equals(groupName)) {
+            serviceMap.entrySet()
+                    .removeIf(entry -> !entry.getKey().startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
+        }
+        return ServiceUtil.pageServiceName(pageNo, pageSize, serviceMap);
     }
 }
