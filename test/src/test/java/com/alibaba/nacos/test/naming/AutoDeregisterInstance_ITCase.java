@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.test.utils.NamingTestUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,7 +70,7 @@ public class AutoDeregisterInstance_ITCase {
         }
         
         while (true) {
-            if (!"UP".equals(naming.getServerStatus()) || ApplicationUtils.getPort() == 0) {
+            if (!"UP".equals(naming.getServerStatus()) || EnvUtil.getPort() == 0) {
                 Thread.sleep(1000L);
                 continue;
             }

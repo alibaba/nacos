@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
@@ -169,7 +169,7 @@ public class MemberUtils {
         manager.getMemberAddressInfos().remove(member.getAddress());
         cloneMember.setState(NodeState.SUSPICIOUS);
         cloneMember.setFailAccessCnt(member.getFailAccessCnt() + 1);
-        int maxFailAccessCnt = ApplicationUtils.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
+        int maxFailAccessCnt = EnvUtil.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
         
         // If the number of consecutive failures to access the target node reaches
         // a maximum, or the link request is rejected, the state is directly down
@@ -192,7 +192,7 @@ public class MemberUtils {
             for (String member : simpleMembers(members)) {
                 builder.append(member).append(StringUtils.LF);
             }
-            ApplicationUtils.writeClusterConf(builder.toString());
+            EnvUtil.writeClusterConf(builder.toString());
         } catch (Throwable ex) {
             Loggers.CLUSTER.error("cluster member node persistence failed : {}", ExceptionUtil.getAllExceptionMsg(ex));
         }
