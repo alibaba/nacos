@@ -144,8 +144,9 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         String clientId = ip + ":" + port;
+        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
         IpPortBasedClient client = (IpPortBasedClient) clientManager.getClient(clientId);
-        if (null == client) {
+        if (null == client || !client.getAllPublishedService().contains(service)) {
             if (null == clientBeat) {
                 return NamingResponseCode.RESOURCE_NOT_FOUND;
             }
@@ -161,7 +162,6 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             registerInstance(namespaceId, serviceName, instance);
             client = (IpPortBasedClient) clientManager.getClient(clientId);
         }
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.SERVER_ERROR,
                     "service not found: " + serviceName + "@" + namespaceId);
