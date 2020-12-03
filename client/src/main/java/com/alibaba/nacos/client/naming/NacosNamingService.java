@@ -78,7 +78,7 @@ public class NacosNamingService implements NamingService {
         ValidatorUtils.checkInitParam(properties);
         this.namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
-        InitUtils.initWebRootContext();
+        InitUtils.initWebRootContext(properties);
         initLogName(properties);
         
         this.changeNotifier = new InstancesChangeNotifier();

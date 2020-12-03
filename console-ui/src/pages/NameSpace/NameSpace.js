@@ -308,7 +308,7 @@ class NameSpace extends React.Component {
               <div style={{ textAlign: 'right', marginBottom: 10 }}>
                 <Button
                   type="primary"
-                  style={{ marginRight: 0, marginTop: 10 }}
+                  style={{ marginRight: 20, marginTop: 10 }}
                   onClick={this.addNameSpace.bind(this)}
                 >
                   {namespaceAdd}
