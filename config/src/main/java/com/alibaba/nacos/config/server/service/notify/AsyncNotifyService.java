@@ -183,6 +183,8 @@ public class AsyncNotifyService {
         
         private boolean isRetry;
         
+        private String key;
+        
         public NotifySingleTask(String dataId, String group, String tenant, long lastModified, String target) {
             this(dataId, group, tenant, lastModified, target, false);
         }
@@ -247,8 +249,11 @@ public class AsyncNotifyService {
         }
         
         private String getSingleTaskKey() {
-            return getTargetIP() + KEY_SPLITER + getDataId() + KEY_SPLITER + getGroup() + KEY_SPLITER + getTenant()
-                    + KEY_SPLITER + isBeta;
+            if (key == null) {
+                key = getTargetIP() + KEY_SPLITER + getDataId() + KEY_SPLITER + getGroup() + KEY_SPLITER + getTenant()
+                        + KEY_SPLITER + isBeta;
+            }
+            return key;
         }
         
         public long getStartTimestamp() {
