@@ -230,6 +230,8 @@ public class ClientWorker implements Closeable {
                 String[] ct = getServerConfig(dataId, group, tenant, 3000L);
                 cacheData.setContent(ct[0]);
             }
+            int taskId = cacheMap.size() / (int) ParamUtil.getPerTaskConfigSize();
+            cacheData.setTaskId(taskId);
             lastCacheData = cacheData;
         }
         
