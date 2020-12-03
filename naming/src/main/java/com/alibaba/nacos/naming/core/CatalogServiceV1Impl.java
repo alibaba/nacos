@@ -105,7 +105,7 @@ public class CatalogServiceV1Impl implements CatalogService {
     public Object pageListService(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
             String instancePattern, boolean ignoreEmptyService) throws NacosException {
         String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ? StringUtils.EMPTY
-                : NamingUtils.getGroupedName(serviceName, groupName);
+                : NamingUtils.getGroupedNameOptional(serviceName, groupName);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
         List<Service> services = new ArrayList<>();
@@ -140,7 +140,7 @@ public class CatalogServiceV1Impl implements CatalogService {
     public Object pageListServiceDetail(String namespaceId, String groupName, String serviceName, int pageNo,
             int pageSize) throws NacosException {
         String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ? StringUtils.EMPTY
-                : NamingUtils.getGroupedName(serviceName, groupName);
+                : NamingUtils.getGroupedNameOptional(serviceName, groupName);
         List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
         List<Service> services = new ArrayList<>(8);
         serviceManager.getPagedService(namespaceId, pageNo, pageSize, param, StringUtils.EMPTY, services, false);
