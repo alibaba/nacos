@@ -110,7 +110,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "service not found, namespace: " + namespaceId + ", service: " + service);
         }
-        metadataOperateService.updateInstanceMetadata(service, instance.getIp(), buildMetadata(instance));
+        metadataOperateService.updateInstanceMetadata(service, instance.toInetAddr(), buildMetadata(instance));
     }
     
     private InstanceMetadata buildMetadata(Instance instance) {

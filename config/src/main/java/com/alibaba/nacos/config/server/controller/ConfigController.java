@@ -21,9 +21,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.model.RestResultUtils;
-import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.MapUtil;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
@@ -43,10 +43,8 @@ import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.MD5Util;
-import com.alibaba.nacos.config.server.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -314,7 +312,7 @@ public class ConfigController {
             throw new IllegalArgumentException("invalid probeModify");
         }
         request.removeAttribute("body");
-
+        
         probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
         
         Map<String, String> clientMd5Map;
@@ -635,7 +633,7 @@ public class ConfigController {
             return RestResultUtils.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
         }
         configBeansList.removeAll(Collections.singleton(null));
-    
+        
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
