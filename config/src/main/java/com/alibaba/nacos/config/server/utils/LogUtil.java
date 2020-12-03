@@ -75,7 +75,7 @@ public class LogUtil {
             case "config-dump":
                 ((ch.qos.logback.classic.Logger) DUMP_LOG).setLevel(Level.valueOf(level));
                 break;
-            case "config-memory":
+            case "config-monitor":
                 ((ch.qos.logback.classic.Logger) MONITOR_LOG).setLevel(Level.valueOf(level));
                 break;
             case "config-client-request":
