@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.result.code;
 
-import com.alibaba.nacos.config.server.result.core.IResultCode;
+import com.alibaba.nacos.common.model.core.IResultCode;
 
 /**
  * ResultCodeEnum.

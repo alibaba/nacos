@@ -27,6 +27,7 @@ import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
@@ -114,7 +115,7 @@ public class MergeDatumService {
         if (!PropertyUtil.isEmbeddedStorage()) {
             return true;
         }
-        if (ApplicationUtils.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) {
             return true;
         }
         ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);

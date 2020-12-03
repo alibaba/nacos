@@ -20,7 +20,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,7 +40,7 @@ public class ClusterVersionJudgementTest {
     
     @BeforeClass
     public static void beforeClass() {
-        ApplicationUtils.injectEnvironment(new MockEnvironment());
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Before
