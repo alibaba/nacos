@@ -136,8 +136,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtils.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
-        this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE, ApplicationUtils
-                .getProperty(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE, ConnectionType.GRPC.getType()));
+        this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE,
+                EnvUtil.getProperty(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE, ConnectionType.GRPC.getType()));
         serverList.put(self.getAddress(), self);
         
         // register NodeChangeEvent publisher to NotifyManager

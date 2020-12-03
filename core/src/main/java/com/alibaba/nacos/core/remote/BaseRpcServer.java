@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
@@ -44,14 +44,14 @@ public abstract class BaseRpcServer {
      */
     @PostConstruct
     public void start() throws Exception {
-    
+        
         Loggers.REMOTE.info("Nacos {} Rpc server starting at port {}", getClass().getSimpleName(),
-                (ApplicationUtils.getPort() + rpcPortOffset()));
-    
+                (EnvUtil.getPort() + rpcPortOffset()));
+        
         startServer();
-    
+        
         Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", getClass().getSimpleName(),
-                (ApplicationUtils.getPort() + rpcPortOffset()));
+                (EnvUtil.getPort() + rpcPortOffset()));
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -96,13 +96,13 @@ public abstract class BaseRpcServer {
      * @return
      */
     public int getServicePort() {
-        return ApplicationUtils.getPort() + rpcPortOffset();
+        return EnvUtil.getPort() + rpcPortOffset();
     }
     
     /**
      * Stop Server.
      *
-     * @throws excetpion throw if stop server fail.
+     * @throws Exception throw if stop server fail.
      */
     public final void stopServer() throws Exception {
         shundownServer();
