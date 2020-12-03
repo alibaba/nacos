@@ -464,8 +464,6 @@ public class RaftCore implements Closeable {
         masterTask.cancel(true);
         Loggers.RAFT.warn("stop old raft protocol task for heartbeat task");
         heartbeatTask.cancel(true);
-        Loggers.RAFT.warn("clean old cache datum for old raft");
-        datums.clear();
     }
     
     public class MasterElection implements Runnable {
