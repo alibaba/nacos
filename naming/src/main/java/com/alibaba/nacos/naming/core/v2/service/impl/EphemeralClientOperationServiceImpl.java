@@ -77,7 +77,9 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     
     private InstancePublishInfo getPublishInfo(Instance instance) {
         InstancePublishInfo result = new InstancePublishInfo(instance.getIp(), instance.getPort());
-        result.getExtendDatum().putAll(instance.getMetadata());
+        if (null != instance.getMetadata() && !instance.getMetadata().isEmpty()) {
+            result.getExtendDatum().putAll(instance.getMetadata());
+        }
         String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
                 : instance.getClusterName();
         result.setHealthy(instance.isHealthy());

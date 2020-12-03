@@ -30,6 +30,15 @@ public class MetadataEvent extends SlowEvent {
     
     private final Service service;
     
+    /**
+     * Mark this metadata whether is expired.
+     *
+     * <p>If value is {@code true}, means that the original object (service or instance) has been removed, so the
+     * metadata has been expired, need be delete.
+     *
+     * <p>If value is {code false}, means that the original object (service or instance) is registered, The metadata
+     * should stop to delete.
+     */
     private final boolean expired;
     
     public MetadataEvent(Service service, boolean expired) {
@@ -55,16 +64,16 @@ public class MetadataEvent extends SlowEvent {
     }
     
     public static class InstanceMetadataEvent extends MetadataEvent {
-    
+        
         private static final long serialVersionUID = 5781016126117637520L;
-    
+        
         private final String instanceId;
         
         public InstanceMetadataEvent(Service service, String instanceId, boolean expired) {
             super(service, expired);
             this.instanceId = instanceId;
         }
-    
+        
         public String getInstanceId() {
             return instanceId;
         }

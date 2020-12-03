@@ -44,7 +44,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
     public void run() {
         try {
             ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
-            serviceInfo = ServiceUtil.selectInstances(serviceInfo, true, true);
+            serviceInfo = ServiceUtil.selectInstances(serviceInfo, false, true);
             for (String each : delayTaskEngine.getIndexesManager().getAllClientsSubscribeService(service)) {
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
                 delayTaskEngine.getPushExecuteService().doPush(each, subscriber, handleClusterData(serviceInfo, subscriber));

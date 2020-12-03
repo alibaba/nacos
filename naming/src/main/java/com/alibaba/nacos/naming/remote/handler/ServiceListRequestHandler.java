@@ -46,6 +46,7 @@ public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest
         ServiceListResponse result = ServiceListResponse.buildSuccessResponse(0, new LinkedList<>());
         if (!serviceSet.isEmpty()) {
             Collection<String> serviceNameSet = selectServiceWithGroupName(serviceSet, request.getGroupName());
+            // TODO select service by selector
             List<String> serviceNameList = ServiceUtil
                     .pageServiceName(request.getPageNo(), request.getPageSize(), serviceNameSet);
             result.setCount(serviceNameList.size());
