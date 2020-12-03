@@ -21,7 +21,14 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Implementation of service operator for v2.x.
@@ -44,5 +51,28 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
                     String.format("service %s not found!", service.getGroupedServiceName()));
         }
         metadataOperateService.updateServiceMetadata(service, metadata);
+    }
+    
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<String> listService(String namespaceId, String groupName, String selector, int pageSize, int pageNo)
+            throws NacosException {
+        Collection<Service> services = ServiceManager.getInstance().getSingletons(namespaceId);
+        if (services.isEmpty()) {
+            return Collections.EMPTY_LIST;
+        }
+        Collection<String> serviceNameSet = selectServiceWithGroupName(services, groupName);
+        // TODO select service by selector
+        return ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameSet);
+    }
+    
+    private Collection<String> selectServiceWithGroupName(Collection<Service> serviceSet, String groupName) {
+        Collection<String> result = new HashSet<>(serviceSet.size());
+        for (Service each : serviceSet) {
+            if (Objects.equals(groupName, each.getGroup())) {
+                result.add(each.getGroupedServiceName());
+            }
+        }
+        return result;
     }
 }
