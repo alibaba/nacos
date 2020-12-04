@@ -117,7 +117,7 @@ public class NamingMetadataOperateService {
     
     private void submitMetadataOperation(WriteRequest operationLog) {
         try {
-            Response response = cpProtocol.submit(operationLog);
+            Response response = cpProtocol.write(operationLog);
             if (!response.getSuccess()) {
                 throw new NacosRuntimeException(NacosException.SERVER_ERROR,
                         "do metadata operation failed " + response.getErrMsg());
