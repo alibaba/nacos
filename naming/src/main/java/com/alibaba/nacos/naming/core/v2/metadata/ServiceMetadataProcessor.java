@@ -60,7 +60,7 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
         this.processType = TypeUtils.parameterize(MetadataOperation.class, ServiceMetadata.class);
         this.lock = new ReentrantReadWriteLock();
         this.readLock = lock.readLock();
-        protocolManager.getCpProtocol().addLogProcessors(Collections.singletonList(this));
+        protocolManager.getCpProtocol().addRequestProcessors(Collections.singletonList(this));
     }
     
     @Override
