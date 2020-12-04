@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfoEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -26,23 +29,18 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 /**
- * ConfigInfoWrapperMapStruct.
+ * Config KeyMapStruct.
  *
  * @author Nacos
  */
 @Mapper
-public interface ConfigInfoWrapperMapStruct {
+public interface ConfigKeyMapStruct {
     
-    ConfigInfoWrapperMapStruct INSTANCE = Mappers.getMapper(ConfigInfoWrapperMapStruct.class);
+    ConfigKeyMapStruct INSTANCE = Mappers.getMapper(ConfigKeyMapStruct.class);
     
-    List<ConfigInfoWrapper> convertConfigInfoWrapperList(List<ConfigInfoEntity> list);
+    List<ConfigKey> convertConfigKeyList(List<ConfigInfoEntity> list);
     
-    @Mappings({
-            @Mapping(source = "groupId", target = "group"),
-            @Mapping(source = "tenantId", target = "tenant"),
-            @Mapping(target = "lastModified",
-                    expression = "java(configInfoEntity.getGmtModified().getTime())"),
-    })
-    ConfigInfoWrapper convertConfigInfoWrapper(ConfigInfoEntity configInfoEntity);
+    @Mapping(target = "group", source = "groupId")
+    ConfigKey convertConfigKey(ConfigInfoEntity entity);
     
 }
