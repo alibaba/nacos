@@ -24,10 +24,10 @@ import InstanceTable from './InstanceTable';
 import { getParameter } from 'utils/nacosutil';
 import MonacoEditor from 'components/MonacoEditor';
 import { MONACO_READONLY_OPTIONS, METADATA_ENTER } from './constant';
+import InstanceFilter from './instanceFilter';
 import './ServiceDetail.scss';
 
 const FormItem = Form.Item;
-const { Group: TagGroup, Closeable: CloseableTag } = Tag;
 const pageFormLayout = {
   labelCol: { fixedSpan: 10 },
   wrapperCol: { span: 14 },
@@ -57,6 +57,7 @@ class ServiceDetail extends React.Component {
       service: {},
       pageSize: 10,
       pageNum: {},
+      filter: {},
     };
   }
 
@@ -176,27 +177,7 @@ class ServiceDetail extends React.Component {
                 </Button>
               }
             >
-              <Form inline size="small">
-                <FormItem label={'元数据过滤'}>
-                  <FormItem>
-                    <Input placeholder={'请输入key'} />
-                  </FormItem>
-                  <FormItem>
-                    <Input placeholder={'请输入value'} />
-                  </FormItem>
-                </FormItem>
-              </Form>
-              <TagGroup>
-                <CloseableTag size="medium">name : inst1</CloseableTag>
-                <CloseableTag size="medium">name : inst1</CloseableTag>
-                <CloseableTag size="medium">label:dataServer</CloseableTag>
-                <CloseableTag size="medium">label:dataServer</CloseableTag>
-                <CloseableTag size="medium">ip : 192.168.0.233</CloseableTag>
-                <CloseableTag size="medium">name : inst1</CloseableTag>
-                <CloseableTag size="medium">name : inst1</CloseableTag>
-                <CloseableTag size="medium">name : inst1</CloseableTag>
-              </TagGroup>
-
+              <InstanceFilter />
               <InstanceTable
                 clusterName={cluster.name}
                 serviceName={serviceName}
