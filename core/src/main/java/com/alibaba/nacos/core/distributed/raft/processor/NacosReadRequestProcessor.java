@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft.processor;
 
-import com.alibaba.nacos.consistency.ProtoMessageUtil;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
