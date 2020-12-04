@@ -22,9 +22,9 @@ const { Group: TagGroup, Closeable: CloseableTag } = Tag;
 const FormItem = Form.Item;
 
 export default class InstanceFilter extends React.Component {
-  // PropTypes = {
-  //     getFilter: PropTypes.func.isRequired
-  // }
+  static propTypes = {
+    setFilters: PropTypes.func.isRequired,
+  };
 
   constructor(props) {
     super(props);
@@ -40,10 +40,12 @@ export default class InstanceFilter extends React.Component {
     const { key, value, filters } = this.state;
 
     if (key && value) {
+      const newFilters = new Map(Array.from(filters)).set(key, value);
       this.setState({
-        filters: new Map(Array.from(filters)).set(key, value),
+        filters: newFilters,
       });
       this.clearInput();
+      this.props.setFilters(newFilters);
     }
   };
 
@@ -52,6 +54,7 @@ export default class InstanceFilter extends React.Component {
     filters.delete(key);
 
     this.setState({ filters });
+    this.props.setFilters(filters);
   };
 
   clearInput = () => {

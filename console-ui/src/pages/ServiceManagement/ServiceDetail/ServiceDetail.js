@@ -57,7 +57,7 @@ class ServiceDetail extends React.Component {
       service: {},
       pageSize: 10,
       pageNum: {},
-      filter: {},
+      instanceFilters: new Map(),
     };
   }
 
@@ -96,9 +96,15 @@ class ServiceDetail extends React.Component {
     this.editClusterDialog.current.getInstance().show(cluster);
   }
 
+  setFilters = filters => {
+    this.setState({
+      instanceFilters: filters,
+    });
+  };
+
   render() {
     const { locale = {} } = this.props;
-    const { serviceName, groupName, loading, service = {}, clusters } = this.state;
+    const { serviceName, groupName, loading, service = {}, clusters, instanceFilters } = this.state;
     const { metadata = {}, selector = {} } = service;
     let metadataText = '';
     if (Object.keys(metadata).length) {
@@ -177,11 +183,12 @@ class ServiceDetail extends React.Component {
                 </Button>
               }
             >
-              <InstanceFilter />
+              <InstanceFilter setFilters={this.setFilters} />
               <InstanceTable
                 clusterName={cluster.name}
                 serviceName={serviceName}
                 groupName={groupName}
+                filters={instanceFilters}
               />
             </Card>
           ))}
