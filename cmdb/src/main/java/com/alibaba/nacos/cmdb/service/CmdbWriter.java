@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.cmdb.service;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * CMDB writer.
+ *
+ * @author nkorange
  * @since 0.7.0
  */
 public interface CmdbWriter {
+
 }

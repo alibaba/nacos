@@ -13,59 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.cmdb.core;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Switch and options.
+ *
+ * @author nkorange
  * @since 0.7.0
  */
 @Component
 public class SwitchAndOptions {
-
-    @Value("${nacos.cmdb.dumpTaskInterval}")
+    
+    @Value("${nacos.cmdb.dumpTaskInterval:3600}")
     private int dumpTaskInterval;
-
-    @Value("${nacos.cmdb.eventTaskInterval}")
+    
+    @Value("${nacos.cmdb.eventTaskInterval:10}")
     private int eventTaskInterval;
-
-    @Value("${nacos.cmdb.labelTaskInterval}")
+    
+    @Value("${nacos.cmdb.labelTaskInterval:300}")
     private int labelTaskInterval;
-
-    @Value("${nacos.cmdb.loadDataAtStart}")
+    
+    @Value("${nacos.cmdb.loadDataAtStart:false}")
     private boolean loadDataAtStart;
-
+    
     public int getDumpTaskInterval() {
         return dumpTaskInterval;
     }
-
-    public void setDumpTaskInterval(int dumpTaskInterval) {
-        this.dumpTaskInterval = dumpTaskInterval;
-    }
-
+    
     public int getEventTaskInterval() {
         return eventTaskInterval;
     }
-
-    public void setEventTaskInterval(int eventTaskInterval) {
-        this.eventTaskInterval = eventTaskInterval;
-    }
-
+    
     public int getLabelTaskInterval() {
         return labelTaskInterval;
     }
-
-    public void setLabelTaskInterval(int labelTaskInterval) {
-        this.labelTaskInterval = labelTaskInterval;
-    }
-
+    
     public boolean isLoadDataAtStart() {
         return loadDataAtStart;
-    }
-
-    public void setLoadDataAtStart(boolean loadDataAtStart) {
-        this.loadDataAtStart = loadDataAtStart;
     }
 }

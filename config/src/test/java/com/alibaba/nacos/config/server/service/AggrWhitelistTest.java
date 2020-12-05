@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service;
 
 import org.junit.Before;
@@ -24,32 +25,33 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 public class AggrWhitelistTest {
-
+    
     AggrWhitelist service;
-
+    
     @Before
     public void before() throws Exception {
         service = new AggrWhitelist();
     }
-
+    
     @Test
     public void testIsAggrDataId() {
         List<String> list = new ArrayList<String>();
         list.add("com.taobao.jiuren.*");
         list.add("NS_NACOS_SUBSCRIPTION_TOPIC_*");
         list.add("com.taobao.tae.AppListOnGrid-*");
-        service.compile(list);
-
-        assertEquals(false, service.isAggrDataId("com.abc"));
-        assertEquals(false, service.isAggrDataId("com.taobao.jiuren"));
-        assertEquals(false, service.isAggrDataId("com.taobao.jiurenABC"));
-        assertEquals(true, service.isAggrDataId("com.taobao.jiuren.abc"));
-        assertEquals(true, service.isAggrDataId("NS_NACOS_SUBSCRIPTION_TOPIC_abc"));
-        assertEquals(true, service.isAggrDataId("com.taobao.tae.AppListOnGrid-abc"));
+        AggrWhitelist.compile(list);
+        
+        assertFalse(AggrWhitelist.isAggrDataId("com.abc"));
+        assertFalse(AggrWhitelist.isAggrDataId("com.taobao.jiuren"));
+        assertFalse(AggrWhitelist.isAggrDataId("com.taobao.jiurenABC"));
+        assertTrue(AggrWhitelist.isAggrDataId("com.taobao.jiuren.abc"));
+        assertTrue(AggrWhitelist.isAggrDataId("NS_NACOS_SUBSCRIPTION_TOPIC_abc"));
+        assertTrue(AggrWhitelist.isAggrDataId("com.taobao.tae.AppListOnGrid-abc"));
     }
 }

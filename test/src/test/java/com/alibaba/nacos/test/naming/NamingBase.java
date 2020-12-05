@@ -15,25 +15,32 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.net.NamingHttpClientManager;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.test.base.HttpClient4Test;
+import org.apache.http.HttpStatus;
+import org.junit.Assert;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.pojo.Cluster;
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.Service;
-
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
-public class NamingBase {
+public class NamingBase extends HttpClient4Test {
 
+    private static final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
 
     public static final String TEST_DOM_1 = "nacos.test.1";
     public static final String TEST_IP_4_DOM_1 = "127.0.0.1";
     public static final String TEST_PORT_4_DOM_1 = "8080";
     public static final String TEST_PORT2_4_DOM_1 = "8888";
+    public static final String TEST_PORT3_4_DOM_1 = "80";
     public static final String TEST_TOKEN_4_DOM_1 = "abc";
     public static final String TEST_NEW_CLUSTER_4_DOM_1 = "TEST1";
 
@@ -43,9 +50,18 @@ public class NamingBase {
     public static final String TETS_TOKEN_4_DOM_2 = "xyz";
     public static final String TEST_SERVER_STATUS = "UP";
 
+    public static final String TEST_GROUP = "group";
+    public static final String TEST_GROUP_1 = "group1";
+    public static final String TEST_GROUP_2 = "group2";
+
+    public static final String TEST_NAMESPACE_1 = "namespace-1";
+    public static final String TEST_NAMESPACE_2 = "namespace-2";
+
     static final String NAMING_CONTROLLER_PATH = "/nacos/v1/ns";
 
     public static final int TEST_PORT = 8080;
+
+    public static final int TIME_OUT = 3000;
 
     public static String randomDomainName() {
         StringBuilder sb = new StringBuilder();
@@ -153,5 +169,34 @@ public class NamingBase {
             }
         }
         return true;
+    }
+
+    public static void prepareServer(int localPort) throws Exception{
+        prepareServer(localPort, "UP");
+    }
+
+    public static void prepareServer(int localPort, String status) throws Exception {
+        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
+
+        url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
+
+        result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
+    }
+
+    public static void destoryServer(int localPort) throws Exception{
+        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
+
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }
 }

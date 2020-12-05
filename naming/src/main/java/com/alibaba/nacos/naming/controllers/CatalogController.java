@@ -13,287 +13,297 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.Service;
-import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.core.DomainsManager;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
-import com.alibaba.nacos.naming.exception.NacosException;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.ClusterInfo;
 import com.alibaba.nacos.naming.pojo.IpAddressInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
-import com.alibaba.nacos.naming.selector.LabelSelector;
-import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.view.ServiceDetailView;
-import com.alibaba.nacos.naming.view.ServiceView;
+import com.alibaba.nacos.naming.pojo.ServiceView;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Catalog controller.
+ *
+ * @author nkorange
  */
 @RestController
-
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/catalog")
 public class CatalogController {
-
+    
     @Autowired
-    protected DomainsManager domainsManager;
-
-    @RequestMapping(value = "/serviceList")
-    public JSONObject serviceList(HttpServletRequest request) throws Exception {
-
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        JSONObject result = new JSONObject();
-
-        int page = Integer.parseInt(WebUtils.required(request, "startPg"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
-        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
-
-        List<Domain> doms = new ArrayList<>();
-        int total = domainsManager.getPagedDom(namespaceId, page - 1, pageSize, keyword, doms);
-
-        if (CollectionUtils.isEmpty(doms)) {
-            result.put("serviceList", Collections.emptyList());
-            result.put("count", 0);
-            return result;
+    protected ServiceManager serviceManager;
+    
+    /**
+     * Get service detail.
+     *
+     * @param namespaceId namespace id
+     * @param serviceName service name
+     * @return service detail information
+     * @throws NacosException nacos exception
+     */
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @GetMapping("/service")
+    public ObjectNode serviceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            String serviceName) throws NacosException {
+        
+        Service detailedService = serviceManager.getService(namespaceId, serviceName);
+        
+        if (detailedService == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
         }
-
-        JSONArray domArray = new JSONArray();
-        for (Domain dom : doms) {
-            VirtualClusterDomain vDomain = (VirtualClusterDomain) dom;
-            ServiceView serviceView = new ServiceView();
-            serviceView.setName(vDomain.getName());
-            serviceView.setClusterCount(vDomain.getClusterMap().size());
-            serviceView.setIpCount(vDomain.allIPs().size());
-
-            // FIXME should be optimized:
-            int validCount = 0;
-            for (IpAddress ipAddress : vDomain.allIPs()) {
-                if (ipAddress.isValid()) {
-                    validCount++;
-                }
-            }
-
-            serviceView.setHealthyInstanceCount(validCount);
-
-            domArray.add(serviceView);
-        }
-
-        result.put("serviceList", domArray);
-        result.put("count", total);
-
-        return result;
-    }
-
-    @RequestMapping(value = "/serviceDetail")
-    public ServiceDetailView serviceDetail(HttpServletRequest request) throws Exception {
-
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        String serviceName = WebUtils.required(request, "serviceName");
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
-        if (domain == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
-        }
-
-        ServiceDetailView detailView = new ServiceDetailView();
-
-        Service service = new Service(serviceName);
-        service.setName(serviceName);
-        service.setProtectThreshold(domain.getProtectThreshold());
-        service.setHealthCheckMode(HealthCheckMode.none.name());
-        if (domain.getEnableHealthCheck()) {
-            service.setHealthCheckMode(HealthCheckMode.server.name());
-        }
-        if (domain.getEnableClientBeat()) {
-            service.setHealthCheckMode(HealthCheckMode.client.name());
-        }
-        service.setMetadata(domain.getMetadata());
-
-        switch (SelectorType.valueOf(domain.getSelector().getType())) {
-            case label:
-                service.setSelector((LabelSelector) domain.getSelector());
-                break;
-            case none:
-            case unknown:
-            default:
-                service.setSelector((NoneSelector) domain.getSelector());
-                break;
-        }
-
-        detailView.setService(service);
-
+        ObjectNode serviceObject = JacksonUtils.createEmptyJsonNode();
+        serviceObject.put("name", NamingUtils.getServiceName(serviceName));
+        serviceObject.put("protectThreshold", detailedService.getProtectThreshold());
+        serviceObject.put("groupName", NamingUtils.getGroupName(serviceName));
+        serviceObject.replace("selector", JacksonUtils.transferToJsonNode(detailedService.getSelector()));
+        serviceObject.replace("metadata", JacksonUtils.transferToJsonNode(detailedService.getMetadata()));
+        
+        ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
+        detailView.replace("service", serviceObject);
+        
         List<Cluster> clusters = new ArrayList<>();
-
-        for (com.alibaba.nacos.naming.core.Cluster cluster : domain.getClusterMap().values()) {
+        
+        for (com.alibaba.nacos.naming.core.Cluster cluster : detailedService.getClusterMap().values()) {
             Cluster clusterView = new Cluster();
             clusterView.setName(cluster.getName());
             clusterView.setHealthChecker(cluster.getHealthChecker());
             clusterView.setMetadata(cluster.getMetadata());
             clusterView.setUseIPPort4Check(cluster.isUseIPPort4Check());
-            clusterView.setDefaultPort(cluster.getDefIPPort());
-            clusterView.setDefaultCheckPort(cluster.getDefCkport());
-            clusterView.setServiceName(serviceName);
+            clusterView.setDefaultPort(cluster.getDefaultPort());
+            clusterView.setDefaultCheckPort(cluster.getDefaultCheckPort());
+            clusterView.setServiceName(cluster.getService().getName());
             clusters.add(clusterView);
         }
-
-        detailView.setClusters(clusters);
-
+        
+        detailView.replace("clusters", JacksonUtils.transferToJsonNode(clusters));
+        
         return detailView;
     }
-
-    @RequestMapping(value = "/instanceList")
-    public JSONObject instanceList(HttpServletRequest request) throws Exception {
-
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        String serviceName = WebUtils.required(request, "serviceName");
-        String clusterName = WebUtils.required(request, "clusterName");
-        int page = Integer.parseInt(WebUtils.required(request, "startPg"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
-
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
-        if (domain == null) {
+    
+    /**
+     * List instances of special service.
+     *
+     * @param namespaceId namespace id
+     * @param serviceName service name
+     * @param clusterName cluster name
+     * @param page        number of page
+     * @param pageSize    size of each page
+     * @return instances information
+     * @throws NacosException nacos exception
+     */
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @RequestMapping(value = "/instances")
+    public ObjectNode instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam String serviceName, @RequestParam String clusterName, @RequestParam(name = "pageNo") int page,
+            @RequestParam int pageSize) throws NacosException {
+        
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
-
-        if (!domain.getClusterMap().containsKey(clusterName)) {
+        
+        if (!service.getClusterMap().containsKey(clusterName)) {
             throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
         }
-
-        List<Instance> instances = new ArrayList<>();
-
-        for (IpAddress ipAddress : domain.getClusterMap().get(clusterName).allIPs()) {
-            Instance instance = new Instance();
-            instance.setIp(ipAddress.getIp());
-            instance.setMetadata(ipAddress.getMetadata());
-            instance.setHealthy(ipAddress.isValid());
-            instance.setPort(ipAddress.getPort());
-            instance.setInstanceId(ipAddress.getInstanceId());
-            instance.setWeight(ipAddress.getWeight());
-            instance.setEnabled(ipAddress.isEnabled());
-
-            instances.add(instance);
-        }
-
+        
+        List<Instance> instances = service.getClusterMap().get(clusterName).allIPs();
+        
         int start = (page - 1) * pageSize;
         int end = page * pageSize;
-
+        
         if (start < 0) {
             start = 0;
         }
-
+        
         if (start > instances.size()) {
             start = instances.size();
         }
-
+        
         if (end > instances.size()) {
             end = instances.size();
         }
-
-        JSONObject result = new JSONObject();
-        result.put("list", instances.subList(start, end));
+        
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.replace("list", JacksonUtils.transferToJsonNode(instances.subList(start, end)));
         result.put("count", instances.size());
-
+        
         return result;
     }
-
-    @RequestMapping(value = "/services", method = RequestMethod.GET)
-    public List<ServiceDetailInfo> listDetail(HttpServletRequest request) {
-
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
-
-        domainsManager
-                .getDomMap(namespaceId)
-                .forEach(
-                        (serviceName, domain) -> {
-
-                            if (domain instanceof VirtualClusterDomain) {
-
-                                VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domain;
-                                ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
-                                serviceDetailInfo.setServiceName(serviceName);
-                                serviceDetailInfo.setMetadata(virtualClusterDomain.getMetadata());
-
-                                Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(virtualClusterDomain);
-                                serviceDetailInfo.setClusterMap(clusterInfoMap);
-
-                                serviceDetailInfoList.add(serviceDetailInfo);
-                            }
-                        });
-
-        return serviceDetailInfoList;
-
-    }
-
+    
     /**
-     * getStringClusterInfoMap
+     * List service detail information.
      *
-     * @param virtualClusterDomain
-     * @return
+     * @param withInstances     whether return instances
+     * @param namespaceId       namespace id
+     * @param pageNo            number of page
+     * @param pageSize          size of each page
+     * @param serviceName       service name
+     * @param groupName         group name
+     * @param containedInstance instance name pattern which will be contained in detail
+     * @param hasIpCount        whether filter services with empty instance
+     * @return list service detail
      */
-    private Map<String, ClusterInfo> getStringClusterInfoMap(VirtualClusterDomain virtualClusterDomain) {
-        Map<String, ClusterInfo> clusterInfoMap = new HashedMap();
-
-        virtualClusterDomain.getClusterMap().forEach((clusterName, cluster) -> {
-
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @GetMapping("/services")
+    public Object listDetail(@RequestParam(required = false) boolean withInstances,
+            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam(required = false) int pageNo, @RequestParam(required = false) int pageSize,
+            @RequestParam(name = "serviceNameParam", defaultValue = StringUtils.EMPTY) String serviceName,
+            @RequestParam(name = "groupNameParam", defaultValue = StringUtils.EMPTY) String groupName,
+            @RequestParam(name = "instance", defaultValue = StringUtils.EMPTY) String containedInstance,
+            @RequestParam(required = false) boolean hasIpCount) {
+        
+        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ? StringUtils.EMPTY
+                : NamingUtils.getGroupedName(serviceName, groupName);
+        
+        if (withInstances) {
+            List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
+            
+            List<Service> services = new ArrayList<>(8);
+            serviceManager.getPagedService(namespaceId, pageNo, pageSize, param, StringUtils.EMPTY, services, false);
+            
+            for (Service service : services) {
+                ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
+                serviceDetailInfo.setServiceName(NamingUtils.getServiceName(service.getName()));
+                serviceDetailInfo.setGroupName(NamingUtils.getGroupName(service.getName()));
+                serviceDetailInfo.setMetadata(service.getMetadata());
+                
+                Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
+                serviceDetailInfo.setClusterMap(clusterInfoMap);
+                
+                serviceDetailInfoList.add(serviceDetailInfo);
+            }
+            
+            return serviceDetailInfoList;
+        }
+        
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        
+        List<Service> services = new ArrayList<>();
+        final int total = serviceManager.getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
+        if (CollectionUtils.isEmpty(services)) {
+            result.replace("serviceList", JacksonUtils.transferToJsonNode(Collections.emptyList()));
+            result.put("count", 0);
+            return result;
+        }
+        
+        List<ServiceView> serviceViews = new LinkedList<>();
+        for (Service service : services) {
+            ServiceView serviceView = new ServiceView();
+            serviceView.setName(NamingUtils.getServiceName(service.getName()));
+            serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
+            serviceView.setClusterCount(service.getClusterMap().size());
+            serviceView.setIpCount(service.allIPs().size());
+            serviceView.setHealthyInstanceCount(service.healthyInstanceCount());
+            serviceView.setTriggerFlag(service.triggerFlag() ? "true" : "false");
+            serviceViews.add(serviceView);
+        }
+        
+        result.replace("serviceList", JacksonUtils.transferToJsonNode(serviceViews));
+        result.put("count", total);
+        
+        return result;
+    }
+    
+    /**
+     * Get response time of service.
+     *
+     * @param request http request
+     * @return response time information
+     */
+    @RequestMapping("/rt/service")
+    public ObjectNode rt4Service(HttpServletRequest request) {
+        
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
+            throw new IllegalArgumentException("request service doesn't exist");
+        }
+        
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        
+        ArrayNode clusters = JacksonUtils.createEmptyArrayNode();
+        for (Map.Entry<String, com.alibaba.nacos.naming.core.Cluster> entry : service.getClusterMap().entrySet()) {
+            ObjectNode packet = JacksonUtils.createEmptyJsonNode();
+            HealthCheckTask task = entry.getValue().getHealthCheckTask();
+            
+            packet.put("name", entry.getKey());
+            packet.put("checkRTBest", task.getCheckRtBest());
+            packet.put("checkRTWorst", task.getCheckRtWorst());
+            packet.put("checkRTNormalized", task.getCheckRtNormalized());
+            
+            clusters.add(packet);
+        }
+        result.replace("clusters", clusters);
+        return result;
+    }
+    
+    private Map<String, ClusterInfo> getStringClusterInfoMap(Service service) {
+        Map<String, ClusterInfo> clusterInfoMap = new HashMap<>(8);
+        
+        service.getClusterMap().forEach((clusterName, cluster) -> {
+            
             ClusterInfo clusterInfo = new ClusterInfo();
             List<IpAddressInfo> ipAddressInfos = getIpAddressInfos(cluster.allIPs());
             clusterInfo.setHosts(ipAddressInfos);
             clusterInfoMap.put(clusterName, clusterInfo);
-
+            
         });
         return clusterInfoMap;
     }
-
-    /**
-     * getIpAddressInfos
-     *
-     * @param ipAddresses
-     * @return
-     */
-    private List<IpAddressInfo> getIpAddressInfos(List<IpAddress> ipAddresses) {
+    
+    private List<IpAddressInfo> getIpAddressInfos(List<Instance> instances) {
         List<IpAddressInfo> ipAddressInfos = new ArrayList<>();
-
-        ipAddresses.forEach((ipAddress) -> {
-
+        
+        instances.forEach((ipAddress) -> {
+            
             IpAddressInfo ipAddressInfo = new IpAddressInfo();
             ipAddressInfo.setIp(ipAddress.getIp());
             ipAddressInfo.setPort(ipAddress.getPort());
             ipAddressInfo.setMetadata(ipAddress.getMetadata());
-            ipAddressInfo.setValid(ipAddress.isValid());
+            ipAddressInfo.setValid(ipAddress.isHealthy());
             ipAddressInfo.setWeight(ipAddress.getWeight());
             ipAddressInfo.setEnabled(ipAddress.isEnabled());
             ipAddressInfos.add(ipAddressInfo);
-
+            
         });
         return ipAddressInfos;
     }
-
+    
 }

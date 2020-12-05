@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 1999-2018 Alibaba Group Holding Ltd.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<Configuration status="WARN">
+    <Appenders>
+        <RollingFile name="CONFIG_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/config.log"
+            filePattern="${sys:JM.LOG.PATH}/nacos/config.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+        </RollingFile>
+        
+        <RollingFile name="NAMING_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/naming.log"
+            filePattern="${sys:JM.LOG.PATH}/nacos/naming.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+        </RollingFile>
+    </Appenders>
+    
+    <Loggers>
+        <Logger name="com.alibaba.nacos.client" level="${sys:com.alibaba.nacos.config.log.level:-info}"
+            additivity="false">
+            <AppenderRef ref="CONFIG_LOG_FILE"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.client.config" level="${sys:com.alibaba.nacos.config.log.level:-info}"
+            additivity="false">
+            <AppenderRef ref="CONFIG_LOG_FILE"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.client.naming" level="${sys:com.alibaba.nacos.naming.log.level:-info}"
+            additivity="false">
+            <AppenderRef ref="NAMING_LOG_FILE"/>
+        </Logger>
+        <Root level="INFO">
+            <AppenderRef ref="CONFIG_LOG_FILE"/>
+        </Root>
+    </Loggers>
+</Configuration>

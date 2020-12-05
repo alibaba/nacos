@@ -13,69 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
 
-import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
- */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = MockServletContext.class)
-@WebAppConfiguration
 public class DomainsManagerTest extends BaseTest {
-
-    private DomainsManager domainsManager;
-
-    @Before
-    public void before() {
-        super.before();
-        domainsManager = new DomainsManager();
-    }
-
+    
+    @Spy
+    @InjectMocks
+    private ServiceManager manager;
+    
+    @Mock
+    private DistroConsistencyServiceImpl consistencyService;
+    
     @Test
     public void easyRemoveDom() throws Exception {
-        domainsManager.easyRemoveDom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1");
+        Service service = new Service(TEST_SERVICE_NAME);
+        service.setNamespaceId(TEST_NAMESPACE);
+        manager.putService(service);
+        manager.easyRemoveService(TEST_NAMESPACE, TEST_SERVICE_NAME);
     }
-
+    
     @Test
-    public void easyRemvIP4Dom() throws Exception {
-
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.test.1");
-
-        domainsManager.chooseDomMap(UtilsAndCommons.getDefaultNamespaceId()).put("nacos.test.1", domain);
-
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("1.1.1.1");
-        List<IpAddress> ipList = new ArrayList<IpAddress>();
-        ipList.add(ipAddress);
-        domainsManager.addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1"));
-        domainsManager.easyRemvIP4Dom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1", ipList, 1L);
+    public void easyRemoveDomNotExist() throws Exception {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("specified service not exist, serviceName : " + TEST_SERVICE_NAME);
+        manager.easyRemoveService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME);
     }
-
+    
     @Test
-    public void searchDom() throws Exception {
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.test.1");
-
-        domainsManager.chooseDomMap(UtilsAndCommons.getDefaultNamespaceId()).put("nacos.test.1", domain);
-
-        List<Domain> list = domainsManager.searchDomains(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.*");
+    public void searchDom() {
+        Service service = new Service(TEST_SERVICE_NAME);
+        service.setNamespaceId(TEST_NAMESPACE);
+        manager.putService(service);
+        
+        List<Service> list = manager.searchServices(TEST_NAMESPACE, "test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
-        Assert.assertEquals("nacos.test.1", list.get(0).getName());
+        Assert.assertEquals(TEST_SERVICE_NAME, list.get(0).getName());
     }
 }

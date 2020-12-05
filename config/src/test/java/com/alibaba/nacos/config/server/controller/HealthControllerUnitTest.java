@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,37 +34,31 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.DataSourceService;
-
-/**
- * Created by qingliang on 2017/8/14.
- */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 public class HealthControllerUnitTest {
-
+    
     @InjectMocks
     HealthController healthController;
-
+    
     @Mock
     DataSourceService dataSourceService;
-
+    
     private MockMvc mockmvc;
-
+    
     @Before
     public void setUp() throws Exception {
         mockmvc = MockMvcBuilders.standaloneSetup(healthController).build();
     }
-
+    
     @Test
     public void testGetHealth() throws Exception {
-
+        
         Mockito.when(dataSourceService.getHealth()).thenReturn("UP");
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HEALTH_CONTROLLER_PATH);
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         Assert.assertEquals("UP", actualValue);
-
+        
     }
 }

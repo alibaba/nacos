@@ -13,13 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.annotation;
 
 import com.alibaba.nacos.api.annotation.NacosProperties;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.convert.NacosConfigConverter;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
 
@@ -33,35 +39,42 @@ import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
 @Target(ElementType.METHOD)
 @Documented
 public @interface NacosConfigListener {
-
+    
     /**
-     * Nacos Group ID
+     * Nacos Group ID.
      *
      * @return default value {@link Constants#DEFAULT_GROUP};
      */
     String groupId() default DEFAULT_GROUP;
-
+    
     /**
-     * Nacos Data ID
+     * Nacos Data ID.
      *
      * @return required value.
      */
     String dataId();
-
+    
+    /**
+     * Nacos Config type.
+     *
+     * @return "properties"
+     */
+    ConfigType type() default ConfigType.PROPERTIES;
+    
     /**
      * Specify {@link NacosConfigConverter Nacos configuraion convertor} class to convert target type instance.
      *
      * @return The implementation class of {@link NacosConfigConverter}
      */
     Class<? extends NacosConfigConverter> converter() default NacosConfigConverter.class;
-
+    
     /**
      * The {@link NacosProperties} attribute, If not specified, it will use global Nacos Properties.
      *
      * @return the default value is {@link NacosProperties}
      */
     NacosProperties properties() default @NacosProperties;
-
+    
     /**
      * Maximum timeout value of execution in milliseconds, which is used to prevent long-time blocking execution
      * impacting others.
@@ -69,5 +82,5 @@ public @interface NacosConfigListener {
      * @return default value is 1000
      */
     long timeout() default 1000L;
-
+    
 }

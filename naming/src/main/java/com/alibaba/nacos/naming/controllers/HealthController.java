@@ -13,91 +13,136 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.DomainsManager;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
-import com.alibaba.nacos.naming.misc.HttpClient;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.web.CanDistro;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.net.HttpURLConnection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Health status related operation controller.
+ *
+ * @author nkorange
  * @author nanamikon
  * @since 0.8.0
  */
 @RestController("namingHealthController")
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/health")
 public class HealthController {
+    
     @Autowired
-    private DomainsManager domainsManager;
-
-    @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
-    public String update(HttpServletRequest request) throws Exception {
-
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        String dom = WebUtils.required(request, "serviceName");
+    private ServiceManager serviceManager;
+    
+    @Autowired
+    private PushService pushService;
+    
+    /**
+     * Just a health check.
+     *
+     * @return hello message
+     */
+    @RequestMapping("/server")
+    public ObjectNode server() {
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put("msg",
+                "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getServiceCount()
+                        + ", local port:" + ApplicationUtils.getPort());
+        return result;
+    }
+    
+    /**
+     * Update health check for instance.
+     *
+     * @param request http request
+     * @return 'ok' if success
+     */
+    @CanDistro
+    @PutMapping(value = {"", "/instance"})
+    @Secured(action = ActionTypes.WRITE)
+    public String update(HttpServletRequest request) {
+        String healthyString = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
+        if (StringUtils.isBlank(healthyString)) {
+            healthyString = WebUtils.optional(request, "valid", StringUtils.EMPTY);
+        }
+        if (StringUtils.isBlank(healthyString)) {
+            throw new IllegalArgumentException("Param 'healthy' is required.");
+        }
+        
+        boolean valid = BooleanUtils.toBoolean(healthyString);
+        
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String clusterName = WebUtils
+                .optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
-        boolean valid = Boolean.valueOf(WebUtils.required(request, "valid"));
-        String clusterName = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-
-        if (!DistroMapper.responsible(dom)) {
-            String server = DistroMapper.mapSrv(dom);
-            Loggers.EVT_LOG.info("I'm not responsible for " + dom + ", proxy it to " + server);
-            Map<String, String> proxyParams = new HashMap<>(16);
-            for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue()[0];
-                proxyParams.put(key, value);
-            }
-
-            if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-            }
-
-            String url = "http://" + server + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/health";
-            HttpClient.HttpResult httpResult = HttpClient.httpPost(url, null, proxyParams);
-
-            if (httpResult.code != HttpURLConnection.HTTP_OK) {
-                throw new IllegalArgumentException("failed to proxy health update to " + server + ", dom: " + dom);
+        
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        // Only health check "none" need update health status with api
+        if (HealthCheckType.NONE.name().equals(service.getClusterMap().get(clusterName).getHealthChecker().getType())) {
+            for (Instance instance : service.allIPs(Lists.newArrayList(clusterName))) {
+                if (instance.getIp().equals(ip) && instance.getPort() == port) {
+                    instance.setHealthy(valid);
+                    Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: " + instance.getIp() + ":"
+                            + instance.getPort() + "@" + instance.getClusterName() + ", service: " + serviceName
+                            + ", msg: update thought HealthController api");
+                    pushService.serviceChanged(service);
+                    break;
+                }
             }
         } else {
-            VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
-            // Only health check "none" need update health status with api
-            if (!virtualClusterDomain.getEnableHealthCheck() && !virtualClusterDomain.getEnableClientBeat()) {
-                for (IpAddress ipAddress : virtualClusterDomain.allIPs(Lists.newArrayList(clusterName))) {
-                    if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
-                        ipAddress.setValid(valid);
-                        Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: "
-                            + ipAddress.getIp() + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName()
-                            + ", dom: " + dom + ", msg: update thought HealthController api");
-                        PushService.domChanged(namespaceId, virtualClusterDomain.getName());
-                        break;
-                    }
-                }
-            } else {
-                throw new IllegalArgumentException("health check mode 'client' and 'server' are not supported  , dom: " + dom);
+            throw new IllegalArgumentException("health check is still working, service: " + serviceName);
+        }
+        
+        return "ok";
+    }
+    
+    /**
+     * Get all health checkers.
+     *
+     * @return health checkers map
+     */
+    @GetMapping("checkers")
+    public ResponseEntity checkers() {
+        List<Class<? extends AbstractHealthChecker>> classes = HealthCheckType.getLoadedHealthCheckerClasses();
+        Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);
+        for (Class<? extends AbstractHealthChecker> clazz : classes) {
+            try {
+                AbstractHealthChecker checker = clazz.newInstance();
+                checkerMap.put(checker.getType(), checker);
+            } catch (InstantiationException | IllegalAccessException e) {
+                Loggers.EVT_LOG.error("checkers error ", e);
             }
         }
-        return "ok";
+        return ResponseEntity.ok(checkerMap);
     }
 }

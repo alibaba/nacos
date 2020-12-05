@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +18,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Switch, Message, ConfigProvider } from '@alifd/next';
-import { DIALOG_FORM_LAYOUT } from './constant';
+import { DIALOG_FORM_LAYOUT, METADATA_ENTER, METADATA_SEPARATOR } from './constant';
+import MonacoEditor from 'components/MonacoEditor';
 
 @ConfigProvider.config
 class EditInstanceDialog extends React.Component {
@@ -24,6 +28,7 @@ class EditInstanceDialog extends React.Component {
   static propTypes = {
     serviceName: PropTypes.string,
     clusterName: PropTypes.string,
+    groupName: PropTypes.string,
     openLoading: PropTypes.string,
     closeLoading: PropTypes.string,
     getInstanceList: PropTypes.func,
@@ -43,9 +48,7 @@ class EditInstanceDialog extends React.Component {
     let editInstance = _editInstance;
     const { metadata = {} } = editInstance;
     if (Object.keys(metadata).length) {
-      editInstance.metadataText = Object.keys(metadata)
-        .map(k => `${k}=${metadata[k]}`)
-        .join(',');
+      editInstance.metadataText = JSON.stringify(metadata, null, '\t');
     }
     this.setState({ editInstance, editInstanceDialogVisible: true });
   }
@@ -55,12 +58,29 @@ class EditInstanceDialog extends React.Component {
   }
 
   onConfirm() {
-    const { serviceName, clusterName, getInstanceList, openLoading, closeLoading } = this.props;
-    const { ip, port, weight, enabled, metadataText } = this.state.editInstance;
+    const {
+      serviceName,
+      clusterName,
+      groupName,
+      getInstanceList,
+      openLoading,
+      closeLoading,
+    } = this.props;
+    const { ip, port, ephemeral, weight, enabled, metadataText } = this.state.editInstance;
     request({
       method: 'PUT',
       url: 'v1/ns/instance',
-      data: { serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText },
+      data: {
+        serviceName,
+        clusterName,
+        groupName,
+        ip,
+        port,
+        ephemeral,
+        weight,
+        enabled,
+        metadata: metadataText,
+      },
       dataType: 'text',
       beforeSend: () => openLoading(),
       success: res => {
@@ -71,6 +91,7 @@ class EditInstanceDialog extends React.Component {
         this.hide();
         getInstanceList();
       },
+      error: e => Message.error(e.responseText || 'error'),
       complete: () => closeLoading(),
     });
   }
@@ -89,6 +110,7 @@ class EditInstanceDialog extends React.Component {
       <Dialog
         className="instance-edit-dialog"
         title={locale.updateInstance}
+        style={{ width: 600 }}
         visible={editInstanceDialogVisible}
         onOk={() => this.onConfirm()}
         onCancel={() => this.hide()}
@@ -115,8 +137,10 @@ class EditInstanceDialog extends React.Component {
             />
           </Form.Item>
           <Form.Item label={`${locale.metadata}:`}>
-            <Input
-              className="in-text"
+            <MonacoEditor
+              language="json"
+              width={'100%'}
+              height={200}
               value={editInstance.metadataText}
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />

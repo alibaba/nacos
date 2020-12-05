@@ -13,30 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.raft;
 
+import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Instances;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Spy;
 
-/**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
- */
-public class RaftStoreTest {
-
+public class RaftStoreTest extends BaseTest {
+    
+    @InjectMocks
+    @Spy
+    public RaftCore raftCore;
+    
+    @Spy
+    public RaftStore raftStore;
+    
     @Test
     public void wrietDatum() throws Exception {
-
-        Datum datum = new Datum();
-        datum.key = "1.2.3.4";
-        datum.value = "value1";
-
-        RaftStore.write(datum);
-
-        RaftStore.load("1.2.3.4");
-
-        Datum result = RaftCore.getDatum("1.2.3.4");
-
-        Assert.assertNotNull(result);
-        Assert.assertEquals("value1", result.value);
+        Datum<Instances> datum = new Datum<>();
+        String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, false);
+        datum.key = key;
+        datum.timestamp.getAndIncrement();
+        datum.value = new Instances();
+        Instance instance = new Instance("1.1.1.1", 1, TEST_CLUSTER_NAME);
+        datum.value.getInstanceList().add(instance);
+        instance = new Instance("2.2.2.2", 2, TEST_CLUSTER_NAME);
+        datum.value.getInstanceList().add(instance);
+        
+        raftStore.write(datum);
+        raftCore.init();
+        Datum result = raftCore.getDatum(key);
+        
+        Assert.assertEquals(key, result.key);
+        Assert.assertEquals(1, result.timestamp.intValue());
+        Assert.assertEquals(datum.value.toString(), result.value.toString());
     }
 }

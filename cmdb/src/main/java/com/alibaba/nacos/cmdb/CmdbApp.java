@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.cmdb;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * CMDB starter.
+ *
+ * @author nkorange
  * @since 0.7.0
  */
 @SpringBootApplication
 public class CmdbApp {
-
+    
     public static void main(String[] args) {
         SpringApplication.run(CmdbApp.class, args);
     }

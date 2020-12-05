@@ -1,0 +1,25 @@
+{
+  "name": "Nacos-console-fe-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "",
+  "dependencies": {
+    "chai": "3.5.0",
+    "jwebdriver": "2.2.6",
+    "mocha": "3.1.2",
+    "mocha-parallel-tests": "1.2.4",
+    "mochawesome-uirecorder": "1.5.25",
+    "resemblejs-node": "1.0.0",
+    "selenium-standalone": "6.x.x"
+  },
+  "devDependencies": {
+  },
+  "scripts": {
+    "installdriver": "./node_modules/.bin/selenium-standalone install --drivers.firefox.baseURL=http://npm.taobao.org/mirrors/geckodriver --baseURL=http://npm.taobao.org/mirrors/selenium --drivers.chrome.baseURL=http://npm.taobao.org/mirrors/chromedriver --drivers.ie.baseURL=http://npm.taobao.org/mirrors/selenium",
+    "server": "./node_modules/.bin/selenium-standalone start",
+    "test": "./node_modules/.bin/mocha \"!(node_modules)/**/*.spec.js\" --reporter mochawesome-uirecorder --bail",
+    "singletest": "./node_modules/.bin/mocha --reporter mochawesome-uirecorder --bail",
+    "paralleltest": "./node_modules/.bin/mocha-parallel-tests \"!(node_modules)/**/*.spec.js\" --reporter mochawesome-uirecorder --max-parallel 5 --bail"
+  },
+  "author": ""
+}

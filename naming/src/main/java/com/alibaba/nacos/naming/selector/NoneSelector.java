@@ -13,24 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.selector.SelectorType;
-import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.core.Instance;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Selector with no filtering.
+ *
+ * @author nkorange
+ * @since 0.7.0
  */
-public class NoneSelector extends com.alibaba.nacos.api.selector.AbstractSelector implements Selector {
-
-    public NoneSelector() {
-        this.setType(SelectorType.none.name());
+@JsonTypeInfo(use = Id.NAME, property = "type")
+public class NoneSelector extends com.alibaba.nacos.api.selector.NoneSelector implements Selector {
+    
+    static {
+        JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
     }
-
+    
     @Override
-    public List<IpAddress> select(String consumer, List<IpAddress> providers) {
+    public List<Instance> select(String consumer, List<Instance> providers) {
         return providers;
     }
 }

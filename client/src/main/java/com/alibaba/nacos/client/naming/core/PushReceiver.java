@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.client.naming.utils.IoUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -27,25 +30,32 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+
 /**
+ * Push receiver.
+ *
  * @author xuanyin
  */
-public class PushReceiver implements Runnable {
-
+public class PushReceiver implements Runnable, Closeable {
+    
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
+    
+    private static final int UDP_MSS = 64 * 1024;
+    
     private ScheduledExecutorService executorService;
-
-    public static final int UDP_MSS = 64 * 1024;
-
+    
     private DatagramSocket udpSocket;
-
+    
     private HostReactor hostReactor;
-
+    
+    private volatile boolean closed = false;
+    
     public PushReceiver(HostReactor hostReactor) {
         try {
             this.hostReactor = hostReactor;
-            udpSocket = new DatagramSocket();
-
-            executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            this.udpSocket = new DatagramSocket();
+            this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
                     Thread thread = new Thread(r);
@@ -54,64 +64,77 @@ public class PushReceiver implements Runnable {
                     return thread;
                 }
             });
-
-            executorService.execute(this);
+            
+            this.executorService.execute(this);
         } catch (Exception e) {
-            LogUtils.LOG.error("NA", "init udp socket failed", e);
+            NAMING_LOGGER.error("[NA] init udp socket failed", e);
         }
     }
-
+    
     @Override
     public void run() {
-        while (true) {
+        while (!closed) {
             try {
+                
                 // byte[] is initialized with 0 full filled by default
                 byte[] buffer = new byte[UDP_MSS];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-
+                
                 udpSocket.receive(packet);
-
-                String json = new String(IoUtils.tryDecompress(packet.getData()), "UTF-8").trim();
-                LogUtils.LOG.info("received push data: " + json + " from " + packet.getAddress().toString());
-
-                PushPacket pushPacket = JSON.parseObject(json, PushPacket.class);
+                
+                String json = new String(IoUtils.tryDecompress(packet.getData()), UTF_8).trim();
+                NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
+                
+                PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
                 String ack;
-                if ("dom".equals(pushPacket.type)) {
-                    hostReactor.processServiceJSON(pushPacket.data);
-
+                if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
+                    hostReactor.processServiceJson(pushPacket.data);
+                    
                     // send ack to server
-                    ack = "{\"type\": \"push-ack\""
-                        + ", \"lastRefTime\":\"" + pushPacket.lastRefTime
-                        + "\", \"data\":" + "\"\"}";
+                    ack = "{\"type\": \"push-ack\"" + ", \"lastRefTime\":\"" + pushPacket.lastRefTime + "\", \"data\":"
+                            + "\"\"}";
                 } else if ("dump".equals(pushPacket.type)) {
                     // dump data to server
-                    ack = "{\"type\": \"dump-ack\""
-                        + ", \"lastRefTime\": \"" + pushPacket.lastRefTime
-                        + "\", \"data\":" + "\""
-                        + StringUtils.escapeJavaScript(JSON.toJSONString(hostReactor.getServiceInfoMap()))
-                        + "\"}";
+                    ack = "{\"type\": \"dump-ack\"" + ", \"lastRefTime\": \"" + pushPacket.lastRefTime + "\", \"data\":"
+                            + "\"" + StringUtils.escapeJavaScript(JacksonUtils.toJson(hostReactor.getServiceInfoMap()))
+                            + "\"}";
                 } else {
                     // do nothing send ack only
-                    ack = "{\"type\": \"unknown-ack\""
-                        + ", \"lastRefTime\":\"" + pushPacket.lastRefTime
-                        + "\", \"data\":" + "\"\"}";
+                    ack = "{\"type\": \"unknown-ack\"" + ", \"lastRefTime\":\"" + pushPacket.lastRefTime
+                            + "\", \"data\":" + "\"\"}";
                 }
-
-                udpSocket.send(new DatagramPacket(ack.getBytes(Charset.forName("UTF-8")),
-                    ack.getBytes(Charset.forName("UTF-8")).length, packet.getSocketAddress()));
+                
+                udpSocket.send(new DatagramPacket(ack.getBytes(UTF_8), ack.getBytes(UTF_8).length,
+                        packet.getSocketAddress()));
             } catch (Exception e) {
-                LogUtils.LOG.error("NA", "error while receiving push data", e);
+                if (closed) {
+                    return;
+                }
+                NAMING_LOGGER.error("[NA] error while receiving push data", e);
             }
         }
     }
-
+    
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        closed = true;
+        udpSocket.close();
+        NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
+    
     public static class PushPacket {
+        
         public String type;
+        
         public long lastRefTime;
+        
         public String data;
     }
-
-    public int getUDPPort() {
-        return udpSocket.getLocalPort();
+    
+    public int getUdpPort() {
+        return this.udpSocket.getLocalPort();
     }
 }

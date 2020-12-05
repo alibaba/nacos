@@ -13,52 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.web;
 
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.servlet.Filter;
-
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Naming spring configuration.
+ *
+ * @author nkorange
  */
-
 @Configuration
 public class NamingConfig {
-
+    
     @Bean
     public FilterRegistrationBean distroFilterRegistration() {
-        FilterRegistrationBean registration = new FilterRegistrationBean();
+        FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(distroFilter());
-        registration.addUrlPatterns("/*");
+        registration.addUrlPatterns("/v1/ns/*");
         registration.setName("distroFilter");
         registration.setOrder(6);
-
         return registration;
     }
-
+    
     @Bean
-    public FilterRegistrationBean authFilterRegistration() {
-        FilterRegistrationBean registration = new FilterRegistrationBean();
-
-        registration.setFilter(authFilter());
-        registration.addUrlPatterns("/api/*", "/raft/*");
-        registration.setName("authFilter");
-        registration.setOrder(5);
-
+    public FilterRegistrationBean trafficReviseFilterRegistration() {
+        FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(trafficReviseFilter());
+        registration.addUrlPatterns("/v1/ns/*");
+        registration.setName("trafficReviseFilter");
+        registration.setOrder(1);
         return registration;
     }
-
+    
     @Bean
-    public Filter distroFilter() {
+    public DistroFilter distroFilter() {
         return new DistroFilter();
     }
-
+    
     @Bean
-    public Filter authFilter() {
-        return new AuthFilter();
+    public TrafficReviseFilter trafficReviseFilter() {
+        return new TrafficReviseFilter();
     }
-
+    
 }

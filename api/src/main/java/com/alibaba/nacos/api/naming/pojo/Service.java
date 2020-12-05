@@ -13,113 +13,103 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.nacos.api.selector.AbstractSelector;
-
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Service
+ * Service of Nacos.
  *
- * @author dungu.zpf
+ * <p>We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters, which contains a
+ * list of instances.
+ *
+ * <p>Typically we put some unique properties between instances to service level.
+ *
+ * @author nkorange
  */
-public class Service {
-
+public class Service implements Serializable {
+    
+    private static final long serialVersionUID = -3470985546826874460L;
+    
     /**
-     * service name
+     * service name.
      */
     private String name;
-
+    
     /**
-     * protect threshold
+     * protect threshold.
      */
     private float protectThreshold = 0.0F;
-
+    
     /**
-     * application name of this service
+     * application name of this service.
      */
-    private String app;
-
+    private String appName;
+    
     /**
-     * Service group which is meant to classify services into different sets.
+     * Service group to classify services into different sets.
      */
-    private String group;
-
-    /**
-     * Health check mode.
-     */
-    private String healthCheckMode;
-
-    /**
-     * Selector name of this service
-     */
-    private AbstractSelector selector;
-
+    private String groupName;
+    
     private Map<String, String> metadata = new HashMap<String, String>();
-
+    
+    public Service() {
+    }
+    
     public Service(String name) {
         this.name = name;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
-    public String getHealthCheckMode() {
-        return healthCheckMode;
-    }
-
-    public void setHealthCheckMode(String healthCheckMode) {
-        this.healthCheckMode = healthCheckMode;
-    }
-
+    
     public float getProtectThreshold() {
         return protectThreshold;
     }
-
+    
     public void setProtectThreshold(float protectThreshold) {
         this.protectThreshold = protectThreshold;
     }
-
-    public String getApp() {
-        return app;
+    
+    public String getAppName() {
+        return appName;
     }
-
-    public void setApp(String app) {
-        this.app = app;
+    
+    public void setAppName(String appName) {
+        this.appName = appName;
     }
-
-    public String getGroup() {
-        return group;
+    
+    public String getGroupName() {
+        return groupName;
     }
-
-    public void setGroup(String group) {
-        this.group = group;
+    
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
-
+    
     public Map<String, String> getMetadata() {
         return metadata;
     }
-
+    
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
-
+    
     public void addMetadata(String key, String value) {
         this.metadata.put(key, value);
     }
-
-    public AbstractSelector getSelector() {
-        return selector;
-    }
-
-    public void setSelector(AbstractSelector selector) {
-        this.selector = selector;
+    
+    @Override
+    public String toString() {
+        return "Service{" + "name='" + name + '\'' + ", protectThreshold=" + protectThreshold + ", appName='" + appName
+                + '\'' + ", groupName='" + groupName + '\'' + ", metadata=" + metadata + '}';
     }
 }

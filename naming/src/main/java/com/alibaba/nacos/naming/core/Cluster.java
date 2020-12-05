@@ -13,403 +13,450 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.Assert;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Cluster.
+ *
+ * @author nkorange
+ * @author jifengnan 2019-04-26
  */
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
-
+    
     private static final String CLUSTER_NAME_SYNTAX = "[0-9a-zA-Z-]+";
-
-    /**
-     * in fact this is CIDR(Classless Inter-Domain Routing). for naming it 'submask' it has historical reasons
-     */
-    private String submask = "0.0.0.0/0";
+    
+    private static final long serialVersionUID = 8940123791150907510L;
+    
     /**
      * a addition for same site routing, can group multiple sites into a region, like Hangzhou, Shanghai, etc.
      */
     private String sitegroup = StringUtils.EMPTY;
-
+    
     private int defCkport = 80;
-
-    private int defIPPort = -1;
-
-    @JSONField(name = "nodegroup")
-    private String legacySyncConfig;
-
-    @JSONField(name = "healthChecker")
-    private AbstractHealthChecker healthChecker = new AbstractHealthChecker.Tcp();
-
-    @JSONField(serialize = false)
+    
+    private int defIpPort = -1;
+    
+    @JsonIgnore
     private HealthCheckTask checkTask;
-
-    @JSONField(serialize = false)
-    private Set<IpAddress> raftIPs = new HashSet<IpAddress>();
-
-    @JSONField(serialize = false)
-    private Domain dom;
-
-    private Map<String, Boolean> ipContains = new ConcurrentHashMap<>();
-
+    
+    @JsonIgnore
+    private Set<Instance> persistentInstances = new HashSet<>();
+    
+    @JsonIgnore
+    private Set<Instance> ephemeralInstances = new HashSet<>();
+    
+    @JsonIgnore
+    private Service service;
+    
+    @JsonIgnore
+    private volatile boolean inited = false;
+    
     private Map<String, String> metadata = new ConcurrentHashMap<>();
-
+    
     public Cluster() {
     }
-
-    public Cluster(String clusterName) {
+    
+    /**
+     * Create a cluster.
+     *
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
+     *
+     * @param clusterName the cluster name
+     * @param service     the service to which the current cluster belongs
+     * @throws IllegalArgumentException the service is null, or the cluster name is null, or the cluster name is
+     *                                  illegal
+     * @author jifengnan 2019-04-26
+     * @since 1.0.1
+     */
+    public Cluster(String clusterName, Service service) {
         this.setName(clusterName);
+        this.service = service;
+        validate();
     }
-
+    
+    /**
+     * Reason why method is not camel is that the old version has released, and the method name will be as the key
+     * serialize and deserialize for Json. So ignore checkstyle.
+     *
+     * @return default port
+     */
+    @SuppressWarnings("checkstyle:abbreviationaswordinname")
     public int getDefIPPort() {
         // for compatibility with old entries
-        return defIPPort == -1 ? defCkport : defIPPort;
+        return defIpPort == -1 ? defCkport : defIpPort;
     }
-
-    public void setDefIPPort(int defIPPort) {
-        if (defIPPort == 0) {
+    
+    @SuppressWarnings("checkstyle:abbreviationaswordinname")
+    public void setDefIPPort(int defIpPort) {
+        if (defIpPort == 0) {
             throw new IllegalArgumentException("defIPPort can not be 0");
         }
-        this.defIPPort = defIPPort;
+        this.defIpPort = defIpPort;
     }
-
-    public List<IpAddress> allIPs() {
-        return new ArrayList<IpAddress>(chooseIPs());
+    
+    /**
+     * Get all instances.
+     *
+     * @return list of instance
+     */
+    public List<Instance> allIPs() {
+        List<Instance> allInstances = new ArrayList<>();
+        allInstances.addAll(persistentInstances);
+        allInstances.addAll(ephemeralInstances);
+        return allInstances;
     }
-
-    public List<IpAddress> allIPs(String tenant) {
-
-        List<IpAddress> list = new ArrayList<>();
-        for (IpAddress ipAddress : chooseIPs()) {
-            if (ipAddress.getTenant().equals(tenant)) {
-                list.add(ipAddress);
-            }
-        }
-        return list;
+    
+    /**
+     * Get all ephemeral or consistence instances.
+     *
+     * @param ephemeral whether returned instances are ephemeral
+     * @return list of special instances
+     */
+    public List<Instance> allIPs(boolean ephemeral) {
+        return ephemeral ? new ArrayList<>(ephemeralInstances) : new ArrayList<>(persistentInstances);
     }
-
-    public List<IpAddress> allIPs(String tenant, String app) {
-
-        List<IpAddress> list = new ArrayList<>();
-        for (IpAddress ipAddress : chooseIPs()) {
-            if (ipAddress.getTenant().equals(tenant) && ipAddress.getApp().equals(app)) {
-                list.add(ipAddress);
-            }
-        }
-        return list;
-    }
-
+    
+    /**
+     * Init cluster.
+     */
     public void init() {
+        if (inited) {
+            return;
+        }
         checkTask = new HealthCheckTask(this);
+        
         HealthCheckReactor.scheduleCheck(checkTask);
+        inited = true;
     }
-
+    
+    /**
+     * Destroy cluster.
+     */
     public void destroy() {
-        checkTask.setCancelled(true);
+        if (checkTask != null) {
+            checkTask.setCancelled(true);
+        }
     }
-
-    public void addIP(IpAddress ip) {
-        chooseIPs().add(ip);
-    }
-
-    public void removeIP(IpAddress ip) {
-        chooseIPs().remove(ip);
-    }
-
+    
+    @JsonIgnore
     public HealthCheckTask getHealthCheckTask() {
         return checkTask;
     }
-
-    public Domain getDom() {
-        return dom;
+    
+    public Service getService() {
+        return service;
     }
-
-    public void setDom(Domain dom) {
-        this.dom = dom;
+    
+    /**
+     * Replace the service for the current cluster.
+     *
+     * <p>the service shouldn't be replaced. so if the service is not empty will nothing to do.
+     * (the service fields can be changed, but the service A shouldn't be replaced to service B). If the service of a
+     * cluster is required to replace, actually, a new cluster is required.
+     *
+     * @param service the new service
+     */
+    public void setService(Service service) {
+        if (this.service != null) {
+            return;
+        }
+        this.service = service;
     }
-
-    public String getLegacySyncConfig() {
-        return legacySyncConfig;
+    
+    /**
+     * this method has been deprecated, the service name shouldn't be changed.
+     *
+     * @param serviceName the service name
+     * @author jifengnan  2019-04-26
+     * @since 1.0.1
+     */
+    @Deprecated
+    @Override
+    public void setServiceName(String serviceName) {
+        super.setServiceName(serviceName);
     }
-
-    public void setLegacySyncConfig(String nodegroup) {
-        this.legacySyncConfig = nodegroup;
+    
+    /**
+     * Get the service name of the current cluster.
+     *
+     * <p>Note that the returned service name is not the name which set by {@link #setServiceName(String)},
+     * but the name of the service to which the current cluster belongs.
+     *
+     * @return the service name of the current cluster.
+     */
+    @Override
+    public String getServiceName() {
+        if (service != null) {
+            return service.getName();
+        } else {
+            return super.getServiceName();
+        }
     }
-
+    
     @Override
     public Cluster clone() throws CloneNotSupportedException {
         super.clone();
-        Cluster cluster = new Cluster();
-
-        cluster.setHealthChecker(healthChecker.clone());
-        cluster.setDom(getDom());
-        cluster.raftIPs = new HashSet<IpAddress>();
+        Cluster cluster = new Cluster(this.getName(), service);
+        cluster.setHealthChecker(getHealthChecker().clone());
+        cluster.persistentInstances = new HashSet<>();
         cluster.checkTask = null;
         cluster.metadata = new HashMap<>(metadata);
         return cluster;
     }
-
-    public void updateIPs(List<IpAddress> ips) {
-        HashMap<String, IpAddress> oldIPMap = new HashMap<>(raftIPs.size());
-
-        for (IpAddress ip : this.raftIPs) {
-            oldIPMap.put(ip.getDatumKey(), ip);
+    
+    public boolean isEmpty() {
+        return ephemeralInstances.isEmpty() && persistentInstances.isEmpty();
+    }
+    
+    /**
+     * Update instance list.
+     *
+     * @param ips       instance list
+     * @param ephemeral whether these instances are ephemeral
+     */
+    public void updateIps(List<Instance> ips, boolean ephemeral) {
+        
+        Set<Instance> toUpdateInstances = ephemeral ? ephemeralInstances : persistentInstances;
+        
+        HashMap<String, Instance> oldIpMap = new HashMap<>(toUpdateInstances.size());
+        
+        for (Instance ip : toUpdateInstances) {
+            oldIpMap.put(ip.getDatumKey(), ip);
         }
-
-        List<IpAddress> updatedIPs = updatedIPs(ips, oldIPMap.values());
+        
+        List<Instance> updatedIPs = updatedIps(ips, oldIpMap.values());
         if (updatedIPs.size() > 0) {
-            for (IpAddress ip : updatedIPs) {
-                IpAddress oldIP = oldIPMap.get(ip.getDatumKey());
-
-                if (responsible(ip)) {
-                    // do not update the ip validation status of updated ips
-                    // because the checker has the most precise result
-
-                    // Only when ip is not marked, don't we update the health status of IP:
-                    if (!ip.isMarked()) {
-                        ip.setValid(oldIP.isValid());
-                    }
-
-                } else {
-                    if (ip.isValid() != oldIP.isValid()) {
-                        // ip validation status updated
-                        Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}",
-                            getDom().getName(), (ip.isValid() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
-                    }
+            for (Instance ip : updatedIPs) {
+                Instance oldIP = oldIpMap.get(ip.getDatumKey());
+                
+                // do not update the ip validation status of updated ips
+                // because the checker has the most precise result
+                // Only when ip is not marked, don't we update the health status of IP:
+                if (!ip.isMarked()) {
+                    ip.setHealthy(oldIP.isHealthy());
                 }
-
+                
+                if (ip.isHealthy() != oldIP.isHealthy()) {
+                    // ip validation status updated
+                    Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}", getService().getName(),
+                            (ip.isHealthy() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
+                }
+                
                 if (ip.getWeight() != oldIP.getWeight()) {
                     // ip validation status updated
-                    Loggers.EVT_LOG.info("{} {SYNC} {IP-UPDATED} {}->{}", getDom().getName(), oldIP.toString(), ip.toString());
+                    Loggers.EVT_LOG.info("{} {SYNC} {IP-UPDATED} {}->{}", getService().getName(), oldIP.toString(),
+                            ip.toString());
                 }
             }
         }
-
-        List<IpAddress> newIPs = subtract(ips, oldIPMap.values());
+        
+        List<Instance> newIPs = subtract(ips, oldIpMap.values());
         if (newIPs.size() > 0) {
-            Loggers.EVT_LOG.info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}",
-                getDom().getName(), getName(), newIPs.size(), newIPs.toString());
-
-            for (IpAddress ip : newIPs) {
+            Loggers.EVT_LOG
+                    .info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}", getService().getName(),
+                            getName(), newIPs.size(), newIPs.toString());
+            
+            for (Instance ip : newIPs) {
                 HealthCheckStatus.reset(ip);
             }
         }
-
-        List<IpAddress> deadIPs = subtract(oldIPMap.values(), ips);
-
+        
+        List<Instance> deadIPs = subtract(oldIpMap.values(), ips);
+        
         if (deadIPs.size() > 0) {
-            Loggers.EVT_LOG.info("{} {SYNC} {IP-DEAD} cluster: {}, dead ips size: {}, content: {}",
-                getDom().getName(), getName(), deadIPs.size(), deadIPs.toString());
-
-            for (IpAddress ip : deadIPs) {
+            Loggers.EVT_LOG
+                    .info("{} {SYNC} {IP-DEAD} cluster: {}, dead ips size: {}, content: {}", getService().getName(),
+                            getName(), deadIPs.size(), deadIPs.toString());
+            
+            for (Instance ip : deadIPs) {
                 HealthCheckStatus.remv(ip);
             }
         }
-
-        this.raftIPs = new HashSet<IpAddress>(ips);
-
-        StringBuilder stringBuilder = new StringBuilder();
-        for (IpAddress ipAddress : raftIPs) {
-            stringBuilder.append(ipAddress.toIPAddr()).append(ipAddress.isValid());
+        
+        toUpdateInstances = new HashSet<>(ips);
+        
+        if (ephemeral) {
+            ephemeralInstances = toUpdateInstances;
+        } else {
+            persistentInstances = toUpdateInstances;
         }
-
-        ipContains.clear();
-
-        for (IpAddress ipAddress : raftIPs) {
-            ipContains.put(ipAddress.toIPAddr(), true);
-        }
-
     }
-
-    public List<IpAddress> updatedIPs(Collection<IpAddress> a, Collection<IpAddress> b) {
-
-        List<IpAddress> intersects = (List<IpAddress>) CollectionUtils.intersection(a, b);
-        Map<String, IpAddress> stringIPAddressMap = new ConcurrentHashMap<>(intersects.size());
-
-        for (IpAddress ipAddress : intersects) {
-            stringIPAddressMap.put(ipAddress.getIp() + ":" + ipAddress.getPort(), ipAddress);
+    
+    private List<Instance> updatedIps(Collection<Instance> newInstance, Collection<Instance> oldInstance) {
+        
+        List<Instance> intersects = (List<Instance>) CollectionUtils.intersection(newInstance, oldInstance);
+        Map<String, Instance> stringIpAddressMap = new ConcurrentHashMap<>(intersects.size());
+        
+        for (Instance instance : intersects) {
+            stringIpAddressMap.put(instance.getIp() + ":" + instance.getPort(), instance);
         }
-
-        Map<String, Integer> intersectMap = new ConcurrentHashMap<>(a.size() + b.size());
-        Map<String, IpAddress> ipAddressMap = new ConcurrentHashMap<>(a.size());
-        Map<String, IpAddress> ipAddressMap1 = new ConcurrentHashMap<>(b.size());
-        Map<String, IpAddress> ipAddressMap2 = new ConcurrentHashMap<>(a.size());
-
-        for (IpAddress ipAddress : b) {
-            if (stringIPAddressMap.containsKey(ipAddress.getIp() + ":" + ipAddress.getPort())) {
-                intersectMap.put(ipAddress.toString(), 1);
+        
+        Map<String, Integer> intersectMap = new ConcurrentHashMap<>(newInstance.size() + oldInstance.size());
+        Map<String, Instance> updatedInstancesMap = new ConcurrentHashMap<>(newInstance.size());
+        Map<String, Instance> newInstancesMap = new ConcurrentHashMap<>(newInstance.size());
+        
+        for (Instance instance : oldInstance) {
+            if (stringIpAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
+                intersectMap.put(instance.toString(), 1);
             }
-            ipAddressMap1.put(ipAddress.toString(), ipAddress);
         }
-
-
-        for (IpAddress ipAddress : a) {
-            if (stringIPAddressMap.containsKey(ipAddress.getIp() + ":" + ipAddress.getPort())) {
-
-                if (intersectMap.containsKey(ipAddress.toString())) {
-                    intersectMap.put(ipAddress.toString(), 2);
+        
+        for (Instance instance : newInstance) {
+            if (stringIpAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
+                
+                if (intersectMap.containsKey(instance.toString())) {
+                    intersectMap.put(instance.toString(), 2);
                 } else {
-                    intersectMap.put(ipAddress.toString(), 1);
+                    intersectMap.put(instance.toString(), 1);
                 }
             }
-
-            ipAddressMap2.put(ipAddress.toString(), ipAddress);
-
+            
+            newInstancesMap.put(instance.toString(), instance);
+            
         }
-
+        
         for (Map.Entry<String, Integer> entry : intersectMap.entrySet()) {
             String key = entry.getKey();
             Integer value = entry.getValue();
-
+            
             if (value == 1) {
-                if (ipAddressMap2.containsKey(key)) {
-                    ipAddressMap.put(key, ipAddressMap2.get(key));
+                if (newInstancesMap.containsKey(key)) {
+                    updatedInstancesMap.put(key, newInstancesMap.get(key));
                 }
             }
         }
-
-        return new ArrayList<>(ipAddressMap.values());
+        
+        return new ArrayList<>(updatedInstancesMap.values());
     }
-
-    public List<IpAddress> subtract(Collection<IpAddress> a, Collection<IpAddress> b) {
-        Map<String, IpAddress> mapa = new HashMap<>(b.size());
-        for (IpAddress o : b) {
-            mapa.put(o.getIp() + ":" + o.getPort(), o);
+    
+    private List<Instance> subtract(Collection<Instance> oldIp, Collection<Instance> ips) {
+        Map<String, Instance> ipsMap = new HashMap<>(ips.size());
+        for (Instance instance : ips) {
+            ipsMap.put(instance.getIp() + ":" + instance.getPort(), instance);
         }
-
-        List<IpAddress> result = new ArrayList<IpAddress>();
-
-        for (IpAddress o : a) {
-            if (!mapa.containsKey(o.getIp() + ":" + o.getPort())) {
-                result.add(o);
+        
+        List<Instance> instanceResult = new ArrayList<>();
+        
+        for (Instance instance : oldIp) {
+            if (!ipsMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
+                instanceResult.add(instance);
             }
         }
-
-        return result;
+        return instanceResult;
     }
-
-    public Set<IpAddress> chooseIPs() {
-        return raftIPs;
-    }
-
+    
     @Override
     public int hashCode() {
         return Objects.hash(getName());
     }
-
+    
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof Cluster)) {
             return false;
         }
-
+        
         return getName().equals(((Cluster) obj).getName());
     }
-
+    
     public int getDefCkport() {
         return defCkport;
     }
-
+    
     public void setDefCkport(int defCkport) {
         this.defCkport = defCkport;
     }
-
+    
+    /**
+     * Update cluster from other cluster.
+     *
+     * @param cluster new cluster
+     */
     public void update(Cluster cluster) {
-
-        if (!healthChecker.equals(cluster.getHealthChecker())) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}:, healthChecker: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), healthChecker.toString(), cluster.getHealthChecker().toString());
-            healthChecker = cluster.getHealthChecker();
+        
+        if (!getHealthChecker().equals(cluster.getHealthChecker())) {
+            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}:, healthChecker: {} -> {}", getService().getName(), getName(),
+                    getHealthChecker().toString(), cluster.getHealthChecker().toString());
+            setHealthChecker(cluster.getHealthChecker());
         }
-
+        
         if (defCkport != cluster.getDefCkport()) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defCkport: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), defCkport, cluster.getDefCkport());
+            Loggers.SRV_LOG
+                    .info("[CLUSTER-UPDATE] {}:{}, defCkport: {} -> {}", getService().getName(), getName(), defCkport,
+                            cluster.getDefCkport());
             defCkport = cluster.getDefCkport();
         }
-
-        if (defIPPort != cluster.getDefIPPort()) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defIPPort: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), defIPPort, cluster.getDefIPPort());
-            defIPPort = cluster.getDefIPPort();
+        
+        if (defIpPort != cluster.getDefIPPort()) {
+            Loggers.SRV_LOG
+                    .info("[CLUSTER-UPDATE] {}:{}, defIPPort: {} -> {}", getService().getName(), getName(), defIpPort,
+                            cluster.getDefIPPort());
+            defIpPort = cluster.getDefIPPort();
         }
-
-        if (!StringUtils.equals(submask, cluster.getSubmask())) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, submask: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), submask, cluster.getSubmask());
-            submask = cluster.getSubmask();
-        }
-
+        
         if (!StringUtils.equals(sitegroup, cluster.getSitegroup())) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, sitegroup: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), sitegroup, cluster.getSitegroup());
+            Loggers.SRV_LOG
+                    .info("[CLUSTER-UPDATE] {}:{}, sitegroup: {} -> {}", getService().getName(), getName(), sitegroup,
+                            cluster.getSitegroup());
             sitegroup = cluster.getSitegroup();
         }
-
+        
         if (isUseIPPort4Check() != cluster.isUseIPPort4Check()) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, useIPPort4Check: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
+            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, useIPPort4Check: {} -> {}", getService().getName(), getName(),
+                    isUseIPPort4Check(), cluster.isUseIPPort4Check());
             setUseIPPort4Check(cluster.isUseIPPort4Check());
         }
-
+        
         metadata = cluster.getMetadata();
     }
-
-    public String getSyncKey() {
-        return "";
-    }
-
-    public String getSubmask() {
-        return submask;
-    }
-
-    public void setSubmask(String submask) {
-        this.submask = submask;
-    }
-
+    
     public String getSitegroup() {
         return sitegroup;
     }
-
+    
     public void setSitegroup(String sitegroup) {
         this.sitegroup = sitegroup;
     }
-
-    public boolean responsible(IpAddress ip) {
-        return Switch.isHealthCheckEnabled(dom.getName())
-            && !getHealthCheckTask().isCancelled()
-            && DistroMapper.responsible(getDom().getName())
-            && ipContains.containsKey(ip.toIPAddr());
+    
+    public boolean contains(Instance ip) {
+        return persistentInstances.contains(ip) || ephemeralInstances.contains(ip);
     }
-
-    public void valid() {
+    
+    /**
+     * validate the current cluster.
+     *
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
+     *
+     * @throws IllegalArgumentException the service is null, or the cluster name is null, or the cluster name is
+     *                                  illegal
+     */
+    public void validate() {
+        Assert.notNull(getName(), "cluster name cannot be null");
+        Assert.notNull(service, "service cannot be null");
         if (!getName().matches(CLUSTER_NAME_SYNTAX)) {
-            throw new IllegalArgumentException("cluster name can only have these characters: 0-9a-zA-Z-, current: " + getName());
-        }
-
-        String[] cidrGroups = submask.split("\\|");
-        for (String cidrGroup : cidrGroups) {
-            String[] cidrs = cidrGroup.split(",");
-
-            for (String cidr : cidrs) {
-                if (!cidr.matches(UtilsAndCommons.CIDR_REGEX)) {
-                    throw new IllegalArgumentException("malformed submask: " + submask + " for cluster: " + getName());
-                }
-            }
+            throw new IllegalArgumentException(
+                    "cluster name can only have these characters: 0-9a-zA-Z-, current: " + getName());
         }
     }
 }

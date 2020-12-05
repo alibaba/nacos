@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.naming.listener;
 
 /**
- * Event Listener
+ * Event Listener.
  *
  * @author Nacos
  */
 public interface EventListener {
+    
     /**
-     * callback event
+     * callback event.
      *
-     * @param event
+     * @param event event
      */
     void onEvent(Event event);
 }

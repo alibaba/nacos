@@ -13,23 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.pojo;
 
 import java.io.Serializable;
 import java.util.Map;
 
 /**
+ * Service detial info.
+ *
  * @author caogu.wyp
  * @version $Id: ServiceDetailInfo.java, v 0.1 2018-09-17 上午10:47 caogu.wyp Exp $$
  */
 public class ServiceDetailInfo implements Serializable {
-
-    private String                   serviceName;
-
+    
+    private String serviceName;
+    
+    private String groupName;
+    
     private Map<String, ClusterInfo> clusterMap;
-
-    private Map<String, String>      metadata;
-
+    
+    private Map<String, String> metadata;
+    
     /**
      * Getter method for property <tt>serviceName</tt>.
      *
@@ -38,7 +43,7 @@ public class ServiceDetailInfo implements Serializable {
     public String getServiceName() {
         return serviceName;
     }
-
+    
     /**
      * Setter method for property <tt>serviceName </tt>.
      *
@@ -47,7 +52,15 @@ public class ServiceDetailInfo implements Serializable {
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
-
+    
+    public String getGroupName() {
+        return groupName;
+    }
+    
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+    
     /**
      * Getter method for property <tt>clusterMap</tt>.
      *
@@ -56,7 +69,7 @@ public class ServiceDetailInfo implements Serializable {
     public Map<String, ClusterInfo> getClusterMap() {
         return clusterMap;
     }
-
+    
     /**
      * Setter method for property <tt>clusterMap </tt>.
      *
@@ -65,7 +78,7 @@ public class ServiceDetailInfo implements Serializable {
     public void setClusterMap(Map<String, ClusterInfo> clusterMap) {
         this.clusterMap = clusterMap;
     }
-
+    
     /**
      * Getter method for property <tt>metadata</tt>.
      *
@@ -74,7 +87,7 @@ public class ServiceDetailInfo implements Serializable {
     public Map<String, String> getMetadata() {
         return metadata;
     }
-
+    
     /**
      * Setter method for property <tt>metadata </tt>.
      *

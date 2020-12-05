@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.identify;
 
 /**
- * Spas Credential Interface
+ * Spas Credential Interface.
  *
  * @author Nacos
  */
 public interface SpasCredential {
+    
     /**
-     * get AccessKey
+     * get AccessKey.
      *
      * @return AccessKey
      */
-    public String getAccessKey();
-
+    String getAccessKey();
+    
     /**
-     * get SecretKey
+     * get SecretKey.
      *
      * @return SecretKey
      */
-    public String getSecretKey();
+    String getSecretKey();
 }
