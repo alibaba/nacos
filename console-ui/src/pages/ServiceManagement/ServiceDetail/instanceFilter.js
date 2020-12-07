@@ -34,7 +34,9 @@ class InstanceFilter extends React.Component {
 
     this.state = {
       key: '',
+      keyState: '',
       value: '',
+      valueState: '',
       filters: new Map(),
     };
   }
@@ -42,11 +44,17 @@ class InstanceFilter extends React.Component {
   addFilter = () => {
     const { key, value, filters } = this.state;
 
+    this.updateInput();
+
     if (key && value) {
       const newFilters = new Map(Array.from(filters)).set(key, value);
+
       this.setState({
         filters: newFilters,
+        keyState: '',
+        valueState: '',
       });
+
       this.clearInput();
     }
   };
@@ -72,6 +80,22 @@ class InstanceFilter extends React.Component {
     });
   };
 
+  updateInput = () => {
+    const { key, value } = this.state;
+
+    if (!key) {
+      this.setState({ keyState: 'error' });
+    } else {
+      this.setState({ keyState: '' });
+    }
+
+    if (!value) {
+      this.setState({ valueState: 'error' });
+    } else {
+      this.setState({ valueState: '' });
+    }
+  };
+
   componentDidUpdate(prevProps, prevState) {
     const { filters } = this.state;
 
@@ -81,7 +105,7 @@ class InstanceFilter extends React.Component {
   }
 
   render() {
-    const { key, value, filters } = this.state;
+    const { key, value, filters, keyState, valueState } = this.state;
     const { locale = {} } = this.props;
 
     return (
@@ -94,6 +118,8 @@ class InstanceFilter extends React.Component {
                 value={key}
                 trim
                 onChange={key => this.setState({ key })}
+                onPressEnter={this.addFilter}
+                state={keyState}
               />
             </FormItem>
             <FormItem>
@@ -102,6 +128,8 @@ class InstanceFilter extends React.Component {
                 value={value}
                 trim
                 onChange={value => this.setState({ value })}
+                onPressEnter={this.addFilter}
+                state={valueState}
               />
             </FormItem>
             <FormItem label="">
