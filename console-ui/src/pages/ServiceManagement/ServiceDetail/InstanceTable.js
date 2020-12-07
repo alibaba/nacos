@@ -20,6 +20,7 @@ import { request } from '../../../globalLib';
 import { Button, ConfigProvider, Message, Pagination, Table } from '@alifd/next';
 import { HEALTHY_COLOR_MAPPING } from './constant';
 import EditInstanceDialog from './EditInstanceDialog';
+import { isDiff } from './util';
 
 @ConfigProvider.config
 class InstanceTable extends React.Component {
@@ -48,9 +49,10 @@ class InstanceTable extends React.Component {
     this.getInstanceList();
   }
 
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    this.props = nextProps;
-    this.getInstanceList();
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (isDiff(prevProps.filters, this.props.filters)) {
+      this.getInstanceList();
+    }
   }
 
   openLoading() {
@@ -74,7 +76,7 @@ class InstanceTable extends React.Component {
         groupName,
         pageSize,
         pageNo: pageNum,
-        matedata: filters,
+        metadata: JSON.stringify(Object.fromEntries(filters)),
       },
       beforeSend: () => this.openLoading(),
       success: instance => this.setState({ instance }),

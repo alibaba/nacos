@@ -17,6 +17,7 @@
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 import { Input, Button, Form, Tag, Card } from '@alifd/next';
+import { isDiff } from './util';
 
 const { Group: TagGroup, Closeable: CloseableTag } = Tag;
 const FormItem = Form.Item;
@@ -45,16 +46,15 @@ export default class InstanceFilter extends React.Component {
         filters: newFilters,
       });
       this.clearInput();
-      this.props.setFilters(newFilters);
     }
   };
 
   removeFilter = key => {
     const { filters } = this.state;
-    filters.delete(key);
+    const newFilters = new Map(Array.from(filters));
+    newFilters.delete(key);
 
-    this.setState({ filters });
-    this.props.setFilters(filters);
+    this.setState({ filters: newFilters });
   };
 
   clearInput = () => {
@@ -69,6 +69,14 @@ export default class InstanceFilter extends React.Component {
       filters: new Map(),
     });
   };
+
+  componentDidUpdate(prevProps, prevState) {
+    const { filters } = this.state;
+
+    if (isDiff(prevState.filters, filters)) {
+      this.props.setFilters(filters);
+    }
+  }
 
   render() {
     const { key, value, filters } = this.state;
