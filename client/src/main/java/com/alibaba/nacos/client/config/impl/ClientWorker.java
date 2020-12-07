@@ -133,9 +133,7 @@ public class ClientWorker implements Closeable {
         Optional<CacheData> cacheDataOptional = getCache(dataId, finalGroup);
         cacheDataOptional.ifPresent(cacheData -> {
             cacheData.removeListener(listener);
-            if (cacheData.getListeners().isEmpty()) {
-                agent.removeCache(dataId, finalGroup);
-            }
+            agent.removeCache(dataId, finalGroup);
         });
     }
     
@@ -194,26 +192,32 @@ public class ClientWorker implements Closeable {
         Optional<CacheData> cacheDataOptional = getCache(dataId, finalGroup, tenant);
         cacheDataOptional.ifPresent(cacheData -> {
             cacheData.removeListener(listener);
-            if (cacheData.getListeners().isEmpty()) {
-                agent.removeCache(dataId, finalGroup);
-            }
+            agent.removeCache(dataId, finalGroup);
         });
     }
     
-    private void removeCache(String dataId, String group) {
+    private void removeCacheIfEmptyListener(String dataId, String group) {
         String groupKey = GroupKey.getKey(dataId, group);
-        cacheMap.remove(groupKey);
-        LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
+        removeCacheIfEmptyListener(groupKey);
         
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
     }
     
-    void removeCache(String dataId, String group, String tenant) {
+    private void removeCacheIfEmptyListener(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
-        cacheMap.remove(groupKey);
-        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
+        removeCacheIfEmptyListener(groupKey);
         
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
+    }
+    
+    private void removeCacheIfEmptyListener(String groupKey) {
+        cacheMap.computeIfPresent(groupKey, (key, value) -> {
+            if (value.getListeners().isEmpty()) {
+                LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
+                MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
+                return null;
+            } else {
+                return value;
+            }
+        });
     }
     
     /**
@@ -718,7 +722,8 @@ public class ClientWorker implements Closeable {
                         boolean removeSuccess = unListenConfigChange(rpcClient, configChangeListenRequest);
                         if (removeSuccess) {
                             for (CacheData cacheData : removeListenCaches) {
-                                ClientWorker.this.removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
+                                ClientWorker.this.removeCacheIfEmptyListener(cacheData.dataId, cacheData.group,
+                                        cacheData.tenant);
                             }
                         }
                         
@@ -979,7 +984,8 @@ public class ClientWorker implements Closeable {
         @Override
         public void removeCache(String dataId, String group) {
             //remove cache directory in http model
-            ClientWorker.this.removeCache(dataId, group);
+            
+            ClientWorker.this.removeCacheIfEmptyListener(dataId, group);
         }
         
         @Override
