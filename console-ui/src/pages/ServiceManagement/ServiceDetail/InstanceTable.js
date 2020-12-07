@@ -20,6 +20,7 @@ import { request } from '../../../globalLib';
 import { Button, ConfigProvider, Message, Pagination, Table } from '@alifd/next';
 import { HEALTHY_COLOR_MAPPING } from './constant';
 import EditInstanceDialog from './EditInstanceDialog';
+import { isDiff } from './util';
 
 @ConfigProvider.config
 class InstanceTable extends React.Component {
@@ -30,6 +31,7 @@ class InstanceTable extends React.Component {
     clusterName: PropTypes.string,
     serviceName: PropTypes.string,
     groupName: PropTypes.string,
+    filters: PropTypes.object,
   };
 
   constructor(props) {
@@ -47,6 +49,12 @@ class InstanceTable extends React.Component {
     this.getInstanceList();
   }
 
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (isDiff(prevProps.filters, this.props.filters)) {
+      this.getInstanceList();
+    }
+  }
+
   openLoading() {
     this.setState({ loading: true });
   }
@@ -56,7 +64,8 @@ class InstanceTable extends React.Component {
   }
 
   getInstanceList() {
-    const { clusterName, serviceName, groupName } = this.props;
+    const { clusterName, serviceName, groupName, filters } = this.props;
+
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
     request({
@@ -67,6 +76,7 @@ class InstanceTable extends React.Component {
         groupName,
         pageSize,
         pageNo: pageNum,
+        metadata: JSON.stringify(Object.fromEntries(filters)),
       },
       beforeSend: () => this.openLoading(),
       success: instance => this.setState({ instance }),
@@ -120,7 +130,7 @@ class InstanceTable extends React.Component {
     const { instance, pageSize, loading } = this.state;
     return instance.count ? (
       <div>
-        <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
+        <Table dataSource={instance.list} loading={loading} rowProps={this.rowColor}>
           <Table.Column width={138} title="IP" dataIndex="ip" />
           <Table.Column width={100} title={locale.port} dataIndex="port" />
           <Table.Column

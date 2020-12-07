@@ -31,10 +31,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.test.naming.NamingBase.*;
 
 /**
  * Created by wangtong.wt on 2018/6/20.
@@ -103,9 +105,9 @@ public class RegisterInstance_ITCase {
      */
     @Test
     public void regDomTest() throws Exception {
-        String serviceName = randomDomainName();
+        String serviceName = NamingBase.randomDomainName();
         System.out.println(serviceName);
-        naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
+        naming.registerInstance(serviceName, NamingBase.TEST_IP_4_DOM_1, NamingBase.TEST_PORT);
 
         TimeUnit.SECONDS.sleep(3);
 
@@ -114,8 +116,8 @@ public class RegisterInstance_ITCase {
         Assert.assertEquals(1, instances.size());
         Assert.assertTrue(instances.get(0).getInstanceId().contains(serviceName));
         //Assert.assertEquals(instances.get(0).getService().getName(), serviceName);
-        Assert.assertEquals(instances.get(0).getIp(), TEST_IP_4_DOM_1);
-        Assert.assertEquals(instances.get(0).getPort(), TEST_PORT);
+        Assert.assertEquals(instances.get(0).getIp(), NamingBase.TEST_IP_4_DOM_1);
+        Assert.assertEquals(instances.get(0).getPort(), NamingBase.TEST_PORT);
     }
 
     /**
@@ -126,11 +128,11 @@ public class RegisterInstance_ITCase {
     @Test
     public void regDomClusterTest() throws Exception {
 
-        String serviceName = randomDomainName();
+        String serviceName = NamingBase.randomDomainName();
 
         System.out.println(serviceName);
 
-        naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT, TEST_NEW_CLUSTER_4_DOM_1);
+        naming.registerInstance(serviceName, NamingBase.TEST_IP_4_DOM_1, NamingBase.TEST_PORT, NamingBase.TEST_NEW_CLUSTER_4_DOM_1);
 
         TimeUnit.SECONDS.sleep(3);
 
@@ -139,17 +141,17 @@ public class RegisterInstance_ITCase {
         Assert.assertEquals(1, instances.size());
         Assert.assertTrue(instances.get(0).getInstanceId().contains(serviceName));
         //Assert.assertEquals(instances2.get(0).getService().getName(), serviceName);
-        Assert.assertEquals(instances.get(0).getIp(), TEST_IP_4_DOM_1);
-        Assert.assertEquals(instances.get(0).getPort(), TEST_PORT);
+        Assert.assertEquals(instances.get(0).getIp(), NamingBase.TEST_IP_4_DOM_1);
+        Assert.assertEquals(instances.get(0).getPort(), NamingBase.TEST_PORT);
         //Assert.assertEquals(instances.get(0).getCluster().getName(), TEST_NEW_CLUSTER_4_DOM_1);
 
-        List<Instance> instances2 = naming.getAllInstances(serviceName, Arrays.asList(TEST_NEW_CLUSTER_4_DOM_1));
+        List<Instance> instances2 = naming.getAllInstances(serviceName, Arrays.asList(NamingBase.TEST_NEW_CLUSTER_4_DOM_1));
 
         Assert.assertEquals(instances2.size(), 1);
         Assert.assertTrue(instances2.get(0).getInstanceId().contains(serviceName));
         //Assert.assertEquals(instances2.get(0).getService().getName(), serviceName);
-        Assert.assertEquals(instances2.get(0).getIp(), TEST_IP_4_DOM_1);
-        Assert.assertEquals(instances2.get(0).getPort(), TEST_PORT);
+        Assert.assertEquals(instances2.get(0).getIp(), NamingBase.TEST_IP_4_DOM_1);
+        Assert.assertEquals(instances2.get(0).getPort(), NamingBase.TEST_PORT);
         //Assert.assertEquals(instances2.get(0).getCluster().getName(), TEST_NEW_CLUSTER_4_DOM_1);
     }
 
@@ -160,9 +162,9 @@ public class RegisterInstance_ITCase {
      */
     @Test
     public void regDomWithInstance() throws Exception {
-        String serviceName = randomDomainName();
+        String serviceName = NamingBase.randomDomainName();
 
-        Instance i1 = getInstance(serviceName);
+        Instance i1 = NamingBase.getInstance(serviceName);
         naming.registerInstance(serviceName, i1);
 
         TimeUnit.SECONDS.sleep(3);
@@ -171,7 +173,7 @@ public class RegisterInstance_ITCase {
 
         Assert.assertEquals(instances.size(), 1);
 
-        Assert.assertTrue(verifyInstance(i1, instances.get(0)));
+        Assert.assertTrue(NamingBase.verifyInstance(i1, instances.get(0)));
 
     }
 
@@ -182,11 +184,11 @@ public class RegisterInstance_ITCase {
      */
     @Test
     public void regDomNotHealth() throws Exception {
-        String serviceName = randomDomainName();
+        String serviceName = NamingBase.randomDomainName();
         System.out.println(serviceName);
 
         naming.registerInstance(serviceName, "1.1.1.1", 2000);
-        naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
+        naming.registerInstance(serviceName, NamingBase.TEST_IP_4_DOM_1, NamingBase.TEST_PORT);
 
         TimeUnit.SECONDS.sleep(3);
 
@@ -198,7 +200,7 @@ public class RegisterInstance_ITCase {
     @Test
     public void regServiceWithMetadata() throws Exception {
 
-        String serviceName = randomDomainName();
+        String serviceName = NamingBase.randomDomainName();
         System.out.println(serviceName);
 
         Instance instance = new Instance();
@@ -223,7 +225,7 @@ public class RegisterInstance_ITCase {
     @Test
     public void regServiceWithTTL() throws Exception {
 
-        String serviceName = randomDomainName();
+        String serviceName = NamingBase.randomDomainName();
         System.out.println(serviceName);
 
         Instance instance = new Instance();

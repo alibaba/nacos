@@ -55,6 +55,8 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private static final String LOCAL_IP_PROPERTY_KEY = "nacos.local.ip";
     
+    private static final String FIRST_PRE_PROPERTIES = "first_pre";
+    
     private ScheduledExecutorService scheduledExecutorService;
     
     private volatile boolean starting;
@@ -126,7 +128,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private void loadPreProperties(ConfigurableEnvironment environment) {
         try {
-            environment.getPropertySources().addLast(new OriginTrackedMapPropertySource("first_pre",
+            environment.getPropertySources().addLast(new OriginTrackedMapPropertySource(FIRST_PRE_PROPERTIES,
                     EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource())));
         } catch (IOException e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
@@ -151,7 +153,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
     }
     
     private void removePreProperties(ConfigurableEnvironment environment) {
-        environment.getPropertySources().remove("first_pre");
+        environment.getPropertySources().remove(FIRST_PRE_PROPERTIES);
     }
     
     private void logClusterConf() {
