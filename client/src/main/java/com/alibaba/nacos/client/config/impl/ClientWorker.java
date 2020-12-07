@@ -212,12 +212,12 @@ public class ClientWorker implements Closeable {
         cacheMap.computeIfPresent(groupKey, (key, value) -> {
             if (value.getListeners().isEmpty()) {
                 LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
-                MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
                 return null;
             } else {
                 return value;
             }
         });
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
     }
     
     /**
@@ -264,14 +264,15 @@ public class ClientWorker implements Closeable {
             throw new IllegalArgumentException();
         }
         String groupKey = GroupKey.getKey(dataId, group);
-        return cacheMap.computeIfAbsent(groupKey, key -> {
+        CacheData cacheData = cacheMap.computeIfAbsent(groupKey, key -> {
             CacheData cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
             int taskId = cacheMap.size() / (int) ParamUtil.getPerTaskConfigSize();
             cache.setTaskId(taskId);
             LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), groupKey);
-            MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
             return cache;
         });
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
+        return cacheData;
         
     }
     
@@ -288,7 +289,7 @@ public class ClientWorker implements Closeable {
             throw new IllegalArgumentException();
         }
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
-        return cacheMap.computeIfAbsent(groupKey, key -> {
+        CacheData cacheData = cacheMap.computeIfAbsent(groupKey, key -> {
             CacheData cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
             int taskId = cacheMap.size() / (int) ParamUtil.getPerTaskConfigSize();
             cache.setTaskId(taskId);
@@ -303,9 +304,10 @@ public class ClientWorker implements Closeable {
                 cache.setContent(ct[0]);
             }
             LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), groupKey);
-            MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
             return cache;
         });
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
+        return cacheData;
         
     }
     
