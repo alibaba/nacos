@@ -197,11 +197,10 @@ public class ClientWorker implements Closeable {
         }
         // reset so that server not hang this check
         lastCacheData.setInitializing(true);
-        
+    
         LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
-        
+    
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
-        
         return lastCacheData;
     }
     
