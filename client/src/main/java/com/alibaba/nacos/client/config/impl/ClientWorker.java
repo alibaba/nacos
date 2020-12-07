@@ -186,11 +186,10 @@ public class ClientWorker implements Closeable {
         if (cacheData != null) {
             return cacheData;
         }
-    
+        
         cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
         // multiple listeners on the same dataid+group and race condition
         CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
-        
         if (lastCacheData == null) {
             int taskId = cacheMap.size() / (int) ParamUtil.getPerTaskConfigSize();
             lastCacheData = cacheData;
