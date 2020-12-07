@@ -176,6 +176,11 @@ const I18N_CONF = {
     serviceNameRequired: '请输入服务名',
     protectThresholdRequired: '请输入保护阈值',
   },
+  InstanceFilter: {
+    title: '元数据过滤',
+    addFilter: '添加过滤',
+    clear: '清空',
+  },
   InstanceTable: {
     operation: '操作',
     port: '端口',

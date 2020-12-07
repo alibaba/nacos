@@ -16,14 +16,16 @@
 
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
-import { Input, Button, Form, Tag, Card } from '@alifd/next';
+import { Input, ConfigProvider, Button, Form, Tag, Card } from '@alifd/next';
 import { isDiff } from './util';
 
 const { Group: TagGroup, Closeable: CloseableTag } = Tag;
 const FormItem = Form.Item;
 
-export default class InstanceFilter extends React.Component {
+@ConfigProvider.config
+class InstanceFilter extends React.Component {
   static propTypes = {
+    locale: PropTypes.object,
     setFilters: PropTypes.func.isRequired,
   };
 
@@ -80,10 +82,12 @@ export default class InstanceFilter extends React.Component {
 
   render() {
     const { key, value, filters } = this.state;
+    const { locale = {} } = this.props;
+
     return (
-      <Card subTitle={'元数据过滤'} contentHeight="auto" className="inner-card">
+      <Card contentHeight="auto" className="inner-card">
         <Form inline size="small">
-          <FormItem label={'元数据过滤'}>
+          <FormItem label={locale.title}>
             <FormItem>
               <Input
                 placeholder={'key'}
@@ -102,11 +106,11 @@ export default class InstanceFilter extends React.Component {
             </FormItem>
             <FormItem label="">
               <Button type="primary" onClick={this.addFilter} style={{ marginRight: 10 }}>
-                {'添加过滤'}
+                {locale.addFilter}
               </Button>
               {filters.size > 0 ? (
                 <Button type="primary" onClick={this.clearFilters}>
-                  {'清空'}
+                  {locale.clear}
                 </Button>
               ) : (
                 ''
@@ -131,3 +135,5 @@ export default class InstanceFilter extends React.Component {
     );
   }
 }
+
+export default InstanceFilter;
