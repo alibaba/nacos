@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.remote;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+
 /**
  * ConnectionType.
  *
@@ -44,13 +46,21 @@ public enum ConnectionType {
     String name;
     
     public static ConnectionType getByType(String type) {
+        
+        return getByType(type, null);
+    }
+    
+    public static ConnectionType getByType(String type, ConnectionType defaultType) {
+        if (StringUtils.isBlank(type)) {
+            return defaultType;
+        }
         ConnectionType[] values = ConnectionType.values();
         for (ConnectionType connectionType : values) {
             if (connectionType.getType().equals(type)) {
                 return connectionType;
             }
         }
-        return null;
+        return defaultType;
     }
     
     private ConnectionType(String type, String name) {
