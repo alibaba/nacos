@@ -67,11 +67,11 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
         Loggers.SRV_LOG.info("Remove expired metadata {}", expiredInfo);
         if (null == expiredInfo.getInstanceId()) {
             if (metadataManager.containServiceMetadata(expiredInfo.getService())) {
-                metadataOperateService.deleteInstanceMetadata(expiredInfo.getService(), expiredInfo.getInstanceId());
+                metadataOperateService.deleteServiceMetadata(expiredInfo.getService());
             }
         } else {
             if (metadataManager.containInstanceMetadata(expiredInfo.getService(), expiredInfo.getInstanceId())) {
-                metadataOperateService.deleteServiceMetadata(expiredInfo.getService());
+                metadataOperateService.deleteInstanceMetadata(expiredInfo.getService(), expiredInfo.getInstanceId());
             }
         }
     }
