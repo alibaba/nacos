@@ -42,9 +42,30 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
     }
     
     @Override
+    public void create(String namespaceId, String serviceName, ServiceMetadata metadata) throws NacosException {
+        if (serviceManager.getService(namespaceId, serviceName) != null) {
+            throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
+        }
+        com.alibaba.nacos.naming.core.Service service = new com.alibaba.nacos.naming.core.Service(serviceName);
+        service.setProtectThreshold(metadata.getProtectThreshold());
+        service.setEnabled(true);
+        service.setMetadata(metadata.getExtendData());
+        service.setSelector(metadata.getSelector());
+        service.setNamespaceId(namespaceId);
+        
+        // now valid the service. if failed, exception will be thrown
+        service.setLastModifiedMillis(System.currentTimeMillis());
+        service.recalculateChecksum();
+        service.validate();
+        
+        serviceManager.addOrReplaceService(service);
+    }
+    
+    @Override
     public void update(Service service, ServiceMetadata metadata) throws NacosException {
         String serviceName = service.getGroupedServiceName();
-        com.alibaba.nacos.naming.core.Service serviceV1 = serviceManager.getService(service.getNamespace(), serviceName);
+        com.alibaba.nacos.naming.core.Service serviceV1 = serviceManager
+                .getService(service.getNamespace(), serviceName);
         if (serviceV1 == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "service " + serviceName + " not found!");
         }
@@ -55,6 +76,11 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
         serviceV1.recalculateChecksum();
         serviceV1.validate();
         serviceManager.addOrReplaceService(serviceV1);
+    }
+    
+    @Override
+    public void delete(String namespaceId, String serviceName) throws NacosException {
+        serviceManager.easyRemoveService(namespaceId, serviceName);
     }
     
     @Override
