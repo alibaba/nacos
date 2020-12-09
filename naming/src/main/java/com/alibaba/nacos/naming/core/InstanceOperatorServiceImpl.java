@@ -107,6 +107,35 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     }
     
     @Override
+    public void patchInstance(String namespaceId, String serviceName, InstancePatchObject patchObject)
+            throws NacosException {
+        com.alibaba.nacos.naming.core.Instance instance = serviceManager
+                .getInstance(namespaceId, serviceName, patchObject.getCluster(), patchObject.getIp(),
+                        patchObject.getPort());
+        if (instance == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "instance not found");
+        }
+        if (null != patchObject.getMetadata()) {
+            instance.setMetadata(patchObject.getMetadata());
+        }
+        if (null != patchObject.getApp()) {
+            instance.setApp(patchObject.getApp());
+        }
+        if (null != patchObject.getEnabled()) {
+            instance.setEnabled(patchObject.getEnabled());
+        }
+        if (null != patchObject.getHealthy()) {
+            instance.setHealthy(patchObject.getHealthy());
+        }
+        if (null != patchObject.getApp()) {
+            instance.setApp(patchObject.getApp());
+        }
+        instance.setLastBeat(System.currentTimeMillis());
+        instance.validate();
+        serviceManager.updateInstance(namespaceId, serviceName, instance);
+    }
+    
+    @Override
     public ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
             boolean healthOnly) throws Exception {
         ClientInfo clientInfo = new ClientInfo(subscriber.getAgent());

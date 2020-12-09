@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
+import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
@@ -319,35 +320,28 @@ public class InstanceController {
         if (StringUtils.isBlank(cluster)) {
             cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        
-        Instance instance = serviceManager.getInstance(namespaceId, serviceName, cluster, ip, Integer.parseInt(port));
-        if (instance == null) {
-            throw new IllegalArgumentException("instance not found");
-        }
-        
+        InstancePatchObject patchObject = new InstancePatchObject(cluster, ip, Integer.parseInt(port));
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(metadata)) {
-            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
+            patchObject.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
         String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(app)) {
-            instance.setApp(app);
+            patchObject.setApp(app);
         }
         String weight = WebUtils.optional(request, "weight", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(weight)) {
-            instance.setWeight(Double.parseDouble(weight));
+            patchObject.setWeight(Double.parseDouble(weight));
         }
         String healthy = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(healthy)) {
-            instance.setHealthy(BooleanUtils.toBoolean(healthy));
+            patchObject.setHealthy(BooleanUtils.toBoolean(healthy));
         }
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(enabledString)) {
-            instance.setEnabled(BooleanUtils.toBoolean(enabledString));
+            patchObject.setEnabled(BooleanUtils.toBoolean(enabledString));
         }
-        instance.setLastBeat(System.currentTimeMillis());
-        instance.validate();
-        serviceManager.updateInstance(namespaceId, serviceName, instance);
+        instanceService.patchInstance(namespaceId, serviceName, patchObject);
         return "ok";
     }
     

@@ -42,6 +42,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -84,9 +85,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     public void registerInstance(String namespaceId, String serviceName, Instance instance) {
         String clientId = instance.toInetAddr();
         createIpPortClientIfAbsent(clientId, instance.isEphemeral());
-        String groupName = NamingUtils.getGroupName(serviceName);
-        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped, instance.isEphemeral());
+        Service service = getService(namespaceId, serviceName, instance.isEphemeral());
         clientOperationService.registerInstance(service, instance, clientId);
     }
     
@@ -97,17 +96,13 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             Loggers.SRV_LOG.warn("remove instance from non-exist client: {}", clientId);
             return;
         }
-        String groupName = NamingUtils.getGroupName(serviceName);
-        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped, instance.isEphemeral());
+        Service service = getService(namespaceId, serviceName, instance.isEphemeral());
         clientOperationService.deregisterInstance(service, instance, clientId);
     }
     
     @Override
     public void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
-        String groupName = NamingUtils.getGroupName(serviceName);
-        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped, instance.isEphemeral());
+        Service service = getService(namespaceId, serviceName, instance.isEphemeral());
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "service not found, namespace: " + namespaceId + ", service: " + service);
@@ -124,11 +119,42 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     @Override
+    public void patchInstance(String namespaceId, String serviceName, InstancePatchObject patchObject)
+            throws NacosException {
+        Service service = getService(namespaceId, serviceName, true);
+        Instance instance = getInstance(namespaceId, serviceName, patchObject.getCluster(), patchObject.getIp(),
+                patchObject.getPort());
+        String instanceId = instance.toInetAddr();
+        Optional<InstanceMetadata> instanceMetadata = metadataManager.getInstanceMetadata(service, instanceId);
+        InstanceMetadata newMetadata = instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
+        mergeMetadata(newMetadata, patchObject);
+        metadataOperateService.updateInstanceMetadata(service, instanceId, newMetadata);
+    }
+    
+    private InstanceMetadata cloneMetadata(InstanceMetadata instanceMetadata) {
+        InstanceMetadata result = new InstanceMetadata();
+        result.setExtendData(new HashMap<>(instanceMetadata.getExtendData()));
+        result.setWeight(instanceMetadata.getWeight());
+        result.setEnabled(instanceMetadata.isEnabled());
+        return result;
+    }
+    
+    private void mergeMetadata(InstanceMetadata newMetadata, InstancePatchObject patchObject) {
+        if (null != patchObject.getMetadata()) {
+            newMetadata.setExtendData(new HashMap<>(patchObject.getMetadata()));
+        }
+        if (null != patchObject.getEnabled()) {
+            newMetadata.setEnabled(patchObject.getEnabled());
+        }
+        if (null != patchObject.getWeight()) {
+            newMetadata.setWeight(patchObject.getWeight());
+        }
+    }
+    
+    @Override
     public ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
             boolean healthOnly) {
-        String groupName = NamingUtils.getGroupName(serviceName);
-        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
+        Service service = getService(namespaceId, serviceName, true);
         if (null != subscriber) {
             createIpPortClientIfAbsent(subscriber.getAddrStr(), true);
             clientOperationService.subscribeService(service, subscriber, subscriber.getAddrStr());
@@ -143,9 +169,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     @Override
     public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
             throws NacosException {
-        String groupName = NamingUtils.getGroupName(serviceName);
-        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
+        Service service = getService(namespaceId, serviceName, true);
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         if (serviceInfo.getHosts().isEmpty()) {
             throw new NacosException(NacosException.NOT_FOUND,
@@ -162,10 +186,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     @Override
     public int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster,
             RsInfo clientBeat) throws NacosException {
-        String groupName = NamingUtils.getGroupName(serviceName);
-        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
+        Service service = getService(namespaceId, serviceName, true);
         String clientId = ip + ":" + port;
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
         IpPortBasedClient client = (IpPortBasedClient) clientManager.getClient(clientId);
         if (null == client || !client.getAllPublishedService().contains(service)) {
             if (null == clientBeat) {
@@ -202,9 +224,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     @Override
     public long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster) {
-        String groupName = NamingUtils.getGroupName(serviceName);
-        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
+        Service service = getService(namespaceId, serviceName, true);
         Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, ip);
         if (metadata.isPresent() && metadata.get().getExtendData()
                 .containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
@@ -219,17 +239,21 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         return switchDomain.getClientBeatInterval();
     }
     
+    @Override
+    public List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException {
+        Service service = getService(namespaceId, serviceName, true);
+        return serviceStorage.getData(service).getHosts();
+    }
+    
     private void createIpPortClientIfAbsent(String clientId, boolean ephemeral) {
         if (!clientManager.allClientId().contains(clientId)) {
             clientManager.clientConnected(new IpPortBasedClient(clientId, ephemeral));
         }
     }
     
-    @Override
-    public List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException {
+    private Service getService(String namespaceId, String serviceName, boolean ephemeral) {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
-        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
-        return serviceStorage.getData(service).getHosts();
+        return Service.newService(namespaceId, groupName, serviceNameNoGrouped, ephemeral);
     }
 }
