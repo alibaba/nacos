@@ -99,7 +99,7 @@ public class ServiceStorage {
     }
     
     private List<Instance> getAllInstancesFromIndex(Service service) {
-        List<Instance> result = new LinkedList<>();
+        Set<Instance> result = new HashSet<>();
         Set<String> clusters = new HashSet<>();
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
             Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(each, service);
@@ -111,7 +111,7 @@ public class ServiceStorage {
         }
         // cache clusters of this service
         serviceClusterIndex.put(service, clusters);
-        return result;
+        return new LinkedList<>(result);
     }
     
     private Optional<InstancePublishInfo> getInstanceInfo(String clientId, Service service) {
@@ -135,7 +135,8 @@ public class ServiceStorage {
                 instanceMetadata.put(entry.getKey(), entry.getValue().toString());
             }
         }
-        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, instanceInfo.getInstanceId());
+        Optional<InstanceMetadata> metadata = metadataManager
+                .getInstanceMetadata(service, instanceInfo.getInstanceId());
         if (metadata.isPresent()) {
             result.setEnabled(metadata.get().isEnabled());
             result.setWeight(metadata.get().getWeight());
