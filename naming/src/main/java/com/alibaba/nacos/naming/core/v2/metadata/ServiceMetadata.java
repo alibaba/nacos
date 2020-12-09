@@ -34,6 +34,11 @@ public class ServiceMetadata implements Serializable {
     private static final long serialVersionUID = -6605609934135069566L;
     
     /**
+     * Service is ephemeral or persistence.
+     */
+    private boolean ephemeral = true;
+    
+    /**
      * protect threshold.
      */
     private float protectThreshold = 0.0F;
@@ -46,6 +51,14 @@ public class ServiceMetadata implements Serializable {
     private Map<String, String> extendData = new ConcurrentHashMap<>(1);
     
     private Map<String, ClusterMetadata> clusters = new ConcurrentHashMap<>(1);
+    
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
+    
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
+    }
     
     public float getProtectThreshold() {
         return protectThreshold;

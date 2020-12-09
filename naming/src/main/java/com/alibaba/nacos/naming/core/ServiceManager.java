@@ -431,13 +431,13 @@ public class ServiceManager implements RecordListener<Service> {
      *
      * @param namespaceId namespace
      * @param serviceName service name
-     * @throws Exception exception
+     * @throws NacosException exception
      */
-    public void easyRemoveService(String namespaceId, String serviceName) throws Exception {
+    public void easyRemoveService(String namespaceId, String serviceName) throws NacosException {
         
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
-            throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
+            throw new NacosException(NacosException.INVALID_PARAM, "specified service not exist, serviceName : " + serviceName);
         }
         
         consistencyService.remove(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName));
