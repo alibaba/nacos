@@ -34,6 +34,10 @@ class InstanceTable extends React.Component {
     filters: PropTypes.object,
   };
 
+  static defaultProps = {
+    filters: new Map(),
+  };
+
   constructor(props) {
     super(props);
     this.editInstanceDialog = React.createRef();

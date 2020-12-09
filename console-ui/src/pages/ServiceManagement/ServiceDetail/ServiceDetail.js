@@ -24,7 +24,7 @@ import InstanceTable from './InstanceTable';
 import { getParameter } from 'utils/nacosutil';
 import MonacoEditor from 'components/MonacoEditor';
 import { MONACO_READONLY_OPTIONS, METADATA_ENTER } from './constant';
-import InstanceFilter from './instanceFilter';
+import InstanceFilter from './InstanceFilter';
 import './ServiceDetail.scss';
 
 const FormItem = Form.Item;
@@ -96,9 +96,13 @@ class ServiceDetail extends React.Component {
     this.editClusterDialog.current.getInstance().show(cluster);
   }
 
-  setFilters = filters => {
+  setFilters = clusterName => filters => {
+    const { instanceFilters } = this.state;
+    const newFilters = new Map(Array.from(instanceFilters));
+    newFilters.set(clusterName, filters);
+
     this.setState({
-      instanceFilters: filters,
+      instanceFilters: newFilters,
     });
   };
 
@@ -183,12 +187,12 @@ class ServiceDetail extends React.Component {
                 </Button>
               }
             >
-              <InstanceFilter setFilters={this.setFilters} />
+              <InstanceFilter setFilters={this.setFilters(cluster.name)} />
               <InstanceTable
                 clusterName={cluster.name}
                 serviceName={serviceName}
                 groupName={groupName}
-                filters={instanceFilters}
+                filters={instanceFilters.get(cluster.name)}
               />
             </Card>
           ))}
