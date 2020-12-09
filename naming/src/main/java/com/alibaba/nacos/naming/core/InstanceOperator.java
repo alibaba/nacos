@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
+import java.util.List;
+
 /**
  * Instance operator.
  *
@@ -53,12 +55,27 @@ public interface InstanceOperator {
      * Update instance information. Due to the basic information can't be changed, so this update should only update
      * metadata.
      *
+     * <p>Update API will replace the whole metadata with new input instance.
+     *
      * @param namespaceId namespace
      * @param serviceName grouped service name group@@service
      * @param instance    instance
      * @throws NacosException nacos exception when update failed
      */
     void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException;
+    
+    /**
+     * Patch update instance information. Due to the basic information can't be changed, so this update should only
+     * update metadata.
+     *
+     * <p>Patch update will only update variables in requests, the others will keep original value.
+     *
+     * @param namespaceId namespace
+     * @param serviceName grouped service name group@@service
+     * @param patchObject objects need to be patch
+     * @throws NacosException nacos exception when update failed
+     */
+    void patchInstance(String namespaceId, String serviceName, InstancePatchObject patchObject) throws NacosException;
     
     /**
      * Get all instance of input service.
@@ -73,6 +90,20 @@ public interface InstanceOperator {
      */
     ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
             boolean healthOnly) throws Exception;
+    
+    /**
+     * Get instance detail information.
+     *
+     * @param namespaceId namespace
+     * @param serviceName grouped service name group@@service
+     * @param cluster     cluster of instance
+     * @param ip          ip of instance
+     * @param port        port of instance
+     * @return instance info
+     * @throws NacosException nacos exception during query
+     */
+    Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
+            throws NacosException;
     
     /**
      * Handle beat request.
@@ -100,4 +131,14 @@ public interface InstanceOperator {
      * @return heart beat interval
      */
     long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster);
+    
+    /**
+     * List all instances whatever status they are.
+     *
+     * @param namespaceId namespace
+     * @param serviceName grouped service name group@@service
+     * @return all instances
+     * @throws NacosException nacos exception during query
+     */
+    List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException;
 }

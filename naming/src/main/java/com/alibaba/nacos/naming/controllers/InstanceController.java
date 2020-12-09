@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
+import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
@@ -33,9 +34,9 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
@@ -173,8 +174,7 @@ public class InstanceController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         instanceService.updateInstance(namespaceId, serviceName, parseInstance(request));
@@ -311,7 +311,6 @@ public class InstanceController {
     @PatchMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String patch(HttpServletRequest request) throws Exception {
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         String ip = WebUtils.required(request, "ip");
@@ -320,35 +319,29 @@ public class InstanceController {
         if (StringUtils.isBlank(cluster)) {
             cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        
-        Instance instance = serviceManager.getInstance(namespaceId, serviceName, cluster, ip, Integer.parseInt(port));
-        if (instance == null) {
-            throw new IllegalArgumentException("instance not found");
-        }
-        
+        InstancePatchObject patchObject = new InstancePatchObject(cluster, ip, Integer.parseInt(port));
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(metadata)) {
-            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
+            patchObject.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
         String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(app)) {
-            instance.setApp(app);
+            patchObject.setApp(app);
         }
         String weight = WebUtils.optional(request, "weight", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(weight)) {
-            instance.setWeight(Double.parseDouble(weight));
+            patchObject.setWeight(Double.parseDouble(weight));
         }
         String healthy = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(healthy)) {
-            instance.setHealthy(BooleanUtils.toBoolean(healthy));
+            patchObject.setHealthy(BooleanUtils.toBoolean(healthy));
         }
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(enabledString)) {
-            instance.setEnabled(BooleanUtils.toBoolean(enabledString));
+            patchObject.setEnabled(BooleanUtils.toBoolean(enabledString));
         }
-        instance.setLastBeat(System.currentTimeMillis());
-        instance.validate();
-        serviceManager.updateInstance(namespaceId, serviceName, instance);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        instanceService.patchInstance(namespaceId, serviceName, patchObject);
         return "ok";
     }
     
@@ -403,36 +396,18 @@ public class InstanceController {
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
         
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "no service " + serviceName + " found!");
-        }
-        
-        List<String> clusters = new ArrayList<>();
-        clusters.add(cluster);
-        
-        List<Instance> ips = service.allIPs(clusters);
-        if (ips == null || ips.isEmpty()) {
-            throw new NacosException(NacosException.NOT_FOUND,
-                    "no ips found for cluster " + cluster + " in service " + serviceName);
-        }
-        
-        for (Instance instance : ips) {
-            if (instance.getIp().equals(ip) && instance.getPort() == port) {
-                ObjectNode result = JacksonUtils.createEmptyJsonNode();
-                result.put("service", serviceName);
-                result.put("ip", ip);
-                result.put("port", port);
-                result.put("clusterName", cluster);
-                result.put("weight", instance.getWeight());
-                result.put("healthy", instance.isHealthy());
-                result.put("instanceId", instance.getInstanceId());
-                result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
-                return result;
-            }
-        }
-        
-        throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
+        com.alibaba.nacos.api.naming.pojo.Instance instance = instanceService
+                .getInstance(namespaceId, serviceName, cluster, ip, port);
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put("service", serviceName);
+        result.put("ip", ip);
+        result.put("port", port);
+        result.put("clusterName", cluster);
+        result.put("weight", instance.getWeight());
+        result.put("healthy", instance.isHealthy());
+        result.put("instanceId", instance.getInstanceId());
+        result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
+        return result;
     }
     
     /**
@@ -503,21 +478,15 @@ public class InstanceController {
             serviceName = key;
         }
         NamingUtils.checkServiceNameFormat(serviceName);
-        Service service = serviceManager.getService(namespaceId, serviceName);
         
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service: " + serviceName + " not found.");
-        }
-        
-        List<Instance> ips = service.allIPs();
+        List<? extends com.alibaba.nacos.api.naming.pojo.Instance> ips = instanceService
+                .listAllInstances(namespaceId, serviceName);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
-        
-        for (Instance ip : ips) {
-            ipArray.add(ip.toIpAddr() + "_" + ip.isHealthy());
+        for (com.alibaba.nacos.api.naming.pojo.Instance ip : ips) {
+            ipArray.add(ip.toInetAddr() + "_" + ip.isHealthy());
         }
-        
         result.replace("ips", ipArray);
         return result;
     }

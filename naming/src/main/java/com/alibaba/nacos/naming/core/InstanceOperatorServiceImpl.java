@@ -107,6 +107,35 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     }
     
     @Override
+    public void patchInstance(String namespaceId, String serviceName, InstancePatchObject patchObject)
+            throws NacosException {
+        com.alibaba.nacos.naming.core.Instance instance = serviceManager
+                .getInstance(namespaceId, serviceName, patchObject.getCluster(), patchObject.getIp(),
+                        patchObject.getPort());
+        if (instance == null) {
+            throw new NacosException(NacosException.INVALID_PARAM, "instance not found");
+        }
+        if (null != patchObject.getMetadata()) {
+            instance.setMetadata(patchObject.getMetadata());
+        }
+        if (null != patchObject.getApp()) {
+            instance.setApp(patchObject.getApp());
+        }
+        if (null != patchObject.getEnabled()) {
+            instance.setEnabled(patchObject.getEnabled());
+        }
+        if (null != patchObject.getHealthy()) {
+            instance.setHealthy(patchObject.getHealthy());
+        }
+        if (null != patchObject.getApp()) {
+            instance.setApp(patchObject.getApp());
+        }
+        instance.setLastBeat(System.currentTimeMillis());
+        instance.validate();
+        serviceManager.updateInstance(namespaceId, serviceName, instance);
+    }
+    
+    @Override
     public ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
             boolean healthOnly) throws Exception {
         ClientInfo clientInfo = new ClientInfo(subscriber.getAgent());
@@ -202,6 +231,28 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         return result;
     }
     
+    @Override
+    public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
+            throws NacosException {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "no service " + serviceName + " found!");
+        }
+        List<String> clusters = new ArrayList<>();
+        clusters.add(cluster);
+        List<com.alibaba.nacos.naming.core.Instance> ips = service.allIPs(clusters);
+        if (ips == null || ips.isEmpty()) {
+            throw new NacosException(NacosException.NOT_FOUND,
+                    "no ips found for cluster " + cluster + " in service " + serviceName);
+        }
+        for (com.alibaba.nacos.naming.core.Instance each : ips) {
+            if (each.getIp().equals(ip) && each.getPort() == port) {
+                return each;
+            }
+        }
+        throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
+    }
+    
     private void checkIfDisabled(Service service) throws Exception {
         if (!service.getEnabled()) {
             throw new Exception("service is disabled now.");
@@ -259,5 +310,14 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             return instance.getInstanceHeartBeatInterval();
         }
         return switchDomain.getClientBeatInterval();
+    }
+    
+    @Override
+    public List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "service: " + serviceName + " not found.");
+        }
+        return service.allIPs();
     }
 }
