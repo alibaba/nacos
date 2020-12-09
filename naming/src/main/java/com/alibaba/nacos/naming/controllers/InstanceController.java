@@ -33,9 +33,9 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
@@ -173,8 +173,7 @@ public class InstanceController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         instanceService.updateInstance(namespaceId, serviceName, parseInstance(request));
@@ -403,36 +402,18 @@ public class InstanceController {
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
         
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "no service " + serviceName + " found!");
-        }
-        
-        List<String> clusters = new ArrayList<>();
-        clusters.add(cluster);
-        
-        List<Instance> ips = service.allIPs(clusters);
-        if (ips == null || ips.isEmpty()) {
-            throw new NacosException(NacosException.NOT_FOUND,
-                    "no ips found for cluster " + cluster + " in service " + serviceName);
-        }
-        
-        for (Instance instance : ips) {
-            if (instance.getIp().equals(ip) && instance.getPort() == port) {
-                ObjectNode result = JacksonUtils.createEmptyJsonNode();
-                result.put("service", serviceName);
-                result.put("ip", ip);
-                result.put("port", port);
-                result.put("clusterName", cluster);
-                result.put("weight", instance.getWeight());
-                result.put("healthy", instance.isHealthy());
-                result.put("instanceId", instance.getInstanceId());
-                result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
-                return result;
-            }
-        }
-        
-        throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
+        com.alibaba.nacos.api.naming.pojo.Instance instance = instanceService
+                .getInstance(namespaceId, serviceName, cluster, ip, port);
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put("service", serviceName);
+        result.put("ip", ip);
+        result.put("port", port);
+        result.put("clusterName", cluster);
+        result.put("weight", instance.getWeight());
+        result.put("healthy", instance.isHealthy());
+        result.put("instanceId", instance.getInstanceId());
+        result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
+        return result;
     }
     
     /**

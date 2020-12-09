@@ -66,7 +66,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     public InstanceOperatorClientImpl(ClientManagerDelegate clientManager,
             ClientOperationService clientOperationService, ServiceStorage serviceStorage,
-            NamingMetadataOperateService metadataOperateService, NamingMetadataManager metadataManager, SwitchDomain switchDomain) {
+            NamingMetadataOperateService metadataOperateService, NamingMetadataManager metadataManager,
+            SwitchDomain switchDomain) {
         this.clientManager = clientManager;
         this.clientOperationService = clientOperationService;
         this.serviceStorage = serviceStorage;
@@ -139,6 +140,25 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     @Override
+    public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
+            throws NacosException {
+        String groupName = NamingUtils.getGroupName(serviceName);
+        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
+        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
+        ServiceInfo serviceInfo = serviceStorage.getData(service);
+        if (serviceInfo.getHosts().isEmpty()) {
+            throw new NacosException(NacosException.NOT_FOUND,
+                    "no ips found for cluster " + cluster + " in service " + serviceName);
+        }
+        for (Instance each : serviceInfo.getHosts()) {
+            if (cluster.equals(each.getClusterName()) && ip.equals(each.getIp()) && port == each.getPort()) {
+                return each;
+            }
+        }
+        throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
+    }
+    
+    @Override
     public int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster,
             RsInfo clientBeat) throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
@@ -185,7 +205,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
         Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, ip);
-        if (metadata.isPresent() && metadata.get().getExtendData().containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
+        if (metadata.isPresent() && metadata.get().getExtendData()
+                .containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
             return ConvertUtils.toLong(metadata.get().getExtendData().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));
         }
         String clientId = ip + ":" + port;

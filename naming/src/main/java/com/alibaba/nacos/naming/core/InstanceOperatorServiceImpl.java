@@ -202,6 +202,28 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         return result;
     }
     
+    @Override
+    public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
+            throws NacosException {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "no service " + serviceName + " found!");
+        }
+        List<String> clusters = new ArrayList<>();
+        clusters.add(cluster);
+        List<com.alibaba.nacos.naming.core.Instance> ips = service.allIPs(clusters);
+        if (ips == null || ips.isEmpty()) {
+            throw new NacosException(NacosException.NOT_FOUND,
+                    "no ips found for cluster " + cluster + " in service " + serviceName);
+        }
+        for (com.alibaba.nacos.naming.core.Instance each : ips) {
+            if (each.getIp().equals(ip) && each.getPort() == port) {
+                return each;
+            }
+        }
+        throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
+    }
+    
     private void checkIfDisabled(Service service) throws Exception {
         if (!service.getEnabled()) {
             throw new Exception("service is disabled now.");

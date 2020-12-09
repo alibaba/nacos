@@ -75,6 +75,20 @@ public interface InstanceOperator {
             boolean healthOnly) throws Exception;
     
     /**
+     * Get instance detail information.
+     *
+     * @param namespaceId namespace
+     * @param serviceName grouped service name group@@service
+     * @param cluster     cluster of instance
+     * @param ip          ip of instance
+     * @param port        port of instance
+     * @return instance info
+     * @throws NacosException nacos exception during query
+     */
+    Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
+            throws NacosException;
+    
+    /**
      * Handle beat request.
      *
      * @param namespaceId namespace
