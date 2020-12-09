@@ -311,7 +311,6 @@ public class InstanceController {
     @PatchMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String patch(HttpServletRequest request) throws Exception {
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         String ip = WebUtils.required(request, "ip");
@@ -341,6 +340,7 @@ public class InstanceController {
         if (StringUtils.isNotBlank(enabledString)) {
             patchObject.setEnabled(BooleanUtils.toBoolean(enabledString));
         }
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         instanceService.patchInstance(namespaceId, serviceName, patchObject);
         return "ok";
     }
