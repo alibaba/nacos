@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { Fragment } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Input, ConfigProvider, Button, Form, Tag, Card } from '@alifd/next';
 import { isDiff } from './util';
@@ -22,146 +22,116 @@ import { isDiff } from './util';
 const { Group: TagGroup, Closeable: CloseableTag } = Tag;
 const FormItem = Form.Item;
 
-@ConfigProvider.config
-class InstanceFilter extends React.Component {
-  static propTypes = {
-    locale: PropTypes.object,
-    setFilters: PropTypes.func.isRequired,
-  };
+function InstanceFilter(props) {
+  const [key, setKey] = useState('');
+  const [value, setValue] = useState('');
+  const [keyState, setKeyState] = useState('');
+  const [valueState, setValueState] = useState('');
+  const [filters, setFilters] = useState(new Map());
+  const { locale = {} } = props;
 
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      key: '',
-      keyState: '',
-      value: '',
-      valueState: '',
-      filters: new Map(),
-    };
-  }
-
-  addFilter = () => {
-    const { key, value, filters } = this.state;
-
-    this.updateInput();
+  const addFilter = () => {
+    updateInput();
 
     if (key && value) {
       const newFilters = new Map(Array.from(filters)).set(key, value);
 
-      this.setState({
-        filters: newFilters,
-        keyState: '',
-        valueState: '',
-      });
+      setFilters(newFilters);
+      setKeyState('');
+      setValueState('');
 
-      this.clearInput();
+      clearInput();
     }
   };
 
-  removeFilter = key => {
-    const { filters } = this.state;
+  const removeFilter = key => {
     const newFilters = new Map(Array.from(filters));
     newFilters.delete(key);
 
-    this.setState({ filters: newFilters });
+    setFilters(newFilters);
   };
 
-  clearInput = () => {
-    this.setState({
-      key: '',
-      value: '',
-    });
+  const clearFilters = () => {
+    setFilters(new Map());
   };
 
-  clearFilters = () => {
-    this.setState({
-      filters: new Map(),
-    });
+  const clearInput = () => {
+    setKey('');
+    setValue('');
   };
 
-  updateInput = () => {
-    const { key, value } = this.state;
-
+  const updateInput = () => {
     if (!key) {
-      this.setState({ keyState: 'error' });
+      setKeyState('error');
     } else {
-      this.setState({ keyState: '' });
+      setKeyState('');
     }
 
     if (!value) {
-      this.setState({ valueState: 'error' });
+      setValueState('error');
     } else {
-      this.setState({ valueState: '' });
+      setValueState('');
     }
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    const { filters } = this.state;
+  useEffect(() => {
+    props.setFilters(filters);
+  }, [filters]);
 
-    if (isDiff(prevState.filters, filters)) {
-      this.props.setFilters(filters);
-    }
-  }
-
-  render() {
-    const { key, value, filters, keyState, valueState } = this.state;
-    const { locale = {} } = this.props;
-
-    return (
-      <Card contentHeight="auto" className="inner-card">
-        <Form inline size="small">
-          <FormItem label={locale.title}>
-            <FormItem>
-              <Input
-                placeholder={'key'}
-                value={key}
-                trim
-                onChange={key => this.setState({ key })}
-                onPressEnter={this.addFilter}
-                state={keyState}
-              />
-            </FormItem>
-            <FormItem>
-              <Input
-                placeholder={'value'}
-                value={value}
-                trim
-                onChange={value => this.setState({ value })}
-                onPressEnter={this.addFilter}
-                state={valueState}
-              />
-            </FormItem>
-            <FormItem label="">
-              <Button type="primary" onClick={this.addFilter} style={{ marginRight: 10 }}>
-                {locale.addFilter}
-              </Button>
-              {filters.size > 0 ? (
-                <Button type="primary" onClick={this.clearFilters}>
-                  {locale.clear}
-                </Button>
-              ) : (
-                ''
-              )}
-            </FormItem>
+  return (
+    <Card contentHeight="auto" className="inner-card">
+      <Form inline size="small">
+        <FormItem label={locale.title}>
+          <FormItem>
+            <Input
+              placeholder={'key'}
+              value={key}
+              trim
+              onChange={key => setKey(key)}
+              onPressEnter={addFilter}
+              state={keyState}
+            />
           </FormItem>
-        </Form>
-        <TagGroup>
-          {Array.from(filters).map(filter => {
-            return (
-              <CloseableTag
-                size="medium"
-                key={filter[0]}
-                onClose={() => this.removeFilter(filter[0])}
-              >
-                {`${filter[0]} : ${filter[1]}`}
-              </CloseableTag>
-            );
-          })}
-        </TagGroup>
-      </Card>
-    );
-  }
+          <FormItem>
+            <Input
+              placeholder={'value'}
+              value={value}
+              trim
+              onChange={value => setValue(value)}
+              onPressEnter={addFilter}
+              state={valueState}
+            />
+          </FormItem>
+          <FormItem label="">
+            <Button type="primary" onClick={addFilter} style={{ marginRight: 10 }}>
+              {locale.addFilter}
+            </Button>
+            {filters.size > 0 ? (
+              <Button type="primary" onClick={clearFilters}>
+                {locale.clear}
+              </Button>
+            ) : (
+              ''
+            )}
+          </FormItem>
+        </FormItem>
+      </Form>
+      <TagGroup>
+        {Array.from(filters).map(filter => {
+          return (
+            <CloseableTag size="medium" key={filter[0]} onClose={() => removeFilter(filter[0])}>
+              {`${filter[0]} : ${filter[1]}`}
+            </CloseableTag>
+          );
+        })}
+      </TagGroup>
+    </Card>
+  );
 }
 
-export default InstanceFilter;
+InstanceFilter.propTypes = {
+  locale: PropTypes.object,
+  setFilters: PropTypes.func.isRequired,
+};
+
+export default ConfigProvider.config(InstanceFilter);

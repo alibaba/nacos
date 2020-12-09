@@ -24,7 +24,7 @@ import InstanceTable from './InstanceTable';
 import { getParameter } from 'utils/nacosutil';
 import MonacoEditor from 'components/MonacoEditor';
 import { MONACO_READONLY_OPTIONS, METADATA_ENTER } from './constant';
-import InstanceFilter from './instanceFilter';
+import InstanceFilter from './InstanceFilter';
 import './ServiceDetail.scss';
 
 const FormItem = Form.Item;
