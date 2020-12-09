@@ -50,7 +50,7 @@ public class CatalogControllerTest {
     
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
-        catalogController = new CatalogController();
+        catalogController = new CatalogController(null, null, null);
         Field field = catalogController.getClass().getDeclaredField("serviceManager");
         field.setAccessible(true);
         field.set(catalogController, serviceManager);

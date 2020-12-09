@@ -19,12 +19,14 @@ package com.alibaba.nacos.naming.consistency.persistent.impl;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * batch write request.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public class BatchWriteRequest implements Serializable {
     
     private static final long serialVersionUID = 5620748357962129879L;
@@ -49,8 +51,10 @@ public class BatchWriteRequest implements Serializable {
         this.values = values;
     }
     
-    public void append(byte[] key, byte[] value) {
+    public BatchWriteRequest append(byte[] key, byte[] value) {
         keys.add(key);
         values.add(value);
+        return this;
     }
+
 }

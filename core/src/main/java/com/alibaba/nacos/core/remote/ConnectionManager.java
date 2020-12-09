@@ -26,7 +26,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -59,9 +58,6 @@ public class ConnectionManager {
     
     String redirectAddress = null;
     
-    @Autowired
-    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
-    
     Map<String, Connection> connetions = new ConcurrentHashMap<String, Connection>();
     
     /**
@@ -80,17 +76,17 @@ public class ConnectionManager {
      * @param connectionId connectionId
      * @param connection   connection
      */
-    public synchronized void register(String connectionId, Connection connection) {
-        if (connection.isConnected()) {
-            Connection connectionInner = connetions.put(connectionId, connection);
-            if (connectionInner == null) {
-                clientConnectionEventListenerRegistry.notifyClientConnected(connection);
-                Loggers.REMOTE
-                        .info("new connection registered successfully, connectionid = {},connection={} ", connectionId,
-                                connection);
-            }
+    public void register(String connectionId, Connection connection) {
+        if (!connection.isConnected()) {
+            return;
         }
-        
+        Connection connectionInner = connetions.put(connectionId, connection);
+        if (connectionInner == null) {
+            ClientConnectionEventListenerRegistry.getInstance().notifyClientConnected(connection);
+            Loggers.REMOTE
+                    .info("new connection registered successfully, connectionid = {},connection={} ", connectionId,
+                            connection);
+        }
     }
     
     /**
@@ -103,7 +99,7 @@ public class ConnectionManager {
         if (remove != null) {
             remove.close();
             Loggers.REMOTE.info(" connection unregistered successfully,connectionid = {} ", connectionId);
-            clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
+            ClientConnectionEventListenerRegistry.getInstance().notifyClientDisConnected(remove);
         }
     }
     

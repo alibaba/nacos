@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 
 @Ignore
 public class NamingTest {
@@ -44,6 +45,7 @@ public class NamingTest {
         instance.setIp("1.1.1.1");
         instance.setPort(800);
         instance.setWeight(2);
+        instance.setEphemeral(false);
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external");
         map.put("version", "2.0");
@@ -58,7 +60,7 @@ public class NamingTest {
         
         System.out.println(list);
         
-        ThreadUtils.sleep(30000L);
+        new CountDownLatch(1).await();
         //        ExpressionSelector expressionSelector = new ExpressionSelector();
         //        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
         //        ListView<String> serviceList = namingService.getServicesOfServer(1, 10, expressionSelector);

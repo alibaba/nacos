@@ -17,8 +17,11 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+
+import java.util.List;
 
 import java.util.List;
 
@@ -33,12 +36,22 @@ public interface ServiceOperator {
      * Update service information. Due to service basic information can't be changed, so update should only update the
      * metadata of service.
      *
-     * @param service  service need to be updated.
+     * @param service service need to be updated.
      * @param metadata new metadata of service.
      * @throws NacosException nacos exception during update
      */
-    void update(Service service, ServiceMetadata metadata) throws NacosException;
+    void updateServiceMetadata(Service service, ServiceMetadata metadata) throws NacosException;
     
+    /**
+     * Update cluster information. Due to service basic information can't be changed, so update should only update the
+     * metadata of service.
+     *
+     * @param service service need to be updated.
+     * @param metadata new metadata of cluster.
+     * @throws NacosException nacos exception during update
+     */
+    void updateClusterMetadata(Service service, ClusterMetadata metadata) throws NacosException;
+   
     /**
      * Page list service name.
      *

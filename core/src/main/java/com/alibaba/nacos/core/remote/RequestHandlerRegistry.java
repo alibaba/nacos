@@ -16,9 +16,7 @@
 
 package com.alibaba.nacos.core.remote;
 
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.ParameterizedType;
@@ -32,11 +30,8 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: RequestHandlerRegistry.java, v 0.1 2020年07月13日 8:24 PM liuzunfei Exp $
  */
-
 @Service
-public class RequestHandlerRegistry implements ApplicationContextAware {
-    
-    ApplicationContext applicationContext;
+public class RequestHandlerRegistry {
     
     Map<String, RequestHandler> registryHandlers = new HashMap<String, RequestHandler>();
     
@@ -48,7 +43,7 @@ public class RequestHandlerRegistry implements ApplicationContextAware {
      */
     public RequestHandler getByRequestType(String requestType) {
         if (!registryHandlers.containsKey(requestType)) {
-            Map<String, RequestHandler> beansOfType = applicationContext.getBeansOfType(RequestHandler.class);
+            Map<String, RequestHandler> beansOfType = ApplicationUtils.getBeansOfType(RequestHandler.class);
             Collection<RequestHandler> values = beansOfType.values();
             for (RequestHandler requestHandler : values) {
             
@@ -82,9 +77,5 @@ public class RequestHandlerRegistry implements ApplicationContextAware {
     public void registryHandler(RequestHandler requestHandler) {
     
     }
-    
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
+
 }

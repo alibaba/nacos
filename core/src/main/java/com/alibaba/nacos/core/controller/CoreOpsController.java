@@ -43,8 +43,8 @@ public class CoreOpsController {
     
     private final IdGeneratorManager idGeneratorManager;
     
-    public CoreOpsController(ProtocolManager protocolManager, IdGeneratorManager idGeneratorManager) {
-        this.protocolManager = protocolManager;
+    public CoreOpsController(IdGeneratorManager idGeneratorManager) {
+        this.protocolManager = ProtocolManager.getInstance();
         this.idGeneratorManager = idGeneratorManager;
     }
     
@@ -57,7 +57,7 @@ public class CoreOpsController {
     
     @PostMapping(value = "/raft")
     public RestResult<String> raftOps(@RequestBody Map<String, String> commands) {
-        return protocolManager.getCpProtocol().execute(commands);
+        return ProtocolManager.getCpProtocol().execute(commands);
     }
     
     /**

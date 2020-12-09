@@ -51,14 +51,7 @@ public final class ThreadPoolManager {
     
     static {
         INSTANCE.init();
-        ThreadUtils.addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
-                shutdown();
-                LOGGER.warn("[ThreadPoolManager] Destruction of the end");
-            }
-        }));
+        ThreadUtils.addShutdownHook(ThreadPoolManager::shutdown);
     }
     
     public static ThreadPoolManager getInstance() {
@@ -192,10 +185,12 @@ public final class ThreadPoolManager {
         if (!CLOSED.compareAndSet(false, true)) {
             return;
         }
+        LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
         Set<String> namespaces = INSTANCE.resourcesManager.keySet();
         for (String namespace : namespaces) {
             INSTANCE.destroy(namespace);
         }
+        LOGGER.warn("[ThreadPoolManager] Destruction of the end");
     }
     
 }

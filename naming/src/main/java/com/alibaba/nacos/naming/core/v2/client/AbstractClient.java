@@ -115,4 +115,12 @@ public abstract class AbstractClient implements Client {
         }
         return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances);
     }
+    
+    /**
+     * Whether the current client has expired.
+     * @param currentTime current time
+     *
+     * @return is expire
+     */
+    public abstract boolean isExpire(final long currentTime);
 }

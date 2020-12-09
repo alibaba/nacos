@@ -65,12 +65,10 @@ public class EmbeddedDumpService extends DumpService {
      *
      * @param persistService  {@link PersistService}
      * @param memberManager   {@link ServerMemberManager}
-     * @param protocolManager {@link ProtocolManager}
      */
-    public EmbeddedDumpService(PersistService persistService, ServerMemberManager memberManager,
-            ProtocolManager protocolManager) {
+    public EmbeddedDumpService(PersistService persistService, ServerMemberManager memberManager) {
         super(persistService, memberManager);
-        this.protocolManager = protocolManager;
+        this.protocolManager = ProtocolManager.getInstance();
     }
     
     @PostConstruct
@@ -81,7 +79,7 @@ public class EmbeddedDumpService extends DumpService {
             return;
         }
         
-        CPProtocol protocol = protocolManager.getCpProtocol();
+        CPProtocol protocol = ProtocolManager.getCpProtocol();
         AtomicReference<Throwable> errorReference = new AtomicReference<>(null);
         CountDownLatch waitDumpFinish = new CountDownLatch(1);
         
@@ -159,7 +157,7 @@ public class EmbeddedDumpService extends DumpService {
             return true;
         }
         // if is derby + raft mode, only leader can execute
-        CPProtocol protocol = protocolManager.getCpProtocol();
+        CPProtocol protocol = ProtocolManager.getCpProtocol();
         return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
     }
 }

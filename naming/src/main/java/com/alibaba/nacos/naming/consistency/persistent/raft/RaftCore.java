@@ -83,7 +83,6 @@ import java.util.zip.GZIPOutputStream;
  * @deprecated will remove in 1.4.x
  */
 @Deprecated
-@DependsOn("ProtocolManager")
 @Component
 public class RaftCore implements Closeable {
     

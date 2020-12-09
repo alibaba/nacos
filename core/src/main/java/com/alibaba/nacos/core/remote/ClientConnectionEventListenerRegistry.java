@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,20 +32,19 @@ import java.util.concurrent.TimeUnit;
  * @author liuzunfei
  * @version $Id: ClientConnectionEventListenerRegistry.java, v 0.1 2020年07月20日 1:47 PM liuzunfei Exp $
  */
-@Service
 public class ClientConnectionEventListenerRegistry {
     
-    final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<ClientConnectionEventListener>();
+    private static final ClientConnectionEventListenerRegistry INSTANCE = new ClientConnectionEventListenerRegistry();
     
-    protected ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(10, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.core.remote.client.connection.notifier");
-            t.setDaemon(true);
-            return t;
-        }
-    });
+    public static ClientConnectionEventListenerRegistry getInstance() {
+        return INSTANCE;
+    }
+    
+    final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<>();
+    
+    protected ScheduledExecutorService executorService = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(getClass()), 10,
+                    new NameThreadFactory("com.alibaba.nacos.remote.client.connection.notifier"));
     
     /**
      * notify where a new client connected.

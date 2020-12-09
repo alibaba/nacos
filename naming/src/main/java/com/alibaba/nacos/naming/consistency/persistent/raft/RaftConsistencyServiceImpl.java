@@ -42,7 +42,6 @@ import javax.annotation.PostConstruct;
  * @deprecated will remove in 1.4.x
  */
 @Deprecated
-@DependsOn("ProtocolManager")
 @Service
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
     

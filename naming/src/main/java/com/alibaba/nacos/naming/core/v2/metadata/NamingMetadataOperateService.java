@@ -22,8 +22,8 @@ import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.Constants;
@@ -42,8 +42,8 @@ public class NamingMetadataOperateService {
     
     private final Serializer serializer;
     
-    public NamingMetadataOperateService(ProtocolManager protocolManager) {
-        this.cpProtocol = protocolManager.getCpProtocol();
+    public NamingMetadataOperateService() {
+        this.cpProtocol = ProtocolManager.getCpProtocol();
         this.serializer = SerializeFactory.getDefault();
     }
     

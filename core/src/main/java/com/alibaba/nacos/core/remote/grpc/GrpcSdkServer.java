@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class GrpcSdkServer extends BaseGrpcServer {
     
-    private static final int PORT_OFFSET = 1000;
+    private static final int PORT_OFFSET = 2000;
     
     @Override
     public int rpcPortOffset() {

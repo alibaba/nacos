@@ -54,14 +54,18 @@ import java.util.Map;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/catalog")
 public class CatalogController {
     
-    @Autowired
-    protected ServiceManager serviceManager;
+    protected final ServiceManager serviceManager;
     
-    @Autowired
-    private CatalogServiceV1Impl catalogServiceV1;
+    private final CatalogServiceV1Impl catalogServiceV1;
     
-    @Autowired
-    private CatalogServiceV2Impl catalogServiceV2;
+    private final CatalogServiceV2Impl catalogServiceV2;
+    
+    public CatalogController(ServiceManager serviceManager, CatalogServiceV1Impl catalogServiceV1,
+            CatalogServiceV2Impl catalogServiceV2) {
+        this.serviceManager = serviceManager;
+        this.catalogServiceV1 = catalogServiceV1;
+        this.catalogServiceV2 = catalogServiceV2;
+    }
     
     /**
      * Get service detail.

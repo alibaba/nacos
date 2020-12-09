@@ -40,6 +40,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Deprecated
 @Component
 public class ClusterVersionJudgement {
     

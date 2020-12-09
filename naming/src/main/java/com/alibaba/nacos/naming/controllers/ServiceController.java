@@ -240,7 +240,7 @@ public class ServiceController {
         com.alibaba.nacos.naming.core.v2.pojo.Service service = com.alibaba.nacos.naming.core.v2.pojo.Service
                 .newService(namespaceId, NamingUtils.getGroupName(serviceName),
                         NamingUtils.getServiceName(serviceName));
-        serviceOperatorV2.update(service, serviceMetadata);
+        serviceOperatorV2.updateServiceMetadata(service, serviceMetadata);
         return "ok";
     }
     

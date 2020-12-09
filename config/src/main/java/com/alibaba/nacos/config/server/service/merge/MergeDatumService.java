@@ -28,7 +28,6 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,8 +117,7 @@ public class MergeDatumService {
         if (EnvUtil.getStandaloneMode()) {
             return true;
         }
-        ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
-        return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+        return ProtocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
     }
     
     class MergeAllDataWorker extends Thread {
@@ -165,8 +163,9 @@ public class MergeDatumService {
                     } else {
                         // remove
                         persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
-                        LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
-                                + group);
+                        LOGGER.warn(
+                                "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
+                                        + group);
                     }
                     
                 } catch (Exception e) {

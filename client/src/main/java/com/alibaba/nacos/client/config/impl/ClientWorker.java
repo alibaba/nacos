@@ -595,7 +595,7 @@ public class ClientWorker implements Closeable {
                 @Override
                 public void onDisConnect() {
                     String taskId = rpcClientInner.getLabels().get("taskId");
-                    LOGGER.info("[0]clear listen context...", rpcClientInner.getName());
+                    LOGGER.info("{} clear listen context...", rpcClientInner.getName());
                     Collection<CacheData> values = cacheMap.get().values();
                 
                     for (CacheData cacheData : values) {

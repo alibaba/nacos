@@ -32,7 +32,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -48,8 +47,11 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
 public class ClusterController {
     
-    @Autowired
-    protected ServiceManager serviceManager;
+    protected final ServiceManager serviceManager;
+    
+    public ClusterController(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+    }
     
     /**
      * Update cluster.

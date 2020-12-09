@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.v2;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
@@ -186,14 +187,13 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     @Override
     public DistroData getDatumSnapshot() {
-        List<ClientSyncData> datum = new LinkedList<>();
-        for (String each : clientManager.allClientId()) {
-            Client client = clientManager.getClient(each);
-            if (null == client) {
-                continue;
+        final List<ClientSyncData> datum = new LinkedList<>();
+        clientManager.forEach((s, client) -> {
+            if (Objects.isNull(client)) {
+                return;
             }
             datum.add(client.generateSyncData());
-        }
+        });
         ClientSyncDatumSnapshot snapshot = new ClientSyncDatumSnapshot();
         snapshot.setClientSyncDataList(datum);
         byte[] data = ApplicationUtils.getBean(Serializer.class).serialize(snapshot);
@@ -202,16 +202,15 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     @Override
     public DistroData getVerifyData() {
-        List<String> verifyData = new LinkedList<>();
-        for (String each : clientManager.allClientId()) {
-            Client client = clientManager.getClient(each);
-            if (null == client) {
-                continue;
+        final List<String> verifyData = new LinkedList<>();
+        clientManager.forEach((s, client) -> {
+            if (Objects.isNull(client)) {
+                return;
             }
             if (clientManager.isResponsibleClient(client)) {
-                verifyData.add(each);
+                verifyData.add(s);
             }
-        }
+        });
         byte[] data = ApplicationUtils.getBean(Serializer.class).serialize(verifyData);
         return new DistroData(new DistroKey(DataOperation.VERIFY.name(), TYPE), data);
     }

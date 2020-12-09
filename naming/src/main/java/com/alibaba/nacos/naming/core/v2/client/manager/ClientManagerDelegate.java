@@ -83,4 +83,12 @@ public class ClientManagerDelegate implements ClientManager {
     private ClientManager getClientManagerById(String clientId) {
         return clientId.contains(":") ? ipPortBasedClientManager : connectionBasedClientManager;
     }
+    
+    public ConnectionBasedClientManager getConnectionBasedClientManager() {
+        return connectionBasedClientManager;
+    }
+    
+    public IpPortBasedClientManager getIpPortBasedClientManager() {
+        return ipPortBasedClientManager;
+    }
 }

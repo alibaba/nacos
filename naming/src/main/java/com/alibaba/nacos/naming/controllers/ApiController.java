@@ -23,15 +23,17 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
+import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -54,11 +56,16 @@ import java.util.Set;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api")
 public class ApiController extends InstanceController {
     
-    @Autowired
-    private DistroMapper distroMapper;
+    private final DistroMapper distroMapper;
     
-    @Autowired
-    private ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
+    
+    public ApiController(SwitchDomain switchDomain, PushService pushService, ServiceManager serviceManager,
+            InstanceOperatorClientImpl instanceService, DistroMapper distroMapper) {
+        super(switchDomain, pushService, serviceManager, instanceService);
+        this.distroMapper = distroMapper;
+        this.serviceManager = serviceManager;
+    }
     
     /**
      * Get all dom(service) name.

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
@@ -42,7 +43,7 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
     }
     
     @Override
-    public void update(Service service, ServiceMetadata metadata) throws NacosException {
+    public void updateServiceMetadata(Service service, ServiceMetadata metadata) throws NacosException {
         String serviceName = service.getGroupedServiceName();
         com.alibaba.nacos.naming.core.Service serviceV1 = serviceManager.getService(service.getNamespace(), serviceName);
         if (serviceV1 == null) {
@@ -55,6 +56,11 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
         serviceV1.recalculateChecksum();
         serviceV1.validate();
         serviceManager.addOrReplaceService(serviceV1);
+    }
+    
+    @Override
+    public void updateClusterMetadata(Service service, ClusterMetadata metadata) throws NacosException {
+    
     }
     
     @Override

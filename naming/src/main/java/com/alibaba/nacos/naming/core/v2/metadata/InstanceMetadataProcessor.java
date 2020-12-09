@@ -56,13 +56,13 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     private final ReentrantReadWriteLock.ReadLock readLock;
     
     @SuppressWarnings("unchecked")
-    public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
+    public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager) {
         this.namingMetadataManager = namingMetadataManager;
         this.serializer = SerializeFactory.getDefault();
         this.processType = TypeUtils.parameterize(MetadataOperation.class, InstanceMetadata.class);
         this.lock = new ReentrantReadWriteLock();
         this.readLock = lock.readLock();
-        protocolManager.getCpProtocol().addRequestProcessors(Collections.singletonList(this));
+        ProtocolManager.getCpProtocol().addRequestProcessors(Collections.singletonList(this));
     }
     
     @Override

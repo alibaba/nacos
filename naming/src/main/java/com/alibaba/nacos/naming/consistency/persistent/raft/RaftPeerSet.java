@@ -56,7 +56,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Deprecated
 @Component
-@DependsOn("ProtocolManager")
 public class RaftPeerSet extends MemberChangeListener implements Closeable {
     
     private final ServerMemberManager memberManager;

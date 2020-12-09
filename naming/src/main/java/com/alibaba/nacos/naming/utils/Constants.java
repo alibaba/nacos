@@ -30,6 +30,8 @@ public final class Constants {
     
     public static final String OLD_NAMING_RAFT_GROUP = "naming";
     
+    public static final String NAMING_PERSISTENT_SERVICE_GROUP_V2 = "naming_persistent_service_v2";
+    
     public static final String NAMING_PERSISTENT_SERVICE_GROUP = "naming_persistent_service";
     
     public static final String NACOS_NAMING_USE_NEW_RAFT_FIRST = "nacos.naming.use-new-raft.first";

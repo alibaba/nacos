@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
@@ -25,14 +24,11 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 /**
  * The manager of {@code ConnectionBasedClient}.
@@ -40,21 +36,10 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 @Component("connectionBasedClientManager")
-public class ConnectionBasedClientManager extends ClientConnectionEventListener implements ClientManager {
-    
-    private final ConcurrentMap<String, ConnectionBasedClient> clients = new ConcurrentHashMap<>();
+public class ConnectionBasedClientManager extends BaseClientManager<ConnectionBasedClient> implements ClientManager {
     
     public ConnectionBasedClientManager() {
-        GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0,
-                Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
-    }
-    
-    @Override
-    public void clientConnected(Connection connect) {
-        if (!RemoteConstants.LABEL_MODULE_NAMING.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
-            return;
-        }
-        clientConnected(new ConnectionBasedClient(connect.getMetaInfo().getConnectionId(), true));
+        new InnerClientConnectionEventListener(this);
     }
     
     @Override
@@ -69,11 +54,6 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     @Override
     public boolean syncClientConnected(String clientId) {
         return clientConnected(new ConnectionBasedClient(clientId, false));
-    }
-    
-    @Override
-    public void clientDisConnected(Connection connect) {
-        clientDisconnected(connect.getMetaInfo().getConnectionId());
     }
     
     @Override
@@ -98,6 +78,11 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     }
     
     @Override
+    public void forEach(BiConsumer<String, Client> consumer) {
+        clients.forEach(consumer);
+    }
+    
+    @Override
     public boolean isResponsibleClient(Client client) {
         return (client instanceof ConnectionBasedClient) && ((ConnectionBasedClient) client).isNative();
     }
@@ -112,27 +97,26 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
         return false;
     }
     
-    private static class ExpiredClientCleaner implements Runnable {
+    protected class InnerClientConnectionEventListener extends ClientConnectionEventListener {
         
         private final ConnectionBasedClientManager clientManager;
-        
-        public ExpiredClientCleaner(ConnectionBasedClientManager clientManager) {
+    
+        private InnerClientConnectionEventListener(ConnectionBasedClientManager clientManager) {
             this.clientManager = clientManager;
         }
-        
+    
         @Override
-        public void run() {
-            long currentTime = System.currentTimeMillis();
-            for (String each : clientManager.allClientId()) {
-                ConnectionBasedClient client = (ConnectionBasedClient) clientManager.getClient(each);
-                if (null != client && isExpireClient(currentTime, client)) {
-                    clientManager.clientDisconnected(each);
-                }
+        public void clientConnected(Connection connect) {
+            if (!RemoteConstants.LABEL_MODULE_NAMING.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
+                return;
             }
+            clientManager.clientConnected(new ConnectionBasedClient(connect.getMetaInfo().getConnectionId(), true));
         }
-        
-        private boolean isExpireClient(long currentTime, ConnectionBasedClient client) {
-            return !client.isNative() && currentTime - client.getLastRenewTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
+    
+        @Override
+        public void clientDisConnected(Connection connect) {
+            clientDisconnected(connect.getMetaInfo().getConnectionId());
         }
     }
+    
 }
