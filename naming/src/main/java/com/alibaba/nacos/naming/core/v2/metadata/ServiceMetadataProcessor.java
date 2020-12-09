@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -100,9 +101,36 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     }
     
     private void updateServiceMetadata(MetadataOperation<ServiceMetadata> op) {
-        Service service = ServiceManager.getInstance()
-                .getSingleton(Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName()));
-        namingMetadataManager.updateServiceMetadata(service, op.getMetadata());
+        Service service = Service
+                .newService(op.getNamespace(), op.getGroup(), op.getServiceName(), op.getMetadata().isEphemeral());
+        Optional<ServiceMetadata> currentMetadata = namingMetadataManager.getServiceMetadata(service);
+        if (currentMetadata.isPresent()) {
+            ServiceMetadata newMetadata = mergeMetadata(currentMetadata.get(), op.getMetadata());
+            Service singleton = ServiceManager.getInstance().getSingleton(service);
+            namingMetadataManager.updateServiceMetadata(singleton, newMetadata);
+        } else {
+            Service singleton = ServiceManager.getInstance().getSingleton(service);
+            namingMetadataManager.updateServiceMetadata(singleton, op.getMetadata());
+        }
+    }
+    
+    /**
+     * Do not modified old metadata directly to avoid read half status.
+     *
+     * <p>Ephemeral variable should only use the value the metadata create.
+     *
+     * @param oldMetadata old metadata
+     * @param newMetadata new metadata
+     * @return merged metadata
+     */
+    private ServiceMetadata mergeMetadata(ServiceMetadata oldMetadata, ServiceMetadata newMetadata) {
+        ServiceMetadata result = new ServiceMetadata();
+        result.setEphemeral(oldMetadata.isEphemeral());
+        result.setClusters(oldMetadata.getClusters());
+        result.setProtectThreshold(newMetadata.getProtectThreshold());
+        result.setSelector(newMetadata.getSelector());
+        result.setExtendData(newMetadata.getExtendData());
+        return result;
     }
     
     private void deleteServiceMetadata(MetadataOperation<ServiceMetadata> op) {

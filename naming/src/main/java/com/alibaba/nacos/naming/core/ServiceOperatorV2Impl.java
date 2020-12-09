@@ -47,7 +47,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     
     @Override
     public void create(String namespaceId, String serviceName, ServiceMetadata metadata) throws NacosException {
-        Service service = getServiceFromGroupedServiceName(namespaceId, serviceName);
+        Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, metadata.isEphemeral());
         if (ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     String.format("specified service %s already exists!", service.getGroupedServiceName()));
@@ -66,7 +66,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     
     @Override
     public void delete(String namespaceId, String serviceName) throws NacosException {
-        metadataOperateService.deleteServiceMetadata(getServiceFromGroupedServiceName(namespaceId, serviceName));
+        metadataOperateService.deleteServiceMetadata(getServiceFromGroupedServiceName(namespaceId, serviceName, true));
     }
     
     @Override
@@ -92,9 +92,9 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         return result;
     }
     
-    private Service getServiceFromGroupedServiceName(String namespaceId, String groupedServiceName) {
+    private Service getServiceFromGroupedServiceName(String namespaceId, String groupedServiceName, boolean ephemeral) {
         String groupName = NamingUtils.getGroupName(groupedServiceName);
         String serviceName = NamingUtils.getServiceName(groupedServiceName);
-        return Service.newService(namespaceId, groupName, serviceName);
+        return Service.newService(namespaceId, groupName, serviceName, ephemeral);
     }
 }
