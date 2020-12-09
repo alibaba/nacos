@@ -94,7 +94,7 @@ public class ServiceController {
     private ServiceOperatorV2Impl serviceOperatorV2;
     
     /**
-     * Create a new service.
+     * Create a new service. This API will create a persistence service.
      *
      * @param namespaceId      namespace id
      * @param serviceName      service name
@@ -114,6 +114,7 @@ public class ServiceController {
         serviceMetadata.setProtectThreshold(protectThreshold);
         serviceMetadata.setSelector(parseSelector(selector));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
+        serviceMetadata.setEphemeral(false);
         serviceOperatorV2.create(namespaceId, serviceName, serviceMetadata);
         return "ok";
     }
