@@ -42,6 +42,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -222,5 +223,13 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         if (!clientManager.allClientId().contains(clientId)) {
             clientManager.clientConnected(new IpPortBasedClient(clientId, ephemeral));
         }
+    }
+    
+    @Override
+    public List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException {
+        String groupName = NamingUtils.getGroupName(serviceName);
+        String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
+        Service service = Service.newService(namespaceId, groupName, serviceNameNoGrouped);
+        return serviceStorage.getData(service).getHosts();
     }
 }

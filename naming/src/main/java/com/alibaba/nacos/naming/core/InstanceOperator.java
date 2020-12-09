@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
+import java.util.List;
+
 /**
  * Instance operator.
  *
@@ -114,4 +116,14 @@ public interface InstanceOperator {
      * @return heart beat interval
      */
     long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster);
+    
+    /**
+     * List all instances whatever status they are.
+     *
+     * @param namespaceId namespace
+     * @param serviceName grouped service name group@@service
+     * @return all instances
+     * @throws NacosException nacos exception during query
+     */
+    List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException;
 }

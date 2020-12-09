@@ -484,21 +484,15 @@ public class InstanceController {
             serviceName = key;
         }
         NamingUtils.checkServiceNameFormat(serviceName);
-        Service service = serviceManager.getService(namespaceId, serviceName);
         
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service: " + serviceName + " not found.");
-        }
-        
-        List<Instance> ips = service.allIPs();
+        List<? extends com.alibaba.nacos.api.naming.pojo.Instance> ips = instanceService
+                .listAllInstances(namespaceId, serviceName);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
-        
-        for (Instance ip : ips) {
-            ipArray.add(ip.toIpAddr() + "_" + ip.isHealthy());
+        for (com.alibaba.nacos.api.naming.pojo.Instance ip : ips) {
+            ipArray.add(ip.toInetAddr() + "_" + ip.isHealthy());
         }
-        
         result.replace("ips", ipArray);
         return result;
     }

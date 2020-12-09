@@ -282,4 +282,13 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         }
         return switchDomain.getClientBeatInterval();
     }
+    
+    @Override
+    public List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "service: " + serviceName + " not found.");
+        }
+        return service.allIPs();
+    }
 }
