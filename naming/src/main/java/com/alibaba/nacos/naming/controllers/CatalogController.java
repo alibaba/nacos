@@ -24,8 +24,6 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.MapUtils;
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -39,6 +37,7 @@ import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +53,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Catalog controller.
@@ -129,8 +127,7 @@ public class CatalogController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     @RequestMapping(value = "/instances")
     public ObjectNode instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam String clusterName,
-            @RequestParam(required = false) String metadata, @RequestParam(name = "pageNo") int page,
+            @RequestParam String serviceName, @RequestParam String clusterName, @RequestParam(name = "pageNo") int page,
             @RequestParam int pageSize) throws NacosException {
         
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -142,14 +139,7 @@ public class CatalogController {
             throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
         }
         
-        Map<String, String> metadataFilter = null;
-        if (StringUtils.isNotEmpty(metadata)) {
-            metadataFilter = UtilsAndCommons.parseMetadata(metadata);
-        }
-        
         List<Instance> instances = service.getClusterMap().get(clusterName).allIPs();
-        
-        instances = filterInstance(instances, metadataFilter);
         
         int start = (page - 1) * pageSize;
         int end = page * pageSize;
@@ -317,18 +307,4 @@ public class CatalogController {
         return ipAddressInfos;
     }
     
-    private List<Instance> filterInstance(List<Instance> instances, Map<String, String> metadata) {
-        if (MapUtils.isEmpty(metadata)) {
-            return instances;
-        }
-        return instances.stream().filter(instance -> {
-            for (Map.Entry<String, String> entry : metadata.entrySet()) {
-                if (!instance.getMetadata().containsKey(entry.getKey()) || !Objects
-                        .equals(instance.getMetadata().get(entry.getKey()), entry.getValue())) {
-                    return false;
-                }
-            }
-            return true;
-        }).collect(Collectors.toList());
-    }
 }
