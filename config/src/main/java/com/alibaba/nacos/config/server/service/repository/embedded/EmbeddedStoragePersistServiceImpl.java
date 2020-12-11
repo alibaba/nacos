@@ -700,7 +700,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
-        final String sql = "SELECT ID,data_id,group_id,tenant_id,tag_id,app_name,content FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?";
+        final String sql = "SELECT ID,data_id,group_id,tenant_id,tag_id,app_name,content FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=? ORDER BY tenant_id, group_id, data_id";
         
         return databaseOperate
                 .queryOne(sql, new Object[] {dataId, group, tenantTmp, tagTmp}, CONFIG_INFO4TAG_ROW_MAPPER);
@@ -912,17 +912,21 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 paramList.add(appName);
             }
         }
+        
+        String order = " ORDER BY app_name, group_id, data_id ";
+        
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         return helper
-                .fetchPage(sqlCount + where.toString(), sql + where.toString(), paramList.toArray(), pageNo, pageSize,
-                        CONFIG_INFO_ROW_MAPPER);
+                .fetchPage(sqlCount + where.toString() + order, sql + where.toString() + order, paramList.toArray(),
+                        pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
     }
     
     @Override
     public Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo, final int pageSize, final String dataId) {
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
-        return helper.fetchPage("select count(*) from config_info where data_id=? and tenant_id=?",
-                "select ID,data_id,group_id,content from config_info where data_id=? and tenant_id=?",
+        String order = " ORDER BY group_id, data_id ";
+        return helper.fetchPage("select count(*) from config_info where data_id=? and tenant_id=?" + order,
+                "select ID,data_id,group_id,content from config_info where data_id=? and tenant_id=?" + order,
                 new Object[] {dataId, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
         
     }
@@ -1125,8 +1129,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         Page<Map<String, Object>> pageList = helper
                 .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
-        return pageList.getPageItems().stream()
-                .map(map -> String.valueOf(map.get("TENANT_ID")))
+        return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("TENANT_ID")))
                 .collect(Collectors.toList());
     }
     
@@ -1139,8 +1142,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         Page<Map<String, Object>> pageList = helper
                 .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
-        return pageList.getPageItems().stream()
-                .map(map -> String.valueOf(map.get("GROUP_ID")))
+        return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("GROUP_ID")))
                 .collect(Collectors.toList());
     }
     
@@ -1561,9 +1563,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 params.add(generateLikeArgument(content));
             }
         }
+        String order = " ORDER BY app_name, group_id, data_id ";
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
+        return helper.fetchPage(sqlCountRows + where + order, sqlFetchRows + where + order, params.toArray(), pageNo,
+                pageSize, CONFIG_INFO_ROW_MAPPER);
         
     }
     

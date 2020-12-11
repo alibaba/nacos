@@ -658,7 +658,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
             return this.jt.queryForObject(
-                    "SELECT ID,data_id,group_id,tenant_id,tag_id,app_name,content FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?",
+                    "SELECT ID,data_id,group_id,tenant_id,tag_id,app_name,content FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?  ORDER BY tenant_id, group_id, data_id",
                     new Object[] {dataId, group, tenantTmp, tagTmp}, CONFIG_INFO4TAG_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
@@ -921,9 +921,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 paramList.add(appName);
             }
         }
+        String order = " ORDER BY app_name, group_id, data_id ";
         try {
-            return helper.fetchPage(sqlCount + where, sql + where, paramList.toArray(), pageNo, pageSize,
-                    CONFIG_INFO_ROW_MAPPER);
+            return helper
+                    .fetchPage(sqlCount + where + order, sql + where + order, paramList.toArray(), pageNo, pageSize,
+                            CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -1627,9 +1629,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             }
         }
         
+        String order = " ORDER BY app_name, group_id, data_id ";
         try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                    CONFIG_INFO_ROW_MAPPER);
+            return helper
+                    .fetchPage(sqlCountRows + where + order, sqlFetchRows + where + order, params.toArray(), pageNo,
+                            pageSize, CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -1713,6 +1717,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
             final int pageSize) {
+        String order = " ORDER BY app_name, group_id, data_id ";
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sqlCountRows = "SELECT COUNT(*) FROM config_info_aggr WHERE data_id = ? and group_id = ? and tenant_id = ?";
         String sqlFetchRows =
@@ -1720,9 +1725,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                         + "group_id=? and tenant_id=? order by datum_id limit ?,?";
         PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
         try {
-            return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows,
-                    new Object[] {dataId, group, tenantTmp, (pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
-                    CONFIG_INFO_AGGR_ROW_MAPPER);
+            return helper
+                    .fetchPageLimit(sqlCountRows + order, new Object[] {dataId, group, tenantTmp}, sqlFetchRows + order,
+                            new Object[] {dataId, group, tenantTmp, (pageNo - 1) * pageSize, pageSize}, pageNo,
+                            pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
             
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
