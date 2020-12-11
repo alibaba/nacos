@@ -30,20 +30,22 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushExecuteServiceDelegate;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTask;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTaskExecuteEngine;
-import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Stream;
 
 /**
- * Remote push services.
+ * Naming subscriber service for v2.x.
  *
  * @author xiweng.yy
  */
-@Component
-public class ClientPushService extends SmartSubscriber {
+@org.springframework.stereotype.Service
+public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements NamingSubscriberService {
+    
+    private static final int PARALLEL_SIZE = 100;
     
     private final ClientManager clientManager;
     
@@ -51,8 +53,9 @@ public class ClientPushService extends SmartSubscriber {
     
     private final PushDelayTaskExecuteEngine delayTaskEngine;
     
-    public ClientPushService(ClientManagerDelegate clientManager, ClientServiceIndexesManager indexesManager,
-            ServiceStorage serviceStorage, PushExecuteServiceDelegate pushExecuteService) {
+    public NamingSubscriberServiceV2Impl(ClientManagerDelegate clientManager,
+            ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
+            PushExecuteServiceDelegate pushExecuteService) {
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
         this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
@@ -61,19 +64,38 @@ public class ClientPushService extends SmartSubscriber {
         
     }
     
-    public Set<Subscriber> getSubscribes(String namespaceId, String serviceName) {
+    @Override
+    public Collection<Subscriber> getSubscribers(String namespaceId, String serviceName) {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
         Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup);
-        return getSubscribes(service);
+        return getSubscribers(service);
     }
     
-    public Set<Subscriber> getSubscribes(Service service) {
-        Set<Subscriber> result = new HashSet<>();
+    @Override
+    public Collection<Subscriber> getSubscribers(Service service) {
+        Collection<Subscriber> result = new HashSet<>();
         for (String each : indexesManager.getAllClientsSubscribeService(service)) {
             result.add(clientManager.getClient(each).getSubscriber(service));
         }
         return result;
+    }
+    
+    @Override
+    public Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName) {
+        Collection<Subscriber> result = new HashSet<>();
+        Stream<Service> serviceStream = getServiceStream();
+        String serviceNamePattern = NamingUtils.getServiceName(serviceName);
+        String groupNamePattern = NamingUtils.getGroupName(serviceName);
+        serviceStream.filter(service -> service.getNamespace().equals(namespaceId) && service.getName()
+                .contains(serviceNamePattern) && service.getGroup().contains(groupNamePattern))
+                .forEach(service -> result.addAll(getSubscribers(service)));
+        return result;
+    }
+    
+    @Override
+    public Collection<Subscriber> getFuzzySubscribers(Service service) {
+        return getFuzzySubscribers(service.getNamespace(), service.getGroupedServiceName());
     }
     
     @Override
@@ -86,5 +108,10 @@ public class ClientPushService extends SmartSubscriber {
         ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
         Service service = serviceChangedEvent.getService();
         delayTaskEngine.addTask(service, new PushDelayTask(service, 500L));
+    }
+    
+    private Stream<Service> getServiceStream() {
+        Collection<Service> services = indexesManager.getSubscribedService();
+        return services.size() > PARALLEL_SIZE ? services.parallelStream() : services.stream();
     }
 }

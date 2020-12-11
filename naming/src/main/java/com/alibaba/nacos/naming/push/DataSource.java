@@ -30,5 +30,5 @@ public interface DataSource {
      * @return data to push
      * @throws Exception exception
      */
-    String getData(PushService.PushClient client) throws Exception;
+    String getData(PushClient client) throws Exception;
 }

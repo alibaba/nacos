@@ -58,6 +58,10 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         return subscriberIndexes.containsKey(service) ? subscriberIndexes.get(service) : new ConcurrentHashSet<>();
     }
     
+    public Collection<Service> getSubscribedService() {
+        return subscriberIndexes.keySet();
+    }
+    
     /**
      * Clear the service index without instances.
      *
