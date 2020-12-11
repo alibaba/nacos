@@ -308,7 +308,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             
             // Ensure that the node is created only once
             tmpMap.put(address, member);
-            tmpAddressInfo.add(address);
+            if (NodeState.UP.equals(member.getState())) {
+                tmpAddressInfo.add(address);
+            }
         }
         
         serverList = tmpMap;
@@ -323,9 +325,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         // that the event publication is sequential
         if (hasChange) {
             MemberUtils.syncToFile(finalMembers);
-            Set<Member> healthMembers = MemberUtils.selectTargetMembers(members, member -> {
-                return !NodeState.DOWN.equals(member.getState());
-            });
             Event event = MembersChangeEvent.builder().members(finalMembers).build();
             NotifyCenter.publishEvent(event);
         }
