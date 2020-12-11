@@ -21,14 +21,14 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.naming.push.NamingSubscriberServiceV1Impl;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.Subscribers;
-import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.naming.push.ClientPushService;
+import com.alibaba.nacos.naming.push.NamingSubscriberServiceV2Impl;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -56,23 +56,26 @@ public class SubscribeManager {
     private static final String SUBSCRIBER_ON_SYNC_URL = "/service/subscribers";
     
     @Autowired
-    private PushService pushService;
+    private NamingSubscriberServiceV1Impl subscriberServiceV1;
     
     @Autowired
-    private ClientPushService clientPushService;
+    private NamingSubscriberServiceV2Impl subscriberServiceV2;
     
     @Autowired
     private ServerMemberManager memberManager;
     
     private List<Subscriber> getSubscribersFuzzy(String serviceName, String namespaceId) {
         List<Subscriber> result = new LinkedList<>();
-        result.addAll(pushService.getClientsFuzzy(serviceName, namespaceId));
-        result.addAll(clientPushService.getSubscribes(namespaceId, serviceName));
+        result.addAll(subscriberServiceV1.getFuzzySubscribers(namespaceId, serviceName));
+        result.addAll(subscriberServiceV2.getFuzzySubscribers(namespaceId, serviceName));
         return result;
     }
     
     private List<Subscriber> getSubscribers(String serviceName, String namespaceId) {
-        return pushService.getClients(serviceName, namespaceId);
+        List<Subscriber> result = new LinkedList<>();
+        result.addAll(subscriberServiceV1.getSubscribers(namespaceId, serviceName));
+        result.addAll(subscriberServiceV2.getSubscribers(namespaceId, serviceName));
+        return result;
     }
     
     /**

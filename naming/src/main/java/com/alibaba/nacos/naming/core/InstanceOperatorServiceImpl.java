@@ -28,6 +28,8 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
+import com.alibaba.nacos.naming.push.NamingSubscriberServiceV1Impl;
+import com.alibaba.nacos.naming.push.PushClient;
 import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -55,10 +57,12 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     
     private final PushService pushService;
     
+    private final NamingSubscriberServiceV1Impl subscriberServiceV1;
+    
     private DataSource pushDataSource = new DataSource() {
         
         @Override
-        public String getData(PushService.PushClient client) {
+        public String getData(PushClient client) {
             ServiceInfo result = new ServiceInfo(client.getServiceName(), client.getClusters());
             try {
                 Subscriber subscriber = new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(),
@@ -77,10 +81,11 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     };
     
     public InstanceOperatorServiceImpl(ServiceManager serviceManager, SwitchDomain switchDomain,
-            PushService pushService) {
+            PushService pushService, NamingSubscriberServiceV1Impl subscriberServiceV1) {
         this.serviceManager = serviceManager;
         this.switchDomain = switchDomain;
         this.pushService = pushService;
+        this.subscriberServiceV1 = subscriberServiceV1;
     }
     
     @Override
@@ -147,7 +152,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         // now try to enable the push
         try {
             if (subscriber.getPort() > 0 && pushService.canEnablePush(subscriber.getAgent())) {
-                pushService.addClient(namespaceId, serviceName, cluster, subscriber.getAgent(),
+                subscriberServiceV1.addClient(namespaceId, serviceName, cluster, subscriber.getAgent(),
                         new InetSocketAddress(clientIP, subscriber.getPort()), pushDataSource, StringUtils.EMPTY,
                         StringUtils.EMPTY);
                 cacheMillis = switchDomain.getPushCacheMillis(serviceName);
