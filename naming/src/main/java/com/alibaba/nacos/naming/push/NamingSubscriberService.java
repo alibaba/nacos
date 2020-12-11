@@ -44,4 +44,25 @@ public interface NamingSubscriberService {
      * @return list of subsribers
      */
     Collection<Subscriber> getSubscribers(Service service);
+    
+    /**
+     * Fuzzy get subscribers. Only support fuzzy serviceName.
+     *
+     * <p>Warning: This method cost much performance, use less.
+     *
+     * @param namespaceId namespace id
+     * @param serviceName fuzzy serviceName
+     * @return list of subsribers
+     */
+    Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName);
+    
+    /**
+     * Fuzzy get subscribers. Only support fuzzy serviceName.
+     *
+     * <p>Warning: This method cost much performance, use less.
+     *
+     * @param service {@link Service}
+     * @return list of subsribers
+     */
+    Collection<Subscriber> getFuzzySubscribers(Service service);
 }

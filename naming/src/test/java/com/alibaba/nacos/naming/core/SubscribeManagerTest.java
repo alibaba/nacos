@@ -22,7 +22,8 @@ import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingSubscriberServiceV1Impl;
+import com.alibaba.nacos.naming.push.NamingSubscriberServiceV2Impl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +34,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +48,10 @@ public class SubscribeManagerTest extends BaseTest {
     private SubscribeManager subscribeManager;
     
     @Mock
-    private PushService pushService;
+    private NamingSubscriberServiceV1Impl namingSubscriberService;
+    
+    @Mock
+    private NamingSubscriberServiceV2Impl namingSubscriberServiceV2;
     
     @Mock
     private ServerMemberManager memberManager;
@@ -55,6 +60,8 @@ public class SubscribeManagerTest extends BaseTest {
     public void before() {
         super.before();
         subscribeManager = new SubscribeManager();
+        ReflectionTestUtils.setField(subscribeManager, "subscriberServiceV1", namingSubscriberService);
+        ReflectionTestUtils.setField(subscribeManager, "subscriberServiceV2", namingSubscriberServiceV2);
     }
     
     @Test
@@ -67,7 +74,8 @@ public class SubscribeManagerTest extends BaseTest {
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
                     serviceName, 0);
             clients.add(subscriber);
-            Mockito.when(pushService.getClients(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
+            Mockito.when(namingSubscriberService.getFuzzySubscribers(Mockito.anyString(), Mockito.anyString()))
+                    .thenReturn(clients);
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             Assert.assertNotNull(list);
             Assert.assertEquals(1, list.size());
@@ -87,7 +95,8 @@ public class SubscribeManagerTest extends BaseTest {
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
                     "testGroupName@@test_subscriber", 0);
             clients.add(subscriber);
-            Mockito.when(pushService.getClientsFuzzy(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
+            Mockito.when(namingSubscriberService.getFuzzySubscribers(Mockito.anyString(), Mockito.anyString()))
+                    .thenReturn(clients);
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             Assert.assertNotNull(list);
             Assert.assertEquals(1, list.size());

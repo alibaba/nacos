@@ -22,11 +22,23 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import java.util.Collection;
 
 /**
- * Fuzzy naming subscriber service. Controller all implementation of {@link NamingSubscriberService}.
+ * Aggregation naming subscriber service. Aggregate all implementation of {@link NamingSubscriberService} and
+ * subscribers from other nodes.
  *
  * @author xiweng.yy
  */
-public class NamingSubscriberServiceFuzzyImpl implements NamingSubscriberService {
+@org.springframework.stereotype.Service
+public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberService {
+    
+    private final NamingSubscriberServiceV1Impl subscriberServiceV1;
+    
+    private final NamingSubscriberServiceV2Impl subscriberServiceV2;
+    
+    public NamingSubscriberServiceAggregationImpl(NamingSubscriberServiceV1Impl subscriberServiceV1,
+            NamingSubscriberServiceV2Impl subscriberServiceV2) {
+        this.subscriberServiceV1 = subscriberServiceV1;
+        this.subscriberServiceV2 = subscriberServiceV2;
+    }
     
     @Override
     public Collection<Subscriber> getSubscribers(String namespaceId, String serviceName) {
@@ -35,6 +47,16 @@ public class NamingSubscriberServiceFuzzyImpl implements NamingSubscriberService
     
     @Override
     public Collection<Subscriber> getSubscribers(Service service) {
+        return null;
+    }
+    
+    @Override
+    public Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName) {
+        return null;
+    }
+    
+    @Override
+    public Collection<Subscriber> getFuzzySubscribers(Service service) {
         return null;
     }
 }
