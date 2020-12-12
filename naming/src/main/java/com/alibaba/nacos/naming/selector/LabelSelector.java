@@ -243,7 +243,8 @@ public class LabelSelector extends ExpressionSelector implements Selector {
             
             return checkInnerSyntax(elements, index);
         }
-        
+    
+        @SuppressWarnings("PMD.VariableDeclarationUsageDistance")
         private static int checkInnerSyntax(List<String> elements, int start) {
             
             int index = start;
