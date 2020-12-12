@@ -27,7 +27,7 @@ import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.v2.PushExecuteServiceDelegate;
+import com.alibaba.nacos.naming.push.v2.PushExecutorDelegate;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTask;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTaskExecuteEngine;
 
@@ -55,11 +55,11 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     
     public NamingSubscriberServiceV2Impl(ClientManagerDelegate clientManager,
             ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
-            PushExecuteServiceDelegate pushExecuteService) {
+            PushExecutorDelegate pushExecutor) {
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
         this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
-                pushExecuteService);
+                pushExecutor);
         NotifyCenter.registerSubscriber(this);
         
     }

@@ -28,11 +28,11 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class RpcPushExecuteServiceImpl implements PushExecuteService {
+public class PushExecutorRpcImpl implements PushExecutor {
     
     private final RpcPushService pushService;
     
-    public RpcPushExecuteServiceImpl(RpcPushService pushService) {
+    public PushExecutorRpcImpl(RpcPushService pushService) {
         this.pushService = pushService;
     }
     
