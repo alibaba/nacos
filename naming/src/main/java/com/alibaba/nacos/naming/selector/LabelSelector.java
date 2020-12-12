@@ -243,8 +243,7 @@ public class LabelSelector extends ExpressionSelector implements Selector {
             
             return checkInnerSyntax(elements, index);
         }
-    
-        @SuppressWarnings("PMD.VariableDeclarationUsageDistance")
+        
         private static int checkInnerSyntax(List<String> elements, int start) {
             
             int index = start;
@@ -257,9 +256,9 @@ public class LabelSelector extends ExpressionSelector implements Selector {
             if (!elements.get(index).startsWith(CONSUMER_PREFIX)) {
                 return -1;
             }
-    
-            String labelConsumer = elements.get(index++).split(CONSUMER_PREFIX)[1];
-    
+            
+            final String labelConsumer = elements.get(index++).split(CONSUMER_PREFIX)[1];
+            
             index = skipEmpty(elements, index);
             if (index >= elements.size()) {
                 return -1;
@@ -278,7 +277,7 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                 return -1;
             }
             
-            String labelProvider = elements.get(index).split(PROVIDER_PREFIX)[1];
+            final String labelProvider = elements.get(index).split(PROVIDER_PREFIX)[1];
             
             if (!labelConsumer.equals(labelProvider)) {
                 return -1;
