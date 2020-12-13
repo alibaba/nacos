@@ -6,6 +6,7 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
+import com.alibaba.nacos.naming.core.v2.client.manager.impl.NoConnectionClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
@@ -26,17 +27,21 @@ public class ClientOperationServiceProxy implements ClientOperationService {
     
     private final ClientOperationService persistentClientOperationService;
     
-    private final ClientManager clientManager;
+    private final ClientManager connectionClientManager;
     
-    public ClientOperationServiceProxy(ClientManagerDelegate clientManager) {
-        this.clientManager = clientManager;
-        this.ephemeraClientOperationService = new EphemeralClientOperationServiceImpl(clientManager);
-        this.persistentClientOperationService = new PersistentClientOperationServiceImpl(clientManager);
+    private final NoConnectionClientManager noConnectionClientManager;
+    
+    public ClientOperationServiceProxy(ClientManagerDelegate connectionClientManager,
+            NoConnectionClientManager noConnectionClientManager) {
+        this.connectionClientManager = connectionClientManager;
+        this.noConnectionClientManager = noConnectionClientManager;
+        this.ephemeraClientOperationService = new EphemeralClientOperationServiceImpl(connectionClientManager);
+        this.persistentClientOperationService = new PersistentClientOperationServiceImpl(noConnectionClientManager);
     }
     
     @Override
     public void registerInstance(Service service, Instance instance, String clientId) {
-        final ClientOperationService operationService = switchByClientID(instance);
+        final ClientOperationService operationService = chooseClientOperationService(instance);
         operationService.registerInstance(service, instance, clientId);
     }
     
@@ -46,29 +51,43 @@ public class ClientOperationServiceProxy implements ClientOperationService {
             Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", service);
             return;
         }
-        final ClientOperationService operationService = switchByClientID(instance);
+        final ClientOperationService operationService = chooseClientOperationService(instance);
         operationService.deregisterInstance(service, instance, clientId);
     }
     
     @Override
     public void subscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
-        Client client = clientManager.getClient(clientId);
+        
+        Client client = connectionClientManager.getClient(clientId);
         client.addServiceSubscriber(singleton, subscriber);
         client.setLastUpdatedTime();
+    
+        Client pClient = noConnectionClientManager.getClient(clientId);
+        pClient.addServiceSubscriber(singleton, subscriber);
+        
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
     }
     
     @Override
     public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
-        Client client = clientManager.getClient(clientId);
-        client.removeServiceSubscriber(singleton);
-        client.setLastUpdatedTime();
+        
+        Client eClient = connectionClientManager.getClient(clientId);
+        eClient.removeServiceSubscriber(singleton);
+        eClient.setLastUpdatedTime();
+    
+        Client pClient = noConnectionClientManager.getClient(clientId);
+        pClient.removeServiceSubscriber(singleton);
+    
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
     }
     
-    private ClientOperationService switchByClientID(final Instance instance) {
+    private ClientOperationService chooseClientOperationService(final Instance instance) {
         return instance.isEphemeral() ? ephemeraClientOperationService : persistentClientOperationService;
+    }
+    
+    private ClientManager chooseClientManager(final Instance instance) {
+        return instance.isEphemeral() ? connectionClientManager : noConnectionClientManager;
     }
 }

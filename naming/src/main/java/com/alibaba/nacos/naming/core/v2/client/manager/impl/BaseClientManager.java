@@ -33,11 +33,21 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class BaseClientManager<C extends AbstractClient> implements ClientManager {
     
-    protected final ConcurrentMap<String, C> clients = new ConcurrentHashMap<>(128);
+    protected volatile ConcurrentMap<String, C> clients = new ConcurrentHashMap<>(128);
     
     public BaseClientManager() {
-        GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0,
-                Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
+        init();
+    }
+    
+    @Override
+    public boolean contains(String clientId) {
+        return clients.containsKey(clientId);
+    }
+    
+    protected void init() {
+        GlobalExecutor
+                .scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0, Constants.DEFAULT_HEART_BEAT_INTERVAL,
+                        TimeUnit.MILLISECONDS);
     }
     
     private static class ExpiredClientCleaner implements Runnable {

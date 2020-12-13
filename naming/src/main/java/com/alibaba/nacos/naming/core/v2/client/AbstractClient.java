@@ -27,6 +27,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * Abstract implementation of {@code Client}.
@@ -35,11 +37,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractClient implements Client {
     
-    protected final ConcurrentHashMap<Service, InstancePublishInfo> publishers = new ConcurrentHashMap<>(16, 0.75f, 1);
+    protected volatile ConcurrentMap<Service, InstancePublishInfo> publishers = new ConcurrentHashMap<>(16, 0.75f, 1);
     
-    protected final ConcurrentHashMap<Service, Subscriber> subscribers = new ConcurrentHashMap<>(16, 0.75f, 1);
+    protected volatile ConcurrentMap<Service, Subscriber> subscribers = new ConcurrentHashMap<>(16, 0.75f, 1);
     
     protected volatile long lastUpdatedTime;
+    
+    protected static final AtomicReferenceFieldUpdater<AbstractClient, ConcurrentMap> PUBLISHERS_FILED_UPDATER = AtomicReferenceFieldUpdater
+            .newUpdater(AbstractClient.class, ConcurrentMap.class, "publishers");
+    
+    protected static final AtomicReferenceFieldUpdater<AbstractClient, ConcurrentMap> SUBSCRIBERS_FILED_UPDATER = AtomicReferenceFieldUpdater
+            .newUpdater(AbstractClient.class, ConcurrentMap.class, "subscribers");
     
     public AbstractClient() {
         lastUpdatedTime = System.currentTimeMillis();
@@ -116,10 +124,18 @@ public abstract class AbstractClient implements Client {
         return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances);
     }
     
+    protected final void loadPublishers(ConcurrentMap<Service, InstancePublishInfo> publishers) {
+        PUBLISHERS_FILED_UPDATER.set(this, publishers);
+    }
+    
+    protected final void loadSubscribers(ConcurrentMap<Service, Subscriber> subscribers) {
+        PUBLISHERS_FILED_UPDATER.set(this, subscribers);
+    }
+    
     /**
      * Whether the current client has expired.
-     * @param currentTime current time
      *
+     * @param currentTime current time
      * @return is expire
      */
     public abstract boolean isExpire(final long currentTime);

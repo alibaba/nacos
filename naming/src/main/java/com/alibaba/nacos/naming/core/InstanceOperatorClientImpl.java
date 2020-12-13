@@ -198,7 +198,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     private void createIpPortClientIfAbsent(String clientId, boolean ephemeral) {
-        if (!clientManager.allClientId().contains(clientId)) {
+        if (!clientManager.contains(clientId)) {
             clientManager.clientConnected(new IpPortBasedClient(clientId, ephemeral));
         }
     }

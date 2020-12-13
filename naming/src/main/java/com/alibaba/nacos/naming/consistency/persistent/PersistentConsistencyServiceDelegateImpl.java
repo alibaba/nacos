@@ -20,8 +20,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.impl.BasePersistentServiceProcessor;
-import com.alibaba.nacos.naming.core.PersistentServiceV1Operator;
+import com.alibaba.nacos.naming.consistency.persistent.impl.ClusterPersistentServiceProcessor;
+import com.alibaba.nacos.naming.consistency.persistent.impl.StandalonePersistentServiceProcessor;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.pojo.Record;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,40 +35,69 @@ import org.springframework.stereotype.Component;
 @Component("persistentConsistencyServiceDelegate")
 public class PersistentConsistencyServiceDelegateImpl implements PersistentConsistencyService {
     
-    private final PersistentConsistencyService newPersistentConsistencyService;
+    private final ClusterVersionJudgement versionJudgement;
     
-    public PersistentConsistencyServiceDelegateImpl(BasePersistentServiceProcessor processor) {
-        this.newPersistentConsistencyService = new PersistentServiceV1Operator(processor);
+    private final RaftConsistencyServiceImpl oldPersistentConsistencyService;
+    
+    private final BasePersistentServiceProcessor newPersistentConsistencyService;
+    
+    private volatile boolean switchNewPersistentService = false;
+    
+    public PersistentConsistencyServiceDelegateImpl(ClusterVersionJudgement versionJudgement,
+            RaftConsistencyServiceImpl oldPersistentConsistencyService) throws Exception {
+        this.versionJudgement = versionJudgement;
+        this.oldPersistentConsistencyService = oldPersistentConsistencyService;
+        this.newPersistentConsistencyService = createNewPersistentServiceProcessor(versionJudgement);
+        init();
+    }
+    
+    private void init() {
+        this.versionJudgement.registerObserver(isAllNewVersion -> switchNewPersistentService = isAllNewVersion, -1);
     }
     
     @Override
     public void put(String key, Record value) throws NacosException {
-        newPersistentConsistencyService.put(key, value);
+        switchOne().put(key, value);
     }
     
     @Override
     public void remove(String key) throws NacosException {
-        newPersistentConsistencyService.remove(key);
+        switchOne().remove(key);
     }
     
     @Override
     public Datum get(String key) throws NacosException {
-        return newPersistentConsistencyService.get(key);
+        return switchOne().get(key);
     }
     
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
+        oldPersistentConsistencyService.listen(key, listener);
         newPersistentConsistencyService.listen(key, listener);
     }
     
     @Override
     public void unListen(String key, RecordListener listener) throws NacosException {
         newPersistentConsistencyService.unListen(key, listener);
+        oldPersistentConsistencyService.unListen(key, listener);
     }
     
     @Override
     public boolean isAvailable() {
-        return newPersistentConsistencyService.isAvailable();
+        return switchOne().isAvailable();
+    }
+    
+    private PersistentConsistencyService switchOne() {
+        return switchNewPersistentService ? newPersistentConsistencyService : oldPersistentConsistencyService;
+    }
+    
+    private BasePersistentServiceProcessor createNewPersistentServiceProcessor(ClusterVersionJudgement versionJudgement)
+            throws Exception {
+        final BasePersistentServiceProcessor processor =
+                EnvUtil.getStandaloneMode() ? new StandalonePersistentServiceProcessor(versionJudgement)
+                        : new ClusterPersistentServiceProcessor(versionJudgement);
+        processor.afterConstruct();
+        return processor;
     }
     
 }

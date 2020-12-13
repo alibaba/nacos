@@ -39,10 +39,10 @@ public class ClientBeatProcessorV2 implements BeatProcessor {
     
     private final IpPortBasedClient client;
     
-    public ClientBeatProcessorV2(String namespace, RsInfo rsInfo, IpPortBasedClient ipPortBasedClient) {
+    public ClientBeatProcessorV2(String namespace, RsInfo rsInfo, IpPortBasedClient client) {
         this.namespace = namespace;
         this.rsInfo = rsInfo;
-        this.client = ipPortBasedClient;
+        this.client = client;
     }
     
     @Override

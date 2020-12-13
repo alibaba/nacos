@@ -21,8 +21,8 @@ import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
 import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 
 import java.util.Collection;
 
@@ -40,6 +40,7 @@ public class IpPortBasedClient extends AbstractClient {
     
     private final boolean ephemeral;
     
+    // TODO Checking types requires considering whether optional support is supported
     private final ClientBeatCheckTaskV2 beatCheckTask;
     
     public IpPortBasedClient(String clientId, boolean ephemeral) {
@@ -92,5 +93,26 @@ public class IpPortBasedClient extends AbstractClient {
         result.setHealthy(instancePublishInfo.isHealthy());
         result.setExtendDatum(instancePublishInfo.getExtendDatum());
         return result;
+    }
+    
+    public void clearAllSubscribers() {
+        subscribers.clear();
+    }
+    
+    public void load(final IpPortBasedClient client) {
+        loadPublishers(client.publishers);
+        loadSubscribers(client.subscribers);
+    }
+    
+    /**
+     * clone new {@link IpPortBasedClient}.
+     *
+     * @return
+     */
+    public IpPortBasedClient clone() {
+        final IpPortBasedClient clone = new IpPortBasedClient(clientId, ephemeral);
+        clone.subscribers.putAll(subscribers);
+        clone.publishers.putAll(publishers);
+        return clone;
     }
 }

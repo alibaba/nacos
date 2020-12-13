@@ -61,6 +61,14 @@ public interface ClientManager {
     Client getClient(String clientId);
     
     /**
+     * Whether the client id exists.
+     *
+     * @param clientId client id
+     * @return client
+     */
+    boolean contains(final String clientId);
+    
+    /**
      * All client id.
      *
      * @return collection of client id

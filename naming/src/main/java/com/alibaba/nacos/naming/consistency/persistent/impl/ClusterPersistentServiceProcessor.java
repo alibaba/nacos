@@ -16,24 +16,29 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.impl;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.consistency.SerializeFactory;
-import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
-import com.alibaba.nacos.core.code.ConditionOnClusterMode;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.exception.ErrorCode;
+import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.utils.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.protobuf.ByteString;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,43 +47,33 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-@Conditional(value = ConditionOnClusterMode.class)
-@Component
 public class ClusterPersistentServiceProcessor extends BasePersistentServiceProcessor {
     
     private final CPProtocol protocol;
-    
-    private final Serializer serializer;
     
     /**
      * Is there a leader node currently.
      */
     private volatile boolean hasLeader = false;
     
-    /**
-     * Whether an unrecoverable error occurred.
-     */
-    private volatile boolean hasError = false;
-    
-    public ClusterPersistentServiceProcessor() throws Exception {
+    public ClusterPersistentServiceProcessor(ClusterVersionJudgement versionJudgement) throws Exception {
+        super(versionJudgement);
         this.protocol = ProtocolManager.getCpProtocol();
-        this.serializer = SerializeFactory.getSerializer("JSON");
-        init();
     }
     
     @Override
-    public boolean isAvailable() {
-        return hasLeader && !hasError;
-    }
-    
-    @SuppressWarnings("unchecked")
-    private void init() {
+    public void afterConstruct() {
+        super.afterConstruct();
         this.protocol.addRequestProcessors(Collections.singletonList(this));
         this.protocol.protocolMetaData()
                 .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
                         (o, arg) -> hasLeader = StringUtils.isNotBlank(String.valueOf(arg)));
         // If you choose to use the new RAFT protocol directly, there will be no compatible logical execution
-        waitLeader();
+        if (EnvUtil.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
+            NotifyCenter.registerSubscriber(notifier);
+            waitLeader();
+            startNotify = true;
+        }
     }
     
     private void waitLeader() {
@@ -92,29 +87,67 @@ public class ClusterPersistentServiceProcessor extends BasePersistentServiceProc
     }
     
     @Override
-    protected Response read(Object ctx) throws Exception {
+    public void put(String key, Record value) throws NacosException {
+        final BatchWriteRequest req = new BatchWriteRequest();
+        Datum datum = Datum.createDatum(key, value);
+        req.append(ByteUtils.toBytes(key), serializer.serialize(datum));
+        final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
+                .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Write.getDesc()).build();
+        try {
+            protocol.write(request);
+        } catch (Exception e) {
+            throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
+        }
+    }
+    
+    @Override
+    public void remove(String key) throws NacosException {
+        final BatchWriteRequest req = new BatchWriteRequest();
+        req.append(ByteUtils.toBytes(key), ByteUtils.EMPTY);
+        final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
+                .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Delete.getDesc()).build();
+        try {
+            protocol.write(request);
+        } catch (Exception e) {
+            throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
+        }
+    }
+    
+    @Override
+    public Datum get(String key) throws NacosException {
+        final List<byte[]> keys = new ArrayList<>(1);
+        keys.add(ByteUtils.toBytes(key));
         final ReadRequest req = ReadRequest.newBuilder().setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
-                .setData(ByteString.copyFrom(serializer.serialize(ctx))).build();
-        return protocol.getData(req);
+                .setData(ByteString.copyFrom(serializer.serialize(keys))).build();
+        try {
+            Response resp = protocol.getData(req);
+            if (resp.getSuccess()) {
+                BatchReadResponse response = serializer
+                        .deserialize(resp.getData().toByteArray(), BatchReadResponse.class);
+                final List<byte[]> rValues = response.getValues();
+                return rValues.isEmpty() ? null : serializer.deserialize(rValues.get(0), getDatumTypeFromKey(key));
+            }
+            throw new NacosException(ErrorCode.ProtoReadError.getCode(), resp.getErrMsg());
+        } catch (Throwable e) {
+            throw new NacosException(ErrorCode.ProtoReadError.getCode(), e.getMessage());
+        }
     }
     
     @Override
-    protected Response write(final BatchWriteRequest request, final String op) throws Exception {
-        return write(StringUtils.EMPTY, op, request);
+    public void listen(String key, RecordListener listener) throws NacosException {
+        notifier.registerListener(key, listener);
+        if (startNotify) {
+            notifierDatumIfAbsent(key, listener);
+        }
     }
     
     @Override
-    protected Response write(final String key, final String op, final BatchWriteRequest request) throws Exception {
-        return protocol
-                .write(WriteRequest.newBuilder().setKey(key).setData(ByteString.copyFrom(serializer.serialize(request)))
-                        .setGroup(group()).setOperation(op).build());
+    public void unListen(String key, RecordListener listener) throws NacosException {
+        notifier.deregisterListener(key, listener);
     }
     
     @Override
-    protected Response write(String key, String op, BatchWriteRequest request, Map<String, String> extendInfo)
-            throws Exception {
-        return protocol
-                .write(WriteRequest.newBuilder().setKey(key).setData(ByteString.copyFrom(serializer.serialize(request)))
-                        .setGroup(group()).setOperation(op).putAllExtendInfo(extendInfo).build());
+    public boolean isAvailable() {
+        return hasLeader && !hasError;
     }
 }

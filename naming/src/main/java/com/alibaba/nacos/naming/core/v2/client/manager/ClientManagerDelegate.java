@@ -63,6 +63,11 @@ public class ClientManagerDelegate implements ClientManager {
     }
     
     @Override
+    public boolean contains(String clientId) {
+        return connectionBasedClientManager.contains(clientId) || ipPortBasedClientManager.contains(clientId);
+    }
+    
+    @Override
     public Collection<String> allClientId() {
         Collection<String> result = new HashSet<>();
         result.addAll(connectionBasedClientManager.allClientId());
@@ -91,4 +96,5 @@ public class ClientManagerDelegate implements ClientManager {
     public IpPortBasedClientManager getIpPortBasedClientManager() {
         return ipPortBasedClientManager;
     }
+    
 }

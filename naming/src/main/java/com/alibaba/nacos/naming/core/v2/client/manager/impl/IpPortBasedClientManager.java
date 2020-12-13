@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
@@ -30,8 +29,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 /**
@@ -44,8 +41,6 @@ public class IpPortBasedClientManager extends BaseClientManager<IpPortBasedClien
     
     private final DistroMapper distroMapper;
     
-    private final Map<String, IpPortBasedClient> persistentClientRepository = new ConcurrentHashMap<>(512);
-    
     public IpPortBasedClientManager(DistroMapper distroMapper) {
         this.distroMapper = distroMapper;
     }
@@ -54,7 +49,7 @@ public class IpPortBasedClientManager extends BaseClientManager<IpPortBasedClien
     public boolean clientConnected(Client client) {
         Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
         if (!clients.containsKey(client.getClientId())) {
-            switchOneRepository(client.isEphemeral()).put(client.getClientId(), (IpPortBasedClient) client);
+            clients.put(client.getClientId(), (IpPortBasedClient) client);
         }
         return true;
     }
@@ -67,12 +62,7 @@ public class IpPortBasedClientManager extends BaseClientManager<IpPortBasedClien
     @Override
     public boolean clientDisconnected(String clientId) {
         Loggers.SRV_LOG.info("Client connection {} disconnect, remove instances and subscribers", clientId);
-        IpPortBasedClient eClient = clients.remove(clientId);
-        IpPortBasedClient pClient = persistentClientRepository.remove(clientId);
-        if (null == eClient && pClient == null) {
-            return true;
-        }
-        IpPortBasedClient client = Objects.isNull(eClient) ? pClient : eClient;
+        IpPortBasedClient client = clients.remove(clientId);
         NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
         client.destroy();
         return true;
@@ -80,21 +70,19 @@ public class IpPortBasedClientManager extends BaseClientManager<IpPortBasedClien
     
     @Override
     public Client getClient(String clientId) {
-        return clients.getOrDefault(clientId, persistentClientRepository.get(clientId));
+        return clients.get(clientId);
     }
     
     @Override
     public Collection<String> allClientId() {
-        Collection<String> clientIds = new ArrayList<>(clients.size() + persistentClientRepository.size());
+        Collection<String> clientIds = new ArrayList<>(clients.size());
         clientIds.addAll(clients.keySet());
-        clientIds.addAll(persistentClientRepository.keySet());
         return clientIds;
     }
     
     @Override
     public void forEach(BiConsumer<String, Client> consumer) {
         clients.forEach(consumer);
-        persistentClientRepository.forEach(consumer);
     }
     
     @Override
@@ -106,14 +94,11 @@ public class IpPortBasedClientManager extends BaseClientManager<IpPortBasedClien
     public boolean verifyClient(String clientId) {
         IpPortBasedClient client = clients.get(clientId);
         if (null != client) {
-            NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
+            NamingExecuteTaskDispatcher.getInstance()
+                    .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
             return true;
         }
         return false;
-    }
-    
-    private Map<String, IpPortBasedClient> switchOneRepository(boolean ephemeral) {
-        return ephemeral ? clients : persistentClientRepository;
     }
     
 }

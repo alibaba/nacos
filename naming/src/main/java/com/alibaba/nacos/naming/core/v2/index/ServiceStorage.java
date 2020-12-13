@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
+import com.alibaba.nacos.naming.core.v2.client.manager.impl.NoConnectionClientManager;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -51,7 +52,9 @@ public class ServiceStorage {
     
     private final ClientServiceIndexesManager serviceIndexesManager;
     
-    private final ClientManager clientManager;
+    private final ClientManager connectionClientManager;
+    
+    private final ClientManager noConnectionClientManager;
     
     private final SwitchDomain switchDomain;
     
@@ -61,10 +64,12 @@ public class ServiceStorage {
     
     private final ConcurrentMap<Service, Set<String>> serviceClusterIndex;
     
-    public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager, ClientManagerDelegate clientManager,
+    public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager,
+            ClientManagerDelegate connectionClientManager, NoConnectionClientManager noConnectionClientManager,
             SwitchDomain switchDomain, NamingMetadataManager metadataManager) {
         this.serviceIndexesManager = serviceIndexesManager;
-        this.clientManager = clientManager;
+        this.connectionClientManager = connectionClientManager;
+        this.noConnectionClientManager = noConnectionClientManager;
         this.switchDomain = switchDomain;
         this.metadataManager = metadataManager;
         this.serviceDataIndexes = new ConcurrentHashMap<>();
@@ -102,7 +107,13 @@ public class ServiceStorage {
         List<Instance> result = new LinkedList<>();
         Set<String> clusters = new HashSet<>();
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
-            Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(each, service);
+            Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(connectionClientManager, each, service);
+            if (instancePublishInfo.isPresent()) {
+                Instance instance = parseInstance(service, instancePublishInfo.get());
+                result.add(instance);
+                clusters.add(instance.getClusterName());
+            }
+            instancePublishInfo = getInstanceInfo(noConnectionClientManager, each, service);
             if (instancePublishInfo.isPresent()) {
                 Instance instance = parseInstance(service, instancePublishInfo.get());
                 result.add(instance);
@@ -114,8 +125,8 @@ public class ServiceStorage {
         return result;
     }
     
-    private Optional<InstancePublishInfo> getInstanceInfo(String clientId, Service service) {
-        Client client = clientManager.getClient(clientId);
+    private Optional<InstancePublishInfo> getInstanceInfo(ClientManager manager, String clientId, Service service) {
+        Client client = manager.getClient(clientId);
         if (null == client) {
             return Optional.empty();
         }
@@ -135,7 +146,8 @@ public class ServiceStorage {
                 instanceMetadata.put(entry.getKey(), entry.getValue().toString());
             }
         }
-        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, instanceInfo.getInstanceId());
+        Optional<InstanceMetadata> metadata = metadataManager
+                .getInstanceMetadata(service, instanceInfo.getInstanceId());
         if (metadata.isPresent()) {
             result.setEnabled(metadata.get().isEnabled());
             result.setWeight(metadata.get().getWeight());
