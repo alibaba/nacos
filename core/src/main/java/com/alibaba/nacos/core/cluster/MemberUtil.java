@@ -43,13 +43,7 @@ import java.util.stream.Collectors;
 public class MemberUtil {
     
     protected static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
-    
-    private static ServerMemberManager manager;
-    
-    public static void setManager(ServerMemberManager manager) {
-        MemberUtil.manager = manager;
-    }
-    
+
     /**
      * Information copy.
      *
@@ -117,7 +111,7 @@ public class MemberUtil {
      *
      * @param member {@link Member}
      */
-    public static void onSuccess(Member member) {
+    public static void onSuccess(final ServerMemberManager manager, final Member member) {
         final NodeState old = member.getState();
         manager.getMemberAddressInfos().add(member.getAddress());
         member.setState(NodeState.UP);
@@ -127,9 +121,9 @@ public class MemberUtil {
         }
     }
     
-    public static void onFail(Member member) {
+    public static void onFail(final ServerMemberManager manager, final Member member) {
         // To avoid null pointer judgments, pass in one NONE_EXCEPTION
-        onFail(member, ExceptionUtil.NONE_EXCEPTION);
+        onFail(manager, member, ExceptionUtil.NONE_EXCEPTION);
     }
     
     /**
@@ -138,7 +132,7 @@ public class MemberUtil {
      * @param member {@link Member}
      * @param ex     {@link Throwable}
      */
-    public static void onFail(Member member, Throwable ex) {
+    public static void onFail(final ServerMemberManager manager, final Member member, Throwable ex) {
         manager.getMemberAddressInfos().remove(member.getAddress());
         final NodeState old = member.getState();
         member.setState(NodeState.SUSPICIOUS);

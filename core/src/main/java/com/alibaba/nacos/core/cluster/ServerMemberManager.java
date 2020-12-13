@@ -124,7 +124,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap<>();
         EnvUtil.setContextPath(servletContext.getContextPath());
-        MemberUtil.setManager(this);
         
         init();
     }
@@ -196,7 +195,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      * member information update.
      *
      * @param newMember {@link Member}
-     * @return update is success
+     * @return update is successw
      */
     public boolean update(Member newMember) {
         Loggers.CLUSTER.debug("member information update : {}", newMember);
@@ -312,7 +311,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             
             // Ensure that the node is created only once
             tmpMap.put(address, member);
-            tmpAddressInfo.add(address);
+            if (NodeState.UP.equals(member.getState())) {
+                tmpAddressInfo.add(address);
+            }
         }
         
         serverList = tmpMap;
@@ -327,9 +328,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         // that the event publication is sequential
         if (hasChange) {
             MemberUtil.syncToFile(finalMembers);
-            Set<Member> healthMembers = MemberUtil.selectTargetMembers(members, member -> {
-                return !NodeState.DOWN.equals(member.getState());
-            });
             Event event = MembersChangeEvent.builder().members(finalMembers).build();
             NotifyCenter.publishEvent(event);
         }
@@ -471,12 +469,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                             return;
                                         }
                                         if (result.ok()) {
-                                            MemberUtil.onSuccess(target);
+                                            MemberUtil.onSuccess(ServerMemberManager.this, target);
                                         } else {
                                             Loggers.CLUSTER
                                                     .warn("failed to report new info to target node : {}, result : {}",
                                                             target.getAddress(), result);
-                                            MemberUtil.onFail(target);
+                                            MemberUtil.onFail(ServerMemberManager.this, target);
                                         }
                                     }
                                     
@@ -486,7 +484,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                                 .error("failed to report new info to target node : {}, error : {}",
                                                         target.getAddress(),
                                                         ExceptionUtil.getAllExceptionMsg(throwable));
-                                        MemberUtil.onFail(target, throwable);
+                                        MemberUtil.onFail(ServerMemberManager.this, target, throwable);
                                     }
                                     
                                     @Override

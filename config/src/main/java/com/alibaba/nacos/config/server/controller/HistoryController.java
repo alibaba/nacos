@@ -47,9 +47,9 @@ public class HistoryController {
      * @param group    group string value.
      * @param tenant   tenant string value.
      * @param appName  appName string value.
-     * @param pageNo   pageNo string value.
-     * @param pageSize pageSize string value.
-     * @param modelMap modeMap.
+     * @param pageNo   pageNo integer value.
+     * @param pageSize pageSize integer value.
+     * @param modelMap modelMap.
      * @return
      */
     @GetMapping(params = "search=accurate")

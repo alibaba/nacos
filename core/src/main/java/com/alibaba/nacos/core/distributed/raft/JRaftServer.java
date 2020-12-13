@@ -50,6 +50,7 @@ import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.closure.ReadIndexClosure;
 import com.alipay.sofa.jraft.conf.Configuration;
+import com.alipay.sofa.jraft.core.CliServiceImpl;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.entity.Task;
 import com.alipay.sofa.jraft.error.RaftError;
@@ -190,9 +191,8 @@ public class JRaftServer {
         
         CliOptions cliOptions = new CliOptions();
         
-        this.cliClientService = new CliClientServiceImpl();
-        this.cliClientService.init(cliOptions);
         this.cliService = RaftServiceFactory.createAndInitCliService(cliOptions);
+        this.cliClientService = (CliClientServiceImpl) ((CliServiceImpl) this.cliService).getCliClientService();
     }
     
     synchronized void start() {

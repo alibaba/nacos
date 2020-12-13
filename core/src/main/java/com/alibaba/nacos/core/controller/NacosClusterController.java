@@ -169,12 +169,12 @@ public class NacosClusterController {
                         if (result.ok()) {
                             LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER,
                                     "The node : [{}] success to process the request", member);
-                            MemberUtil.onSuccess(member);
+                            MemberUtil.onSuccess(memberManager, member);
                         } else {
                             Loggers.CLUSTER
                                     .warn("The node : [{}] failed to process the request, response is : {}", member,
                                             result);
-                            MemberUtil.onFail(member);
+                            MemberUtil.onFail(memberManager, member);
                         }
                     } finally {
                         latch.countDown();
@@ -185,7 +185,7 @@ public class NacosClusterController {
                 public void onError(Throwable throwable) {
                     try {
                         Loggers.CLUSTER.error("Failed to communicate with the node : {}", member);
-                        MemberUtil.onFail(member);
+                        MemberUtil.onFail(memberManager, member);
                     } finally {
                         latch.countDown();
                     }

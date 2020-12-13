@@ -136,19 +136,19 @@ public class MemberUtilTest {
         memberManager.memberJoin(Collections.singletonList(remote));
         
         remote.setFailAccessCnt(2);
-        MemberUtil.onFail(remote);
+        MemberUtil.onFail(memberManager, remote);
         
         final Member search1 = memberManager.find(remote.getAddress());
         Assert.assertEquals(3, search1.getFailAccessCnt());
         Assert.assertEquals(NodeState.SUSPICIOUS, search1.getState());
         
-        MemberUtil.onFail(remote);
+        MemberUtil.onFail(memberManager, remote);
         
         final Member search2 = memberManager.find(remote.getAddress());
         Assert.assertEquals(4, search2.getFailAccessCnt());
         Assert.assertEquals(NodeState.DOWN, search2.getState());
         
-        MemberUtil.onSuccess(remote);
+        MemberUtil.onSuccess(memberManager, remote);
         final Member search3 = memberManager.find(remote.getAddress());
         Assert.assertEquals(0, search3.getFailAccessCnt());
         Assert.assertEquals(NodeState.UP, search3.getState());
@@ -160,13 +160,13 @@ public class MemberUtilTest {
         memberManager.memberJoin(Collections.singletonList(remote));
         
         remote.setFailAccessCnt(1);
-        MemberUtil.onFail(remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
+        MemberUtil.onFail(memberManager, remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
         
         final Member search1 = memberManager.find(remote.getAddress());
         Assert.assertEquals(2, search1.getFailAccessCnt());
         Assert.assertEquals(NodeState.DOWN, search1.getState());
         
-        MemberUtil.onSuccess(remote);
+        MemberUtil.onSuccess(memberManager, remote);
         final Member search2 = memberManager.find(remote.getAddress());
         Assert.assertEquals(0, search2.getFailAccessCnt());
         Assert.assertEquals(NodeState.UP, search2.getState());
@@ -190,7 +190,7 @@ public class MemberUtilTest {
         memberManager.memberJoin(Collections.singletonList(remote));
         
         remote.setFailAccessCnt(1);
-        MemberUtil.onFail(remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
+        MemberUtil.onFail(memberManager, remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
         ThreadUtils.sleep(4000);
         Assert.assertTrue(received.get());
         final MembersChangeEvent event1 = reference.get();
@@ -200,7 +200,7 @@ public class MemberUtilTest {
         Assert.assertEquals(NodeState.DOWN, member1.getState());
         received.set(false);
         
-        MemberUtil.onSuccess(remote);
+        MemberUtil.onSuccess(memberManager, remote);
         ThreadUtils.sleep(4000);
         Assert.assertTrue(received.get());
         final MembersChangeEvent event2 = reference.get();
@@ -224,7 +224,7 @@ public class MemberUtilTest {
         final Member remote = buildMember();
         memberManager.updateMember(remote);
         
-        MemberUtil.onSuccess(remote);
+        MemberUtil.onSuccess(memberManager, remote);
         ThreadUtils.sleep(4000);
         Assert.assertFalse(received.get());
     }
@@ -245,7 +245,7 @@ public class MemberUtilTest {
         remote.setState(NodeState.SUSPICIOUS);
         memberManager.updateMember(remote);
         
-        MemberUtil.onFail(remote);
+        MemberUtil.onFail(memberManager, remote);
         ThreadUtils.sleep(4000);
         Assert.assertFalse(received.get());
     }
