@@ -154,7 +154,7 @@ public final class RaftSysConstants {
     public static final String RAFT_CLI_SERVICE_THREAD_NUM = "cli_service_thread_num";
     
     /**
-     * raft linear read strategy, defaults to index
+     * raft linear read strategy, defaults to read_index read
      */
     public static final String RAFT_READ_INDEX_TYPE = "read_index_type";
     

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -24,10 +25,13 @@ import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -66,8 +70,6 @@ public class HostReactor implements Closeable {
     
     private final PushReceiver pushReceiver;
     
-    private final EventDispatcher eventDispatcher;
-    
     private final BeatReactor beatReactor;
     
     private final NamingProxy serverProxy;
@@ -78,13 +80,14 @@ public class HostReactor implements Closeable {
     
     private final ScheduledExecutorService executor;
     
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor,
-            String cacheDir) {
-        this(eventDispatcher, serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+    private final InstancesChangeNotifier notifier;
+    
+    public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
+        this(serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
     
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor,
-            String cacheDir, boolean loadCacheAtStart, int pollingThreadCount) {
+    public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir, boolean loadCacheAtStart,
+            int pollingThreadCount) {
         // init executorService
         this.executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
             @Override
@@ -95,7 +98,7 @@ public class HostReactor implements Closeable {
                 return thread;
             }
         });
-        this.eventDispatcher = eventDispatcher;
+        
         this.beatReactor = beatReactor;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
@@ -108,6 +111,10 @@ public class HostReactor implements Closeable {
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
+        this.notifier = new InstancesChangeNotifier();
+    
+        NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
+        NotifyCenter.registerSubscriber(notifier);
     }
     
     public Map<String, ServiceInfo> getServiceInfoMap() {
@@ -116,6 +123,33 @@ public class HostReactor implements Closeable {
     
     public synchronized ScheduledFuture<?> addTask(UpdateTask task) {
         return executor.schedule(task, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
+    }
+    
+    /**
+     * subscribe instancesChangeEvent.
+     *
+     * @param serviceName   combineServiceName, such as 'xxx@@xxx'
+     * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
+     * @param eventListener custom listener
+     */
+    public void subscribe(String serviceName, String clusters, EventListener eventListener) {
+        notifier.registerListener(serviceName, clusters, eventListener);
+        getServiceInfo(serviceName, clusters);
+    }
+    
+    /**
+     * unsubscribe instancesChangeEvent.
+     *
+     * @param serviceName   combineServiceName, such as 'xxx@@xxx'
+     * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
+     * @param eventListener custom listener
+     */
+    public void unSubscribe(String serviceName, String clusters, EventListener eventListener) {
+        notifier.deregisterListener(serviceName, clusters, eventListener);
+    }
+    
+    public List<ServiceInfo> getSubscribeServices() {
+        return notifier.getSubscribeServices();
     }
     
     /**
@@ -208,7 +242,8 @@ public class HostReactor implements Closeable {
             serviceInfo.setJsonFromServer(json);
             
             if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
-                eventDispatcher.serviceChanged(serviceInfo);
+                NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+                        serviceInfo.getClusters(), serviceInfo.getHosts()));
                 DiskCache.write(serviceInfo, cacheDir);
             }
             
@@ -217,7 +252,8 @@ public class HostReactor implements Closeable {
             NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> "
                     + JacksonUtils.toJson(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-            eventDispatcher.serviceChanged(serviceInfo);
+            NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+                    serviceInfo.getClusters(), serviceInfo.getHosts()));
             serviceInfo.setJsonFromServer(json);
             DiskCache.write(serviceInfo, cacheDir);
         }
@@ -371,6 +407,7 @@ public class HostReactor implements Closeable {
         ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
         pushReceiver.shutdown();
         failoverReactor.shutdown();
+        NotifyCenter.deregisterSubscriber(notifier);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
     
@@ -427,7 +464,7 @@ public class HostReactor implements Closeable {
                 
                 lastRefTime = serviceObj.getLastRefTime();
                 
-                if (!eventDispatcher.isSubscribed(serviceName, clusters) && !futureMap
+                if (!notifier.isSubscribed(serviceName, clusters) && !futureMap
                         .containsKey(ServiceInfo.getKey(serviceName, clusters))) {
                     // abort the update task
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
