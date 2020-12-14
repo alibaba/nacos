@@ -81,7 +81,7 @@ public class PayloadRegistry {
         REGISTRY_REQUEST.put(type, clazz);
     }
     
-    public static Class getClassbyType(String type) {
+    public static Class getClassByType(String type) {
         return REGISTRY_REQUEST.get(type);
     }
 }

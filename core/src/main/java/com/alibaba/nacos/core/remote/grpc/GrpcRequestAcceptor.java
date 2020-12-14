@@ -89,7 +89,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                     responseObserver.onNext(GrpcUtils.convert(response));
                     responseObserver.onCompleted();
                     return;
-                } catch (Exception e) {
+                } catch (Throwable e) {
     
                     Loggers.REMOTE_DIGEST.error(String
                             .format("[%s] fail to handle request ,error message :%s", "grpc", e.getMessage(), e));

@@ -155,7 +155,7 @@ public class GrpcUtils {
      */
     public static PlainRequest parse(Payload payload) {
         PlainRequest plainRequest = new PlainRequest();
-        Class classbyType = PayloadRegistry.getClassbyType(payload.getMetadata().getType());
+        Class classbyType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
         if (classbyType != null) {
             Object obj = toObj(payload.getBody().getValue().toStringUtf8(), classbyType);
             if (obj instanceof Request) {

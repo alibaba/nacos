@@ -43,11 +43,11 @@ import java.sql.Timestamp;
  * @version $Id: ConfiRemoveRequestHandler.java, v 0.1 2020年07月16日 5:49 PM liuzunfei Exp $
  */
 @Component
-public class ConfiRemoveRequestHandler extends RequestHandler<ConfigRemoveRequest, ConfigRemoveResponse> {
+public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveRequest, ConfigRemoveResponse> {
     
     private final PersistService persistService;
     
-    public ConfiRemoveRequestHandler(PersistService persistService) {
+    public ConfigRemoveRequestHandler(PersistService persistService) {
         this.persistService = persistService;
     }
     
