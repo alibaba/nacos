@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.push;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.net.DatagramPacket;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,5 +72,9 @@ public class AckEntry {
     
     public Map<String, Object> getData() {
         return data;
+    }
+    
+    public static String getAckKey(String host, int port, long lastRefTime) {
+        return StringUtils.strip(host) + "," + port + "," + lastRefTime;
     }
 }

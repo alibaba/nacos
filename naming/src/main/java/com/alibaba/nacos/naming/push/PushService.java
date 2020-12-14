@@ -24,8 +24,8 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.utils.Constants;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,10 +67,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     private NamingSubscriberServiceV1Impl subscriberServiceV1;
     
     private ApplicationContext applicationContext;
-    
-    private static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
-    
-    private static final int MAX_RETRY_TIMES = 1;
     
     private static volatile ConcurrentMap<String, AckEntry> ackMap = new ConcurrentHashMap<>();
     
@@ -153,7 +149,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     } else {
                         ackEntry = prepareAckEntry(client, prepareHostsData(client), lastRefTime);
                         if (ackEntry != null) {
-                            cache.put(key, new org.javatuples.Pair<>(ackEntry.getOrigin().getData(), ackEntry.getData()));
+                            cache.put(key,
+                                    new org.javatuples.Pair<>(ackEntry.getOrigin().getData(), ackEntry.getData()));
                         }
                     }
                     
@@ -194,8 +191,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             try {
                 Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
                 long lastRefTime = System.nanoTime();
-                AckEntry ackEntry = prepareAckEntry(socketAddress,
-                        prepareHostsData(JacksonUtils.toJson(serviceInfo)), lastRefTime);
+                AckEntry ackEntry = prepareAckEntry(socketAddress, prepareHostsData(JacksonUtils.toJson(serviceInfo)),
+                        lastRefTime);
                 Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}", serviceInfo,
                         subscriber.getAddrStr(), subscriber.getAgent(), (ackEntry == null ? null : ackEntry.getKey()));
                 udpPush(ackEntry);
@@ -244,9 +241,10 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         return prepareAckEntry(client.getSocketAddr(), dataBytes, data, lastRefTime);
     }
     
-    private static AckEntry prepareAckEntry(InetSocketAddress socketAddress, byte[] dataBytes,
-            Map<String, Object> data, long lastRefTime) {
-        String key = getAckKey(socketAddress.getAddress().getHostAddress(), socketAddress.getPort(), lastRefTime);
+    private static AckEntry prepareAckEntry(InetSocketAddress socketAddress, byte[] dataBytes, Map<String, Object> data,
+            long lastRefTime) {
+        String key = AckEntry
+                .getAckKey(socketAddress.getAddress().getHostAddress(), socketAddress.getPort(), lastRefTime);
         try {
             DatagramPacket packet = new DatagramPacket(dataBytes, dataBytes.length, socketAddress);
             AckEntry ackEntry = new AckEntry(key, packet);
@@ -353,8 +351,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             return null;
         }
         
-        if (ackEntry.getRetryTimes() > MAX_RETRY_TIMES) {
-            Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.getRetryTimes(), ackEntry.getKey());
+        if (ackEntry.getRetryTimes() > Constants.UDP_MAX_RETRY_TIMES) {
+            Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.getRetryTimes(),
+                    ackEntry.getKey());
             ackMap.remove(ackEntry.getKey());
             udpSendTimeMap.remove(ackEntry.getKey());
             failedPush += 1;
@@ -374,7 +373,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             ackEntry.increaseRetryTime();
             
             GlobalExecutor.scheduleRetransmitter(new Retransmitter(ackEntry),
-                    TimeUnit.NANOSECONDS.toMillis(ACK_TIMEOUT_NANOS), TimeUnit.MILLISECONDS);
+                    TimeUnit.NANOSECONDS.toMillis(Constants.ACK_TIMEOUT_NANOS), TimeUnit.MILLISECONDS);
             
             return ackEntry;
         } catch (Exception e) {
@@ -386,10 +385,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             
             return null;
         }
-    }
-    
-    private static String getAckKey(String host, int port, long lastRefTime) {
-        return StringUtils.strip(host) + "," + port + "," + lastRefTime;
     }
     
     public static class Retransmitter implements Runnable {
@@ -427,11 +422,11 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     String ip = socketAddress.getAddress().getHostAddress();
                     int port = socketAddress.getPort();
                     
-                    if (System.nanoTime() - ackPacket.lastRefTime > ACK_TIMEOUT_NANOS) {
+                    if (System.nanoTime() - ackPacket.lastRefTime > Constants.ACK_TIMEOUT_NANOS) {
                         Loggers.PUSH.warn("ack takes too long from {} ack json: {}", packet.getSocketAddress(), json);
                     }
                     
-                    String ackKey = getAckKey(ip, port, ackPacket.lastRefTime);
+                    String ackKey = AckEntry.getAckKey(ip, port, ackPacket.lastRefTime);
                     AckEntry ackEntry = ackMap.remove(ackKey);
                     if (ackEntry == null) {
                         throw new IllegalStateException(
@@ -453,7 +448,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                 }
             }
         }
-    
+        
     }
     
 }
