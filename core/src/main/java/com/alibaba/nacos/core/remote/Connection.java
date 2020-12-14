@@ -37,7 +37,7 @@ public abstract class Connection implements Requester {
     /**
      * check is connected.
      *
-     * @return
+     * @return if connection or not,check the inner connection is active.
      */
     public abstract boolean isConnected();
     

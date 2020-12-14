@@ -171,11 +171,19 @@ public class GrpcConnection extends Connection {
     @Override
     public void close() {
         if (this.payloadStreamObserver != null) {
-            payloadStreamObserver.onCompleted();
+            try {
+                payloadStreamObserver.onCompleted();
+            } catch (Throwable throwable) {
+                //ignore.
+            }
         }
         
         if (this.channel != null && !channel.isShutdown()) {
-            this.channel.shutdownNow();
+            try {
+                this.channel.shutdownNow();
+            } catch (Throwable throwable) {
+                //ignore.
+            }
         }
     }
     
