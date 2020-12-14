@@ -122,7 +122,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             client = RpcClientFactory.createClusterClient(memberClientKey, type, labels);
         }
     
-        if (client.isWaitInited()) {
+        if (client.isWaitInitiated()) {
             Loggers.CLUSTER.info("start a new rpc client to member - > : {}", member);
             
             //one fixed server

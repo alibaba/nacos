@@ -88,7 +88,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             
             if (AggrWhitelist.isAggrDataId(dataId)) {
                 Loggers.REMOTE_DIGEST
-                        .warn("[aggr-conflict] {} attemp to publish single data, {}, {}", srcIp, dataId, group);
+                        .warn("[aggr-conflict] {} attempt to publish single data, {}, {}", srcIp, dataId, group);
                 throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
             }
             
