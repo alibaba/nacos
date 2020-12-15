@@ -253,6 +253,11 @@ public class ServiceController {
         if (start < 0) {
             start = 0;
         }
+        if (start >= serviceNameList.size()) {
+            result.replace("doms", JacksonUtils.transferToJsonNode(Collections.emptyList()));
+            result.put("count", serviceNameList.size());
+            return result;
+        }
         
         int end = start + pageSize;
         if (end > serviceNameList.size()) {
