@@ -17,6 +17,8 @@
 
 package com.alibaba.nacos.naming.utils;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Naming module code starts with 20001.
  *
@@ -83,4 +85,14 @@ public final class Constants {
      * default 60000L.
      */
     public static final String LOAD_DATA_RETRY_DELAY_MILLIS = "nacos.naming.clean.loadDataRetryDelayMillis";
+    
+    /**
+     * UDP max retry times.
+     */
+    public static final int UDP_MAX_RETRY_TIMES = 1;
+    
+    /**
+     * The Nanoseconds for receive UDP ack time out.
+     */
+    public static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
 }

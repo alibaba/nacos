@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.push.AckEntry;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -106,7 +107,7 @@ public class OperatorController {
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
-        List<PushService.Receiver.AckEntry> failedPushes = PushService.getFailedPushes();
+        List<AckEntry> failedPushes = PushService.getFailedPushes();
         int failedPushCount = pushService.getFailedPushCount();
         result.put("succeed", pushService.getTotalPush() - failedPushCount);
         result.put("total", pushService.getTotalPush());
@@ -119,9 +120,9 @@ public class OperatorController {
         
         ArrayNode dataArray = JacksonUtils.createEmptyArrayNode();
         if (detail) {
-            for (PushService.Receiver.AckEntry entry : failedPushes) {
+            for (AckEntry entry : failedPushes) {
                 try {
-                    dataArray.add(new String(entry.origin.getData(), "UTF-8"));
+                    dataArray.add(new String(entry.getOrigin().getData(), "UTF-8"));
                 } catch (UnsupportedEncodingException e) {
                     dataArray.add("[encoding failure]");
                 }

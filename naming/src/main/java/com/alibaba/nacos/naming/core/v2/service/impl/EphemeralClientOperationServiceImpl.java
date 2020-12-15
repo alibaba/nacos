@@ -89,7 +89,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     
     @Override
     public void subscribeService(Service service, Subscriber subscriber, String clientId) {
-        Service singleton = ServiceManager.getInstance().getSingleton(service);
+        Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
         client.addServiceSubscriber(singleton, subscriber);
         client.setLastUpdatedTime();
@@ -98,7 +98,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     
     @Override
     public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
-        Service singleton = ServiceManager.getInstance().getSingleton(service);
+        Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
         client.removeServiceSubscriber(singleton);
         client.setLastUpdatedTime();

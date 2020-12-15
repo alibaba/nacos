@@ -20,11 +20,11 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
 /**
- * Nacos naming push execute service for v2.
+ * Nacos naming push executor for v2.
  *
  * @author xiweng.yy
  */
-public interface PushExecuteService {
+public interface PushExecutor {
     
     /**
      * Do push.

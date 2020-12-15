@@ -27,14 +27,14 @@ import org.springframework.stereotype.Component;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Component
-public class PushExecuteServiceDelegate implements PushExecuteService {
+public class PushExecutorDelegate implements PushExecutor {
     
-    private final RpcPushExecuteServiceImpl rpcPushExecuteService;
+    private final PushExecutorRpcImpl rpcPushExecuteService;
     
-    private final UdpPushExecuteServiceImpl udpPushExecuteService;
+    private final PushExecutorUdpImpl udpPushExecuteService;
     
-    public PushExecuteServiceDelegate(RpcPushExecuteServiceImpl rpcPushExecuteService,
-            UdpPushExecuteServiceImpl udpPushExecuteService) {
+    public PushExecutorDelegate(PushExecutorRpcImpl rpcPushExecuteService,
+            PushExecutorUdpImpl udpPushExecuteService) {
         this.rpcPushExecuteService = rpcPushExecuteService;
         this.udpPushExecuteService = udpPushExecuteService;
     }
@@ -44,7 +44,7 @@ public class PushExecuteServiceDelegate implements PushExecuteService {
         getPushExecuteService(clientId).doPush(clientId, subscriber, data);
     }
     
-    private PushExecuteService getPushExecuteService(String clientId) {
+    private PushExecutor getPushExecuteService(String clientId) {
         return clientId.contains(":") ? udpPushExecuteService : rpcPushExecuteService;
     }
 }
