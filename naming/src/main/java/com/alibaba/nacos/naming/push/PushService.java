@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.remote.udp.UdpConnector;
 import com.alibaba.nacos.naming.utils.Constants;
 import org.apache.commons.collections.MapUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -80,6 +81,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     
     private static DatagramSocket udpSocket;
     
+    private final UdpConnector udpConnector;
+    
     private static ConcurrentMap<String, Future> futureMap = new ConcurrentHashMap<>();
     
     static {
@@ -96,6 +99,10 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         } catch (SocketException e) {
             Loggers.SRV_LOG.error("[NACOS-PUSH] failed to init push service");
         }
+    }
+    
+    public PushService(UdpConnector udpConnector) {
+        this.udpConnector = udpConnector;
     }
     
     @Override
@@ -158,7 +165,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                             client.getServiceName(), client.getAddrStr(), client.getAgent(),
                             (ackEntry == null ? null : ackEntry.getKey()));
                     
-                    udpPush(ackEntry);
+                    udpConnector.sendDataWithoutCallback(ackEntry);
                 }
             } catch (Exception e) {
                 Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
@@ -181,28 +188,19 @@ public class PushService implements ApplicationContextAware, ApplicationListener
      */
     public void pushData(Subscriber subscriber, ServiceInfo serviceInfo) {
         String serviceName = subscriber.getServiceName();
-        String namespaceId = subscriber.getNamespaceId();
-        if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName))) {
-            return;
-        }
         int port = subscriber.getPort();
         InetSocketAddress socketAddress = new InetSocketAddress(subscriber.getIp(), port);
-        Future future = GlobalExecutor.scheduleUdpSender(() -> {
-            try {
-                Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
-                long lastRefTime = System.nanoTime();
-                AckEntry ackEntry = prepareAckEntry(socketAddress, prepareHostsData(JacksonUtils.toJson(serviceInfo)),
-                        lastRefTime);
-                Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}", serviceInfo,
-                        subscriber.getAddrStr(), subscriber.getAgent(), (ackEntry == null ? null : ackEntry.getKey()));
-                udpPush(ackEntry);
-            } catch (Exception e) {
-                Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
-            } finally {
-                futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-            }
-        }, 1000L, TimeUnit.MILLISECONDS);
-        futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName), future);
+        try {
+            Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
+            long lastRefTime = System.nanoTime();
+            AckEntry ackEntry = prepareAckEntry(socketAddress, prepareHostsData(JacksonUtils.toJson(serviceInfo)),
+                    lastRefTime);
+            Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}", serviceInfo,
+                    subscriber.getAddrStr(), subscriber.getAgent(), (ackEntry == null ? null : ackEntry.getKey()));
+            udpConnector.sendDataWithoutCallback(ackEntry);
+        } catch (Exception e) {
+            Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
+        }
     }
     
     public int getTotalPush() {

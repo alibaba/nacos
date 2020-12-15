@@ -17,13 +17,13 @@
 package com.alibaba.nacos.naming.remote.udp;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.AckEntry;
 import com.alibaba.nacos.naming.push.AckPacket;
-import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.utils.Constants;
 import org.springframework.stereotype.Component;
 
@@ -62,6 +62,7 @@ public class UdpConnector {
         this.udpSocket = new DatagramSocket();
         this.pushCount = new AtomicLong();
         this.pushFailed = new AtomicLong();
+        GlobalExecutor.scheduleUdpReceiver(new UdpReceiver());
     }
     
     public boolean containAck(String ackId) {
@@ -90,25 +91,7 @@ public class UdpConnector {
      * @param ackEntry ack entry
      */
     public void sendDataWithoutCallback(AckEntry ackEntry) {
-        if (isInvalidData(ackEntry)) {
-            return;
-        }
-        try {
-            if (!ackMap.containsKey(ackEntry.getKey())) {
-                pushCount.incrementAndGet();
-            }
-            ackMap.put(ackEntry.getKey(), ackEntry);
-            Loggers.PUSH.info("send udp packet: " + ackEntry.getKey());
-            ackEntry.increaseRetryTime();
-            udpSocket.send(ackEntry.getOrigin());
-            GlobalExecutor.scheduleRetransmitter(new UdpRetrySender(ackEntry, this), Constants.ACK_TIMEOUT_NANOS,
-                    TimeUnit.NANOSECONDS);
-        } catch (Exception e) {
-            Loggers.PUSH.error("[NACOS-PUSH] failed to push data: {} to client: {}, error: {}", ackEntry.getData(),
-                    ackEntry.getOrigin().getAddress().getHostAddress(), e);
-            ackMap.remove(ackEntry.getKey());
-            pushFailed.incrementAndGet();
-        }
+        sendDataWithCallback(ackEntry, null);
     }
     
     /**
@@ -118,46 +101,106 @@ public class UdpConnector {
      * @param pushCallBack push callback
      */
     public void sendDataWithCallback(AckEntry ackEntry, PushCallBack pushCallBack) {
-        if (isInvalidData(ackEntry)) {
+        if (null == ackEntry) {
             return;
         }
-        try {
-            if (!ackMap.containsKey(ackEntry.getKey())) {
-                pushCount.incrementAndGet();
-            }
-            ackMap.put(ackEntry.getKey(), ackEntry);
-            callbackMap.put(ackEntry.getKey(), pushCallBack);
-            Loggers.PUSH.info("send udp packet with callback: " + ackEntry.getKey());
-            ackEntry.increaseRetryTime();
-            udpSocket.send(ackEntry.getOrigin());
-            GlobalExecutor.scheduleRetransmitter(new PushService.Retransmitter(ackEntry), pushCallBack.getTimeout(),
-                    TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            callbackMap.remove(ackEntry.getKey());
-            ackMap.remove(ackEntry.getKey());
-            pushCallBack.onFail(e);
-            pushFailed.incrementAndGet();
-        }
-    }
-    
-    private boolean isInvalidData(AckEntry ackEntry) {
-        return null == ackEntry || isRetryMaxTime(ackEntry);
-    }
-    
-    private boolean isRetryMaxTime(AckEntry ackEntry) {
-        if (ackEntry.getRetryTimes() > Constants.UDP_MAX_RETRY_TIMES) {
-            Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.getRetryTimes(),
-                    ackEntry.getKey());
-            ackMap.remove(ackEntry.getKey());
-            pushFailed.incrementAndGet();
-            return true;
-        }
-        return false;
+        GlobalExecutor.scheduleUdpSender(new UdpAsyncSender(ackEntry, pushCallBack), 0L, TimeUnit.MILLISECONDS);
     }
     
     private void doSend(DatagramPacket packet) throws IOException {
-        if (udpSocket.isConnected() && !udpSocket.isClosed()) {
+        if (!udpSocket.isClosed()) {
             udpSocket.send(packet);
+        }
+    }
+    
+    private void callbackSuccess(String ackKey) {
+        PushCallBack pushCallBack = callbackMap.remove(ackKey);
+        if (null != pushCallBack) {
+            pushCallBack.onSuccess();
+        }
+    }
+    
+    private void callbackFailed(String ackKey, Throwable exception) {
+        PushCallBack pushCallBack = callbackMap.remove(ackKey);
+        if (null != pushCallBack) {
+            pushCallBack.onFail(exception);
+        }
+    }
+    
+    private class UdpAsyncSender implements Runnable {
+        
+        private final AckEntry ackEntry;
+        
+        private final PushCallBack callBack;
+        
+        public UdpAsyncSender(AckEntry ackEntry, PushCallBack callBack) {
+            this.ackEntry = ackEntry;
+            this.callBack = callBack;
+        }
+        
+        @Override
+        public void run() {
+            try {
+                if (!ackMap.containsKey(ackEntry.getKey())) {
+                    pushCount.incrementAndGet();
+                }
+                if (null != callBack) {
+                    callbackMap.put(ackEntry.getKey(), callBack);
+                }
+                ackMap.put(ackEntry.getKey(), ackEntry);
+                Loggers.PUSH.info("send udp packet: " + ackEntry.getKey());
+                ackEntry.increaseRetryTime();
+                doSend(ackEntry.getOrigin());
+                GlobalExecutor.scheduleRetransmitter(new UdpRetrySender(ackEntry), Constants.ACK_TIMEOUT_NANOS,
+                        TimeUnit.NANOSECONDS);
+            } catch (Exception e) {
+                callbackMap.remove(ackEntry.getKey());
+                ackMap.remove(ackEntry.getKey());
+                pushFailed.incrementAndGet();
+                if (null != callBack) {
+                    callBack.onFail(e);
+                }
+            }
+        }
+    }
+    
+    private class UdpRetrySender implements Runnable {
+        
+        private final AckEntry ackEntry;
+        
+        public UdpRetrySender(AckEntry ackEntry) {
+            this.ackEntry = ackEntry;
+        }
+        
+        @Override
+        public void run() {
+            // Received ack, no need to retry
+            if (!containAck(ackEntry.getKey())) {
+                return;
+            }
+            // Match max retry, push failed.
+            if (ackEntry.getRetryTimes() > Constants.UDP_MAX_RETRY_TIMES) {
+                String maxRetryError = String
+                        .format("max re-push times reached, retry times %d, key: %s", ackEntry.getRetryTimes(),
+                                ackEntry.getKey());
+                Loggers.PUSH.warn(maxRetryError);
+                ackMap.remove(ackEntry.getKey());
+                pushFailed.incrementAndGet();
+                callbackFailed(ackEntry.getKey(),
+                        new NacosRuntimeException(NacosException.SERVER_ERROR, maxRetryError));
+                return;
+            }
+            Loggers.PUSH.info("retry to push data, key: " + ackEntry.getKey());
+            try {
+                ackEntry.increaseRetryTime();
+                doSend(ackEntry.getOrigin());
+                GlobalExecutor.scheduleRetransmitter(this, Constants.ACK_TIMEOUT_NANOS, TimeUnit.NANOSECONDS);
+            } catch (Exception e) {
+                callbackMap.remove(ackEntry.getKey());
+                ackMap.remove(ackEntry.getKey());
+                pushFailed.incrementAndGet();
+                callbackFailed(ackEntry.getKey(), e);
+            }
         }
     }
     
@@ -184,8 +227,7 @@ public class UdpConnector {
                         throw new IllegalStateException(
                                 "unable to find ackEntry for key: " + ackKey + ", ack json: " + json);
                     }
-                    PushCallBack callBack = callbackMap.remove(ackKey);
-                    callBack.onSuccess();
+                    callbackSuccess(ackKey);
                 } catch (Throwable e) {
                     Loggers.PUSH.error("[NACOS-PUSH] error while receiving ack data", e);
                 }
