@@ -811,7 +811,12 @@ public class ServiceManager implements RecordListener<Service> {
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
                 instanceMap.remove(instance.getDatumKey());
             } else {
-                instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
+                Instance oldInstance = instanceMap.get(instance.getDatumKey());
+                if (oldInstance != null) {
+                    instance.setInstanceId(oldInstance.getInstanceId());
+                } else {
+                    instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
+                }
                 instanceMap.put(instance.getDatumKey(), instance);
             }
             
@@ -958,7 +963,7 @@ public class ServiceManager implements RecordListener<Service> {
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
                     if (IPUtil.containsPort(containedInstance)) {
-                        if (StringUtils.equals(instance.getIp() +  IPUtil.IP_PORT_SPLITER + instance.getPort(), containedInstance)) {
+                        if (StringUtils.equals(instance.getIp() + IPUtil.IP_PORT_SPLITER + instance.getPort(), containedInstance)) {
                             contained = true;
                             break;
                         }
