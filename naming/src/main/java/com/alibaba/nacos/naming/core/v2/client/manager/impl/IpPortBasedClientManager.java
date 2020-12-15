@@ -27,6 +27,7 @@ import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatUpdateTask;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -46,11 +47,10 @@ public class IpPortBasedClientManager implements ClientManager {
     
     private final DistroMapper distroMapper;
     
-    public IpPortBasedClientManager(DistroMapper distroMapper) {
+    public IpPortBasedClientManager(DistroMapper distroMapper, SwitchDomain switchDomain) {
         this.distroMapper = distroMapper;
-        GlobalExecutor
-                .scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0, Constants.DEFAULT_HEART_BEAT_INTERVAL,
-                        TimeUnit.MILLISECONDS);
+        GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this, switchDomain), 0,
+                Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
     }
     
     @Override
@@ -98,7 +98,8 @@ public class IpPortBasedClientManager implements ClientManager {
     public boolean verifyClient(String clientId) {
         IpPortBasedClient client = clients.get(clientId);
         if (null != client) {
-            NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
+            NamingExecuteTaskDispatcher.getInstance()
+                    .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
             return true;
         }
         return false;
@@ -108,8 +109,11 @@ public class IpPortBasedClientManager implements ClientManager {
         
         private final IpPortBasedClientManager clientManager;
         
-        public ExpiredClientCleaner(IpPortBasedClientManager clientManager) {
+        private final SwitchDomain switchDomain;
+        
+        public ExpiredClientCleaner(IpPortBasedClientManager clientManager, SwitchDomain switchDomain) {
             this.clientManager = clientManager;
+            this.switchDomain = switchDomain;
         }
         
         @Override
@@ -124,8 +128,18 @@ public class IpPortBasedClientManager implements ClientManager {
         }
         
         private boolean isExpireClient(long currentTime, IpPortBasedClient client) {
-            return client.isEphemeral() && client.getAllPublishedService().isEmpty()
+            return client.isEphemeral() && isExpirePublishedClient(currentTime, client) && isExpireSubscriberClient(
+                    currentTime, client);
+        }
+        
+        private boolean isExpirePublishedClient(long currentTime, IpPortBasedClient client) {
+            return client.getAllPublishedService().isEmpty()
                     && currentTime - client.getLastUpdatedTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
+        }
+        
+        private boolean isExpireSubscriberClient(long currentTime, IpPortBasedClient client) {
+            return client.getAllSubscribeService().isEmpty() || currentTime - client.getLastUpdatedTime() > switchDomain
+                    .getDefaultPushCacheMillis();
         }
     }
 }
