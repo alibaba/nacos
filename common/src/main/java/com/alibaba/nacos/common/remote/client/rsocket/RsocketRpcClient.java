@@ -38,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -150,15 +149,9 @@ public class RsocketRpcClient extends RpcClient {
             @Override
             public void onError(Throwable throwable) {
                 if (isRunning() && !connectionInner.isAbandon()) {
-                    System.out.println("onError ,switch server " + this + new Date().toString());
-    
                     if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
                         switchServerAsync();
                     }
-                } else {
-                    System.out.println(
-                            "client is not running status ,ignore error event , " + this + new Date().toString());
-    
                 }
             }
             
@@ -166,14 +159,9 @@ public class RsocketRpcClient extends RpcClient {
             public void onComplete() {
     
                 if (isRunning() && !connectionInner.isAbandon()) {
-                    System.out.println("onCompleted ,switch server " + this);
                     if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
                         switchServerAsync();
                     }
-                } else {
-                    System.out.println(
-                            "client is not running status ,ignore complete  event , " + this + new Date().toString());
-        
                 }
             }
         };

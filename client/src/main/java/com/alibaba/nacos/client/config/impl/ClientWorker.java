@@ -793,7 +793,7 @@ public class ClientWorker implements Closeable {
         
             RpcClient rpcClient = RpcClientFactory
                     .createClient("config-" + taskId + "-" + uuid, getConectiontype(), newlabels);
-            if (rpcClient.isWaitInited()) {
+            if (rpcClient.isWaitInitiated()) {
                 initHandlerRpcClient(rpcClient);
                 rpcClient.start();
             }

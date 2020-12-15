@@ -62,16 +62,16 @@ public class ConnectionManager {
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
-    Map<String, Connection> connetions = new ConcurrentHashMap<String, Connection>();
+    Map<String, Connection> connections = new ConcurrentHashMap<String, Connection>();
     
     /**
-     * check connnectionid is valid.
+     * check connection id is valid.
      *
      * @param connectionId connectionId to be check.
-     * @return
+     * @return is valid or not.
      */
     public boolean checkValid(String connectionId) {
-        return connetions.containsKey(connectionId);
+        return connections.containsKey(connectionId);
     }
     
     /**
@@ -82,11 +82,11 @@ public class ConnectionManager {
      */
     public synchronized void register(String connectionId, Connection connection) {
         if (connection.isConnected()) {
-            Connection connectionInner = connetions.put(connectionId, connection);
+            Connection connectionInner = connections.put(connectionId, connection);
             if (connectionInner == null) {
                 clientConnectionEventListenerRegistry.notifyClientConnected(connection);
                 Loggers.REMOTE
-                        .info("new connection registered successfully, connectionid = {},connection={} ", connectionId,
+                        .info("new connection registered successfully, connectionId = {},connection={} ", connectionId,
                                 connection);
             }
         }
@@ -99,10 +99,10 @@ public class ConnectionManager {
      * @param connectionId connectionId.
      */
     public synchronized void unregister(String connectionId) {
-        Connection remove = this.connetions.remove(connectionId);
+        Connection remove = this.connections.remove(connectionId);
         if (remove != null) {
             remove.close();
-            Loggers.REMOTE.info(" connection unregistered successfully,connectionid = {} ", connectionId);
+            Loggers.REMOTE.info(" connection unregistered successfully,connectionId = {} ", connectionId);
             clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
         }
     }
@@ -111,20 +111,20 @@ public class ConnectionManager {
      * get by connection id.
      *
      * @param connectionId connection id.
-     * @return
+     * @return connection of the id.
      */
     public Connection getConnection(String connectionId) {
-        return connetions.get(connectionId);
+        return connections.get(connectionId);
     }
     
     /**
      * get by client ip.
      *
      * @param clientIp client ip.
-     * @return
+     * @return connections of the client ip.
      */
     public List<Connection> getConnectionByIp(String clientIp) {
-        Set<Map.Entry<String, Connection>> entries = connetions.entrySet();
+        Set<Map.Entry<String, Connection>> entries = connections.entrySet();
         List<Connection> connections = new ArrayList<>();
         for (Map.Entry<String, Connection> entry : entries) {
             Connection value = entry.getValue();
@@ -136,21 +136,21 @@ public class ConnectionManager {
     }
     
     /**
-     * get curret connetions count.
+     * get current connections count.
      *
-     * @return
+     * @return get all connection count
      */
-    public int getCurretConnectionCount() {
-        return this.connetions.size();
+    public int getCurrentConnectionCount() {
+        return this.connections.size();
     }
     
     /**
      * regresh connection active time.
      *
-     * @param connnectionId connnectionId.
+     * @param connectionId connectionId.
      */
-    public void refreshActiveTime(String connnectionId) {
-        Connection connection = connetions.get(connnectionId);
+    public void refreshActiveTime(String connectionId) {
+        Connection connection = connections.get(connectionId);
         if (connection != null) {
             connection.freshActiveTime();
         }
@@ -168,10 +168,10 @@ public class ConnectionManager {
             public void run() {
                 try {
                     
-                    MetricsMonitor.getLongConnectionMonitor().set(connetions.size());
+                    MetricsMonitor.getLongConnectionMonitor().set(connections.size());
                     
                     long currentStamp = System.currentTimeMillis();
-                    Set<Map.Entry<String, Connection>> entries = connetions.entrySet();
+                    Set<Map.Entry<String, Connection>> entries = connections.entrySet();
                     boolean isLoaderClient = loadClient >= 0;
                     int currentMaxClient = isLoaderClient ? loadClient : maxClient;
                     int expelCount = currentMaxClient < 0 ? currentMaxClient : entries.size() - currentMaxClient;
@@ -191,20 +191,20 @@ public class ConnectionManager {
                         connectResetRequest.setServerPort(split[1]);
                     }
                     
-                    for (String expeledClientId : expelClient) {
+                    for (String expelledClientId : expelClient) {
                         try {
-                            Connection connection = getConnection(expeledClientId);
+                            Connection connection = getConnection(expelledClientId);
                             if (connection != null) {
                                 connection.asyncRequest(connectResetRequest, buildMeta(), null);
                                 Loggers.REMOTE
-                                        .info("expel connection ,send switch server response connectionid = {},connectResetRequest={} ",
-                                                expeledClientId, connectResetRequest);
+                                        .info("expel connection ,send switch server response connection id = {},connectResetRequest={} ",
+                                                expelledClientId, connectResetRequest);
                             }
                             
                         } catch (ConnectionAlreadyClosedException e) {
-                            unregister(expeledClientId);
+                            unregister(expelledClientId);
                         } catch (Exception e) {
-                            Loggers.REMOTE.error("error occurs when expel connetion :", expeledClientId, e);
+                            Loggers.REMOTE.error("error occurs when expel connection :", expelledClientId, e);
                         }
                     }
                     
@@ -271,7 +271,7 @@ public class ConnectionManager {
      * @return
      */
     public int currentClientsCount() {
-        return connetions.size();
+        return connections.size();
     }
     
     /**
@@ -282,7 +282,7 @@ public class ConnectionManager {
      */
     public int currentClientsCount(Map<String, String> filterLabels) {
         int count = 0;
-        for (Connection connection : connetions.values()) {
+        for (Connection connection : connections.values()) {
             Map<String, String> labels = connection.getMetaInfo().labels;
             boolean disMatchFound = false;
             for (Map.Entry<String, String> entry : filterLabels.entrySet()) {
@@ -299,7 +299,7 @@ public class ConnectionManager {
     }
     
     public Map<String, Connection> currentClients() {
-        return connetions;
+        return connections;
     }
     
     /**
@@ -309,7 +309,7 @@ public class ConnectionManager {
         //reject all new connections.
         this.maxClient = 0;
         //send connect reset response to  all clients.
-        for (Map.Entry<String, Connection> entry : connetions.entrySet()) {
+        for (Map.Entry<String, Connection> entry : connections.entrySet()) {
             Connection client = entry.getValue();
             try {
                 client.request(new ConnectResetRequest(), buildMeta());
@@ -325,7 +325,7 @@ public class ConnectionManager {
      * @return
      */
     public boolean isOverLimit() {
-        return maxClient > 0 && this.connetions.size() >= maxClient;
+        return maxClient > 0 && this.connections.size() >= maxClient;
     }
     
     public int countLimited() {

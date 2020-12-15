@@ -94,7 +94,7 @@ public class ServiceController {
     private ServiceOperatorV2Impl serviceOperatorV2;
     
     /**
-     * Create a new service.
+     * Create a new service. This API will create a persistence service.
      *
      * @param namespaceId      namespace id
      * @param serviceName      service name
@@ -110,30 +110,12 @@ public class ServiceController {
             @RequestParam String serviceName, @RequestParam(required = false) float protectThreshold,
             @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
             @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
-        
-        if (serviceManager.getService(namespaceId, serviceName) != null) {
-            throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
-        }
-        
-        Map<String, String> metadataMap = new HashMap<>(16);
-        if (StringUtils.isNotBlank(metadata)) {
-            metadataMap = UtilsAndCommons.parseMetadata(metadata);
-        }
-        
-        Service service = new Service(serviceName);
-        service.setProtectThreshold(protectThreshold);
-        service.setEnabled(true);
-        service.setMetadata(metadataMap);
-        service.setSelector(parseSelector(selector));
-        service.setNamespaceId(namespaceId);
-        
-        // now valid the service. if failed, exception will be thrown
-        service.setLastModifiedMillis(System.currentTimeMillis());
-        service.recalculateChecksum();
-        service.validate();
-        
-        serviceManager.addOrReplaceService(service);
-        
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.setProtectThreshold(protectThreshold);
+        serviceMetadata.setSelector(parseSelector(selector));
+        serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
+        serviceMetadata.setEphemeral(false);
+        serviceOperatorV2.create(namespaceId, serviceName, serviceMetadata);
         return "ok";
     }
     
@@ -150,8 +132,7 @@ public class ServiceController {
     public String remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws Exception {
         
-        serviceManager.easyRemoveService(namespaceId, serviceName);
-        
+        serviceOperatorV2.delete(namespaceId, serviceName);
         return "ok";
     }
     
