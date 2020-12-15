@@ -47,7 +47,8 @@ public class PushExecuteTask extends AbstractExecuteTask {
             serviceInfo = ServiceUtil.selectInstances(serviceInfo, false, true);
             for (String each : delayTaskEngine.getIndexesManager().getAllClientsSubscribeService(service)) {
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
-                delayTaskEngine.getPushExecuteService().doPush(each, subscriber, handleClusterData(serviceInfo, subscriber));
+                delayTaskEngine.getPushExecutor()
+                        .doPush(each, subscriber, handleClusterData(serviceInfo, subscriber));
             }
         } catch (Exception e) {
             Loggers.PUSH.error("Push task for service" + service.getGroupedServiceName() + " execute failed ", e);
@@ -56,11 +57,12 @@ public class PushExecuteTask extends AbstractExecuteTask {
     }
     
     /**
-     * For adapt push cluster feature. Will be remove after 2.1.x.
+     * For adapt push cluster feature for v1.x.
      *
      * @param data       original data
      * @param subscriber subscriber information
      * @return cluster filtered data
+     * @deprecated Will be removed after client can filter cluster
      */
     @Deprecated
     private ServiceInfo handleClusterData(ServiceInfo data, Subscriber subscriber) {

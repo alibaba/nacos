@@ -28,11 +28,11 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class UdpPushExecuteServiceImpl implements PushExecuteService {
+public class PushExecutorUdpImpl implements PushExecutor {
     
     private final PushService pushService;
     
-    public UdpPushExecuteServiceImpl(PushService pushService) {
+    public PushExecutorUdpImpl(PushService pushService) {
         this.pushService = pushService;
     }
     
