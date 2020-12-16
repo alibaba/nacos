@@ -224,7 +224,7 @@ public class GlobalExecutor {
     }
     
     /**
-     * scheduleServiceReporter
+     * scheduleServiceReporter.
      *
      * @param command command
      * @param delay   delay
