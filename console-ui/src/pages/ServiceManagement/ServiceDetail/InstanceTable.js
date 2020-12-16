@@ -44,6 +44,7 @@ class InstanceTable extends React.Component {
     this.state = {
       loading: false,
       instance: { count: 0, list: [] },
+      // tableData: {},
       pageNum: 1,
       pageSize: 10,
     };
@@ -51,12 +52,6 @@ class InstanceTable extends React.Component {
 
   componentDidMount() {
     this.getInstanceList();
-  }
-
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    if (isDiff(prevProps.filters, this.props.filters)) {
-      this.getInstanceList();
-    }
   }
 
   openLoading() {
@@ -80,7 +75,6 @@ class InstanceTable extends React.Component {
         groupName,
         pageSize,
         pageNo: pageNum,
-        metadata: JSON.stringify(Object.fromEntries(filters)),
       },
       beforeSend: () => this.openLoading(),
       success: instance => this.setState({ instance }),
@@ -132,9 +126,16 @@ class InstanceTable extends React.Component {
     const { locale = {} } = this.props;
     const { clusterName, serviceName, groupName } = this.props;
     const { instance, pageSize, loading } = this.state;
-    return instance.count ? (
+    const instanceList = instanceFilter(instance.list, this.props.filters);
+
+    const _instance = {
+      count: instanceList.length,
+      list: instanceList,
+    };
+
+    return _instance.count ? (
       <div>
-        <Table dataSource={instance.list} loading={loading} rowProps={this.rowColor}>
+        <Table dataSource={_instance.list} loading={loading} rowProps={this.rowColor}>
           <Table.Column width={138} title="IP" dataIndex="ip" />
           <Table.Column width={100} title={locale.port} dataIndex="port" />
           <Table.Column
@@ -184,10 +185,10 @@ class InstanceTable extends React.Component {
             )}
           />
         </Table>
-        {instance.count > pageSize ? (
+        {_instance.count > pageSize ? (
           <Pagination
             className="pagination"
-            total={instance.count}
+            total={_instance.count}
             pageSize={pageSize}
             onChange={currentPage => this.onChangePage(currentPage)}
           />
@@ -205,5 +206,21 @@ class InstanceTable extends React.Component {
     ) : null;
   }
 }
+
+const instanceFilter = function(array, filters) {
+  return array.filter(item => {
+    const { metadata } = item;
+    let isTargetInstance = true;
+
+    filters.forEach((value, key) => {
+      if (value !== metadata[key]) {
+        isTargetInstance = false;
+        return isTargetInstance;
+      }
+    });
+
+    return isTargetInstance;
+  });
+};
 
 export default InstanceTable;
