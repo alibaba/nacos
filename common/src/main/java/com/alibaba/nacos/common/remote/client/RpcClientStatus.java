@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.remote.client;
 
 /**
- * Status of rpc client.
+ * status of rpc client.
  *
  * @author liuzunfei
  * @version $Id: RpcClientStatus.java, v 0.1 2020年07月14日 3:49 PM liuzunfei Exp $
@@ -25,32 +25,32 @@ package com.alibaba.nacos.common.remote.client;
 public enum RpcClientStatus {
     
     /**
-     * Wait to init.
+     * wait to init.
      */
     WAIT_INIT(0, "Wait to init server list factory..."),
     
     /**
-     * Already init.
+     * already init.
      */
     INITED(1, "Server list factory is ready, wait to starting..."),
     
     /**
-     * In starting.
+     * in starting.
      */
     STARTING(2, "Client already staring, wait to connect with server..."),
     
     /**
-     * Unhealthy.
+     * unhealthy.
      */
     UNHEALTHY(3, "Client unhealthy, may closed by server, in reconnecting"),
     
     /**
-     * In running.
+     * in running.
      */
     RUNNING(4, "Client is running"),
     
     /**
-     * Shutdown.
+     * shutdown.
      */
     SHUTDOWN(5, "Client is shutdown");
     
