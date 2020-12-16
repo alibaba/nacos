@@ -125,7 +125,7 @@ public abstract class GrpcClient extends RpcClient {
             @Override
             public void onNext(Payload payload) {
                 
-                LoggerUtils.printIfDebugEnabled(LOGGER, " stream server request receive  ,original info :{}",
+                LoggerUtils.printIfDebugEnabled(LOGGER, "Stream server request receive, original info: {}",
                         payload.toString());
                 try {
                     GrpcUtils.PlainRequest parse = GrpcUtils.parse(payload);
@@ -137,12 +137,12 @@ public abstract class GrpcClient extends RpcClient {
                                 response.setRequestId(request.getRequestId());
                                 sendResponse(response);
                             } else {
-                                LOGGER.warn("fail to process server request,ackId->:{}", request.getRequestId());
+                                LOGGER.warn("Fail to process server request, ackId->{}", request.getRequestId());
                             }
                             
                         } catch (Exception e) {
                             LoggerUtils
-                                    .printIfErrorEnabled(LOGGER, e.getMessage(), "handle server request exception :{}",
+                                    .printIfErrorEnabled(LOGGER, e.getMessage(), "Handle server request exception: {}",
                                             payload.toString());
                             sendResponse(request.getRequestId(), false);
                         }
@@ -150,7 +150,7 @@ public abstract class GrpcClient extends RpcClient {
                     
                 } catch (Exception e) {
                     
-                    LoggerUtils.printIfErrorEnabled(LOGGER, "error tp process server push response  :{}",
+                    LoggerUtils.printIfErrorEnabled(LOGGER, "Error tp process server push response: {}",
                             payload.getBody().getValue().toStringUtf8());
                 }
             }
@@ -158,7 +158,7 @@ public abstract class GrpcClient extends RpcClient {
             @Override
             public void onError(Throwable throwable) {
                 if (isRunning() && !grpcConn.isAbandon()) {
-                    LoggerUtils.printIfErrorEnabled(LOGGER, " Request Stream Error ,switch server ", throwable);
+                    LoggerUtils.printIfErrorEnabled(LOGGER, "Request stream error, switch server", throwable);
                     if (throwable instanceof StatusRuntimeException) {
                         Status.Code code = ((StatusRuntimeException) throwable).getStatus().getCode();
                         if (Status.UNAVAILABLE.getCode().equals(code) || Status.CANCELLED.getCode().equals(code)) {
@@ -168,7 +168,7 @@ public abstract class GrpcClient extends RpcClient {
                         }
                     }
                 } else {
-                    LoggerUtils.printIfWarnEnabled(LOGGER, "client is not running status ,ignore error event");
+                    LoggerUtils.printIfWarnEnabled(LOGGER, "Client is not running status, ignore error event");
                 }
                 
             }
@@ -176,12 +176,12 @@ public abstract class GrpcClient extends RpcClient {
             @Override
             public void onCompleted() {
                 if (isRunning() && !grpcConn.isAbandon()) {
-                    LoggerUtils.printIfErrorEnabled(LOGGER, " Request Stream onCompleted ,switch server ");
+                    LoggerUtils.printIfErrorEnabled(LOGGER, "Request stream onCompleted, switch server");
                     if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
                         switchServerAsync();
                     }
                 } else {
-                    LoggerUtils.printIfErrorEnabled(LOGGER, "client is not running status ,ignore complete  event ");
+                    LoggerUtils.printIfErrorEnabled(LOGGER, "Client is not running status, ignore complete event");
                 }
                 
             }
@@ -193,7 +193,7 @@ public abstract class GrpcClient extends RpcClient {
             PushAckRequest request = PushAckRequest.build(ackId, success);
             this.currentConnection.request(request, buildMeta());
         } catch (Exception e) {
-            LOGGER.error("error to send ack  response,ackId->:{}", ackId);
+            LOGGER.error("Error to send ack response, ackId->{}", ackId);
         }
     }
     
@@ -201,7 +201,7 @@ public abstract class GrpcClient extends RpcClient {
         try {
             ((GrpcConnection) this.currentConnection).sendResponse(response);
         } catch (Exception e) {
-            LOGGER.error("error to send ack  response,ackId->:{}", response.getRequestId());
+            LOGGER.error("Error to send ack response, ackId->{}", response.getRequestId());
         }
     }
     
@@ -232,7 +232,7 @@ public abstract class GrpcClient extends RpcClient {
             }
             return null;
         } catch (Exception e) {
-            LOGGER.error("fail to connect to server  ! ", e);
+            LOGGER.error("Fail to connect to server!", e);
         }
         return null;
     }
