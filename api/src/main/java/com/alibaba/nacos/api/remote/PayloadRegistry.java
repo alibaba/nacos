@@ -48,25 +48,32 @@ public class PayloadRegistry {
         if (inited) {
             return;
         }
-        List<String> scanPackage = Lists.newArrayList("com.alibaba.nacos.api.naming.remote.request",
-                "com.alibaba.nacos.api.naming.remote.response", "com.alibaba.nacos.api.config.remote.request",
-                "com.alibaba.nacos.api.config.remote.response", "com.alibaba.nacos.api.remote.request",
-                "com.alibaba.nacos.api.remote.response", "com.alibaba.nacos.naming.cluster.remote.request",
-                "com.alibaba.nacos.naming.cluster.remote.response");
-        for (String pkg : scanPackage) {
+        
+        List<String> requestScanPackage = Lists.newArrayList("com.alibaba.nacos.api.naming.remote.request",
+                "com.alibaba.nacos.api.config.remote.request", "com.alibaba.nacos.api.remote.request",
+                "com.alibaba.nacos.naming.cluster.remote.request");
+        for (String pkg : requestScanPackage) {
             Reflections reflections = new Reflections(pkg);
             Set<Class<? extends Request>> subTypesRequest = reflections.getSubTypesOf(Request.class);
-            Set<Class<? extends Response>> subTypesOfResponse = reflections.getSubTypesOf(Response.class);
             for (Class clazz : subTypesRequest) {
                 register(clazz.getName(), clazz);
             }
+        }
+        
+        List<String> responseScanPackage = Lists.newArrayList("com.alibaba.nacos.api.naming.remote.response",
+                "com.alibaba.nacos.api.config.remote.response", "com.alibaba.nacos.api.remote.response",
+                "com.alibaba.nacos.naming.cluster.remote.response");
+        for (String pkg : responseScanPackage) {
+            Reflections reflections = new Reflections(pkg);
+            Set<Class<? extends Response>> subTypesOfResponse = reflections.getSubTypesOf(Response.class);
             for (Class clazz : subTypesOfResponse) {
                 register(clazz.getName(), clazz);
             }
         }
-        inited = true;
         
+        inited = true;
     }
+    
     
     static void register(String type, Class clazz) {
         if (Modifier.isAbstract(clazz.getModifiers())) {
