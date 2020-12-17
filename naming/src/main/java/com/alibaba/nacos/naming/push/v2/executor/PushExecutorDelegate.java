@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +43,11 @@ public class PushExecutorDelegate implements PushExecutor {
     @Override
     public void doPush(String clientId, Subscriber subscriber, ServiceInfo data) {
         getPushExecuteService(clientId).doPush(clientId, subscriber, data);
+    }
+    
+    @Override
+    public void doPushWithCallback(String clientId, Subscriber subscriber, ServiceInfo data, PushCallBack callBack) {
+        getPushExecuteService(clientId).doPushWithCallback(clientId, subscriber, data, callBack);
     }
     
     private PushExecutor getPushExecuteService(String clientId) {

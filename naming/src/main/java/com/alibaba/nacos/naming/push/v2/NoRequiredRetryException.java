@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming;
+package com.alibaba.nacos.naming.push.v2;
 
-import com.alibaba.nacos.api.common.ResponseCode;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.naming.NamingResponseCode;
 
 /**
- * Business response code of naming module
+ * Exception that does not require retry.
  *
- * <p>Every code stays between 20001 to 29999.
- *
- * @author nkorange
- * @author 1.2.0
+ * @author xiweng.yy
  */
-public class NamingResponseCode extends ResponseCode {
+public class NoRequiredRetryException extends NacosRuntimeException {
     
-    /**
-     * The requested resource is not found.
-     */
-    public static final int RESOURCE_NOT_FOUND = 20404;
+    private static final long serialVersionUID = -7941235764759109405L;
     
-    /**
-     * Stop or no need to retry.
-     */
-    public static final int NO_NEED_RETRY = 21600;
-    
+    public NoRequiredRetryException() {
+        super(NamingResponseCode.NO_NEED_RETRY);
+    }
 }

@@ -17,11 +17,11 @@
 package com.alibaba.nacos.naming.remote.udp;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
 import com.alibaba.nacos.naming.utils.Constants;
 import org.springframework.stereotype.Component;
 
@@ -178,14 +178,11 @@ public class UdpConnector {
             }
             // Match max retry, push failed.
             if (ackEntry.getRetryTimes() > Constants.UDP_MAX_RETRY_TIMES) {
-                String maxRetryError = String
-                        .format("max re-push times reached, retry times %d, key: %s", ackEntry.getRetryTimes(),
-                                ackEntry.getKey());
-                Loggers.PUSH.warn(maxRetryError);
+                Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.getRetryTimes(),
+                        ackEntry.getKey());
                 ackMap.remove(ackEntry.getKey());
                 pushFailed.incrementAndGet();
-                callbackFailed(ackEntry.getKey(),
-                        new NacosRuntimeException(NacosException.SERVER_ERROR, maxRetryError));
+                callbackFailed(ackEntry.getKey(), new NoRequiredRetryException());
                 return;
             }
             Loggers.PUSH.info("retry to push data, key: " + ackEntry.getKey());

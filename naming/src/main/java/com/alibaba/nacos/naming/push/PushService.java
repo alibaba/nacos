@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -190,19 +191,41 @@ public class PushService implements ApplicationContextAware, ApplicationListener
      */
     public void pushData(Subscriber subscriber, ServiceInfo serviceInfo) {
         String serviceName = subscriber.getServiceName();
-        int port = subscriber.getPort();
-        InetSocketAddress socketAddress = new InetSocketAddress(subscriber.getIp(), port);
         try {
             Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
-            long lastRefTime = System.nanoTime();
-            AckEntry ackEntry = prepareAckEntry(socketAddress, prepareHostsData(JacksonUtils.toJson(serviceInfo)),
-                    lastRefTime);
+            AckEntry ackEntry = prepareAckEntry(subscriber, serviceInfo);
             Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}", serviceInfo,
                     subscriber.getAddrStr(), subscriber.getAgent(), (ackEntry == null ? null : ackEntry.getKey()));
             udpConnector.sendDataWithoutCallback(ackEntry);
         } catch (Exception e) {
             Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
         }
+    }
+    
+    /**
+     * Push Data with callback.
+     *
+     * @param subscriber   subscriber
+     * @param serviceInfo  service info
+     * @param pushCallBack callback
+     */
+    public void pushDataWithCallback(Subscriber subscriber, ServiceInfo serviceInfo, PushCallBack pushCallBack) {
+        String serviceName = subscriber.getServiceName();
+        try {
+            Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
+            AckEntry ackEntry = prepareAckEntry(subscriber, serviceInfo);
+            Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}", serviceInfo,
+                    subscriber.getAddrStr(), subscriber.getAgent(), (ackEntry == null ? null : ackEntry.getKey()));
+            udpConnector.sendDataWithCallback(ackEntry, pushCallBack);
+        } catch (Exception e) {
+            Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
+        }
+    }
+    
+    private AckEntry prepareAckEntry(Subscriber subscriber, ServiceInfo serviceInfo) {
+        InetSocketAddress socketAddress = new InetSocketAddress(subscriber.getIp(), subscriber.getPort());
+        long lastRefTime = System.nanoTime();
+        return prepareAckEntry(socketAddress, prepareHostsData(JacksonUtils.toJson(serviceInfo)), lastRefTime);
     }
     
     public int getTotalPush() {
