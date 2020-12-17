@@ -25,7 +25,7 @@ import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
-import com.alibaba.nacos.naming.push.v2.PushExecutor;
+import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
 
 /**
  * Nacos naming push delay task execute engine.

@@ -24,6 +24,8 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.remote.udp.AckEntry;
+import com.alibaba.nacos.naming.remote.udp.AckPacket;
 import com.alibaba.nacos.naming.remote.udp.UdpConnector;
 import com.alibaba.nacos.naming.utils.Constants;
 import org.apache.commons.collections.MapUtils;

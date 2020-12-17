@@ -22,8 +22,6 @@ import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.push.AckEntry;
-import com.alibaba.nacos.naming.push.AckPacket;
 import com.alibaba.nacos.naming.utils.Constants;
 import org.springframework.stereotype.Component;
 
