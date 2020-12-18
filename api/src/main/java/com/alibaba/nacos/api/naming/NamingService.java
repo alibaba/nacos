@@ -525,7 +525,7 @@ public interface NamingService {
      *
      * @param pageNo    page index
      * @param pageSize  page size
-     * @param groupName group name
+     * @param groupName group name(* means get all services)
      * @return list of service names
      * @throws NacosException nacos exception
      */
@@ -548,7 +548,7 @@ public interface NamingService {
      *
      * @param pageNo    page index
      * @param pageSize  page size
-     * @param groupName group name
+     * @param groupName group name(* means get all services)
      * @param selector  selector to filter the resource
      * @return list of service names
      * @throws NacosException nacos exception
