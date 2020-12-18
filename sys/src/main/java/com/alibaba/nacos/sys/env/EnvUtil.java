@@ -368,8 +368,7 @@ public class EnvUtil {
     private static Resource getCustomFileResource() {
         String path = getProperty("spring.config.location");
         if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
-            String[] paths = path.split(",");
-            path = paths[paths.length - 1].substring(FILE_PREFIX.length());
+            path = path.substring(FILE_PREFIX.length());
             return getRelativePathResource(path, "application.properties");
         }
         return null;
