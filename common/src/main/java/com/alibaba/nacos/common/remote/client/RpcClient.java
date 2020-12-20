@@ -742,7 +742,6 @@ public abstract class RpcClient implements Closeable {
         public boolean isDisConnected() {
             return eventType == DISCONNECTED;
         }
-        
     }
     
     /**
