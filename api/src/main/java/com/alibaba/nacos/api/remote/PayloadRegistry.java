@@ -74,7 +74,6 @@ public class PayloadRegistry {
         inited = true;
     }
     
-    
     static void register(String type, Class clazz) {
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return;
