@@ -25,8 +25,9 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
-import com.alibaba.nacos.naming.utils.Constants;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
+
+import java.util.Collection;
 
 /**
  * Nacos naming push execute task.
@@ -39,15 +40,12 @@ public class PushExecuteTask extends AbstractExecuteTask {
     
     private final PushDelayTaskExecuteEngine delayTaskEngine;
     
-    /**
-     * Record the push task start time from delay push.
-     */
-    private final long pushTaskStartTime;
+    private final PushDelayTask delayTask;
     
-    public PushExecuteTask(Service service, PushDelayTaskExecuteEngine delayTaskEngine, long pushTaskStartTime) {
+    public PushExecuteTask(Service service, PushDelayTaskExecuteEngine delayTaskEngine, PushDelayTask delayTask) {
         this.service = service;
         this.delayTaskEngine = delayTaskEngine;
-        this.pushTaskStartTime = pushTaskStartTime;
+        this.delayTask = delayTask;
     }
     
     @Override
@@ -55,16 +53,21 @@ public class PushExecuteTask extends AbstractExecuteTask {
         try {
             ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
             serviceInfo = ServiceUtil.selectInstances(serviceInfo, false, true);
-            for (String each : delayTaskEngine.getIndexesManager().getAllClientsSubscribeService(service)) {
+            for (String each : getTargetClientIds()) {
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
                 delayTaskEngine.getPushExecutor()
                         .doPushWithCallback(each, subscriber, handleClusterData(serviceInfo, subscriber),
-                                new NamingPushCallback(subscriber, serviceInfo));
+                                new NamingPushCallback(each, subscriber, serviceInfo));
             }
         } catch (Exception e) {
             Loggers.PUSH.error("Push task for service" + service.getGroupedServiceName() + " execute failed ", e);
             delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L));
         }
+    }
+    
+    private Collection<String> getTargetClientIds() {
+        return delayTask.isPushToAll() ? delayTaskEngine.getIndexesManager().getAllClientsSubscribeService(service)
+                : delayTask.getTargetClients();
     }
     
     /**
@@ -83,6 +86,8 @@ public class PushExecuteTask extends AbstractExecuteTask {
     
     private class NamingPushCallback implements PushCallBack {
         
+        private final String clientId;
+        
         private final Subscriber subscriber;
         
         private final ServiceInfo serviceInfo;
@@ -92,7 +97,8 @@ public class PushExecuteTask extends AbstractExecuteTask {
          */
         private final long executeStartTime;
         
-        private NamingPushCallback(Subscriber subscriber, ServiceInfo serviceInfo) {
+        private NamingPushCallback(String clientId, Subscriber subscriber, ServiceInfo serviceInfo) {
+            this.clientId = clientId;
             this.subscriber = subscriber;
             this.serviceInfo = serviceInfo;
             this.executeStartTime = System.currentTimeMillis();
@@ -100,14 +106,15 @@ public class PushExecuteTask extends AbstractExecuteTask {
         
         @Override
         public long getTimeout() {
-            return Constants.DEFAULT_PUSH_TIMEOUT_MILLS;
+            // TODO timeout should can be config
+            return 3000L;
         }
         
         @Override
         public void onSuccess() {
             long pushFinishTime = System.currentTimeMillis();
             long pushCostTimeForNetWork = pushFinishTime - executeStartTime;
-            long pushCostTimeForAll = pushFinishTime - pushTaskStartTime;
+            long pushCostTimeForAll = pushFinishTime - delayTask.getLastProcessTime();
             long serviceLevelAgreementTime = pushFinishTime - service.getLastUpdatedTime();
             Loggers.PUSH.info("[PUSH-SUCC] {}ms, all delay time {}ms, SLA {}ms, {}, DataSize={}, target={}",
                     pushCostTimeForNetWork, pushCostTimeForAll, serviceLevelAgreementTime, service,
@@ -126,7 +133,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Reason detail: ", e);
                 // TODO should only push for single client
-                delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L));
+                delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L, clientId));
             }
         }
     }
