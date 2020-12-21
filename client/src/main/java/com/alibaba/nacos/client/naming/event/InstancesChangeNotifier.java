@@ -119,15 +119,10 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         for (final EventListener listener : eventListeners) {
             final com.alibaba.nacos.api.naming.listener.Event namingEvent = transferToNamingEvent(event);
             if (listener instanceof AbstractEventListener && ((AbstractEventListener) listener).getExecutor() != null) {
-                ((AbstractEventListener) listener).getExecutor().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        listener.onEvent(namingEvent);
-                    }
-                });
-                continue;
+                ((AbstractEventListener) listener).getExecutor().execute(() -> listener.onEvent(namingEvent));
+            } else {
+                listener.onEvent(namingEvent);
             }
-            listener.onEvent(namingEvent);
         }
     }
     
