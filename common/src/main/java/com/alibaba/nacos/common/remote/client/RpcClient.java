@@ -83,7 +83,7 @@ public abstract class RpcClient implements Closeable {
     protected List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>();
     
     /**
-     * change listeners handler registry.
+     * handlers to process server push request.
      */
     protected List<ServerRequestHandler> serverRequestHandlers = new ArrayList<ServerRequestHandler>();
     
@@ -105,7 +105,7 @@ public abstract class RpcClient implements Closeable {
     
     public RpcClient(ServerListFactory serverListFactory) {
         this.serverListFactory = serverListFactory;
-        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
+        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
         LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor, ServerListFactory ={}",
                 serverListFactory.getClass().getName());
     }
@@ -113,7 +113,7 @@ public abstract class RpcClient implements Closeable {
     public RpcClient(String name, ServerListFactory serverListFactory) {
         this(name);
         this.serverListFactory = serverListFactory;
-        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
+        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
         LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor, ServerListFactory ={}",
                 serverListFactory.getClass().getName());
     }
@@ -172,7 +172,7 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
-     * init server list factory.
+     * init server list factory.only can init once.
      *
      * @param serverListFactory serverListFactory
      */
@@ -181,14 +181,14 @@ public abstract class RpcClient implements Closeable {
             return;
         }
         this.serverListFactory = serverListFactory;
-        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
+        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
         
         LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init, ServerListFactory ={}",
                 serverListFactory.getClass().getName());
     }
     
     /**
-     * init server list factory.
+     * init labels.
      *
      * @param labels labels
      */
@@ -202,7 +202,7 @@ public abstract class RpcClient implements Closeable {
      */
     public final void start() throws NacosException {
         
-        boolean success = rpcClientStatus.compareAndSet(RpcClientStatus.INITED, RpcClientStatus.STARTING);
+        boolean success = rpcClientStatus.compareAndSet(RpcClientStatus.INITIALIZED, RpcClientStatus.STARTING);
         if (!success) {
             return;
         }
@@ -217,7 +217,7 @@ public abstract class RpcClient implements Closeable {
             }
         });
         
-        // connect event consumer.
+        // connection event consumer.
         executorService.submit(new Runnable() {
             @Override
             public void run() {
@@ -231,13 +231,13 @@ public abstract class RpcClient implements Closeable {
                             notifyDisConnected();
                         }
                     } catch (Exception e) {
-                        //Donothing
+                        //Do nothing
                     }
                 }
             }
         });
         
-        //connect to server ,try to connect to server sync once, aync starting if fail.
+        //connect to server ,try to connect to server sync once, async starting if fail.
         Connection connectToServer = null;
         rpcClientStatus.set(RpcClientStatus.STARTING);
         

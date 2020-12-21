@@ -98,10 +98,8 @@ public class DefaultRequestFuture implements RequestFuture {
         synchronized (this) {
             notifyAll();
         }
-        
-        if (requestCallBack != null) {
-            requestCallBack.getExcutor().execute(new CallBackHandler());
-        }
+    
+        callBacInvoke();
     }
     
     public void setFailResult(Exception e) {
@@ -111,9 +109,14 @@ public class DefaultRequestFuture implements RequestFuture {
         synchronized (this) {
             notifyAll();
         }
-        
+    
+        callBacInvoke();
+    }
+    private void callBacInvoke(){
         if (requestCallBack != null) {
-            requestCallBack.onException(e);
+            requestCallBack.getExcutor().execute(new CallBackHandler());
+        }else{
+            new CallBackHandler().run();
         }
     }
     

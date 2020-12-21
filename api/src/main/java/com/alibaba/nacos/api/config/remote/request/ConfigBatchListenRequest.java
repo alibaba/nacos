@@ -35,7 +35,7 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
     private List<ConfigListenContext> configListenContexts = new ArrayList<ConfigListenContext>();
     
     /**
-     * add listen congif.
+     * add listen config.
      *
      * @param group  group.
      * @param dataId dataId.
