@@ -24,6 +24,8 @@ import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.RemoteUtils;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.Attributes;
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -46,7 +48,9 @@ import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Grpc implementation as  a rpc server.
@@ -107,6 +111,11 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         };
         
         addServices(handlerRegistry, serverInterceptor);
+    
+        grpcExecutor = new ThreadPoolExecutor(0,
+                Runtime.getRuntime().availableProcessors() * RemoteUtils.getRemoteExecutorTimesOfProcessors(), 10L,
+                TimeUnit.SECONDS, new SynchronousQueue(),
+                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-executor-%d").build());
         
         server = ServerBuilder.forPort(getServicePort()).executor(grpcExecutor).fallbackHandlerRegistry(handlerRegistry)
                 .addTransportFilter(new ServerTransportFilter() {
@@ -118,12 +127,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                                 .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
                         int remotePort = remoteAddress.getPort();
                         int localPort = localAddress.getPort();
-                        Attributes attrWraper = transportAttrs.toBuilder()
+                        Attributes attrWrapper = transportAttrs.toBuilder()
                                 .set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid()).set(TRANS_KEY_CLIENT_PORT, remotePort)
                                 .set(TRANS_KEY_LOCAL_PORT, localPort).build();
-                        String connectionId = attrWraper.get(TRANS_KEY_CONN_ID);
+                        String connectionId = attrWrapper.get(TRANS_KEY_CONN_ID);
                         Loggers.REMOTE.info(" connection transportReady,connectionId = {} ", connectionId);
-                        return attrWraper;
+                        return attrWrapper;
                         
                     }
                     

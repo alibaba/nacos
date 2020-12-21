@@ -29,7 +29,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 public interface ServerRequestHandler {
     
     /**
-     * Handle reuqest from server.
+     * Handle request from server.
      *
      * @param request request
      * @param requestMeta requestMeta

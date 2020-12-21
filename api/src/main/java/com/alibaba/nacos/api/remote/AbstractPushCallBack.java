@@ -14,33 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.response;
+package com.alibaba.nacos.api.remote;
+
+import com.alibaba.nacos.api.remote.PushCallBack;
 
 /**
- * callback of push service.
+ * abstract callback of push service.
  *
  * @author liuzunfei
  * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
  */
-public interface PushCallBack {
+public abstract class AbstractPushCallBack implements PushCallBack {
     
-    /**
-     * timie out mills.
-     *
-     * @return
-     */
-    public long getTimeout();
+    private long timeout;
     
-    /**
-     * invoked on success.
-     */
-    public void onSuccess();
+    public AbstractPushCallBack(long timeout) {
+        this.timeout = timeout;
+    }
     
-    /**
-     * invoked on fail.
-     *
-     * @param e exception throwed.
-     */
-    public void onFail(Throwable e);
-    
+    @Override
+    public long getTimeout() {
+        return timeout;
+    }
 }
