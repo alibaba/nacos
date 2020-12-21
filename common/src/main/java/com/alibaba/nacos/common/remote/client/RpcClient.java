@@ -119,14 +119,15 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
-     * Notify when client re connected.
+     * Notify when client disconnected.
      */
     protected void notifyDisConnected() {
-        if (!connectionEventListeners.isEmpty()) {
-            LoggerUtils.printIfInfoEnabled(LOGGER, "Notify connection event listeners.");
-            for (ConnectionEventListener connectionEventListener : connectionEventListeners) {
-                connectionEventListener.onDisConnect();
-            }
+        if (connectionEventListeners.isEmpty()) {
+            return;
+        }
+        LoggerUtils.printIfInfoEnabled(LOGGER, "Notify disconnected event to listeners");
+        for (ConnectionEventListener connectionEventListener : connectionEventListeners) {
+            connectionEventListener.onDisConnect();
         }
     }
     
@@ -134,10 +135,12 @@ public abstract class RpcClient implements Closeable {
      * Notify when client new connected.
      */
     protected void notifyConnected() {
-        if (!connectionEventListeners.isEmpty()) {
-            for (ConnectionEventListener connectionEventListener : connectionEventListeners) {
-                connectionEventListener.onConnected();
-            }
+        if (connectionEventListeners.isEmpty()) {
+            return;
+        }
+        LoggerUtils.printIfInfoEnabled(LOGGER, "Notify connected event to listeners.");
+        for (ConnectionEventListener connectionEventListener : connectionEventListeners) {
+            connectionEventListener.onConnected();
         }
     }
     
@@ -256,7 +259,8 @@ public abstract class RpcClient implements Closeable {
         }
         
         if (connectToServer != null) {
-            LoggerUtils.printIfInfoEnabled(LOGGER, String.format("[%s] success to connect to server on start up", name));
+            LoggerUtils
+                    .printIfInfoEnabled(LOGGER, String.format("[%s] success to connect to server on start up", name));
             this.currentConnection = connectToServer;
             rpcClientStatus.set(RpcClientStatus.RUNNING);
             eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
