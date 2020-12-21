@@ -23,7 +23,7 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.NamingSubscriberServiceV1Impl;
-import com.alibaba.nacos.naming.push.NamingSubscriberServiceV2Impl;
+import com.alibaba.nacos.naming.push.v2.NamingSubscriberServiceV2Impl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

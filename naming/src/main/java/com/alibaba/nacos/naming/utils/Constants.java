@@ -95,4 +95,9 @@ public final class Constants {
      * The Nanoseconds for receive UDP ack time out.
      */
     public static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
+    
+    /**
+     * The Milliseconds for push timeout.
+     */
+    public static final long DEFAULT_PUSH_TIMEOUT_MILLS = TimeUnit.SECONDS.toNanos(3L);
 }

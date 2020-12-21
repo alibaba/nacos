@@ -51,6 +51,7 @@ public class ServiceEvent extends SlowEvent {
         
         public ServiceChangedEvent(Service service, boolean incrementRevision) {
             super(service);
+            service.renewUpdateTime();
             if (incrementRevision) {
                 service.incrementRevision();
             }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.v2.NamingSubscriberServiceV2Impl;
 
 import java.util.Collection;
 
