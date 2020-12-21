@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
 import com.alibaba.nacos.naming.utils.Constants;
@@ -111,6 +112,9 @@ public class PushExecuteTask extends AbstractExecuteTask {
             Loggers.PUSH.info("[PUSH-SUCC] {}ms, all delay time {}ms, SLA {}ms, {}, DataSize={}, target={}",
                     pushCostTimeForNetWork, pushCostTimeForAll, serviceLevelAgreementTime, service,
                     serviceInfo.getHosts().size(), subscriber.getIp());
+            MetricsMonitor.incrementPush();
+            MetricsMonitor.incrementPushCost(pushCostTimeForNetWork);
+            MetricsMonitor.compareAndSetMaxPushCost(pushCostTimeForNetWork);
         }
         
         @Override
@@ -118,6 +122,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
             long pushCostTime = System.currentTimeMillis() - executeStartTime;
             Loggers.PUSH.error("[PUSH-FAIL] {}ms, {}, reason={}, target={}", pushCostTime, service, e.getMessage(),
                     subscriber.getIp());
+            MetricsMonitor.incrementFailPush();
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Reason detail: ", e);
                 // TODO should only push for single client

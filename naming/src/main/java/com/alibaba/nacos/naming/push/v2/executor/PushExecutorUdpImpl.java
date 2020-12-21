@@ -39,7 +39,7 @@ public class PushExecutorUdpImpl implements PushExecutor {
     
     @Override
     public void doPush(String clientId, Subscriber subscriber, ServiceInfo data) {
-        pushService.pushData(subscriber, replaceServiceInfoName(data));
+        pushService.pushDataWithoutCallback(subscriber, replaceServiceInfoName(data));
     }
     
     @Override

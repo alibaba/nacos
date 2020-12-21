@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.remote.udp.AckEntry;
 import com.alibaba.nacos.naming.remote.udp.AckPacket;
@@ -75,12 +76,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     private static volatile ConcurrentMap<String, AckEntry> ackMap = new ConcurrentHashMap<>();
     
     private static volatile ConcurrentMap<String, Long> udpSendTimeMap = new ConcurrentHashMap<>();
-    
-    public static volatile ConcurrentMap<String, Long> pushCostMap = new ConcurrentHashMap<>();
-    
-    private static int totalPush = 0;
-    
-    private static int failedPush = 0;
     
     private static DatagramSocket udpSocket;
     
@@ -168,7 +163,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                             client.getServiceName(), client.getAddrStr(), client.getAgent(),
                             (ackEntry == null ? null : ackEntry.getKey()));
                     
-                    udpConnector.sendDataWithoutCallback(ackEntry);
+                    udpPush(ackEntry);
                 }
             } catch (Exception e) {
                 Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
@@ -184,19 +179,19 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     }
     
     /**
-     * Push Data.
+     * Push Data without callback.
      *
      * @param subscriber  subscriber
      * @param serviceInfo service info
      */
-    public void pushData(Subscriber subscriber, ServiceInfo serviceInfo) {
+    public void pushDataWithoutCallback(Subscriber subscriber, ServiceInfo serviceInfo) {
         String serviceName = subscriber.getServiceName();
         try {
             Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
             AckEntry ackEntry = prepareAckEntry(subscriber, serviceInfo);
             Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}", serviceInfo,
                     subscriber.getAddrStr(), subscriber.getAgent(), (ackEntry == null ? null : ackEntry.getKey()));
-            udpConnector.sendDataWithoutCallback(ackEntry);
+            udpConnector.sendData(ackEntry);
         } catch (Exception e) {
             Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
         }
@@ -226,14 +221,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         InetSocketAddress socketAddress = new InetSocketAddress(subscriber.getIp(), subscriber.getPort());
         long lastRefTime = System.nanoTime();
         return prepareAckEntry(socketAddress, prepareHostsData(JacksonUtils.toJson(serviceInfo)), lastRefTime);
-    }
-    
-    public int getTotalPush() {
-        return totalPush;
-    }
-    
-    public void setTotalPush(int totalPush) {
-        PushService.totalPush = totalPush;
     }
     
     private static AckEntry prepareAckEntry(PushClient client, Map<String, Object> data, long lastRefTime) {
@@ -330,14 +317,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         return new ArrayList<>(ackMap.values());
     }
     
-    public int getFailedPushCount() {
-        return ackMap.size() + failedPush;
-    }
-    
-    public void setFailedPush(int failedPush) {
-        PushService.failedPush = failedPush;
-    }
-    
     public static void resetPushState() {
         ackMap.clear();
     }
@@ -379,13 +358,13 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     ackEntry.getKey());
             ackMap.remove(ackEntry.getKey());
             udpSendTimeMap.remove(ackEntry.getKey());
-            failedPush += 1;
+            MetricsMonitor.incrementFailPush();
             return ackEntry;
         }
         
         try {
             if (!ackMap.containsKey(ackEntry.getKey())) {
-                totalPush++;
+                MetricsMonitor.incrementPush();
             }
             ackMap.put(ackEntry.getKey(), ackEntry);
             udpSendTimeMap.put(ackEntry.getKey(), System.currentTimeMillis());
@@ -404,7 +383,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     ackEntry.getOrigin().getAddress().getHostAddress(), e);
             ackMap.remove(ackEntry.getKey());
             udpSendTimeMap.remove(ackEntry.getKey());
-            failedPush += 1;
+            MetricsMonitor.incrementFailPush();
             
             return null;
         }
@@ -460,9 +439,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     
                     Loggers.PUSH
                             .info("received ack: {} from: {}:{}, cost: {} ms, unacked: {}, total push: {}", json, ip,
-                                    port, pushCost, ackMap.size(), totalPush);
+                                    port, pushCost, ackMap.size(), MetricsMonitor.getTotalPushMonitor().get());
                     
-                    pushCostMap.put(ackKey, pushCost);
+                    MetricsMonitor.incrementPushCost(pushCost);
                     
                     udpSendTimeMap.remove(ackKey);
                     
