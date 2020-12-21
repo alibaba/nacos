@@ -140,6 +140,9 @@ public class GlobalExecutor {
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.remote-connection-manager"));
     
+    private static final ExecutorService PUSH_CALLBACK_EXECUTOR = ExecutorFactory.Managed
+            .newSingleExecutorService("Push", new NameThreadFactory("com.alibaba.nacos.naming.push.callback"));
+    
     /**
      * Register raft leader election executor.
      *
@@ -292,5 +295,9 @@ public class GlobalExecutor {
     
     public static void scheduleExpiredClientCleaner(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
         EXPIRED_CLIENT_CLEANER_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
+    }
+    
+    public static ExecutorService getCallbackExecutor() {
+        return PUSH_CALLBACK_EXECUTOR;
     }
 }

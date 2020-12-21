@@ -34,8 +34,9 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.AckEntry;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.remote.udp.AckEntry;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -62,8 +63,6 @@ import java.util.List;
 @RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator", UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 public class OperatorController {
     
-    private final PushService pushService;
-    
     private final SwitchManager switchManager;
     
     private final ServerListManager serverListManager;
@@ -80,10 +79,9 @@ public class OperatorController {
     
     private final RaftCore raftCore;
     
-    public OperatorController(PushService pushService, SwitchManager switchManager, ServerListManager serverListManager,
+    public OperatorController(SwitchManager switchManager, ServerListManager serverListManager,
             ServiceManager serviceManager, ServerMemberManager memberManager, ServerStatusManager serverStatusManager,
             SwitchDomain switchDomain, DistroMapper distroMapper, RaftCore raftCore) {
-        this.pushService = pushService;
         this.switchManager = switchManager;
         this.serverListManager = serverListManager;
         this.serviceManager = serviceManager;
@@ -108,12 +106,13 @@ public class OperatorController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
         List<AckEntry> failedPushes = PushService.getFailedPushes();
-        int failedPushCount = pushService.getFailedPushCount();
-        result.put("succeed", pushService.getTotalPush() - failedPushCount);
-        result.put("total", pushService.getTotalPush());
+        int failedPushCount = MetricsMonitor.getFailedPushMonitor().get();
+        int totalPushCount = MetricsMonitor.getTotalPushMonitor().get();
+        result.put("succeed", totalPushCount - failedPushCount);
+        result.put("total", totalPushCount);
         
-        if (pushService.getTotalPush() > 0) {
-            result.put("ratio", ((float) pushService.getTotalPush() - failedPushCount) / pushService.getTotalPush());
+        if (totalPushCount > 0) {
+            result.put("ratio", ((float) totalPushCount - failedPushCount) / totalPushCount);
         } else {
             result.put("ratio", 0);
         }

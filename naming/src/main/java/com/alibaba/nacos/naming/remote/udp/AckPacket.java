@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.push;
+package com.alibaba.nacos.naming.remote.udp;
 
 /**
  * UDP ack packet.
