@@ -33,7 +33,7 @@ public interface RequestCallBack<T extends Response> {
      *
      * @return
      */
-    public Executor getExcutor();
+    public Executor getExecutor();
     
     /**
      * get timeout mills.

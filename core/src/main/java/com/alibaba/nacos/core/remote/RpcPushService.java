@@ -55,7 +55,7 @@ public class RpcPushService {
                 connection.asyncRequest(request, null, new AbstractRequestCallBack(requestCallBack.getTimeout()) {
                 
                             @Override
-                            public Executor getExcutor() {
+                            public Executor getExecutor() {
                                 return executor;
                             }
                 

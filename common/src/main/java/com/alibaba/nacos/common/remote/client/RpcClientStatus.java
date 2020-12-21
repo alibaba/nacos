@@ -32,7 +32,7 @@ public enum RpcClientStatus {
     /**
      * already init.
      */
-    INITED(1, "Server list factory is ready, wait to starting..."),
+    INITIALIZED(1, "Server list factory is ready, wait to starting..."),
     
     /**
      * in starting.
