@@ -132,7 +132,6 @@ public class PushExecuteTask extends AbstractExecuteTask {
             MetricsMonitor.incrementFailPush();
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Reason detail: ", e);
-                // TODO should only push for single client
                 delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L, clientId));
             }
         }
