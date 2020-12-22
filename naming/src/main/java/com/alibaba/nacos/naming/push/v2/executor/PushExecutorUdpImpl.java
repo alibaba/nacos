@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import org.springframework.stereotype.Component;

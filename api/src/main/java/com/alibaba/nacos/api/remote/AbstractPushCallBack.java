@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.api.remote;
 
-import com.alibaba.nacos.api.remote.PushCallBack;
-
 /**
  * abstract callback of push service.
  *

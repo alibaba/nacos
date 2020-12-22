@@ -98,7 +98,7 @@ public class DefaultRequestFuture implements RequestFuture {
         synchronized (this) {
             notifyAll();
         }
-    
+        
         callBacInvoke();
     }
     
@@ -109,13 +109,14 @@ public class DefaultRequestFuture implements RequestFuture {
         synchronized (this) {
             notifyAll();
         }
-    
+        
         callBacInvoke();
     }
-    private void callBacInvoke(){
+    
+    private void callBacInvoke() {
         if (requestCallBack != null) {
-            requestCallBack.getExcutor().execute(new CallBackHandler());
-        }else{
+            requestCallBack.getExecutor().execute(new CallBackHandler());
+        } else {
             new CallBackHandler().run();
         }
     }
