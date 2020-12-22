@@ -63,7 +63,7 @@ import java.util.zip.GZIPOutputStream;
  */
 @Component
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
-public class PushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
+public class UdpPushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
     
     @Autowired
     private SwitchDomain switchDomain;
@@ -99,7 +99,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         }
     }
     
-    public PushService(UdpConnector udpConnector) {
+    public UdpPushService(UdpConnector udpConnector) {
         this.udpConnector = udpConnector;
     }
     

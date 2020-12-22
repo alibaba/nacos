@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,9 +31,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class PushExecutorUdpImpl implements PushExecutor {
     
-    private final PushService pushService;
+    private final UdpPushService pushService;
     
-    public PushExecutorUdpImpl(PushService pushService) {
+    public PushExecutorUdpImpl(UdpPushService pushService) {
         this.pushService = pushService;
     }
     

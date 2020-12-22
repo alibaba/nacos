@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.push.v2.executor;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,7 +40,7 @@ public class PushExecutorUdpImplTest {
     private final String rpcClientId = "1.1.1.1:10000";
     
     @Mock
-    private PushService pushService;
+    private UdpPushService pushService;
     
     @Mock
     private Subscriber subscriber;
