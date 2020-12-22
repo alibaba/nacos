@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.grpc.auto.Metadata;
@@ -33,6 +34,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * grpc utils, use to parse request and response.
@@ -103,8 +105,7 @@ public class GrpcUtils {
         // request body .
         request.clearHeaders();
         String jsonString = toJson(request);
-    
-        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString))).build();
+        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString,Charset.forName(Constants.ENCODE)))).build();
         return payload;
         
     }
@@ -123,7 +124,7 @@ public class GrpcUtils {
         String jsonString = toJson(request);
     
         Payload.Builder builder = Payload.newBuilder();
-        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString)))
+        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString,Charset.forName(Constants.ENCODE))))
                 .setMetadata(buildMeta)
                 .build();
         return payload;
@@ -142,7 +143,8 @@ public class GrpcUtils {
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         metaBuilder.setClientVersion(VersionUtils.getFullClientVersion()).setType(response.getClass().getName());
     
-        Payload payload = Payload.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString)))
+        Payload payload = Payload.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString,
+                Charset.forName(Constants.ENCODE))))
                 .setMetadata(metaBuilder.build()).build();
         return payload;
     }
@@ -157,7 +159,7 @@ public class GrpcUtils {
         PlainRequest plainRequest = new PlainRequest();
         Class classbyType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
         if (classbyType != null) {
-            Object obj = toObj(payload.getBody().getValue().toStringUtf8(), classbyType);
+            Object obj = toObj(payload.getBody().getValue().toString(Charset.forName(Constants.ENCODE)), classbyType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }

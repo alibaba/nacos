@@ -41,11 +41,14 @@ import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
@@ -262,7 +265,10 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         BufferedReader reader = null;
         StringBuffer sbf = new StringBuffer();
         try {
-            reader = new BufferedReader(new FileReader(file));
+            InputStreamReader isr = new InputStreamReader(new FileInputStream(
+                    file), Charset.forName(Constants.ENCODE));
+            
+            reader = new BufferedReader(isr);
             String tempStr;
             while ((tempStr = reader.readLine()) != null) {
                 sbf.append(tempStr);
