@@ -885,7 +885,7 @@ public class ClientWorker implements Closeable {
         /**
          * send cancel listen config change request .
          *
-         * @param configListenString string of remove listen config string.
+         * @param configChangeListenRequest request of remove listen config string.
          */
         private boolean unListenConfigChange(RpcClient rpcClient, ConfigBatchListenRequest configChangeListenRequest)
                 throws NacosException {
