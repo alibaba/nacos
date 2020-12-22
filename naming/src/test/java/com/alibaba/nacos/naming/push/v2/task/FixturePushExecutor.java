@@ -14,38 +14,37 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.push.v2.executor;
+package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
-import com.alibaba.nacos.api.remote.PushCallBack;
-import com.alibaba.nacos.core.remote.RpcPushService;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import org.springframework.stereotype.Component;
+import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
 
-/**
- * Push execute service for rpc.
- *
- * @author xiweng.yy
- */
-@Component
-public class PushExecutorRpcImpl implements PushExecutor {
+public class FixturePushExecutor implements PushExecutor {
     
-    private final RpcPushService pushService;
+    private boolean shouldSuccess = true;
     
-    public PushExecutorRpcImpl(RpcPushService pushService) {
-        this.pushService = pushService;
-    }
+    private Throwable failedException;
     
     @Override
     public void doPush(String clientId, Subscriber subscriber, ServiceInfo data) {
-        pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildSuccessResponse(data));
     }
     
     @Override
     public void doPushWithCallback(String clientId, Subscriber subscriber, ServiceInfo data, PushCallBack callBack) {
-        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildSuccessResponse(data), callBack,
-                GlobalExecutor.getCallbackExecutor());
+        if (shouldSuccess) {
+            callBack.onSuccess();
+        } else {
+            callBack.onFail(failedException);
+        }
+    }
+    
+    public void setShouldSuccess(boolean shouldSuccess) {
+        this.shouldSuccess = shouldSuccess;
+    }
+    
+    public void setFailedException(Throwable failedException) {
+        this.failedException = failedException;
     }
 }

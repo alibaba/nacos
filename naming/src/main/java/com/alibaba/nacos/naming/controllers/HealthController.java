@@ -30,7 +30,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
@@ -63,7 +63,7 @@ public class HealthController {
     private ServiceManager serviceManager;
     
     @Autowired
-    private PushService pushService;
+    private UdpPushService pushService;
     
     /**
      * Just a health check.

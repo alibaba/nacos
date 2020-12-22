@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -63,7 +63,7 @@ import java.util.zip.GZIPOutputStream;
  */
 @Component
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
-public class PushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
+public class UdpPushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
     
     @Autowired
     private SwitchDomain switchDomain;
@@ -99,7 +99,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         }
     }
     
-    public PushService(UdpConnector udpConnector) {
+    public UdpPushService(UdpConnector udpConnector) {
         this.udpConnector = udpConnector;
     }
     

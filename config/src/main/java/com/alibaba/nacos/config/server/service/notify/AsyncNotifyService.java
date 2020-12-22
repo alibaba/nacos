@@ -343,7 +343,7 @@ public class AsyncNotifyService {
         }
         
         @Override
-        public Executor getExcutor() {
+        public Executor getExecutor() {
             return ConfigExecutor.getConfigSubServiceExecutor();
         }
         

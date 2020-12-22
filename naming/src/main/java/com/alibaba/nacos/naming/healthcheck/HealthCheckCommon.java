@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +44,7 @@ public class HealthCheckCommon {
     private SwitchDomain switchDomain;
     
     @Autowired
-    private PushService pushService;
+    private UdpPushService pushService;
     
     /**
      * Re-evaluate check responsce time.

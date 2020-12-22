@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
@@ -76,7 +76,7 @@ public class BaseTest {
     protected HealthCheckProcessorDelegate delegate;
     
     @Mock
-    protected PushService pushService;
+    protected UdpPushService pushService;
     
     @Spy
     private MockEnvironment environment;
@@ -97,7 +97,7 @@ public class BaseTest {
     }
     
     protected void mockInjectPushServer() {
-        doReturn(pushService).when(context).getBean(PushService.class);
+        doReturn(pushService).when(context).getBean(UdpPushService.class);
     }
     
     protected void mockInjectHealthCheckProcessor() {
