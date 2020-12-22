@@ -35,7 +35,7 @@ import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.remote.udp.AckEntry;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -105,7 +105,7 @@ public class OperatorController {
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
-        List<AckEntry> failedPushes = PushService.getFailedPushes();
+        List<AckEntry> failedPushes = UdpPushService.getFailedPushes();
         int failedPushCount = MetricsMonitor.getFailedPushMonitor().get();
         int totalPushCount = MetricsMonitor.getTotalPushMonitor().get();
         result.put("succeed", totalPushCount - failedPushCount);
@@ -130,7 +130,7 @@ public class OperatorController {
         }
         
         if (reset) {
-            PushService.resetPushState();
+            UdpPushService.resetPushState();
         }
         
         result.put("reset", reset);

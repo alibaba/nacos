@@ -40,7 +40,7 @@ import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Sets;
@@ -100,7 +100,7 @@ public class ServiceManager implements RecordListener<Service> {
     
     private final ServerMemberManager memberManager;
     
-    private final PushService pushService;
+    private final UdpPushService pushService;
     
     private final RaftPeerSet raftPeerSet;
     
@@ -116,7 +116,7 @@ public class ServiceManager implements RecordListener<Service> {
     private int cleanEmptyServicePeriod;
     
     public ServiceManager(SwitchDomain switchDomain, DistroMapper distroMapper, ServerMemberManager memberManager,
-            PushService pushService, RaftPeerSet raftPeerSet) {
+            UdpPushService pushService, RaftPeerSet raftPeerSet) {
         this.switchDomain = switchDomain;
         this.distroMapper = distroMapper;
         this.memberManager = memberManager;

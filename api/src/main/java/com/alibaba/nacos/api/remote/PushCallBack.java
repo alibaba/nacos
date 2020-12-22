@@ -25,22 +25,22 @@ package com.alibaba.nacos.api.remote;
 public interface PushCallBack {
     
     /**
-     * timie out mills.
+     * Push timeout mills.
      *
-     * @return
+     * @return timeout milliseconds
      */
-    public long getTimeout();
+    long getTimeout();
     
     /**
      * invoked on success.
      */
-    public void onSuccess();
+    void onSuccess();
     
     /**
      * invoked on fail.
      *
      * @param e exception throwed.
      */
-    public void onFail(Throwable e);
+    void onFail(Throwable e);
     
 }
