@@ -46,17 +46,17 @@ import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
 
 /**
- * Grpc implementation as  a rpc server.
+ * Grpc implementation as a rpc server.
  *
  * @author liuzunfei
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
 public abstract class BaseGrpcServer extends BaseRpcServer {
     
-    private static ThreadPoolExecutor grpcExecutor;
+    ExecutorService grpcExecutor;
     
     private Server server;
     
@@ -89,7 +89,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
         
-        // server intercetpor to set connection id.
+        // server interceptor to set connection id.
         ServerInterceptor serverInterceptor = new ServerInterceptor() {
             @Override
             public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
@@ -118,19 +118,19 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                                 .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
                         int remotePort = remoteAddress.getPort();
                         int localPort = localAddress.getPort();
-                        Attributes attrWraper = transportAttrs.toBuilder()
+                        Attributes attrWrapper = transportAttrs.toBuilder()
                                 .set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid()).set(TRANS_KEY_CLIENT_PORT, remotePort)
                                 .set(TRANS_KEY_LOCAL_PORT, localPort).build();
-                        String connectionId = attrWraper.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info(" connection transportReady,connectionId = {} ", connectionId);
-                        return attrWraper;
+                        String connectionId = attrWrapper.get(TRANS_KEY_CONN_ID);
+                        Loggers.REMOTE.info("Connection transportReady, connectionId = {}", connectionId);
+                        return attrWrapper;
                         
                     }
                     
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
                         String connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info(" connection transportTerminated,connectionId = {} ", connectionId);
+                        Loggers.REMOTE.info("Connection transportTerminated, connectionId = {}", connectionId);
                         connectionManager.unregister(connectionId);
                     }
                 }).build();
@@ -139,17 +139,16 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     
     private Channel getInternalChannel(ServerCall serverCall) {
         ServerStream serverStream = (ServerStream) ReflectUtils.getFieldValue(serverCall, "stream");
-        Channel channel = (Channel) ReflectUtils.getFieldValue(serverStream, "channel");
-        return channel;
+        return (Channel) ReflectUtils.getFieldValue(serverStream, "channel");
     }
     
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
         
         // unary common call register.
-        final MethodDescriptor<Payload, Payload> unarypayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
+        final MethodDescriptor<Payload, Payload> unaryPayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.UNARY)
                 .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME))
-                .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
+                .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
         
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
@@ -162,7 +161,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 });
         
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)
-                .addMethod(unarypayloadMethod, payloadHandler).build();
+                .addMethod(unaryPayloadMethod, payloadHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
         
         // bi stream register.
@@ -184,7 +183,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     }
     
     @Override
-    public void shundownServer() {
+    public void shutdownServer() {
         if (server != null) {
             server.shutdownNow();
         }

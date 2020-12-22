@@ -105,7 +105,7 @@ public abstract class BaseRpcServer {
      * @throws Exception throw if stop server fail.
      */
     public final void stopServer() throws Exception {
-        shundownServer();
+        shutdownServer();
     }
     
     /**
@@ -113,6 +113,6 @@ public abstract class BaseRpcServer {
      *
      * @return
      */
-    public abstract void shundownServer();
+    public abstract void shutdownServer();
     
 }

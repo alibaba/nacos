@@ -246,7 +246,7 @@ public class RsocketRpcServer extends BaseRpcServer {
     }
     
     @Override
-    public void shundownServer() {
+    public void shutdownServer() {
         if (this.closeChannel != null && !closeChannel.isDisposed()) {
             this.closeChannel.dispose();
         }
