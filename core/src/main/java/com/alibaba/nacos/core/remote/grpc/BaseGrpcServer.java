@@ -59,45 +59,45 @@ import java.util.concurrent.TimeUnit;
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
 public abstract class BaseGrpcServer extends BaseRpcServer {
-
+    
     private static ThreadPoolExecutor grpcExecutor;
-
+    
     private Server server;
-
+    
     private static final String REQUEST_BI_STREAM_SERVICE_NAME = "BiRequestStream";
-
+    
     private static final String REQUEST_BI_STREAM_METHOD_NAME = "requestBiStream";
-
+    
     private static final String REQUEST_SERVICE_NAME = "Request";
-
+    
     private static final String REQUEST_METHOD_NAME = "request";
-
+    
     @Autowired
     private GrpcRequestAcceptor grpcCommonRequestAcceptor;
-
+    
     @Autowired
     private GrpcBiStreamRequestAcceptor grpcBiStreamRequestAcceptor;
-
+    
     @Autowired
     private ConnectionManager connectionManager;
-
+    
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
-
+    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
     }
-
+    
     @Override
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
-
+        
         // server interceptor to set connection id.
         ServerInterceptor serverInterceptor = new ServerInterceptor() {
             @Override
             public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
-                                                               ServerCallHandler<T, S> next) {
+                    ServerCallHandler<T, S> next) {
                 Context ctx = Context.current()
                         .withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID))
                         .withValue(CONTEXT_KEY_CONN_CLIENT_PORT, call.getAttributes().get(TRANS_KEY_CLIENT_PORT))
@@ -109,14 +109,14 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 return Contexts.interceptCall(ctx, call, headers, next);
             }
         };
-
+        
         addServices(handlerRegistry, serverInterceptor);
-
+        
         grpcExecutor = new ThreadPoolExecutor(0,
                 Runtime.getRuntime().availableProcessors() * RemoteUtils.getRemoteExecutorTimesOfProcessors(), 10L,
                 TimeUnit.SECONDS, new SynchronousQueue(),
                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-executor-%d").build());
-
+        
         server = ServerBuilder.forPort(getServicePort()).executor(grpcExecutor).fallbackHandlerRegistry(handlerRegistry)
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
@@ -133,9 +133,9 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                         String connectionId = attrWrapper.get(TRANS_KEY_CONN_ID);
                         Loggers.REMOTE.info("Connection transportReady, connectionId = {}", connectionId);
                         return attrWrapper;
-
+                        
                     }
-
+                    
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
                         String connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
@@ -145,21 +145,21 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 }).build();
         server.start();
     }
-
+    
     private Channel getInternalChannel(ServerCall serverCall) {
         ServerStream serverStream = (ServerStream) ReflectUtils.getFieldValue(serverCall, "stream");
         return (Channel) ReflectUtils.getFieldValue(serverStream, "channel");
     }
-
+    
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
-
+        
         // unary common call register.
         final MethodDescriptor<Payload, Payload> unaryPayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.UNARY)
                 .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-
+        
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
                 .asyncUnaryCall((request, responseObserver) -> {
                     com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
@@ -168,52 +168,52 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                     Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
                     grpcCommonRequestAcceptor.request(requestNew, responseObserver);
                 });
-
+        
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)
                 .addMethod(unaryPayloadMethod, payloadHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
-
+        
         // bi stream register.
         final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls
                 .asyncBidiStreamingCall((responseObserver) -> {
                     return grpcBiStreamRequestAcceptor.requestBiStream(responseObserver);
                 });
-
+        
         final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor
                         .generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-
+        
         final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
                 .builder(REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
-
+        
     }
-
+    
     @Override
     public void shutdownServer() {
         if (server != null) {
             server.shutdownNow();
         }
     }
-
+    
     static final Attributes.Key<String> TRANS_KEY_CONN_ID = Attributes.Key.create("conn_id");
-
+    
     static final Attributes.Key<String> TRANS_KEY_CLIENT_IP = Attributes.Key.create("client_ip");
-
+    
     static final Attributes.Key<Integer> TRANS_KEY_CLIENT_PORT = Attributes.Key.create("client_port");
-
+    
     static final Attributes.Key<Integer> TRANS_KEY_LOCAL_PORT = Attributes.Key.create("local_port");
-
+    
     static final Context.Key<String> CONTEXT_KEY_CONN_ID = Context.key("conn_id");
-
+    
     static final Context.Key<String> CONTEXT_KEY_CONN_CLIENT_IP = Context.key("client_ip");
-
+    
     static final Context.Key<Integer> CONTEXT_KEY_CONN_CLIENT_PORT = Context.key("client_port");
-
+    
     static final Context.Key<Integer> CONTEXT_KEY_CONN_LOCAL_PORT = Context.key("local_port");
-
+    
     static final Context.Key<Channel> CONTEXT_KEY_CHANNEL = Context.key("ctx_channel");
-
+    
 }

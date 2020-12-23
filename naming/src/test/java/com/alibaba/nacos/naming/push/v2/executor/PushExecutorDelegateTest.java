@@ -31,51 +31,51 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PushExecutorDelegateTest {
-
+    
     private final String udpClientId = "1.1.1.1:60000";
-
+    
     private final String rpcClientId = UUID.randomUUID().toString();
-
+    
     @Mock
     private PushExecutorRpcImpl pushExecutorRpc;
-
+    
     @Mock
     private PushExecutorUdpImpl pushExecutorUdp;
-
+    
     @Mock
     private Subscriber subscriber;
-
+    
     @Mock
     private PushCallBack pushCallBack;
-
+    
     private ServiceInfo serviceInfo;
-
+    
     private PushExecutorDelegate delegate;
-
+    
     @Before
     public void setUp() throws Exception {
         serviceInfo = new ServiceInfo("G@@S");
         delegate = new PushExecutorDelegate(pushExecutorRpc, pushExecutorUdp);
     }
-
+    
     @Test
     public void testDoPushForUdp() {
         delegate.doPush(udpClientId, subscriber, serviceInfo);
         verify(pushExecutorUdp).doPush(udpClientId, subscriber, serviceInfo);
     }
-
+    
     @Test
     public void testDoPushForRpc() {
         delegate.doPush(rpcClientId, subscriber, serviceInfo);
         verify(pushExecutorRpc).doPush(rpcClientId, subscriber, serviceInfo);
     }
-
+    
     @Test
     public void doPushWithCallbackForUdp() {
         delegate.doPushWithCallback(udpClientId, subscriber, serviceInfo, pushCallBack);
         verify(pushExecutorUdp).doPushWithCallback(udpClientId, subscriber, serviceInfo, pushCallBack);
     }
-
+    
     @Test
     public void doPushWithCallbackForRpc() {
         delegate.doPushWithCallback(rpcClientId, subscriber, serviceInfo, pushCallBack);

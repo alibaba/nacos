@@ -36,22 +36,22 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PushExecutorUdpImplTest {
-
+    
     private final String rpcClientId = "1.1.1.1:10000";
-
+    
     @Mock
     private UdpPushService pushService;
-
+    
     @Mock
     private Subscriber subscriber;
-
+    
     @Mock
     private PushCallBack pushCallBack;
-
+    
     private ServiceInfo serviceInfo;
-
+    
     private PushExecutorUdpImpl pushExecutor;
-
+    
     @Before
     public void setUp() throws Exception {
         serviceInfo = new ServiceInfo("G@@S");
@@ -59,21 +59,21 @@ public class PushExecutorUdpImplTest {
         doAnswer(new CallbackAnswer()).when(pushService)
                 .pushDataWithCallback(eq(subscriber), any(ServiceInfo.class), eq(pushCallBack));
     }
-
+    
     @Test
     public void testDoPush() {
         pushExecutor.doPush(rpcClientId, subscriber, serviceInfo);
         verify(pushService).pushDataWithoutCallback(eq(subscriber), any(ServiceInfo.class));
     }
-
+    
     @Test
     public void testDoPushWithCallback() {
         pushExecutor.doPushWithCallback(rpcClientId, subscriber, serviceInfo, pushCallBack);
         verify(pushCallBack).onSuccess();
     }
-
+    
     private static class CallbackAnswer implements Answer<Void> {
-
+        
         @Override
         public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
             ServiceInfo serviceInfo = invocationOnMock.getArgument(1);
