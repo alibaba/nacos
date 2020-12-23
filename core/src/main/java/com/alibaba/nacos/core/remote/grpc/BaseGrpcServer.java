@@ -97,7 +97,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         ServerInterceptor serverInterceptor = new ServerInterceptor() {
             @Override
             public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
-                    ServerCallHandler<T, S> next) {
+                                                               ServerCallHandler<T, S> next) {
                 Context ctx = Context.current()
                         .withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID))
                         .withValue(CONTEXT_KEY_CONN_CLIENT_PORT, call.getAttributes().get(TRANS_KEY_CLIENT_PORT))
