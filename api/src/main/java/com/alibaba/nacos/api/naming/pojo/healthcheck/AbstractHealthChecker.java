@@ -35,7 +35,8 @@ import java.io.Serializable;
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = None.class)
 @JsonSubTypes({@JsonSubTypes.Type(name = Http.TYPE, value = Http.class),
         @JsonSubTypes.Type(name = Mysql.TYPE, value = Mysql.class),
-        @JsonSubTypes.Type(name = Tcp.TYPE, value = Tcp.class)})
+        @JsonSubTypes.Type(name = Tcp.TYPE, value = Tcp.class),
+        @JsonSubTypes.Type(name = None.TYPE, value = None.class)})
 public abstract class AbstractHealthChecker implements Cloneable, Serializable {
     
     private static final long serialVersionUID = 3848305577423336421L;
