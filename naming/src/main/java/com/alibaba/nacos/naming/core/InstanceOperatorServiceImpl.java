@@ -30,7 +30,7 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.NamingSubscriberServiceV1Impl;
 import com.alibaba.nacos.naming.push.PushClient;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -55,7 +55,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     
     private final SwitchDomain switchDomain;
     
-    private final PushService pushService;
+    private final UdpPushService pushService;
     
     private final NamingSubscriberServiceV1Impl subscriberServiceV1;
     
@@ -81,7 +81,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     };
     
     public InstanceOperatorServiceImpl(ServiceManager serviceManager, SwitchDomain switchDomain,
-            PushService pushService, NamingSubscriberServiceV1Impl subscriberServiceV1) {
+            UdpPushService pushService, NamingSubscriberServiceV1Impl subscriberServiceV1) {
         this.serviceManager = serviceManager;
         this.switchDomain = switchDomain;
         this.pushService = pushService;

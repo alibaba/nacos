@@ -17,13 +17,12 @@
 package com.alibaba.nacos.naming.remote.udp;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.push.AckEntry;
-import com.alibaba.nacos.naming.push.AckPacket;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
 import com.alibaba.nacos.naming.utils.Constants;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +35,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Udp socket connector to send upd data and listen ack if necessary.
@@ -52,16 +50,10 @@ public class UdpConnector {
     
     private final DatagramSocket udpSocket;
     
-    private final AtomicLong pushCount;
-    
-    private final AtomicLong pushFailed;
-    
     public UdpConnector() throws SocketException {
         this.ackMap = new ConcurrentHashMap<>();
         this.callbackMap = new ConcurrentHashMap<>();
         this.udpSocket = new DatagramSocket();
-        this.pushCount = new AtomicLong();
-        this.pushFailed = new AtomicLong();
         GlobalExecutor.scheduleUdpReceiver(new UdpReceiver());
     }
     
@@ -76,22 +68,16 @@ public class UdpConnector {
      * @throws NacosException nacos exception during sending
      */
     public void sendData(AckEntry ackEntry) throws NacosException {
+        if (null == ackEntry) {
+            return;
+        }
         try {
-            pushCount.incrementAndGet();
+            MetricsMonitor.incrementPush();
             doSend(ackEntry.getOrigin());
         } catch (IOException e) {
-            pushFailed.incrementAndGet();
+            MetricsMonitor.incrementFailPush();
             throw new NacosException(NacosException.SERVER_ERROR, "[NACOS-PUSH] push data with exception: ", e);
         }
-    }
-    
-    /**
-     * Async send data without callback. If send failed will retry {@link Constants#UDP_MAX_RETRY_TIMES} times.
-     *
-     * @param ackEntry ack entry
-     */
-    public void sendDataWithoutCallback(AckEntry ackEntry) {
-        sendDataWithCallback(ackEntry, null);
     }
     
     /**
@@ -141,12 +127,7 @@ public class UdpConnector {
         @Override
         public void run() {
             try {
-                if (!ackMap.containsKey(ackEntry.getKey())) {
-                    pushCount.incrementAndGet();
-                }
-                if (null != callBack) {
-                    callbackMap.put(ackEntry.getKey(), callBack);
-                }
+                callbackMap.put(ackEntry.getKey(), callBack);
                 ackMap.put(ackEntry.getKey(), ackEntry);
                 Loggers.PUSH.info("send udp packet: " + ackEntry.getKey());
                 ackEntry.increaseRetryTime();
@@ -154,12 +135,9 @@ public class UdpConnector {
                 GlobalExecutor.scheduleRetransmitter(new UdpRetrySender(ackEntry), Constants.ACK_TIMEOUT_NANOS,
                         TimeUnit.NANOSECONDS);
             } catch (Exception e) {
-                callbackMap.remove(ackEntry.getKey());
                 ackMap.remove(ackEntry.getKey());
-                pushFailed.incrementAndGet();
-                if (null != callBack) {
-                    callBack.onFail(e);
-                }
+                callbackMap.remove(ackEntry.getKey());
+                callBack.onFail(e);
             }
         }
     }
@@ -180,14 +158,10 @@ public class UdpConnector {
             }
             // Match max retry, push failed.
             if (ackEntry.getRetryTimes() > Constants.UDP_MAX_RETRY_TIMES) {
-                String maxRetryError = String
-                        .format("max re-push times reached, retry times %d, key: %s", ackEntry.getRetryTimes(),
-                                ackEntry.getKey());
-                Loggers.PUSH.warn(maxRetryError);
+                Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.getRetryTimes(),
+                        ackEntry.getKey());
                 ackMap.remove(ackEntry.getKey());
-                pushFailed.incrementAndGet();
-                callbackFailed(ackEntry.getKey(),
-                        new NacosRuntimeException(NacosException.SERVER_ERROR, maxRetryError));
+                callbackFailed(ackEntry.getKey(), new NoRequiredRetryException());
                 return;
             }
             Loggers.PUSH.info("retry to push data, key: " + ackEntry.getKey());
@@ -196,10 +170,8 @@ public class UdpConnector {
                 doSend(ackEntry.getOrigin());
                 GlobalExecutor.scheduleRetransmitter(this, Constants.ACK_TIMEOUT_NANOS, TimeUnit.NANOSECONDS);
             } catch (Exception e) {
-                callbackMap.remove(ackEntry.getKey());
-                ackMap.remove(ackEntry.getKey());
-                pushFailed.incrementAndGet();
                 callbackFailed(ackEntry.getKey(), e);
+                ackMap.remove(ackEntry.getKey());
             }
         }
     }

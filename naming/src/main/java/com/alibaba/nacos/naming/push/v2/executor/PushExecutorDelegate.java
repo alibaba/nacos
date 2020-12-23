@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.push.v2;
+package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +43,11 @@ public class PushExecutorDelegate implements PushExecutor {
     @Override
     public void doPush(String clientId, Subscriber subscriber, ServiceInfo data) {
         getPushExecuteService(clientId).doPush(clientId, subscriber, data);
+    }
+    
+    @Override
+    public void doPushWithCallback(String clientId, Subscriber subscriber, ServiceInfo data, PushCallBack callBack) {
+        getPushExecuteService(clientId).doPushWithCallback(clientId, subscriber, data, callBack);
     }
     
     private PushExecutor getPushExecuteService(String clientId) {

@@ -38,14 +38,14 @@ public class PayloadRegistry {
     
     private static final Map<String, Class> REGISTRY_REQUEST = new HashMap<String, Class>();
     
-    static boolean inited = false;
+    static boolean initialized = false;
     
     public static void init() {
         scan();
     }
     
     private static synchronized void scan() {
-        if (inited) {
+        if (initialized) {
             return;
         }
         
@@ -71,7 +71,7 @@ public class PayloadRegistry {
             }
         }
         
-        inited = true;
+        initialized = true;
     }
     
     static void register(String type, Class clazz) {

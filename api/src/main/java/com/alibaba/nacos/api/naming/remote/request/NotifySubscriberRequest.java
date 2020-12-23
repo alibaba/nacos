@@ -54,7 +54,7 @@ public class NotifySubscriberRequest extends ServerPushRequest {
      * Build fail response.
      *
      * @param message error message
-     * @return faile response
+     * @return fail response
      */
     public static NotifySubscriberRequest buildFailResponse(String message) {
         NotifySubscriberRequest result = new NotifySubscriberRequest();

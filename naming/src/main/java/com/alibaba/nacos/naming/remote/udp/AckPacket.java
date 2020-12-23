@@ -14,33 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.response;
+package com.alibaba.nacos.naming.remote.udp;
 
 /**
- * callback of push service.
+ * UDP ack packet.
  *
- * @author liuzunfei
- * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public interface PushCallBack {
+public class AckPacket {
     
-    /**
-     * timie out mills.
-     *
-     * @return
-     */
-    public long getTimeout();
+    public String type;
     
-    /**
-     * invoked on success.
-     */
-    public void onSuccess();
+    public long lastRefTime;
     
-    /**
-     * invoked on fail.
-     *
-     * @param e exception throwed.
-     */
-    public void onFail(Throwable e);
-    
+    public String data;
 }

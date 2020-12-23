@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.push;
+package com.alibaba.nacos.api.remote;
 
 /**
- * UDP ack packet.
+ * abstract callback of push service.
  *
- * @author xiweng.yy
+ * @author liuzunfei
+ * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
  */
-public class AckPacket {
+public abstract class AbstractPushCallBack implements PushCallBack {
     
-    public String type;
+    private long timeout;
     
-    public long lastRefTime;
+    public AbstractPushCallBack(long timeout) {
+        this.timeout = timeout;
+    }
     
-    public String data;
+    @Override
+    public long getTimeout() {
+        return timeout;
+    }
 }

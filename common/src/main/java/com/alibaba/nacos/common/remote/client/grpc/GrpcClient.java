@@ -62,7 +62,7 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     /**
-     * create a new channel with specfic server address.
+     * create a new channel with specific server address.
      *
      * @param serverIp   serverIp.
      * @param serverPort serverPort.

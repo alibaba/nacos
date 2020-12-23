@@ -22,13 +22,11 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,9 +40,6 @@ public class PerformanceLoggerThread {
     
     @Autowired
     private ServiceManager serviceManager;
-    
-    @Autowired
-    private PushService pushService;
     
     @Autowired
     private RaftCore raftCore;
@@ -69,11 +64,7 @@ public class PerformanceLoggerThread {
      */
     @Scheduled(cron = "0 0 0 * * ?")
     public void refreshMetrics() {
-        pushService.setFailedPush(0);
-        pushService.setTotalPush(0);
-        MetricsMonitor.getHttpHealthCheckMonitor().set(0);
-        MetricsMonitor.getMysqlHealthCheckMonitor().set(0);
-        MetricsMonitor.getTcpHealthCheckMonitor().set(0);
+        MetricsMonitor.resetAll();
     }
     
     /**
@@ -81,21 +72,9 @@ public class PerformanceLoggerThread {
      */
     @Scheduled(cron = "0/15 * * * * ?")
     public void collectMetrics() {
-        int serviceCount = serviceManager.getServiceCount();
-        MetricsMonitor.getDomCountMonitor().set(serviceCount);
-        
-        int ipCount = serviceManager.getInstanceCount();
-        MetricsMonitor.getIpCountMonitor().set(ipCount);
-        
-        long maxPushCost = getMaxPushCost();
-        MetricsMonitor.getMaxPushCostMonitor().set(maxPushCost);
-        
-        long avgPushCost = getAvgPushCost();
-        MetricsMonitor.getAvgPushCostMonitor().set(avgPushCost);
-        
-        MetricsMonitor.getTotalPushMonitor().set(pushService.getTotalPush());
-        MetricsMonitor.getFailedPushMonitor().set(pushService.getFailedPushCount());
-        
+        MetricsMonitor.getDomCountMonitor().set(serviceManager.getServiceCount());
+        MetricsMonitor.getIpCountMonitor().set(serviceManager.getInstanceCount());
+        MetricsMonitor.getAvgPushCostMonitor().set(getAvgPushCost());
         metricsRaftLeader();
     }
     
@@ -122,12 +101,16 @@ public class PerformanceLoggerThread {
             try {
                 int serviceCount = serviceManager.getServiceCount();
                 int ipCount = serviceManager.getInstanceCount();
-                long maxPushCost = getMaxPushCost();
+                long maxPushCost = MetricsMonitor.getMaxPushCostMonitor().get();
                 long avgPushCost = getAvgPushCost();
-                
+                long totalPushCount = MetricsMonitor.getTotalPushMonitor().longValue();
+                long failPushCount = MetricsMonitor.getFailedPushMonitor().longValue();
                 Loggers.PERFORMANCE_LOG
-                        .info("PERFORMANCE:" + "|" + serviceCount + "|" + ipCount + "|" + maxPushCost + "|"
-                                + avgPushCost);
+                        .info("PERFORMANCE:|{}|{}|{}|{}|{}|{}", serviceCount, ipCount, maxPushCost, avgPushCost,
+                                totalPushCount, failPushCount);
+                MetricsMonitor.getTotalPushCountForAvg().set(0);
+                MetricsMonitor.getTotalPushCostForAvg().set(0);
+                MetricsMonitor.getMaxPushCostMonitor().set(-1);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
             }
@@ -135,32 +118,9 @@ public class PerformanceLoggerThread {
         }
     }
     
-    private long getMaxPushCost() {
-        long max = -1;
-        
-        for (Map.Entry<String, Long> entry : PushService.pushCostMap.entrySet()) {
-            if (entry.getValue() > max) {
-                max = entry.getValue();
-            }
-        }
-        
-        return max;
-    }
-    
     private long getAvgPushCost() {
-        int size = 0;
-        long totalCost = 0;
-        long avgCost = -1;
-        
-        for (Map.Entry<String, Long> entry : PushService.pushCostMap.entrySet()) {
-            size += 1;
-            totalCost += entry.getValue();
-        }
-        PushService.pushCostMap.clear();
-        
-        if (size > 0 && totalCost > 0) {
-            avgCost = totalCost / size;
-        }
-        return avgCost;
+        int size = MetricsMonitor.getTotalPushCountForAvg().get();
+        long totalCost = MetricsMonitor.getTotalPushCostForAvg().get();
+        return (size > 0 && totalCost > 0) ? totalCost / size : -1;
     }
 }

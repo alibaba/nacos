@@ -63,8 +63,8 @@ public interface Requester {
     public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException;
     
     /**
-     * send aync request. =    * @param request request.
-     *
+     * send async request.
+     * @param request request.
      * @param requestMeta     meta of request.
      * @param requestCallBack callback of request.
      * @throws NacosException exception throw.

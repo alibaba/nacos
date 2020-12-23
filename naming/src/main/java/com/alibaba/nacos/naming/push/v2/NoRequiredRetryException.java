@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,19 @@
 
 package com.alibaba.nacos.naming.push.v2;
 
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.api.naming.NamingResponseCode;
 
 /**
- * Nacos naming push executor for v2.
+ * Exception that does not require retry.
  *
  * @author xiweng.yy
  */
-public interface PushExecutor {
+public class NoRequiredRetryException extends NacosRuntimeException {
     
-    /**
-     * Do push.
-     *
-     * @param clientId   client id
-     * @param subscriber subscriber
-     * @param data       push data
-     */
-    void doPush(String clientId, Subscriber subscriber, ServiceInfo data);
+    private static final long serialVersionUID = -7941235764759109405L;
+    
+    public NoRequiredRetryException() {
+        super(NamingResponseCode.NO_NEED_RETRY);
+    }
 }
