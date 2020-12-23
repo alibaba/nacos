@@ -29,6 +29,7 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -59,7 +60,7 @@ public class ClusterController {
      * @throws Exception if failed
      */
     @PutMapping
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
     public String update(HttpServletRequest request) throws Exception {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
