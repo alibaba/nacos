@@ -48,7 +48,6 @@ import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -61,7 +60,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class BaseGrpcServer extends BaseRpcServer {
 
-    ExecutorService grpcExecutor;
+    private static ThreadPoolExecutor grpcExecutor;
 
     private Server server;
 
