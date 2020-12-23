@@ -17,20 +17,20 @@
 package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
 
 public class FixturePushExecutor implements PushExecutor {
-    
+
     private boolean shouldSuccess = true;
-    
+
     private Throwable failedException;
-    
+
     @Override
     public void doPush(String clientId, Subscriber subscriber, ServiceInfo data) {
     }
-    
+
     @Override
     public void doPushWithCallback(String clientId, Subscriber subscriber, ServiceInfo data, PushCallBack callBack) {
         if (shouldSuccess) {
@@ -39,11 +39,11 @@ public class FixturePushExecutor implements PushExecutor {
             callBack.onFail(failedException);
         }
     }
-    
+
     public void setShouldSuccess(boolean shouldSuccess) {
         this.shouldSuccess = shouldSuccess;
     }
-    
+
     public void setFailedException(Throwable failedException) {
         this.failedException = failedException;
     }

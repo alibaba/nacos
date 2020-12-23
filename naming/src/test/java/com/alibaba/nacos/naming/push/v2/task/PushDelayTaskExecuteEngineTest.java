@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
@@ -42,31 +42,31 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PushDelayTaskExecuteEngineTest {
-    
+
     @Mock
     private ClientManager clientManager;
-    
+
     @Mock
     private ClientServiceIndexesManager indexesManager;
-    
+
     @Mock
     private ServiceStorage serviceStorage;
-    
+
     @Mock
     private PushExecutor pushExecutor;
-    
+
     @Mock
     private Client client;
-    
+
     @Mock
     private Subscriber subscriber;
-    
+
     private final Service service = Service.newService("N", "G", "S");
-    
+
     private final String clientId = "testClient";
-    
+
     private PushDelayTaskExecuteEngine executeEngine;
-    
+
     @Before
     public void setUp() throws Exception {
         when(serviceStorage.getPushData(service)).thenReturn(new ServiceInfo("G@@S"));
@@ -75,12 +75,12 @@ public class PushDelayTaskExecuteEngineTest {
         when(client.getSubscriber(service)).thenReturn(subscriber);
         executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, pushExecutor);
     }
-    
+
     @After
     public void tearDown() throws Exception {
         executeEngine.shutdown();
     }
-    
+
     @Test
     public void testAddTask() throws InterruptedException {
         PushDelayTask pushDelayTask = new PushDelayTask(service, 0L);

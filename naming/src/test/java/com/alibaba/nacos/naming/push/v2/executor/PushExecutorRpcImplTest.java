@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -40,22 +40,22 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PushExecutorRpcImplTest {
-    
+
     private final String rpcClientId = UUID.randomUUID().toString();
-    
+
     @Mock
     private RpcPushService pushService;
-    
+
     @Mock
     private Subscriber subscriber;
-    
+
     @Mock
     private PushCallBack pushCallBack;
-    
+
     private ServiceInfo serviceInfo;
-    
+
     private PushExecutorRpcImpl pushExecutor;
-    
+
     @Before
     public void setUp() throws Exception {
         serviceInfo = new ServiceInfo("G@@S");
@@ -64,21 +64,21 @@ public class PushExecutorRpcImplTest {
                 .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
                         eq(GlobalExecutor.getCallbackExecutor()));
     }
-    
+
     @Test
     public void testDoPush() {
         pushExecutor.doPush(rpcClientId, subscriber, serviceInfo);
         verify(pushService).pushWithoutAck(eq(rpcClientId), any(NotifySubscriberRequest.class));
     }
-    
+
     @Test
     public void testDoPushWithCallback() {
         pushExecutor.doPushWithCallback(rpcClientId, subscriber, serviceInfo, pushCallBack);
         verify(pushCallBack).onSuccess();
     }
-    
+
     private class CallbackAnswer implements Answer<Void> {
-        
+
         @Override
         public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
             NotifySubscriberRequest pushRequest = invocationOnMock.getArgument(1);
