@@ -157,8 +157,10 @@ public abstract class GrpcClient extends RpcClient {
             
             @Override
             public void onError(Throwable throwable) {
-                if (isRunning() && !grpcConn.isAbandon()) {
-                    LoggerUtils.printIfErrorEnabled(LOGGER, "Request stream error, switch server", throwable);
+                boolean isRunning = isRunning();
+                boolean isAbandon = grpcConn.isAbandon();
+                if (isRunning && !isAbandon) {
+                    LoggerUtils.printIfErrorEnabled(LOGGER, "Request stream error, switch server,error={}", throwable);
                     if (throwable instanceof StatusRuntimeException) {
                         Status.Code code = ((StatusRuntimeException) throwable).getStatus().getCode();
                         if (Status.UNAVAILABLE.getCode().equals(code) || Status.CANCELLED.getCode().equals(code)) {
@@ -168,20 +170,24 @@ public abstract class GrpcClient extends RpcClient {
                         }
                     }
                 } else {
-                    LoggerUtils.printIfWarnEnabled(LOGGER, "Client is not running status, ignore error event");
+                    LoggerUtils.printIfWarnEnabled(LOGGER, "ignore error event,isRunning:{},isAbandon={}", isRunning,
+                            isAbandon);
                 }
                 
             }
             
             @Override
             public void onCompleted() {
-                if (isRunning() && !grpcConn.isAbandon()) {
+                boolean isRunning = isRunning();
+                boolean isAbandon = grpcConn.isAbandon();
+                if (isRunning && !isAbandon) {
                     LoggerUtils.printIfErrorEnabled(LOGGER, "Request stream onCompleted, switch server");
                     if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
                         switchServerAsync();
                     }
                 } else {
-                    LoggerUtils.printIfErrorEnabled(LOGGER, "Client is not running status, ignore complete event");
+                    LoggerUtils.printIfInfoEnabled(LOGGER, "ignore complete event,isRunning:{},isAbandon={}", isRunning,
+                            isAbandon);
                 }
                 
             }

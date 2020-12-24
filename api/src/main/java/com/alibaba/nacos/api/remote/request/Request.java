@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.google.common.base.MoreObjects;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -115,6 +118,6 @@ public abstract class Request {
     
     @Override
     public String toString() {
-        return "Request{" + "headers=" + headers + ", requestId='" + requestId + '\'' + '}';
+        return  this.getClass().getSimpleName()+"{" + "headers=" + headers + ", requestId='" + requestId + '\'' + '}';
     }
 }
