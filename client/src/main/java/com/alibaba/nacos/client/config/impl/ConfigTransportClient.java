@@ -131,7 +131,7 @@ public abstract class ConfigTransportClient {
     /**
      * get common header.
      *
-     * @return
+     * @return headers.
      */
     protected Map<String, String> getCommonHeader() {
         Map<String, String> headers = new HashMap<String, String>(16);
@@ -264,7 +264,7 @@ public abstract class ConfigTransportClient {
     /**
      * get encode.
      *
-     * @return
+     * @return encode.
      */
     public String getEncode() {
         return this.encode;
@@ -273,7 +273,7 @@ public abstract class ConfigTransportClient {
     /**
      * get tenant.
      *
-     * @return
+     * @return tenant.
      */
     public String getTenant() {
         return this.tenant;
@@ -286,8 +286,6 @@ public abstract class ConfigTransportClient {
     
     /**
      * listen change .
-     *
-     * @return
      */
     public abstract void executeConfigListen();
     

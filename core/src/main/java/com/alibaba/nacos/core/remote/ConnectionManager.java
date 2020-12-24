@@ -268,7 +268,7 @@ public class ConnectionManager {
     /**
      * get all client count.
      *
-     * @return
+     * @return client count.
      */
     public int currentClientsCount() {
         return connections.size();
@@ -322,7 +322,7 @@ public class ConnectionManager {
     /**
      * check if over limit.
      *
-     * @return
+     * @return over limit or not.
      */
     public boolean isOverLimit() {
         return maxClient > 0 && this.connections.size() >= maxClient;

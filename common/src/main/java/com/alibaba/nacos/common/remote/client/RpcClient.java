@@ -339,22 +339,23 @@ public abstract class RpcClient implements Closeable {
     
     private volatile AtomicBoolean switchingFlag = new AtomicBoolean(false);
     
-    public void switchServerAsync() {
-        switchServerAsync(null, false);
-    }
-    
-    public void switchServerAsyncOnRequestFail() {
-        switchServerAsync(null, true);
-    }
-    
     private boolean serverCheck() {
         ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
         try {
             Response response = this.currentConnection.request(serverCheckRequest, buildMeta());
             return response == null ? false : response.isSuccess();
         } catch (NacosException e) {
+            //ignore
         }
         return false;
+    }
+    
+    public void switchServerAsync() {
+        switchServerAsync(null, false);
+    }
+    
+    public void switchServerAsyncOnRequestFail() {
+        switchServerAsync(null, true);
     }
     
     /**

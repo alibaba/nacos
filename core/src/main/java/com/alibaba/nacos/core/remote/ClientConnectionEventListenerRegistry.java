@@ -21,10 +21,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 /**
  * registry for client connection event listeners.
@@ -36,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 public class ClientConnectionEventListenerRegistry {
     
     final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<ClientConnectionEventListener>();
-    
     
     /**
      * notify where a new client connected.

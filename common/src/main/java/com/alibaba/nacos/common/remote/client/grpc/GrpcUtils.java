@@ -88,7 +88,7 @@ public class GrpcUtils {
      *
      * @param request request.
      * @param meta    request meta.
-     * @return
+     * @return payload.
      */
     public static Payload convert(Request request, RequestMeta meta) {
         //meta.
@@ -117,7 +117,7 @@ public class GrpcUtils {
      *
      * @param request request.
      * @param meta    meta
-     * @return
+     * @return payload.
      */
     public static Payload convert(Request request, Metadata meta) {
         
@@ -137,7 +137,7 @@ public class GrpcUtils {
      * convert response to payload.
      *
      * @param response response.
-     * @return
+     * @return payload.
      */
     public static Payload convert(Response response) {
         String jsonString = toJson(response);
@@ -155,7 +155,7 @@ public class GrpcUtils {
      * parse payload to request/response model.
      *
      * @param payload payload to be parsed.
-     * @return
+     * @return payload
      */
     public static PlainRequest parse(Payload payload) {
         PlainRequest plainRequest = new PlainRequest();

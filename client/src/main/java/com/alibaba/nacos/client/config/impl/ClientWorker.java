@@ -27,7 +27,7 @@ import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
-import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -811,36 +811,12 @@ public class ClientWorker implements Closeable {
             
             return rpcClient;
         }
-        
+
         /**
          * build config string.
          *
          * @param caches caches to build config string.
-         * @return
-         */
-        private String buildConfigStr(List<CacheData> caches) {
-            StringBuilder listenConfigsBuilder = new StringBuilder();
-            List<String> configStrings = new ArrayList<String>();
-            for (CacheData cache : caches) {
-                listenConfigsBuilder.append(cache.dataId).append(WORD_SEPARATOR);
-                listenConfigsBuilder.append(cache.group).append(WORD_SEPARATOR);
-                if (StringUtils.isBlank(cache.tenant)) {
-                    listenConfigsBuilder.append(cache.getMd5()).append(LINE_SEPARATOR);
-                } else {
-                    listenConfigsBuilder.append(cache.getMd5()).append(WORD_SEPARATOR);
-                    listenConfigsBuilder.append(cache.getTenant()).append(LINE_SEPARATOR);
-                }
-                
-            }
-            
-            return listenConfigsBuilder.toString();
-        }
-        
-        /**
-         * build config string.
-         *
-         * @param caches caches to build config string.
-         * @return
+         * @return request.
          */
         private ConfigBatchListenRequest buildConfigRequest(List<CacheData> caches) {
             
@@ -854,7 +830,7 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void removeCache(String dataId, String group) {
-            // Notify to rpc unlisten ,and remove cache if success.
+            // Notify to rpc un listen ,and remove cache if success.
             notifyListenConfig();
         }
         
@@ -938,7 +914,7 @@ public class ClientWorker implements Closeable {
                 request.putAdditonalParam("tag", tag);
                 request.putAdditonalParam("appName", appName);
                 request.putAdditonalParam("betaIps", betaIps);
-                ConfigPubishResponse response = (ConfigPubishResponse) requestProxy(getOneRunningClient(), request);
+                ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
                 return response.isSuccess();
             } catch (Exception e) {
                 LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
@@ -1475,7 +1451,7 @@ public class ClientWorker implements Closeable {
     /**
      * get client worker agent.
      *
-     * @return
+     * @return agent name.
      */
     public String getAgentName() {
         return this.agent.getName();

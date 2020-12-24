@@ -72,7 +72,7 @@ public abstract class BaseRpcServer {
     /**
      * get connection type.
      *
-     * @return
+     * @return  connection type.
      */
     public abstract ConnectionType getConnectionType();
     
@@ -86,14 +86,14 @@ public abstract class BaseRpcServer {
     /**
      * the increase offset of nacos server port for rpc server port.
      *
-     * @return
+     * @return delta port offset of main port.
      */
     public abstract int rpcPortOffset();
     
     /**
      * get service port.
      *
-     * @return
+     * @return service port.
      */
     public int getServicePort() {
         return EnvUtil.getPort() + rpcPortOffset();

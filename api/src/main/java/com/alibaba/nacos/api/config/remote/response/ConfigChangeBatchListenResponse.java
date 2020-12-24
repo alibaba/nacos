@@ -71,7 +71,7 @@ public class ConfigChangeBatchListenResponse extends Response {
      * build fail response.
      *
      * @param errorMessage errorMessage.
-     * @return
+     * @return response.
      */
     public static ConfigChangeBatchListenResponse buildFailResponse(String errorMessage) {
         ConfigChangeBatchListenResponse response = new ConfigChangeBatchListenResponse();
