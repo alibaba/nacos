@@ -182,7 +182,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor
                         .generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME))
-                .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
+                .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
         
         final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
