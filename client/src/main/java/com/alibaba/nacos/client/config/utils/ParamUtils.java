@@ -211,7 +211,7 @@ public class ParamUtils {
     /**
      * check whether still using http .
      *
-     * @return
+     * @return use http transport .
      */
     public static boolean useHttpSwitch() {
         String useHttpSwitch = System.getProperty("clientworker.use.http.switch");
@@ -221,7 +221,7 @@ public class ParamUtils {
     /**
      * get connection type for remote.
      *
-     * @return
+     * @return connection type.
      */
     public static String configRemoteConnectionType() {
         String remoteConnectionType = System.getProperty("nacos.remote.config.connectiontype");

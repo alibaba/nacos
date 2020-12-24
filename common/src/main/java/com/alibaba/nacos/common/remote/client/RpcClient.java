@@ -350,14 +350,14 @@ public abstract class RpcClient implements Closeable {
         return false;
     }
     
-    public void switchServerAsync() {
-        switchServerAsync(null, false);
-    }
-    
     public void switchServerAsyncOnRequestFail() {
         switchServerAsync(null, true);
     }
     
+    public void switchServerAsync() {
+        switchServerAsync(null, false);
+    }
+
     /**
      * switch server .
      */
