@@ -90,7 +90,7 @@ public class GrpcUtils {
      */
     public static Payload convert(Request request, RequestMeta meta) {
         //meta.
-        Payload.Builder builder = Payload.newBuilder();
+        Payload.Builder payloadBuilder = Payload.newBuilder();
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         if (meta != null) {
             metaBuilder.setClientIp(meta.getClientIp()).setClientPort(meta.getClientPort())
@@ -98,13 +98,13 @@ public class GrpcUtils {
                     .setClientVersion(meta.getClientVersion()).putAllHeaders(request.getHeaders())
                     .setType(request.getClass().getName());
         }
-        builder.setMetadata(metaBuilder.build());
+        payloadBuilder.setMetadata(metaBuilder.build());
         
         // request body .
         request.clearHeaders();
         String jsonString = toJson(request);
         
-        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString))).build();
+        Payload payload = payloadBuilder.setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString))).build();
         return payload;
         
     }
@@ -118,13 +118,13 @@ public class GrpcUtils {
      */
     public static Payload convert(Request request, Metadata meta) {
         
-        Metadata buildMeta = meta.toBuilder().putAllHeaders(request.getHeaders()).build();
+        Metadata newMeta = meta.toBuilder().putAllHeaders(request.getHeaders()).build();
         request.clearHeaders();
         String jsonString = toJson(request);
         
         Payload.Builder builder = Payload.newBuilder();
         Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString)))
-                .setMetadata(buildMeta).build();
+                .setMetadata(newMeta).build();
         return payload;
         
     }
