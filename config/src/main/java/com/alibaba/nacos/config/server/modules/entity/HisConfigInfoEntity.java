@@ -62,7 +62,7 @@ public class HisConfigInfoEntity implements Serializable {
     @Column(name = "md5")
     private String md5;
     
-    @Column(name = "gmt_create", insertable = false)
+    @Column(name = "gmt_create", insertable = false, updatable = false)
     private Date gmtCreate;
     
     @Column(name = "gmt_modified")
