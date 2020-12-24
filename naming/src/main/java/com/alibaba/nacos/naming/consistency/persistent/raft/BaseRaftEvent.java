@@ -21,9 +21,11 @@ import org.springframework.context.ApplicationEvent;
 /**
  * Base raft event.
  *
+ * @deprecated will remove in 1.4.x
  * @author pbting
  * @date 2019-07-01 8:46 PM
  */
+@Deprecated
 public abstract class BaseRaftEvent extends ApplicationEvent {
     
     private final RaftPeer raftPeer;

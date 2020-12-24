@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright 1999-2018 Alibaba Group Holding Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,7 +79,7 @@ export JAVA_HOME
 export JAVA="$JAVA_HOME/bin/java"
 export BASE_DIR=`cd $(dirname $0)/..; pwd`
 export DEFAULT_SEARCH_LOCATIONS="classpath:/,classpath:/config/,file:./,file:./config/"
-export CUSTOM_SEARCH_LOCATIONS=${DEFAULT_SEARCH_LOCATIONS},file:${BASE_DIR}/conf/
+export CUSTOM_SEARCH_LOCATIONS=file:${BASE_DIR}/conf/,${DEFAULT_SEARCH_LOCATIONS}
 
 #===========================================================================================
 # JVM Configuration

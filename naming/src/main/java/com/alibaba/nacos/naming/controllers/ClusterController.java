@@ -21,14 +21,15 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
-import com.alibaba.nacos.core.auth.ActionTypes;
-import com.alibaba.nacos.core.auth.Secured;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -59,7 +60,7 @@ public class ClusterController {
      * @throws Exception if failed
      */
     @PutMapping
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
     public String update(HttpServletRequest request) throws Exception {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);

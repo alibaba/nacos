@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
@@ -34,7 +35,6 @@ import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -92,11 +92,11 @@ public class HealthCheckCommon {
                             JacksonUtils.toJson(list));
                 }
                 
-                HttpClient.HttpResult httpResult = HttpClient.httpPost(
-                        "http://" + server.getAddress() + ApplicationUtils.getContextPath()
+                RestResult<String> httpResult = HttpClient.httpPost(
+                        "http://" + server.getAddress() + EnvUtil.getContextPath()
                                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/healthCheckResult", null, params);
                 
-                if (httpResult.code != HttpURLConnection.HTTP_OK) {
+                if (!httpResult.ok()) {
                     Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to send result to {}, result: {}", server,
                             JacksonUtils.toJson(list));
                 }

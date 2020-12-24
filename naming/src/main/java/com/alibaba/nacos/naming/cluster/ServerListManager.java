@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.cluster;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
@@ -23,8 +25,7 @@ import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -54,7 +55,7 @@ import java.util.Optional;
  * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 @Component("serverListManager")
-public class ServerListManager implements MemberChangeListener {
+public class ServerListManager extends MemberChangeListener {
     
     private static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
     
@@ -69,7 +70,7 @@ public class ServerListManager implements MemberChangeListener {
     public ServerListManager(final SwitchDomain switchDomain, final ServerMemberManager memberManager) {
         this.switchDomain = switchDomain;
         this.memberManager = memberManager;
-        NotifyCenter.registerSubscribe(this);
+        NotifyCenter.registerSubscriber(this);
         this.servers = new ArrayList<>(memberManager.allMembers());
     }
     
@@ -124,10 +125,11 @@ public class ServerListManager implements MemberChangeListener {
                 Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
                 continue;
             }
-            
+    
+            String[] info = IPUtil.splitIPPortStr(params[1]);
             Member server = Optional.ofNullable(memberManager.find(params[1]))
-                    .orElse(Member.builder().ip(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0]).state(NodeState.UP)
-                            .port(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1])).build());
+                    .orElse(Member.builder().ip(info[0]).state(NodeState.UP)
+                            .port(Integer.parseInt(info[1])).build());
             
             server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
             server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
@@ -152,7 +154,7 @@ public class ServerListManager implements MemberChangeListener {
             
             this.cursor = (this.cursor + 1) % members.size();
             Member target = members.get(cursor);
-            if (Objects.equals(target.getAddress(), ApplicationUtils.getLocalAddress())) {
+            if (Objects.equals(target.getAddress(), EnvUtil.getLocalAddress())) {
                 return;
             }
             
@@ -190,7 +192,7 @@ public class ServerListManager implements MemberChangeListener {
         public void run() {
             try {
                 
-                if (ApplicationUtils.getPort() <= 0) {
+                if (EnvUtil.getPort() <= 0) {
                     return;
                 }
                 
@@ -200,21 +202,21 @@ public class ServerListManager implements MemberChangeListener {
                 }
                 
                 long curTime = System.currentTimeMillis();
-                String status = LOCALHOST_SITE + "#" + ApplicationUtils.getLocalAddress() + "#" + curTime + "#" + weight
+                String status = LOCALHOST_SITE + "#" + EnvUtil.getLocalAddress() + "#" + curTime + "#" + weight
                         + "\r\n";
                 
                 List<Member> allServers = getServers();
                 
-                if (!contains(ApplicationUtils.getLocalAddress())) {
+                if (!contains(EnvUtil.getLocalAddress())) {
                     Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}",
-                            ApplicationUtils.getLocalAddress(), allServers);
+                            EnvUtil.getLocalAddress(), allServers);
                     return;
                 }
                 
-                if (allServers.size() > 0 && !ApplicationUtils.getLocalAddress()
-                        .contains(UtilsAndCommons.LOCAL_HOST_IP)) {
+                if (allServers.size() > 0 && !EnvUtil.getLocalAddress()
+                        .contains(IPUtil.localHostIP())) {
                     for (Member server : allServers) {
-                        if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
+                        if (Objects.equals(server.getAddress(), EnvUtil.getLocalAddress())) {
                             continue;
                         }
                         

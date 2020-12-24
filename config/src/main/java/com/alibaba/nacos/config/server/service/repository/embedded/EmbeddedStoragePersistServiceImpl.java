@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -48,11 +50,10 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -70,6 +71,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -86,14 +89,15 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_LIST_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.TENANT_INFO_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.MAP_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
- * For Apache Derby
+ * For Apache Derby.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.MethodReturnWrapperTypeRule")
+@SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedStoragePersistServiceImpl implements PersistService {
@@ -123,7 +127,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     private final IdGeneratorManager idGeneratorManager;
     
     /**
-     * The constructor sets the dependency injection order
+     * The constructor sets the dependency injection order.
      *
      * @param databaseOperate    {@link EmbeddedStoragePersistServiceImpl}
      * @param idGeneratorManager {@link IdGeneratorManager}
@@ -135,6 +139,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
     
+    /**
+     * init DataSourceService and IdGeneratorManager.
+     */
     @PostConstruct
     public void init() {
         dataSourceService = DynamicDataSource.getInstance().getDataSource();
@@ -156,10 +163,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         this.dataSourceService.reload();
     }
     
-    // ----------------------- config_info 表 insert update delete
+    // ----------------------- config_info table insert update delete
     
     /**
-     * 单元测试用
+     * For unit testing.
      */
     public JdbcTemplate getJdbcTemplate() {
         return this.dataSourceService.getJdbcTemplate();
@@ -169,8 +176,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return this.dataSourceService.getTransactionTemplate();
     }
     
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public String getCurrentDBUrl() {
-        return this.dataSourceService.getCurrentDBUrl();
+        return this.dataSourceService.getCurrentDbUrl();
     }
     
     public DatabaseOperate getDatabaseOperate() {
@@ -182,8 +190,15 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return new EmbeddedPaginationHelperImpl<E>(databaseOperate);
     }
     
+    @Override
     public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
+        addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify, null);
+    }
+    
+    private void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+            final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify,
+            BiConsumer<Boolean, Throwable> consumer) {
         
         try {
             final String tenantTmp =
@@ -200,12 +215,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     configInfo.getTenant());
             insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, time, "I");
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
-            databaseOperate.blockUpdate();
+            databaseOperate.blockUpdate(consumer);
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
     
+    @Override
     public void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
@@ -230,6 +246,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
@@ -256,6 +273,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
         try {
@@ -304,6 +322,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             
             final String sql = "UPDATE config_info_beta SET content=?,md5=?,src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND tenant_id=?";
+            
             final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
             
@@ -316,6 +335,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
@@ -340,6 +360,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
@@ -349,6 +370,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
@@ -358,6 +380,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void updateMd5(String dataId, String group, String tenant, String md5, Timestamp lastTime) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
@@ -376,11 +399,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo) {
         insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
     }
     
+    @Override
     public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo, boolean notify) {
         if (Objects.isNull(findConfigInfo(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
@@ -390,6 +415,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void insertOrUpdateSub(SubInfo subInfo) {
         if (isAlreadyExist(subInfo)) {
             updateConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName(), subInfo.getDate());
@@ -405,6 +431,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return obj != null;
     }
     
+    @Override
     public void removeConfigInfo(final String dataId, final String group, final String tenant, final String srcIp,
             final String srcUser) {
         final Timestamp time = new Timestamp(System.currentTimeMillis());
@@ -429,6 +456,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
         if (CollectionUtils.isEmpty(ids)) {
             return null;
@@ -458,6 +486,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void removeConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
@@ -481,6 +510,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public boolean addAggrConfigInfo(final String dataId, final String group, String tenant, final String datumId,
             String appName, final String content) {
         String appNameTmp = StringUtils.isBlank(appName) ? StringUtils.EMPTY : appName;
@@ -488,15 +518,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String contentTmp = StringUtils.isBlank(content) ? StringUtils.EMPTY : content;
         final Timestamp now = new Timestamp(System.currentTimeMillis());
         
-        final String select =
-                "SELECT content FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?  AND "
-                        + "datum_id = ?";
-        final String insert =
-                "INSERT INTO config_info_aggr(data_id, group_id, tenant_id, datum_id, app_name, content, gmt_modified) "
-                        + "VALUES(?,?,?,?,?,?,?) ";
-        final String update =
-                "UPDATE config_info_aggr SET content = ? , gmt_modified = ? WHERE data_id = ? AND group_id = ? AND "
-                        + "tenant_id = ? AND datum_id = ?";
+        final String select = "SELECT content FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id = ?";
+        final String insert = "INSERT INTO config_info_aggr(data_id, group_id, tenant_id, datum_id, app_name, content, gmt_modified) VALUES(?,?,?,?,?,?,?) ";
+        final String update = "UPDATE config_info_aggr SET content = ? , gmt_modified = ? WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id = ?";
         
         String dbContent = databaseOperate
                 .queryOne(select, new Object[] {dataId, group, tenantTmp, datumId}, String.class);
@@ -520,6 +544,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void removeSingleAggrConfigInfo(final String dataId, final String group, final String tenant,
             final String datumId) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -538,6 +563,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void removeAggrConfigInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
@@ -555,6 +581,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public boolean batchRemoveAggr(final String dataId, final String group, final String tenant,
             final List<String> datumList) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -580,12 +607,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
         String sql = "delete from his_config_info where gmt_modified < ? limit ?";
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         helper.updateLimit(sql, new Object[] {startTime, limitSize});
     }
     
+    @Override
     public int findConfigHistoryCountByTime(final Timestamp startTime) {
         String sql = "SELECT COUNT(*) FROM his_config_info WHERE gmt_modified < ?";
         Integer result = databaseOperate.queryOne(sql, new Object[] {startTime}, Integer.class);
@@ -595,11 +624,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return result;
     }
     
+    @Override
     public long findConfigMaxId() {
         String sql = "SELECT max(id) FROM config_info";
         return Optional.ofNullable(databaseOperate.queryOne(sql, Long.class)).orElse(0L);
     }
     
+    @Override
     public boolean batchPublishAggr(final String dataId, final String group, final String tenant,
             final Map<String, String> datumMap, final String appName) {
         try {
@@ -619,6 +650,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public boolean replaceAggr(final String dataId, final String group, final String tenant,
             final Map<String, String> datumMap, final String appName) {
         Boolean isReplaceOk = false;
@@ -647,44 +679,44 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public List<ConfigInfo> findAllDataIdAndGroup() {
         String sql = "SELECT DISTINCT data_id, group_id FROM config_info";
         return databaseOperate.queryMany(sql, EMPTY_ARRAY, CONFIG_INFO_ROW_MAPPER);
     }
     
+    @Override
     public ConfigInfo4Beta findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final String sql =
-                "SELECT ID,data_id,group_id,tenant_id,app_name,content,beta_ips FROM config_info_beta WHERE data_id=?"
-                        + " AND group_id=? AND tenant_id=?";
+        final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content,beta_ips FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=?";
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO4BETA_ROW_MAPPER);
         
     }
     
+    @Override
     public ConfigInfo4Tag findConfigInfo4Tag(final String dataId, final String group, final String tenant,
             final String tag) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
-        final String sql =
-                "SELECT ID,data_id,group_id,tenant_id,tag_id,app_name,content FROM config_info_tag WHERE data_id=? "
-                        + "AND group_id=? AND tenant_id=? AND tag_id=?";
+        final String sql = "SELECT ID,data_id,group_id,tenant_id,tag_id,app_name,content FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?";
         
         return databaseOperate
                 .queryOne(sql, new Object[] {dataId, group, tenantTmp, tagTmp}, CONFIG_INFO4TAG_ROW_MAPPER);
     }
     
+    @Override
     public ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant,
             final String appName) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND "
-                + "group_id=? AND tenant_id=? AND app_name=?";
+        final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=? AND app_name=?";
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp, appName}, CONFIG_INFO_ROW_MAPPER);
         
     }
     
+    @Override
     public ConfigInfo findConfigInfoAdvanceInfo(final String dataId, final String group, final String tenant,
             final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -696,8 +728,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         paramList.add(tenantTmp);
         
         StringBuilder sql = new StringBuilder(
-                "select ID,data_id,group_id,tenant_id,app_name,content from config_info where data_id=? and group_id=? "
-                        + "and tenant_id=? ");
+                "select ID,data_id,group_id,tenant_id,app_name,content from config_info where data_id=? and group_id=? and tenant_id=? ");
         if (StringUtils.isNotBlank(configTags)) {
             sql = new StringBuilder(
                     "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
@@ -727,20 +758,31 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return databaseOperate.queryOne(sql.toString(), paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
     }
     
+    @Override
     public ConfigInfoBase findConfigInfoBase(final String dataId, final String group) {
-        final String sql = "SELECT ID,data_id,group_id,content FROM config_info WHERE data_id=? AND group_id=? AND "
-                + "tenant_id=?";
+        final String sql = "SELECT ID,data_id,group_id,content FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?";
         
         return databaseOperate
                 .queryOne(sql, new Object[] {dataId, group, StringUtils.EMPTY}, CONFIG_INFO_BASE_ROW_MAPPER);
     }
     
+    @Override
     public ConfigInfo findConfigInfo(long id) {
         final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE ID=?";
-        
         return databaseOperate.queryOne(sql, new Object[] {id}, CONFIG_INFO_ROW_MAPPER);
     }
     
+    @Override
+    public ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant) {
+        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info "
+                + " WHERE data_id=? AND group_id=? AND tenant_id=?";
+        final Object[] args = new Object[] {dataId, group, tenantTmp};
+        return databaseOperate.queryOne(sql, args, CONFIG_INFO_ROW_MAPPER);
+        
+    }
+    
+    @Override
     public Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
             final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -750,6 +792,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                         + "tenant_id=?", new Object[] {dataId, tenantTmp}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
     }
     
+    @Override
     public Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
             final String tenant, final String appName) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -760,6 +803,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 CONFIG_INFO_ROW_MAPPER);
     }
     
+    @Override
     public Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
             final String tenant, final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -773,8 +817,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         paramList.add(tenantTmp);
         if (StringUtils.isNotBlank(configTags)) {
             sqlCount = new StringBuilder(
-                    "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id where a.data_id=? "
-                            + "and a.tenant_id=? ");
+                    "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id where a.data_id=? and a.tenant_id=? ");
             
             sql = new StringBuilder(
                     "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
@@ -813,6 +856,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 CONFIG_INFO_ROW_MAPPER);
     }
     
+    @Override
     public Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -874,6 +918,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                         CONFIG_INFO_ROW_MAPPER);
     }
     
+    @Override
     public Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo, final int pageSize, final String dataId) {
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
         return helper.fetchPage("select count(*) from config_info where data_id=? and tenant_id=?",
@@ -882,6 +927,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
             final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -892,6 +938,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo, final int pageSize, final String group,
             final String tenant, final String appName) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -903,6 +950,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo, final int pageSize, final String group,
             final String tenant, final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -918,8 +966,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         paramList.add(tenantTmp);
         if (StringUtils.isNotBlank(configTags)) {
             sqlCount = new StringBuilder(
-                    "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id where a.group_id=?"
-                            + " and a.tenant_id=? ");
+                    "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id where a.group_id=?  and a.tenant_id=? ");
             sql = new StringBuilder(
                     "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
                             + "config_tags_relation b on a.id=b.id where a.group_id=? and a.tenant_id=? ");
@@ -957,6 +1004,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfo> findConfigInfoByApp(final int pageNo, final int pageSize, final String tenant,
             final String appName) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -968,6 +1016,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo, final int pageSize, final String tenant,
             final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -980,8 +1029,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         paramList.add(tenantTmp);
         if (StringUtils.isNotBlank(configTags)) {
             sqlCount = new StringBuilder(
-                    "select count(*) from config_info a left join config_tags_relation b on a.id=b.id where a.tenant_id=?"
-                            + " ");
+                    "select count(*) from config_info a left join config_tags_relation b on a.id=b.id where a.tenant_id=? ");
             
             sql = new StringBuilder(
                     "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
@@ -1020,6 +1068,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfoBase> findConfigInfoBaseByGroup(final int pageNo, final int pageSize, final String group) {
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
         return helper.fetchPage("select count(*) from config_info where group_id=? and tenant_id=?",
@@ -1027,6 +1076,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 new Object[] {group, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
     }
     
+    @Override
     public int configInfoCount() {
         String sql = " SELECT COUNT(ID) FROM config_info ";
         Integer result = databaseOperate.queryOne(sql, Integer.class);
@@ -1036,15 +1086,17 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return result;
     }
     
+    @Override
     public int configInfoCount(String tenant) {
-        String sql = " SELECT COUNT(ID) FROM config_info where tenant_id like '" + tenant + "'";
-        Integer result = databaseOperate.queryOne(sql, Integer.class);
+        String sql = " SELECT COUNT(ID) FROM config_info where tenant_id like ?";
+        Integer result = databaseOperate.queryOne(sql, new Object[] {tenant}, Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
         return result;
     }
     
+    @Override
     public int configInfoBetaCount() {
         String sql = " SELECT COUNT(ID) FROM config_info_beta ";
         Integer result = databaseOperate.queryOne(sql, Integer.class);
@@ -1054,6 +1106,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return result;
     }
     
+    @Override
     public int configInfoTagCount() {
         String sql = " SELECT COUNT(ID) FROM config_info_tag ";
         Integer result = databaseOperate.queryOne(sql, Integer.class);
@@ -1063,18 +1116,35 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return result;
     }
     
+    @Override
     public List<String> getTenantIdList(int page, int pageSize) {
-        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?";
+        PaginationHelper<Map<String, Object>> helper = createPaginationHelper();
+        
+        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?,?";
         int from = (page - 1) * pageSize;
-        return databaseOperate.queryMany(sql, new Object[] {from, pageSize}, String.class);
+        
+        Page<Map<String, Object>> pageList = helper
+                .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
+        return pageList.getPageItems().stream()
+                .map(map -> String.valueOf(map.get("TENANT_ID")))
+                .collect(Collectors.toList());
     }
     
+    @Override
     public List<String> getGroupIdList(int page, int pageSize) {
-        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?, ?";
+        PaginationHelper<Map<String, Object>> helper = createPaginationHelper();
+        
+        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?,?";
         int from = (page - 1) * pageSize;
-        return databaseOperate.queryMany(sql, new Object[] {from, pageSize}, String.class);
+        
+        Page<Map<String, Object>> pageList = helper
+                .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
+        return pageList.getPageItems().stream()
+                .map(map -> String.valueOf(map.get("GROUP_ID")))
+                .collect(Collectors.toList());
     }
     
+    @Override
     public int aggrConfigInfoCount(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sql = " SELECT COUNT(ID) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
@@ -1085,22 +1155,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return result;
     }
     
-    public int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds) {
-        return aggrConfigInfoCount(dataId, group, tenant, datumIds, true);
-    }
-    
-    public int aggrConfigInfoCountNotIn(String dataId, String group, String tenant, List<String> datumIds) {
-        return aggrConfigInfoCount(dataId, group, tenant, datumIds, false);
-    }
-    
+    @Override
     public int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds, boolean isIn) {
         if (datumIds == null || datumIds.isEmpty()) {
             return 0;
         }
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         StringBuilder sql = new StringBuilder(
-                " SELECT COUNT(*) FROM config_info_aggr WHERE data_id = ? and group_id = ? and tenant_id = ? and "
-                        + "datum_id");
+                " SELECT COUNT(*) FROM config_info_aggr WHERE data_id = ? and group_id = ? and tenant_id = ? and datum_id");
         if (isIn) {
             sql.append(" in (");
         } else {
@@ -1124,13 +1186,23 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return result;
     }
     
+    @Override
+    public int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds) {
+        return aggrConfigInfoCount(dataId, group, tenant, datumIds, true);
+    }
+    
+    @Override
+    public int aggrConfigInfoCountNotIn(String dataId, String group, String tenant, List<String> datumIds) {
+        return aggrConfigInfoCount(dataId, group, tenant, datumIds, false);
+    }
+    
+    @Override
     public Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sqlCountRows = "SELECT COUNT(*) FROM config_info";
         String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
-                + " FROM (                               " + "   SELECT id FROM config_info         "
-                + "   WHERE tenant_id like ?                  " + "   ORDER BY id LIMIT ?,?             "
-                + " ) g, config_info t                   " + " WHERE g.id = t.id                    ";
+                + " FROM ( SELECT id FROM config_info  WHERE tenant_id like ? ORDER BY id LIMIT ?,? )"
+                + " g, config_info t  WHERE g.id = t.id ";
         
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         return helper.fetchPageLimit(sqlCountRows, sqlFetchRows,
@@ -1139,12 +1211,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String select = " SELECT data_id,group_id,app_name " + " FROM (                               "
-                + "   SELECT id FROM config_info         " + "   WHERE tenant_id LIKE ?                  "
-                + "   ORDER BY id LIMIT ?, ?             " + " ) g, config_info t                   "
-                + " WHERE g.id = t.id                    ";
+        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        final String select = " SELECT data_id,group_id,app_name FROM "
+                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?, ? ) "
+                + "g, config_info t  WHERE g.id = t.id ";
         
         final int totalCount = configInfoCount(tenant);
         int pageCount = totalCount / pageSize;
@@ -1172,11 +1244,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return page;
     }
     
+    @Override
     public Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo, final int pageSize) {
         String sqlCountRows = "SELECT COUNT(*) FROM config_info";
-        String sqlFetchRows = " SELECT t.id,data_id,group_id,content,md5 " + " FROM (                               "
-                + "   SELECT id FROM config_info         " + "   ORDER BY id LIMIT ?,?             "
-                + " ) g, config_info t                   " + " WHERE g.id = t.id                    ";
+        String sqlFetchRows = "SELECT t.id,data_id,group_id,content,md5 "
+                + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,? )  "
+                + " g, config_info t WHERE g.id = t.id ";
         
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
         return helper
@@ -1185,12 +1258,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(final int pageNo, final int pageSize) {
         String sqlCountRows = "select count(*) from config_info";
         String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified "
-                + " FROM (                               " + "   SELECT id FROM config_info         "
-                + "   ORDER BY id LIMIT ?,?             " + " ) g, config_info t                   "
-                + " WHERE g.id = t.id                    ";
+                + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,? )"
+                + " g, config_info t  WHERE g.id = t.id ";
         
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
         
@@ -1199,6 +1272,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
         String select =
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type from config_info where id > ? "
@@ -1209,12 +1283,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize) {
         String sqlCountRows = "SELECT COUNT(*) FROM config_info_beta";
         String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips "
-                + " FROM (                               " + "   SELECT id FROM config_info_beta         "
-                + "   ORDER BY id LIMIT ?,?             " + " ) g, config_info_beta t                   "
-                + " WHERE g.id = t.id                    ";
+                + " FROM (  SELECT id FROM config_info_beta ORDER BY id LIMIT ?,?  )"
+                + " g, config_info_beta t WHERE g.id = t.id  ";
         PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
         return helper
                 .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo,
@@ -1222,12 +1296,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize) {
         String sqlCountRows = "SELECT COUNT(*) FROM config_info_tag";
         String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
-                + " FROM (                               " + "   SELECT id FROM config_info_tag         "
-                + "   ORDER BY id LIMIT ?,?             " + " ) g, config_info_tag t                   "
-                + " WHERE g.id = t.id                    ";
+                + " FROM ( SELECT id FROM config_info_tag  ORDER BY id LIMIT ?,? ) "
+                + " g, config_info_tag t  WHERE g.id = t.id ";
         PaginationHelper<ConfigInfoTagWrapper> helper = createPaginationHelper();
         return helper
                 .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo,
@@ -1235,6 +1309,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds, final String group, final String tenant,
             int subQueryLimit) {
         // assert dataids group not null
@@ -1251,9 +1326,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         List<ConfigInfo> result = new ArrayList<ConfigInfo>(dataIds.size());
         
-        String sqlStart =
-                "select data_id, group_id, tenant_id, app_name, content from config_info where group_id = ? and "
-                        + "tenant_id = ? and data_id in (";
+        String sqlStart = "select data_id, group_id, tenant_id, app_name, content from config_info where group_id = ? and tenant_id = ? and data_id in (";
         String sqlEnd = ")";
         StringBuilder subQuerySql = new StringBuilder();
         
@@ -1285,6 +1358,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return result;
     }
     
+    @Override
     public Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final String appName, final String content) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -1296,8 +1370,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
         }
         
-        String sqlCountRows = "select count(*) from config_info where ";
-        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
+        final String sqlCountRows = "select count(*) from config_info where ";
+        final String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
         String where = " 1=1 ";
         List<String> params = new ArrayList<String>();
         
@@ -1327,76 +1401,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
-    public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
-            final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
-        final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
-        final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-        String sqlCountRows = "select count(*) from config_info";
-        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info";
-        StringBuilder where = new StringBuilder(" where ");
-        List<String> params = new ArrayList<String>();
-        params.add(generateLikeArgument(tenantTmp));
-        if (StringUtils.isNotBlank(configTags)) {
-            sqlCountRows = "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id ";
-            sqlFetchRows =
-                    "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
-                            + "config_tags_relation b on a.id=b.id ";
-            
-            where.append(" a.tenant_id like ? ");
-            if (!StringUtils.isBlank(dataId)) {
-                where.append(" and a.data_id like ? ");
-                params.add(generateLikeArgument(dataId));
-            }
-            if (!StringUtils.isBlank(group)) {
-                where.append(" and a.group_id like ? ");
-                params.add(generateLikeArgument(group));
-            }
-            if (!StringUtils.isBlank(appName)) {
-                where.append(" and a.app_name = ? ");
-                params.add(appName);
-            }
-            if (!StringUtils.isBlank(content)) {
-                where.append(" and a.content like ? ");
-                params.add(generateLikeArgument(content));
-            }
-            
-            where.append(" and b.tag_name in (");
-            String[] tagArr = configTags.split(",");
-            for (int i = 0; i < tagArr.length; i++) {
-                if (i != 0) {
-                    where.append(", ");
-                }
-                where.append("?");
-                params.add(tagArr[i]);
-            }
-            where.append(") ");
-        } else {
-            where.append(" tenant_id like ? ");
-            if (!StringUtils.isBlank(dataId)) {
-                where.append(" and data_id like ? ");
-                params.add(generateLikeArgument(dataId));
-            }
-            if (!StringUtils.isBlank(group)) {
-                where.append(" and group_id like ? ");
-                params.add(generateLikeArgument(group));
-            }
-            if (!StringUtils.isBlank(appName)) {
-                where.append(" and app_name = ? ");
-                params.add(appName);
-            }
-            if (!StringUtils.isBlank(content)) {
-                where.append(" and content like ? ");
-                params.add(generateLikeArgument(content));
-            }
-        }
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
-        
-    }
-    
+    @Override
     public Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final ConfigKey[] configKeys,
             final boolean blacklist) {
         String sqlCountRows = "select count(*) from config_info where ";
@@ -1491,14 +1496,86 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
+    public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
+            final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+        final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
+        final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+        String sqlCountRows = "select count(*) from config_info";
+        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info";
+        StringBuilder where = new StringBuilder(" where ");
+        List<String> params = new ArrayList<String>();
+        params.add(generateLikeArgument(tenantTmp));
+        if (StringUtils.isNotBlank(configTags)) {
+            sqlCountRows = "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id ";
+            sqlFetchRows =
+                    "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
+                            + "config_tags_relation b on a.id=b.id ";
+            
+            where.append(" a.tenant_id like ? ");
+            if (!StringUtils.isBlank(dataId)) {
+                where.append(" and a.data_id like ? ");
+                params.add(generateLikeArgument(dataId));
+            }
+            if (!StringUtils.isBlank(group)) {
+                where.append(" and a.group_id like ? ");
+                params.add(generateLikeArgument(group));
+            }
+            if (!StringUtils.isBlank(appName)) {
+                where.append(" and a.app_name = ? ");
+                params.add(appName);
+            }
+            if (!StringUtils.isBlank(content)) {
+                where.append(" and a.content like ? ");
+                params.add(generateLikeArgument(content));
+            }
+            
+            where.append(" and b.tag_name in (");
+            String[] tagArr = configTags.split(",");
+            for (int i = 0; i < tagArr.length; i++) {
+                if (i != 0) {
+                    where.append(", ");
+                }
+                where.append("?");
+                params.add(tagArr[i]);
+            }
+            where.append(") ");
+        } else {
+            where.append(" tenant_id like ? ");
+            if (!StringUtils.isBlank(dataId)) {
+                where.append(" and data_id like ? ");
+                params.add(generateLikeArgument(dataId));
+            }
+            if (!StringUtils.isBlank(group)) {
+                where.append(" and group_id like ? ");
+                params.add(generateLikeArgument(group));
+            }
+            if (!StringUtils.isBlank(appName)) {
+                where.append(" and app_name = ? ");
+                params.add(appName);
+            }
+            if (!StringUtils.isBlank(content)) {
+                where.append(" and content like ? ");
+                params.add(generateLikeArgument(content));
+            }
+        }
+        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                CONFIG_INFO_ROW_MAPPER);
+        
+    }
+    
+    @Override
     public Page<ConfigInfoBase> findConfigInfoBaseLike(final int pageNo, final int pageSize, final String dataId,
             final String group, final String content) throws IOException {
         if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group)) {
             throw new IOException("invalid param");
         }
         
-        String sqlCountRows = "select count(*) from config_info where ";
-        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,content from config_info where ";
+        final String sqlCountRows = "select count(*) from config_info where ";
+        final String sqlFetchRows = "select ID,data_id,group_id,tenant_id,content from config_info where ";
         String where = " 1=1 and tenant_id='' ";
         List<String> params = new ArrayList<String>();
         
@@ -1520,6 +1597,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public ConfigInfoAggr findSingleConfigInfoAggr(String dataId, String group, String tenant, String datumId) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sql =
@@ -1531,6 +1609,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sql =
@@ -1541,6 +1620,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
             final int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -1555,6 +1635,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
             boolean blacklist) {
         
@@ -1649,6 +1730,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public List<ConfigInfoChanged> findAllAggrGroup() {
         String sql = "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr";
         
@@ -1656,6 +1738,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public List<String> findDatumIdByContent(String dataId, String groupId, String content) {
         String sql = "SELECT datum_id FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND content = ? ";
         
@@ -1663,6 +1746,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, final Timestamp endTime) {
         List<Map<String, Object>> list = databaseOperate.queryMany(
                 "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE "
@@ -1671,12 +1755,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public Page<ConfigInfoWrapper> findChangeConfig(final String dataId, final String group, final String tenant,
             final String appName, final Timestamp startTime, final Timestamp endTime, final int pageNo,
             final int pageSize, final long lastMaxId) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String sqlCountRows = "select count(*) from config_info where ";
-        String sqlFetchRows = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified from config_info where ";
+        final String sqlCountRows = "select count(*) from config_info where ";
+        final String sqlFetchRows = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified from config_info where ";
         String where = " 1=1 ";
         List<Object> params = new ArrayList<Object>();
         
@@ -1713,6 +1798,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public List<ConfigInfo> findDeletedConfig(final Timestamp startTime, final Timestamp endTime) {
         List<Map<String, Object>> list = databaseOperate.queryMany(
                 "SELECT DISTINCT data_id, group_id, tenant_id FROM his_config_info WHERE op_type = 'D' AND "
@@ -1721,6 +1807,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser,
             final ConfigInfo configInfo, final Timestamp time, Map<String, Object> configAdvanceInfo) {
         final String appNameTmp =
@@ -1737,11 +1824,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 "INSERT INTO config_info(id, data_id, group_id, tenant_id, app_name, content, md5, src_ip, src_user, gmt_create,"
                         + "gmt_modified, c_desc, c_use, effect, type, c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         final Object[] args = new Object[] {id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
-                configInfo.getContent(), md5Tmp, srcIp, srcUser, time, time, desc, use, effect, type, schema,};
+                configInfo.getContent(), md5Tmp, srcIp, srcUser, time, time, desc, use, effect, type, schema};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
         return id;
     }
     
+    @Override
     public void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant) {
         final String sql = "INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) "
                 + "VALUES(?,?,?,?,?,?)";
@@ -1749,6 +1837,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
     
+    @Override
     public void addConfigTagsRelation(long configId, String configTags, String dataId, String group, String tenant) {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
@@ -1758,22 +1847,26 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void removeTagByIdAtomic(long id) {
         final String sql = "DELETE FROM config_tags_relation WHERE id=?";
         final Object[] args = new Object[] {id};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
     
+    @Override
     public List<String> getConfigTagsByTenant(String tenant) {
         String sql = "SELECT tag_name FROM config_tags_relation WHERE tenant_id = ? ";
         return databaseOperate.queryMany(sql, new Object[] {tenant}, String.class);
     }
     
+    @Override
     public List<String> selectTagByConfig(String dataId, String group, String tenant) {
         String sql = "SELECT tag_name FROM config_tags_relation WHERE data_id=? AND group_id=? AND tenant_id = ? ";
         return databaseOperate.queryMany(sql, new Object[] {dataId, group, tenant}, String.class);
     }
     
+    @Override
     public void removeConfigInfoAtomic(final String dataId, final String group, final String tenant, final String srcIp,
             final String srcUser) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -1784,6 +1877,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
     
+    @Override
     public void removeConfigInfoByIdsAtomic(final String ids) {
         if (StringUtils.isBlank(ids)) {
             return;
@@ -1803,6 +1897,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         EmbeddedStorageContextUtils.addSqlContext(sql.toString(), paramList.toArray());
     }
     
+    @Override
     public void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
             final String srcIp, final String srcUser) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -1820,6 +1915,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, Map<String, Object> configAdvanceInfo) {
         final String appNameTmp =
@@ -1842,15 +1938,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
     
-    public ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant) {
-        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        
-        final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?";
-        final Object[] args = new Object[] {dataId, group, tenantTmp};
-        return databaseOperate.queryOne(sql, args, CONFIG_INFO_ROW_MAPPER);
-        
-    }
-    
+    @Override
     public List<ConfigInfo> findConfigInfosByIds(final String ids) {
         if (StringUtils.isBlank(ids)) {
             return null;
@@ -1871,6 +1959,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
     }
     
+    @Override
     public ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         List<String> configTagList = this.selectTagByConfig(dataId, group, tenant);
@@ -1893,6 +1982,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return configAdvance;
     }
     
+    @Override
     public ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
@@ -1919,6 +2009,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return configAdvance;
     }
     
+    @Override
     public void insertConfigHistoryAtomic(long configHistoryId, ConfigInfo configInfo, String srcIp, String srcUser,
             final Timestamp time, String ops) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
@@ -1933,17 +2024,19 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
     
+    @Override
     public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
             int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ?";
-        String sqlFetchRows = "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,gmt_create,gmt_modified from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
+        String sqlFetchRows = "select nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
         
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
         return helper.fetchPage(sqlCountRows, sqlFetchRows, new Object[] {dataId, group, tenantTmp}, pageNo, pageSize,
                 HISTORY_LIST_ROW_MAPPER);
     }
     
+    @Override
     public void addConfigSubAtomic(final String dataId, final String group, final String appName,
             final Timestamp date) {
         final String appNameTmp = appName == null ? "" : appName;
@@ -1960,6 +2053,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void updateConfigSubAtomic(final String dataId, final String group, final String appName,
             final Timestamp time) {
         final String appNameTmp = appName == null ? "" : appName;
@@ -1975,12 +2069,19 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public ConfigHistoryInfo detailConfigHistory(Long nid) {
-        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,"
-                + "op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = ?";
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = ?";
         return databaseOperate.queryOne(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
     }
     
+    @Override
+    public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (select max(nid) from his_config_info where id = ?)";
+        return databaseOperate.queryOne(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
+    }
+    
+    @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
             String createResoure, final long time) {
         
@@ -1999,6 +2100,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
         
         final String sql = "UPDATE tenant_info SET tenant_name = ?, tenant_desc = ?, gmt_modified= ? WHERE kp=? AND tenant_id=?";
@@ -2016,18 +2118,21 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public List<TenantInfo> findTenantByKp(String kp) {
         String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=?";
         return databaseOperate.queryMany(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
         
     }
     
+    @Override
     public TenantInfo findTenantByKp(String kp, String tenantId) {
         String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=? AND tenant_id=?";
         return databaseOperate.queryOne(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         
     }
     
+    @Override
     public void removeTenantInfoAtomic(final String kp, final String tenantId) {
         EmbeddedStorageContextUtils.addSqlContext("DELETE FROM tenant_info WHERE kp=? AND tenant_id=?", kp, tenantId);
         try {
@@ -2037,6 +2142,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
         List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
         for (Map<String, Object> map : list) {
@@ -2052,6 +2158,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return configs;
     }
     
+    @Override
     public List<ConfigInfoWrapper> convertChangeConfig(List<Map<String, Object>> list) {
         List<ConfigInfoWrapper> configs = new ArrayList<ConfigInfoWrapper>();
         for (Map<String, Object> map : list) {
@@ -2071,6 +2178,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return configs;
     }
     
+    @Override
     public List<ConfigInfoWrapper> listAllGroupKeyMd5() {
         final int pageSize = 10000;
         int totalCount = configInfoCount();
@@ -2083,6 +2191,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return allConfigInfo;
     }
     
+    @Override
     public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
         String sqlCountRows = " SELECT COUNT(*) FROM config_info ";
         String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
@@ -2094,6 +2203,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return page.getPageItems();
     }
     
+    @Override
     public String generateLikeArgument(String s) {
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
@@ -2104,16 +2214,17 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public ConfigInfoWrapper queryConfigInfo(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content,type,gmt_modified,md5 FROM "
-                + "config_info WHERE data_id=? AND group_id=? AND tenant_id=?";
+        final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content,type,gmt_modified,md5 FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?";
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
     }
     
+    @Override
     public boolean isExistTable(String tableName) {
-        String sql = "SELECT COUNT(*) FROM " + tableName;
+        String sql = String.format("SELECT 1 FROM %s FETCH FIRST ROW ONLY", tableName);
         try {
             databaseOperate.queryOne(sql, Integer.class);
             return true;
@@ -2122,8 +2233,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
     public Boolean completeMd5() {
-        defaultLog.info("[start completeMd5]");
+        DEFAULT_LOG.info("[start completeMd5]");
         int perPageSize = 1000;
         int rowCount = configInfoCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / perPageSize);
@@ -2140,7 +2252,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                         try {
                             updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5, new Timestamp(cf.getLastModified()));
                         } catch (Throwable e) {
-                            LogUtil.defaultLog
+                            LogUtil.DEFAULT_LOG
                                     .error("[completeMd5-error] datId:{} group:{} lastModified:{}", cf.getDataId(),
                                             cf.getGroup(), new Timestamp(cf.getLastModified()));
                         }
@@ -2150,7 +2262,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                                 updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5,
                                         new Timestamp(cf.getLastModified()));
                             } catch (Throwable e) {
-                                LogUtil.defaultLog
+                                LogUtil.DEFAULT_LOG
                                         .error("[completeMd5-error] datId:{} group:{} lastModified:{}", cf.getDataId(),
                                                 cf.getGroup(), new Timestamp(cf.getLastModified()));
                             }
@@ -2159,12 +2271,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 }
                 
                 actualRowCount += page.getPageItems().size();
-                defaultLog.info("[completeMd5] {} / {}", actualRowCount, rowCount);
+                DEFAULT_LOG.info("[completeMd5] {} / {}", actualRowCount, rowCount);
             }
         }
         return true;
     }
     
+    @Override
     public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
             final String appName, final List<Long> ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -2200,6 +2313,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 .queryMany(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
     }
     
+    @Override
     public Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
             Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)
             throws NacosException {
@@ -2208,13 +2322,19 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         List<Map<String, String>> failData = null;
         List<Map<String, String>> skipData = null;
         
+        final BiConsumer<Boolean, Throwable> callFinally = (result, t) -> {
+            if (t != null) {
+                throw new NacosRuntimeException(0, t);
+            }
+        };
+        
         for (int i = 0; i < configInfoList.size(); i++) {
             ConfigAllInfo configInfo = configInfoList.get(i);
             try {
                 ParamUtils
                         .checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (Throwable e) {
-                defaultLog.error("data verification failed", e);
+                DEFAULT_LOG.error("data verification failed", e);
                 throw e;
             }
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
@@ -2238,10 +2358,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
             configAdvanceInfo.put("type", type);
             try {
-                addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify);
+                addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify, callFinally);
                 succCount++;
             } catch (Throwable e) {
-                if (!StringUtils.contains("DuplicateKeyException", e.toString())) {
+                if (!StringUtils.contains(e.toString(), "DuplicateKeyException")) {
                     throw e;
                 }
                 // uniqueness constraint conflict
@@ -2287,6 +2407,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return result;
     }
     
+    @Override
     public int tenantInfoCountByTenantId(String tenantId) {
         Assert.hasText(tenantId, "tenantId can not be null");
         Integer result = databaseOperate

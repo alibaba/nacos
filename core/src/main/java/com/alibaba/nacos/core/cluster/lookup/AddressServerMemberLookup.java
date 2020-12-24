@@ -17,20 +17,19 @@
 package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.NSyncHttpClient;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
-import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpStatus;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -63,14 +62,14 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     
     private int maxFailCount = 12;
     
-    private NSyncHttpClient syncHttpClient = HttpClientManager.getSyncHttpClient();
+    private final NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(Loggers.CORE);
     
     private volatile boolean shutdown = false;
     
     @Override
     public void start() throws NacosException {
         if (start.compareAndSet(false, true)) {
-            this.maxFailCount = Integer.parseInt(ApplicationUtils.getProperty("maxHealthCheckFailCount", "12"));
+            this.maxFailCount = Integer.parseInt(EnvUtil.getProperty("maxHealthCheckFailCount", "12"));
             initAddressSys();
             run();
         }
@@ -79,17 +78,22 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {
-            domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
+            domainName = EnvUtil.getProperty("address.server.domain", "jmenv.tbsite.net");
         } else {
             domainName = envDomainName;
         }
         String envAddressPort = System.getenv("address_server_port");
         if (StringUtils.isBlank(envAddressPort)) {
-            addressPort = System.getProperty("address.server.port", "8080");
+            addressPort = EnvUtil.getProperty("address.server.port", "8080");
         } else {
             addressPort = envAddressPort;
         }
-        addressUrl = System.getProperty("address.server.url", ApplicationUtils.getContextPath() + "/" + "serverlist");
+        String envAddressUrl = System.getenv("address_server_url");
+        if (StringUtils.isBlank(envAddressUrl)) {
+            addressUrl = EnvUtil.getProperty("address.server.url", EnvUtil.getContextPath() + "/" + "serverlist");
+        } else {
+            addressUrl = envAddressUrl;
+        }
         addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
         envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
         
@@ -103,7 +107,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
         // Repeat three times, successfully jump out
         boolean success = false;
         Throwable ex = null;
-        int maxRetry = ApplicationUtils.getProperty("nacos.core.address-server.retry", Integer.class, 5);
+        int maxRetry = EnvUtil.getProperty("nacos.core.address-server.retry", Integer.class, 5);
         for (int i = 0; i < maxRetry; i++) {
             try {
                 syncFromAddressUrl();
@@ -137,19 +141,18 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     }
     
     private void syncFromAddressUrl() throws Exception {
-        RestResult<String> result = syncHttpClient
+        RestResult<String> result = restTemplate
                 .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
-        if (HttpStatus.OK.value() == result.getCode()) {
+        if (result.ok()) {
             isAddressServerHealth = true;
             Reader reader = new StringReader(result.getData());
             try {
-                afterLookup(MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(reader)));
+                afterLookup(MemberUtil.readServerConf(EnvUtil.analyzeClusterConf(reader)));
             } catch (Throwable e) {
                 Loggers.CLUSTER.error("[serverlist] exception for analyzeClusterConf, error : {}",
                         ExceptionUtil.getAllExceptionMsg(e));
             }
             addressServerFailCount = 0;
-            isAddressServerHealth = false;
         } else {
             addressServerFailCount++;
             if (addressServerFailCount >= maxFailCount) {

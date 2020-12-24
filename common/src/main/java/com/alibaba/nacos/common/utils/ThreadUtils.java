@@ -94,9 +94,19 @@ public final class ThreadUtils {
      * @return thread count
      */
     public static int getSuitableThreadCount() {
+        return getSuitableThreadCount(THREAD_MULTIPLER);
+    }
+    
+    /**
+     * Through the number of cores, calculate the appropriate number of threads.
+     *
+     * @param threadMultiple multiple time of cores
+     * @return thread count
+     */
+    public static int getSuitableThreadCount(int threadMultiple) {
         final int coreCount = Runtime.getRuntime().availableProcessors();
         int workerCount = 1;
-        while (workerCount < coreCount * THREAD_MULTIPLER) {
+        while (workerCount < coreCount * threadMultiple) {
             workerCount <<= 1;
         }
         return workerCount;
@@ -118,7 +128,7 @@ public final class ThreadUtils {
         while (retry > 0) {
             retry--;
             try {
-                if (executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                if (executor.awaitTermination(1, TimeUnit.SECONDS)) {
                     return;
                 }
             } catch (InterruptedException e) {

@@ -13,23 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.utils;
 
 import java.util.List;
 
 /**
+ * Poller.
+ *
  * @author nkorange
  */
 public interface Poller<T> {
+    
     /**
-     * Get next element selected by poller
+     * Get next element selected by poller.
      *
      * @return next element
      */
     T next();
-
+    
     /**
-     * Update items stored in poller
+     * Update items stored in poller.
      *
      * @param items new item list
      * @return new poller instance

@@ -13,23 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service.notify;
 
-import com.alibaba.nacos.config.server.manager.AbstractTask;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
 
 /**
- * Notify task
+ * Notify task.
  *
  * @author Nacos
  */
-public class NotifyTask extends AbstractTask {
-
+public class NotifyTask extends AbstractDelayTask {
+    
     private String dataId;
+    
     private String group;
+    
     private String tenant;
+    
     private long lastModified;
+    
     private int failCount;
-
+    
     public NotifyTask(String dataId, String group, String tenant, long lastModified) {
         this.dataId = dataId;
         this.group = group;
@@ -37,51 +42,51 @@ public class NotifyTask extends AbstractTask {
         this.lastModified = lastModified;
         setTaskInterval(3000L);
     }
-
+    
     public String getDataId() {
         return dataId;
     }
-
+    
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-
+    
     public String getGroup() {
         return group;
     }
-
+    
     public void setGroup(String group) {
         this.group = group;
     }
-
+    
     public int getFailCount() {
         return failCount;
     }
-
+    
     public void setFailCount(int failCount) {
         this.failCount = failCount;
     }
-
+    
     public long getLastModified() {
         return lastModified;
     }
-
+    
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
-
+    
     @Override
-    public void merge(AbstractTask task) {
-        // 进行merge, 但什么都不做, 相同的dataId和group的任务，后来的会代替之前的
-
+    public void merge(AbstractDelayTask task) {
+        // Perform merge, but do nothing, tasks with the same dataId and group, later will replace the previous
+        
     }
-
+    
     public String getTenant() {
         return tenant;
     }
-
+    
     public void setTenant(String tenant) {
         this.tenant = tenant;
     }
-
+    
 }

@@ -32,9 +32,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * The Derby database basic operation.
@@ -59,10 +60,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] can't get connection : {}", ExceptionUtil.getAllExceptionMsg(e));
+            FATAL_LOG.error("[db-error] can't get connection : {}", ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         } catch (DataAccessException e) {
-            fatalLog.error("[db-error] DataAccessException : {}", ExceptionUtil.getAllExceptionMsg(e));
+            FATAL_LOG.error("[db-error] DataAccessException : {}", ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
     }
@@ -83,10 +84,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] {}", e.toString());
+            FATAL_LOG.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -108,10 +109,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] {}", e.toString());
+            FATAL_LOG.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -131,10 +132,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         try {
             return jdbcTemplate.query(sql, args, mapper);
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] {}", e.toString());
+            FATAL_LOG.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -156,10 +157,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] {}", e.toString());
+            FATAL_LOG.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -177,10 +178,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         try {
             return jdbcTemplate.queryForList(sql, args);
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] {}", e.toString());
+            FATAL_LOG.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -196,6 +197,19 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
      */
     default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate,
             List<ModifyRequest> contexts) {
+        return update(transactionTemplate, jdbcTemplate, contexts, null);
+    }
+    
+    /**
+     * execute update operation, to fix #3617.
+     *
+     * @param transactionTemplate {@link TransactionTemplate}
+     * @param jdbcTemplate        {@link JdbcTemplate}
+     * @param contexts            {@link List} ModifyRequest list
+     * @return {@link Boolean}
+     */
+    default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate,
+            List<ModifyRequest> contexts, BiConsumer<Boolean, Throwable> consumer) {
         return transactionTemplate.execute(status -> {
             String[] errSql = new String[] {null};
             Object[][] args = new Object[][] {null};
@@ -203,19 +217,25 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                 contexts.forEach(pair -> {
                     errSql[0] = pair.getSql();
                     args[0] = pair.getArgs();
-                    LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "current sql : {}", errSql[0]);
-                    LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "current args : {}", args[0]);
+                    LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current sql : {}", errSql[0]);
+                    LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
                     jdbcTemplate.update(pair.getSql(), pair.getArgs());
                 });
+                if (consumer != null) {
+                    consumer.accept(Boolean.TRUE, null);
+                }
                 return Boolean.TRUE;
             } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
-                fatalLog.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
-                return false;
+                FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
+                if (consumer != null) {
+                    consumer.accept(Boolean.FALSE, e);
+                }
+                return Boolean.FALSE;
             } catch (CannotGetJdbcConnectionException e) {
-                fatalLog.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
+                FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                 throw e;
             } catch (DataAccessException e) {
-                fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", errSql[0], args[0],
+                FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", errSql[0], args[0],
                         ExceptionUtil.getAllExceptionMsg(e));
                 throw e;
             }

@@ -24,12 +24,13 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.fasterxml.jackson.databind.JsonNode;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -44,7 +45,11 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
@@ -62,6 +67,7 @@ public class InstanceControllerTest extends BaseTest {
     @Before
     public void before() {
         super.before();
+        mockInjectPushServer();
         mockmvc = MockMvcBuilders.standaloneSetup(instanceController).build();
     }
     
@@ -84,7 +90,7 @@ public class InstanceControllerTest extends BaseTest {
         Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance").param("serviceName", TEST_SERVICE_NAME)
+                .post(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance").param("serviceName", TEST_SERVICE_NAME)
                 .param("ip", "1.1.1.1").param("port", "9999");
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         
@@ -155,5 +161,95 @@ public class InstanceControllerTest extends BaseTest {
         
         JsonNode hosts = result.get("hosts");
         Assert.assertEquals(hosts.size(), 0);
+    }
+    
+    @Test
+    public void batchUpdateMetadata() throws Exception {
+        Instance instance = new Instance("1.1.1.1", 8080, TEST_CLUSTER_NAME);
+        instance.setServiceName(TEST_SERVICE_NAME);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key1", "value1");
+        instance.setMetadata(metadata);
+        
+        Instance instance2 = new Instance("2.2.2.2", 8080, TEST_CLUSTER_NAME);
+        instance2.setServiceName(TEST_SERVICE_NAME);
+        
+        List<Instance> instanceList = new LinkedList<>();
+        instanceList.add(instance);
+        instanceList.add(instance2);
+        
+        Mockito.when(serviceManager
+                .batchOperate(ArgumentMatchers.anyString(), ArgumentMatchers.any(InstanceOperationInfo.class),
+                        ArgumentMatchers.any(Function.class))).thenReturn(instanceList);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/metadata/batch").param("namespace", "public")
+                .param("serviceName", TEST_SERVICE_NAME).param("instances",
+                        "[{\"ip\":\"1.1.1.1\",\"port\": \"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"},"
+                                + "{\"ip\":\"2.2.2.2\",\"port\":\"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"}]")
+                .param("metadata", "{\"age\":\"20\",\"name\":\"horizon\"}");
+        
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        JsonNode result = JacksonUtils.toObj(actualValue);
+        
+        JsonNode updated = result.get("updated");
+        
+        Assert.assertEquals(updated.size(), 2);
+        
+        Assert.assertTrue(updated.get(0).asText().contains("1.1.1.1"));
+        Assert.assertTrue(updated.get(0).asText().contains("8080"));
+        Assert.assertTrue(updated.get(0).asText().contains(TEST_CLUSTER_NAME));
+        Assert.assertTrue(updated.get(0).asText().contains("ephemeral"));
+        
+        Assert.assertTrue(updated.get(1).asText().contains("2.2.2.2"));
+        Assert.assertTrue(updated.get(1).asText().contains("8080"));
+        Assert.assertTrue(updated.get(1).asText().contains(TEST_CLUSTER_NAME));
+        Assert.assertTrue(updated.get(1).asText().contains("ephemeral"));
+    }
+    
+    @Test
+    public void batchDeleteMetadata() throws Exception {
+        Instance instance = new Instance("1.1.1.1", 8080, TEST_CLUSTER_NAME);
+        instance.setServiceName(TEST_SERVICE_NAME);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key1", "value1");
+        instance.setMetadata(metadata);
+        
+        Instance instance2 = new Instance("2.2.2.2", 8080, TEST_CLUSTER_NAME);
+        instance2.setServiceName(TEST_SERVICE_NAME);
+        
+        List<Instance> instanceList = new LinkedList<>();
+        instanceList.add(instance);
+        instanceList.add(instance2);
+        
+        Mockito.when(serviceManager
+                .batchOperate(ArgumentMatchers.anyString(), ArgumentMatchers.any(InstanceOperationInfo.class),
+                        ArgumentMatchers.any(Function.class))).thenReturn(instanceList);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .delete(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/metadata/batch").param("namespace", "public")
+                .param("serviceName", TEST_SERVICE_NAME).param("instances",
+                        "[{\"ip\":\"1.1.1.1\",\"port\": \"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"},"
+                                + "{\"ip\":\"2.2.2.2\",\"port\":\"8080\",\"ephemeral\":\"true\",\"clusterName\":\"test-cluster\"}]")
+                .param("metadata", "{\"age\":\"20\",\"name\":\"horizon\"}");
+        
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        JsonNode result = JacksonUtils.toObj(actualValue);
+        
+        JsonNode updated = result.get("updated");
+        
+        Assert.assertEquals(updated.size(), 2);
+        
+        Assert.assertTrue(updated.get(0).asText().contains("1.1.1.1"));
+        Assert.assertTrue(updated.get(0).asText().contains("8080"));
+        Assert.assertTrue(updated.get(0).asText().contains(TEST_CLUSTER_NAME));
+        Assert.assertTrue(updated.get(0).asText().contains("ephemeral"));
+        
+        Assert.assertTrue(updated.get(1).asText().contains("2.2.2.2"));
+        Assert.assertTrue(updated.get(1).asText().contains("8080"));
+        Assert.assertTrue(updated.get(1).asText().contains(TEST_CLUSTER_NAME));
+        Assert.assertTrue(updated.get(1).asText().contains("ephemeral"));
     }
 }

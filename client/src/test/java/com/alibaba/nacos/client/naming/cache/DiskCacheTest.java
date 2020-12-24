@@ -16,40 +16,41 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DiskCacheTest {
-
+    
     private static final String CACHE_DIR = DiskCacheTest.class.getResource("/").getPath() + "cache/";
-
+    
     private ServiceInfo serviceInfo;
-
+    
     private Instance instance;
-
+    
     @Before
     public void setUp() throws Exception {
         System.out.println(CACHE_DIR);
-        serviceInfo = new ServiceInfo("testName", "testClusters");
+        serviceInfo = new ServiceInfo("G@@testName", "testClusters");
         instance = new Instance();
         instance.setClusterName("testClusters");
         instance.setIp("1.1.1.1");
         instance.setPort(1234);
         instance.setServiceName("testName");
+        instance.addMetadata("chinese", "中文");
         serviceInfo.setHosts(Collections.singletonList(instance));
     }
-
+    
     @After
     public void tearDown() {
         File file = new File(CACHE_DIR);
@@ -59,16 +60,16 @@ public class DiskCacheTest {
             }
         }
     }
-
+    
     @Test
     public void testCache() {
         DiskCache.write(serviceInfo, CACHE_DIR);
         Map<String, ServiceInfo> actual = DiskCache.read(CACHE_DIR);
         assertEquals(1, actual.size());
-        assertTrue(actual.containsKey(serviceInfo.getKeyEncoded()));
-        assertServiceInfo(actual.get(serviceInfo.getKeyEncoded()), serviceInfo);
+        assertTrue(actual.containsKey(serviceInfo.getKey()));
+        assertServiceInfo(actual.get(serviceInfo.getKey()), serviceInfo);
     }
-
+    
     private void assertServiceInfo(ServiceInfo actual, ServiceInfo expected) {
         assertEquals(actual.getName(), expected.getName());
         assertEquals(actual.getGroupName(), expected.getGroupName());
@@ -78,18 +79,19 @@ public class DiskCacheTest {
         assertEquals(actual.getKey(), expected.getKey());
         assertHosts(actual.getHosts(), expected.getHosts());
     }
-
+    
     private void assertHosts(List<Instance> actual, List<Instance> expected) {
         assertEquals(actual.size(), expected.size());
         for (int i = 0; i < expected.size(); i++) {
             assertInstance(actual.get(i), expected.get(i));
         }
     }
-
+    
     private void assertInstance(Instance actual, Instance expected) {
-        assertEquals(actual.getServiceName(), actual.getServiceName());
-        assertEquals(actual.getClusterName(), actual.getClusterName());
-        assertEquals(actual.getIp(), actual.getIp());
-        assertEquals(actual.getPort(), actual.getPort());
+        assertEquals(actual.getServiceName(), expected.getServiceName());
+        assertEquals(actual.getClusterName(), expected.getClusterName());
+        assertEquals(actual.getIp(), expected.getIp());
+        assertEquals(actual.getPort(), expected.getPort());
+        assertEquals(actual.getMetadata(), expected.getMetadata());
     }
 }

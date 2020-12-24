@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.test.core;
 
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,7 +28,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.alibaba.nacos.core.utils.Constants.NACOS_SERVER_IP;
+import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
+
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -38,7 +39,7 @@ public class InetUtils_ITCase {
 	static {
 		System.setProperty("nacos.core.inet.auto-refresh", "3");
 		// For load InetUtils.class
-		InetUtils.getSelfIp();
+		InetUtils.getSelfIP();
 	}
 
 	@Test
@@ -49,13 +50,13 @@ public class InetUtils_ITCase {
 
 		AtomicReference<String> reference = new AtomicReference<>(null);
 
-		Subscribe<InetUtils.IPChangeEvent> subscribe = new Subscribe<InetUtils.IPChangeEvent>() {
+		Subscriber<InetUtils.IPChangeEvent> subscribe = new Subscriber<InetUtils.IPChangeEvent>() {
 			@Override
 			public void onEvent(InetUtils.IPChangeEvent event) {
-				if (Objects.nonNull(event.getOldIp())) {
+				if (Objects.nonNull(event.getOldIP())) {
 					try {
 						System.out.println(event);
-						reference.set(event.getNewIp());
+						reference.set(event.getNewIP());
 					}
 					finally {
 						latch.countDown();
@@ -69,11 +70,11 @@ public class InetUtils_ITCase {
 			}
 		};
 
-		NotifyCenter.registerSubscribe(subscribe);
+		NotifyCenter.registerSubscriber(subscribe);
 		latch.await(10_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals(testIp, reference.get());
-		Assert.assertEquals(testIp, InetUtils.getSelfIp());
+		Assert.assertEquals(testIp, InetUtils.getSelfIP());
 	}
 
 }

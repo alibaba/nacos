@@ -17,20 +17,21 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * when embeddedStorage==false
+ * Judge whether to user StandaloneEmbedStorage by condition.
+ * When embeddedStorage==false.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConditionStandaloneEmbedStorage implements Condition {
-
+    
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        return PropertyUtil.isEmbeddedStorage() && ApplicationUtils.getStandaloneMode();
+        return PropertyUtil.isEmbeddedStorage() && EnvUtil.getStandaloneMode();
     }
 }

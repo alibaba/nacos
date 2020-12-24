@@ -13,28 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
 
+import java.util.List;
+
 /**
- * User CRUD service
+ * User CRUD service.
  *
  * @author nkorange
  * @since 1.2.0
  */
 @SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface UserPersistService {
-
+    
     void createUser(String username, String password);
-
+    
     void deleteUser(String username);
-
+    
     void updateUserPassword(String username, String password);
-
+    
     User findUserByUsername(String username);
-
+    
     Page<User> getUsers(int pageNo, int pageSize);
+
+    List<String> findUserLikeUsername(String username);
 
 }

@@ -13,30 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.cmdb.service;
 
+package com.alibaba.nacos.cmdb.service;
 
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
 
 import java.util.List;
 
 /**
+ * CMDB Reader.
+ *
  * @author nkorange
  * @since 0.7.0
  */
 public interface CmdbReader {
-
+    
     /**
-     * Get entity
+     * Get entity.
      *
      * @param entityName name of entity
      * @param entityType type of entity
      * @return entity
      */
     Entity queryEntity(String entityName, String entityType);
-
+    
     /**
-     * Get label of entity
+     * Get label of entity.
      *
      * @param entityName name of entity
      * @param entityType type of entity
@@ -44,9 +46,9 @@ public interface CmdbReader {
      * @return label value
      */
     String queryLabel(String entityName, String entityType, String labelName);
-
+    
     /**
-     * Get entities of selected label
+     * Get entities of selected label.
      *
      * @param labelName  name of label
      * @param labelValue value of label

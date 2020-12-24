@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.common.notify.Event;
 
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Publish this event when the node list changes，All interested in the node list change event can listen to this event.
@@ -32,15 +31,11 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MembersChangeEvent implements Event {
-    
-    private static final AtomicLong SEQUENCE = new AtomicLong(0);
+public class MembersChangeEvent extends Event {
     
     private static final long serialVersionUID = 7308126651076668976L;
     
     private Collection<Member> members;
-    
-    private long no = SEQUENCE.getAndIncrement();
     
     public static MemberChangeEventBuilder builder() {
         return new MemberChangeEventBuilder();
@@ -55,13 +50,8 @@ public class MembersChangeEvent implements Event {
     }
     
     @Override
-    public long sequence() {
-        return no;
-    }
-    
-    @Override
     public String toString() {
-        return "MembersChangeEvent{" + "members=" + members + ", no=" + no + '}';
+        return "MembersChangeEvent{" + "members=" + members + ", no=" + sequence() + '}';
     }
     
     public static final class MemberChangeEventBuilder {

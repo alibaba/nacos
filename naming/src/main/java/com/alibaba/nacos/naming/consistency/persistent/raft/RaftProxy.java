@@ -16,20 +16,22 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.misc.HttpClient;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
-import java.net.HttpURLConnection;
 import java.util.Map;
 
 /**
  * Raft http proxy.
  *
+ * @deprecated will remove in 1.4.x
  * @author nacos
  */
+@Deprecated
 @Component
 public class RaftProxy {
     
@@ -43,14 +45,14 @@ public class RaftProxy {
      */
     public void proxyGet(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
-        if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        if (!IPUtil.containsPort(server)) {
+            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        String url = "http://" + server + ApplicationUtils.getContextPath() + api;
+        String url = "http://" + server + EnvUtil.getContextPath() + api;
         
-        HttpClient.HttpResult result = HttpClient.httpGet(url, null, params);
-        if (result.code != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        RestResult<String> result = HttpClient.httpGet(url, null, params);
+        if (!result.ok()) {
+            throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
     }
     
@@ -65,11 +67,11 @@ public class RaftProxy {
      */
     public void proxy(String server, String api, Map<String, String> params, HttpMethod method) throws Exception {
         // do proxy
-        if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        if (!IPUtil.containsPort(server)) {
+            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        String url = "http://" + server + ApplicationUtils.getContextPath() + api;
-        HttpClient.HttpResult result;
+        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        RestResult<String> result;
         switch (method) {
             case GET:
                 result = HttpClient.httpGet(url, null, params);
@@ -84,8 +86,8 @@ public class RaftProxy {
                 throw new RuntimeException("unsupported method:" + method);
         }
         
-        if (result.code != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        if (!result.ok()) {
+            throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
     }
     
@@ -101,14 +103,14 @@ public class RaftProxy {
     public void proxyPostLarge(String server, String api, String content, Map<String, String> headers)
             throws Exception {
         // do proxy
-        if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        if (!IPUtil.containsPort(server)) {
+            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        String url = "http://" + server + ApplicationUtils.getContextPath() + api;
+        String url = "http://" + server + EnvUtil.getContextPath() + api;
         
-        HttpClient.HttpResult result = HttpClient.httpPostLarge(url, headers, content);
-        if (result.code != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        RestResult<String> result = HttpClient.httpPostLarge(url, headers, content);
+        if (!result.ok()) {
+            throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
     }
 }

@@ -13,52 +13,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.auth;
 
 import java.io.Serializable;
 
 /**
+ * PermissionInfo model.
+ *
  * @author nkorange
  * @since 1.2.0
  */
 public class PermissionInfo implements Serializable {
-
+    
     private static final long serialVersionUID = 388813573388837395L;
+    
     /**
-     * Role name
+     * Role name.
      */
     private String role;
-
+    
     /**
-     * Resource
+     * Resource.
      */
     private String resource;
-
+    
     /**
-     * Action on resource
+     * Action on resource.
      */
     private String action;
-
+    
     public String getRole() {
         return role;
     }
-
+    
     public void setRole(String role) {
         this.role = role;
     }
-
+    
     public String getResource() {
         return resource;
     }
-
+    
     public void setResource(String resource) {
         this.resource = resource;
     }
-
+    
     public String getAction() {
         return action;
     }
-
+    
     public void setAction(String action) {
         this.action = action;
     }

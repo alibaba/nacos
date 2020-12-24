@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.core.notify.SlowEvent;
+import com.alibaba.nacos.common.notify.SlowEvent;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.List;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class RaftEvent implements SlowEvent {
+public class RaftEvent extends SlowEvent {
     
     private static final long serialVersionUID = -4304258594602886451L;
     
@@ -36,6 +36,8 @@ public class RaftEvent implements SlowEvent {
     private String leader = null;
     
     private Long term = null;
+    
+    private String errMsg = "";
     
     private List<String> raftClusterInfo = Collections.emptyList();
     
@@ -75,6 +77,14 @@ public class RaftEvent implements SlowEvent {
         this.raftClusterInfo = raftClusterInfo;
     }
     
+    public String getErrMsg() {
+        return errMsg;
+    }
+    
+    public void setErrMsg(String errMsg) {
+        this.errMsg = errMsg;
+    }
+    
     @Override
     public String toString() {
         return "RaftEvent{" + "groupId='" + groupId + '\'' + ", leader='" + leader + '\'' + ", term=" + term
@@ -90,6 +100,8 @@ public class RaftEvent implements SlowEvent {
         private Long term = null;
         
         private List<String> raftClusterInfo = Collections.emptyList();
+        
+        private String errMsg = "";
         
         private RaftEventBuilder() {
         }
@@ -113,6 +125,11 @@ public class RaftEvent implements SlowEvent {
             this.raftClusterInfo = raftClusterInfo;
             return this;
         }
+    
+        public RaftEventBuilder errMsg(String errMsg) {
+            this.errMsg = errMsg;
+            return this;
+        }
         
         public RaftEvent build() {
             RaftEvent raftEvent = new RaftEvent();
@@ -120,6 +137,7 @@ public class RaftEvent implements SlowEvent {
             raftEvent.setLeader(leader);
             raftEvent.setTerm(term);
             raftEvent.setRaftClusterInfo(raftClusterInfo);
+            raftEvent.setErrMsg(errMsg);
             return raftEvent;
         }
     }

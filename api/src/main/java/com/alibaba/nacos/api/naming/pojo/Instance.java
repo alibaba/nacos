@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +34,9 @@ import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN;
  * @author nkorange
  */
 @JsonInclude(Include.NON_NULL)
-public class Instance {
+public class Instance implements Serializable {
+    
+    private static final long serialVersionUID = -742906310567291979L;
     
     /**
      * unique id of this instance.
@@ -229,6 +232,19 @@ public class Instance {
     public String getInstanceIdGenerator() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.INSTANCE_ID_GENERATOR,
                 Constants.DEFAULT_INSTANCE_ID_GENERATOR);
+    }
+    
+    /**
+     * Returns {@code true} if this metadata contains the specified key.
+     *
+     * @param key metadata key
+     * @return {@code true} if this metadata contains the specified key
+     */
+    public boolean containsMetadata(final String key) {
+        if (getMetadata() == null || getMetadata().isEmpty()) {
+            return false;
+        }
+        return getMetadata().containsKey(key);
     }
     
     private long getMetaDataByKeyWithDefault(final String key, final long defaultValue) {

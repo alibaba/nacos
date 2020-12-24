@@ -17,13 +17,12 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.auth.ActionTypes;
-import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
@@ -36,10 +35,10 @@ import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -175,7 +174,6 @@ public class OperatorController {
      * @param request request
      * @return metrics information
      */
-    @Secured(resource = "naming/metrics", action = ActionTypes.READ)
     @GetMapping("/metrics")
     public ObjectNode metrics(HttpServletRequest request) {
         
@@ -193,9 +191,9 @@ public class OperatorController {
         result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIpCount);
-        result.put("cpu", ApplicationUtils.getCPU());
-        result.put("load", ApplicationUtils.getLoad());
-        result.put("mem", ApplicationUtils.getMem());
+        result.put("cpu", EnvUtil.getCPU());
+        result.put("load", EnvUtil.getLoad());
+        result.put("mem", EnvUtil.getMem());
         
         return result;
     }

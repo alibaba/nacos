@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;

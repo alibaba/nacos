@@ -22,12 +22,14 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
+ * Judge whether to user EmbeddedStorage by condition.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConditionOnEmbeddedStorage implements Condition {
-
-	@Override
-	public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-		return PropertyUtil.isEmbeddedStorage();
-	}
+    
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        return PropertyUtil.isEmbeddedStorage();
+    }
 }

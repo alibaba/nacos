@@ -19,11 +19,11 @@ package com.alibaba.nacos.core.cluster.lookup;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.file.FileChangeEvent;
-import com.alibaba.nacos.core.file.FileWatcher;
-import com.alibaba.nacos.core.file.WatchFileCenter;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.file.FileChangeEvent;
+import com.alibaba.nacos.sys.file.FileWatcher;
+import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 
@@ -58,7 +58,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
             // Use the inotify mechanism to monitor file changes and automatically
             // trigger the reading of cluster.conf
             try {
-                WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), watcher);
+                WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), watcher);
             } catch (Throwable e) {
                 Loggers.CLUSTER.error("An exception occurred in the launch file monitor : {}", e.getMessage());
             }
@@ -67,14 +67,14 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
     
     @Override
     public void destroy() throws NacosException {
-        WatchFileCenter.deregisterWatcher(ApplicationUtils.getConfFilePath(), watcher);
+        WatchFileCenter.deregisterWatcher(EnvUtil.getConfPath(), watcher);
     }
     
     private void readClusterConfFromDisk() {
         Collection<Member> tmpMembers = new ArrayList<>();
         try {
-            List<String> tmp = ApplicationUtils.readClusterConf();
-            tmpMembers = MemberUtils.readServerConf(tmp);
+            List<String> tmp = EnvUtil.readClusterConf();
+            tmpMembers = MemberUtil.readServerConf(tmp);
         } catch (Throwable e) {
             Loggers.CLUSTER
                     .error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e.getMessage());

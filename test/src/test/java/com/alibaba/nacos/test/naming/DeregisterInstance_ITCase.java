@@ -16,20 +16,22 @@
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT;
@@ -49,15 +51,21 @@ public class DeregisterInstance_ITCase {
     private NamingService naming;
     @LocalServerPort
     private int port;
-
+    
+    @Value("${server.servlet.context-path}")
+    private String contextPath;
+    
     @Before
     public void init() throws Exception {
-
-        NamingBase.prepareServer(port);
+    
+        NamingBase.prepareServer(port, contextPath);
 
         if (naming == null) {
+            Properties properties = new Properties();
+            properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
+            properties.put(PropertyKeyConst.CONTEXT_PATH, contextPath);
             //TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            naming = NamingFactory.createNamingService(properties);
         }
 
         while (true) {

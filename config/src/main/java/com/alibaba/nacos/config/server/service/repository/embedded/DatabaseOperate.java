@@ -108,14 +108,6 @@ public interface DatabaseOperate {
     Boolean update(List<ModifyRequest> modifyRequests, BiConsumer<Boolean, Throwable> consumer);
     
     /**
-     * data importing, This method is suitable for importing data from external data sources into embedded data sources.
-     *
-     * @param file {@link File}
-     * @return {@link CompletableFuture}
-     */
-    CompletableFuture<RestResult<String>> dataImport(File file);
-    
-    /**
      * data modify transaction.
      *
      * @param modifyRequests {@link List}
@@ -126,14 +118,35 @@ public interface DatabaseOperate {
     }
     
     /**
+     * data importing, This method is suitable for importing data from external data sources into embedded data
+     * sources.
+     *
+     * @param file {@link File}
+     * @return {@link CompletableFuture}
+     */
+    CompletableFuture<RestResult<String>> dataImport(File file);
+    
+    /**
      * data modify transaction The SqlContext to be executed in the current thread will be executed and automatically
      * cleared.
      *
      * @return is success
      */
     default Boolean blockUpdate() {
+        return blockUpdate(null);
+    }
+    
+    /**
+     * data modify transaction The SqlContext to be executed in the current thread will be executed and automatically
+     * cleared.
+     * @author klw(213539@qq.com)
+     * 2020/8/24 18:16
+     * @param consumer the consumer
+     * @return java.lang.Boolean
+     */
+    default Boolean blockUpdate(BiConsumer<Boolean, Throwable> consumer) {
         try {
-            return update(EmbeddedStorageContextUtils.getCurrentSqlContext(), null);
+            return update(EmbeddedStorageContextUtils.getCurrentSqlContext(), consumer);
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }

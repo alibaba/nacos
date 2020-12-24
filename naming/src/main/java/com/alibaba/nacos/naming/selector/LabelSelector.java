@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -257,6 +257,8 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                 return -1;
             }
             
+            final String labelConsumer = elements.get(index++).split(CONSUMER_PREFIX)[1];
+            
             index = skipEmpty(elements, index);
             if (index >= elements.size()) {
                 return -1;
@@ -275,9 +277,8 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                 return -1;
             }
             
-            String labelProvider = elements.get(index).split(PROVIDER_PREFIX)[1];
+            final String labelProvider = elements.get(index).split(PROVIDER_PREFIX)[1];
             
-            String labelConsumer = elements.get(index++).split(CONSUMER_PREFIX)[1];
             if (!labelConsumer.equals(labelProvider)) {
                 return -1;
             }
