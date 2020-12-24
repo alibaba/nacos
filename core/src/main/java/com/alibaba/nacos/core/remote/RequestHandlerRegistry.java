@@ -41,10 +41,10 @@ public class RequestHandlerRegistry implements ApplicationContextAware {
     Map<String, RequestHandler> registryHandlers = new HashMap<String, RequestHandler>();
     
     /**
-     * Get Reuquest Handler By request Type.
+     * Get Request Handler By request Type.
      *
      * @param requestType see definitions  of sub constants classes of RequestTypeConstants
-     * @return
+     * @return request handler.
      */
     public RequestHandler getByRequestType(String requestType) {
         if (!registryHandlers.containsKey(requestType)) {
