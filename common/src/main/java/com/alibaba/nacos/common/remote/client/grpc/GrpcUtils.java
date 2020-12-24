@@ -35,7 +35,7 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 
 /**
- * grpc utils, use to parse request and response.
+ * gRPC utils, use to parse request and response.
  *
  * @author liuzunfei
  * @version $Id: GrpcUtils.java, v 0.1 2020年08月09日 1:43 PM liuzunfei Exp $
