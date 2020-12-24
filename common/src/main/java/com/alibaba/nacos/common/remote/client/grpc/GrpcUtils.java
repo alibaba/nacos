@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.grpc.auto.Metadata;
@@ -25,6 +26,7 @@ import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.exception.RemoteException;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -159,13 +161,15 @@ public class GrpcUtils {
      */
     public static PlainRequest parse(Payload payload) {
         PlainRequest plainRequest = new PlainRequest();
-        Class classbyType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
-        if (classbyType != null) {
-            Object obj = toObj(payload.getBody().getValue().toString(Charset.forName(Constants.ENCODE)), classbyType);
+        Class classyType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
+        if (classyType != null) {
+            Object obj = toObj(payload.getBody().getValue().toString(Charset.forName(Constants.ENCODE)), classyType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }
             plainRequest.body = obj;
+        } else {
+            throw new RemoteException(NacosException.SERVER_ERROR, "unknown payload type:" + classyType);
         }
         
         plainRequest.type = payload.getMetadata().getType();

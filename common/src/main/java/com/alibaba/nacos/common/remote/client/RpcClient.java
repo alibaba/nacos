@@ -78,6 +78,10 @@ public abstract class RpcClient implements Closeable {
     
     private String name;
     
+    private static final int RETRY_TIMES = 3;
+    
+    private static final long DEFAULT_TIMEOUT_MILLS = 3000L;
+    
     /**
      * listener called where connect status changed.
      */
@@ -252,7 +256,7 @@ public abstract class RpcClient implements Closeable {
         Connection connectToServer = null;
         rpcClientStatus.set(RpcClientStatus.STARTING);
         
-        int startUpRetryTimes = 3;
+        int startUpRetryTimes = RETRY_TIMES;
         while (startUpRetryTimes > 0 && connectToServer == null) {
             try {
                 startUpRetryTimes--;
@@ -357,7 +361,7 @@ public abstract class RpcClient implements Closeable {
     public void switchServerAsync() {
         switchServerAsync(null, false);
     }
-
+    
     /**
      * switch server .
      */
@@ -518,7 +522,7 @@ public abstract class RpcClient implements Closeable {
      * @return response from server.
      */
     public Response request(Request request) throws NacosException {
-        return request(request, 3000L);
+        return request(request, DEFAULT_TIMEOUT_MILLS);
     }
     
     /**
@@ -532,7 +536,7 @@ public abstract class RpcClient implements Closeable {
         Response response = null;
         Exception exceptionToThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < 3 && (System.currentTimeMillis() - start) < timeoutMills) {
+        while (retryTimes < RETRY_TIMES && (System.currentTimeMillis() - start) < timeoutMills) {
             try {
                 if (this.currentConnection == null || !isRunning()) {
                     throw new NacosException(NacosException.CLIENT_DISCONNECT, "Client not connected.");
@@ -588,7 +592,7 @@ public abstract class RpcClient implements Closeable {
         
         Exception exceptionToThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < 3 && System.currentTimeMillis() > start + callback.getTimeout()) {
+        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() > start + callback.getTimeout()) {
             try {
                 if (this.currentConnection == null || !isRunning()) {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
@@ -629,7 +633,7 @@ public abstract class RpcClient implements Closeable {
         int retryTimes = 0;
         long start = System.currentTimeMillis();
         Exception exceptionToThrow = null;
-        while (retryTimes < 3 && System.currentTimeMillis() > start + 3000L) {
+        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() > start + DEFAULT_TIMEOUT_MILLS) {
             try {
                 if (this.currentConnection == null || !isRunning()) {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
@@ -652,7 +656,7 @@ public abstract class RpcClient implements Closeable {
         if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
             switchServerAsyncOnRequestFail();
         }
-    
+        
         if (exceptionToThrow != null) {
             throw (exceptionToThrow instanceof NacosException) ? (NacosException) exceptionToThrow
                     : new NacosException(SERVER_ERROR, exceptionToThrow);
