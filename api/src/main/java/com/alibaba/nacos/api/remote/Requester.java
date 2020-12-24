@@ -87,7 +87,7 @@ public interface Requester {
     /**
      * check this requester is busy.
      *
-     * @return
+     * @return busy or not.
      */
     public boolean isBusy();
 }

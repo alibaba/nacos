@@ -41,9 +41,9 @@ public class ConfigPublishResponse extends Response {
     }
     
     /**
-     * Buidl fail resposne.
+     * Build fail response.
      *
-     * @return
+     * @return response.
      */
     public static ConfigPublishResponse buildFailResponse(String errorMsg) {
         ConfigPublishResponse configPublishResponse = new ConfigPublishResponse();
