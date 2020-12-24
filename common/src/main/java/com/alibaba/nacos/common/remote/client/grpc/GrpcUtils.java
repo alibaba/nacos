@@ -101,11 +101,13 @@ public class GrpcUtils {
                     .setType(request.getClass().getName());
         }
         builder.setMetadata(metaBuilder.build());
-    
+        
         // request body .
         request.clearHeaders();
         String jsonString = toJson(request);
-        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString,Charset.forName(Constants.ENCODE)))).build();
+        Payload payload = builder
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
+                .build();
         return payload;
         
     }
@@ -118,15 +120,15 @@ public class GrpcUtils {
      * @return
      */
     public static Payload convert(Request request, Metadata meta) {
-    
+        
         Metadata buildMeta = meta.toBuilder().putAllHeaders(request.getHeaders()).build();
         request.clearHeaders();
         String jsonString = toJson(request);
-    
+        
         Payload.Builder builder = Payload.newBuilder();
-        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString,Charset.forName(Constants.ENCODE))))
-                .setMetadata(buildMeta)
-                .build();
+        Payload payload = builder
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
+                .setMetadata(buildMeta).build();
         return payload;
         
     }
@@ -139,12 +141,12 @@ public class GrpcUtils {
      */
     public static Payload convert(Response response) {
         String jsonString = toJson(response);
-    
+        
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         metaBuilder.setClientVersion(VersionUtils.getFullClientVersion()).setType(response.getClass().getName());
-    
-        Payload payload = Payload.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString,
-                Charset.forName(Constants.ENCODE))))
+        
+        Payload payload = Payload.newBuilder()
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .setMetadata(metaBuilder.build()).build();
         return payload;
     }
@@ -165,7 +167,7 @@ public class GrpcUtils {
             }
             plainRequest.body = obj;
         }
-    
+        
         plainRequest.type = payload.getMetadata().getType();
         plainRequest.metadata = convertMeta(payload.getMetadata());
         return plainRequest;
