@@ -116,26 +116,8 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
-        if (!cache.isListenSuccess()) {
+        if (!cache.isSync()) {
             agent.notifyListenConfig();
-        }
-    }
-    
-    /**
-     * Remove listener.
-     *
-     * @param dataId   dataId of data
-     * @param group    group of data
-     * @param listener listener
-     */
-    public void removeListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
-        CacheData cache = getCache(dataId, group);
-        if (null != cache) {
-            cache.removeListener(listener);
-            if (cache.getListeners().isEmpty()) {
-                agent.removeCache(dataId, group);
-            }
         }
     }
     
@@ -152,12 +134,15 @@ public class ClientWorker implements Closeable {
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
-        for (Listener listener : listeners) {
-            cache.addListener(listener);
+        synchronized (cache) {
+            for (Listener listener : listeners) {
+                cache.addListener(listener);
+            }
+            if (!cache.isSync()) {
+                agent.notifyListenConfig();
+            }
         }
-        if (!cache.isListenSuccess()) {
-            agent.notifyListenConfig();
-        }
+        
     }
     
     /**
@@ -174,13 +159,38 @@ public class ClientWorker implements Closeable {
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
-        cache.setContent(content);
-        for (Listener listener : listeners) {
-            cache.addListener(listener);
+        synchronized (cache) {
+            cache.setContent(content);
+            for (Listener listener : listeners) {
+                cache.addListener(listener);
+            }
+            // if current cache is already at listening status,do not notify.
+            if (!cache.isSync()) {
+                agent.notifyListenConfig();
+            }
         }
-        // if current cache is already at listening status,do not notify.
-        if (!cache.isListenSuccess()) {
-            agent.notifyListenConfig();
+        
+    }
+    
+    /**
+     * Remove listener.
+     *
+     * @param dataId   dataId of data
+     * @param group    group of data
+     * @param listener listener
+     */
+    public void removeListener(String dataId, String group, Listener listener) {
+        group = null2defaultGroup(group);
+        CacheData cache = getCache(dataId, group);
+        if (null != cache) {
+            synchronized (cache) {
+                cache.removeListener(listener);
+                if (cache.getListeners().isEmpty()) {
+                    cache.setSync(false);
+                    agent.removeCache(dataId, group);
+                }
+            }
+            
         }
     }
     
@@ -198,6 +208,7 @@ public class ClientWorker implements Closeable {
         if (null != cache) {
             cache.removeListener(listener);
             if (cache.getListeners().isEmpty()) {
+                cache.setSync(false);
                 agent.removeCache(dataId, group);
             }
         }
@@ -464,7 +475,13 @@ public class ClientWorker implements Closeable {
             if (null != ct[1]) {
                 cacheData.setType(ct[1]);
             }
+            if (notify) {
+                LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
+                        agent.getName(), cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.getMd5(),
+                        ContentUtils.truncateContent(ct[0]), ct[1]);
+            }
             cacheData.checkListenerMd5();
+            
         } catch (Exception e) {
             LOGGER.error("refresh content and check md5 fail ,dataid={},group={},tenant={} ", cacheData.dataId,
                     cacheData.group, cacheData.tenant, e);
@@ -536,13 +553,13 @@ public class ClientWorker implements Closeable {
             super(properties, serverListManager);
         }
         
-        private ConnectionType getConectiontype() {
+        private ConnectionType getConnectionType() {
             ConnectionType connectionType = ConnectionType.GRPC;
-            String connetionType = ParamUtils.configRemoteConnectionType();
-            if (StringUtils.isNotBlank(connetionType)) {
-                ConnectionType connectionType1 = ConnectionType.valueOf(connetionType);
-                if (connectionType1 != null) {
-                    connectionType = connectionType1;
+            String connectionTypeString = ParamUtils.configRemoteConnectionType();
+            if (StringUtils.isNotBlank(connectionTypeString)) {
+                ConnectionType connectionTypeInner = ConnectionType.valueOf(connectionTypeString);
+                if (connectionTypeInner != null) {
+                    connectionType = connectionTypeInner;
                 }
             }
             return connectionType;
@@ -565,8 +582,11 @@ public class ClientWorker implements Closeable {
                 public Response requestReply(Request request, RequestMeta requestMeta) {
                     if (request instanceof ConfigChangeNotifyRequest) {
                         ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
+                        LOGGER.info("[{}] [server-push] config changed. dataId={}, group={}", getName(),
+                                configChangeNotifyRequest.getDataId(), configChangeNotifyRequest.getGroup());
                         String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
                                 configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                        
                         CacheData cacheData = cacheMap.get().get(groupKey);
                         if (cacheData != null) {
                             if (configChangeNotifyRequest.isContentPush()
@@ -575,7 +595,7 @@ public class ClientWorker implements Closeable {
                                 cacheData.setType(configChangeNotifyRequest.getType());
                                 cacheData.checkListenerMd5();
                             }
-                            cacheData.setListenSuccess(false);
+                            cacheData.setSync(false);
                             notifyListenConfig();
                         }
                         return new ConfigChangeNotifyResponse();
@@ -601,10 +621,10 @@ public class ClientWorker implements Closeable {
                     
                     for (CacheData cacheData : values) {
                         if (taskId != null && Integer.valueOf(taskId).equals(cacheData.getTaskId())) {
-                            cacheData.setListenSuccess(false);
+                            cacheData.setSync(false);
                             continue;
                         }
-                        cacheData.setListenSuccess(false);
+                        cacheData.setSync(false);
                     }
                 }
                 
@@ -632,21 +652,17 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public void startIntenal() throws NacosException {
+        public void startInternal() throws NacosException {
             executor.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        while (true) {
-                            try {
-                                listenExecutebell.poll(5L, TimeUnit.SECONDS);
-                                executeConfigListen();
-                            } catch (Exception e) {
-                                LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
-                            }
+                    while (true) {
+                        try {
+                            listenExecutebell.poll(5L, TimeUnit.SECONDS);
+                            executeConfigListen();
+                        } catch (Exception e) {
+                            LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
                         }
-                    } catch (Throwable e) {
-                        LOGGER.error("rpc listen task exception", e);
                     }
                 }
             }, 0L, TimeUnit.MILLISECONDS);
@@ -698,8 +714,11 @@ public class ClientWorker implements Closeable {
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
             
             for (CacheData cache : cacheMap.get().values()) {
-                //get listen  config and remove listen  config
-                if (!CollectionUtils.isEmpty(cache.getListeners()) && !cache.isListenSuccess()) {
+                if (cache.isSync()) {
+                    continue;
+                }
+                if (!CollectionUtils.isEmpty(cache.getListeners())) {
+                    //get listen  config
                     if (!cache.isUseLocalConfigInfo()) {
                         List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
                         if (cacheDatas == null) {
@@ -709,7 +728,7 @@ public class ClientWorker implements Closeable {
                         cacheDatas.add(cache);
                         
                     }
-                } else if (CollectionUtils.isEmpty(cache.getListeners()) && cache.isListenSuccess()) {
+                } else if (CollectionUtils.isEmpty(cache.getListeners())) {
                     
                     if (!cache.isUseLocalConfigInfo()) {
                         List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
@@ -732,7 +751,6 @@ public class ClientWorker implements Closeable {
                     configChangeListenRequest.setListen(true);
                     try {
                         RpcClient rpcClient = ensureRpcClient(taskId);
-                        
                         ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
                                 rpcClient, configChangeListenRequest);
                         if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
@@ -746,7 +764,8 @@ public class ClientWorker implements Closeable {
                                             .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
                                                     changeConfig.getTenant());
                                     changeKeys.add(changeKey);
-                                    refreshContentAndCheck(changeKey, true);
+                                    boolean isInitializing = cacheMap.get().get(changeKey).isInitializing();
+                                    refreshContentAndCheck(changeKey, !isInitializing);
                                 }
                             }
                             
@@ -754,8 +773,9 @@ public class ClientWorker implements Closeable {
                             for (CacheData cacheData : listenCaches) {
                                 if (!changeKeys.contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group,
                                         cacheData.getTenant()))) {
-                                    cacheData.setListenSuccess(true);
+                                    cacheData.setSync(true);
                                 }
+                                cacheData.setInitializing(false);
                             }
                             
                         }
@@ -786,12 +806,22 @@ public class ClientWorker implements Closeable {
                         boolean removeSuccess = unListenConfigChange(rpcClient, configChangeListenRequest);
                         if (removeSuccess) {
                             for (CacheData cacheData : removeListenCaches) {
-                                ClientWorker.this.removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
+                                synchronized (cacheData) {
+                                    if (cacheData.getListeners().isEmpty()) {
+                                        ClientWorker.this
+                                                .removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
+                                    }
+                                }
                             }
                         }
                         
                     } catch (Exception e) {
                         LOGGER.error("async remove listen config change error ", e);
+                    }
+                    try {
+                        Thread.sleep(10L);
+                    } catch (InterruptedException interruptedException) {
+                        //ignore
                     }
                 }
             }
@@ -803,7 +833,7 @@ public class ClientWorker implements Closeable {
             newlabels.put("taskId", taskId);
             
             RpcClient rpcClient = RpcClientFactory
-                    .createClient("config-" + taskId + "-" + uuid, getConectiontype(), newlabels);
+                    .createClient("config-" + taskId + "-" + uuid, getConnectionType(), newlabels);
             if (rpcClient.isWaitInitiated()) {
                 initHandlerRpcClient(rpcClient);
                 rpcClient.start();
@@ -811,7 +841,7 @@ public class ClientWorker implements Closeable {
             
             return rpcClient;
         }
-
+        
         /**
          * build config string.
          *
@@ -848,11 +878,12 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public String[] queryConfig(String dataId, String group, String tenant, long readTimeous, boolean notify)
+        public String[] queryConfig(String dataId, String group, String tenant, long readTimeouts, boolean notify)
                 throws NacosException {
             ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
             request.putHeader("notify", String.valueOf(notify));
-            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(getOneRunningClient(), request);
+            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(getOneRunningClient(), request,
+                    readTimeouts);
             
             String[] ct = new String[2];
             if (response.isSuccess()) {
@@ -884,6 +915,11 @@ public class ClientWorker implements Closeable {
         }
         
         private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
+            return requestProxy(rpcClientInner, request, 3000L);
+        }
+        
+        private Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
+                throws NacosException {
             try {
                 request.putAllHeader(super.getSecurityHeaders());
                 request.putAllHeader(super.getSpasHeaders());
@@ -899,7 +935,7 @@ public class ClientWorker implements Closeable {
                 throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
                         "More than client-side current limit threshold");
             }
-            return rpcClientInner.request(request);
+            return rpcClientInner.request(request, timeoutMills);
         }
         
         RpcClient getOneRunningClient() throws NacosException {
@@ -924,8 +960,8 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public boolean removeConfig(String dataid, String group, String tenat, String tag) throws NacosException {
-            ConfigRemoveRequest request = new ConfigRemoveRequest(dataid, group, tenat, tag);
+        public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
+            ConfigRemoveRequest request = new ConfigRemoveRequest(dataId, group, tenant, tag);
             ConfigRemoveResponse response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
             return response.isSuccess();
         }
@@ -948,7 +984,7 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public void startIntenal() {
+        public void startInternal() {
             
             executor.scheduleWithFixedDelay(new Runnable() {
                 @Override
@@ -974,7 +1010,7 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void executeConfigListen() {
-            // Dispatch taskes.
+            // Dispatch tasks.
             int listenerSize = cacheMap.get().size();
             // Round up the longingTaskCount.
             int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());

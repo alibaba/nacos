@@ -244,7 +244,7 @@ public abstract class ConfigTransportClient {
         
         }
         
-        startIntenal();
+        startInternal();
     }
     
     /**
@@ -252,7 +252,7 @@ public abstract class ConfigTransportClient {
      *
      * @throws NacosException exception may throw.
      */
-    public abstract void startIntenal() throws NacosException;
+    public abstract void startInternal() throws NacosException;
     
     /**
      * get client name.

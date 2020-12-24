@@ -95,7 +95,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             RequestMeta meta, boolean notify) throws UnsupportedEncodingException {
         
         ConfigQueryResponse response = new ConfigQueryResponse();
-    
+        
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
         String autoTag = meta.getLabels().get("Vipserver-Tag");
@@ -168,7 +168,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
                                 // new Object[]{clientIp, groupKey});
-    
+                                
                                 response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                                 return response;
                             }
@@ -199,7 +199,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
                             // new Object[]{clientIp, groupKey});
-    
+                            
                             response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                             return response;
                             
@@ -233,7 +233,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                  because the delayed value of active get requests is very large.
                  */
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                        ConfigTraceService.PULL_EVENT_OK, delayed, clientIp, notify);
+                        ConfigTraceService.PULL_EVENT_OK, notify ? delayed : -1, clientIp, notify);
                 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -264,8 +264,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         BufferedReader reader = null;
         StringBuffer sbf = new StringBuffer();
         try {
-            InputStreamReader isr = new InputStreamReader(new FileInputStream(
-                    file), Charset.forName(Constants.ENCODE));
+            InputStreamReader isr = new InputStreamReader(new FileInputStream(file), Charset.forName(Constants.ENCODE));
             
             reader = new BufferedReader(isr);
             String tempStr;
