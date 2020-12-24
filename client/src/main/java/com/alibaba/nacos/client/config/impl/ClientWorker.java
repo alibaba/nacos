@@ -560,7 +560,7 @@ public class ClientWorker implements Closeable {
             /*
              * Register Listen Change Handler
              */
-            rpcClientInner.registerServerPushResponseHandler(new ServerRequestHandler() {
+            rpcClientInner.registerServerRequestHandler(new ServerRequestHandler() {
                 @Override
                 public Response requestReply(Request request, RequestMeta requestMeta) {
                     if (request instanceof ConfigChangeNotifyRequest) {
