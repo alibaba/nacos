@@ -57,7 +57,7 @@ public class ConfigInfoEntity implements Serializable {
     @Column(name = "md5")
     private String md5;
     
-    @Column(name = "gmt_create")
+    @Column(name = "gmt_create", insertable = false, updatable = false)
     private Date gmtCreate;
     
     @Column(name = "gmt_modified")
