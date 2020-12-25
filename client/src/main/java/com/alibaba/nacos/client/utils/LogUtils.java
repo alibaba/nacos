@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.utils;
 
-import com.alibaba.nacos.client.logging.NacosLoggingUtils;
+import com.alibaba.nacos.client.logging.NacosLogging;
 import org.slf4j.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -32,7 +32,7 @@ public class LogUtils {
     public static final Logger NAMING_LOGGER;
     
     static {
-        NacosLoggingUtils.loadConfiguration();
+        NacosLogging.getInstance().loadConfiguration();
         NAMING_LOGGER = getLogger("com.alibaba.nacos.client.naming");
     }
     

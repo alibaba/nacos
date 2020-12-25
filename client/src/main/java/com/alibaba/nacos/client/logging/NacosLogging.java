@@ -26,46 +26,15 @@ import org.slf4j.Logger;
  *
  * @author mai.jh
  */
-public final class NacosLoggingUtils {
+public class NacosLogging {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(NacosLoggingUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosLogging.class);
     
-    /**
-     * Load logging Configuration.
-     */
-    public static void loadConfiguration() {
-        loadConfiguration(null);
-    }
+    private AbstractNacosLogging nacosLogging;
     
-    /**
-     * Load the log configuration file according to the specified {@link AbstractNacosLogging} implementation, If {@code
-     * logging} is null, use the default policy.
-     *
-     * @param logging {@link AbstractNacosLogging}
-     */
-    public static void loadConfiguration(AbstractNacosLogging logging) {
-        try {
-            if (logging != null) {
-                try {
-                    logging.loadConfiguration();
-                } catch (Exception e) {
-                    LOGGER.warn("Customize the {} load Configuration fail, message: {}", logging.getClass().getName(), e.getMessage());
-                    loadDefaultConfiguration();
-                }
-            } else {
-                loadDefaultConfiguration();
-            }
-        } catch (Throwable ex) {
-            LOGGER.warn("Init Nacos Logging fail, message: {}", ex.getMessage());
-        }
-    }
+    private boolean isLogback = false;
     
-    /**
-     * Load default Configuration.
-     */
-    private static void loadDefaultConfiguration() {
-        boolean isLogback = false;
-        AbstractNacosLogging nacosLogging;
+    private NacosLogging() {
         try {
             Class.forName("ch.qos.logback.classic.Logger");
             nacosLogging = new LogbackNacosLogging();
@@ -73,7 +42,21 @@ public final class NacosLoggingUtils {
         } catch (ClassNotFoundException e) {
             nacosLogging = new Log4J2NacosLogging();
         }
+    }
     
+    private static class NacosLoggingInstance {
+        
+        private static final NacosLogging INSTANCE = new NacosLogging();
+    }
+    
+    public static NacosLogging getInstance() {
+        return NacosLoggingInstance.INSTANCE;
+    }
+    
+    /**
+     * Load logging Configuration.
+     */
+    public void loadConfiguration() {
         try {
             nacosLogging.loadConfiguration();
         } catch (Throwable t) {
@@ -84,5 +67,4 @@ public final class NacosLoggingUtils {
             }
         }
     }
-    
 }
