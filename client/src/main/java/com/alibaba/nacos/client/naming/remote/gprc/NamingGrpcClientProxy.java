@@ -86,7 +86,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
         rpcClient.init(serverListFactory);
         rpcClient.start();
-        rpcClient.registerServerRequestHandler(new NamingPushResponseHandler(serviceInfoHolder));
+        rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
         rpcClient.registerConnectionListener(namingGrpcConnectionEventListener);
     }
     
