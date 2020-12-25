@@ -46,7 +46,12 @@ public final class NacosLoggingUtils {
     public static void loadConfiguration(AbstractNacosLogging logging) {
         try {
             if (logging != null) {
-                logging.loadConfiguration();
+                try {
+                    logging.loadConfiguration();
+                } catch (Exception e) {
+                    LOGGER.warn("Customize the {} load Configuration fail, message: {}", logging.getClass().getName(), e.getMessage());
+                    loadDefaultConfiguration();
+                }
             } else {
                 loadDefaultConfiguration();
             }
