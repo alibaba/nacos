@@ -44,10 +44,14 @@ public final class NacosLoggingUtils {
      * @param logging {@link AbstractNacosLogging}
      */
     public static void loadConfiguration(AbstractNacosLogging logging) {
-        if (logging != null) {
-            logging.loadConfiguration();
-        } else {
-            loadDefaultConfiguration();
+        try {
+            if (logging != null) {
+                logging.loadConfiguration();
+            } else {
+                loadDefaultConfiguration();
+            }
+        } catch (Throwable ex) {
+            LOGGER.warn("Init Nacos Logging fail, message: {}", ex.getMessage());
         }
     }
     
@@ -55,29 +59,24 @@ public final class NacosLoggingUtils {
      * Load default Configuration.
      */
     private static void loadDefaultConfiguration() {
+        boolean isLogback = false;
+        AbstractNacosLogging nacosLogging;
         try {
-            boolean isLogback = false;
-            AbstractNacosLogging nacosLogging;
-            
-            try {
-                Class.forName("ch.qos.logback.classic.Logger");
-                nacosLogging = new LogbackNacosLogging();
-                isLogback = true;
-            } catch (ClassNotFoundException e) {
-                nacosLogging = new Log4J2NacosLogging();
+            Class.forName("ch.qos.logback.classic.Logger");
+            nacosLogging = new LogbackNacosLogging();
+            isLogback = true;
+        } catch (ClassNotFoundException e) {
+            nacosLogging = new Log4J2NacosLogging();
+        }
+    
+        try {
+            nacosLogging.loadConfiguration();
+        } catch (Throwable t) {
+            if (isLogback) {
+                LOGGER.warn("Load Logback Configuration of Nacos fail, message: {}", t.getMessage());
+            } else {
+                LOGGER.warn("Load Log4j Configuration of Nacos fail, message: {}", t.getMessage());
             }
-            
-            try {
-                nacosLogging.loadConfiguration();
-            } catch (Throwable t) {
-                if (isLogback) {
-                    LOGGER.warn("Load Logback Configuration of Nacos fail, message: {}", t.getMessage());
-                } else {
-                    LOGGER.warn("Load Log4j Configuration of Nacos fail, message: {}", t.getMessage());
-                }
-            }
-        } catch (Throwable ex) {
-            LOGGER.warn("Init Nacos Logging fail, message: {}", ex.getMessage());
         }
     }
     
