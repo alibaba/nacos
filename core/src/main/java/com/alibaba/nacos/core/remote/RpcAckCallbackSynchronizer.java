@@ -112,35 +112,35 @@ public class RpcAckCallbackSynchronizer {
     /**
      * clear context of connectionId.
      *
-     * @param connetionId connetionId
+     * @param connectionId connectionId
      */
-    public static void clearContext(String connetionId) {
-        CALLBACK_CONTEXT.remove(connetionId);
+    public static void clearContext(String connectionId) {
+        CALLBACK_CONTEXT.remove(connectionId);
     }
     
     /**
      * clear context of connectionId.
      *
-     * @param connetionId connetionId
+     * @param connectionId connectionId
      */
-    public static Map<String, DefaultRequestFuture> initContextIfNecessary(String connetionId) {
-        if (!CALLBACK_CONTEXT.containsKey(connetionId)) {
+    public static Map<String, DefaultRequestFuture> initContextIfNecessary(String connectionId) {
+        if (!CALLBACK_CONTEXT.containsKey(connectionId)) {
             Map<String, DefaultRequestFuture> context = new HashMap<String, DefaultRequestFuture>(128);
             Map<String, DefaultRequestFuture> stringDefaultRequestFutureMap = CALLBACK_CONTEXT
-                    .putIfAbsent(connetionId, context);
+                    .putIfAbsent(connectionId, context);
             return stringDefaultRequestFutureMap == null ? context : stringDefaultRequestFutureMap;
         } else {
-            return CALLBACK_CONTEXT.get(connetionId);
+            return CALLBACK_CONTEXT.get(connectionId);
         }
     }
     
     /**
      * clear context of connectionId.
      *
-     * @param connetionId connetionId
+     * @param connectionId connectionId
      */
-    public static void clearFuture(String connetionId, String requestId) {
-        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connetionId);
+    public static void clearFuture(String connectionId, String requestId) {
+        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
         
         if (stringDefaultPushFutureMap == null || !stringDefaultPushFutureMap.containsKey(requestId)) {
             return;
