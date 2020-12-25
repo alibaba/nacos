@@ -70,7 +70,7 @@ public abstract class RpcClient implements Closeable {
     protected volatile AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
             RpcClientStatus.WAIT_INIT);
     
-    protected ScheduledExecutorService executorService;
+    protected ScheduledExecutorService executor;
     
     protected volatile Connection currentConnection;
     
@@ -222,7 +222,7 @@ public abstract class RpcClient implements Closeable {
             return;
         }
         
-        executorService = new ScheduledThreadPoolExecutor(5, new ThreadFactory() {
+        executor = new ScheduledThreadPoolExecutor(0, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -233,7 +233,7 @@ public abstract class RpcClient implements Closeable {
         });
         
         // connection event consumer.
-        executorService.submit(new Runnable() {
+        executor.submit(new Runnable() {
             @Override
             public void run() {
                 while (true) {
@@ -334,7 +334,7 @@ public abstract class RpcClient implements Closeable {
     
     @Override
     public void shutdown() throws NacosException {
-        executorService.shutdown();
+        executor.shutdown();
         rpcClientStatus.set(RpcClientStatus.SHUTDOWN);
         closeConnection(currentConnection);
     }
@@ -374,7 +374,7 @@ public abstract class RpcClient implements Closeable {
         LoggerUtils.printIfInfoEnabled(LOGGER,
                 String.format("[%s] Submit server switch task : %s,onRequestFail=%s", name, recommendServerInfo,
                         onRequestFail));
-        executorService.submit(new Runnable() {
+        executor.submit(new Runnable() {
             @Override
             public void run() {
                 

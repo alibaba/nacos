@@ -162,7 +162,7 @@ public class ConnectionManager {
     @PostConstruct
     public void start() {
         
-        // Start UnHeathy Conection Expel Task.
+        // Start UnHealthy Connection Expel Task.
         RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -215,7 +215,7 @@ public class ConnectionManager {
                     }
                     
                 } catch (Throwable e) {
-                    Loggers.REMOTE.error("error occurs when heathy check... ", e);
+                    Loggers.REMOTE.error("error occurs when healthy check... ", e);
                 }
             }
         }, 1000L, 3000L, TimeUnit.MILLISECONDS);

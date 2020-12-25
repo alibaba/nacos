@@ -60,7 +60,7 @@ public class RsocketConnection extends Connection {
     
     private static <T> CompletableFuture<T> failAfter(final long timeouts) {
         final CompletableFuture<T> promise = new CompletableFuture<T>();
-        RpcScheduledExecutor.TIMEOUT_SHEDULER.schedule(new Callable<Object>() {
+        RpcScheduledExecutor.TIMEOUT_SCHEDULER.schedule(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
                 final TimeoutException ex = new TimeoutException("Timeout after " + timeouts);

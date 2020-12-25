@@ -82,7 +82,7 @@ public class DefaultRequestFuture implements RequestFuture {
         this.requestId = requestId;
         this.connectionId = connectionId;
         if (requestCallBack != null) {
-            this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SHEDULER
+            this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SCHEDULER
                     .schedule(new TimeoutHandler(), requestCallBack.getTimeout(), TimeUnit.MILLISECONDS);
         }
         this.timeoutInnerTrigger = timeoutInnerTrigger;
