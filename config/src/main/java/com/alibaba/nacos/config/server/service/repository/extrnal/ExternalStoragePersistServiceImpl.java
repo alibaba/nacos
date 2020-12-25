@@ -807,13 +807,13 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     private void buildConfigInfoCommonCondition(BooleanBuilder booleanBuilder, QConfigInfoEntity qConfigInfo,
             final String dataId, final String group, final String appName) {
         if (StringUtils.isNotBlank(dataId)) {
-            booleanBuilder.and(qConfigInfo.dataId.eq(dataId));
+            booleanBuilder.and(qConfigInfo.dataId.like(generateLikeArgument(dataId)));
         }
         if (StringUtils.isNotBlank(group)) {
-            booleanBuilder.and(qConfigInfo.groupId.eq(group));
+            booleanBuilder.and(qConfigInfo.groupId.like(generateLikeArgument(group)));
         }
         if (StringUtils.isNotBlank(appName)) {
-            booleanBuilder.and(qConfigInfo.appName.eq(appName));
+            booleanBuilder.and(qConfigInfo.appName.like(generateLikeArgument(appName)));
         }
     }
     
@@ -1139,13 +1139,13 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         buildConfigInfoCommonCondition(booleanBuilder, qConfigInfo, dataId, group, appName);
         if (StringUtils.isNotBlank(tenant)) {
-            booleanBuilder.and(qConfigInfo.tenantId.like(tenant));
+            booleanBuilder.and(qConfigInfo.tenantId.like(generateLikeArgument(tenant)));
         }
         if (StringUtils.isNotBlank(content)) {
-            booleanBuilder.and(qConfigInfo.content.like(content));
+            booleanBuilder.and(qConfigInfo.content.like(generateLikeArgument(content)));
         }
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(booleanBuilder, PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
+                .findAll(booleanBuilder, PageRequest.of((pageNo - 1) * pageSize, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
         Page<ConfigInfo> page = new Page<>();
         page.setPageNumber(sPage.getNumber());
         page.setPagesAvailable(sPage.getTotalPages());
