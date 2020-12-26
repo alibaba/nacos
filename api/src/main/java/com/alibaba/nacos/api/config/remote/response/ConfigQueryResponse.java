@@ -57,7 +57,7 @@ public class ConfigQueryResponse extends Response {
      *
      * @param errorCode errorCode.
      * @param message   message.
-     * @return
+     * @return response.
      */
     public static ConfigQueryResponse buildFailResponse(int errorCode, String message) {
         ConfigQueryResponse response = new ConfigQueryResponse();
@@ -66,10 +66,10 @@ public class ConfigQueryResponse extends Response {
     }
     
     /**
-     * Buidl success resposne.
+     * Build success response.
      *
      * @param content content.
-     * @return
+     * @return response.
      */
     public static ConfigQueryResponse buildSuccessResponse(String content) {
         ConfigQueryResponse response = new ConfigQueryResponse();

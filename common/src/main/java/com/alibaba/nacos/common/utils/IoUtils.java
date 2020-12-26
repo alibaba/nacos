@@ -109,7 +109,7 @@ public class IoUtils {
      *
      * @param str      strings to be compressed.
      * @param encoding encoding.
-     * @return
+     * @return byte[]
      */
     public static byte[] tryCompress(String str, String encoding) {
         if (str == null || str.length() == 0) {

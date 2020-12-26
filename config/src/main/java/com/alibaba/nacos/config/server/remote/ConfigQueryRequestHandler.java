@@ -41,11 +41,13 @@ import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
@@ -93,7 +95,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             RequestMeta meta, boolean notify) throws UnsupportedEncodingException {
         
         ConfigQueryResponse response = new ConfigQueryResponse();
-    
+        
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
         String autoTag = meta.getLabels().get("Vipserver-Tag");
@@ -166,7 +168,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
                                 // new Object[]{clientIp, groupKey});
-    
+                                
                                 response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                                 return response;
                             }
@@ -197,7 +199,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
                             // new Object[]{clientIp, groupKey});
-    
+                            
                             response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                             return response;
                             
@@ -231,7 +233,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                  because the delayed value of active get requests is very large.
                  */
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                        ConfigTraceService.PULL_EVENT_OK, delayed, clientIp, notify);
+                        ConfigTraceService.PULL_EVENT_OK, notify ? delayed : -1, clientIp, notify);
                 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -256,13 +258,15 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
      * read content.
      *
      * @param file file to read.
-     * @return
+     * @return content.
      */
     public static String readFileContent(File file) {
         BufferedReader reader = null;
         StringBuffer sbf = new StringBuffer();
         try {
-            reader = new BufferedReader(new FileReader(file));
+            InputStreamReader isr = new InputStreamReader(new FileInputStream(file), Charset.forName(Constants.ENCODE));
+            
+            reader = new BufferedReader(isr);
             String tempStr;
             while ((tempStr = reader.readLine()) != null) {
                 sbf.append(tempStr);

@@ -100,13 +100,13 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
         public ConfigListenContext() {
         
         }
-    
+        
         @Override
         public String toString() {
             return "ConfigListenContext{" + "group='" + group + '\'' + ", md5='" + md5 + '\'' + ", dataId='" + dataId
                     + '\'' + ", tenant='" + tenant + '\'' + '}';
         }
-    
+        
         /**
          * Getter method for property <tt>group</tt>.
          *
