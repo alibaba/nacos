@@ -70,7 +70,7 @@ public class EnvUtil {
     
     private static String functionModeType = null;
     
-    private static String contextPath = "";
+    private static String contextPath = null;
     
     @JustForTest
     private static String confPath = "";
@@ -89,6 +89,10 @@ public class EnvUtil {
     
     public static void setEnvironment(ConfigurableEnvironment environment) {
         EnvUtil.environment = environment;
+    }
+    
+    public static boolean containsProperty(String key) {
+        return environment.containsProperty(key);
     }
     
     public static String getProperty(String key) {
@@ -161,14 +165,10 @@ public class EnvUtil {
     }
     
     public static String getContextPath() {
-        if (StringUtils.isBlank(contextPath)) {
-            if (StringUtils.isBlank(contextPath)) {
-                contextPath = getProperty(Constants.WEB_CONTEXT_PATH, "/nacos");
-            }
+        if (Objects.isNull(contextPath)) {
+            contextPath = getProperty(Constants.WEB_CONTEXT_PATH, "/nacos");
             if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
-                return StringUtils.EMPTY;
-            } else {
-                return contextPath;
+                contextPath = StringUtils.EMPTY;
             }
         }
         return contextPath;
@@ -361,19 +361,31 @@ public class EnvUtil {
     private static final String FILE_PREFIX = "file:";
     
     public static Resource getApplicationConfFileResource() {
+        Resource customResource = getCustomFileResource();
+        return customResource == null ? getDefaultResource() : customResource;
+    }
+    
+    private static Resource getCustomFileResource() {
         String path = getProperty("spring.config.location");
-        InputStream inputStream = null;
         if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
             String[] paths = path.split(",");
             path = paths[paths.length - 1].substring(FILE_PREFIX.length());
+            return getRelativePathResource(path, "application.properties");
         }
+        return null;
+    }
+    
+    private static Resource getRelativePathResource(String parentPath, String path) {
         try {
-            inputStream = new FileInputStream(new File(path + "application.properties"));
+            InputStream inputStream = new FileInputStream(Paths.get(parentPath, path).toFile());
+            return new InputStreamResource(inputStream);
         } catch (Exception ignore) {
         }
-        if (inputStream == null) {
-            inputStream = EnvUtil.class.getResourceAsStream("/application.properties");
-        }
+        return null;
+    }
+    
+    private static Resource getDefaultResource() {
+        InputStream inputStream = EnvUtil.class.getResourceAsStream("/application.properties");
         return new InputStreamResource(inputStream);
     }
     
