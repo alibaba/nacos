@@ -37,6 +37,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -53,6 +54,8 @@ public class GrpcConnection extends Connection {
      */
     protected ManagedChannel channel;
     
+    Executor executor;
+    
     /**
      * stub to send request.
      */
@@ -60,8 +63,9 @@ public class GrpcConnection extends Connection {
     
     protected StreamObserver<Payload> payloadStreamObserver;
     
-    public GrpcConnection(RpcClient.ServerInfo serverInfo) {
+    public GrpcConnection(RpcClient.ServerInfo serverInfo, Executor executor) {
         super(serverInfo);
+        this.executor = executor;
     }
     
     @Override
@@ -72,7 +76,6 @@ public class GrpcConnection extends Connection {
     @Override
     public Response request(Request request, RequestMeta requestMeta, long timeouts) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
-        
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
         Payload grpcResponse = null;
         try {
@@ -155,16 +158,16 @@ public class GrpcConnection extends Connection {
             public void onFailure(Throwable throwable) {
                 if (throwable instanceof CancellationException) {
                     requestCallBack.onException(
-                            new TimeoutException("Timeout after " + requestCallBack.getTimeout() + " millseconds."));
+                            new TimeoutException("Timeout after " + requestCallBack.getTimeout() + " milliseconds."));
                 } else {
                     requestCallBack.onException(throwable);
                 }
             }
-        }, RpcScheduledExecutor.AYNS_REQUEST_EXECUTOR);
+        }, this.executor);
         // set timeout future.
         ListenableFuture<Payload> payloadListenableFuture = Futures
                 .withTimeout(requestFuture, requestCallBack.getTimeout(), TimeUnit.MILLISECONDS,
-                        RpcScheduledExecutor.TIMEOUT_SHEDULER);
+                        RpcScheduledExecutor.TIMEOUT_SCHEDULER);
         
     }
     

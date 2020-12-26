@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
-import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -49,7 +49,7 @@ import java.util.Map;
  * @version $Id: ConfigPublishRequestHandler.java, v 0.1 2020年07月16日 4:41 PM liuzunfei Exp $
  */
 @Component
-public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishRequest, ConfigPubishResponse> {
+public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishRequest, ConfigPublishResponse> {
     
     private final PersistService persistService;
     
@@ -59,7 +59,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
     
     @Override
     @Secured(action = ActionTypes.WRITE, resource = "", parser = ConfigResourceParser.class)
-    public ConfigPubishResponse handle(ConfigPublishRequest request, RequestMeta meta) throws NacosException {
+    public ConfigPublishResponse handle(ConfigPublishRequest request, RequestMeta meta) throws NacosException {
         
         try {
             String dataId = request.getDataId();
@@ -115,10 +115,10 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             ConfigTraceService
                     .logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
-            return ConfigPubishResponse.buildSuccessResponse();
+            return ConfigPublishResponse.buildSuccessResponse();
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
-            return ConfigPubishResponse.buildFailResponse(e.getMessage());
+            return ConfigPublishResponse.buildFailResponse(e.getMessage());
         }
     }
     

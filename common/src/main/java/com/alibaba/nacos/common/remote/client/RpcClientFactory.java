@@ -68,7 +68,7 @@ public class RpcClientFactory {
      *
      * @param clientName     client name.
      * @param connectionType client type.
-     * @return
+     * @return rpc client.
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
         String clientNameInner = clientName;
@@ -97,7 +97,7 @@ public class RpcClientFactory {
      *
      * @param clientName     client name.
      * @param connectionType client type.
-     * @return
+     * @return rpc client.
      */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
             Map<String, String> labels) {

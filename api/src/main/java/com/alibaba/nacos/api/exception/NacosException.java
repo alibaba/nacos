@@ -108,10 +108,15 @@ public class NacosException extends Exception {
     public static final int CLIENT_INVALID_PARAM = -400;
     
     /**
+     * invalid param（参数错误）.
+     */
+    public static final int CLIENT_DISCONNECT = -401;
+    
+    /**
      * over client threshold（超过server端的限流阈值）.
      */
     public static final int CLIENT_OVER_THRESHOLD = -503;
-    
+
     /*
      * server error code.
      * 400 403 throw exception to user
@@ -160,4 +165,6 @@ public class NacosException extends Exception {
      * ome exceptions that occurred when the use the Nacos RestTemplate and Nacos AsyncRestTemplate.
      */
     public static final int HTTP_CLIENT_ERROR_CODE = -500;
+    
+    
 }

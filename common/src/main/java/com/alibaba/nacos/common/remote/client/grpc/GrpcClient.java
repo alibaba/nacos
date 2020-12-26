@@ -34,6 +34,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.grpc.internal.GrpcUtil;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,8 +71,9 @@ public abstract class GrpcClient extends RpcClient {
      */
     private RequestGrpc.RequestFutureStub createNewChannelStub(String serverIp, int serverPort) {
         
-        ManagedChannel managedChannelTemp = ManagedChannelBuilder.forAddress(serverIp, serverPort).usePlaintext()
-                .build();
+        ManagedChannelBuilder<?> o = ManagedChannelBuilder.forAddress(serverIp, serverPort)
+                .executor(GrpcUtil.SHARED_CHANNEL_EXECUTOR.create()).usePlaintext();
+        ManagedChannel managedChannelTemp = o.build();
         
         RequestGrpc.RequestFutureStub grpcServiceStubTemp = RequestGrpc.newFutureStub(managedChannelTemp);
         
@@ -131,6 +133,7 @@ public abstract class GrpcClient extends RpcClient {
                     GrpcUtils.PlainRequest parse = GrpcUtils.parse(payload);
                     final Request request = (Request) parse.getBody();
                     if (request != null) {
+                        
                         try {
                             Response response = handleServerRequest(request, parse.metadata);
                             if (response != null) {
@@ -146,6 +149,7 @@ public abstract class GrpcClient extends RpcClient {
                                             payload.toString());
                             sendResponse(request.getRequestId(), false);
                         }
+                        
                     }
                     
                 } catch (Exception e) {
@@ -157,8 +161,10 @@ public abstract class GrpcClient extends RpcClient {
             
             @Override
             public void onError(Throwable throwable) {
-                if (isRunning() && !grpcConn.isAbandon()) {
-                    LoggerUtils.printIfErrorEnabled(LOGGER, "Request stream error, switch server", throwable);
+                boolean isRunning = isRunning();
+                boolean isAbandon = grpcConn.isAbandon();
+                if (isRunning && !isAbandon) {
+                    LoggerUtils.printIfErrorEnabled(LOGGER, "Request stream error, switch server,error={}", throwable);
                     if (throwable instanceof StatusRuntimeException) {
                         Status.Code code = ((StatusRuntimeException) throwable).getStatus().getCode();
                         if (Status.UNAVAILABLE.getCode().equals(code) || Status.CANCELLED.getCode().equals(code)) {
@@ -168,20 +174,24 @@ public abstract class GrpcClient extends RpcClient {
                         }
                     }
                 } else {
-                    LoggerUtils.printIfWarnEnabled(LOGGER, "Client is not running status, ignore error event");
+                    LoggerUtils.printIfWarnEnabled(LOGGER, "ignore error event,isRunning:{},isAbandon={}", isRunning,
+                            isAbandon);
                 }
                 
             }
             
             @Override
             public void onCompleted() {
-                if (isRunning() && !grpcConn.isAbandon()) {
+                boolean isRunning = isRunning();
+                boolean isAbandon = grpcConn.isAbandon();
+                if (isRunning && !isAbandon) {
                     LoggerUtils.printIfErrorEnabled(LOGGER, "Request stream onCompleted, switch server");
                     if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
                         switchServerAsync();
                     }
                 } else {
-                    LoggerUtils.printIfErrorEnabled(LOGGER, "Client is not running status, ignore complete event");
+                    LoggerUtils.printIfInfoEnabled(LOGGER, "ignore complete event,isRunning:{},isAbandon={}", isRunning,
+                            isAbandon);
                 }
                 
             }
@@ -215,7 +225,7 @@ public abstract class GrpcClient extends RpcClient {
                 
                 BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
-                GrpcConnection grpcConn = new GrpcConnection(serverInfo);
+                GrpcConnection grpcConn = new GrpcConnection(serverInfo, super.executor);
                 
                 //create stream request and bind connection event to this connection.
                 StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);

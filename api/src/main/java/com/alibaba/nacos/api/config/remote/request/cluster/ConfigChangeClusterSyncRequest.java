@@ -41,7 +41,7 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     /**
      * is beta.
      *
-     * @return
+     * @return is beta or not.
      */
     public boolean isBeta() {
         return "Y".equalsIgnoreCase(isBeta);

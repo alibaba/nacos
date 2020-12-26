@@ -36,9 +36,10 @@ public class ConfigChangeBatchListenResponse extends Response {
     }
     
     /**
-     *  add changed config.
+     * add changed config.
+     *
      * @param dataId dataId.
-     * @param group group.
+     * @param group  group.
      * @param tenant tenant.
      */
     public void addChangeConfig(String dataId, String group, String tenant) {
@@ -71,7 +72,7 @@ public class ConfigChangeBatchListenResponse extends Response {
      * build fail response.
      *
      * @param errorMessage errorMessage.
-     * @return
+     * @return response.
      */
     public static ConfigChangeBatchListenResponse buildFailResponse(String errorMessage) {
         ConfigChangeBatchListenResponse response = new ConfigChangeBatchListenResponse();
@@ -145,7 +146,7 @@ public class ConfigChangeBatchListenResponse extends Response {
         public void setTenant(String tenant) {
             this.tenant = tenant;
         }
-    
+        
         @Override
         public String toString() {
             return "ConfigContext{" + "group='" + group + '\'' + ", dataId='" + dataId + '\'' + ", tenant='" + tenant
