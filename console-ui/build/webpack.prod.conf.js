@@ -36,12 +36,12 @@ module.exports = Object.assign({}, base, {
     minimizer: [
       new UglifyJsPlugin({
         cache: true,
-        parallel: true,
-        sourceMap: true,
+        parallel: true
       }),
       new OptimizeCSSAssetsPlugin({}),
     ],
   },
+  devtool: 'eval-source-map',
   plugins: [
     new CleanWebpackPlugin({
       cleanOnceBeforeBuildPatterns:[
@@ -54,5 +54,5 @@ module.exports = Object.assign({}, base, {
       chunkFilename: '[id].css',
     }),
   ],
-  mode: 'production',
+  mode: 'production'
 });
