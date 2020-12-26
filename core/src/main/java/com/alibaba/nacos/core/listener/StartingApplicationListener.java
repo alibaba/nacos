@@ -23,9 +23,12 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.file.FileChangeEvent;
+import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.env.OriginTrackedMapPropertySource;
@@ -36,6 +39,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -55,7 +60,9 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private static final String LOCAL_IP_PROPERTY_KEY = "nacos.local.ip";
     
-    private static final String FIRST_PRE_PROPERTIES = "first_pre";
+    private static final String NACOS_APPLICATION_CONF = "nacos_application_conf";
+    
+    private static final Map<String, Object> SOURCES = new ConcurrentHashMap<>();
     
     private ScheduledExecutorService scheduledExecutorService;
     
@@ -100,7 +107,6 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     @Override
     public void running(ConfigurableApplicationContext context) {
-        removePreProperties(context.getEnvironment());
     }
     
     @Override
@@ -109,7 +115,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
         
         logFilePath();
         
-        LOGGER.error("Startup errors : {}", exception);
+        LOGGER.error("Startup errors :", exception);
         ThreadPoolManager.shutdown();
         WatchFileCenter.shutdown();
         NotifyCenter.shutdown();
@@ -128,10 +134,35 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private void loadPreProperties(ConfigurableEnvironment environment) {
         try {
-            environment.getPropertySources().addLast(new OriginTrackedMapPropertySource(FIRST_PRE_PROPERTIES,
-                    EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource())));
+            SOURCES.putAll(EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource()));
+            environment.getPropertySources()
+                    .addLast(new OriginTrackedMapPropertySource(NACOS_APPLICATION_CONF, SOURCES));
+            registerWatcher();
         } catch (IOException e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+        }
+    }
+    
+    private void registerWatcher() {
+        try {
+            WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
+                @Override
+                public void onChange(FileChangeEvent event) {
+                    try {
+                        Map<String, ?> tmp = EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource());
+                        SOURCES.putAll(tmp);
+                    } catch (IOException ignore) {
+                    
+                    }
+                }
+                
+                @Override
+                public boolean interest(String context) {
+                    return StringUtils.contains(context, "application.properties");
+                }
+            });
+        } catch (NacosException ignore) {
+        
         }
     }
     
@@ -150,10 +181,6 @@ public class StartingApplicationListener implements NacosApplicationListener {
         }
         
         System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIP());
-    }
-    
-    private void removePreProperties(ConfigurableEnvironment environment) {
-        environment.getPropertySources().remove(FIRST_PRE_PROPERTIES);
     }
     
     private void logClusterConf() {
