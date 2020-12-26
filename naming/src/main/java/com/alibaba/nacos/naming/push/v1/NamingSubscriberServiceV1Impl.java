@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.push;
+package com.alibaba.nacos.naming.push.v1;
 
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.NamingSubscriberService;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -36,8 +37,10 @@ import java.util.concurrent.TimeUnit;
  * Naming subscriber service for v1.x.
  *
  * @author xiweng.yy
+ * @deprecated Will be removed in v2.1.x version
  */
 @org.springframework.stereotype.Service
+@Deprecated
 public class NamingSubscriberServiceV1Impl implements NamingSubscriberService {
     
     private final ConcurrentMap<String, ConcurrentMap<String, PushClient>> clientMap = new ConcurrentHashMap<>();
