@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.push;
+package com.alibaba.nacos.naming.push.v1;
+
+import com.alibaba.nacos.naming.core.Service;
+import org.springframework.context.ApplicationEvent;
 
 /**
- * Data source for naming push.
+ * Service change event.
  *
- * @author nacos
+ * @author pbting
+ * @date 2019-07-10 5:41 PM
  */
-public interface DataSource {
+public class ServiceChangeEvent extends ApplicationEvent {
     
-    /**
-     * Get push data for a specified client.
-     *
-     * @param client target client
-     * @return data to push
-     * @throws Exception exception
-     */
-    String getData(PushClient client) throws Exception;
+    private Service service;
+    
+    public ServiceChangeEvent(Object source, Service service) {
+        super(source);
+        this.service = service;
+    }
+    
+    public Service getService() {
+        return service;
+    }
 }
