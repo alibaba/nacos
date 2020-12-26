@@ -39,8 +39,6 @@ public class ConfigAllInfo extends ConfigInfo {
     
     private String effect;
     
-    private String type;
-    
     private String schema;
     
     private String configTags;
@@ -103,15 +101,7 @@ public class ConfigAllInfo extends ConfigInfo {
     public void setEffect(String effect) {
         this.effect = effect;
     }
-    
-    public String getType() {
-        return type;
-    }
-    
-    public void setType(String type) {
-        this.type = type;
-    }
-    
+
     public String getSchema() {
         return schema;
     }
