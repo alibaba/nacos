@@ -24,6 +24,7 @@ import com.alibaba.nacos.auth.common.AuthSystemTypes;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
@@ -160,7 +161,7 @@ public class UserController {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
-        if (request.getAttribute(RequestUtil.NACOS_USER_KEY) == null) {
+        if (Objects.isNull(request.getAttribute(RequestUtil.NACOS_USER_KEY))) {
             return false;
         }
 
