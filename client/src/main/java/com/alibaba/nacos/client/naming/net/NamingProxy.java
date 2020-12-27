@@ -521,7 +521,7 @@ public class NamingProxy implements Closeable {
         NacosException exception = new NacosException();
 
         if (StringUtils.isNotBlank(nacosDomain)) {
-            for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
+            for (int i = 0; i < maxRetry; i++) {
                 try {
                     return callServer(api, params, body, nacosDomain, method);
                 } catch (NacosException e) {
