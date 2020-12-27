@@ -43,6 +43,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.IPUtil;
@@ -107,6 +108,8 @@ public class NamingProxy implements Closeable {
     private Properties properties;
     
     private ScheduledExecutorService executorService;
+
+    private int maxRetry;
     
     public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
         
@@ -115,6 +118,9 @@ public class NamingProxy implements Closeable {
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
         this.endpoint = endpoint;
+        this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
+            String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
+
         if (StringUtils.isNotEmpty(serverList)) {
             this.serverList = Arrays.asList(serverList.split(","));
             if (this.serverList.size() == 1) {
@@ -513,7 +519,20 @@ public class NamingProxy implements Closeable {
         }
         
         NacosException exception = new NacosException();
-        
+
+        if (StringUtils.isNotBlank(nacosDomain)) {
+            for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
+                try {
+                    return callServer(api, params, body, nacosDomain, method);
+                } catch (NacosException e) {
+                    exception = e;
+                    if (NAMING_LOGGER.isDebugEnabled()) {
+                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
+                    }
+                }
+            }
+        }
+
         if (servers != null && !servers.isEmpty()) {
             
             Random random = new Random(System.currentTimeMillis());
@@ -530,19 +549,6 @@ public class NamingProxy implements Closeable {
                     }
                 }
                 index = (index + 1) % servers.size();
-            }
-        }
-        
-        if (StringUtils.isNotBlank(nacosDomain)) {
-            for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
-                try {
-                    return callServer(api, params, body, nacosDomain, method);
-                } catch (NacosException e) {
-                    exception = e;
-                    if (NAMING_LOGGER.isDebugEnabled()) {
-                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
-                    }
-                }
             }
         }
         
