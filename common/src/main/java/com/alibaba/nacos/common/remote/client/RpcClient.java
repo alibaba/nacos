@@ -222,7 +222,7 @@ public abstract class RpcClient implements Closeable {
             return;
         }
         
-        executor = new ScheduledThreadPoolExecutor(0, new ThreadFactory() {
+        executor = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
