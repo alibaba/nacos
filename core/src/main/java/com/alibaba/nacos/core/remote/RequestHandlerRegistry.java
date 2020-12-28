@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.ParameterizedType;
@@ -34,9 +33,7 @@ import java.util.Map;
  */
 
 @Service
-public class RequestHandlerRegistry implements ApplicationContextAware {
-    
-    ApplicationContext applicationContext;
+public class RequestHandlerRegistry implements ApplicationListener<ContextRefreshedEvent> {
     
     Map<String, RequestHandler> registryHandlers = new HashMap<String, RequestHandler>();
     
@@ -47,30 +44,6 @@ public class RequestHandlerRegistry implements ApplicationContextAware {
      * @return request handler.
      */
     public RequestHandler getByRequestType(String requestType) {
-        if (!registryHandlers.containsKey(requestType)) {
-            Map<String, RequestHandler> beansOfType = applicationContext.getBeansOfType(RequestHandler.class);
-            Collection<RequestHandler> values = beansOfType.values();
-            for (RequestHandler requestHandler : values) {
-            
-                Class<?> clazz = requestHandler.getClass();
-                boolean skip = false;
-                while (!clazz.getSuperclass().equals(RequestHandler.class)) {
-                    if (clazz.getSuperclass().equals(Object.class)) {
-                        skip = true;
-                        break;
-                    }
-                    clazz = clazz.getSuperclass();
-                }
-                if (skip) {
-                    continue;
-                }
-                Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
-            
-                registryHandlers.putIfAbsent(tClass.getName(), requestHandler);
-            
-            }
-        }
-        
         return registryHandlers.get(requestType);
     }
     
@@ -84,7 +57,26 @@ public class RequestHandlerRegistry implements ApplicationContextAware {
     }
     
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        Map<String, RequestHandler> beansOfType = event.getApplicationContext().getBeansOfType(RequestHandler.class);
+        Collection<RequestHandler> values = beansOfType.values();
+        for (RequestHandler requestHandler : values) {
+            
+            Class<?> clazz = requestHandler.getClass();
+            boolean skip = false;
+            while (!clazz.getSuperclass().equals(RequestHandler.class)) {
+                if (clazz.getSuperclass().equals(Object.class)) {
+                    skip = true;
+                    break;
+                }
+                clazz = clazz.getSuperclass();
+            }
+            if (skip) {
+                continue;
+            }
+            Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
+            
+            registryHandlers.putIfAbsent(tClass.getName(), requestHandler);
+        }
     }
 }
