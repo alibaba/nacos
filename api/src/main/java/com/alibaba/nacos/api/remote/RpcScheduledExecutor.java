@@ -27,17 +27,11 @@ import java.util.concurrent.ThreadFactory;
  */
 public class RpcScheduledExecutor extends ScheduledThreadPoolExecutor {
     
-    public static final RpcScheduledExecutor TIMEOUT_SHEDULER = new RpcScheduledExecutor(1,
+    public static final RpcScheduledExecutor TIMEOUT_SCHEDULER = new RpcScheduledExecutor(0,
             "com.alibaba.nacos.remote.TimerScheduler");
-    
-    /**
-     * executor to execute future request.
-     */
-    public static final RpcScheduledExecutor AYNS_REQUEST_EXECUTOR = new RpcScheduledExecutor(
-            Runtime.getRuntime().availableProcessors(), "com.alibaba.nacos.remote.RpcRequestExecutor");
-    
+
     public static final RpcScheduledExecutor COMMON_SERVER_EXECUTOR = new RpcScheduledExecutor(
-            Runtime.getRuntime().availableProcessors(), "com.alibaba.nacos.remote.ServerCommonScheduler");
+            0, "com.alibaba.nacos.remote.ServerCommonScheduler");
     
     public RpcScheduledExecutor(int corePoolSize, final String threadName) {
         super(corePoolSize, new ThreadFactory() {

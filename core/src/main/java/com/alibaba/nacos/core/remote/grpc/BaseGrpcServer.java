@@ -131,7 +131,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                                 .set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid()).set(TRANS_KEY_CLIENT_PORT, remotePort)
                                 .set(TRANS_KEY_LOCAL_PORT, localPort).build();
                         String connectionId = attrWrapper.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info("Connection transportReady, connectionId = {}", connectionId);
+                        Loggers.REMOTE_DIGEST.info("Connection transportReady,connectionId = {} ", connectionId);
                         return attrWrapper;
                         
                     }
@@ -139,7 +139,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
                         String connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info("Connection transportTerminated, connectionId = {}", connectionId);
+                        Loggers.REMOTE_DIGEST.info("Connection transportTerminated,connectionId = {} ", connectionId);
                         connectionManager.unregister(connectionId);
                     }
                 }).build();

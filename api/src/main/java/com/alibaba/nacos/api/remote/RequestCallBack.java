@@ -31,14 +31,14 @@ public interface RequestCallBack<T extends Response> {
     /**
      * get executor on callback.
      *
-     * @return
+     * @return executor.
      */
     public Executor getExecutor();
     
     /**
      * get timeout mills.
      *
-     * @return
+     * @return timeouts.
      */
     public long getTimeout();
     

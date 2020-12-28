@@ -16,11 +16,23 @@
 
 package com.alibaba.nacos.naming.push;
 
+import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.HttpClient;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.v2.NamingSubscriberServiceV2Impl;
+import com.alibaba.nacos.naming.pojo.Subscribers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * Aggregation naming subscriber service. Aggregate all implementation of {@link NamingSubscriberService} and
@@ -31,33 +43,70 @@ import java.util.Collection;
 @org.springframework.stereotype.Service
 public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberService {
     
-    private final NamingSubscriberServiceV1Impl subscriberServiceV1;
+    private static final String SUBSCRIBER_ON_SYNC_URL = "/service/subscribers";
     
-    private final NamingSubscriberServiceV2Impl subscriberServiceV2;
+    private final NamingSubscriberServiceLocalImpl subscriberServiceLocal;
     
-    public NamingSubscriberServiceAggregationImpl(NamingSubscriberServiceV1Impl subscriberServiceV1,
-            NamingSubscriberServiceV2Impl subscriberServiceV2) {
-        this.subscriberServiceV1 = subscriberServiceV1;
-        this.subscriberServiceV2 = subscriberServiceV2;
+    private final ServerMemberManager memberManager;
+    
+    public NamingSubscriberServiceAggregationImpl(NamingSubscriberServiceLocalImpl subscriberServiceLocal,
+            ServerMemberManager serverMemberManager) {
+        this.subscriberServiceLocal = subscriberServiceLocal;
+        this.memberManager = serverMemberManager;
     }
     
     @Override
     public Collection<Subscriber> getSubscribers(String namespaceId, String serviceName) {
-        return null;
+        Collection<Subscriber> result = new LinkedList<>(
+                subscriberServiceLocal.getSubscribers(namespaceId, serviceName));
+        if (memberManager.getServerList().size() > 1) {
+            getSubscribersFromRemotes(namespaceId, serviceName, result);
+        }
+        return result;
     }
     
     @Override
     public Collection<Subscriber> getSubscribers(Service service) {
-        return null;
+        Collection<Subscriber> result = new LinkedList<>(subscriberServiceLocal.getSubscribers(service));
+        if (memberManager.getServerList().size() > 1) {
+            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(), result);
+        }
+        return result;
     }
     
     @Override
     public Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName) {
-        return null;
+        Collection<Subscriber> result = new LinkedList<>(
+                subscriberServiceLocal.getFuzzySubscribers(namespaceId, serviceName));
+        if (memberManager.getServerList().size() > 1) {
+            getSubscribersFromRemotes(namespaceId, serviceName, result);
+        }
+        return result;
     }
     
     @Override
     public Collection<Subscriber> getFuzzySubscribers(Service service) {
-        return null;
+        Collection<Subscriber> result = new LinkedList<>(subscriberServiceLocal.getFuzzySubscribers(service));
+        if (memberManager.getServerList().size() > 1) {
+            getSubscribersFromRemotes(service.getNamespace(), service.getGroupedServiceName(), result);
+        }
+        return result;
+    }
+    
+    private void getSubscribersFromRemotes(String namespaceId, String serviceName, Collection<Subscriber> result) {
+        for (Member server : memberManager.allMembersWithoutSelf()) {
+            Map<String, String> paramValues = new HashMap<>(128);
+            paramValues.put(CommonParams.SERVICE_NAME, serviceName);
+            paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
+            paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
+            // TODO replace with gRPC
+            RestResult<String> response = HttpClient.httpGet(
+                    "http://" + server.getAddress() + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                            + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
+            if (response.ok()) {
+                Subscribers subscribers = JacksonUtils.toObj(response.getData(), Subscribers.class);
+                result.addAll(subscribers.getSubscribers());
+            }
+        }
     }
 }

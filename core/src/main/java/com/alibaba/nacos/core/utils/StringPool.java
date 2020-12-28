@@ -36,7 +36,7 @@ public class StringPool {
      * get singleton string value from the pool.
      *
      * @param key key string to be pooled.
-     * @return
+     * @return value after pooled.
      */
     public static String get(String key) {
         if (key == null) {

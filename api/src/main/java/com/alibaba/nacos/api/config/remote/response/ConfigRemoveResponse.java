@@ -32,18 +32,18 @@ public class ConfigRemoveResponse extends Response {
     }
     
     /**
-     * Buidl success resposne.
+     * Build success response.
      *
-     * @return
+     * @return response.
      */
     public static ConfigRemoveResponse buildSuccessResponse() {
         return new ConfigRemoveResponse();
     }
     
     /**
-     * Buidl fail resposne.
+     * Build fail response.
      *
-     * @return
+     * @return response.
      */
     public static ConfigRemoveResponse buildFailResponse(String errorMsg) {
         ConfigRemoveResponse removeResponse = new ConfigRemoveResponse();

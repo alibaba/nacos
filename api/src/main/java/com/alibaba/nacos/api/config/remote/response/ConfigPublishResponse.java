@@ -20,35 +20,35 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 
 /**
- * ConfigPubishResponse.
+ * ConfigPublishResponse.
  *
  * @author liuzunfei
  * @version $Id: ConfigPubishResponse.java, v 0.1 2020年07月16日 4:59 PM liuzunfei Exp $
  */
-public class ConfigPubishResponse extends Response {
+public class ConfigPublishResponse extends Response {
     
-    public ConfigPubishResponse() {
+    public ConfigPublishResponse() {
         super();
     }
     
     /**
-     * Buidl success resposne.
+     * Build success response.
      *
-     * @return
+     * @return response.
      */
-    public static ConfigPubishResponse buildSuccessResponse() {
-        return new ConfigPubishResponse();
+    public static ConfigPublishResponse buildSuccessResponse() {
+        return new ConfigPublishResponse();
     }
     
     /**
-     * Buidl fail resposne.
+     * Build fail response.
      *
-     * @return
+     * @return response.
      */
-    public static ConfigPubishResponse buildFailResponse(String errorMsg) {
-        ConfigPubishResponse configPubishResponse = new ConfigPubishResponse();
-        configPubishResponse.setResultCode(ResponseCode.FAIL.getCode());
-        configPubishResponse.setMessage(errorMsg);
-        return configPubishResponse;
+    public static ConfigPublishResponse buildFailResponse(String errorMsg) {
+        ConfigPublishResponse configPublishResponse = new ConfigPublishResponse();
+        configPublishResponse.setResultCode(ResponseCode.FAIL.getCode());
+        configPublishResponse.setMessage(errorMsg);
+        return configPublishResponse;
     }
 }

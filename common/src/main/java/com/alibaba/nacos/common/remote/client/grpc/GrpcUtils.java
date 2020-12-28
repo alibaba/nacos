@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.grpc.auto.Metadata;
@@ -24,6 +26,7 @@ import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.exception.RemoteException;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,6 +36,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * gRPC utils, use to parse request and response.
@@ -86,7 +90,7 @@ public class GrpcUtils {
      *
      * @param request request.
      * @param meta    request meta.
-     * @return
+     * @return payload.
      */
     public static Payload convert(Request request, RequestMeta meta) {
         //meta.
@@ -103,8 +107,9 @@ public class GrpcUtils {
         // request body .
         request.clearHeaders();
         String jsonString = toJson(request);
-        
-        Payload payload = payloadBuilder.setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString))).build();
+        Payload payload = payloadBuilder
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
+                .build();
         return payload;
         
     }
@@ -114,7 +119,7 @@ public class GrpcUtils {
      *
      * @param request request.
      * @param meta    meta
-     * @return
+     * @return payload.
      */
     public static Payload convert(Request request, Metadata meta) {
         
@@ -123,7 +128,9 @@ public class GrpcUtils {
         String jsonString = toJson(request);
         
         Payload.Builder builder = Payload.newBuilder();
-        Payload payload = builder.setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString)))
+
+        Payload payload = builder
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .setMetadata(newMeta).build();
         return payload;
         
@@ -133,7 +140,7 @@ public class GrpcUtils {
      * convert response to payload.
      *
      * @param response response.
-     * @return
+     * @return payload.
      */
     public static Payload convert(Response response) {
         String jsonString = toJson(response);
@@ -141,7 +148,8 @@ public class GrpcUtils {
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         metaBuilder.setClientVersion(VersionUtils.getFullClientVersion()).setType(response.getClass().getName());
         
-        Payload payload = Payload.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(jsonString)))
+        Payload payload = Payload.newBuilder()
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .setMetadata(metaBuilder.build()).build();
         return payload;
     }
@@ -150,17 +158,19 @@ public class GrpcUtils {
      * parse payload to request/response model.
      *
      * @param payload payload to be parsed.
-     * @return
+     * @return payload
      */
     public static PlainRequest parse(Payload payload) {
         PlainRequest plainRequest = new PlainRequest();
         Class classType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
         if (classType != null) {
-            Object obj = toObj(payload.getBody().getValue().toStringUtf8(), classType);
+            Object obj = toObj(payload.getBody().getValue().toString(Charset.forName(Constants.ENCODE)), classType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }
             plainRequest.body = obj;
+        } else {
+            throw new RemoteException(NacosException.SERVER_ERROR, "unknown payload type:" + payload.getMetadata().getType());
         }
         
         plainRequest.type = payload.getMetadata().getType();

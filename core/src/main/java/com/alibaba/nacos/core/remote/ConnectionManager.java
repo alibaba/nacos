@@ -162,7 +162,7 @@ public class ConnectionManager {
     @PostConstruct
     public void start() {
         
-        // Start UnHeathy Conection Expel Task.
+        // Start UnHealthy Connection Expel Task.
         RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -215,7 +215,7 @@ public class ConnectionManager {
                     }
                     
                 } catch (Throwable e) {
-                    Loggers.REMOTE.error("error occurs when heathy check... ", e);
+                    Loggers.REMOTE.error("error occurs when healthy check... ", e);
                 }
             }
         }, 1000L, 3000L, TimeUnit.MILLISECONDS);
@@ -268,7 +268,7 @@ public class ConnectionManager {
     /**
      * get all client count.
      *
-     * @return
+     * @return client count.
      */
     public int currentClientsCount() {
         return connections.size();
@@ -322,7 +322,7 @@ public class ConnectionManager {
     /**
      * check if over limit.
      *
-     * @return
+     * @return over limit or not.
      */
     public boolean isOverLimit() {
         return maxClient > 0 && this.connections.size() >= maxClient;
