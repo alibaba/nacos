@@ -754,8 +754,11 @@ public class ClientWorker implements Closeable {
                                 if (!changeKeys.contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group,
                                         cacheData.getTenant()))) {
                                     //sync:cache data md5 = server md5 && cache data md5 = all listeners md5.
-                                    cacheData.checkListenerMd5();
-                                    cacheData.setSync(true);
+                                    if (cacheData.checkListenersMd5Consistent()) {
+                                        cacheData.setSync(true);
+                                    } else {
+                                        cacheData.checkListenerMd5();
+                                    }
                                 }
                                 
                                 cacheData.setInitializing(false);
