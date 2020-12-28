@@ -290,7 +290,8 @@ public abstract class RpcClient implements Closeable {
                 try {
                     RpcClient.this.shutdown();
                 } catch (NacosException e) {
-                    e.printStackTrace();
+                    LoggerUtils.printIfErrorEnabled(LOGGER, "RpcClient shutdown exception, errorMessage ={}",
+                            e.getMessage());
                 }
                 
             }

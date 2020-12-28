@@ -139,15 +139,6 @@ public class RsocketConnection extends Connection {
         }
     }
     
-    /**
-     * Getter method for property <tt>rSocketClient</tt>.
-     *
-     * @return property value of rSocketClient
-     */
-    public RSocket getrSocketClient() {
-        return rSocketClient;
-    }
-    
     @Override
     public String toString() {
         return "RsocketConnection{" + "serverInfo=" + serverInfo + ", labels=" + labels + '}';
