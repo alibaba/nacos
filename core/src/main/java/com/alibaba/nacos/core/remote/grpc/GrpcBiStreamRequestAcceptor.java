@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CHANNEL;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_IP;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_PORT;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_LOCAL_PORT;
@@ -63,15 +64,14 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 String connectionId = CONTEXT_KEY_CONN_ID.get();
                 Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
                 int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
-                
+                String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
                 GrpcUtils.PlainRequest plainRequest = GrpcUtils.parse(payload);
                 plainRequest.getMetadata().setClientPort(clientPort);
                 plainRequest.getMetadata().setConnectionId(connectionId);
                 if (plainRequest.getBody() instanceof ConnectionSetupRequest) {
-                    ConnectionSetupRequest setupRequest = (ConnectionSetupRequest) plainRequest.getBody();
                     RequestMeta metadata = plainRequest.getMetadata();
-                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(metadata.getConnectionId(),
-                            metadata.getClientIp(), metadata.getClientPort(), localPort, ConnectionType.GRPC.getType(),
+                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(metadata.getConnectionId(), clientIp,
+                            metadata.getClientPort(), localPort, ConnectionType.GRPC.getType(),
                             metadata.getClientVersion(), metadata.getLabels());
                     
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());

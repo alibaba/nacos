@@ -78,9 +78,9 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
         
         Response response = null;
         try {
-            response = (Response) getResponseClazz(handlerClazz).newInstance();
+            response = (Response) getResponseClazz(handlerClazz).getDeclaredConstructor().newInstance();
         } catch (Exception e) {
-            Loggers.AUTH.error("auth fail, request: {},exception:", request.getClass().getSimpleName(), e);
+            Loggers.AUTH.error("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);
             
         }
         

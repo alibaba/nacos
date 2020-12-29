@@ -83,6 +83,7 @@ public class RsocketRpcServer extends BaseRpcServer {
         RSocketServer rSocketServerInner = RSocketServer.create();
         
         closeChannel = rSocketServerInner.acceptor(((setup, sendingSocket) -> {
+            
             RsocketUtils.PlainRequest palinrequest = null;
             try {
                 palinrequest = RsocketUtils.parsePlainRequestFromPayload(setup);
@@ -250,6 +251,11 @@ public class RsocketRpcServer extends BaseRpcServer {
         if (this.closeChannel != null && !closeChannel.isDisposed()) {
             this.closeChannel.dispose();
         }
+    }
+    
+    @Override
+    public int getRpcTaskQueueSize() {
+        return -1;
     }
     
     private RequestMeta buildRequestMeta() {

@@ -201,6 +201,18 @@ public class CacheData {
         }
     }
     
+    /**
+     * check if all listeners md5 is equal with cache data.
+     */
+    public boolean checkListenersMd5Consistent() {
+        for (ManagerListenerWrap wrap : listeners) {
+            if (!md5.equals(wrap.lastCallMd5)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
             final String md5, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
@@ -278,8 +290,7 @@ public class CacheData {
     }
     
     /**
-     * 1.first add listener.default is false;need to check.
-     * 2.receive config change notify,set false;need to check.
+     * 1.first add listener.default is false;need to check. 2.receive config change notify,set false;need to check.
      * 3.last listener is remove,set to false;need to check
      *
      * @return
