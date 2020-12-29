@@ -29,9 +29,9 @@ public class RpcScheduledExecutor extends ScheduledThreadPoolExecutor {
     
     public static final RpcScheduledExecutor TIMEOUT_SCHEDULER = new RpcScheduledExecutor(0,
             "com.alibaba.nacos.remote.TimerScheduler");
-
-    public static final RpcScheduledExecutor COMMON_SERVER_EXECUTOR = new RpcScheduledExecutor(
-            0, "com.alibaba.nacos.remote.ServerCommonScheduler");
+    
+    public static final RpcScheduledExecutor COMMON_SERVER_EXECUTOR = new RpcScheduledExecutor(0,
+            "com.alibaba.nacos.remote.ServerCommonScheduler");
     
     public RpcScheduledExecutor(int corePoolSize, final String threadName) {
         super(corePoolSize, new ThreadFactory() {

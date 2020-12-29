@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
