@@ -23,8 +23,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.RemoteUtils;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.Attributes;
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -47,9 +45,7 @@ import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Grpc implementation as a rpc server.
@@ -58,8 +54,6 @@ import java.util.concurrent.TimeUnit;
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
 public abstract class BaseGrpcServer extends BaseRpcServer {
-    
-    private static ThreadPoolExecutor grpcExecutor;
     
     private Server server;
     
@@ -109,11 +103,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         
         addServices(handlerRegistry, serverInterceptor);
         
-        grpcExecutor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-                Runtime.getRuntime().availableProcessors() * RemoteUtils.getRemoteExecutorTimesOfProcessors(), 10L,
-                TimeUnit.SECONDS, new SynchronousQueue(),
-                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-executor-%d").build());
-        server = ServerBuilder.forPort(getServicePort()).executor(grpcExecutor).fallbackHandlerRegistry(handlerRegistry)
+        server = ServerBuilder.forPort(getServicePort()).executor(getRpcExecutor()).fallbackHandlerRegistry(handlerRegistry)
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
@@ -203,10 +193,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         }
     }
     
-    @Override
-    public int getRpcTaskQueueSize() {
-        return grpcExecutor.getQueue().size();
-    }
+    /**
+     * get rpc executor.
+     *
+     * @return executor.
+     */
+    public abstract ThreadPoolExecutor getRpcExecutor();
     
     static final Attributes.Key<String> TRANS_KEY_CONN_ID = Attributes.Key.create("conn_id");
     

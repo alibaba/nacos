@@ -253,11 +253,6 @@ public class RsocketRpcServer extends BaseRpcServer {
         }
     }
     
-    @Override
-    public int getRpcTaskQueueSize() {
-        return -1;
-    }
-    
     private RequestMeta buildRequestMeta() {
         RequestMeta meta = new RequestMeta();
         meta.setClientVersion(VersionUtils.getFullClientVersion());

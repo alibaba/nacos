@@ -537,7 +537,7 @@ public abstract class RpcClient implements Closeable {
         Response response = null;
         Exception exceptionToThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < RETRY_TIMES && (System.currentTimeMillis() - start) < timeoutMills) {
+        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < timeoutMills + start) {
             try {
                 if (this.currentConnection == null || !isRunning()) {
                     throw new NacosException(NacosException.CLIENT_DISCONNECT, "Client not connected.");
@@ -593,7 +593,7 @@ public abstract class RpcClient implements Closeable {
         
         Exception exceptionToThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() > start + callback.getTimeout()) {
+        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < start + callback.getTimeout()) {
             try {
                 if (this.currentConnection == null || !isRunning()) {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
@@ -621,6 +621,8 @@ public abstract class RpcClient implements Closeable {
         if (exceptionToThrow != null) {
             throw (exceptionToThrow instanceof NacosException) ? (NacosException) exceptionToThrow
                     : new NacosException(SERVER_ERROR, exceptionToThrow);
+        } else {
+            throw new NacosException(SERVER_ERROR, "AsyncRequest fail: unknown reason");
         }
     }
     
@@ -634,7 +636,7 @@ public abstract class RpcClient implements Closeable {
         int retryTimes = 0;
         long start = System.currentTimeMillis();
         Exception exceptionToThrow = null;
-        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() > start + DEFAULT_TIMEOUT_MILLS) {
+        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < start + DEFAULT_TIMEOUT_MILLS) {
             try {
                 if (this.currentConnection == null || !isRunning()) {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");

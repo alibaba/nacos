@@ -102,10 +102,10 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         boolean isBeta = event.isBeta;
         List<String> betaIps = event.betaIps;
         String[] strings = GroupKey.parseKey(groupKey);
-        String dataid = strings[0];
+        String dataId = strings[0];
         String group = strings[1];
         String tenant = strings.length > 2 ? strings[2] : "";
-        ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataid, group, tenant);
+        ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
         notifyRequest.setBeta(isBeta);
         notifyRequest.setBetaIps(betaIps);
         if (PropertyUtil.isPushContent()) {
@@ -126,7 +126,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     class RpcPushTask implements Runnable {
         
-        ConfigChangeNotifyRequest notifyRequet;
+        ConfigChangeNotifyRequest notifyRequest;
         
         int maxRetryTimes = -1;
         
@@ -138,13 +138,13 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         
         String appName;
         
-        public RpcPushTask(ConfigChangeNotifyRequest notifyRequet, String clientId, String clientIp, String appName) {
-            this(notifyRequet, -1, clientId, clientIp, appName);
+        public RpcPushTask(ConfigChangeNotifyRequest notifyRequest, String clientId, String clientIp, String appName) {
+            this(notifyRequest, -1, clientId, clientIp, appName);
         }
         
-        public RpcPushTask(ConfigChangeNotifyRequest notifyRequet, int maxRetryTimes, String clientId, String clientIp,
+        public RpcPushTask(ConfigChangeNotifyRequest notifyRequest, int maxRetryTimes, String clientId, String clientIp,
                 String appName) {
-            this.notifyRequet = notifyRequet;
+            this.notifyRequest = notifyRequest;
             this.maxRetryTimes = maxRetryTimes;
             this.clientId = clientId;
             this.clientIp = clientIp;
@@ -157,7 +157,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         
         @Override
         public void run() {
-            rpcPushService.pushWithCallback(clientId, notifyRequet, new AbstractPushCallBack(3000L) {
+            rpcPushService.pushWithCallback(clientId, notifyRequest, new AbstractPushCallBack(3000L) {
                 int retryTimes = tryTimes;
                 
                 @Override
@@ -180,7 +180,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     }
     
     private void push(RpcPushTask retryTask) {
-        ConfigChangeNotifyRequest notifyRequet = retryTask.notifyRequet;
+        ConfigChangeNotifyRequest notifyRequet = retryTask.notifyRequest;
         if (retryTask.isOverTimes()) {
             Loggers.CORE
                     .warn("push callback retry fail over times .dataId={},group={},tenant={},clientId={},will unregister client.",

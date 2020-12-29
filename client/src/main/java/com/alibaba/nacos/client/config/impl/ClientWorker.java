@@ -599,11 +599,13 @@ public class ClientWorker implements Closeable {
                     Collection<CacheData> values = cacheMap.get().values();
                     
                     for (CacheData cacheData : values) {
-                        if (taskId != null && Integer.valueOf(taskId).equals(cacheData.getTaskId())) {
+                        if (StringUtils.isNotBlank(taskId)) {
+                            if (Integer.valueOf(taskId).equals(cacheData.getTaskId())) {
+                                cacheData.setSync(false);
+                            }
+                        } else {
                             cacheData.setSync(false);
-                            continue;
                         }
-                        cacheData.setSync(false);
                     }
                 }
                 
