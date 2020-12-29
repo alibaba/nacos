@@ -86,12 +86,6 @@ public class GrpcConnection extends Connection {
         return meta;
     }
     
-    Metadata buildMeta(String type) {
-        Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP()).setType(type)
-                .setClientVersion(VersionUtils.getFullClientVersion()).build();
-        return meta;
-    }
-    
     private DefaultRequestFuture sendRequestInner(Request request, RequestMeta meta, RequestCallBack callBack)
             throws NacosException {
         String requestId = String.valueOf(PushAckIdGenerator.getNextId());

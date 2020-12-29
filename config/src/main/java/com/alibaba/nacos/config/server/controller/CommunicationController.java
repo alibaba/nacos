@@ -123,14 +123,15 @@ public class CommunicationController {
     @GetMapping("/watcherConfigs")
     public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("ip") String ip, ModelMap modelMap) {
-    
+        
         SampleResult result = longPollingService.getCollectSubscribleInfoByIp(ip);
         List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
         for (Connection connectionByIp : connectionsByIp) {
             Map<String, String> listenKeys = configChangeListenContext
                     .getListenKeys(connectionByIp.getMetaInfo().getConnectionId());
-            Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenKeys);
-            result.getLisentersGroupkeyStatus().putAll(lisentersGroupkeyStatus);
+            if (listenKeys != null) {
+                result.getLisentersGroupkeyStatus().putAll(listenKeys);
+            }
         }
         return result;
         

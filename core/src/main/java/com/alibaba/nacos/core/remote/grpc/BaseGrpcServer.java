@@ -19,10 +19,9 @@ package com.alibaba.nacos.core.remote.grpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ReflectUtils;
-import com.alibaba.nacos.common.utils.UuidUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RemoteUtils;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -81,9 +80,6 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     @Autowired
     private ConnectionManager connectionManager;
     
-    @Autowired
-    private RequestHandlerRegistry requestHandlerRegistry;
-    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
@@ -100,6 +96,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                     ServerCallHandler<T, S> next) {
                 Context ctx = Context.current()
                         .withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID))
+                        .withValue(CONTEXT_KEY_CONN_CLIENT_IP, call.getAttributes().get(TRANS_KEY_CLIENT_IP))
                         .withValue(CONTEXT_KEY_CONN_CLIENT_PORT, call.getAttributes().get(TRANS_KEY_CLIENT_PORT))
                         .withValue(CONTEXT_KEY_CONN_LOCAL_PORT, call.getAttributes().get(TRANS_KEY_LOCAL_PORT));
                 if (REQUEST_BI_STREAM_SERVICE_NAME.equals(call.getMethodDescriptor().getServiceName())) {
@@ -112,11 +109,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         
         addServices(handlerRegistry, serverInterceptor);
         
-        grpcExecutor = new ThreadPoolExecutor(0,
+        grpcExecutor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
                 Runtime.getRuntime().availableProcessors() * RemoteUtils.getRemoteExecutorTimesOfProcessors(), 10L,
                 TimeUnit.SECONDS, new SynchronousQueue(),
                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-executor-%d").build());
-        
         server = ServerBuilder.forPort(getServicePort()).executor(grpcExecutor).fallbackHandlerRegistry(handlerRegistry)
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
@@ -127,8 +123,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                                 .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
                         int remotePort = remoteAddress.getPort();
                         int localPort = localAddress.getPort();
+                        String remoteIp = remoteAddress.getAddress().getHostAddress();
                         Attributes attrWrapper = transportAttrs.toBuilder()
-                                .set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid()).set(TRANS_KEY_CLIENT_PORT, remotePort)
+                                .set(TRANS_KEY_CONN_ID, System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort)
+                                .set(TRANS_KEY_CLIENT_IP, remoteIp).set(TRANS_KEY_CLIENT_PORT, remotePort)
                                 .set(TRANS_KEY_LOCAL_PORT, localPort).build();
                         String connectionId = attrWrapper.get(TRANS_KEY_CONN_ID);
                         Loggers.REMOTE_DIGEST.info("Connection transportReady,connectionId = {} ", connectionId);
@@ -138,9 +136,17 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                     
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
-                        String connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE_DIGEST.info("Connection transportTerminated,connectionId = {} ", connectionId);
-                        connectionManager.unregister(connectionId);
+                        String connectionId = null;
+                        try {
+                            connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
+                        } catch (Exception e) {
+                            // Ignore
+                        }
+                        if (StringUtils.isNotBlank(connectionId)) {
+                            Loggers.REMOTE_DIGEST
+                                    .info("Connection transportTerminated,connectionId = {} ", connectionId);
+                            connectionManager.unregister(connectionId);
+                        }
                     }
                 }).build();
         server.start();
@@ -164,7 +170,8 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 .asyncUnaryCall((request, responseObserver) -> {
                     com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
                             .setConnectionId(CONTEXT_KEY_CONN_ID.get())
-                            .setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get()).build();
+                            .setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get())
+                            .setClientIp(CONTEXT_KEY_CONN_CLIENT_IP.get()).build();
                     Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
                     grpcCommonRequestAcceptor.request(requestNew, responseObserver);
                 });
@@ -174,16 +181,14 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
         
         // bi stream register.
+        final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls.asyncBidiStreamingCall(
+                (responseObserver) -> grpcBiStreamRequestAcceptor.requestBiStream(responseObserver));
+        
         final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor
                         .generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME))
-                .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
+                .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-        
-        final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls
-                .asyncBidiStreamingCall((responseObserver) -> {
-                    return grpcBiStreamRequestAcceptor.requestBiStream(responseObserver);
-                });
         
         final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
                 .builder(REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
@@ -196,6 +201,11 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         if (server != null) {
             server.shutdownNow();
         }
+    }
+    
+    @Override
+    public int getRpcTaskQueueSize() {
+        return grpcExecutor.getQueue().size();
     }
     
     static final Attributes.Key<String> TRANS_KEY_CONN_ID = Attributes.Key.create("conn_id");
