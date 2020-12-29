@@ -118,7 +118,7 @@ public class ZipUtils {
     /**
      * unzip method.
      */
-    public static UnZipResult unzip(byte[] source) {
+    public static UnZipResult unzip(byte[] source, String metaItemName) {
         List<ZipItem> itemList = new ArrayList<>();
         ZipItem metaDataItem = null;
         try (ZipInputStream zipIn = new ZipInputStream(new ByteArrayInputStream(source))) {
@@ -133,10 +133,16 @@ public class ZipUtils {
                     while ((offset = zipIn.read(buffer)) != -1) {
                         out.write(buffer, 0, offset);
                     }
-                    if (".meta.yml".equals(entry.getName())) {
-                        metaDataItem = new ZipItem(entry.getName(), out.toString("UTF-8"));
+                    String entryName = entry.getName();
+                    String[] split = entryName.split("/");
+                    // 忽略以.开头的文件名, mac 目录会生成 .XX 的文件
+                    if (split.length > 0 && split[split.length - 1].startsWith(".")) {
+                        continue;
+                    }
+                    if (entryName.equals(metaItemName)) {
+                        metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
                     } else {
-                        itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
+                        itemList.add(new ZipItem(entryName, out.toString("UTF-8")));
                     }
                 } catch (IOException e) {
                     LOGGER.error("unzip error", e);
