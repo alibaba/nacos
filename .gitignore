@@ -16,3 +16,6 @@ work
 test/logs
 derby.log
 yarn.lock
+distribution/bin/logs
+distribution/data
+distribution/logs
