@@ -18,8 +18,10 @@ package com.alibaba.nacos.core.distributed.distro.task.execute;
 
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandler;
+import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.utils.Loggers;
 
@@ -49,7 +51,21 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
     
     @Override
     public void run() {
+        String type = getDistroKey().getResourceType();
+        DistroTransportAgent transportAgent = distroComponentHolder.findTransportAgent(type);
+        if (null == transportAgent) {
+            Loggers.DISTRO.warn("No found transport agent for type [{}]", type);
+            return;
+        }
         Loggers.DISTRO.info("[DISTRO-START] {}", toString());
+        if (transportAgent.supportCallbackTransport()) {
+            doExecuteWithCallback(new DistroExecuteCallback());
+        } else {
+            executeDistroTask();
+        }
+    }
+    
+    private void executeDistroTask() {
         try {
             boolean result = doExecute();
             if (!result) {
@@ -63,11 +79,25 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
     }
     
     /**
+     * Get {@link DataOperation} for current task.
+     *
+     * @return data operation
+     */
+    protected abstract DataOperation getDataOperation();
+    
+    /**
      * Do execute for different sub class.
      *
      * @return result of execute
      */
     protected abstract boolean doExecute();
+    
+    /**
+     * Do execute with callback for different sub class.
+     *
+     * @param callback callback
+     */
+    protected abstract void doExecuteWithCallback(DistroCallback callback);
     
     /**
      * Handle failed task.
@@ -79,6 +109,24 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
             Loggers.DISTRO.warn("[DISTRO] Can't find failed task for type {}, so discarded", type);
             return;
         }
-        failedTaskHandler.retry(getDistroKey(), DataOperation.CHANGE);
+        failedTaskHandler.retry(getDistroKey(), getDataOperation());
+    }
+    
+    private class DistroExecuteCallback implements DistroCallback {
+        
+        @Override
+        public void onSuccess() {
+            Loggers.DISTRO.info("[DISTRO-END] {} result: true", getDistroKey().toString());
+        }
+        
+        @Override
+        public void onFailed(Throwable throwable) {
+            if (null == throwable) {
+                Loggers.DISTRO.info("[DISTRO-END] {} result: false", getDistroKey().toString());
+            } else {
+                Loggers.DISTRO.warn("[DISTRO] Sync data change failed.", throwable);
+            }
+            handleFailedTask();
+        }
     }
 }
