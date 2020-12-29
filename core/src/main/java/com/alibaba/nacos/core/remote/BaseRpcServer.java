@@ -24,7 +24,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import javax.annotation.PostConstruct;
 
 /**
- * abstrat rpc server .
+ * abstract rpc server .
  *
  * @author liuzunfei
  * @version $Id: BaseRpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
@@ -58,6 +58,7 @@ public abstract class BaseRpcServer {
                 }
             }
         });
+
     }
     
     /**
@@ -103,11 +104,5 @@ public abstract class BaseRpcServer {
      * the increase offset of nacos server port for rpc server port.
      */
     public abstract void shutdownServer();
-    
-    /**
-     * get rpc task queue size.
-     *
-     * @return queue size.
-     */
-    public abstract int getRpcTaskQueueSize();
+
 }
