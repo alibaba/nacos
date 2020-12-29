@@ -393,6 +393,11 @@ public class AsyncNotifyService {
         public void run() {
             long current = System.currentTimeMillis();
             for (NotifySingleTask task : delayNotifyTaskMap.values()) {
+                //If the target server already be removed in serverList, just remove the task.
+                if (!memberManager.hasMember(task.getTargetIP())) {
+                    removeTask(task);
+                    continue;
+                }
                 if (current < task.getStartTimestamp()) {
                     continue;
                 }
