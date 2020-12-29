@@ -121,7 +121,7 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     }
     
     public boolean isNotify() {
-        String notify = getHeader("notify");
+        String notify = getHeader("notify", "false");
         return Boolean.valueOf(notify);
     }
 }

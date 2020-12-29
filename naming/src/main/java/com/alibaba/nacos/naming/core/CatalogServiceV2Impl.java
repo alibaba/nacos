@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
@@ -62,8 +61,7 @@ public class CatalogServiceV2Impl implements CatalogService {
     
     @Override
     public Object getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException {
-        Service service = Service.newService(namespaceId, NamingUtils.getGroupName(serviceName),
-                NamingUtils.getServiceName(serviceName));
+        Service service = Service.newService(namespaceId, groupName, serviceName);
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.NOT_FOUND,
                     String.format("service %s@@%s is not found!", groupName, serviceName));
@@ -73,8 +71,8 @@ public class CatalogServiceV2Impl implements CatalogService {
         ServiceMetadata detailedService = metadata.orElseGet(ServiceMetadata::new);
         
         ObjectNode serviceObject = JacksonUtils.createEmptyJsonNode();
-        serviceObject.put("name", NamingUtils.getServiceName(serviceName));
-        serviceObject.put("groupName", NamingUtils.getGroupName(serviceName));
+        serviceObject.put("name", serviceName);
+        serviceObject.put("groupName", groupName);
         serviceObject.put("protectThreshold", detailedService.getProtectThreshold());
         serviceObject.replace("selector", JacksonUtils.transferToJsonNode(detailedService.getSelector()));
         serviceObject.replace("metadata", JacksonUtils.transferToJsonNode(detailedService.getExtendData()));

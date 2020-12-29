@@ -23,8 +23,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 import java.util.List;
 
-import java.util.List;
-
 /**
  * Service operator.
  *
@@ -33,25 +31,44 @@ import java.util.List;
 public interface ServiceOperator {
     
     /**
+     * Create new service.
+     *
+     * @param namespaceId namespace id of service
+     * @param serviceName grouped service name format like 'groupName@@serviceName'
+     * @param metadata    new metadata of service
+     * @throws NacosException nacos exception during creating
+     */
+    void create(String namespaceId, String serviceName, ServiceMetadata metadata) throws NacosException;
+    
+    /**
      * Update service information. Due to service basic information can't be changed, so update should only update the
      * metadata of service.
      *
-     * @param service service need to be updated.
+     * @param service  service need to be updated.
      * @param metadata new metadata of service.
      * @throws NacosException nacos exception during update
      */
     void updateServiceMetadata(Service service, ServiceMetadata metadata) throws NacosException;
     
     /**
+     * Delete service.
+     *
+     * @param namespaceId namespace id of service
+     * @param serviceName grouped service name format like 'groupName@@serviceName'
+     * @throws NacosException nacos exception during delete
+     */
+    void delete(String namespaceId, String serviceName) throws NacosException;
+    
+    /**
      * Update cluster information. Due to service basic information can't be changed, so update should only update the
      * metadata of service.
      *
-     * @param service service need to be updated.
+     * @param service  service need to be updated.
      * @param metadata new metadata of cluster.
      * @throws NacosException nacos exception during update
      */
     void updateClusterMetadata(Service service, ClusterMetadata metadata) throws NacosException;
-   
+    
     /**
      * Page list service name.
      *

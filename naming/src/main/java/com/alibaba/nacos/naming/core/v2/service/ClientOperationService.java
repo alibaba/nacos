@@ -71,6 +71,12 @@ public interface ClientOperationService {
     
     }
     
+    /**
+     * get publish info.
+     *
+     * @param instance {@link Instance}
+     * @return {@link InstancePublishInfo}
+     */
     default InstancePublishInfo getPublishInfo(Instance instance) {
         InstancePublishInfo result = new InstancePublishInfo(instance.getIp(), instance.getPort());
         if (null != instance.getMetadata() && !instance.getMetadata().isEmpty()) {

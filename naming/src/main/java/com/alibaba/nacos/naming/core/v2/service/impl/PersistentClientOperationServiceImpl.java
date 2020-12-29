@@ -253,7 +253,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         protected InputStream dumpSnapshot() {
             Map<String, IpPortBasedClient> clientMap = clientManager.showClients();
-            ConcurrentHashMap<String, IpPortBasedClient> clone = new ConcurrentHashMap<>();
+            ConcurrentHashMap<String, IpPortBasedClient> clone = new ConcurrentHashMap<>(128);
             clientMap.forEach((clientId, client) -> {
                 final IpPortBasedClient copy = client.clone();
                 copy.clearAllSubscribers();

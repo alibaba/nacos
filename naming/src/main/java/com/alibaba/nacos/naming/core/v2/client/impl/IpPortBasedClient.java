@@ -40,7 +40,9 @@ public class IpPortBasedClient extends AbstractClient {
     
     private final boolean ephemeral;
     
-    // TODO Checking types requires considering whether optional support is supported
+    /**
+     * TODO Checking types requires considering whether optional support is supported.
+     */
     private final ClientBeatCheckTaskV2 beatCheckTask;
     
     public IpPortBasedClient(String clientId, boolean ephemeral) {

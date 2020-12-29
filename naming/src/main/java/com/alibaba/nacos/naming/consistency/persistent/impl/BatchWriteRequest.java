@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.consistency.persistent.impl;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
 
 /**
  * batch write request.
@@ -56,5 +55,5 @@ public class BatchWriteRequest implements Serializable {
         values.add(value);
         return this;
     }
-
+    
 }

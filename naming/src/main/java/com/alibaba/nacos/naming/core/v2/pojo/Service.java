@@ -88,9 +88,12 @@ public class Service implements Serializable {
         return lastUpdatedTime;
     }
     
+    public void renewUpdateTime() {
+        lastUpdatedTime = System.currentTimeMillis();
+    }
+    
     public void incrementRevision() {
         revision.incrementAndGet();
-        lastUpdatedTime = System.currentTimeMillis();
     }
     
     public String getGroupedServiceName() {

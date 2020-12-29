@@ -82,7 +82,7 @@ public class DefaultRequestFuture implements RequestFuture {
         this.requestId = requestId;
         this.connectionId = connectionId;
         if (requestCallBack != null) {
-            this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SHEDULER
+            this.timeoutFuture = RpcScheduledExecutor.TIMEOUT_SCHEDULER
                     .schedule(new TimeoutHandler(), requestCallBack.getTimeout(), TimeUnit.MILLISECONDS);
         }
         this.timeoutInnerTrigger = timeoutInnerTrigger;
@@ -99,9 +99,7 @@ public class DefaultRequestFuture implements RequestFuture {
             notifyAll();
         }
         
-        if (requestCallBack != null) {
-            requestCallBack.getExcutor().execute(new CallBackHandler());
-        }
+        callBacInvoke();
     }
     
     public void setFailResult(Exception e) {
@@ -112,8 +110,14 @@ public class DefaultRequestFuture implements RequestFuture {
             notifyAll();
         }
         
+        callBacInvoke();
+    }
+    
+    private void callBacInvoke() {
         if (requestCallBack != null) {
-            requestCallBack.onException(e);
+            requestCallBack.getExecutor().execute(new CallBackHandler());
+        } else {
+            new CallBackHandler().run();
         }
     }
     

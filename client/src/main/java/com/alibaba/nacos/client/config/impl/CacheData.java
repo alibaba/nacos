@@ -51,14 +51,6 @@ public class CacheData {
         this.isInitializing = isInitializing;
     }
     
-    public boolean isListenSuccess() {
-        return isListenSuccess;
-    }
-    
-    public void setListenSuccess(boolean listenSuccess) {
-        isListenSuccess = listenSuccess;
-    }
-    
     public String getMd5() {
         return md5;
     }
@@ -209,6 +201,18 @@ public class CacheData {
         }
     }
     
+    /**
+     * check if all listeners md5 is equal with cache data.
+     */
+    public boolean checkListenersMd5Consistent() {
+        for (ManagerListenerWrap wrap : listeners) {
+            if (!md5.equals(wrap.lastCallMd5)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
             final String md5, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
@@ -285,6 +289,20 @@ public class CacheData {
         return content;
     }
     
+    /**
+     * 1.first add listener.default is false;need to check. 2.receive config change notify,set false;need to check.
+     * 3.last listener is remove,set to false;need to check
+     *
+     * @return
+     */
+    public boolean isSync() {
+        return isSync;
+    }
+    
+    public void setSync(boolean sync) {
+        isSync = sync;
+    }
+    
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
@@ -350,7 +368,10 @@ public class CacheData {
     
     private volatile boolean isInitializing = true;
     
-    private volatile boolean isListenSuccess = false;
+    /**
+     * if is sync with the server.
+     */
+    private volatile boolean isSync = false;
     
     private String type;
     

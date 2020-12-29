@@ -115,6 +115,6 @@ public abstract class Request {
     
     @Override
     public String toString() {
-        return "Request{" + "headers=" + headers + ", requestId='" + requestId + '\'' + '}';
+        return this.getClass().getSimpleName() + "{" + "headers=" + headers + ", requestId='" + requestId + '\'' + '}';
     }
 }

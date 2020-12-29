@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
@@ -83,12 +82,6 @@ public class GrpcConnection extends Connection {
         meta.setConnectionId(getMetaInfo().getConnectionId());
         meta.setClientPort(getMetaInfo().getLocalPort());
         meta.setClientIp(NetUtils.localIP());
-        return meta;
-    }
-    
-    Metadata buildMeta(String type) {
-        Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP()).setType(type)
-                .setClientVersion(VersionUtils.getFullClientVersion()).build();
         return meta;
     }
     

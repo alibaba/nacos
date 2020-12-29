@@ -30,11 +30,6 @@ public enum ConnectionType {
     RSOCKET("RSOCKET", "Rsocket Connection"),
     
     /**
-     * Rsocket connection.
-     */
-    TB_REMOTEING("TB_REMOTEING", "TB_REMOTEING Connection"),
-    
-    /**
      * gRPC connection.
      */
     GRPC("GRPC", "Grpc Connection");

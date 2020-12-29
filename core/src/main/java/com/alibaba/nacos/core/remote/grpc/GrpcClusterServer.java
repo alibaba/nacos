@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Grpc implementation as  a rpc server.
@@ -32,5 +35,10 @@ public class GrpcClusterServer extends BaseGrpcServer {
     @Override
     public int rpcPortOffset() {
         return PORT_OFFSET;
+    }
+    
+    @Override
+    public ThreadPoolExecutor getRpcExecutor() {
+        return GlobalExecutor.clusterRpcExecutor;
     }
 }

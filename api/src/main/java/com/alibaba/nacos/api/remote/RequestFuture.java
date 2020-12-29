@@ -31,7 +31,7 @@ public interface RequestFuture {
     
     /**
      * check that it is done or not..
-     * @return
+     * @return is done .
      */
     boolean isDone();
     

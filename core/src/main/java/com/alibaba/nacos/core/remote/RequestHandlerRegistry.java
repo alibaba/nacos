@@ -36,17 +36,16 @@ public class RequestHandlerRegistry {
     Map<String, RequestHandler> registryHandlers = new HashMap<String, RequestHandler>();
     
     /**
-     * Get Reuquest Handler By request Type.
+     * Get Request Handler By request Type.
      *
      * @param requestType see definitions  of sub constants classes of RequestTypeConstants
-     * @return
+     * @return request handler.
      */
     public RequestHandler getByRequestType(String requestType) {
         if (!registryHandlers.containsKey(requestType)) {
             Map<String, RequestHandler> beansOfType = ApplicationUtils.getBeansOfType(RequestHandler.class);
             Collection<RequestHandler> values = beansOfType.values();
             for (RequestHandler requestHandler : values) {
-            
                 Class<?> clazz = requestHandler.getClass();
                 boolean skip = false;
                 while (!clazz.getSuperclass().equals(RequestHandler.class)) {
@@ -60,12 +59,9 @@ public class RequestHandlerRegistry {
                     continue;
                 }
                 Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
-            
                 registryHandlers.putIfAbsent(tClass.getName(), requestHandler);
-            
             }
         }
-        
         return registryHandlers.get(requestType);
     }
     
@@ -77,5 +73,5 @@ public class RequestHandlerRegistry {
     public void registryHandler(RequestHandler requestHandler) {
     
     }
-
+    
 }

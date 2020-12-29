@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -41,11 +42,11 @@ import java.util.concurrent.ConcurrentMap;
 @Component
 public class NamingMetadataManager extends SmartSubscriber {
     
-    private final ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap;
-    
-    private final ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataMap;
-    
     private final Set<ExpiredMetadataInfo> expiredMetadataInfos;
+    
+    private ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap;
+    
+    private ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataMap;
     
     public NamingMetadataManager() {
         serviceMetadataMap = new ConcurrentHashMap<>(1 << 10);
@@ -75,7 +76,9 @@ public class NamingMetadataManager extends SmartSubscriber {
     }
     
     /**
-     * Get service metadata for {@link Service}.
+     * Get service metadata for {@link Service}, which is the original metadata object.
+     *
+     * <p>This method should use only query, can't modified metadata.
      *
      * @param service service
      * @return service metadata
@@ -85,7 +88,9 @@ public class NamingMetadataManager extends SmartSubscriber {
     }
     
     /**
-     * Get instance metadata for instance of {@link Service}.
+     * Get instance metadata for instance of {@link Service}, which is the original metadata object.
+     *
+     * <p>This method should use only query, can't modified metadata.
      *
      * @param service    service
      * @param instanceId instance id
@@ -106,6 +111,7 @@ public class NamingMetadataManager extends SmartSubscriber {
      * @param serviceMetadata new service metadata
      */
     public void updateServiceMetadata(Service service, ServiceMetadata serviceMetadata) {
+        service.incrementRevision();
         serviceMetadataMap.put(service, serviceMetadata);
     }
     
@@ -171,12 +177,31 @@ public class NamingMetadataManager extends SmartSubscriber {
         return result;
     }
     
-    public void loadServiceMetadataSnapshot(Map<Service, ServiceMetadata> snapshot) {
-        serviceMetadataMap.putAll(snapshot);
+    /**
+     * Load service metadata snapshot.
+     *
+     * <p>Service metadata need load back the service.
+     *
+     * @param snapshot snapshot
+     */
+    public void loadServiceMetadataSnapshot(ConcurrentMap<Service, ServiceMetadata> snapshot) {
+        for (Service each : snapshot.keySet()) {
+            ServiceManager.getInstance().getSingleton(each);
+        }
+        ConcurrentMap<Service, ServiceMetadata> oldSnapshot = serviceMetadataMap;
+        serviceMetadataMap = snapshot;
+        oldSnapshot.clear();
     }
     
-    public void loadInstanceMetadataSnapshot(Map<Service, ConcurrentMap<String, InstanceMetadata>> snapshot) {
-        instanceMetadataMap.putAll(snapshot);
+    /**
+     * Load instance metadata snapshot.
+     *
+     * @param snapshot snapshot
+     */
+    public void loadInstanceMetadataSnapshot(ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> snapshot) {
+        ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> oldSnapshot = instanceMetadataMap;
+        instanceMetadataMap = snapshot;
+        oldSnapshot.clear();
     }
     
     public Set<ExpiredMetadataInfo> getExpiredMetadataInfos() {

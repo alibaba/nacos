@@ -185,7 +185,7 @@ public class ConfigController {
     }
     
     /**
-     * Get configure board infomation fail.
+     * Get configure board information fail.
      *
      * @throws ServletException ServletException.
      * @throws IOException      IOException.

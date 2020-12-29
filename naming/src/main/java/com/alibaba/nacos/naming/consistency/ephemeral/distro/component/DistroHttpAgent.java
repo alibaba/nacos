@@ -36,6 +36,11 @@ import java.util.List;
 public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
+    public boolean supportCallbackTransport() {
+        return false;
+    }
+    
+    @Override
     public boolean syncData(DistroData data, String targetServer) {
         byte[] dataContent = data.getContent();
         return NamingProxy.syncData(dataContent, data.getDistroKey().getTargetServer());

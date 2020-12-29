@@ -58,7 +58,7 @@ public class KeyBuilder {
         return SERVICE_META_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName;
     }
     
-    public static String getSwitchDomainKey() {
+    public static String  getSwitchDomainKey() {
         return SERVICE_META_KEY_PREFIX + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
     

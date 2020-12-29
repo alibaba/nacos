@@ -38,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -73,12 +72,12 @@ public class RsocketRpcClient extends RpcClient {
     public Connection connectToServer(ServerInfo serverInfo) throws Exception {
         RSocket rSocket = null;
         try {
-            ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest();
-            Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
+            ConnectionSetupRequest connectionSetupRequest = new ConnectionSetupRequest();
+            Payload setUpPayload = RsocketUtils.convertRequestToPayload(connectionSetupRequest, buildMeta());
             rSocket = RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
                 @Override
                 public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
-    
+                    
                     RSocket rsocket = new RSocketProxy(sendingSocket) {
                         @Override
                         public Mono<Payload> requestResponse(Payload payload) {
@@ -97,7 +96,7 @@ public class RsocketRpcClient extends RpcClient {
                                     response.setRequestId(plainRequest.getBody().getRequestId());
                                     return Mono.just(RsocketUtils.convertResponseToPayload(response));
                                 }
-    
+                                
                             } catch (Exception e) {
                                 UnKnowResponse response = new UnKnowResponse();
                                 response.setResultCode(ResponseCode.FAIL.getCode());
@@ -106,7 +105,7 @@ public class RsocketRpcClient extends RpcClient {
                                         .just(DefaultPayload.create(RsocketUtils.convertResponseToPayload(response)));
                             }
                         }
-        
+                        
                         @Override
                         public Mono<Void> fireAndForget(Payload payload) {
                             final RsocketUtils.PlainRequest plainRequest = RsocketUtils
@@ -115,8 +114,8 @@ public class RsocketRpcClient extends RpcClient {
                             return Mono.empty();
                         }
                     };
-    
-                    return Mono.just((RSocket) rsocket);
+                    
+                    return Mono.just(rsocket);
                 }
             }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
             RsocketConnection connection = new RsocketConnection(serverInfo, rSocket);
@@ -150,34 +149,23 @@ public class RsocketRpcClient extends RpcClient {
             @Override
             public void onError(Throwable throwable) {
                 if (isRunning() && !connectionInner.isAbandon()) {
-                    System.out.println("onError ,switch server " + this + new Date().toString());
-    
                     if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
                         switchServerAsync();
                     }
-                } else {
-                    System.out.println(
-                            "client is not running status ,ignore error event , " + this + new Date().toString());
-    
                 }
             }
             
             @Override
             public void onComplete() {
-    
+                
                 if (isRunning() && !connectionInner.isAbandon()) {
-                    System.out.println("onCompleted ,switch server " + this);
                     if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
                         switchServerAsync();
                     }
-                } else {
-                    System.out.println(
-                            "client is not running status ,ignore complete  event , " + this + new Date().toString());
-        
                 }
             }
         };
-    
+        
         rSocket.onClose().subscribe(subscriber);
     }
     

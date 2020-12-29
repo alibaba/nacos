@@ -17,6 +17,8 @@
 package com.alibaba.nacos.naming.consistency.persistent.impl;
 
 /**
+ * The operation of the storage layer.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public enum Op {

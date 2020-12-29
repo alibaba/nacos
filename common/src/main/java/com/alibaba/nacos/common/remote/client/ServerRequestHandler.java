@@ -21,15 +21,15 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * ServerPushResponseHandler.
+ * ServerRequestHandler, to process the request from server side.
  *
  * @author liuzunfei
- * @version $Id: ServerPushResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
+ * @version $Id: ServerRequestHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
  */
 public interface ServerRequestHandler {
     
     /**
-     * Handle reuqest from server.
+     * Handle request from server.
      *
      * @param request request
      * @param requestMeta requestMeta
