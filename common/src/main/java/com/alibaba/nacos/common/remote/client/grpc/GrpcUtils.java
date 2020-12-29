@@ -39,7 +39,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 
 /**
- * grpc utils, use to parse request and response.
+ * gRPC utils, use to parse request and response.
  *
  * @author liuzunfei
  * @version $Id: GrpcUtils.java, v 0.1 2020年08月09日 1:43 PM liuzunfei Exp $
@@ -94,20 +94,20 @@ public class GrpcUtils {
      */
     public static Payload convert(Request request, RequestMeta meta) {
         //meta.
-        Payload.Builder builder = Payload.newBuilder();
+        Payload.Builder payloadBuilder = Payload.newBuilder();
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         if (meta != null) {
             metaBuilder.setClientIp(meta.getClientIp()).setClientPort(meta.getClientPort())
                     .setConnectionId(meta.getConnectionId()).putAllLabels(meta.getLabels())
-                    .putAllHeaders(request.getHeaders()).setClientVersion(meta.getClientVersion())
+                    .setClientVersion(meta.getClientVersion()).putAllHeaders(request.getHeaders())
                     .setType(request.getClass().getName());
         }
-        builder.setMetadata(metaBuilder.build());
+        payloadBuilder.setMetadata(metaBuilder.build());
         
         // request body .
         request.clearHeaders();
         String jsonString = toJson(request);
-        Payload payload = builder
+        Payload payload = payloadBuilder
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .build();
         return payload;
@@ -123,14 +123,15 @@ public class GrpcUtils {
      */
     public static Payload convert(Request request, Metadata meta) {
         
-        Metadata buildMeta = meta.toBuilder().putAllHeaders(request.getHeaders()).build();
+        Metadata newMeta = meta.toBuilder().putAllHeaders(request.getHeaders()).build();
         request.clearHeaders();
         String jsonString = toJson(request);
         
         Payload.Builder builder = Payload.newBuilder();
+
         Payload payload = builder
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
-                .setMetadata(buildMeta).build();
+                .setMetadata(newMeta).build();
         return payload;
         
     }
@@ -161,15 +162,15 @@ public class GrpcUtils {
      */
     public static PlainRequest parse(Payload payload) {
         PlainRequest plainRequest = new PlainRequest();
-        Class classyType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
-        if (classyType != null) {
-            Object obj = toObj(payload.getBody().getValue().toString(Charset.forName(Constants.ENCODE)), classyType);
+        Class classType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
+        if (classType != null) {
+            Object obj = toObj(payload.getBody().getValue().toString(Charset.forName(Constants.ENCODE)), classType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }
             plainRequest.body = obj;
         } else {
-            throw new RemoteException(NacosException.SERVER_ERROR, "unknown payload type:" + classyType);
+            throw new RemoteException(NacosException.SERVER_ERROR, "unknown payload type:" + payload.getMetadata().getType());
         }
         
         plainRequest.type = payload.getMetadata().getType();

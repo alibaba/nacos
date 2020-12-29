@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 /**
- * sdk client for grpc.
+ * gRPC client for sdk.
  *
  * @author liuzunfei
  * @version $Id: GrpcSdkClient.java, v 0.1 2020年09月07日 11:05 AM liuzunfei Exp $

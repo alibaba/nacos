@@ -25,15 +25,15 @@ import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 
 /**
- * Naming push response handler.
+ * Naming push request handler.
  *
  * @author xiweng.yy
  */
-public class NamingPushResponseHandler implements ServerRequestHandler {
+public class NamingPushRequestHandler implements ServerRequestHandler {
     
     private final ServiceInfoHolder serviceInfoHolder;
     
-    public NamingPushResponseHandler(ServiceInfoHolder serviceInfoHolder) {
+    public NamingPushRequestHandler(ServiceInfoHolder serviceInfoHolder) {
         this.serviceInfoHolder = serviceInfoHolder;
     }
 
