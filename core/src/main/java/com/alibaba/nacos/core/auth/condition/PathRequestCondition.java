@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.auth.condition;
 
-import static com.alibaba.nacos.core.utils.Constants.REQUEST_PATH_SEPARATOR;
+import static com.alibaba.nacos.sys.env.Constants.REQUEST_PATH_SEPARATOR;
 
 /**
  * request path info. method:{@link org.springframework.web.bind.annotation.RequestMapping#method()} path: {@link

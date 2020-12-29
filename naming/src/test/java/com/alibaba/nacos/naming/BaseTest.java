@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
@@ -26,6 +25,8 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
@@ -44,7 +45,7 @@ public class BaseTest {
     
     protected static final String TEST_CLUSTER_NAME = "test-cluster";
     
-    protected static final String TEST_SERVICE_NAME = "test-service";
+    protected static final String TEST_SERVICE_NAME = "DEFAULT_GROUP@@test-service";
     
     protected static final String TEST_GROUP_NAME = "test-group-name";
     
@@ -82,7 +83,7 @@ public class BaseTest {
     
     @Before
     public void before() {
-        ApplicationUtils.injectEnvironment(environment);
+        EnvUtil.setEnvironment(environment);
         ApplicationUtils.injectContext(context);
     }
     

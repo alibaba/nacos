@@ -23,9 +23,7 @@ import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.DiskUtils;
-import org.junit.AfterClass;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,7 +34,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -51,6 +48,11 @@ public class ConfigDerbyImport_CITCase {
     
     @Autowired
     private ApplicationContext context;
+    
+    @BeforeClass
+    public static void beforeClass() {
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigDerbyImport_CITCase.class.getSimpleName());
+    }
     
     @Test()
     public void testDerbyImport() throws Throwable {

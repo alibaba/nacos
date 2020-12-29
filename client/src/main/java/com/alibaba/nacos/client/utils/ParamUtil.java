@@ -20,9 +20,9 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import org.slf4j.Logger;
 
-import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
@@ -80,19 +80,7 @@ public class ParamUtil {
         }
         LOGGER.info("[settings] [http-client] connect timeout:{}", connectTimeout);
         
-        try {
-            InputStream in = ValidatorUtils.class.getClassLoader().getResourceAsStream("application.properties");
-            Properties props = new Properties();
-            props.load(in);
-            String val = null;
-            val = props.getProperty("version");
-            if (val != null) {
-                clientVersion = val;
-            }
-            LOGGER.info("NACOS_CLIENT_VERSION: {}", clientVersion);
-        } catch (Exception e) {
-            LOGGER.error("[500] read application.properties", e);
-        }
+        clientVersion = VersionUtils.version;
         
         try {
             perTaskConfigSize = Double.valueOf(System.getProperty("PER_TASK_CONFIG_SIZE", "3000"));

@@ -17,19 +17,19 @@
 package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpUtils;
-import com.alibaba.nacos.common.http.NAsyncHttpClient;
+import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -150,9 +150,9 @@ public class NacosClusterController {
      */
     @PostMapping("/server/leave")
     public RestResult<String> leave(@RequestBody Collection<String> params) throws Exception {
-        Collection<Member> memberList = MemberUtils.multiParse(params);
+        Collection<Member> memberList = MemberUtil.multiParse(params);
         memberManager.memberLeave(memberList);
-        final NAsyncHttpClient asyncHttpClient = HttpClientManager.getAsyncHttpClient();
+        final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CLUSTER);
         final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
         };
         final Collection<Member> notifyList = memberManager.allMembersWithoutSelf();
@@ -160,21 +160,21 @@ public class NacosClusterController {
         CountDownLatch latch = new CountDownLatch(notifyList.size());
         for (Member member : notifyList) {
             final String url = HttpUtils
-                    .buildUrl(false, member.getAddress(), ApplicationUtils.getContextPath(), Commons.NACOS_CORE_CONTEXT,
+                    .buildUrl(false, member.getAddress(), EnvUtil.getContextPath(), Commons.NACOS_CORE_CONTEXT,
                             "/cluster/server/leave");
-            asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, params, genericType.getType(), new Callback<String>() {
+            nacosAsyncRestTemplate.post(url, Header.EMPTY, Query.EMPTY, params, genericType.getType(), new Callback<String>() {
                 @Override
                 public void onReceive(RestResult<String> result) {
                     try {
                         if (result.ok()) {
                             LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER,
                                     "The node : [{}] success to process the request", member);
-                            MemberUtils.onSuccess(member);
+                            MemberUtil.onSuccess(memberManager, member);
                         } else {
                             Loggers.CLUSTER
                                     .warn("The node : [{}] failed to process the request, response is : {}", member,
                                             result);
-                            MemberUtils.onFail(member);
+                            MemberUtil.onFail(memberManager, member);
                         }
                     } finally {
                         latch.countDown();
@@ -185,7 +185,7 @@ public class NacosClusterController {
                 public void onError(Throwable throwable) {
                     try {
                         Loggers.CLUSTER.error("Failed to communicate with the node : {}", member);
-                        MemberUtils.onFail(member);
+                        MemberUtil.onFail(memberManager, member);
                     } finally {
                         latch.countDown();
                     }

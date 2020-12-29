@@ -32,8 +32,8 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,14 +127,14 @@ public class AsyncNotifyService {
                     if (unHealthNeedDelay) {
                         // target ip is unhealthy, then put it in the notification list
                         ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                                task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_UNHEALTH,
+                                task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_UNHEALTH,
                                 0, task.target);
                         // get delay time and set fail count to the task
                         asyncTaskExecute(task);
                     } else {
                         Header header = Header.newInstance();
                         header.addParam(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(task.getLastModified()));
-                        header.addParam(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIp());
+                        header.addParam(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIP());
                         if (task.isBeta) {
                             header.addParam("isBeta", "true");
                         }
@@ -168,13 +168,13 @@ public class AsyncNotifyService {
             
             if (result.ok()) {
                 ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                        task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
+                        task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
                         task.target);
             } else {
                 LOGGER.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}", task.target, task.getDataId(),
                         task.getGroup(), task.getLastModified(), result.getCode());
                 ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                        task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
+                        task.getLastModified(), InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
                         task.target);
                 
                 //get delay time and set fail count to the task
@@ -196,7 +196,7 @@ public class AsyncNotifyService {
                     task.getGroup(), task.getLastModified(), ex.toString());
             ConfigTraceService
                     .logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
-                            InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, task.target);
+                            InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, task.target);
             
             //get delay time and set fail count to the task
             asyncTaskExecute(task);
@@ -259,10 +259,10 @@ public class AsyncNotifyService {
                 LOGGER.error("URLEncoder encode error", e);
             }
             if (StringUtils.isBlank(tenant)) {
-                this.url = MessageFormat.format(URL_PATTERN, target, ApplicationUtils.getContextPath(), dataId, group);
+                this.url = MessageFormat.format(URL_PATTERN, target, EnvUtil.getContextPath(), dataId, group);
             } else {
                 this.url = MessageFormat
-                        .format(URL_PATTERN_TENANT, target, ApplicationUtils.getContextPath(), dataId, group, tenant);
+                        .format(URL_PATTERN_TENANT, target, EnvUtil.getContextPath(), dataId, group, tenant);
             }
             if (StringUtils.isNotEmpty(tag)) {
                 url = url + "&tag=" + tag;

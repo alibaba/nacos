@@ -20,9 +20,9 @@ import com.alibaba.nacos.address.component.AddressServerGeneratorManager;
 import com.alibaba.nacos.address.component.AddressServerManager;
 import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.address.misc.Loggers;
-import com.alibaba.nacos.address.util.AddressServerParamCheckUtil;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -87,8 +87,8 @@ public class AddressServerClusterController {
             clusterObj.setHealthChecker(new AbstractHealthChecker.None());
             serviceManager.createServiceIfAbsent(Constants.DEFAULT_NAMESPACE_ID, serviceName, false, clusterObj);
             String[] ipArray = addressServerManager.splitIps(ips);
-            String checkResult = AddressServerParamCheckUtil.checkIps(ipArray);
-            if (AddressServerParamCheckUtil.CHECK_OK.equals(checkResult)) {
+            String checkResult = IPUtil.checkIPs(ipArray);
+            if (IPUtil.checkOK(checkResult)) {
                 List<Instance> instanceList = addressServerGeneratorManager
                         .generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
                 for (Instance instance : instanceList) {
@@ -143,8 +143,8 @@ public class AddressServerClusterController {
                 } else {
                     // delete specified ip list
                     String[] ipArray = addressServerManager.splitIps(ips);
-                    String checkResult = AddressServerParamCheckUtil.checkIps(ipArray);
-                    if (AddressServerParamCheckUtil.CHECK_OK.equals(checkResult)) {
+                    String checkResult = IPUtil.checkIPs(ipArray);
+                    if (IPUtil.checkOK(checkResult)) {
                         List<Instance> instanceList = addressServerGeneratorManager
                                 .generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
                         serviceManager.removeInstance(Constants.DEFAULT_NAMESPACE_ID, serviceName, false,

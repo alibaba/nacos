@@ -16,18 +16,21 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.Response;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +38,6 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -50,10 +52,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * Sets of raft peers.
  *
  * @author nacos
+ * @deprecated will remove in 1.4.x
  */
+@Deprecated
 @Component
 @DependsOn("ProtocolManager")
-public class RaftPeerSet extends MemberChangeListener {
+public class RaftPeerSet extends MemberChangeListener implements Closeable {
     
     private final ServerMemberManager memberManager;
     
@@ -67,7 +71,7 @@ public class RaftPeerSet extends MemberChangeListener {
     
     private volatile boolean ready = false;
     
-    private Set<Member> oldMembers;
+    private Set<Member> oldMembers = new HashSet<>();
     
     public RaftPeerSet(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -79,8 +83,18 @@ public class RaftPeerSet extends MemberChangeListener {
         changePeers(memberManager.allMembers());
     }
     
+    @Override
+    public void shutdown() throws NacosException {
+        this.localTerm.set(-1);
+        this.leader = null;
+        this.peers.clear();
+        this.sites.clear();
+        this.ready = false;
+        this.oldMembers.clear();
+    }
+    
     public RaftPeer getLeader() {
-        if (ApplicationUtils.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) {
             return local();
         }
         return leader;
@@ -123,7 +137,7 @@ public class RaftPeerSet extends MemberChangeListener {
      * @return true if is leader or stand alone, otherwise false
      */
     public boolean isLeader(String ip) {
-        if (ApplicationUtils.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) {
             return true;
         }
         
@@ -219,20 +233,27 @@ public class RaftPeerSet extends MemberChangeListener {
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
                     String url = RaftCore.buildUrl(peer.ip, RaftCore.API_GET_PEER);
-                    HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler<Integer>() {
+                    HttpClient.asyncHttpGet(url, null, params, new Callback<String>() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
                                 Loggers.RAFT
-                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", response.getResponseBody(),
-                                                peer.ip);
+                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", result.getCode(), peer.ip);
                                 peer.state = RaftPeer.State.FOLLOWER;
-                                return 1;
+                                return;
                             }
                             
-                            update(JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class));
-                            
-                            return 0;
+                            update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
+                        }
+                        
+                        @Override
+                        public void onError(Throwable throwable) {
+                        
+                        }
+                        
+                        @Override
+                        public void onCancel() {
+                        
                         }
                     });
                 } catch (Exception e) {
@@ -251,8 +272,8 @@ public class RaftPeerSet extends MemberChangeListener {
      * @return local raft peer
      */
     public RaftPeer local() {
-        RaftPeer peer = peers.get(ApplicationUtils.getLocalAddress());
-        if (peer == null && ApplicationUtils.getStandaloneMode()) {
+        RaftPeer peer = peers.get(EnvUtil.getLocalAddress());
+        if (peer == null && EnvUtil.getStandaloneMode()) {
             RaftPeer localPeer = new RaftPeer();
             localPeer.ip = NetUtils.localServer();
             localPeer.term.set(localTerm.get());
@@ -303,21 +324,19 @@ public class RaftPeerSet extends MemberChangeListener {
     @Override
     public void onEvent(MembersChangeEvent event) {
         Collection<Member> members = event.getMembers();
-        if (oldMembers == null) {
-            oldMembers = new HashSet<>(members);
-        } else {
-            oldMembers.removeAll(members);
-        }
+        Collection<Member> newMembers = new HashSet<>(members);
+        newMembers.removeAll(oldMembers);
         
-        if (!oldMembers.isEmpty()) {
+        // If an IP change occurs, the change starts
+        if (!newMembers.isEmpty()) {
             changePeers(members);
         }
-    
+        
         oldMembers.clear();
         oldMembers.addAll(members);
     }
     
-    private void changePeers(Collection<Member> members) {
+    protected void changePeers(Collection<Member> members) {
         Map<String, RaftPeer> tmpPeers = new HashMap<>(members.size());
         
         for (Member member : members) {
@@ -332,7 +351,7 @@ public class RaftPeerSet extends MemberChangeListener {
             raftPeer.ip = address;
             
             // first time meet the local server:
-            if (ApplicationUtils.getLocalAddress().equals(address)) {
+            if (EnvUtil.getLocalAddress().equals(address)) {
                 raftPeer.term.set(localTerm.get());
             }
             

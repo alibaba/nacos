@@ -1,0 +1,6 @@
+# EnvironmentPostProcessor
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.alibaba.nacos.sys.env.NacosDefaultPropertySourceEnvironmentPostProcessor
+# ApplicationContextInitializer
+org.springframework.context.ApplicationContextInitializer=\
+  com.alibaba.nacos.sys.utils.ApplicationUtils

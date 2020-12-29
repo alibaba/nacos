@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.Response;
+import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.model.RestResult;
 import org.springframework.util.StringUtils;
 
-import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,24 +43,32 @@ public class ServerStatusSynchronizer implements Synchronizer {
         
         params.put("serverStatus", msg.getData());
         
-        String url = "http://" + serverIP + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
+        String url = "http://" + serverIP + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
         
-        if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+        if (IPUtil.containsPort(serverIP)) {
+            url = "http://" + serverIP + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/operator/server/status";
         }
         
         try {
-            HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler() {
+            HttpClient.asyncHttpGet(url, null, params, new Callback<String>() {
                 @Override
-                public Integer onCompleted(Response response) throws Exception {
-                    if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                public void onReceive(RestResult<String> result) {
+                    if (!result.ok()) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}",
                                 serverIP);
-                        return 1;
                     }
-                    return 0;
+                }
+    
+                @Override
+                public void onError(Throwable throwable) {
+                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, throwable);
+                }
+    
+                @Override
+                public void onCancel() {
+        
                 }
             });
         } catch (Exception e) {

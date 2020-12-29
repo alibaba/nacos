@@ -31,7 +31,7 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -97,6 +97,7 @@ public class ConfigOpsController {
      * @return {@link RestResult}
      */
     @GetMapping(value = "/derby")
+    @Secured(action = ActionTypes.READ, resource = "nacos/admin")
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "select";
         String limitSign = "ROWS FETCH NEXT";

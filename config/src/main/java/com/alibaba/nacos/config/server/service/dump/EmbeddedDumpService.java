@@ -28,7 +28,7 @@ import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -76,7 +76,7 @@ public class EmbeddedDumpService extends DumpService {
     @PostConstruct
     @Override
     protected void init() throws Throwable {
-        if (ApplicationUtils.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) {
             dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
             return;
         }
@@ -155,7 +155,7 @@ public class EmbeddedDumpService extends DumpService {
     
     @Override
     protected boolean canExecute() {
-        if (ApplicationUtils.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) {
             return true;
         }
         // if is derby + raft mode, only leader can execute

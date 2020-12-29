@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.model;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.core.env.StandardEnvironment;
@@ -28,7 +28,7 @@ public class ConfigInfoTest {
     
     @Test
     public void testPrecisionIssue() throws Exception {
-        ApplicationUtils.injectEnvironment(new StandardEnvironment());
+        EnvUtil.setEnvironment(new StandardEnvironment());
         IdGenerator generator = new SnowFlowerIdGenerator();
         long expected = generator.nextId();
         ConfigInfo configInfo = new ConfigInfo();

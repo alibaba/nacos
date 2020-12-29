@@ -25,6 +25,6 @@ import com.alibaba.nacos.consistency.ConsistencyProtocol;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public interface APProtocol<C extends Config, P extends LogProcessor4AP> extends ConsistencyProtocol<C, P> {
+public interface APProtocol<C extends Config, P extends RequestProcessor4AP> extends ConsistencyProtocol<C, P> {
 
 }

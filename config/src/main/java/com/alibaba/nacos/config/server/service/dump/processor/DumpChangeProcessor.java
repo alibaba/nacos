@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
+import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.manager.AbstractTask;
-import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -37,7 +37,7 @@ import java.util.List;
  * @author Nacos
  * @date 2020/7/5 12:19 PM
  */
-public class DumpChangeProcessor implements TaskProcessor {
+public class DumpChangeProcessor implements NacosTaskProcessor {
     
     public DumpChangeProcessor(DumpService dumpService, Timestamp startTime, Timestamp endTime) {
         this.dumpService = dumpService;
@@ -47,7 +47,7 @@ public class DumpChangeProcessor implements TaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractTask task) {
+    public boolean process(NacosTask task) {
         LogUtil.DEFAULT_LOG.warn("quick start; startTime:{},endTime:{}", startTime, endTime);
         LogUtil.DEFAULT_LOG.warn("updateMd5 start");
         long startUpdateMd5 = System.currentTimeMillis();

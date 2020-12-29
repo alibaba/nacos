@@ -24,6 +24,7 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.StsConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
@@ -49,14 +50,13 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.Callable;
 
 /**
  * Server Agent.
@@ -94,9 +94,9 @@ public class ServerHttpAgent implements HttpAgent {
                 if (headers != null) {
                     newHeaders.addAll(headers);
                 }
-                
+                Query query = Query.newInstance().initParams(paramValues);
                 HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                        .get(getUrl(currentServerAddr, path), httpConfig, newHeaders, paramValues, String.class);
+                        .get(getUrl(currentServerAddr, path), httpConfig, newHeaders, query, String.class);
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                             serverListMgr.getCurrentServerAddr(), result.getCode());
@@ -152,8 +152,7 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                        .postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders,
-                                new HashMap<String, String>(0), paramValues, String.class);
+                        .postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders, paramValues, String.class);
                 
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", currentServerAddr,
@@ -207,8 +206,9 @@ public class ServerHttpAgent implements HttpAgent {
                 if (headers != null) {
                     newHeaders.addAll(headers);
                 }
+                Query query = Query.newInstance().initParams(paramValues);
                 HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                        .delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, paramValues, String.class);
+                        .delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, query, String.class);
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                             serverListMgr.getCurrentServerAddr(), result.getCode());
@@ -248,9 +248,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     private String getUrl(String serverAddr, String relativePath) {
-        String contextPath = serverListMgr.getContentPath().startsWith("/") ? serverListMgr.getContentPath()
-                : "/" + serverListMgr.getContentPath();
-        return serverAddr + contextPath + relativePath;
+        return serverAddr + ContextPathUtil.normalizeContextPath(serverListMgr.getContentPath()) + relativePath;
     }
     
     private boolean isFail(HttpRestResult<String> result) {

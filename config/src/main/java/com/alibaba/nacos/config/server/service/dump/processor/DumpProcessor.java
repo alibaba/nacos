@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
-import com.alibaba.nacos.config.server.manager.AbstractTask;
-import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.common.task.NacosTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
@@ -37,14 +37,14 @@ import java.util.Objects;
  * @author Nacos
  * @date 2020/7/5 12:19 PM
  */
-public class DumpProcessor implements TaskProcessor {
+public class DumpProcessor implements NacosTaskProcessor {
     
     public DumpProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
     }
     
     @Override
-    public boolean process(String taskType, AbstractTask task) {
+    public boolean process(NacosTask task) {
         final PersistService persistService = dumpService.getPersistService();
         DumpTask dumpTask = (DumpTask) task;
         String[] pair = GroupKey2.parseKey(dumpTask.getGroupKey());

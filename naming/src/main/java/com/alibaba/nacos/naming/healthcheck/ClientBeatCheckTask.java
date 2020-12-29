@@ -16,8 +16,12 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
@@ -31,10 +35,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.Response;
 
-import java.net.HttpURLConnection;
 import java.util.List;
 
 /**
@@ -136,19 +137,30 @@ public class ClientBeatCheckTask implements Runnable {
                     .appendParam("ephemeral", "true").appendParam("clusterName", instance.getClusterName())
                     .appendParam("serviceName", service.getName()).appendParam("namespaceId", service.getNamespaceId());
             
-            String url = "http://127.0.0.1:" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
+            String url = "http://" + IPUtil.localHostIP() + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort() + EnvUtil.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
             
             // delete instance asynchronously:
-            HttpClient.asyncHttpDelete(url, null, null, new AsyncCompletionHandler() {
+            HttpClient.asyncHttpDelete(url, null, null, new Callback<String>() {
                 @Override
-                public Object onCompleted(Response response) throws Exception {
-                    if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                public void onReceive(RestResult<String> result) {
+                    if (!result.ok()) {
                         Loggers.SRV_LOG
                                 .error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",
-                                        instance.toJson(), response.getResponseBody(), response.getStatusCode());
+                                        instance.toJson(), result.getMessage(), result.getCode());
                     }
-                    return null;
+                }
+    
+                @Override
+                public void onError(Throwable throwable) {
+                    Loggers.SRV_LOG
+                            .error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJson(),
+                                    throwable);
+                }
+    
+                @Override
+                public void onCancel() {
+        
                 }
             });
             

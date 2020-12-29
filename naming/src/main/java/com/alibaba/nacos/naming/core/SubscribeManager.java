@@ -17,10 +17,11 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -31,7 +32,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -97,13 +97,13 @@ public class SubscribeManager {
                     continue;
                 }
                 
-                HttpClient.HttpResult result = HttpClient.httpGet(
-                        "http://" + server.getAddress() + ApplicationUtils.getContextPath()
+                RestResult<String> result = HttpClient.httpGet(
+                        "http://" + server.getAddress() + EnvUtil.getContextPath()
                                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(),
                         paramValues);
                 
-                if (HttpURLConnection.HTTP_OK == result.code) {
-                    Subscribers subscribers = JacksonUtils.toObj(result.content, Subscribers.class);
+                if (result.ok()) {
+                    Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
                 }
             }

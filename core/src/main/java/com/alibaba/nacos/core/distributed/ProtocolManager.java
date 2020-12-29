@@ -21,21 +21,17 @@ import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -48,15 +44,13 @@ import java.util.Set;
  */
 @SuppressWarnings("all")
 @Component(value = "ProtocolManager")
-@DependsOn("serverMemberManager")
-public class ProtocolManager extends MemberChangeListener implements ApplicationListener<ContextStartedEvent>, DisposableBean {
+public class ProtocolManager extends MemberChangeListener implements DisposableBean {
     
     private CPProtocol cpProtocol;
     
     private APProtocol apProtocol;
     
-    @Autowired
-    private ServerMemberManager memberManager;
+    private final ServerMemberManager memberManager;
     
     private boolean apInit = false;
     
@@ -64,28 +58,25 @@ public class ProtocolManager extends MemberChangeListener implements Application
     
     private Set<Member> oldMembers;
     
-    private static Set<String> toAPMembersInfo(Collection<Member> members) {
+    public ProtocolManager(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
+        NotifyCenter.registerSubscriber(this);
+    }
+    
+    public static Set<String> toAPMembersInfo(Collection<Member> members) {
         Set<String> nodes = new HashSet<>();
         members.forEach(member -> nodes.add(member.getAddress()));
         return nodes;
     }
     
-    // delay init protocol
-    
-    private static Set<String> toCPMembersInfo(Collection<Member> members) {
+    public static Set<String> toCPMembersInfo(Collection<Member> members) {
         Set<String> nodes = new HashSet<>();
         members.forEach(member -> {
             final String ip = member.getIp();
-            final int raftPort = MemberUtils.calculateRaftPort(member);
+            final int raftPort = MemberUtil.calculateRaftPort(member);
             nodes.add(ip + ":" + raftPort);
         });
         return nodes;
-    }
-    
-    @PostConstruct
-    public void init() {
-        this.memberManager = memberManager;
-        NotifyCenter.registerSubscriber(this);
     }
     
     public CPProtocol getCpProtocol() {
@@ -108,6 +99,7 @@ public class ProtocolManager extends MemberChangeListener implements Application
         return apProtocol;
     }
     
+    @PreDestroy
     public void destroy() {
         if (Objects.nonNull(apProtocol)) {
             apProtocol.shutdown();
@@ -115,10 +107,6 @@ public class ProtocolManager extends MemberChangeListener implements Application
         if (Objects.nonNull(cpProtocol)) {
             cpProtocol.shutdown();
         }
-    }
-    
-    @Override
-    public void onApplicationEvent(ContextStartedEvent event) {
     }
     
     private void initAPProtocol() {
@@ -161,29 +149,15 @@ public class ProtocolManager extends MemberChangeListener implements Application
         // node change event A occurs at time T1, and node change event B occurs at
         // time T2 after a period of time.
         // (T1 < T2)
-        Set<Member> copy = new HashSet<>(event.getMembers());
-    
-        if (oldMembers == null) {
-            oldMembers = new HashSet<>(copy);
-        } else {
-            oldMembers.removeAll(copy);
+        // Node change events between different protocols should not block each other.
+        // and we use a single thread pool to inform the consistency layer of node changes,
+        // to avoid multiple tasks simultaneously carrying out the consistency layer of
+        // node changes operation
+        if (Objects.nonNull(apProtocol)) {
+            ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(event.getMembers())));
         }
-        
-        if (!oldMembers.isEmpty()) {
-            // Node change events between different protocols should not block each other.
-            // and we use a single thread pool to inform the consistency layer of node changes,
-            // to avoid multiple tasks simultaneously carrying out the consistency layer of
-            // node changes operation
-            if (Objects.nonNull(apProtocol)) {
-                ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(copy)));
-            }
-            if (Objects.nonNull(cpProtocol)) {
-                ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
-            }
+        if (Objects.nonNull(cpProtocol)) {
+            ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(event.getMembers())));
         }
-    
-        // remove old members info
-        oldMembers.clear();
-        oldMembers.addAll(copy);
     }
 }

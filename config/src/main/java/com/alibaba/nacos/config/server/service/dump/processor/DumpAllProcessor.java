@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
+import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.manager.AbstractTask;
-import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
@@ -39,7 +39,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  * @author Nacos
  * @date 2020/7/5 12:19 PM
  */
-public class DumpAllProcessor implements TaskProcessor {
+public class DumpAllProcessor implements NacosTaskProcessor {
     
     public DumpAllProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
@@ -47,7 +47,7 @@ public class DumpAllProcessor implements TaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractTask task) {
+    public boolean process(NacosTask task) {
         long currentMaxId = persistService.findConfigMaxId();
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {

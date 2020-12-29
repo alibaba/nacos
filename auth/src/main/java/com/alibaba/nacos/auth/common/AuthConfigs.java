@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.auth.common;
 
-import com.alibaba.nacos.auth.common.env.ReloadableConfigs;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import io.jsonwebtoken.io.Decoders;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
@@ -39,14 +39,16 @@ public class AuthConfigs {
     @JustForTest
     private static Boolean cachingEnabled = null;
     
-    @Autowired
-    private ReloadableConfigs reloadableConfigs;
-    
     /**
      * secret key.
      */
     @Value("${nacos.core.auth.default.token.secret.key:}")
     private String secretKey;
+    
+    /**
+     * secret key byte array.
+     */
+    private byte[] secretKeyBytes;
     
     /**
      * Token validity time(seconds).
@@ -60,8 +62,11 @@ public class AuthConfigs {
     @Value("${nacos.core.auth.system.type:}")
     private String nacosAuthSystemType;
     
-    public String getSecretKey() {
-        return secretKey;
+    public byte[] getSecretKeyBytes() {
+        if (secretKeyBytes == null) {
+            secretKeyBytes = Decoders.BASE64.decode(secretKey);
+        }
+        return secretKeyBytes;
     }
     
     public long getTokenValidityInSeconds() {
@@ -84,7 +89,7 @@ public class AuthConfigs {
             return BooleanUtils.toBoolean(enabled);
         }
         return BooleanUtils
-                .toBoolean(reloadableConfigs.getProperties().getProperty("nacos.core.auth.enabled", "false"));
+                .toBoolean(EnvUtil.getProperty("nacos.core.auth.enabled", "false"));
     }
     
     /**
@@ -97,7 +102,7 @@ public class AuthConfigs {
             return cachingEnabled;
         }
         return BooleanUtils
-                .toBoolean(reloadableConfigs.getProperties().getProperty("nacos.core.auth.caching.enabled", "true"));
+                .toBoolean(EnvUtil.getProperty("nacos.core.auth.caching.enabled", "true"));
     }
     
     @JustForTest

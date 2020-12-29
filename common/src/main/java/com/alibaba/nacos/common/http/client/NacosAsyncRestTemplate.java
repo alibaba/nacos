@@ -67,26 +67,6 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     }
     
     /**
-     * async http get URL request params are expanded using the given map {@code paramValues}.
-     *
-     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
-     *
-     * <p>{@code callback} Result callback execution
-     * if you need response headers, you can convert the received RestResult to HttpRestResult.
-     *
-     * @param url          url
-     * @param header       headers
-     * @param paramValues  paramValues
-     * @param responseType return type
-     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
-     */
-    public <T> void get(String url, Header header, Map<String, String> paramValues, Type responseType,
-            Callback<T> callback) {
-        execute(url, HttpMethod.GET, new RequestHttpEntity(header, Query.newInstance().initParams(paramValues)),
-                responseType, callback);
-    }
-    
-    /**
      * async get request, may be pulling a lot of data URL request params are expanded using the given query {@link
      * Query}, More request parameters can be set via body.
      *
@@ -126,6 +106,27 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     }
     
     /**
+     * async http delete large request, when the parameter exceeds the URL limit, you can use this method to put the
+     * parameter into the body pass.
+     *
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type
+     *
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
+     *
+     * @param url          url
+     * @param header       http header param
+     * @param body         body
+     * @param responseType return type
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
+     */
+    public <T> void delete(String url, Header header, String body, Type responseType, Callback<T> callback) {
+        execute(url, HttpMethod.DELETE_LARGE,
+                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), Query.EMPTY, body),
+                responseType, callback);
+    }
+    
+    /**
      * async http put Create a new resource by PUTting the given body to http request.
      *
      * <p>URL request params are expanded using the given query {@link Query}.
@@ -150,7 +151,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * async http put Json Create a new resource by PUTting the given body to http request, http header contentType
      * default 'application/json;charset=UTF-8'.
      *
-     * <p>URL request params are expanded using the given map {@code paramValues}.
+     * <p>URL request params are expanded using the given query {@link Query}.
      *
      * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type
      *
@@ -159,15 +160,36 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      *
      * @param url          url
      * @param header       http header param
-     * @param paramValues  http query param
+     * @param query        http query param
      * @param body         http body param
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void putJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType,
+    public <T> void putJson(String url, Header header, Query query, String body, Type responseType,
             Callback<T> callback) {
-        execute(url, HttpMethod.PUT, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
-                Query.newInstance().initParams(paramValues), body), responseType, callback);
+        execute(url, HttpMethod.PUT,
+                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), query, body), responseType,
+                callback);
+    }
+    
+    /**
+     * async http put Json Create a new resource by PUTting the given body to http request, http header contentType
+     * default 'application/json;charset=UTF-8'.
+     *
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type
+     *
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
+     *
+     * @param url          url
+     * @param header       http header param
+     * @param body         http body param
+     * @param responseType return type
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
+     */
+    public <T> void putJson(String url, Header header, String body, Type responseType, Callback<T> callback) {
+        execute(url, HttpMethod.PUT, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), body),
+                responseType, callback);
     }
     
     /**
@@ -199,8 +221,6 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * async http put from Create a new resource by PUTting the given map {@code bodyValues} to http request, http
      * header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
      *
-     * <p>URL request params are expanded using the given map {@code paramValues}.
-     *
      * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
      *
      * <p>{@code callback} Result callback execution,
@@ -208,15 +228,15 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      *
      * @param url          url
      * @param header       http header param
-     * @param paramValues  http query param
      * @param bodyValues   http body param
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void putForm(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues,
-            Type responseType, Callback<T> callback) {
-        execute(url, HttpMethod.PUT, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
-                Query.newInstance().initParams(paramValues), bodyValues), responseType, callback);
+    public <T> void putForm(String url, Header header, Map<String, String> bodyValues, Type responseType,
+            Callback<T> callback) {
+        execute(url, HttpMethod.PUT,
+                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues),
+                responseType, callback);
     }
     
     /**
@@ -244,7 +264,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * async http post Json Create a new resource by POSTing the given object to the http request, http header
      * contentType default 'application/json;charset=UTF-8'.
      *
-     * <p>URL request params are expanded using the given map {@code paramValues}.
+     * <p>URL request params are expanded using the given query {@link Query}.
      *
      * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
      *
@@ -253,15 +273,36 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      *
      * @param url          url
      * @param header       http header param
-     * @param paramValues  http query param
+     * @param query        http query param
      * @param body         http body param
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void postJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType,
+    public <T> void postJson(String url, Header header, Query query, String body, Type responseType,
             Callback<T> callback) {
-        execute(url, HttpMethod.POST, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
-                Query.newInstance().initParams(paramValues), body), responseType, callback);
+        execute(url, HttpMethod.POST,
+                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), query, body), responseType,
+                callback);
+    }
+    
+    /**
+     * async http post Json Create a new resource by POSTing the given object to the http request, http header
+     * contentType default 'application/json;charset=UTF-8'.
+     *
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     *
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
+     *
+     * @param url          url
+     * @param header       http header param
+     * @param body         http body param
+     * @param responseType return type
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
+     */
+    public <T> void postJson(String url, Header header, String body, Type responseType, Callback<T> callback) {
+        execute(url, HttpMethod.POST, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), body),
+                responseType, callback);
     }
     
     /**
@@ -293,8 +334,6 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * async http post from Create a new resource by PUTting the given map {@code bodyValues} to http request, http
      * header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
      *
-     * <p>URL request params are expanded using the given map {@code paramValues}.
-     *
      * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
      *
      * <p>{@code callback} Result callback execution,
@@ -302,17 +341,15 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      *
      * @param url          url
      * @param header       http header param
-     * @param paramValues  http query param
      * @param bodyValues   http body param
      * @param responseType return type
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    public <T> void postForm(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues,
-            Type responseType, Callback<T> callback) {
+    public <T> void postForm(String url, Header header, Map<String, String> bodyValues, Type responseType,
+            Callback<T> callback) {
         execute(url, HttpMethod.POST,
-                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
-                        Query.newInstance().initParams(paramValues), bodyValues), responseType, callback);
-        
+                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), bodyValues),
+                responseType, callback);
     }
     
     @SuppressWarnings("unchecked")

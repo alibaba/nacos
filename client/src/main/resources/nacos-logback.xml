@@ -19,10 +19,10 @@
     <contextName>nacos</contextName>
     
     <appender name="CONFIG_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.logging.path}/config.log</file>
+        <file>${JM.LOG.PATH}/nacos/config.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${nacos.logging.path}/config.log.%i</fileNamePattern>
+            <fileNamePattern>${JM.LOG.PATH}/nacos/config.log.%i</fileNamePattern>
             <maxIndex>${JM.LOG.RETAIN.COUNT:-7}</maxIndex>
         </rollingPolicy>
         
@@ -36,10 +36,10 @@
     </appender>
     
     <appender name="NAMING_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.logging.path}/naming.log</file>
+        <file>${JM.LOG.PATH}/nacos/naming.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${nacos.logging.path}/naming.log.%i</fileNamePattern>
+            <fileNamePattern>${JM.LOG.PATH}/nacos/naming.log.%i</fileNamePattern>
             <maxIndex>${JM.LOG.RETAIN.COUNT:-7}</maxIndex>
         </rollingPolicy>
         

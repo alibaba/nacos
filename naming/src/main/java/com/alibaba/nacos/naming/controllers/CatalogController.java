@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
@@ -93,22 +92,7 @@ public class CatalogController {
         
         ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
         detailView.replace("service", serviceObject);
-        
-        List<Cluster> clusters = new ArrayList<>();
-        
-        for (com.alibaba.nacos.naming.core.Cluster cluster : detailedService.getClusterMap().values()) {
-            Cluster clusterView = new Cluster();
-            clusterView.setName(cluster.getName());
-            clusterView.setHealthChecker(cluster.getHealthChecker());
-            clusterView.setMetadata(cluster.getMetadata());
-            clusterView.setUseIPPort4Check(cluster.isUseIPPort4Check());
-            clusterView.setDefaultPort(cluster.getDefaultPort());
-            clusterView.setDefaultCheckPort(cluster.getDefaultCheckPort());
-            clusterView.setServiceName(cluster.getService().getName());
-            clusters.add(clusterView);
-        }
-        
-        detailView.replace("clusters", JacksonUtils.transferToJsonNode(clusters));
+        detailView.replace("clusters", JacksonUtils.transferToJsonNode(detailedService.getClusterMap().values()));
         
         return detailView;
     }
@@ -187,7 +171,7 @@ public class CatalogController {
             @RequestParam(required = false) boolean hasIpCount) {
         
         String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ? StringUtils.EMPTY
-                : NamingUtils.getGroupedName(serviceName, groupName);
+                : NamingUtils.getGroupedNameOptional(serviceName, groupName);
         
         if (withInstances) {
             List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
@@ -213,7 +197,8 @@ public class CatalogController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
         List<Service> services = new ArrayList<>();
-        final int total = serviceManager.getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
+        final int total = serviceManager
+                .getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
         if (CollectionUtils.isEmpty(services)) {
             result.replace("serviceList", JacksonUtils.transferToJsonNode(Collections.emptyList()));
             result.put("count", 0);

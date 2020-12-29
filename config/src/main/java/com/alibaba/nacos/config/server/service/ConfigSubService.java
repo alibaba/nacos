@@ -25,7 +25,7 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -74,7 +74,7 @@ public class ConfigSubService {
      * @return all path.
      */
     private String getUrl(String ip, String relativePath) {
-        return "http://" + ip + ApplicationUtils.getContextPath() + relativePath;
+        return "http://" + ip + EnvUtil.getContextPath() + relativePath;
     }
     
     private List<SampleResult> runCollectionJob(String url, Map<String, String> params,

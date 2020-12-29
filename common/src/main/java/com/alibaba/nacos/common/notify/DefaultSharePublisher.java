@@ -79,7 +79,7 @@ public class DefaultSharePublisher extends DefaultPublisher {
         try {
             Set<Subscriber> sets = subMappings.get(subSlowEventType);
             
-            if (sets != null && sets.contains(subscriber)) {
+            if (sets != null) {
                 sets.remove(subscriber);
             }
         } finally {
@@ -96,6 +96,10 @@ public class DefaultSharePublisher extends DefaultPublisher {
         
         // Get for Map, the algorithm is O(1).
         Set<Subscriber> subscribers = subMappings.get(slowEventType);
+        if (null == subscribers) {
+            LOGGER.debug("[NotifyCenter] No subscribers for slow event {}", slowEventType.getName());
+            return;
+        }
         
         // Notification single event subscriber
         for (Subscriber subscriber : subscribers) {
