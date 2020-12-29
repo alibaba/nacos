@@ -270,5 +270,5 @@ public class Constants {
     
     public static final String CONFIG_META_ITEM_NAME = "config/" + "__meta__.ini";
     
-    public static final String CONFIG_DEFAULT_APP_NAME = "DEFAULT_APP";
+    public static final String CONFIG_DEFAULT_APP_NAME = "app";
 }
