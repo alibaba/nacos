@@ -83,7 +83,7 @@ public abstract class RpcClient implements Closeable {
     private static final long DEFAULT_TIMEOUT_MILLS = 3000L;
     
     /**
-     * listener called where connect status changed.
+     * listener called where connection's status changed.
      */
     protected List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>();
     
@@ -283,7 +283,7 @@ public abstract class RpcClient implements Closeable {
             switchServerAsync();
         }
         
-        registerServerPushResponseHandler(new ConnectResetRequestHandler());
+        registerServerRequestHandler(new ConnectResetRequestHandler());
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -700,7 +700,7 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
-     * register connection handler.will be notified when inner connect changed.
+     * Register connection handler. Will be notified when inner connection's state changed.
      *
      * @param connectionEventListener connectionEventListener
      */
@@ -712,11 +712,11 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
-     * register change listeners ,will be called when server send change notify response th current client.
+     * Register serverRequestHandler, the handler will handle the request from server side.
      *
      * @param serverRequestHandler serverRequestHandler
      */
-    public synchronized void registerServerPushResponseHandler(ServerRequestHandler serverRequestHandler) {
+    public synchronized void registerServerRequestHandler(ServerRequestHandler serverRequestHandler) {
         LoggerUtils.printIfInfoEnabled(LOGGER, "Register server push request handler:{}",
                 serverRequestHandler.getClass().getName());
         

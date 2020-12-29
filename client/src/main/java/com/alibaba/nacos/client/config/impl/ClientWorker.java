@@ -555,11 +555,11 @@ public class ClientWorker implements Closeable {
             return labels;
         }
         
-        private void initHandlerRpcClient(final RpcClient rpcClientInner) {
+        private void initRpcClientHandler(final RpcClient rpcClientInner) {
             /*
              * Register Listen Change Handler
              */
-            rpcClientInner.registerServerPushResponseHandler((request, requestMeta) -> {
+            rpcClientInner.registerServerRequestHandler((request, requestMeta) -> {
                 if (request instanceof ConfigChangeNotifyRequest) {
                     ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
                     LOGGER.info("[{}] [server-push] config changed. dataId={}, group={}", getName(),
@@ -818,7 +818,7 @@ public class ClientWorker implements Closeable {
             RpcClient rpcClient = RpcClientFactory
                     .createClient("config-" + taskId + "-" + uuid, getConnectionType(), newlabels);
             if (rpcClient.isWaitInitiated()) {
-                initHandlerRpcClient(rpcClient);
+                initRpcClientHandler(rpcClient);
                 rpcClient.start();
             }
             
