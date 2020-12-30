@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.client.manager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 
 import java.util.Collection;
+import java.util.function.BiConsumer;
 
 /**
  * The manager of {@code Client} Nacos naming client.
@@ -60,11 +61,28 @@ public interface ClientManager {
     Client getClient(String clientId);
     
     /**
+     * Whether the client id exists.
+     *
+     * @param clientId client id
+     * @return client
+     */
+    boolean contains(final String clientId);
+    
+    /**
      * All client id.
      *
      * @return collection of client id
      */
     Collection<String> allClientId();
+    
+    /**
+     * Traverse processing.
+     *
+     * @param consumer {@link BiConsumer}
+     */
+    default void forEach(BiConsumer<String, Client> consumer) {
+    
+    }
     
     /**
      * Whether the client is responsible by current server.

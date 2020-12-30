@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 /**
  * The manager of {@code IpPortBasedClient} and ephemeral.
@@ -41,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 @Component("ipPortBasedClientManager")
-public class IpPortBasedClientManager implements ClientManager {
+public class IpPortBasedClientManager extends BaseClientManager<IpPortBasedClient> implements ClientManager {
     
     private final ConcurrentMap<String, IpPortBasedClient> clients = new ConcurrentHashMap<>();
     
@@ -87,6 +88,11 @@ public class IpPortBasedClientManager implements ClientManager {
     @Override
     public Collection<String> allClientId() {
         return clients.keySet();
+    }
+    
+    @Override
+    public void forEach(BiConsumer<String, Client> consumer) {
+        clients.forEach(consumer);
     }
     
     @Override
