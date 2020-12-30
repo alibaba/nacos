@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
 import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -67,6 +68,12 @@ public class IpPortBasedClient extends AbstractClient {
         return super.addServiceInstance(service, parseToHeartBeatInstance(instancePublishInfo));
     }
     
+    @Override
+    public boolean isExpire(long currentTime) {
+        return isEphemeral() && getAllPublishedService().isEmpty()
+                && currentTime - getLastUpdatedTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
+    }
+    
     public Collection<InstancePublishInfo> getAllInstancePublishInfo() {
         return publishers.values();
     }
@@ -85,5 +92,26 @@ public class IpPortBasedClient extends AbstractClient {
         result.setHealthy(instancePublishInfo.isHealthy());
         result.setExtendDatum(instancePublishInfo.getExtendDatum());
         return result;
+    }
+    
+    public void clearAllSubscribers() {
+        subscribers.clear();
+    }
+    
+    public void load(final IpPortBasedClient client) {
+        loadPublishers(client.publishers);
+        loadSubscribers(client.subscribers);
+    }
+    
+    /**
+     * clone new {@link IpPortBasedClient}.
+     *
+     * @return
+     */
+    public IpPortBasedClient clone() {
+        final IpPortBasedClient clone = new IpPortBasedClient(clientId, ephemeral);
+        clone.subscribers.putAll(subscribers);
+        clone.publishers.putAll(publishers);
+        return clone;
     }
 }
