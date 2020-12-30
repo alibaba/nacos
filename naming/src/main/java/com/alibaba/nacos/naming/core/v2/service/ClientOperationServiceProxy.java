@@ -22,7 +22,7 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
-import com.alibaba.nacos.naming.core.v2.client.manager.impl.NoConnectionClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
@@ -46,14 +46,14 @@ public class ClientOperationServiceProxy implements ClientOperationService {
     
     private final ClientManager connectionClientManager;
     
-    private final NoConnectionClientManager noConnectionClientManager;
+    private final PersistentIpPortClientManager persistentIpPortClientManager;
     
     public ClientOperationServiceProxy(ClientManagerDelegate connectionClientManager,
-            NoConnectionClientManager noConnectionClientManager) {
+            PersistentIpPortClientManager persistentIpPortClientManager) {
         this.connectionClientManager = connectionClientManager;
-        this.noConnectionClientManager = noConnectionClientManager;
+        this.persistentIpPortClientManager = persistentIpPortClientManager;
         this.ephemeraClientOperationService = new EphemeralClientOperationServiceImpl(connectionClientManager);
-        this.persistentClientOperationService = new PersistentClientOperationServiceImpl(noConnectionClientManager);
+        this.persistentClientOperationService = new PersistentClientOperationServiceImpl(persistentIpPortClientManager);
     }
     
     @Override
@@ -80,7 +80,7 @@ public class ClientOperationServiceProxy implements ClientOperationService {
         client.addServiceSubscriber(singleton, subscriber);
         client.setLastUpdatedTime();
         
-        Client pClient = noConnectionClientManager.getClient(clientId);
+        Client pClient = persistentIpPortClientManager.getClient(clientId);
         pClient.addServiceSubscriber(singleton, subscriber);
         
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
@@ -94,7 +94,7 @@ public class ClientOperationServiceProxy implements ClientOperationService {
         eClient.removeServiceSubscriber(singleton);
         eClient.setLastUpdatedTime();
         
-        Client pClient = noConnectionClientManager.getClient(clientId);
+        Client pClient = persistentIpPortClientManager.getClient(clientId);
         pClient.removeServiceSubscriber(singleton);
         
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
@@ -105,6 +105,6 @@ public class ClientOperationServiceProxy implements ClientOperationService {
     }
     
     private ClientManager chooseClientManager(final Instance instance) {
-        return instance.isEphemeral() ? connectionClientManager : noConnectionClientManager;
+        return instance.isEphemeral() ? connectionClientManager : persistentIpPortClientManager;
     }
 }

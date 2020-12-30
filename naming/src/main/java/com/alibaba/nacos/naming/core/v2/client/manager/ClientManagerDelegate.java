@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client.manager;
 
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
-import com.alibaba.nacos.naming.core.v2.client.manager.impl.IpPortBasedClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.impl.EphemeralIpPortClientManager;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -34,12 +34,12 @@ public class ClientManagerDelegate implements ClientManager {
     
     private final ConnectionBasedClientManager connectionBasedClientManager;
     
-    private final IpPortBasedClientManager ipPortBasedClientManager;
+    private final EphemeralIpPortClientManager ephemeralIpPortClientManager;
     
     public ClientManagerDelegate(ConnectionBasedClientManager connectionBasedClientManager,
-            IpPortBasedClientManager ipPortBasedClientManager) {
+            EphemeralIpPortClientManager ephemeralIpPortClientManager) {
         this.connectionBasedClientManager = connectionBasedClientManager;
-        this.ipPortBasedClientManager = ipPortBasedClientManager;
+        this.ephemeralIpPortClientManager = ephemeralIpPortClientManager;
     }
     
     @Override
@@ -64,14 +64,14 @@ public class ClientManagerDelegate implements ClientManager {
     
     @Override
     public boolean contains(String clientId) {
-        return connectionBasedClientManager.contains(clientId) || ipPortBasedClientManager.contains(clientId);
+        return connectionBasedClientManager.contains(clientId) || ephemeralIpPortClientManager.contains(clientId);
     }
     
     @Override
     public Collection<String> allClientId() {
         Collection<String> result = new HashSet<>();
         result.addAll(connectionBasedClientManager.allClientId());
-        result.addAll(ipPortBasedClientManager.allClientId());
+        result.addAll(ephemeralIpPortClientManager.allClientId());
         return result;
     }
     
@@ -86,15 +86,15 @@ public class ClientManagerDelegate implements ClientManager {
     }
     
     private ClientManager getClientManagerById(String clientId) {
-        return clientId.contains(":") ? ipPortBasedClientManager : connectionBasedClientManager;
+        return clientId.contains(":") ? ephemeralIpPortClientManager : connectionBasedClientManager;
     }
     
     public ConnectionBasedClientManager getConnectionBasedClientManager() {
         return connectionBasedClientManager;
     }
     
-    public IpPortBasedClientManager getIpPortBasedClientManager() {
-        return ipPortBasedClientManager;
+    public EphemeralIpPortClientManager getEphemeralIpPortClientManager() {
+        return ephemeralIpPortClientManager;
     }
     
 }

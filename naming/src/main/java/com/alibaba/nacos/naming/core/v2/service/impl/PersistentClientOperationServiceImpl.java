@@ -39,7 +39,7 @@ import com.alibaba.nacos.naming.consistency.persistent.impl.AbstractSnapshotOper
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
-import com.alibaba.nacos.naming.core.v2.client.manager.impl.NoConnectionClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -70,7 +70,7 @@ import java.util.zip.Checksum;
  */
 public class PersistentClientOperationServiceImpl extends RequestProcessor4CP implements ClientOperationService {
     
-    private final NoConnectionClientManager clientManager;
+    private final PersistentIpPortClientManager clientManager;
     
     private final Serializer serializer = SerializeFactory.getDefault();
     
@@ -80,7 +80,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     
-    public PersistentClientOperationServiceImpl(final NoConnectionClientManager clientManager) {
+    public PersistentClientOperationServiceImpl(final PersistentIpPortClientManager clientManager) {
         this.clientManager = clientManager;
         this.protocol = ApplicationUtils.getBean(ProtocolManager.class).getCpProtocol();
         this.protocol.addRequestProcessors(Collections.singletonList(this));
@@ -265,7 +265,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         protected void loadSnapshot(byte[] snapshotBytes) {
             ConcurrentHashMap<String, IpPortBasedClient> newData = serializer.deserialize(snapshotBytes);
-            clientManager.loadFromRemote(newData);
+            clientManager.loadFromSnapshot(newData);
         }
         
         @Override

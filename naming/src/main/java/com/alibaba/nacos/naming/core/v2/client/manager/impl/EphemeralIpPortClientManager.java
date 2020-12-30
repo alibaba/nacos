@@ -40,14 +40,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @author xiweng.yy
  */
-@Component("ipPortBasedClientManager")
-public class IpPortBasedClientManager extends BaseClientManager<IpPortBasedClient> implements ClientManager {
+@Component("ephemeralIpPortClientManager")
+public class EphemeralIpPortClientManager implements ClientManager {
     
     private final ConcurrentMap<String, IpPortBasedClient> clients = new ConcurrentHashMap<>();
     
     private final DistroMapper distroMapper;
     
-    public IpPortBasedClientManager(DistroMapper distroMapper, SwitchDomain switchDomain) {
+    public EphemeralIpPortClientManager(DistroMapper distroMapper, SwitchDomain switchDomain) {
         this.distroMapper = distroMapper;
         GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this, switchDomain), 0,
                 Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
@@ -85,6 +85,11 @@ public class IpPortBasedClientManager extends BaseClientManager<IpPortBasedClien
     }
     
     @Override
+    public boolean contains(String clientId) {
+        return clients.containsKey(clientId);
+    }
+    
+    @Override
     public Collection<String> allClientId() {
         return clients.keySet();
     }
@@ -107,11 +112,11 @@ public class IpPortBasedClientManager extends BaseClientManager<IpPortBasedClien
     
     private static class ExpiredClientCleaner implements Runnable {
         
-        private final IpPortBasedClientManager clientManager;
+        private final EphemeralIpPortClientManager clientManager;
         
         private final SwitchDomain switchDomain;
         
-        public ExpiredClientCleaner(IpPortBasedClientManager clientManager, SwitchDomain switchDomain) {
+        public ExpiredClientCleaner(EphemeralIpPortClientManager clientManager, SwitchDomain switchDomain) {
             this.clientManager = clientManager;
             this.switchDomain = switchDomain;
         }
