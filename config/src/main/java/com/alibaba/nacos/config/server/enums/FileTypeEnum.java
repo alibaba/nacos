@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.enums;
 
 import com.alibaba.nacos.common.http.param.MediaType;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * Config file type enum.
@@ -98,4 +99,24 @@ public enum FileTypeEnum {
     public String getContentType() {
         return contentType;
     }
+    
+    /**
+     * 根据文件扩展名获得对应的FileTypeEnum.
+     * 如果找不到则返回 FileTypeEnum.TEXT
+     * @param extName
+     * @return
+     */
+    public static FileTypeEnum getFileTypeEnumByFileExtensionName(String extName) {
+        if (StringUtils.isNotBlank(extName)) {
+            String upperExtName = extName.trim().toUpperCase();
+            for (FileTypeEnum value : values) {
+                if (value.name().equals(upperExtName)) {
+                    return value;
+                }
+            }
+        }
+        return FileTypeEnum.TEXT;
+    }
+    
+    private static final FileTypeEnum[] values = FileTypeEnum.values();
 }
