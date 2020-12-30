@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -80,11 +79,6 @@ public class NoConnectionClientManager extends BaseClientManager<IpPortBasedClie
         Collection<String> clientIds = new ArrayList<>(clients.size());
         clientIds.addAll(clients.keySet());
         return clientIds;
-    }
-    
-    @Override
-    public void forEach(BiConsumer<String, Client> consumer) {
-        clients.forEach(consumer);
     }
     
     /**
