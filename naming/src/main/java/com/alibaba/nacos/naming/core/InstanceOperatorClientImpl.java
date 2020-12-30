@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.EphemeralClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
+import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatProcessorV2;
@@ -54,7 +56,7 @@ import java.util.Optional;
 @org.springframework.stereotype.Service
 public class InstanceOperatorClientImpl implements InstanceOperator {
     
-    private final EphemeralClientManager clientManager;
+    private final ClientManager clientManager;
     
     private final ClientOperationService clientOperationService;
     
@@ -67,7 +69,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     private final SwitchDomain switchDomain;
     
     public InstanceOperatorClientImpl(EphemeralClientManager clientManager,
-            ClientOperationService clientOperationService, ServiceStorage serviceStorage,
+            ClientOperationServiceProxy clientOperationService, ServiceStorage serviceStorage,
             NamingMetadataOperateService metadataOperateService, NamingMetadataManager metadataManager,
             SwitchDomain switchDomain) {
         this.clientManager = clientManager;
