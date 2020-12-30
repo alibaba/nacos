@@ -55,6 +55,7 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -190,8 +191,10 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         return Constants.NAMING_PERSISTENT_SERVICE_GROUP_V2;
     }
     
-    protected static class InstanceStoreRequest {
-        
+    protected static class InstanceStoreRequest implements Serializable {
+    
+        private static final long serialVersionUID = -9077205657156890549L;
+    
         private Service service;
         
         private Instance instance;
