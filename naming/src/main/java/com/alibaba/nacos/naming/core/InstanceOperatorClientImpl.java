@@ -26,7 +26,7 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
+import com.alibaba.nacos.naming.core.v2.client.manager.EphemeralClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -54,7 +54,7 @@ import java.util.Optional;
 @org.springframework.stereotype.Service
 public class InstanceOperatorClientImpl implements InstanceOperator {
     
-    private final ClientManagerDelegate clientManager;
+    private final EphemeralClientManager clientManager;
     
     private final ClientOperationService clientOperationService;
     
@@ -66,7 +66,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     private final SwitchDomain switchDomain;
     
-    public InstanceOperatorClientImpl(ClientManagerDelegate clientManager,
+    public InstanceOperatorClientImpl(EphemeralClientManager clientManager,
             ClientOperationService clientOperationService, ServiceStorage serviceStorage,
             NamingMetadataOperateService metadataOperateService, NamingMetadataManager metadataManager,
             SwitchDomain switchDomain) {

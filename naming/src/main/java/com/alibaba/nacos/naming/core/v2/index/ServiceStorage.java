@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
+import com.alibaba.nacos.naming.core.v2.client.manager.EphemeralClientManager;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -61,7 +61,7 @@ public class ServiceStorage {
     
     private final ConcurrentMap<Service, Set<String>> serviceClusterIndex;
     
-    public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager, ClientManagerDelegate clientManager,
+    public ServiceStorage(ClientServiceIndexesManager serviceIndexesManager, EphemeralClientManager clientManager,
             SwitchDomain switchDomain, NamingMetadataManager metadataManager) {
         this.serviceIndexesManager = serviceIndexesManager;
         this.clientManager = clientManager;

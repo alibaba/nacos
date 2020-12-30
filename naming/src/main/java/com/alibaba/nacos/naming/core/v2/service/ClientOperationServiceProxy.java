@@ -17,13 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.service;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
-import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
-import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
-import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl;
@@ -40,20 +34,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class ClientOperationServiceProxy implements ClientOperationService {
     
-    private final ClientOperationService ephemeraClientOperationService;
+    private final ClientOperationService ephemeralClientOperationService;
     
     private final ClientOperationService persistentClientOperationService;
     
-    private final ClientManager connectionClientManager;
-    
-    private final PersistentIpPortClientManager persistentIpPortClientManager;
-    
-    public ClientOperationServiceProxy(ClientManagerDelegate connectionClientManager,
-            PersistentIpPortClientManager persistentIpPortClientManager) {
-        this.connectionClientManager = connectionClientManager;
-        this.persistentIpPortClientManager = persistentIpPortClientManager;
-        this.ephemeraClientOperationService = new EphemeralClientOperationServiceImpl(connectionClientManager);
-        this.persistentClientOperationService = new PersistentClientOperationServiceImpl(persistentIpPortClientManager);
+    public ClientOperationServiceProxy(EphemeralClientOperationServiceImpl ephemeralClientOperationService,
+            PersistentClientOperationServiceImpl persistentClientOperationService) {
+        this.ephemeralClientOperationService = ephemeralClientOperationService;
+        this.persistentClientOperationService = persistentClientOperationService;
     }
     
     @Override
@@ -74,37 +62,17 @@ public class ClientOperationServiceProxy implements ClientOperationService {
     
     @Override
     public void subscribeService(Service service, Subscriber subscriber, String clientId) {
-        Service singleton = ServiceManager.getInstance().getSingleton(service);
-        
-        Client client = connectionClientManager.getClient(clientId);
-        client.addServiceSubscriber(singleton, subscriber);
-        client.setLastUpdatedTime();
-        
-        Client pClient = persistentIpPortClientManager.getClient(clientId);
-        pClient.addServiceSubscriber(singleton, subscriber);
-        
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
+        // Subscriber is an ephemeral type only, so call ephemeral client directly
+        ephemeralClientOperationService.subscribeService(service, subscriber, clientId);
     }
     
     @Override
     public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
-        Service singleton = ServiceManager.getInstance().getSingleton(service);
-        
-        Client eClient = connectionClientManager.getClient(clientId);
-        eClient.removeServiceSubscriber(singleton);
-        eClient.setLastUpdatedTime();
-        
-        Client pClient = persistentIpPortClientManager.getClient(clientId);
-        pClient.removeServiceSubscriber(singleton);
-        
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
+        // Subscriber is an ephemeral type only, so call ephemeral client directly
+        ephemeralClientOperationService.unsubscribeService(service, subscriber, clientId);
     }
     
     private ClientOperationService chooseClientOperationService(final Instance instance) {
-        return instance.isEphemeral() ? ephemeraClientOperationService : persistentClientOperationService;
-    }
-    
-    private ClientManager chooseClientManager(final Instance instance) {
-        return instance.isEphemeral() ? connectionClientManager : persistentIpPortClientManager;
+        return instance.isEphemeral() ? ephemeralClientOperationService : persistentClientOperationService;
     }
 }

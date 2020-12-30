@@ -22,7 +22,7 @@ import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
+import com.alibaba.nacos.naming.core.v2.client.manager.EphemeralClientManager;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -46,7 +46,7 @@ public class DistroClientComponentRegistry {
     private final ClusterRpcClientProxy clusterRpcClientProxy;
     
     public DistroClientComponentRegistry(ServerMemberManager serverMemberManager, DistroProtocol distroProtocol,
-            DistroComponentHolder componentHolder, ClientManagerDelegate clientManager,
+            DistroComponentHolder componentHolder, EphemeralClientManager clientManager,
             ClusterRpcClientProxy clusterRpcClientProxy) {
         this.serverMemberManager = serverMemberManager;
         this.distroProtocol = distroProtocol;

@@ -25,18 +25,18 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * Client manager delegate.
+ * Ephemeral Client manager delegate.
  *
  * @author xiweng.yy
  */
 @Component("clientManager")
-public class ClientManagerDelegate implements ClientManager {
+public class EphemeralClientManager implements ClientManager {
     
     private final ConnectionBasedClientManager connectionBasedClientManager;
     
     private final EphemeralIpPortClientManager ephemeralIpPortClientManager;
     
-    public ClientManagerDelegate(ConnectionBasedClientManager connectionBasedClientManager,
+    public EphemeralClientManager(ConnectionBasedClientManager connectionBasedClientManager,
             EphemeralIpPortClientManager ephemeralIpPortClientManager) {
         this.connectionBasedClientManager = connectionBasedClientManager;
         this.ephemeralIpPortClientManager = ephemeralIpPortClientManager;
@@ -88,13 +88,4 @@ public class ClientManagerDelegate implements ClientManager {
     private ClientManager getClientManagerById(String clientId) {
         return clientId.contains(":") ? ephemeralIpPortClientManager : connectionBasedClientManager;
     }
-    
-    public ConnectionBasedClientManager getConnectionBasedClientManager() {
-        return connectionBasedClientManager;
-    }
-    
-    public EphemeralIpPortClientManager getEphemeralIpPortClientManager() {
-        return ephemeralIpPortClientManager;
-    }
-    
 }
