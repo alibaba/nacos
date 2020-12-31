@@ -48,6 +48,17 @@ public class HealthCheckReactor {
     }
     
     /**
+     * Schedule health check task for v2.
+     *
+     * @param task health check task
+     */
+    public static void scheduleCheck(HealthCheckTaskV2 task) {
+        task.setStartTime(System.currentTimeMillis());
+        Runnable wrapperTask = new HealthCheckTaskInterceptWrapper(task);
+        GlobalExecutor.scheduleNamingHealth(wrapperTask, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
+    }
+    
+    /**
      * Schedule client beat check task with a delay.
      *
      * @param task client beat check task

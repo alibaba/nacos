@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -33,7 +35,7 @@ import java.util.stream.Collectors;
 @Component("healthCheckDelegate")
 public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
     
-    private Map<String, HealthCheckProcessor> healthCheckProcessorMap = new HashMap<>();
+    private final Map<String, HealthCheckProcessor> healthCheckProcessorMap = new HashMap<>();
     
     public HealthCheckProcessorDelegate(HealthCheckExtendProvider provider) {
         provider.init();
@@ -55,6 +57,15 @@ public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
         }
         
         processor.process(task);
+    }
+    
+    @Override
+    public void process(InstancePublishInfo instancePublishInfo, ClusterMetadata metadata) {
+        HealthCheckProcessor processor = healthCheckProcessorMap.get(metadata.getHealthyCheckType());
+        if (processor == null) {
+            processor = healthCheckProcessorMap.get(NoneHealthCheckProcessor.TYPE);
+        }
+        processor.process(instancePublishInfo, metadata);
     }
     
     @Override

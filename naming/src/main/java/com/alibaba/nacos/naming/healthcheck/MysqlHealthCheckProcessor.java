@@ -19,6 +19,8 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -111,6 +113,11 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
                         switchDomain.getMysqlHealthParams());
             }
         }
+    }
+    
+    @Override
+    public void process(InstancePublishInfo instancePublishInfo, ClusterMetadata metadata) {
+        // TODO
     }
     
     private class MysqlCheckTask implements Runnable {

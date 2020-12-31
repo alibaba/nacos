@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 
 import java.util.Collection;
@@ -44,17 +45,18 @@ public class IpPortBasedClient extends AbstractClient {
     
     private ClientBeatCheckTaskV2 beatCheckTask;
     
+    private HealthCheckTaskV2 healthCheckTaskV2;
+    
     public IpPortBasedClient(String clientId, boolean ephemeral) {
         this.ephemeral = ephemeral;
         this.clientId = clientId;
         if (ephemeral) {
             beatCheckTask = new ClientBeatCheckTaskV2(this);
-            scheduleCheckTask();
+            HealthCheckReactor.scheduleCheck(beatCheckTask);
+        } else {
+            healthCheckTaskV2 = new HealthCheckTaskV2(this);
+            HealthCheckReactor.scheduleCheck(healthCheckTaskV2);
         }
-    }
-    
-    private void scheduleCheckTask() {
-        HealthCheckReactor.scheduleCheck(beatCheckTask);
     }
     
     public static String getClientId(String address, boolean ephemeral) {
@@ -92,6 +94,8 @@ public class IpPortBasedClient extends AbstractClient {
     public void destroy() {
         if (ephemeral) {
             HealthCheckReactor.cancelCheck(beatCheckTask);
+        } else {
+            healthCheckTaskV2.setCancelled(true);
         }
     }
     

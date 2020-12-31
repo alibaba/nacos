@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,6 +33,10 @@ public class NoneHealthCheckProcessor implements HealthCheckProcessor {
     
     @Override
     public void process(HealthCheckTask task) {
+    }
+    
+    @Override
+    public void process(InstancePublishInfo instancePublishInfo, ClusterMetadata metadata) {
     }
     
     @Override

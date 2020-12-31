@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+
 /**
  * Health check processor.
  *
@@ -29,6 +32,14 @@ public interface HealthCheckProcessor {
      * @param task check task
      */
     void process(HealthCheckTask task);
+    
+    /**
+     * process health check for specified instance.
+     *
+     * @param instancePublishInfo instance info
+     * @param metadata            cluster metadata of instance
+     */
+    void process(InstancePublishInfo instancePublishInfo, ClusterMetadata metadata);
     
     /**
      * Get check task type, refer to enum HealthCheckType.
