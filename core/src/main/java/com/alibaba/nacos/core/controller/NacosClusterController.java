@@ -26,7 +26,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -150,7 +150,7 @@ public class NacosClusterController {
      */
     @PostMapping("/server/leave")
     public RestResult<String> leave(@RequestBody Collection<String> params) throws Exception {
-        Collection<Member> memberList = MemberUtils.multiParse(params);
+        Collection<Member> memberList = MemberUtil.multiParse(params);
         memberManager.memberLeave(memberList);
         final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CLUSTER);
         final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
@@ -169,12 +169,12 @@ public class NacosClusterController {
                         if (result.ok()) {
                             LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER,
                                     "The node : [{}] success to process the request", member);
-                            MemberUtils.onSuccess(member);
+                            MemberUtil.onSuccess(memberManager, member);
                         } else {
                             Loggers.CLUSTER
                                     .warn("The node : [{}] failed to process the request, response is : {}", member,
                                             result);
-                            MemberUtils.onFail(member);
+                            MemberUtil.onFail(memberManager, member);
                         }
                     } finally {
                         latch.countDown();
@@ -185,7 +185,7 @@ public class NacosClusterController {
                 public void onError(Throwable throwable) {
                     try {
                         Loggers.CLUSTER.error("Failed to communicate with the node : {}", member);
-                        MemberUtils.onFail(member);
+                        MemberUtil.onFail(memberManager, member);
                     } finally {
                         latch.countDown();
                     }

@@ -176,6 +176,11 @@ const I18N_CONF = {
     serviceNameRequired: '请输入服务名',
     protectThresholdRequired: '请输入保护阈值',
   },
+  InstanceFilter: {
+    title: '元数据过滤',
+    addFilter: '添加过滤',
+    clear: '清空',
+  },
   InstanceTable: {
     operation: '操作',
     port: '端口',
@@ -265,8 +270,8 @@ const I18N_CONF = {
     configurationManagement8: '配置管理',
     queryResults: '查询结果：共查询到',
     articleMeetRequirements: '条满足要求的配置。',
-    fuzzyd: '模糊查询请输入Data ID',
-    fuzzyg: '模糊查询请输入Group',
+    fuzzyd: '添加通配符\'*\'进行模糊查询',
+    fuzzyg: '添加通配符\'*\'进行模糊查询',
     query: '查询',
     advancedQuery9: '高级查询',
     application0: '归属应用:',

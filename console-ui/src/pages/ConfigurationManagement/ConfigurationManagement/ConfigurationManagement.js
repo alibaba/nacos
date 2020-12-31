@@ -177,9 +177,25 @@ class ConfigurationManagement extends React.Component {
               hasdash: false,
             });
           } else {
+            // 前端默认排序
+            let sortList = [];
+            for (let j = 0, len = res.data.length; j < len; j++) {
+              let item = res.data[j];
+              sortList.push({
+                k: item.appName || '' + item.group || '' + item.dataId || '',
+                v: item,
+              });
+            }
+            sortList.sort(function(a, b) {
+              return a.k.localeCompare(b.k);
+            });
+            let showList = [];
+            for (let j = 0, len = sortList.length; j < len; j++) {
+              showList.push(sortList[j].v);
+            }
             this.setState({
               hasdash: true,
-              contentList: res.data,
+              contentList: showList,
             });
           }
         }
@@ -423,6 +439,15 @@ class ConfigurationManagement extends React.Component {
       },
       () => this.getData(value, false)
     );
+  }
+
+  onChangeSort(dataIndex, order) {
+    this.dataSource.sort(function(a, b) {
+      if (order === 'asc') {
+        return (a[dataIndex] + '').localeCompare(b[dataIndex] + '');
+      }
+      return (b[dataIndex] + '').localeCompare(a[dataIndex] + '');
+    });
   }
 
   handlePageSizeChange(pageSize) {
@@ -1363,10 +1388,13 @@ class ConfigurationManagement extends React.Component {
               ref="dataTable"
               loading={this.state.loading}
               rowSelection={this.state.rowSelection}
+              onSort={this.onChangeSort}
             >
-              <Table.Column title={'Data Id'} dataIndex={'dataId'} />
-              <Table.Column title={'Group'} dataIndex={'group'} />
-              {!this.inApp && <Table.Column title={locale.application} dataIndex="appName" />}
+              <Table.Column sortable={true} title={'Data Id'} dataIndex={'dataId'} />
+              <Table.Column sortable={true} title={'Group'} dataIndex={'group'} />
+              {!this.inApp && (
+                <Table.Column sortable={true} title={locale.application} dataIndex="appName" />
+              )}
               <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
             </Table>
             {configurations.totalCount > 0 && (
