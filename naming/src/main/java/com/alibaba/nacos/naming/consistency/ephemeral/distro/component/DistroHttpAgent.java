@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.component;
 
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.exception.DistroException;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 
 import java.util.ArrayList;
@@ -35,6 +36,12 @@ import java.util.List;
  */
 public class DistroHttpAgent implements DistroTransportAgent {
     
+    private final ServerMemberManager memberManager;
+    
+    public DistroHttpAgent(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
+    }
+    
     @Override
     public boolean supportCallbackTransport() {
         return false;
@@ -42,6 +49,9 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public boolean syncData(DistroData data, String targetServer) {
+        if (!memberManager.hasMember(targetServer)) {
+            return true;
+        }
         byte[] dataContent = data.getContent();
         return NamingProxy.syncData(dataContent, data.getDistroKey().getTargetServer());
     }
@@ -53,6 +63,9 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public boolean syncVerifyData(DistroData verifyData, String targetServer) {
+        if (!memberManager.hasMember(targetServer)) {
+            return true;
+        }
         NamingProxy.syncCheckSums(verifyData.getContent(), targetServer);
         return true;
     }

@@ -42,7 +42,6 @@ import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.GrpcRaftRpcFactory;
 import com.alipay.sofa.jraft.rpc.impl.MarshallerRegistry;
-import com.alipay.sofa.jraft.util.Endpoint;
 import com.alipay.sofa.jraft.util.RpcFactoryHelper;
 
 import java.io.File;
@@ -77,7 +76,7 @@ public class JRaftUtils {
         registry.registerResponseInstance(WriteRequest.class.getName(), WriteRequest.getDefaultInstance());
         registry.registerResponseInstance(ReadRequest.class.getName(), ReadRequest.getDefaultInstance());
         
-        final RpcServer rpcServer = raftRpcFactory.createRpcServer(new Endpoint(peerId.getIp(), peerId.getPort()));
+        final RpcServer rpcServer = raftRpcFactory.createRpcServer(peerId.getEndpoint());
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
                 RaftExecutor.getRaftCliServiceExecutor());
         
