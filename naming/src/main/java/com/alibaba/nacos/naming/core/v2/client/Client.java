@@ -128,4 +128,12 @@ public interface Client {
      * @return sync data
      */
     ClientSyncData generateSyncData();
+    
+    /**
+     * Whether current client is expired.
+     *
+     * @param currentTime unified current timestamp
+     * @return true if client has expired, otherwise false
+     */
+    boolean isExpire(long currentTime);
 }

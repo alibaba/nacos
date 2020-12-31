@@ -21,8 +21,8 @@ import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
 import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 
 import java.util.Collection;
 
@@ -36,21 +36,29 @@ import java.util.Collection;
  */
 public class IpPortBasedClient extends AbstractClient {
     
+    private static final String ID_DELIMITER = "#";
+    
     private final String clientId;
     
     private final boolean ephemeral;
     
-    private final ClientBeatCheckTaskV2 beatCheckTask;
+    private ClientBeatCheckTaskV2 beatCheckTask;
     
     public IpPortBasedClient(String clientId, boolean ephemeral) {
         this.ephemeral = ephemeral;
         this.clientId = clientId;
-        beatCheckTask = new ClientBeatCheckTaskV2(this);
-        scheduleCheckTask();
+        if (ephemeral) {
+            beatCheckTask = new ClientBeatCheckTaskV2(this);
+            scheduleCheckTask();
+        }
     }
     
     private void scheduleCheckTask() {
         HealthCheckReactor.scheduleCheck(beatCheckTask);
+    }
+    
+    public static String getClientId(String address, boolean ephemeral) {
+        return address + ID_DELIMITER + ephemeral;
     }
     
     @Override
@@ -78,8 +86,13 @@ public class IpPortBasedClient extends AbstractClient {
         return publishers.values();
     }
     
+    /**
+     * Destroy current client.
+     */
     public void destroy() {
-        HealthCheckReactor.cancelCheck(beatCheckTask);
+        if (ephemeral) {
+            HealthCheckReactor.cancelCheck(beatCheckTask);
+        }
     }
     
     private InstancePublishInfo parseToHeartBeatInstance(InstancePublishInfo instancePublishInfo) {

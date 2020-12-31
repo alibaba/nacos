@@ -17,7 +17,10 @@
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
+import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
@@ -30,7 +33,6 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 /**
  * The manager of {@code ConnectionBasedClient}.
@@ -38,14 +40,21 @@ import java.util.function.BiConsumer;
  * @author xiweng.yy
  */
 @Component("connectionBasedClientManager")
-public class ConnectionBasedClientManager extends BaseClientManager<ConnectionBasedClient> implements ClientManager {
+public class ConnectionBasedClientManager extends ClientConnectionEventListener implements ClientManager {
     
     private final ConcurrentMap<String, ConnectionBasedClient> clients = new ConcurrentHashMap<>();
     
     public ConnectionBasedClientManager() {
-        GlobalExecutor
-                .scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0, Constants.DEFAULT_HEART_BEAT_INTERVAL,
-                        TimeUnit.MILLISECONDS);
+        GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0,
+                Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
+    }
+    
+    @Override
+    public void clientConnected(Connection connect) {
+        if (!RemoteConstants.LABEL_MODULE_NAMING.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
+            return;
+        }
+        clientConnected(new ConnectionBasedClient(connect.getMetaInfo().getConnectionId(), true));
     }
     
     @Override
@@ -60,6 +69,11 @@ public class ConnectionBasedClientManager extends BaseClientManager<ConnectionBa
     @Override
     public boolean syncClientConnected(String clientId) {
         return clientConnected(new ConnectionBasedClient(clientId, false));
+    }
+    
+    @Override
+    public void clientDisConnected(Connection connect) {
+        clientDisconnected(connect.getMetaInfo().getConnectionId());
     }
     
     @Override
@@ -79,13 +93,13 @@ public class ConnectionBasedClientManager extends BaseClientManager<ConnectionBa
     }
     
     @Override
-    public Collection<String> allClientId() {
-        return clients.keySet();
+    public boolean contains(String clientId) {
+        return clients.containsKey(clientId);
     }
     
     @Override
-    public void forEach(BiConsumer<String, Client> consumer) {
-        clients.forEach(consumer);
+    public Collection<String> allClientId() {
+        return clients.keySet();
     }
     
     @Override

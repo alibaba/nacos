@@ -39,20 +39,23 @@ import com.alibaba.nacos.naming.consistency.persistent.impl.AbstractSnapshotOper
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
-import com.alibaba.nacos.naming.core.v2.client.manager.impl.NoConnectionClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.utils.Constants;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.util.CRC64;
 import com.google.protobuf.ByteString;
+import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -68,9 +71,10 @@ import java.util.zip.Checksum;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Component("persistentClientOperationServiceImpl")
 public class PersistentClientOperationServiceImpl extends RequestProcessor4CP implements ClientOperationService {
     
-    private final NoConnectionClientManager clientManager;
+    private final PersistentIpPortClientManager clientManager;
     
     private final Serializer serializer = SerializeFactory.getDefault();
     
@@ -80,7 +84,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     
-    public PersistentClientOperationServiceImpl(final NoConnectionClientManager clientManager) {
+    public PersistentClientOperationServiceImpl(final PersistentIpPortClientManager clientManager) {
         this.clientManager = clientManager;
         this.protocol = ApplicationUtils.getBean(ProtocolManager.class).getCpProtocol();
         this.protocol.addRequestProcessors(Collections.singletonList(this));
@@ -91,7 +95,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         final InstanceStoreRequest request = new InstanceStoreRequest();
         request.setService(service);
         request.setInstance(instance);
-        request.setClientID(clientId);
+        request.setClientId(clientId);
         final WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
                 .setData(ByteString.copyFrom(serializer.serialize(request))).setOperation(DataOperation.ADD.name())
                 .build();
@@ -108,7 +112,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         final InstanceStoreRequest request = new InstanceStoreRequest();
         request.setService(service);
         request.setInstance(instance);
-        request.setClientID(clientId);
+        request.setClientId(clientId);
         final WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
                 .setData(ByteString.copyFrom(serializer.serialize(request))).setOperation(DataOperation.DELETE.name())
                 .build();
@@ -118,6 +122,16 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
+    }
+    
+    @Override
+    public void subscribeService(Service service, Subscriber subscriber, String clientId) {
+        throw new UnsupportedOperationException("No persistent subscribers");
+    }
+    
+    @Override
+    public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
+        throw new UnsupportedOperationException("No persistent subscribers");
     }
     
     @Override
@@ -135,10 +149,10 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             switch (operation) {
                 case ADD:
                     onInstanceRegister(instanceRequest.service, instanceRequest.instance,
-                            instanceRequest.getClientID());
+                            instanceRequest.getClientId());
                     break;
                 case DELETE:
-                    onInstanceDeregister(instanceRequest.service, instanceRequest.getClientID());
+                    onInstanceDeregister(instanceRequest.service, instanceRequest.getClientId());
                     break;
                 default:
                     return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + operation)
@@ -164,6 +178,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         Client client = clientManager.getClient(clientId);
         client.removeServiceInstance(singleton);
         client.setLastUpdatedTime();
+        if (client.getAllPublishedService().isEmpty()) {
+            clientManager.clientDisconnected(clientId);
+        }
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
     }
     
@@ -177,13 +194,15 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         return Constants.NAMING_PERSISTENT_SERVICE_GROUP_V2;
     }
     
-    protected static class InstanceStoreRequest {
-        
+    protected static class InstanceStoreRequest implements Serializable {
+    
+        private static final long serialVersionUID = -9077205657156890549L;
+    
         private Service service;
         
         private Instance instance;
         
-        private String clientID;
+        private String clientId;
         
         public Service getService() {
             return service;
@@ -201,12 +220,12 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             this.instance = instance;
         }
         
-        public String getClientID() {
-            return clientID;
+        public String getClientId() {
+            return clientId;
         }
         
-        public void setClientID(String clientID) {
-            this.clientID = clientID;
+        public void setClientId(String clientId) {
+            this.clientId = clientId;
         }
         
     }
@@ -265,7 +284,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         protected void loadSnapshot(byte[] snapshotBytes) {
             ConcurrentHashMap<String, IpPortBasedClient> newData = serializer.deserialize(snapshotBytes);
-            clientManager.loadFromRemote(newData);
+            clientManager.loadFromSnapshot(newData);
         }
         
         @Override
