@@ -62,9 +62,7 @@ public interface HttpClientResponse extends Closeable {
     
     /**
      * close response InputStream.
-     *
-     * @throws IOException ex
      */
     @Override
-    void close() throws IOException;
+    void close();
 }
