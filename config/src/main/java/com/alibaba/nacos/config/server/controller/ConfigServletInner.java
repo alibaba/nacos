@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
@@ -271,9 +272,7 @@ public class ConfigServletInner {
                 
             } finally {
                 releaseConfigReadLock(groupKey);
-                if (null != fis) {
-                    fis.close();
-                }
+                IoUtils.closeQuietly(fis);
             }
         } else if (lockResult == 0) {
             
