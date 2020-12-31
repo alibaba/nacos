@@ -114,7 +114,11 @@ public class NacosRoleServiceImpl {
      * @return true if granted, false otherwise
      */
     public boolean hasPermission(String username, Permission permission) {
-        
+        //update password
+        if (NacosAuthConfig.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource())) {
+            return true;
+        }
+
         List<RoleInfo> roleInfoList = getRoles(username);
         if (Collections.isEmpty(roleInfoList)) {
             return false;

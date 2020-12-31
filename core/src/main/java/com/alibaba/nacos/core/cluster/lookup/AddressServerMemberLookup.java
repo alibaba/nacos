@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -147,7 +147,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
             isAddressServerHealth = true;
             Reader reader = new StringReader(result.getData());
             try {
-                afterLookup(MemberUtils.readServerConf(EnvUtil.analyzeClusterConf(reader)));
+                afterLookup(MemberUtil.readServerConf(EnvUtil.analyzeClusterConf(reader)));
             } catch (Throwable e) {
                 Loggers.CLUSTER.error("[serverlist] exception for analyzeClusterConf, error : {}",
                         ExceptionUtil.getAllExceptionMsg(e));
