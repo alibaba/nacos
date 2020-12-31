@@ -705,6 +705,20 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
+  exportDataV2() {
+    const { group, appName, dataId, openUri } = this;
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    openUri('v1/cs/configs', {
+      export_v2: 'true',
+      tenant: getParams('namespace'),
+      group,
+      appName,
+      dataId,
+      ids: '',
+      accessToken,
+    });
+  }
+
   exportSelectedData() {
     const ids = [];
     const { locale = {} } = this.props;
@@ -719,6 +733,28 @@ class ConfigurationManagement extends React.Component {
     configsTableSelected.forEach((value, key, map) => ids.push(key));
     this.openUri('v1/cs/configs', {
       export: 'true',
+      tenant: '',
+      group: '',
+      appName: '',
+      ids: ids.join(','),
+      accessToken,
+    });
+  }
+
+  exportSelectedDataV2() {
+    const ids = [];
+    const { locale = {} } = this.props;
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    if (!configsTableSelected.size) {
+      Dialog.alert({
+        title: locale.exportSelectedAlertTitle,
+        content: locale.exportSelectedAlertContent,
+      });
+      return;
+    }
+    configsTableSelected.forEach((value, key, map) => ids.push(key));
+    this.openUri('v1/cs/configs', {
+      export_v2: 'true',
       tenant: '',
       group: '',
       appName: '',
@@ -1323,6 +1359,16 @@ class ConfigurationManagement extends React.Component {
                   <Button
                     type={'primary'}
                     style={{ marginRight: 10 }}
+                    onClick={this.exportDataV2.bind(this)}
+                    data-spm-click={'gostr=/aliyun;locaid=configsExportV2'}
+                  >
+                    {locale.export_v2}
+                  </Button>
+                </Form.Item>
+                <Form.Item label={''}>
+                  <Button
+                    type={'primary'}
+                    style={{ marginRight: 10 }}
                     onClick={this.importData.bind(this)}
                     data-spm-click={'gostr=/aliyun;locaid=configsExport'}
                   >
@@ -1411,6 +1457,11 @@ class ConfigurationManagement extends React.Component {
                       text: locale.exportSelected,
                       locaid: 'configsExport',
                       onClick: () => this.exportSelectedData(),
+                    },
+                    {
+                      text: locale.exportSelectedV2,
+                      locaid: 'configsExportV2',
+                      onClick: () => this.exportSelectedDataV2(),
                     },
                     {
                       text: locale.clone,

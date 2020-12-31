@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -23,9 +24,10 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
+import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -44,7 +46,6 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -508,6 +509,51 @@ public class ConfigController {
     }
     
     /**
+     * Execute export config operation.
+     *
+     * @param dataId  dataId string value.
+     * @param group   group string value.
+     * @param appName appName string value.
+     * @param tenant  tenant string value.
+     * @param ids     id list value.
+     * @return ResponseEntity.
+     */
+    @GetMapping(params = "export_v2=true")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public ResponseEntity<byte[]> exportConfigV2(@RequestParam(value = "dataId", required = false) String dataId,
+            @RequestParam(value = "group", required = false) String group,
+            @RequestParam(value = "appName", required = false) String appName,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "ids", required = false) List<Long> ids) {
+        ids.removeAll(Collections.singleton(null));
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        StringBuilder metaData = new StringBuilder("# ----------- meta data ----------- \r\n");
+        metaData.append(
+                "# Notice: Group folder must start with 'group-'(eg. 'group-www/xxx' string 'www' is the group name.)\r\n");
+        metaData.append("# Config file name cannot start with '.'\r\n");
+        metaData.append("# The line start with '#' will be skipped\r\n");
+        metaData.append(
+                "# The metadata of each config file consists of four parts: group, dataId, appName and fileType. Separated by '|'\r\n");
+        metaData.append("# eg. group|dataId|app_name|type\r\n");
+        List<ConfigAllInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
+        List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
+        for (ConfigInfo ci : dataList) {
+            metaData.append(
+                    String.format("%s|%s|%s|%s\r\n", ci.getGroup(), ci.getDataId(), ci.getAppName(), ci.getType()));
+            String itemName = "group-" + ci.getGroup() + "/" + ci.getDataId();
+            zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
+        }
+        // v2 meta file name is '_config_meta_.txt'
+        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_META_ITEM_NAME, metaData.toString()));
+        HttpHeaders headers = new HttpHeaders();
+        String fileName =
+                EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
+                        + EXPORT_CONFIG_FILE_NAME_EXT;
+        headers.add("Content-Disposition", "attachment;filename=" + fileName);
+        return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+    }
+    
+    /**
      * Execute import and publish config operation.
      *
      * @param request   http servlet request .
@@ -540,46 +586,106 @@ public class ConfigController {
         List<ConfigAllInfo> configInfoList = null;
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
-            ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
-            Map<String, String> metaDataMap = new HashMap<>(16);
-            if (metaDataZipItem != null) {
-                String metaDataStr = metaDataZipItem.getItemData();
+            ZipUtils.ZipItem metaItem = unziped.getMetaDataItem();
+            
+            boolean v2 = metaItem != null && Constants.CONFIG_META_ITEM_NAME.equals(metaItem.getItemName());
+            if (v2) {
+                Map<String, String[]> metaDataMap = new HashMap<>(16);
+                String metaDataStr = metaItem.getItemData();
                 String[] metaDataArr = metaDataStr.split("\r\n");
+                // group|dataId|app_name|type\r\n
                 for (String metaDataItem : metaDataArr) {
-                    String[] metaDataItemArr = metaDataItem.split("=");
-                    if (metaDataItemArr.length != 2) {
+                    metaDataItem = metaDataItem.trim();
+                    if (StringUtils.isBlank(metaDataItem) || metaDataItem.startsWith("#")) {
+                        continue;
+                    }
+                    String[] split = metaDataItem.split("\\|");
+                    if (split.length != 4) {
                         failedData.put("succCount", 0);
                         return RestResultUtils.buildResult(ResultCodeEnum.METADATA_ILLEGAL, failedData);
                     }
-                    metaDataMap.put(metaDataItemArr[0], metaDataItemArr[1]);
+                    String metaKey = split[0] + "|" + split[1];
+                    // group|dataId -> [group|dataId|app_name|type]
+                    metaDataMap.put(metaKey, split);
                 }
-            }
-            List<ZipUtils.ZipItem> itemList = unziped.getZipItemList();
-            if (itemList != null && !itemList.isEmpty()) {
-                configInfoList = new ArrayList<>(itemList.size());
-                for (ZipUtils.ZipItem item : itemList) {
-                    String[] groupAdnDataId = item.getItemName().split("/");
-                    if (!item.getItemName().contains("/") || groupAdnDataId.length != 2) {
-                        failedData.put("succCount", 0);
-                        return RestResultUtils.buildResult(ResultCodeEnum.DATA_VALIDATION_FAILED, failedData);
+                
+                List<ZipUtils.ZipItem> configItemList = unziped.getZipItemList();
+                if (configItemList != null && !configItemList.isEmpty()) {
+                    configInfoList = new ArrayList<>(configItemList.size());
+                    for (ZipUtils.ZipItem item : configItemList) {
+                        // group-[group]/dataId
+                        String[] groupAdnDataId = item.getItemName().split("/");
+                        if (groupAdnDataId.length != 2) {
+                            failedData.put("succCount", 0);
+                            return RestResultUtils.buildResult(ResultCodeEnum.DATA_VALIDATION_FAILED, failedData);
+                        }
+                        String group = groupAdnDataId[0].substring("group-".length());
+                        String dataId = groupAdnDataId[1];
+                        final String metaKey = group + "|" + dataId;
+                        ConfigAllInfo ci = new ConfigAllInfo();
+                        ci.setTenant(namespace);
+                        ci.setGroup(group);
+                        ci.setDataId(dataId);
+                        ci.setContent(item.getItemData());
+                        // group|dataId -> [group|dataId|app_name|type]
+                        String[] metas = metaDataMap.get(metaKey);
+                        if (metas != null && metas.length == 4) {
+                            ci.setAppName(metas[2]);
+                            String type = metas[3];
+                            FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(type);
+                            // judgment of file type based on suffix
+                            if (fileTypeEnum == FileTypeEnum.TEXT && dataId.contains(".")) {
+                                String extName = dataId.substring(dataId.lastIndexOf(".") + 1);
+                                fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(extName);
+                            }
+                            ci.setType(fileTypeEnum.getFileType());
+                        }
+                        configInfoList.add(ci);
                     }
-                    String group = groupAdnDataId[0];
-                    String dataId = groupAdnDataId[1];
-                    String tempDataId = dataId;
-                    if (tempDataId.contains(".")) {
-                        tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId
-                                .substring(tempDataId.lastIndexOf(".") + 1);
+                }
+                // end v2
+            } else {
+                // old version
+                Map<String, String> metaDataMap = new HashMap<>(16);
+                if (metaItem != null) {
+                    String metaDataStr = metaItem.getItemData();
+                    String[] metaDataArr = metaDataStr.split("\r\n");
+                    for (String metaDataItem : metaDataArr) {
+                        String[] metaDataItemArr = metaDataItem.split("=");
+                        if (metaDataItemArr.length != 2) {
+                            failedData.put("succCount", 0);
+                            return RestResultUtils.buildResult(ResultCodeEnum.METADATA_ILLEGAL, failedData);
+                        }
+                        metaDataMap.put(metaDataItemArr[0], metaDataItemArr[1]);
                     }
-                    final String metaDataId = group + "." + tempDataId + ".app";
-                    ConfigAllInfo ci = new ConfigAllInfo();
-                    ci.setTenant(namespace);
-                    ci.setGroup(group);
-                    ci.setDataId(dataId);
-                    ci.setContent(item.getItemData());
-                    if (metaDataMap.get(metaDataId) != null) {
-                        ci.setAppName(metaDataMap.get(metaDataId));
+                }
+                List<ZipUtils.ZipItem> itemList = unziped.getZipItemList();
+                if (itemList != null && !itemList.isEmpty()) {
+                    configInfoList = new ArrayList<>(itemList.size());
+                    for (ZipUtils.ZipItem item : itemList) {
+                        String[] groupAdnDataId = item.getItemName().split("/");
+                        if (!item.getItemName().contains("/") || groupAdnDataId.length != 2) {
+                            failedData.put("succCount", 0);
+                            return RestResultUtils.buildResult(ResultCodeEnum.DATA_VALIDATION_FAILED, failedData);
+                        }
+                        String group = groupAdnDataId[0];
+                        String dataId = groupAdnDataId[1];
+                        String tempDataId = dataId;
+                        if (tempDataId.contains(".")) {
+                            tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId
+                                    .substring(tempDataId.lastIndexOf(".") + 1);
+                        }
+                        final String metaDataId = group + "." + tempDataId + ".app";
+                        ConfigAllInfo ci = new ConfigAllInfo();
+                        ci.setTenant(namespace);
+                        ci.setGroup(group);
+                        ci.setDataId(dataId);
+                        ci.setContent(item.getItemData());
+                        if (metaDataMap.get(metaDataId) != null) {
+                            ci.setAppName(metaDataMap.get(metaDataId));
+                        }
+                        configInfoList.add(ci);
                     }
-                    configInfoList.add(ci);
                 }
             }
         } catch (IOException e) {
@@ -632,7 +738,7 @@ public class ConfigController {
             return RestResultUtils.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
         }
         configBeansList.removeAll(Collections.singleton(null));
-    
+        
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);

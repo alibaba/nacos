@@ -190,4 +190,5 @@ public class Constants {
     
     public static final String ALL_PATTERN = "*";
     
+    public static final String CONFIG_META_ITEM_NAME = "__meta__.txt";
 }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.api.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,8 +101,8 @@ public class ZipUtils {
      */
     public static byte[] zip(List<ZipItem> source) {
         byte[] result = null;
-        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream(); ZipOutputStream zipOut = new ZipOutputStream(
-                byteOut)) {
+        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+                ZipOutputStream zipOut = new ZipOutputStream(byteOut)) {
             for (ZipItem item : source) {
                 zipOut.putNextEntry(new ZipEntry(item.getItemName()));
                 zipOut.write(item.getItemData().getBytes(StandardCharsets.UTF_8));
@@ -123,6 +124,7 @@ public class ZipUtils {
         ZipItem metaDataItem = null;
         try (ZipInputStream zipIn = new ZipInputStream(new ByteArrayInputStream(source))) {
             ZipEntry entry;
+            boolean flagV2 = false;
             while ((entry = zipIn.getNextEntry()) != null) {
                 if (entry.isDirectory()) {
                     continue;
@@ -133,14 +135,31 @@ public class ZipUtils {
                     while ((offset = zipIn.read(buffer)) != -1) {
                         out.write(buffer, 0, offset);
                     }
-                    if (".meta.yml".equals(entry.getName())) {
-                        metaDataItem = new ZipItem(entry.getName(), out.toString("UTF-8"));
-                    } else {
-                        itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
+                    String entryName = entry.getName();
+                    if (".meta.yml".equals(entryName)) {
+                        metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
                     }
+                    // v2 meta
+                    if (Constants.CONFIG_META_ITEM_NAME.equals(entryName)) {
+                        flagV2 = true;
+                        metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
+                    }
+                    itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
                 } catch (IOException e) {
                     LOGGER.error("unzip error", e);
                 }
+            }
+            if (flagV2) {
+                itemList.removeIf((item) -> {
+                    String itemName = item.getItemName();
+                    if (!itemName.startsWith("group-")) {
+                        return true;
+                    }
+                    String[] split = itemName.split("/");
+                    return split.length > 0 && split[split.length - 1].startsWith(".");
+                });
+            } else {
+                itemList.removeIf((item) -> ".meta.yml".equals(item.getItemName()));
             }
         } catch (IOException e) {
             LOGGER.error("unzip error", e);
