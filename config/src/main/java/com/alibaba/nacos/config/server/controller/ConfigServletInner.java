@@ -139,17 +139,12 @@ public class ConfigServletInner {
                             isBeta = true;
                         }
                     }
-                    
+    
                     final String configType =
                             (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
                     response.setHeader("Config-Type", configType);
-                    
-                    String contentTypeHeader;
-                    try {
-                        contentTypeHeader = FileTypeEnum.valueOf(configType.toUpperCase()).getContentType();
-                    } catch (IllegalArgumentException ex) {
-                        contentTypeHeader = FileTypeEnum.TEXT.getContentType();
-                    }
+                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
+                    String contentTypeHeader = fileTypeEnum.getContentType();
                     response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
                 }
                 File file = null;
