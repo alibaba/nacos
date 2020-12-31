@@ -142,7 +142,7 @@ public class ConfigServletInner {
                     final String configType =
                             (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
                     response.setHeader("Config-Type", configType);
-                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName(configType);
+                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
                     String contentTypeHeader = fileTypeEnum.getContentType();
                     response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
                 }
