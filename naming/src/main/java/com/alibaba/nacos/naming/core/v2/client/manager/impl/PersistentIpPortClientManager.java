@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
@@ -25,26 +28,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
- * Non-active client management.
+ * The manager of {@code IpPortBasedClient} and persistence.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author xiweng.yy
  */
-@Component("noConnectionClientManager")
-public class NoConnectionClientManager extends BaseClientManager<IpPortBasedClient> {
+@Component("persistentIpPortClientManager")
+public class PersistentIpPortClientManager implements ClientManager {
     
-    private static final AtomicReferenceFieldUpdater<BaseClientManager, ConcurrentMap> CLIENTS_FIELD_UPDATER = AtomicReferenceFieldUpdater
-            .newUpdater(BaseClientManager.class, ConcurrentMap.class, "clients");
-    
-    @Override
-    protected void init() {
-        // DO Nothing
-    }
+    private ConcurrentMap<String, IpPortBasedClient> clients = new ConcurrentHashMap<>();
     
     @Override
     public boolean clientConnected(Client client) {
@@ -62,12 +59,24 @@ public class NoConnectionClientManager extends BaseClientManager<IpPortBasedClie
     
     @Override
     public boolean clientDisconnected(String clientId) {
-        throw new UnsupportedOperationException("");
+        Loggers.SRV_LOG.info("Persistent client connection {} disconnect", clientId);
+        IpPortBasedClient client = clients.remove(clientId);
+        if (null == client) {
+            return true;
+        }
+        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
+        client.destroy();
+        return true;
     }
     
     @Override
     public Client getClient(String clientId) {
         return clients.get(clientId);
+    }
+    
+    @Override
+    public boolean contains(String clientId) {
+        return clients.containsKey(clientId);
     }
     
     public Client computeIfAbsent(final String clientId, final Supplier<IpPortBasedClient> supplier) {
@@ -82,16 +91,11 @@ public class NoConnectionClientManager extends BaseClientManager<IpPortBasedClie
         return clientIds;
     }
     
-    @Override
-    public void forEach(BiConsumer<String, Client> consumer) {
-        clients.forEach(consumer);
-    }
-    
     /**
      * Because the persistence instance relies on the Raft algorithm, any node can process the request.
      *
      * @param client client
-     * @return
+     * @return true
      */
     @Override
     public boolean isResponsibleClient(Client client) {
@@ -107,7 +111,14 @@ public class NoConnectionClientManager extends BaseClientManager<IpPortBasedClie
         return Collections.unmodifiableMap(clients);
     }
     
-    public void loadFromRemote(ConcurrentMap<String, IpPortBasedClient> clients) {
-        CLIENTS_FIELD_UPDATER.set(this, clients);
+    /**
+     * Load persistent clients from snapshot.
+     *
+     * @param clients clients snapshot
+     */
+    public void loadFromSnapshot(ConcurrentMap<String, IpPortBasedClient> clients) {
+        ConcurrentMap<String, IpPortBasedClient> oldClients = this.clients;
+        this.clients = clients;
+        oldClients.clear();
     }
 }

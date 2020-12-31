@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
+import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatProcessorV2;
@@ -54,7 +56,7 @@ import java.util.Optional;
 @org.springframework.stereotype.Service
 public class InstanceOperatorClientImpl implements InstanceOperator {
     
-    private final ClientManagerDelegate clientManager;
+    private final ClientManager clientManager;
     
     private final ClientOperationService clientOperationService;
     
@@ -67,7 +69,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     private final SwitchDomain switchDomain;
     
     public InstanceOperatorClientImpl(ClientManagerDelegate clientManager,
-            ClientOperationService clientOperationService, ServiceStorage serviceStorage,
+            ClientOperationServiceProxy clientOperationService, ServiceStorage serviceStorage,
             NamingMetadataOperateService metadataOperateService, NamingMetadataManager metadataManager,
             SwitchDomain switchDomain) {
         this.clientManager = clientManager;
@@ -83,20 +85,22 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
      */
     @Override
     public void registerInstance(String namespaceId, String serviceName, Instance instance) {
-        String clientId = instance.toInetAddr();
-        createIpPortClientIfAbsent(clientId, instance.isEphemeral());
-        Service service = getService(namespaceId, serviceName, instance.isEphemeral());
+        boolean ephemeral = instance.isEphemeral();
+        String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
+        createIpPortClientIfAbsent(clientId, ephemeral);
+        Service service = getService(namespaceId, serviceName, ephemeral);
         clientOperationService.registerInstance(service, instance, clientId);
     }
     
     @Override
     public void removeInstance(String namespaceId, String serviceName, Instance instance) {
-        String clientId = instance.toInetAddr();
-        if (!clientManager.allClientId().contains(clientId)) {
+        boolean ephemeral = instance.isEphemeral();
+        String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
+        if (!clientManager.contains(clientId)) {
             Loggers.SRV_LOG.warn("remove instance from non-exist client: {}", clientId);
             return;
         }
-        Service service = getService(namespaceId, serviceName, instance.isEphemeral());
+        Service service = getService(namespaceId, serviceName, ephemeral);
         clientOperationService.deregisterInstance(service, instance, clientId);
     }
     
@@ -246,7 +250,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     private void createIpPortClientIfAbsent(String clientId, boolean ephemeral) {
-        if (!clientManager.allClientId().contains(clientId)) {
+        if (!clientManager.contains(clientId)) {
             clientManager.clientConnected(new IpPortBasedClient(clientId, ephemeral));
         }
     }

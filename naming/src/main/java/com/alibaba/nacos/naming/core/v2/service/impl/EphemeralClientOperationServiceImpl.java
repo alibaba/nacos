@@ -28,12 +28,15 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.pojo.Subscriber;
+import org.springframework.stereotype.Component;
 
 /**
  * Operation service for ephemeral clients and services.
  *
  * @author xiweng.yy
  */
+@Component("ephemeralClientOperationService")
 public class EphemeralClientOperationServiceImpl implements ClientOperationService {
     
     private final ClientManager clientManager;
@@ -69,5 +72,24 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
             NotifyCenter.publishEvent(
                     new MetadataEvent.InstanceMetadataEvent(singleton, removedInstance.getInstanceId(), true));
         }
+    }
+    
+    @Override
+    public void subscribeService(Service service, Subscriber subscriber, String clientId) {
+        Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
+        Client client = clientManager.getClient(clientId);
+        client.addServiceSubscriber(singleton, subscriber);
+        client.setLastUpdatedTime();
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
+    }
+    
+    @Override
+    public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
+        Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
+        Client client = clientManager.getClient(clientId);
+        client.removeServiceSubscriber(singleton);
+        client.setLastUpdatedTime();
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
+        
     }
 }

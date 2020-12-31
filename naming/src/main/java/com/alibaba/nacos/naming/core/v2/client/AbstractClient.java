@@ -126,12 +126,4 @@ public abstract class AbstractClient implements Client {
         this.subscribers.clear();
         this.subscribers.putAll(subscribers);
     }
-    
-    /**
-     * Whether the current client has expired.
-     *
-     * @param currentTime current time
-     * @return is expire
-     */
-    public abstract boolean isExpire(final long currentTime);
 }
