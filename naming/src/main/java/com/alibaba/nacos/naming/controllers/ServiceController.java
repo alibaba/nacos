@@ -107,7 +107,7 @@ public class ServiceController {
     @PostMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam(required = false) float protectThreshold,
+            @RequestParam String serviceName, @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
             @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
             @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
         ServiceMetadata serviceMetadata = new ServiceMetadata();

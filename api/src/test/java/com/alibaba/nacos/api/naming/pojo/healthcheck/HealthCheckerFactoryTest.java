@@ -17,12 +17,18 @@
 package com.alibaba.nacos.api.naming.pojo.healthcheck;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class HealthCheckerFactoryTest {
+
+    @BeforeClass
+    public static void beforeClass() {
+        HealthCheckerFactory.registerSubType(TestChecker.class, TestChecker.TYPE);
+    }
     
     @Test
     public void testSerialize() {
@@ -33,7 +39,6 @@ public class HealthCheckerFactoryTest {
     
     @Test
     public void testSerializeExtend() {
-        HealthCheckerFactory.registerSubType(TestChecker.class, TestChecker.TYPE);
         TestChecker testChecker = new TestChecker();
         String actual = HealthCheckerFactory.serialize(testChecker);
         assertTrue(actual.contains("\"type\":\"TEST\""));

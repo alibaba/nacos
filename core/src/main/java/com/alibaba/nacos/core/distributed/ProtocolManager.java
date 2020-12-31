@@ -23,7 +23,7 @@ import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
@@ -73,7 +73,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
         Set<String> nodes = new HashSet<>();
         members.forEach(member -> {
             final String ip = member.getIp();
-            final int raftPort = MemberUtils.calculateRaftPort(member);
+            final int raftPort = MemberUtil.calculateRaftPort(member);
             nodes.add(ip + ":" + raftPort);
         });
         return nodes;
