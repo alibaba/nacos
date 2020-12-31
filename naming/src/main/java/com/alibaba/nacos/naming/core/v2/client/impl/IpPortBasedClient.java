@@ -36,6 +36,8 @@ import java.util.Collection;
  */
 public class IpPortBasedClient extends AbstractClient {
     
+    private static final String ID_DELIMITER = "#";
+    
     private final String clientId;
     
     private final boolean ephemeral;
@@ -51,6 +53,10 @@ public class IpPortBasedClient extends AbstractClient {
     
     private void scheduleCheckTask() {
         HealthCheckReactor.scheduleCheck(beatCheckTask);
+    }
+    
+    public static String getClientId(String address, boolean ephemeral) {
+        return address + ID_DELIMITER + ephemeral;
     }
     
     @Override

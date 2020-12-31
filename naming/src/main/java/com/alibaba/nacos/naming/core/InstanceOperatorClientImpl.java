@@ -85,20 +85,22 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
      */
     @Override
     public void registerInstance(String namespaceId, String serviceName, Instance instance) {
-        String clientId = instance.toInetAddr();
-        createIpPortClientIfAbsent(clientId, instance.isEphemeral());
-        Service service = getService(namespaceId, serviceName, instance.isEphemeral());
+        boolean ephemeral = instance.isEphemeral();
+        String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
+        createIpPortClientIfAbsent(clientId, ephemeral);
+        Service service = getService(namespaceId, serviceName, ephemeral);
         clientOperationService.registerInstance(service, instance, clientId);
     }
     
     @Override
     public void removeInstance(String namespaceId, String serviceName, Instance instance) {
-        String clientId = instance.toInetAddr();
-        if (!clientManager.allClientId().contains(clientId)) {
+        boolean ephemeral = instance.isEphemeral();
+        String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
+        if (!clientManager.contains(clientId)) {
             Loggers.SRV_LOG.warn("remove instance from non-exist client: {}", clientId);
             return;
         }
-        Service service = getService(namespaceId, serviceName, instance.isEphemeral());
+        Service service = getService(namespaceId, serviceName, ephemeral);
         clientOperationService.deregisterInstance(service, instance, clientId);
     }
     
