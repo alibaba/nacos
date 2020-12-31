@@ -12,7 +12,7 @@ public class FileTypeEnum_ITCase {
     @Test
     public void fileTypeEnum_test1() {
         for (FileTypeEnum value : FileTypeEnum.values()) {
-            FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName(value.name());
+            FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(value.name());
             Assert.assertEquals(fileTypeEnum, value);
         }
     }
@@ -20,26 +20,26 @@ public class FileTypeEnum_ITCase {
     @Test
     public void fileTypeEnum_test2() {
         for (FileTypeEnum value : FileTypeEnum.values()) {
-            FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName(value.getFileType());
+            FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(value.getFileType());
             Assert.assertNotNull(fileTypeEnum);
         }
     }
     
     @Test
     public void fileTypeEnum_test3() {
-        FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName("t");
+        FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType("t");
         Assert.assertEquals(fileTypeEnum, FileTypeEnum.TEXT);
         
-        fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName("");
+        fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType("");
         Assert.assertEquals(fileTypeEnum, FileTypeEnum.TEXT);
         
-        fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName(".");
+        fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(".");
         Assert.assertEquals(fileTypeEnum, FileTypeEnum.TEXT);
         
-        fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName("1");
+        fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType("1");
         Assert.assertEquals(fileTypeEnum, FileTypeEnum.TEXT);
         
-        fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName(null);
+        fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(null);
         Assert.assertEquals(fileTypeEnum, FileTypeEnum.TEXT);
     }
     

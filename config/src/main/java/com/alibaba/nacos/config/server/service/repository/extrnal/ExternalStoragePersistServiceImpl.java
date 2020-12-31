@@ -2591,7 +2591,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 // simple judgment of file type based on suffix
                 if (configInfo.getDataId().contains(SPOT)) {
                     String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1);
-                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName(extName);
+                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(extName);
                     type = fileTypeEnum.getFileType();
                 }
             }

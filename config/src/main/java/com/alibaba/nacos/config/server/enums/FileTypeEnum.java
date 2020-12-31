@@ -101,15 +101,15 @@ public enum FileTypeEnum {
     }
     
     /**
-     * 根据文件扩展名获得对应的FileTypeEnum.
-     * 如果找不到则返回 FileTypeEnum.TEXT
-     * @param extName
+     * Get the corresponding FileTypeEnum by file extension or fileType. If not found FileTypeEnum.TEXT is returned
+     *
+     * @param extOrFileType file extension or fileType
      * @return
      */
-    public static FileTypeEnum getFileTypeEnumByFileExtensionName(String extName) {
-        if (StringUtils.isNotBlank(extName)) {
-            String upperExtName = extName.trim().toUpperCase();
-            for (FileTypeEnum value : values) {
+    public static FileTypeEnum getFileTypeEnumByFileExtensionOrFileType(String extOrFileType) {
+        if (StringUtils.isNotBlank(extOrFileType)) {
+            String upperExtName = extOrFileType.trim().toUpperCase();
+            for (FileTypeEnum value : VALUES) {
                 if (value.name().equals(upperExtName)) {
                     return value;
                 }
@@ -118,5 +118,5 @@ public enum FileTypeEnum {
         return FileTypeEnum.TEXT;
     }
     
-    private static final FileTypeEnum[] values = FileTypeEnum.values();
+    private static final FileTypeEnum[] VALUES = FileTypeEnum.values();
 }

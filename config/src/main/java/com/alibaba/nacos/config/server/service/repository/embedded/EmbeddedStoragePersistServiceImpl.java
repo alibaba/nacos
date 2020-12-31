@@ -1125,8 +1125,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         Page<Map<String, Object>> pageList = helper
                 .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
-        return pageList.getPageItems().stream()
-                .map(map -> String.valueOf(map.get("TENANT_ID")))
+        return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("TENANT_ID")))
                 .collect(Collectors.toList());
     }
     
@@ -1139,8 +1138,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         Page<Map<String, Object>> pageList = helper
                 .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
-        return pageList.getPageItems().stream()
-                .map(map -> String.valueOf(map.get("GROUP_ID")))
+        return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("GROUP_ID")))
                 .collect(Collectors.toList());
     }
     
@@ -2345,7 +2343,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 // simple judgment of file type based on suffix
                 if (configInfo.getDataId().contains(SPOT)) {
                     String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1);
-                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionName(extName);
+                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(extName);
                     type = fileTypeEnum.getFileType();
                 }
             }
