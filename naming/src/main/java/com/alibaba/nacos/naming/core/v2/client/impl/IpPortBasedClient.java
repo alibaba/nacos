@@ -36,7 +36,7 @@ import java.util.Collection;
  */
 public class IpPortBasedClient extends AbstractClient {
     
-    private static final String ID_DELIMITER = "#";
+    public static final String ID_DELIMITER = "#";
     
     private final String clientId;
     
