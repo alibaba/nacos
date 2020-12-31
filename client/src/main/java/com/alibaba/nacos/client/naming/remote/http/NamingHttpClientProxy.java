@@ -49,7 +49,6 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IPUtil;
@@ -100,6 +99,8 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     
     private final PushReceiver pushReceiver;
     
+    private final int maxRetry;
+    
     private int serverPort = DEFAULT_SERVER_PORT;
     
     private ScheduledExecutorService executorService;
@@ -117,6 +118,8 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         this.initRefreshTask();
         this.pushReceiver = new PushReceiver(serviceInfoHolder);
         this.serviceInfoHolder = serviceInfoHolder;
+        this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
+                String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
     }
     
     private void initRefreshTask() {
@@ -412,7 +415,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         
         if (serverListManager.isDomain()) {
             String nacosDomain = serverListManager.getNacosDomain();
-            for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
+            for (int i = 0; i < maxRetry; i++) {
                 try {
                     return callServer(api, params, body, nacosDomain, method);
                 } catch (NacosException e) {
@@ -423,7 +426,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
                 }
             }
         }
-
+        
         if (servers != null && !servers.isEmpty()) {
             
             Random random = new Random(System.currentTimeMillis());

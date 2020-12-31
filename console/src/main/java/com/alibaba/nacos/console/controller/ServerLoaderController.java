@@ -29,7 +29,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.remote.Connection;
@@ -182,7 +182,7 @@ public class ServerLoaderController {
         serverLoaderInfoRequest.setReloadCount(reloadcount);
         int count = 0;
         for (Member member : serverMemberManager.allMembersWithoutSelf()) {
-            if (MemberUtils.isSupportedLongCon(member)) {
+            if (MemberUtil.isSupportedLongCon(member)) {
                 count++;
                 completionService.submit(new ServerReLoaderRpcTask(serverLoaderInfoRequest, member));
             }
@@ -217,7 +217,7 @@ public class ServerLoaderController {
         
         int count = 0;
         for (Member member : serverMemberManager.allMembersWithoutSelf()) {
-            if (MemberUtils.isSupportedLongCon(member)) {
+            if (MemberUtil.isSupportedLongCon(member)) {
                 count++;
                 ServerLoaderInfoRequest serverLoaderInfoRequest = new ServerLoaderInfoRequest();
                 completionService.submit(new ServerLoaderInfoRpcTask(serverLoaderInfoRequest, member));
