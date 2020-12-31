@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.push.v2;
 
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.manager.EphemeralClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -51,7 +51,7 @@ public class NamingSubscriberServiceV2ImplTest {
     private final Service service1 = Service.newService("N", "G1", "S1");
     
     @Mock
-    private EphemeralClientManager clientManager;
+    private ClientManagerDelegate clientManager;
     
     @Mock
     private ClientServiceIndexesManager indexesManager;

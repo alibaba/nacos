@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
-import com.alibaba.nacos.naming.core.v2.client.manager.EphemeralClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -41,7 +41,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     
     private final ClientManager clientManager;
     
-    public EphemeralClientOperationServiceImpl(EphemeralClientManager clientManager) {
+    public EphemeralClientOperationServiceImpl(ClientManagerDelegate clientManager) {
         this.clientManager = clientManager;
     }
     

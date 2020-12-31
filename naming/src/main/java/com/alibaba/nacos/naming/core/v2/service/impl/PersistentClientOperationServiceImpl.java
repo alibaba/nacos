@@ -178,6 +178,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         Client client = clientManager.getClient(clientId);
         client.removeServiceInstance(singleton);
         client.setLastUpdatedTime();
+        if (client.getAllPublishedService().isEmpty()) {
+            clientManager.clientDisconnected(clientId);
+        }
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
     }
     

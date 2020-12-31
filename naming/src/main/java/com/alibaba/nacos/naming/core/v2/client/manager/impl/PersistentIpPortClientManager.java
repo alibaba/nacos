@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
@@ -57,7 +59,14 @@ public class PersistentIpPortClientManager implements ClientManager {
     
     @Override
     public boolean clientDisconnected(String clientId) {
-        throw new UnsupportedOperationException("");
+        Loggers.SRV_LOG.info("Persistent client connection {} disconnect", clientId);
+        IpPortBasedClient client = clients.remove(clientId);
+        if (null == client) {
+            return true;
+        }
+        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
+        client.destroy();
+        return true;
     }
     
     @Override

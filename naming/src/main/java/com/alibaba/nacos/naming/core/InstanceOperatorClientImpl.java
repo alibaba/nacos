@@ -27,7 +27,7 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
-import com.alibaba.nacos.naming.core.v2.client.manager.EphemeralClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -68,7 +68,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     private final SwitchDomain switchDomain;
     
-    public InstanceOperatorClientImpl(EphemeralClientManager clientManager,
+    public InstanceOperatorClientImpl(ClientManagerDelegate clientManager,
             ClientOperationServiceProxy clientOperationService, ServiceStorage serviceStorage,
             NamingMetadataOperateService metadataOperateService, NamingMetadataManager metadataManager,
             SwitchDomain switchDomain) {
@@ -250,7 +250,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     private void createIpPortClientIfAbsent(String clientId, boolean ephemeral) {
-        if (!clientManager.allClientId().contains(clientId)) {
+        if (!clientManager.contains(clientId)) {
             clientManager.clientConnected(new IpPortBasedClient(clientId, ephemeral));
         }
     }

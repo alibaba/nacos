@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
-import com.alibaba.nacos.naming.core.v2.client.manager.EphemeralClientManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
@@ -54,7 +54,7 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     
     private final PushDelayTaskExecuteEngine delayTaskEngine;
     
-    public NamingSubscriberServiceV2Impl(EphemeralClientManager clientManager,
+    public NamingSubscriberServiceV2Impl(ClientManagerDelegate clientManager,
             ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
             PushExecutorDelegate pushExecutor) {
         this.clientManager = clientManager;
