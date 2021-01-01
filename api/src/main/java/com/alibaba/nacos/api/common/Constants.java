@@ -191,4 +191,8 @@ public class Constants {
     public static final String ALL_PATTERN = "*";
     
     public static final String CONFIG_META_ITEM_NAME = "__meta__.txt";
+    
+    public static final String CONFIG_META_COMMENT_PREFIX = "#";
+    
+    public static final String CONFIG_EXPORT_GROUP_PREFIX = "group-";
 }

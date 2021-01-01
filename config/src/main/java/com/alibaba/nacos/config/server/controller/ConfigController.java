@@ -540,10 +540,10 @@ public class ConfigController {
         for (ConfigInfo ci : dataList) {
             metaData.append(
                     String.format("%s|%s|%s|%s\r\n", ci.getGroup(), ci.getDataId(), ci.getAppName(), ci.getType()));
-            String itemName = "group-" + ci.getGroup() + "/" + ci.getDataId();
+            String itemName = Constants.CONFIG_EXPORT_GROUP_PREFIX + ci.getGroup() + "/" + ci.getDataId();
             zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
         }
-        // v2 meta file name is '_config_meta_.txt'
+        // v2 meta file name __meta__.txt
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_META_ITEM_NAME, metaData.toString()));
         HttpHeaders headers = new HttpHeaders();
         String fileName =
@@ -596,7 +596,8 @@ public class ConfigController {
                 // group|dataId|app_name|type\r\n
                 for (String metaDataItem : metaDataArr) {
                     metaDataItem = metaDataItem.trim();
-                    if (StringUtils.isBlank(metaDataItem) || metaDataItem.startsWith("#")) {
+                    if (StringUtils.isBlank(metaDataItem) || metaDataItem
+                            .startsWith(Constants.CONFIG_META_COMMENT_PREFIX)) {
                         continue;
                     }
                     String[] split = metaDataItem.split("\\|");
@@ -619,7 +620,7 @@ public class ConfigController {
                             failedData.put("succCount", 0);
                             return RestResultUtils.buildResult(ResultCodeEnum.DATA_VALIDATION_FAILED, failedData);
                         }
-                        String group = groupAdnDataId[0].substring("group-".length());
+                        String group = groupAdnDataId[0].substring(Constants.CONFIG_EXPORT_GROUP_PREFIX.length());
                         String dataId = groupAdnDataId[1];
                         final String metaKey = group + "|" + dataId;
                         ConfigAllInfo ci = new ConfigAllInfo();
