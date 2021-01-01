@@ -125,6 +125,7 @@ public class ZipUtils {
         try (ZipInputStream zipIn = new ZipInputStream(new ByteArrayInputStream(source))) {
             ZipEntry entry;
             boolean flagV2 = false;
+            String metaName = ".meta.yml";
             while ((entry = zipIn.getNextEntry()) != null) {
                 if (entry.isDirectory()) {
                     continue;
@@ -136,7 +137,7 @@ public class ZipUtils {
                         out.write(buffer, 0, offset);
                     }
                     String entryName = entry.getName();
-                    if (".meta.yml".equals(entryName)) {
+                    if (metaName.equals(entryName)) {
                         metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
                     }
                     // v2 meta
@@ -152,14 +153,15 @@ public class ZipUtils {
             if (flagV2) {
                 itemList.removeIf((item) -> {
                     String itemName = item.getItemName();
-                    if (!itemName.startsWith("group-")) {
+                    String groupPrefix = "group-";
+                    if (!itemName.startsWith(groupPrefix)) {
                         return true;
                     }
                     String[] split = itemName.split("/");
                     return split.length > 0 && split[split.length - 1].startsWith(".");
                 });
             } else {
-                itemList.removeIf((item) -> ".meta.yml".equals(item.getItemName()));
+                itemList.removeIf((item) -> metaName.equals(item.getItemName()));
             }
         } catch (IOException e) {
             LOGGER.error("unzip error", e);
