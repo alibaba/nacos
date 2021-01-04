@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import org.springframework.stereotype.Component;
 
 /**
- * Health checker that does nothing.
+ * TCP health check processor for v2.x.
  *
- * @author nkorange
- * @since 1.0.0
+ * @author xiweng.yy
  */
 @Component
-public class NoneHealthCheckProcessor implements HealthCheckProcessor {
+public class TcpHealthCheckProcessor implements HealthCheckProcessorV2 {
     
-    public static final String TYPE = "NONE";
+    public static final String TYPE = HealthCheckType.TCP.name();
     
     @Override
-    public void process(HealthCheckTask task) {
+    public void process(InstancePublishInfo publishInfo, ClusterMetadata metadata) {
+        // TODO.
     }
     
     @Override

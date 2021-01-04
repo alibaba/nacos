@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.naming.healthcheck.v2.processor;
+
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 
 /**
- * Health check processor.
+ * Health check processor for v2.x.
  *
  * @author nkorange
  */
-public interface HealthCheckProcessor {
+public interface HealthCheckProcessorV2 {
     
     /**
      * Run check task for service.
      *
-     * @param task check task
+     * @param publishInfo publish instance information
+     * @param metadata    cluster metadata of this instance
      */
-    void process(HealthCheckTask task);
+    void process(InstancePublishInfo publishInfo, ClusterMetadata metadata);
     
     /**
      * Get check task type, refer to enum HealthCheckType.

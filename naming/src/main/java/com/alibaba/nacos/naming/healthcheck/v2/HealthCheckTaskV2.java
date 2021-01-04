@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.naming.healthcheck.v2;
 
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
@@ -24,6 +24,10 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
+import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2;
+import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2Delegate;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -46,7 +50,7 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     
     private final NamingMetadataManager metadataManager;
     
-    private final HealthCheckProcessor healthCheckProcessor;
+    private final HealthCheckProcessorV2 healthCheckProcessor;
     
     private long checkRtNormalized = -1;
     
@@ -66,7 +70,7 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         this.client = client;
         this.taskId = generateTaskIdFromClientId(client.getClientId());
         this.switchDomain = ApplicationUtils.getBean(SwitchDomain.class);
-        this.healthCheckProcessor = ApplicationUtils.getBean(HealthCheckProcessorDelegate.class);
+        this.healthCheckProcessor = ApplicationUtils.getBean(HealthCheckProcessorV2Delegate.class);
         this.metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
         initCheckRT();
     }

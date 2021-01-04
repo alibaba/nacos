@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.healthcheck.NoneHealthCheckProcessor;
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,35 +29,33 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Delegate of health check.
+ * Delegate of health check v2.x.
  *
  * @author nacos
  */
-@Component("healthCheckDelegate")
-public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
+@Component("healthCheckDelegateV2")
+public class HealthCheckProcessorV2Delegate implements HealthCheckProcessorV2 {
     
-    private Map<String, HealthCheckProcessor> healthCheckProcessorMap = new HashMap<>();
+    private final Map<String, HealthCheckProcessorV2> healthCheckProcessorMap = new HashMap<>();
     
-    public HealthCheckProcessorDelegate(HealthCheckExtendProvider provider) {
+    public HealthCheckProcessorV2Delegate(HealthCheckExtendProvider provider) {
         provider.init();
     }
     
     @Autowired
-    public void addProcessor(Collection<HealthCheckProcessor> processors) {
+    public void addProcessor(Collection<HealthCheckProcessorV2> processors) {
         healthCheckProcessorMap.putAll(processors.stream().filter(processor -> processor.getType() != null)
-                .collect(Collectors.toMap(HealthCheckProcessor::getType, processor -> processor)));
+                .collect(Collectors.toMap(HealthCheckProcessorV2::getType, processor -> processor)));
     }
     
     @Override
-    public void process(HealthCheckTask task) {
-        
-        String type = task.getCluster().getHealthChecker().getType();
-        HealthCheckProcessor processor = healthCheckProcessorMap.get(type);
+    public void process(InstancePublishInfo publishInfo, ClusterMetadata metadata) {
+        String type = metadata.getHealthyCheckType();
+        HealthCheckProcessorV2 processor = healthCheckProcessorMap.get(type);
         if (processor == null) {
             processor = healthCheckProcessorMap.get(NoneHealthCheckProcessor.TYPE);
         }
-        
-        processor.process(task);
+        processor.process(publishInfo, metadata);
     }
     
     @Override
