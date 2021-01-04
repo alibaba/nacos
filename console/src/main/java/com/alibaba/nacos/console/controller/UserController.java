@@ -28,12 +28,12 @@ import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
+import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
-import com.alibaba.nacos.console.utils.JwtTokenUtils;
 import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +67,7 @@ import java.util.List;
 public class UserController {
     
     @Autowired
-    private JwtTokenUtils jwtTokenUtils;
+    private JwtTokenManager jwtTokenManager;
     
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -126,7 +126,7 @@ public class UserController {
         userDetailsService.deleteUser(username);
         return new RestResult<>(200, "delete user ok!");
     }
-    
+
     /**
      * Update an user.
      *
@@ -228,7 +228,7 @@ public class UserController {
             //将 Authentication 绑定到 SecurityContext
             SecurityContextHolder.getContext().setAuthentication(authentication);
             //生成Token
-            String token = jwtTokenUtils.createToken(authentication);
+            String token = jwtTokenManager.createToken(authentication);
             //将Token写入到Http头部
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, "Bearer " + token);
             rr.setCode(200);
