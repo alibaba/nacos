@@ -43,13 +43,8 @@ public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCh
     
     public ClientBeatCheckTaskV2(IpPortBasedClient client) {
         this.client = client;
-        this.taskId = generateTaskIdFromClientId(client.getClientId());
+        this.taskId = client.getResponsibleId();
         this.interceptorChain = InstanceBeatCheckTaskInterceptorChain.getInstance();
-    }
-    
-    private String generateTaskIdFromClientId(String clientId) {
-        int index = clientId.indexOf(IpPortBasedClient.ID_DELIMITER);
-        return clientId.substring(0, index);
     }
     
     public GlobalConfig getGlobalConfig() {

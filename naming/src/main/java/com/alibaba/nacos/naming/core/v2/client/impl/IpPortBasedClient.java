@@ -37,11 +37,13 @@ import java.util.Collection;
  */
 public class IpPortBasedClient extends AbstractClient {
     
-    public static final String ID_DELIMITER = "#";
+    private static final String ID_DELIMITER = "#";
     
     private final String clientId;
     
     private final boolean ephemeral;
+    
+    private final String responsibleId;
     
     private ClientBeatCheckTaskV2 beatCheckTask;
     
@@ -50,6 +52,7 @@ public class IpPortBasedClient extends AbstractClient {
     public IpPortBasedClient(String clientId, boolean ephemeral) {
         this.ephemeral = ephemeral;
         this.clientId = clientId;
+        this.responsibleId = getResponsibleTagFromId();
         if (ephemeral) {
             beatCheckTask = new ClientBeatCheckTaskV2(this);
             HealthCheckReactor.scheduleCheck(beatCheckTask);
@@ -57,6 +60,11 @@ public class IpPortBasedClient extends AbstractClient {
             healthCheckTaskV2 = new HealthCheckTaskV2(this);
             HealthCheckReactor.scheduleCheck(healthCheckTaskV2);
         }
+    }
+    
+    private String getResponsibleTagFromId() {
+        int index = clientId.indexOf(IpPortBasedClient.ID_DELIMITER);
+        return clientId.substring(0, index);
     }
     
     public static String getClientId(String address, boolean ephemeral) {
@@ -71,6 +79,10 @@ public class IpPortBasedClient extends AbstractClient {
     @Override
     public boolean isEphemeral() {
         return ephemeral;
+    }
+    
+    public String getResponsibleId() {
+        return responsibleId;
     }
     
     @Override

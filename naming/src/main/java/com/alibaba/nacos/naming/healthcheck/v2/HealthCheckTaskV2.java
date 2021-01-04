@@ -68,16 +68,11 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     
     public HealthCheckTaskV2(IpPortBasedClient client) {
         this.client = client;
-        this.taskId = generateTaskIdFromClientId(client.getClientId());
+        this.taskId = client.getResponsibleId();
         this.switchDomain = ApplicationUtils.getBean(SwitchDomain.class);
         this.healthCheckProcessor = ApplicationUtils.getBean(HealthCheckProcessorV2Delegate.class);
         this.metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
         initCheckRT();
-    }
-    
-    private String generateTaskIdFromClientId(String clientId) {
-        int index = clientId.indexOf(IpPortBasedClient.ID_DELIMITER);
-        return clientId.substring(0, index);
     }
     
     private void initCheckRT() {

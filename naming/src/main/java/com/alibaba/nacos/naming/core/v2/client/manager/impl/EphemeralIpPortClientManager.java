@@ -96,7 +96,10 @@ public class EphemeralIpPortClientManager implements ClientManager {
     
     @Override
     public boolean isResponsibleClient(Client client) {
-        return distroMapper.responsible(client.getClientId());
+        if (client instanceof IpPortBasedClient) {
+            return distroMapper.responsible(((IpPortBasedClient) client).getResponsibleId());
+        }
+        return false;
     }
     
     @Override
