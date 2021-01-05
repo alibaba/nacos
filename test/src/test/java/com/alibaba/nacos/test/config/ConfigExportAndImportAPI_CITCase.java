@@ -265,7 +265,9 @@ public class ConfigExportAndImportAPI_CITCase {
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT/test1.yml", "test: test1"));
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT/test2.txt", "test: test1"));
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT/test3.properties", "test.test1.value=test"));
-        String metaDataStr = "TEST_IMPORT.test2~txt.app=testApp1\r\nTEST_IMPORT.test3~properties.app=testApp2";
+        zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT_2/test4.properties", "test.test4.value=test"));
+        zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT/SUB_GROUP/test5.properties", "test.test5.value=test"));
+        String metaDataStr = "TEST_IMPORT.test1~yml.app=testApp1\rTEST_IMPORT.test2~txt.app=testApp2\r\nTEST_IMPORT.test3~properties.app=testApp3\nTEST_IMPORT_2.test4~properties.app=testApp4";
         zipItemList.add(new ZipUtils.ZipItem(".meta.yml", metaDataStr));
         String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
@@ -288,13 +290,26 @@ public class ConfigExportAndImportAPI_CITCase {
             }
             switch (config.get("dataId").textValue()){
                 case "test1.yml":
+                    Assert.assertEquals(config.get("appName").textValue(), "testApp1");
+                    break;
                 case "test2.txt":
+                    Assert.assertEquals(config.get("appName").textValue(), "testApp2");
+                    break;
                 case "test3.properties":
+                    Assert.assertEquals(config.get("appName").textValue(), "testApp3");
                     break;
                 default:
                     Assert.fail();
             }
         }
+    
+        getDataUrl = "?search=accurate&dataId=&group=TEST_IMPORT_2&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
+        queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
+        resultObj = JacksonUtils.toObj(queryResult);
+        resultConfigs = resultObj.get("pageItems");
+        Assert.assertEquals(1, resultConfigs.size());
+        JsonNode jsonNode = resultConfigs.get(0);
+        Assert.assertEquals(jsonNode.get("appName").textValue(), "testApp4");
     }
 
     private Map<String, String> processMetaData(ZipUtils.ZipItem metaDataZipItem){
