@@ -17,15 +17,18 @@
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
-import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
+import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Nacos naming client based ip and port.
@@ -126,24 +129,20 @@ public class IpPortBasedClient extends AbstractClient {
         return result;
     }
     
-    public void clearAllSubscribers() {
-        subscribers.clear();
-    }
-    
-    public void load(final IpPortBasedClient client) {
-        loadPublishers(client.publishers);
-        loadSubscribers(client.subscribers);
-    }
-    
     /**
-     * clone new {@link IpPortBasedClient}.
+     * Load {@code ClientSyncData} and update current client.
      *
-     * @return
+     * @param client client sync data
      */
-    public IpPortBasedClient clone() {
-        final IpPortBasedClient clone = new IpPortBasedClient(clientId, ephemeral);
-        clone.subscribers.putAll(subscribers);
-        clone.publishers.putAll(publishers);
-        return clone;
+    public void loadClientSyncData(ClientSyncData client) {
+        List<String> namespaces = client.getNamespaces();
+        List<String> groupNames = client.getGroupNames();
+        List<String> serviceNames = client.getServiceNames();
+        List<InstancePublishInfo> instances = client.getInstancePublishInfos();
+        for (int i = 0; i < namespaces.size(); i++) {
+            Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), ephemeral);
+            Service singleton = ServiceManager.getInstance().getSingleton(service);
+            publishers.put(singleton, parseToHealthCheckInstance(instances.get(i)));
+        }
     }
 }

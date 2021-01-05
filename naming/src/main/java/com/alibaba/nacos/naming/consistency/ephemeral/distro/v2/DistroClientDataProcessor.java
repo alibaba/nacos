@@ -78,6 +78,10 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         }
         ClientEvent clientEvent = (ClientEvent) event;
         Client client = clientEvent.getClient();
+        // Only ephemeral data sync by Distro, persist client should sync by raft.
+        if (!client.isEphemeral()) {
+            return;
+        }
         if (!clientManager.isResponsibleClient(client)) {
             return;
         }
@@ -189,7 +193,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         List<ClientSyncData> datum = new LinkedList<>();
         for (String each : clientManager.allClientId()) {
             Client client = clientManager.getClient(each);
-            if (null == client) {
+            if (null == client || !client.isEphemeral()) {
                 continue;
             }
             datum.add(client.generateSyncData());
@@ -205,7 +209,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         List<String> verifyData = new LinkedList<>();
         for (String each : clientManager.allClientId()) {
             Client client = clientManager.getClient(each);
-            if (null == client) {
+            if (null == client || !client.isEphemeral()) {
                 continue;
             }
             if (clientManager.isResponsibleClient(client)) {

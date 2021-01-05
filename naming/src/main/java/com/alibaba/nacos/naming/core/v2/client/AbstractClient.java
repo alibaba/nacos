@@ -116,14 +116,4 @@ public abstract class AbstractClient implements Client {
         }
         return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances);
     }
-    
-    protected final void loadPublishers(ConcurrentMap<Service, InstancePublishInfo> publishers) {
-        this.publishers.clear();
-        this.publishers.putAll(publishers);
-    }
-    
-    protected final void loadSubscribers(ConcurrentMap<Service, Subscriber> subscribers) {
-        this.subscribers.clear();
-        this.subscribers.putAll(subscribers);
-    }
 }
