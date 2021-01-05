@@ -21,7 +21,7 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -170,9 +170,9 @@ public class HealthCheckTaskInterceptWrapperTest {
         assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
     }
     
-    private HeartBeatInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {
+    private HealthCheckInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
-        HeartBeatInstancePublishInfo instance = new HeartBeatInstancePublishInfo(IP, PORT);
+        HealthCheckInstancePublishInfo instance = new HealthCheckInstancePublishInfo(IP, PORT);
         instance.setHealthy(healthy);
         instance.setLastHeartBeatTime(heartbeatTime);
         client.addServiceInstance(service, instance);

@@ -36,7 +36,9 @@ import org.apache.commons.lang3.RandomUtils;
 import java.util.Optional;
 
 /**
- * Health check task.
+ * Health check task for v2.x.
+ *
+ * <p>Current health check logic is same as v1.x. TODO refactor health check for v2.x.
  *
  * @author nacos
  */
@@ -83,6 +85,10 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         checkRtWorst = 0L;
     }
     
+    public IpPortBasedClient getClient() {
+        return client;
+    }
+    
     @Override
     public String getTaskId() {
         return taskId;
@@ -95,7 +101,7 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
                 if (switchDomain.isHealthCheckEnabled(each.getGroupedServiceName())) {
                     InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(each);
                     ClusterMetadata metadata = getClusterMetadata(each, instancePublishInfo);
-                    healthCheckProcessor.process(client.getInstancePublishInfo(each), metadata);
+                    healthCheckProcessor.process(this, each, metadata);
                     if (Loggers.EVT_LOG.isDebugEnabled()) {
                         Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", client.getClientId());
                     }
@@ -109,13 +115,15 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
                 // worst == 0 means never checked
                 if (this.getCheckRtWorst() > 0) {
                     // TLog doesn't support float so we must convert it into long
-                    long diff =
-                            ((this.getCheckRtLast() - this.getCheckRtLastLast()) * 10000) / this.getCheckRtLastLast();
+                    long checkRtLastLast = getCheckRtLastLast();
                     this.setCheckRtLastLast(this.getCheckRtLast());
-                    if (Loggers.CHECK_RT.isDebugEnabled()) {
-                        Loggers.CHECK_RT.debug("{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
-                                client.getClientId(), this.getCheckRtNormalized(), this.getCheckRtWorst(),
-                                this.getCheckRtBest(), this.getCheckRtLast(), diff);
+                    if (checkRtLastLast > 0) {
+                        long diff = ((this.getCheckRtLast() - this.getCheckRtLastLast()) * 10000) / checkRtLastLast;
+                        if (Loggers.CHECK_RT.isDebugEnabled()) {
+                            Loggers.CHECK_RT.debug("{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
+                                    client.getClientId(), this.getCheckRtNormalized(), this.getCheckRtWorst(),
+                                    this.getCheckRtBest(), this.getCheckRtLast(), diff);
+                        }
                     }
                 }
             }

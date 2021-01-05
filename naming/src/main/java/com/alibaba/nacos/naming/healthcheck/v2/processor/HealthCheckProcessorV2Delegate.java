@@ -17,9 +17,10 @@
 package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
-import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.NoneHealthCheckProcessor;
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
+import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -49,13 +50,13 @@ public class HealthCheckProcessorV2Delegate implements HealthCheckProcessorV2 {
     }
     
     @Override
-    public void process(InstancePublishInfo publishInfo, ClusterMetadata metadata) {
+    public void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata) {
         String type = metadata.getHealthyCheckType();
         HealthCheckProcessorV2 processor = healthCheckProcessorMap.get(type);
         if (processor == null) {
             processor = healthCheckProcessorMap.get(NoneHealthCheckProcessor.TYPE);
         }
-        processor.process(publishInfo, metadata);
+        processor.process(task, service, metadata);
     }
     
     @Override

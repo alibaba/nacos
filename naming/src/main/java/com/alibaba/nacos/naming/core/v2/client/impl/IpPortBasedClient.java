@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
@@ -87,7 +87,7 @@ public class IpPortBasedClient extends AbstractClient {
     
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
-        return super.addServiceInstance(service, parseToHeartBeatInstance(instancePublishInfo));
+        return super.addServiceInstance(service, parseToHealthCheckInstance(instancePublishInfo));
     }
     
     @Override
@@ -111,15 +111,18 @@ public class IpPortBasedClient extends AbstractClient {
         }
     }
     
-    private InstancePublishInfo parseToHeartBeatInstance(InstancePublishInfo instancePublishInfo) {
-        if (instancePublishInfo instanceof HeartBeatInstancePublishInfo) {
+    private InstancePublishInfo parseToHealthCheckInstance(InstancePublishInfo instancePublishInfo) {
+        if (instancePublishInfo instanceof HealthCheckInstancePublishInfo) {
             return instancePublishInfo;
         }
-        HeartBeatInstancePublishInfo result = new HeartBeatInstancePublishInfo();
+        HealthCheckInstancePublishInfo result = new HealthCheckInstancePublishInfo();
         result.setIp(instancePublishInfo.getIp());
         result.setPort(instancePublishInfo.getPort());
         result.setHealthy(instancePublishInfo.isHealthy());
         result.setExtendDatum(instancePublishInfo.getExtendDatum());
+        if (!ephemeral) {
+            result.initHealthCheck();
+        }
         return result;
     }
     

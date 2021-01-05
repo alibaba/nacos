@@ -25,7 +25,7 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -44,14 +44,14 @@ import java.util.Optional;
 public class ExpiredInstanceChecker implements InstanceBeatChecker {
     
     @Override
-    public void doCheck(Client client, Service service, HeartBeatInstancePublishInfo instance) {
+    public void doCheck(Client client, Service service, HealthCheckInstancePublishInfo instance) {
         boolean expireInstance = ApplicationUtils.getBean(GlobalConfig.class).isExpireInstance();
         if (expireInstance && isExpireInstance(service, instance)) {
             deleteIp(client, service, instance);
         }
     }
     
-    private boolean isExpireInstance(Service service, HeartBeatInstancePublishInfo instance) {
+    private boolean isExpireInstance(Service service, HealthCheckInstancePublishInfo instance) {
         long deleteTimeout = getTimeout(service, instance);
         return System.currentTimeMillis() - instance.getLastHeartBeatTime() > deleteTimeout;
     }

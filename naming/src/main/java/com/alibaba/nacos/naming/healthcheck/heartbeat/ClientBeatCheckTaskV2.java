@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -66,7 +66,7 @@ public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCh
         try {
             Collection<Service> services = client.getAllPublishedService();
             for (Service each : services) {
-                HeartBeatInstancePublishInfo instance = (HeartBeatInstancePublishInfo) client
+                HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) client
                         .getInstancePublishInfo(each);
                 interceptorChain.doInterceptor(new InstanceBeatCheckTask(client, each, instance));
             }

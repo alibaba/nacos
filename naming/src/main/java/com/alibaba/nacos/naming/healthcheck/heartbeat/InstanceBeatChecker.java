@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 /**
@@ -34,5 +34,5 @@ public interface InstanceBeatChecker {
      * @param service  service of instance
      * @param instance instance publish info
      */
-    void doCheck(Client client, Service service, HeartBeatInstancePublishInfo instance);
+    void doCheck(Client client, Service service, HealthCheckInstancePublishInfo instance);
 }
