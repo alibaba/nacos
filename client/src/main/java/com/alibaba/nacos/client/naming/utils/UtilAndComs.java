@@ -51,8 +51,6 @@ public class UtilAndComs {
     
     public static final String NACOS_NAMING_LOG_LEVEL = "com.alibaba.nacos.naming.log.level";
     
-    public static final String SERVER_ADDR_IP_SPLITER = ":";
-    
     public static final int DEFAULT_CLIENT_BEAT_THREAD_COUNT =
             Runtime.getRuntime().availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2 : 1;
     

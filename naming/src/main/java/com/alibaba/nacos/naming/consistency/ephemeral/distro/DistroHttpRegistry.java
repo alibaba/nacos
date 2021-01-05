@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -49,15 +50,18 @@ public class DistroHttpRegistry {
     
     private final DistroConsistencyServiceImpl consistencyService;
     
+    private final ServerMemberManager memberManager;
+    
     public DistroHttpRegistry(DistroComponentHolder componentHolder, DistroTaskEngineHolder taskEngineHolder,
             DataStore dataStore, DistroMapper distroMapper, GlobalConfig globalConfig,
-            DistroConsistencyServiceImpl consistencyService) {
+            DistroConsistencyServiceImpl consistencyService, ServerMemberManager memberManager) {
         this.componentHolder = componentHolder;
         this.taskEngineHolder = taskEngineHolder;
         this.dataStore = dataStore;
         this.distroMapper = distroMapper;
         this.globalConfig = globalConfig;
         this.consistencyService = consistencyService;
+        this.memberManager = memberManager;
     }
     
     /**
@@ -67,7 +71,7 @@ public class DistroHttpRegistry {
     public void doRegister() {
         componentHolder.registerDataStorage(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
                 new DistroDataStorageImpl(dataStore, distroMapper));
-        componentHolder.registerTransportAgent(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, new DistroHttpAgent());
+        componentHolder.registerTransportAgent(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, new DistroHttpAgent(memberManager));
         componentHolder.registerFailedTaskHandler(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
                 new DistroHttpCombinedKeyTaskFailedHandler(globalConfig, taskEngineHolder));
         taskEngineHolder.registerNacosTaskProcessor(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,

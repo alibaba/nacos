@@ -15,3 +15,4 @@ derby.log
 work
 test/logs
 derby.log
+yarn.lock

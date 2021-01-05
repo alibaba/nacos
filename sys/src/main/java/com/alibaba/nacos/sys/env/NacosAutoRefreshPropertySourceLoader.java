@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.env.OriginTrackedMapPropertySource;
 import org.springframework.boot.env.PropertySourceLoader;
@@ -39,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Deprecated
 public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoader {
     
     private final Map<String, Object> properties = new ConcurrentHashMap<>(16);
@@ -57,7 +57,7 @@ public class NacosAutoRefreshPropertySourceLoader implements PropertySourceLoade
         properties.putAll(tmp);
         
         try {
-            WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), new FileWatcher() {
+            WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
                 @Override
                 public void onChange(FileChangeEvent event) {
                     try {
