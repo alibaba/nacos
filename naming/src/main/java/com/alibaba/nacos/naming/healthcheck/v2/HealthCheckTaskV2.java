@@ -52,8 +52,6 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     
     private final NamingMetadataManager metadataManager;
     
-    private final HealthCheckProcessorV2 healthCheckProcessor;
-    
     private long checkRtNormalized = -1;
     
     private long checkRtBest = -1;
@@ -72,7 +70,6 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         this.client = client;
         this.taskId = client.getResponsibleId();
         this.switchDomain = ApplicationUtils.getBean(SwitchDomain.class);
-        this.healthCheckProcessor = ApplicationUtils.getBean(HealthCheckProcessorV2Delegate.class);
         this.metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
         initCheckRT();
     }
@@ -101,7 +98,7 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
                 if (switchDomain.isHealthCheckEnabled(each.getGroupedServiceName())) {
                     InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(each);
                     ClusterMetadata metadata = getClusterMetadata(each, instancePublishInfo);
-                    healthCheckProcessor.process(this, each, metadata);
+                    ApplicationUtils.getBean(HealthCheckProcessorV2Delegate.class).process(this, each, metadata);
                     if (Loggers.EVT_LOG.isDebugEnabled()) {
                         Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", client.getClientId());
                     }

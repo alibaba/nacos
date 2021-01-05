@@ -71,6 +71,7 @@ import java.util.zip.Checksum;
  * format of host:port.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author xiweng.yy
  */
 @Component("persistentClientOperationServiceImpl")
 public class PersistentClientOperationServiceImpl extends RequestProcessor4CP implements ClientOperationService {
@@ -196,9 +197,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     }
     
     protected static class InstanceStoreRequest implements Serializable {
-    
+        
         private static final long serialVersionUID = -9077205657156890549L;
-    
+        
         private Service service;
         
         private Instance instance;

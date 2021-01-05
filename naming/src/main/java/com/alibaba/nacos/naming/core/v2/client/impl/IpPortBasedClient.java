@@ -114,9 +114,9 @@ public class IpPortBasedClient extends AbstractClient {
         }
     }
     
-    private InstancePublishInfo parseToHealthCheckInstance(InstancePublishInfo instancePublishInfo) {
+    private HealthCheckInstancePublishInfo parseToHealthCheckInstance(InstancePublishInfo instancePublishInfo) {
         if (instancePublishInfo instanceof HealthCheckInstancePublishInfo) {
-            return instancePublishInfo;
+            return (HealthCheckInstancePublishInfo) instancePublishInfo;
         }
         HealthCheckInstancePublishInfo result = new HealthCheckInstancePublishInfo();
         result.setIp(instancePublishInfo.getIp());
@@ -142,7 +142,9 @@ public class IpPortBasedClient extends AbstractClient {
         for (int i = 0; i < namespaces.size(); i++) {
             Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), ephemeral);
             Service singleton = ServiceManager.getInstance().getSingleton(service);
-            publishers.put(singleton, parseToHealthCheckInstance(instances.get(i)));
+            HealthCheckInstancePublishInfo instance = parseToHealthCheckInstance(instances.get(i));
+            instance.initHealthCheck();
+            publishers.put(singleton, instance);
         }
     }
 }
