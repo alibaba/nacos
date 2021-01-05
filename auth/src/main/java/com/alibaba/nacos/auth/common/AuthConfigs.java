@@ -53,7 +53,7 @@ public class AuthConfigs {
     /**
      * Token validity time(seconds).
      */
-    @Value("${nacos.core.auth.default.token.expire.seconds:1800}")
+    @Value("${nacos.core.auth.default.token.expire.seconds:18000}")
     private long tokenValidityInSeconds;
     
     /**
