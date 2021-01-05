@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.pojo;
 
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -66,10 +67,12 @@ public class HealthCheckInstancePublishInfo extends InstancePublishInfo {
         healthCheckStatus.checkFailCount.set(0);
     }
     
+    @JsonIgnore
     public AtomicInteger getOkCount() {
         return healthCheckStatus.checkOkCount;
     }
     
+    @JsonIgnore
     public AtomicInteger getFailCount() {
         return healthCheckStatus.checkFailCount;
     }

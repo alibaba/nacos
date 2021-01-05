@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -50,7 +51,7 @@ public class HealthCheckTaskInterceptWrapperTest {
     
     private static final int PORT = 10000;
     
-    private static final String CLIENT_ID = IP + ":" + PORT;
+    private static final String CLIENT_ID = IP + ":" + PORT + "#true";
     
     private static final String SERVICE_NAME = "service";
     
@@ -86,7 +87,7 @@ public class HealthCheckTaskInterceptWrapperTest {
         ApplicationUtils.injectContext(applicationContext);
         client = new IpPortBasedClient(CLIENT_ID, true);
         when(switchDomain.isHealthCheckEnabled()).thenReturn(true);
-        when(distroMapper.responsible(CLIENT_ID)).thenReturn(true);
+        when(distroMapper.responsible(client.getResponsibleId())).thenReturn(true);
         ClientBeatCheckTaskV2 beatCheckTask = new ClientBeatCheckTaskV2(client);
         taskWrapper = new HealthCheckTaskInterceptWrapper(beatCheckTask);
     }
@@ -95,12 +96,12 @@ public class HealthCheckTaskInterceptWrapperTest {
     public void testRunWithDisableHealthCheck() {
         when(switchDomain.isHealthCheckEnabled()).thenReturn(false);
         taskWrapper.run();
-        verify(distroMapper, never()).responsible(CLIENT_ID);
+        verify(distroMapper, never()).responsible(client.getResponsibleId());
     }
     
     @Test
     public void testRunWithoutResponsibleClient() {
-        when(distroMapper.responsible(CLIENT_ID)).thenReturn(false);
+        when(distroMapper.responsible(client.getResponsibleId())).thenReturn(false);
         taskWrapper.run();
         verify(globalConfig, never()).isExpireInstance();
     }
@@ -158,11 +159,11 @@ public class HealthCheckTaskInterceptWrapperTest {
     
     @Test
     public void testRunHealthyInstanceWithTimeoutFromMetadata() throws InterruptedException {
-        injectInstance(true, System.currentTimeMillis());
+        InstancePublishInfo instance = injectInstance(true, System.currentTimeMillis());
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
         metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000L);
-        when(namingMetadataManager.getInstanceMetadata(service, IP)).thenReturn(Optional.of(metadata));
+        when(namingMetadataManager.getInstanceMetadata(service, instance.getInstanceId())).thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         taskWrapper.run();
