@@ -167,10 +167,7 @@ public class ConnectionManager {
             @Override
             public void run() {
                 try {
-                    
                     MetricsMonitor.getLongConnectionMonitor().set(connections.size());
-                    
-                    long currentStamp = System.currentTimeMillis();
                     Set<Map.Entry<String, Connection>> entries = connections.entrySet();
                     boolean isLoaderClient = loadClient >= 0;
                     int currentMaxClient = isLoaderClient ? loadClient : maxClient;
@@ -197,8 +194,9 @@ public class ConnectionManager {
                             if (connection != null) {
                                 connection.asyncRequest(connectResetRequest, buildMeta(), null);
                                 Loggers.REMOTE
-                                        .info("expel connection ,send switch server response connection id = {},connectResetRequest={} ",
-                                                expelledClientId, connectResetRequest);
+                                        .info("send connection reset server , connection id = {},recommendServerIp={}, recommendServerPort={}",
+                                                expelledClientId, connectResetRequest.getServerIp(),
+                                                connectResetRequest.getServerPort());
                             }
                             
                         } catch (ConnectionAlreadyClosedException e) {
@@ -229,7 +227,7 @@ public class ConnectionManager {
         return meta;
     }
     
-    public void coordinateMaxClientsSmoth(int maxClient) {
+    public void setMaxClientCount(int maxClient) {
         this.maxClient = maxClient;
     }
     
@@ -259,7 +257,7 @@ public class ConnectionManager {
             } catch (ConnectionAlreadyClosedException e) {
                 unregister(connectionId);
             } catch (Exception e) {
-                Loggers.REMOTE.error("error occurs when expel connetion :", connectionId, e);
+                Loggers.REMOTE.error("error occurs when expel connection :", connectionId, e);
             }
         }
         

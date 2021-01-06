@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.ServerReloadResponse;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RemoteUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -45,6 +46,8 @@ public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadReq
     @Override
     public ServerReloadResponse handle(ServerReloadRequest request, RequestMeta meta) throws NacosException {
         ServerReloadResponse response = new ServerReloadResponse();
+        Loggers.REMOTE.info("server reload request receive,reload count={},redirectServer={},requestIp={}",
+                request.getReloadCount(), request.getReloadServer(), meta.getClientIp());
         int reloadCount = request.getReloadCount();
         Map<String, String> filter = new HashMap<String, String>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
@@ -53,7 +56,7 @@ public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadReq
             response.setMessage("ignore");
         } else {
             reloadCount = (int) Math.max(reloadCount, sdkCount * (1 - RemoteUtils.LOADER_FACTOR));
-            connectionManager.loadCount(reloadCount, null);
+            connectionManager.loadCount(reloadCount, request.getReloadServer());
             response.setMessage("ok");
         }
         return response;
