@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTaskExecuteEngine;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTaskProcessor;
-import com.alibaba.nacos.core.distributed.distro.task.execute.DistroExecuteWorkersManager;
+import com.alibaba.nacos.core.distributed.distro.task.execute.DistroExecuteTaskExecuteEngine;
 import org.springframework.stereotype.Component;
 
 /**
@@ -33,7 +33,7 @@ public class DistroTaskEngineHolder {
     
     private final DistroDelayTaskExecuteEngine delayTaskExecuteEngine = new DistroDelayTaskExecuteEngine();
     
-    private final DistroExecuteWorkersManager executeWorkersManager = new DistroExecuteWorkersManager();
+    private final DistroExecuteTaskExecuteEngine executeWorkersManager = new DistroExecuteTaskExecuteEngine();
     
     public DistroTaskEngineHolder(DistroComponentHolder distroComponentHolder) {
         DistroDelayTaskProcessor defaultDelayTaskProcessor = new DistroDelayTaskProcessor(this, distroComponentHolder);
@@ -44,7 +44,7 @@ public class DistroTaskEngineHolder {
         return delayTaskExecuteEngine;
     }
     
-    public DistroExecuteWorkersManager getExecuteWorkersManager() {
+    public DistroExecuteTaskExecuteEngine getExecuteWorkersManager() {
         return executeWorkersManager;
     }
     

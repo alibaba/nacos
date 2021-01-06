@@ -78,8 +78,7 @@ done
 export JAVA_HOME
 export JAVA="$JAVA_HOME/bin/java"
 export BASE_DIR=`cd $(dirname $0)/..; pwd`
-export DEFAULT_SEARCH_LOCATIONS="classpath:/,classpath:/config/,file:./,file:./config/"
-export CUSTOM_SEARCH_LOCATIONS=${DEFAULT_SEARCH_LOCATIONS},file:${BASE_DIR}/conf/
+export CUSTOM_SEARCH_LOCATIONS=file:${BASE_DIR}/conf/
 
 #===========================================================================================
 # JVM Configuration
@@ -117,7 +116,7 @@ JAVA_OPT="${JAVA_OPT} -Dloader.path=${BASE_DIR}/plugins/health,${BASE_DIR}/plugi
 JAVA_OPT="${JAVA_OPT} -Dnacos.home=${BASE_DIR}"
 JAVA_OPT="${JAVA_OPT} -jar ${BASE_DIR}/target/${SERVER}.jar"
 JAVA_OPT="${JAVA_OPT} ${JAVA_OPT_EXT}"
-JAVA_OPT="${JAVA_OPT} --spring.config.location=${CUSTOM_SEARCH_LOCATIONS}"
+JAVA_OPT="${JAVA_OPT} --spring.config.additional-location=${CUSTOM_SEARCH_LOCATIONS}"
 JAVA_OPT="${JAVA_OPT} --logging.config=${BASE_DIR}/conf/nacos-logback.xml"
 JAVA_OPT="${JAVA_OPT} --server.max-http-header-size=524288"
 

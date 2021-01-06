@@ -21,8 +21,7 @@ rem added double quotation marks to avoid the issue caused by the folder names c
 rem removed the last 5 chars(which means \bin\) to get the base DIR.
 set BASE_DIR="%BASE_DIR:~0,-5%"
 
-set DEFAULT_SEARCH_LOCATIONS="classpath:/,classpath:/config/,file:./,file:./config/"
-set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%/conf/
+set CUSTOM_SEARCH_LOCATIONS=file:%BASE_DIR%/conf/
 
 set MODE="cluster"
 set FUNCTION_MODE="all"
@@ -84,7 +83,7 @@ set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.home=%BASE_DIR%"
 set "NACOS_OPTS=%NACOS_OPTS% -jar %BASE_DIR%\target\%SERVER%.jar"
 
 rem set nacos spring config location
-set "NACOS_CONFIG_OPTS=--spring.config.location=%CUSTOM_SEARCH_LOCATIONS%"
+set "NACOS_CONFIG_OPTS=--spring.config.additional-location=%CUSTOM_SEARCH_LOCATIONS%"
 
 rem set nacos log4j file location
 set "NACOS_LOG4J_OPTS=--logging.config=%BASE_DIR%/conf/nacos-logback.xml"

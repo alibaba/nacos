@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -47,6 +48,9 @@ public class PerformanceLoggerThread {
     
     @Autowired
     private RaftCore raftCore;
+    
+    @Autowired
+    private ClusterVersionJudgement versionJudgement;
     
     private static final long PERIOD = 5 * 60;
     
@@ -92,12 +96,22 @@ public class PerformanceLoggerThread {
         MetricsMonitor.getTotalPushMonitor().set(pushService.getTotalPush());
         MetricsMonitor.getFailedPushMonitor().set(pushService.getFailedPushCount());
         
-        if (raftCore.isLeader()) {
-            MetricsMonitor.getLeaderStatusMonitor().set(1);
-        } else if (raftCore.getPeerSet().local().state == RaftPeer.State.FOLLOWER) {
-            MetricsMonitor.getLeaderStatusMonitor().set(0);
-        } else {
-            MetricsMonitor.getLeaderStatusMonitor().set(2);
+        metricsRaftLeader();
+    }
+    
+    /**
+     * Will deprecated after v1.4.x
+     */
+    @Deprecated
+    private void metricsRaftLeader() {
+        if (!versionJudgement.allMemberIsNewVersion()) {
+            if (raftCore.isLeader()) {
+                MetricsMonitor.getLeaderStatusMonitor().set(1);
+            } else if (raftCore.getPeerSet().local().state == RaftPeer.State.FOLLOWER) {
+                MetricsMonitor.getLeaderStatusMonitor().set(0);
+            } else {
+                MetricsMonitor.getLeaderStatusMonitor().set(2);
+            }
         }
     }
     

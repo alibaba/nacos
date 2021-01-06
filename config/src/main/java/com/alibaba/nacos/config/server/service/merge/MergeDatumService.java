@@ -27,8 +27,9 @@ import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,7 +107,7 @@ public class MergeDatumService {
             return;
         }
         for (ConfigInfoChanged item : persistService.findAllAggrGroup()) {
-            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIp());
+            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIP());
         }
     }
     
@@ -114,7 +115,7 @@ public class MergeDatumService {
         if (!PropertyUtil.isEmbeddedStorage()) {
             return true;
         }
-        if (ApplicationUtils.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) {
             return true;
         }
         ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
@@ -163,7 +164,7 @@ public class MergeDatumService {
                                 ContentUtils.truncateContent(cf.getContent()));
                     } else {
                         // remove
-                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
+                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
                         LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                                 + group);
                     }

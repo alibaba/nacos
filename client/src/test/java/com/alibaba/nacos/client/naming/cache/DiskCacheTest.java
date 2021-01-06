@@ -41,12 +41,13 @@ public class DiskCacheTest {
     @Before
     public void setUp() throws Exception {
         System.out.println(CACHE_DIR);
-        serviceInfo = new ServiceInfo("testName", "testClusters");
+        serviceInfo = new ServiceInfo("G@@testName", "testClusters");
         instance = new Instance();
         instance.setClusterName("testClusters");
         instance.setIp("1.1.1.1");
         instance.setPort(1234);
         instance.setServiceName("testName");
+        instance.addMetadata("chinese", "中文");
         serviceInfo.setHosts(Collections.singletonList(instance));
     }
     
@@ -65,8 +66,8 @@ public class DiskCacheTest {
         DiskCache.write(serviceInfo, CACHE_DIR);
         Map<String, ServiceInfo> actual = DiskCache.read(CACHE_DIR);
         assertEquals(1, actual.size());
-        assertTrue(actual.containsKey(serviceInfo.getKeyEncoded()));
-        assertServiceInfo(actual.get(serviceInfo.getKeyEncoded()), serviceInfo);
+        assertTrue(actual.containsKey(serviceInfo.getKey()));
+        assertServiceInfo(actual.get(serviceInfo.getKey()), serviceInfo);
     }
     
     private void assertServiceInfo(ServiceInfo actual, ServiceInfo expected) {
@@ -87,9 +88,10 @@ public class DiskCacheTest {
     }
     
     private void assertInstance(Instance actual, Instance expected) {
-        assertEquals(actual.getServiceName(), actual.getServiceName());
-        assertEquals(actual.getClusterName(), actual.getClusterName());
-        assertEquals(actual.getIp(), actual.getIp());
-        assertEquals(actual.getPort(), actual.getPort());
+        assertEquals(actual.getServiceName(), expected.getServiceName());
+        assertEquals(actual.getClusterName(), expected.getClusterName());
+        assertEquals(actual.getIp(), expected.getIp());
+        assertEquals(actual.getPort(), expected.getPort());
+        assertEquals(actual.getMetadata(), expected.getMetadata());
     }
 }

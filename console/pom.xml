@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>1.4.0-SNAPSHOT</version>
+        <version>1.4.1-SNAPSHOT</version>
     </parent>
     <artifactId>nacos-console</artifactId>
     <packaging>jar</packaging>
@@ -83,7 +83,7 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <excludes>
-                    <exclude>static/console-fe/.vscode/**</exclude>
+                    <exclude>static/console-ui/.vscode/**</exclude>
                 </excludes>
             </resource>
         </resources>

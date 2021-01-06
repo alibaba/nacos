@@ -65,7 +65,7 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
         initServerAddr(properties);
-        InitUtils.initWebRootContext();
+        InitUtils.initWebRootContext(properties);
         serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
     }
     
@@ -173,4 +173,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         serverProxy.updateService(service, selector);
     }
     
+    @Override
+    public void shutDown() throws NacosException {
+        serverProxy.shutdown();
+    }
 }

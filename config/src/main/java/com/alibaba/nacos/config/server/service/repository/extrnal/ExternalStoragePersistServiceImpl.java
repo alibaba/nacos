@@ -2292,7 +2292,20 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     .queryForObject(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
             return historyInfo;
         } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[list-config-history] error, nid:{}", new Object[] {nid}, e);
+            LogUtil.FATAL_LOG.error("[detail-config-history] error, nid:{}", new Object[] {nid}, e);
+            throw e;
+        }
+    }
+    
+    @Override
+    public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (select max(nid) from his_config_info where id = ?) ";
+        try {
+            ConfigHistoryInfo historyInfo = jt
+                    .queryForObject(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
+            return historyInfo;
+        } catch (DataAccessException e) {
+            LogUtil.FATAL_LOG.error("[detail-previous-config-history] error, id:{}", new Object[] {id}, e);
             throw e;
         }
     }
@@ -2577,13 +2590,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             if (StringUtils.isBlank(type)) {
                 // simple judgment of file type based on suffix
                 if (configInfo.getDataId().contains(SPOT)) {
-                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1)
-                            .toUpperCase();
-                    try {
-                        type = FileTypeEnum.valueOf(extName.toUpperCase()).getFileType();
-                    } catch (Exception ex) {
-                        type = FileTypeEnum.TEXT.getFileType();
-                    }
+                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1);
+                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(extName);
+                    type = fileTypeEnum.getFileType();
                 }
             }
             if (configAdvanceInfo == null) {

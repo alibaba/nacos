@@ -143,7 +143,7 @@ public class ResourceUtils {
         Properties props = new Properties();
         InputStream in = getResourceAsStream(loader, resource);
         props.load(in);
-        in.close();
+        IoUtils.closeQuietly(in);
         return props;
     }
     

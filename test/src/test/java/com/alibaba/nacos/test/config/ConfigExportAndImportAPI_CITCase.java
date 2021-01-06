@@ -27,14 +27,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClient;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClientBuilder;
 import com.github.keran213539.commonOkHttp.UploadByteFile;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.HttpURLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author klw
@@ -61,6 +71,7 @@ public class ConfigExportAndImportAPI_CITCase {
     @AfterClass
     public static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigExportAndImportAPI_CITCase.class.getSimpleName());
     }
 
     @Before

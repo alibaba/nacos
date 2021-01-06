@@ -20,7 +20,7 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -214,7 +214,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
     }
     
     private boolean isDerby() {
-        return (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseExternalDB()) || PropertyUtil
+        return (EnvUtil.getStandaloneMode() && !PropertyUtil.isUseExternalDB()) || PropertyUtil
                 .isEmbeddedStorage();
     }
     

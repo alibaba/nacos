@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -36,11 +37,20 @@ import com.alibaba.nacos.naming.misc.ServiceStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
+import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.push.PushService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -50,20 +60,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
 
 /**
  * Core manager storing all services in Nacos.
@@ -171,7 +178,7 @@ public class ServiceManager implements RecordListener<Service> {
         } catch (Exception e) {
             toBeUpdatedServicesQueue.poll();
             toBeUpdatedServicesQueue.add(new ServiceKey(namespaceId, serviceName, serverIP, checksum));
-            Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add service to be updatd to queue.", e);
+            Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add service to be updated to queue.", e);
         } finally {
             lock.unlock();
         }
@@ -229,10 +236,14 @@ public class ServiceManager implements RecordListener<Service> {
         
         if (service != null) {
             service.destroy();
-            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
+            String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
+            String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
+            consistencyService.remove(ephemeralInstanceListKey);
+            consistencyService.remove(persistInstanceListKey);
             
-            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
-            
+            // remove listeners of key to avoid mem leak
+            consistencyService.unListen(ephemeralInstanceListKey, service);
+            consistencyService.unListen(persistInstanceListKey, service);
             consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
             Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
         }
@@ -526,6 +537,103 @@ public class ServiceManager implements RecordListener<Service> {
     }
     
     /**
+     * Update instance's metadata.
+     *
+     * @param namespaceId namespace
+     * @param serviceName service name
+     * @param action      update or remove
+     * @param ips         need update instances
+     * @param metadata    target metadata
+     * @return update succeed instances
+     * @throws NacosException nacos exception
+     */
+    public List<Instance> updateMetadata(String namespaceId, String serviceName, boolean isEphemeral, String action,
+            boolean all, List<Instance> ips, Map<String, String> metadata) throws NacosException {
+        
+        Service service = getService(namespaceId, serviceName);
+        
+        if (service == null) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "service not found, namespace: " + namespaceId + ", service: " + serviceName);
+        }
+        
+        List<Instance> locatedInstance = getLocatedInstance(namespaceId, serviceName, isEphemeral, all, ips);
+        
+        if (CollectionUtils.isEmpty(locatedInstance)) {
+            throw new NacosException(NacosException.INVALID_PARAM, "not locate instances, input instances: " + ips);
+        }
+        
+        if (UPDATE_INSTANCE_METADATA_ACTION_UPDATE.equals(action)) {
+            locatedInstance.forEach(ele -> ele.getMetadata().putAll(metadata));
+        } else if (UPDATE_INSTANCE_METADATA_ACTION_REMOVE.equals(action)) {
+            Set<String> removeKeys = metadata.keySet();
+            for (String removeKey : removeKeys) {
+                locatedInstance.forEach(ele -> ele.getMetadata().remove(removeKey));
+            }
+        }
+        Instance[] instances = new Instance[locatedInstance.size()];
+        locatedInstance.toArray(instances);
+        
+        addInstance(namespaceId, serviceName, isEphemeral, instances);
+        
+        return locatedInstance;
+    }
+    
+    /**
+     * locate consistency's datum by all or instances provided.
+     *
+     * @param namespaceId        namespace
+     * @param serviceName        serviceName
+     * @param isEphemeral        isEphemeral
+     * @param all                get from consistencyService directly
+     * @param waitLocateInstance instances provided
+     * @return located instances
+     * @throws NacosException nacos exception
+     */
+    public List<Instance> getLocatedInstance(String namespaceId, String serviceName, boolean isEphemeral, boolean all,
+            List<Instance> waitLocateInstance) throws NacosException {
+        List<Instance> locatedInstance;
+        
+        //need the newest data from consistencyService
+        Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(namespaceId, serviceName, isEphemeral));
+        if (datum == null) {
+            throw new NacosException(NacosException.NOT_FOUND,
+                    "instances from consistencyService not exist, namespace: " + namespaceId + ", service: "
+                            + serviceName + ", ephemeral: " + isEphemeral);
+        }
+        
+        if (all) {
+            locatedInstance = ((Instances) datum.value).getInstanceList();
+        } else {
+            locatedInstance = new ArrayList<>();
+            for (Instance instance : waitLocateInstance) {
+                Instance located = locateInstance(((Instances) datum.value).getInstanceList(), instance);
+                if (located == null) {
+                    continue;
+                }
+                locatedInstance.add(located);
+            }
+        }
+        
+        return locatedInstance;
+    }
+    
+    private Instance locateInstance(List<Instance> instances, Instance instance) {
+        int target = 0;
+        while (target >= 0) {
+            target = instances.indexOf(instance);
+            if (target >= 0) {
+                Instance result = instances.get(target);
+                if (result.getClusterName().equals(instance.getClusterName())) {
+                    return result;
+                }
+                instances.remove(target);
+            }
+        }
+        return null;
+    }
+    
+    /**
      * Add instance to service.
      *
      * @param namespaceId namespace
@@ -606,6 +714,59 @@ public class ServiceManager implements RecordListener<Service> {
     }
     
     /**
+     * batch operate kinds of resources.
+     *
+     * @param namespace       namespace.
+     * @param operationInfo   operation resources description.
+     * @param operateFunction some operation defined by kinds of situation.
+     */
+    public List<Instance> batchOperate(String namespace, InstanceOperationInfo operationInfo,
+            Function<InstanceOperationContext, List<Instance>> operateFunction) {
+        List<Instance> operatedInstances = new ArrayList<>();
+        try {
+            String serviceName = operationInfo.getServiceName();
+            NamingUtils.checkServiceNameFormat(serviceName);
+            // type: ephemeral/persist
+            InstanceOperationContext operationContext;
+            String type = operationInfo.getConsistencyType();
+            if (!StringUtils.isEmpty(type)) {
+                switch (type) {
+                    case UtilsAndCommons.EPHEMERAL:
+                        operationContext = new InstanceOperationContext(namespace, serviceName, true, true);
+                        operatedInstances.addAll(operateFunction.apply(operationContext));
+                        break;
+                    case UtilsAndCommons.PERSIST:
+                        operationContext = new InstanceOperationContext(namespace, serviceName, false, true);
+                        operatedInstances.addAll(operateFunction.apply(operationContext));
+                        break;
+                    default:
+                        Loggers.SRV_LOG
+                                .warn("UPDATE-METADATA: services.all value is illegal, it should be ephemeral/persist. ignore the service '"
+                                        + serviceName + "'");
+                        break;
+                }
+            } else {
+                List<Instance> instances = operationInfo.getInstances();
+                if (!CollectionUtils.isEmpty(instances)) {
+                    //ephemeral:instances or persist:instances
+                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
+                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
+                    
+                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
+                        operationContext = new InstanceOperationContext(namespace, serviceName, entry.getKey(), false,
+                                entry.getValue());
+                        operatedInstances.addAll(operateFunction.apply(operationContext));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("UPDATE-METADATA: update metadata failed, ignore the service '" + operationInfo
+                    .getServiceName() + "'", e);
+        }
+        return operatedInstances;
+    }
+    
+    /**
      * Compare and get new instance list.
      *
      * @param service   service
@@ -631,7 +792,7 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         Map<String, Instance> instanceMap;
-        if (datum != null) {
+        if (datum != null && null != datum.value) {
             instanceMap = setValid(((Instances) datum.value).getInstanceList(), currentInstances);
         } else {
             instanceMap = new HashMap<>(ips.length);
@@ -650,7 +811,12 @@ public class ServiceManager implements RecordListener<Service> {
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
                 instanceMap.remove(instance.getDatumKey());
             } else {
-                instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
+                Instance oldInstance = instanceMap.get(instance.getDatumKey());
+                if (oldInstance != null) {
+                    instance.setInstanceId(oldInstance.getInstanceId());
+                } else {
+                    instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
+                }
                 instanceMap.put(instance.getDatumKey(), instance);
             }
             
@@ -708,7 +874,7 @@ public class ServiceManager implements RecordListener<Service> {
         if (!serviceMap.containsKey(service.getNamespaceId())) {
             synchronized (putServiceLock) {
                 if (!serviceMap.containsKey(service.getNamespaceId())) {
-                    serviceMap.put(service.getNamespaceId(), new ConcurrentHashMap<>(16));
+                    serviceMap.put(service.getNamespaceId(), new ConcurrentSkipListMap<>());
                 }
             }
         }
@@ -796,8 +962,8 @@ public class ServiceManager implements RecordListener<Service> {
                 contained = false;
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
-                    if (containedInstance.contains(":")) {
-                        if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), containedInstance)) {
+                    if (IPUtil.containsPort(containedInstance)) {
+                        if (StringUtils.equals(instance.getIp() + IPUtil.IP_PORT_SPLITER + instance.getPort(), containedInstance)) {
                             contained = true;
                             break;
                         }

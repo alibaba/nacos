@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -87,7 +87,7 @@ public class ConfigTraceService {
         // (md5)
         String md5 = content == null ? null : MD5Utils.md5Hex(content, Constants.ENCODE);
         
-        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
+        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
                 requestIpAppName, ts, handleIp, "persist", type, -1, md5);
     }
     
@@ -116,7 +116,7 @@ public class ConfigTraceService {
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed] | ext
         // (targetIp)
-        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
+        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
                 requestIpAppName, ts, handleIp, "notify", type, delayed, targetIp);
     }
     
@@ -143,7 +143,7 @@ public class ConfigTraceService {
             tenant = null;
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed] | length
-        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
+        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
                 requestIpAppName, ts, handleIp, "dump", type, delayed, length);
     }
     
@@ -169,7 +169,7 @@ public class ConfigTraceService {
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed = -1]
         LogUtil.TRACE_LOG
-                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant, requestIpAppName,
+                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant, requestIpAppName,
                         ts, handleIp, "dump-all", type, -1);
     }
     
@@ -196,7 +196,7 @@ public class ConfigTraceService {
         }
         //localIp | dataid | group | tenant| requestIpAppName| ts | event | type | [delayed] | ext(clientIp)
         LogUtil.TRACE_LOG
-                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant, requestIpAppName,
+                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant, requestIpAppName,
                         ts, "pull", type, delayed, clientIp);
     }
 }

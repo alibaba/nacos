@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
+import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +33,7 @@ import javax.annotation.PostConstruct;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
@@ -88,16 +89,17 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         String sqlCountRows = "select count(*) from roles where ";
         String sqlFetchRows = "select role,username from roles where ";
         
-        String where = " username='" + username + "' ";
-        
-        if (StringUtils.isBlank(username)) {
+        String where = " username= ? ";
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(username)) {
+            params = Collections.singletonList(username);
+        } else {
             where = " 1=1 ";
         }
         
         try {
-            return helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                            pageSize, ROLE_INFO_ROW_MAPPER);
+            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                    ROLE_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -107,7 +109,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     /**
      * Execute add role operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param userName username string value.
      */
     public void addRole(String role, String userName) {
@@ -140,7 +142,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     /**
      * Execute delete role operation.
      *
-     * @param role role string value.
+     * @param role     role string value.
      * @param username username string value.
      */
     public void deleteRole(String role, String username) {
@@ -156,7 +158,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     @Override
     public List<String> findRolesLikeRoleName(String role) {
         String sql = "SELECT role FROM roles WHERE role like '%' ? '%'";
-        List<String> users = this.jt.queryForList(sql, new String[]{role}, String.class);
+        List<String> users = this.jt.queryForList(sql, new String[] {role}, String.class);
         return users;
     }
     

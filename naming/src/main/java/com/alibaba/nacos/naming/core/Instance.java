@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -47,6 +48,8 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     
     private static final double MIN_WEIGHT_VALUE = 0.00D;
     
+    private static final long serialVersionUID = -6527721638428975306L;
+    
     private volatile long lastBeat = System.currentTimeMillis();
     
     @JsonIgnore
@@ -57,9 +60,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     private String tenant;
     
     private String app;
-    
-    private static final Pattern IP_PATTERN = Pattern
-            .compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
     
     private static final Pattern ONLY_DIGIT_AND_DOT = Pattern.compile("(\\d|\\.)+");
     
@@ -117,19 +117,19 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
         
         String provider = ipAddressAttributes[0];
-        Matcher matcher = IP_PATTERN.matcher(provider);
-        if (!matcher.matches()) {
+        String[] providerAddr;
+        try {
+            providerAddr = IPUtil.splitIPPortStr(provider);
+        } catch (Exception ex) {
             return null;
         }
         
-        int expectedGroupCount = 2;
-        
         int port = 0;
-        if (NumberUtils.isNumber(matcher.group(expectedGroupCount))) {
-            port = Integer.parseInt(matcher.group(expectedGroupCount));
+        if (providerAddr.length == IPUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils.isNumber(providerAddr[1])) {
+            port = Integer.parseInt(providerAddr[1]);
         }
         
-        Instance instance = new Instance(matcher.group(1), port);
+        Instance instance = new Instance(providerAddr[0], port);
         
         // 7 possible formats of config:
         // ip:port
@@ -358,8 +358,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
      */
     public void validate() throws NacosException {
         if (onlyContainsDigitAndDot()) {
-            Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
-            if (!matcher.matches()) {
+            if (!IPUtil.containsPort(getIp() + IPUtil.IP_PORT_SPLITER + getPort())) {
                 throw new NacosException(NacosException.INVALID_PARAM,
                         "instance format invalid: Your IP address is spelled incorrectly");
             }

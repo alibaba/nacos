@@ -20,11 +20,12 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
-import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.RequestProcessor;
+import com.alibaba.nacos.consistency.ProtoMessageUtil;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
@@ -69,7 +70,7 @@ class NacosStateMachine extends StateMachineAdapter {
     
     protected final JRaftServer server;
     
-    protected final LogProcessor processor;
+    protected final RequestProcessor processor;
     
     private final AtomicBoolean isLeader = new AtomicBoolean(false);
     
@@ -83,7 +84,7 @@ class NacosStateMachine extends StateMachineAdapter {
     
     private volatile String leaderIp = "unknown";
     
-    NacosStateMachine(JRaftServer server, LogProcessor4CP processor) {
+    NacosStateMachine(JRaftServer server, RequestProcessor4CP processor) {
         this.server = server;
         this.processor = processor;
         this.groupId = processor.group();
@@ -105,18 +106,18 @@ class NacosStateMachine extends StateMachineAdapter {
                         message = closure.getMessage();
                     } else {
                         final ByteBuffer data = iter.getData();
-                        message = parse(data.array());
+                        message = ProtoMessageUtil.parse(data.array());
                     }
                     
                     LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "receive log : {}", message);
                     
-                    if (message instanceof Log) {
-                        Response response = processor.onApply((Log) message);
+                    if (message instanceof WriteRequest) {
+                        Response response = processor.onApply((WriteRequest) message);
                         postProcessor(response, closure);
                     }
                     
-                    if (message instanceof GetRequest) {
-                        Response response = processor.onRequest((GetRequest) message);
+                    if (message instanceof ReadRequest) {
+                        Response response = processor.onRequest((ReadRequest) message);
                         postProcessor(response, closure);
                     }
                 } catch (Throwable e) {
@@ -138,23 +139,6 @@ class NacosStateMachine extends StateMachineAdapter {
                     new Status(RaftError.ESTATEMACHINE, "StateMachine meet critical error: %s.",
                             ExceptionUtil.getStackTrace(t)));
         }
-    }
-    
-    private Message parse(byte[] bytes) {
-        Message result;
-        try {
-            result = Log.parseFrom(bytes);
-            return result;
-        } catch (Throwable ignore) {
-        }
-        
-        try {
-            result = GetRequest.parseFrom(bytes);
-            return result;
-        } catch (Throwable ignore) {
-        }
-        
-        throw new ConsistencyException("The current array cannot be serialized to the corresponding object");
     }
     
     public void setNode(Node node) {
@@ -225,6 +209,10 @@ class NacosStateMachine extends StateMachineAdapter {
     public void onError(RaftException e) {
         super.onError(e);
         processor.onError(e);
+        NotifyCenter.publishEvent(
+                RaftEvent.builder().groupId(groupId).leader(leaderIp).term(term).raftClusterInfo(allPeers())
+                        .errMsg(e.toString())
+                        .build());
     }
     
     public boolean isLeader() {

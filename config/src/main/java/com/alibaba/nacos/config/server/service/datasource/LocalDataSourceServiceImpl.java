@@ -18,13 +18,20 @@ package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.DiskUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -36,13 +43,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * local data source.
@@ -78,7 +78,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             if (!initialize) {
                 LogUtil.DEFAULT_LOG.info("use local db service for init");
                 final String jdbcUrl =
-                        "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), derbyBaseDir).toString()
+                        "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
                                 + ";create=true";
                 initialize(jdbcUrl);
                 initialize = true;
@@ -114,14 +114,14 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     public void cleanAndReopenDerby() throws Exception {
         doDerbyClean();
         final String jdbcUrl =
-                "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), derbyBaseDir).toString() + ";create=true";
+                "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString() + ";create=true";
         initialize(jdbcUrl);
     }
     
     /**
      * Restore derby.
      *
-     * @param jdbcUrl jdbcUrl string value.
+     * @param jdbcUrl  jdbcUrl string value.
      * @param callable callable.
      * @throws Exception exception.
      */
@@ -141,18 +141,16 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 throw e;
             }
         }
-        DiskUtils.deleteDirectory(Paths.get(ApplicationUtils.getNacosHome(), derbyBaseDir).toString());
+        DiskUtils.deleteDirectory(Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString());
     }
     
     private synchronized void initialize(String jdbcUrl) {
-        HikariDataSource ds = new HikariDataSource();
-        ds.setDriverClassName(jdbcDriverName);
-        ds.setJdbcUrl(jdbcUrl);
-        ds.setUsername(userName);
-        ds.setPassword(password);
-        ds.setIdleTimeout(30_000L);
-        ds.setMaximumPoolSize(80);
-        ds.setConnectionTimeout(10000L);
+        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(EnvUtil.getEnvironment());
+        poolProperties.setDriverClassName(jdbcDriverName);
+        poolProperties.setJdbcUrl(jdbcUrl);
+        poolProperties.setUsername(userName);
+        poolProperties.setPassword(password);
+        HikariDataSource ds = poolProperties.getDataSource();
         DataSourceTransactionManager tm = new DataSourceTransactionManager();
         tm.setDataSource(ds);
         if (jdbcTemplateInit) {
@@ -187,7 +185,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     @Override
     public String getCurrentDbUrl() {
-        return "jdbc:derby:" + ApplicationUtils.getNacosHome() + File.separator + derbyBaseDir + ";create=true";
+        return "jdbc:derby:" + EnvUtil.getNacosHome() + File.separator + derbyBaseDir + ";create=true";
     }
     
     @Override
@@ -211,8 +209,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         InputStream sqlFileIn = null;
         try {
             File file = new File(
-                    ApplicationUtils.getNacosHome() + File.separator + "conf" + File.separator + "schema.sql");
-            if (StringUtils.isBlank(ApplicationUtils.getNacosHome()) || !file.exists()) {
+                    EnvUtil.getNacosHome() + File.separator + "conf" + File.separator + "schema.sql");
+            if (StringUtils.isBlank(EnvUtil.getNacosHome()) || !file.exists()) {
                 ClassLoader classLoader = getClass().getClassLoader();
                 URL url = classLoader.getResource(sqlFile);
                 sqlFileIn = url.openStream();
@@ -238,9 +236,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         } catch (Exception ex) {
             throw new Exception(ex.getMessage());
         } finally {
-            if (sqlFileIn != null) {
-                sqlFileIn.close();
-            }
+            IoUtils.closeQuietly(sqlFileIn);
         }
     }
     
@@ -252,20 +248,14 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
      * @throws Exception Exception.
      */
     private void execute(Connection conn, String sqlFile) throws Exception {
-        Statement stmt = null;
-        try {
+        try (Statement stmt = conn.createStatement()) {
             List<String> sqlList = loadSql(sqlFile);
-            stmt = conn.createStatement();
             for (String sql : sqlList) {
                 try {
                     stmt.execute(sql);
                 } catch (Exception e) {
                     LogUtil.DEFAULT_LOG.warn(e.getMessage());
                 }
-            }
-        } finally {
-            if (stmt != null) {
-                stmt.close();
             }
         }
     }

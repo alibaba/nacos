@@ -17,9 +17,9 @@
 package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +56,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     protected volatile Long lastEventSequence = -1L;
     
-    private final AtomicReferenceFieldUpdater<DefaultPublisher, Long> updater = AtomicReferenceFieldUpdater
+    private static final AtomicReferenceFieldUpdater<DefaultPublisher, Long> UPDATER = AtomicReferenceFieldUpdater
             .newUpdater(DefaultPublisher.class, Long.class, "lastEventSequence");
     
     @Override
@@ -115,7 +115,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 }
                 final Event event = queue.take();
                 receiveEvent(event);
-                updater.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
+                UPDATER.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
             }
         } catch (Throwable ex) {
             LOGGER.error("Event listener exception : {}", ex);

@@ -19,13 +19,14 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
-import com.alibaba.nacos.consistency.entity.GetRequest;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupException;
@@ -39,8 +40,8 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
@@ -49,6 +50,7 @@ import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.closure.ReadIndexClosure;
 import com.alipay.sofa.jraft.conf.Configuration;
+import com.alipay.sofa.jraft.core.CliServiceImpl;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.entity.Task;
 import com.alipay.sofa.jraft.error.RaftError;
@@ -134,7 +136,7 @@ public class JRaftServer {
     
     private Serializer serializer;
     
-    private Collection<LogProcessor4CP> processors = Collections.synchronizedSet(new HashSet<>());
+    private Collection<RequestProcessor4CP> processors = Collections.synchronizedSet(new HashSet<>());
     
     private String selfIp;
     
@@ -163,7 +165,7 @@ public class JRaftServer {
         RaftExecutor.init(config);
         
         final String self = config.getSelfMember();
-        String[] info = self.split(":");
+        String[] info = IPUtil.splitIPPortStr(self);
         selfIp = info[0];
         selfPort = Integer.parseInt(info[1]);
         localPeerId = PeerId.parsePeer(self);
@@ -189,9 +191,8 @@ public class JRaftServer {
         
         CliOptions cliOptions = new CliOptions();
         
-        this.cliClientService = new CliClientServiceImpl();
-        this.cliClientService.init(cliOptions);
         this.cliService = RaftServiceFactory.createAndInitCliService(cliOptions);
+        this.cliClientService = (CliClientServiceImpl) ((CliServiceImpl) this.cliService).getCliClientService();
     }
     
     synchronized void start() {
@@ -225,16 +226,16 @@ public class JRaftServer {
         }
     }
     
-    synchronized void createMultiRaftGroup(Collection<LogProcessor4CP> processors) {
+    synchronized void createMultiRaftGroup(Collection<RequestProcessor4CP> processors) {
         // There is no reason why the LogProcessor cannot be processed because of the synchronization
         if (!this.isStarted) {
             this.processors.addAll(processors);
             return;
         }
         
-        final String parentPath = Paths.get(ApplicationUtils.getNacosHome(), "data/protocol/raft").toString();
+        final String parentPath = Paths.get(EnvUtil.getNacosHome(), "data/protocol/raft").toString();
         
-        for (LogProcessor4CP processor : processors) {
+        for (RequestProcessor4CP processor : processors) {
             final String groupName = processor.group();
             if (multiRaftGroup.containsKey(groupName)) {
                 throw new DuplicateRaftGroupException(groupName);
@@ -279,7 +280,7 @@ public class JRaftServer {
         }
     }
     
-    CompletableFuture<Response> get(final GetRequest request) {
+    CompletableFuture<Response> get(final ReadRequest request) {
         final String group = request.getGroup();
         CompletableFuture<Response> future = new CompletableFuture<>();
         final RaftGroupTuple tuple = findTupleByGroup(group);
@@ -288,7 +289,7 @@ public class JRaftServer {
             return future;
         }
         final Node node = tuple.node;
-        final LogProcessor processor = tuple.processor;
+        final RequestProcessor processor = tuple.processor;
         try {
             node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
                 @Override
@@ -321,7 +322,7 @@ public class JRaftServer {
         }
     }
     
-    public void readFromLeader(final GetRequest request, final CompletableFuture<Response> future) {
+    public void readFromLeader(final ReadRequest request, final CompletableFuture<Response> future) {
         commit(request.getGroup(), request, future).whenComplete(new BiConsumer<Response, Throwable>() {
             @Override
             public void accept(Response response, Throwable throwable) {
@@ -456,9 +457,10 @@ public class JRaftServer {
     }
     
     boolean peerChange(JRaftMaintainService maintainService, Set<String> newPeers) {
+        // This is only dealing with node deletion, the Raft protocol, where the node adds itself to the cluster when it starts up
         Set<String> oldPeers = new HashSet<>(this.raftConfig.getMembers());
+        this.raftConfig.setMembers(localPeerId.toString(), newPeers);
         oldPeers.removeAll(newPeers);
-        
         if (oldPeers.isEmpty()) {
             return true;
         }
@@ -480,8 +482,6 @@ public class JRaftServer {
                 }
             }
         });
-        this.raftConfig.setMembers(localPeerId.toString(), newPeers);
-        
         return successCnt.get() == multiRaftGroup.size();
     }
     
@@ -497,16 +497,15 @@ public class JRaftServer {
             Configuration oldConf = instance.getConfiguration(groupName);
             String oldLeader = Optional.ofNullable(instance.selectLeader(groupName)).orElse(PeerId.emptyPeer())
                     .getEndpoint().toString();
+            // fix issue #3661  https://github.com/alibaba/nacos/issues/3661
+            status = instance.refreshLeader(this.cliClientService, groupName, rpcRequestTimeoutMs);
+            if (!status.isOk()) {
+                Loggers.RAFT.error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
+            }
             status = instance.refreshConfiguration(this.cliClientService, groupName, rpcRequestTimeoutMs);
             if (!status.isOk()) {
                 Loggers.RAFT
                         .error("Fail to refresh route configuration for group : {}, status is : {}", groupName, status);
-            }
-            // fix issue #3661  https://github.com/alibaba/nacos/issues/3661
-            status = instance.refreshLeader(this.cliClientService, groupName, rpcRequestTimeoutMs);
-            if (!status.isOk()) {
-                Loggers.RAFT
-                        .error("Fail to refresh leader for group : {}, status is : {}", groupName, status);
             }
         } catch (Exception e) {
             Loggers.RAFT.error("Fail to refresh raft metadata info for group : {}, error is : {}", groupName, e);
@@ -530,13 +529,18 @@ public class JRaftServer {
         return multiRaftGroup;
     }
     
+    @JustForTest
+    void mockMultiRaftGroup(Map<String, RaftGroupTuple> map) {
+        this.multiRaftGroup = map;
+    }
+    
     CliService getCliService() {
         return cliService;
     }
     
     public static class RaftGroupTuple {
         
-        private LogProcessor processor;
+        private RequestProcessor processor;
         
         private Node node;
         
@@ -548,7 +552,7 @@ public class JRaftServer {
         public RaftGroupTuple() {
         }
         
-        public RaftGroupTuple(Node node, LogProcessor processor, RaftGroupService raftGroupService,
+        public RaftGroupTuple(Node node, RequestProcessor processor, RaftGroupService raftGroupService,
                 NacosStateMachine machine) {
             this.node = node;
             this.processor = processor;
@@ -560,7 +564,7 @@ public class JRaftServer {
             return node;
         }
         
-        public LogProcessor getProcessor() {
+        public RequestProcessor getProcessor() {
             return processor;
         }
         
