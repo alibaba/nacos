@@ -26,7 +26,6 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
@@ -63,10 +62,11 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     /**
      * adaptor to config module ,when server side config change ,invoke this method.
      *
-     * @param groupKey     groupKey
-     * @param notifyRequet notifyRequet
+     * @param groupKey      groupKey
+     * @param notifyRequest notifyRequest
      */
-    public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequet) {
+    public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequest, boolean isBeta,
+            List<String> betaIps) {
         
         Set<String> listeners = configChangeListenContext.getListeners(groupKey);
         if (CollectionUtils.isEmpty(listeners)) {
@@ -80,14 +80,13 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 continue;
             }
             
-            if (notifyRequet.isBeta()) {
-                List<String> betaIps = notifyRequet.getBetaIps();
+            if (isBeta) {
                 if (betaIps != null && !betaIps.contains(connection.getMetaInfo().getClientIp())) {
                     continue;
                 }
             }
             
-            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequet, 50, client,
+            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client,
                     connection.getMetaInfo().getClientIp(), connection.getMetaInfo().getConnectionId());
             push(rpcPushRetryTask);
             notifyCount++;
@@ -106,16 +105,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         String group = strings[1];
         String tenant = strings.length > 2 ? strings[2] : "";
         ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
-        notifyRequest.setBeta(isBeta);
-        notifyRequest.setBetaIps(betaIps);
-        if (PropertyUtil.isPushContent()) {
-            notifyRequest.setContent(event.content);
-            notifyRequest.setType(event.type);
-            notifyRequest.setLastModifiedTs(event.lastModifiedTs);
-            notifyRequest.setContentPush(true);
-        }
-        
-        configDataChanged(groupKey, notifyRequest);
+        configDataChanged(groupKey, notifyRequest, isBeta, betaIps);
         
     }
     
