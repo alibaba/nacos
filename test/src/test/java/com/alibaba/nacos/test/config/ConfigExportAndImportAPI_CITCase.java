@@ -283,6 +283,7 @@ public class ConfigExportAndImportAPI_CITCase {
         JsonNode resultObj = JacksonUtils.toObj(queryResult);
         JsonNode resultConfigs = resultObj.get("pageItems");
         Assert.assertEquals(3, resultConfigs.size());
+        
         for(int i = 0; i < resultConfigs.size(); i++){
             JsonNode config = resultConfigs.get(i);
             if(!"TEST_IMPORT".equals(config.get("group").textValue())){
