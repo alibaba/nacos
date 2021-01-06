@@ -26,7 +26,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
-import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2;
 import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2Delegate;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;

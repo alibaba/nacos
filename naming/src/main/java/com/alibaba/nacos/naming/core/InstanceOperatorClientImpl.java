@@ -161,8 +161,9 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             boolean healthOnly) {
         Service service = getService(namespaceId, serviceName, true);
         if (null != subscriber) {
-            createIpPortClientIfAbsent(subscriber.getAddrStr(), true);
-            clientOperationService.subscribeService(service, subscriber, subscriber.getAddrStr());
+            String clientId = IpPortBasedClient.getClientId(subscriber.getAddrStr(), true);
+            createIpPortClientIfAbsent(clientId, true);
+            clientOperationService.subscribeService(service, subscriber, clientId);
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         ServiceInfo result = ServiceUtil.selectInstances(serviceInfo, cluster, healthOnly, true);
