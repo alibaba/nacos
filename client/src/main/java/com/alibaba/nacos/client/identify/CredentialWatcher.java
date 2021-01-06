@@ -39,7 +39,7 @@ public class CredentialWatcher {
     
     private static final Logger SPAS_LOGGER = LogUtils.logger(CredentialWatcher.class);
     
-    private static final long REFRESH_INTERVAL = 10 * 1000;
+    private static final long REFRESH_INTERVAL = 10 * 1000L;
     
     private final CredentialService serviceInstance;
     
@@ -49,6 +49,8 @@ public class CredentialWatcher {
     
     private final TimerTask watcher;
     
+    private final Timer timer;
+    
     private boolean stopped;
     
     @SuppressWarnings("PMD.AvoidUseTimerRule")
@@ -56,8 +58,8 @@ public class CredentialWatcher {
         this.appName = appName;
         this.serviceInstance = serviceInstance;
         loadCredential(true);
+        timer = new Timer(true);
         watcher = new TimerTask() {
-            private final Timer timer = new Timer(true);
             
             private long modified = 0;
             
@@ -101,6 +103,7 @@ public class CredentialWatcher {
             synchronized (watcher) {
                 watcher.cancel();
                 stopped = true;
+                timer.cancel();
             }
         }
         SPAS_LOGGER.info("[{}] {} is stopped", appName, this.getClass().getSimpleName());
