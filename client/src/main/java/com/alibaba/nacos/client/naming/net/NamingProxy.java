@@ -721,6 +721,7 @@ public class NamingProxy implements Closeable {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        SpasAdapter.freeCredentialInstance();
         NamingHttpClientManager.getInstance().shutdown();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
