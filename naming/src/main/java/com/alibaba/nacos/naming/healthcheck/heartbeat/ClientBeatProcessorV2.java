@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -55,7 +55,7 @@ public class ClientBeatProcessorV2 implements BeatProcessor {
         String serviceName = NamingUtils.getServiceName(rsInfo.getServiceName());
         String groupName = NamingUtils.getGroupName(rsInfo.getServiceName());
         Service service = Service.newService(namespace, groupName, serviceName, rsInfo.isEphemeral());
-        HeartBeatInstancePublishInfo instance = (HeartBeatInstancePublishInfo) client.getInstancePublishInfo(service);
+        HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) client.getInstancePublishInfo(service);
         if (instance.getIp().equals(ip) && instance.getPort() == port) {
             if (Loggers.EVT_LOG.isDebugEnabled()) {
                 Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());

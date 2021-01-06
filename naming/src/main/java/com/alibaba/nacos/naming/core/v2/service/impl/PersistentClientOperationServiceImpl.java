@@ -38,6 +38,7 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.consistency.persistent.impl.AbstractSnapshotOperation;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
@@ -70,6 +71,7 @@ import java.util.zip.Checksum;
  * format of host:port.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author xiweng.yy
  */
 @Component("persistentClientOperationServiceImpl")
 public class PersistentClientOperationServiceImpl extends RequestProcessor4CP implements ClientOperationService {
@@ -195,9 +197,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     }
     
     protected static class InstanceStoreRequest implements Serializable {
-    
+        
         private static final long serialVersionUID = -9077205657156890549L;
-    
+        
         private Service service;
         
         private Instance instance;
@@ -273,18 +275,22 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         protected InputStream dumpSnapshot() {
             Map<String, IpPortBasedClient> clientMap = clientManager.showClients();
-            ConcurrentHashMap<String, IpPortBasedClient> clone = new ConcurrentHashMap<>(128);
+            ConcurrentHashMap<String, ClientSyncData> clone = new ConcurrentHashMap<>(128);
             clientMap.forEach((clientId, client) -> {
-                final IpPortBasedClient copy = client.clone();
-                copy.clearAllSubscribers();
-                clone.put(clientId, client);
+                clone.put(clientId, client.generateSyncData());
             });
             return new ByteArrayInputStream(serializer.serialize(clone));
         }
         
         protected void loadSnapshot(byte[] snapshotBytes) {
-            ConcurrentHashMap<String, IpPortBasedClient> newData = serializer.deserialize(snapshotBytes);
-            clientManager.loadFromSnapshot(newData);
+            ConcurrentHashMap<String, ClientSyncData> newData = serializer.deserialize(snapshotBytes);
+            ConcurrentHashMap<String, IpPortBasedClient> snapshot = new ConcurrentHashMap<>(newData.size());
+            for (Map.Entry<String, ClientSyncData> entry : newData.entrySet()) {
+                IpPortBasedClient snapshotClient = new IpPortBasedClient(entry.getKey(), false);
+                snapshotClient.loadClientSyncData(entry.getValue());
+                snapshot.put(entry.getKey(), snapshotClient);
+            }
+            clientManager.loadFromSnapshot(snapshot);
         }
         
         @Override

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client;
 
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -25,7 +26,9 @@ import java.util.List;
  *
  * @author xiweng.yy
  */
-public class ClientSyncData {
+public class ClientSyncData implements Serializable {
+    
+    private static final long serialVersionUID = -5141768777704539562L;
     
     private String clientId;
     

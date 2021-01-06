@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 
 /**
@@ -38,7 +38,7 @@ public class ClientBeatUpdateTask extends AbstractExecuteTask {
     public void run() {
         long currentTime = System.currentTimeMillis();
         for (InstancePublishInfo each : client.getAllInstancePublishInfo()) {
-            ((HeartBeatInstancePublishInfo) each).setLastHeartBeatTime(currentTime);
+            ((HealthCheckInstancePublishInfo) each).setLastHeartBeatTime(currentTime);
         }
         client.setLastUpdatedTime();
     }
