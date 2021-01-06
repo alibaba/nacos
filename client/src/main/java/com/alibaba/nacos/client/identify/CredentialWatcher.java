@@ -27,8 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Credential Watcher.
@@ -39,7 +40,7 @@ public class CredentialWatcher {
     
     private static final Logger SPAS_LOGGER = LogUtils.logger(CredentialWatcher.class);
     
-    private static final long REFRESH_INTERVAL = 10 * 1000;
+    private static final long REFRESH_INTERVAL = 10 * 1000L;
     
     private final CredentialService serviceInstance;
     
@@ -47,23 +48,28 @@ public class CredentialWatcher {
     
     private String propertyPath;
     
-    private final TimerTask watcher;
-    
     private boolean stopped;
+    
+    private final ScheduledThreadPoolExecutor executor;
     
     @SuppressWarnings("PMD.AvoidUseTimerRule")
     public CredentialWatcher(String appName, CredentialService serviceInstance) {
         this.appName = appName;
         this.serviceInstance = serviceInstance;
         loadCredential(true);
-        watcher = new TimerTask() {
-            private final Timer timer = new Timer(true);
-            
-            private long modified = 0;
-            
-            {
-                timer.schedule(this, REFRESH_INTERVAL, REFRESH_INTERVAL);
+        
+        executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.identify.watcher");
+                t.setDaemon(true);
+                return t;
             }
+        });
+        
+        executor.scheduleWithFixedDelay(new Runnable() {
+            private long modified = 0;
             
             @Override
             public void run() {
@@ -87,7 +93,7 @@ public class CredentialWatcher {
                     }
                 }
             }
-        };
+        }, REFRESH_INTERVAL, REFRESH_INTERVAL, TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -97,10 +103,10 @@ public class CredentialWatcher {
         if (stopped) {
             return;
         }
-        if (watcher != null) {
-            synchronized (watcher) {
-                watcher.cancel();
+        if (executor != null) {
+            synchronized (executor) {
                 stopped = true;
+                executor.shutdown();
             }
         }
         SPAS_LOGGER.info("[{}] {} is stopped", appName, this.getClass().getSimpleName());
