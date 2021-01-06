@@ -35,6 +35,7 @@ import java.util.TimerTask;
  *
  * @author Nacos
  */
+@SuppressWarnings("PMD.AvoidUseTimerRule")
 public class CredentialWatcher {
     
     private static final Logger SPAS_LOGGER = LogUtils.logger(CredentialWatcher.class);
@@ -53,7 +54,6 @@ public class CredentialWatcher {
     
     private boolean stopped;
     
-    @SuppressWarnings("PMD.AvoidUseTimerRule")
     public CredentialWatcher(String appName, CredentialService serviceInstance) {
         this.appName = appName;
         this.serviceInstance = serviceInstance;
