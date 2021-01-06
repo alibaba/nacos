@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.interceptor.Interceptable;
 
@@ -38,7 +38,7 @@ public class InstanceBeatCheckTask implements Interceptable {
     
     private final Service service;
     
-    private final HeartBeatInstancePublishInfo instancePublishInfo;
+    private final HealthCheckInstancePublishInfo instancePublishInfo;
     
     static {
         CHECKERS.add(new UnhealthyInstanceChecker());
@@ -46,7 +46,7 @@ public class InstanceBeatCheckTask implements Interceptable {
         CHECKERS.addAll(NacosServiceLoader.load(InstanceBeatChecker.class));
     }
     
-    public InstanceBeatCheckTask(Client client, Service service, HeartBeatInstancePublishInfo instancePublishInfo) {
+    public InstanceBeatCheckTask(Client client, Service service, HealthCheckInstancePublishInfo instancePublishInfo) {
         this.client = client;
         this.service = service;
         this.instancePublishInfo = instancePublishInfo;
@@ -67,7 +67,7 @@ public class InstanceBeatCheckTask implements Interceptable {
         return service;
     }
     
-    public HeartBeatInstancePublishInfo getInstancePublishInfo() {
+    public HealthCheckInstancePublishInfo getInstancePublishInfo() {
         return instancePublishInfo;
     }
 }

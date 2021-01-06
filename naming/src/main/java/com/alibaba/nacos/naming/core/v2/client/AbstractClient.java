@@ -27,7 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Abstract implementation of {@code Client}.
@@ -115,15 +114,5 @@ public abstract class AbstractClient implements Client {
             instances.add(entry.getValue());
         }
         return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances);
-    }
-    
-    protected final void loadPublishers(ConcurrentMap<Service, InstancePublishInfo> publishers) {
-        this.publishers.clear();
-        this.publishers.putAll(publishers);
-    }
-    
-    protected final void loadSubscribers(ConcurrentMap<Service, Subscriber> subscribers) {
-        this.subscribers.clear();
-        this.subscribers.putAll(subscribers);
     }
 }

@@ -116,8 +116,8 @@ public class GlobalExecutor {
             .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class), DEFAULT_THREAD_COUNT,
                     new NameThreadFactory("com.alibaba.nacos.naming.supersense.checker"));
     
-    private static final ScheduledExecutorService TCP_CHECK_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+    private static final ExecutorService TCP_CHECK_EXECUTOR = ExecutorFactory.Managed
+            .newFixedExecutorService(ClassUtils.getCanonicalName(NamingApp.class), 2,
                     new NameThreadFactory("com.alibaba.nacos.naming.tcp.check.worker"));
     
     private static final ScheduledExecutorService NAMING_HEALTH_EXECUTOR = ExecutorFactory.Managed

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.naming.healthcheck.heartbeat.BeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.interceptor.HealthCheckTaskInterceptWrapper;
+import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 
@@ -45,6 +46,17 @@ public class HealthCheckReactor {
     public static ScheduledFuture<?> scheduleCheck(HealthCheckTask task) {
         task.setStartTime(System.currentTimeMillis());
         return GlobalExecutor.scheduleNamingHealth(task, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
+    }
+    
+    /**
+     * Schedule health check task for v2.
+     *
+     * @param task health check task
+     */
+    public static void scheduleCheck(HealthCheckTaskV2 task) {
+        task.setStartTime(System.currentTimeMillis());
+        Runnable wrapperTask = new HealthCheckTaskInterceptWrapper(task);
+        GlobalExecutor.scheduleNamingHealth(wrapperTask, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
     }
     
     /**
