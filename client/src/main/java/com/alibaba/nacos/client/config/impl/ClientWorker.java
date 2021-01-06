@@ -24,11 +24,13 @@ import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigReSyncRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigReSyncResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
@@ -525,7 +527,7 @@ public class ClientWorker implements Closeable {
     
     public class ConfigRpcTransportClient extends ConfigTransportClient {
         
-        private BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<Object>(1);
+        private final BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<Object>(1);
         
         private Object bellItem = new Object();
         
@@ -557,29 +559,25 @@ public class ClientWorker implements Closeable {
         
         private void initRpcClientHandler(final RpcClient rpcClientInner) {
             /*
-             * Register Listen Change Handler
+             * Register Config Change /Config ReSync Handler
              */
             rpcClientInner.registerServerRequestHandler((request, requestMeta) -> {
-                if (request instanceof ConfigChangeNotifyRequest) {
-                    ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
-                    LOGGER.info("[{}] [server-push] config changed. dataId={}, group={}", getName(),
-                            configChangeNotifyRequest.getDataId(), configChangeNotifyRequest.getGroup());
+                if (request instanceof ConfigChangeNotifyRequest || request instanceof ConfigReSyncRequest) {
+                    ConfigReSyncRequest configReSyncRequest = (ConfigReSyncRequest) request;
+                    LOGGER.info("[{}] [server-push] config {}. dataId={}, group={}", rpcClientInner.getName(),
+                            (request instanceof ConfigChangeNotifyRequest) ? "changed" : "re sync",
+                            configReSyncRequest.getDataId(), configReSyncRequest.getGroup());
                     String groupKey = GroupKey
-                            .getKeyTenant(configChangeNotifyRequest.getDataId(), configChangeNotifyRequest.getGroup(),
-                                    configChangeNotifyRequest.getTenant());
+                            .getKeyTenant(configReSyncRequest.getDataId(), configReSyncRequest.getGroup(),
+                                    configReSyncRequest.getTenant());
                     
                     CacheData cacheData = cacheMap.get().get(groupKey);
                     if (cacheData != null) {
-                        if (configChangeNotifyRequest.isContentPush()
-                                && cacheData.getLastModifiedTs() < configChangeNotifyRequest.getLastModifiedTs()) {
-                            cacheData.setContent(configChangeNotifyRequest.getContent());
-                            cacheData.setType(configChangeNotifyRequest.getType());
-                            cacheData.checkListenerMd5();
-                        }
                         cacheData.setSync(false);
                         notifyListenConfig();
                     }
-                    return new ConfigChangeNotifyResponse();
+                    return (request instanceof ConfigChangeNotifyRequest) ? new ConfigChangeNotifyResponse()
+                            : new ConfigReSyncResponse();
                 }
                 return null;
             });
@@ -746,7 +744,7 @@ public class ClientWorker implements Closeable {
                                                     changeConfig.getTenant());
                                     changeKeys.add(changeKey);
                                     boolean isInitializing = cacheMap.get().get(changeKey).isInitializing();
-                                    this.executor.execute(() -> refreshContentAndCheck(changeKey, !isInitializing));
+                                    refreshContentAndCheck(changeKey, !isInitializing);
                                     
                                 }
                             }

@@ -17,14 +17,14 @@
 package com.alibaba.nacos.api.naming.remote.request;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
+import com.alibaba.nacos.api.remote.request.ServerRequest;
 
 /**
  * Notify subscriber response.
  *
  * @author xiweng.yy
  */
-public class NotifySubscriberRequest extends ServerPushRequest {
+public class NotifySubscriberRequest extends ServerRequest {
     
     private String namespace;
     
