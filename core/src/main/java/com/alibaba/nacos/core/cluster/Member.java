@@ -78,7 +78,9 @@ public class Member implements Comparable<Member>, Cloneable {
     }
     
     public void setExtendInfo(Map<String, Object> extendInfo) {
-        this.extendInfo.putAll(extendInfo);
+        Map<String, Object> newExtendInfo = Collections.synchronizedMap(new TreeMap<>());
+        newExtendInfo.putAll(extendInfo);
+        this.extendInfo = newExtendInfo;
     }
     
     public String getIp() {
