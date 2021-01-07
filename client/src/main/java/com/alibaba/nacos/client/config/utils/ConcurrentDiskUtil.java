@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.utils;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +90,7 @@ public class ConcurrentDiskUtil {
                 rlock = null;
             }
             if (fis != null) {
-                fis.close();
+                IoUtils.closeQuietly(fis);
                 fis = null;
             }
         }

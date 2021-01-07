@@ -261,22 +261,16 @@ public class RaftStore implements Closeable {
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
         
-        FileChannel fc = null;
         ByteBuffer data;
         
         data = ByteBuffer.wrap(JacksonUtils.toJson(datum).getBytes(StandardCharsets.UTF_8));
         
-        try {
-            fc = new FileOutputStream(cacheFile, false).getChannel();
+        try (FileChannel fc = new FileOutputStream(cacheFile, false).getChannel()) {
             fc.write(data, data.position());
             fc.force(true);
         } catch (Exception e) {
             MetricsMonitor.getDiskException().increment();
             throw e;
-        } finally {
-            if (fc != null) {
-                fc.close();
-            }
         }
         
         // remove old format file:
