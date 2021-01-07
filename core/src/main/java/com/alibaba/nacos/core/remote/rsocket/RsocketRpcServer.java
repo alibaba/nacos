@@ -109,7 +109,7 @@ public class RsocketRpcServer extends BaseRpcServer {
                 ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId,
                         plainrequest.getMetadata().getClientIp(), remoteAddress.getPort(), localAddress.getPort(),
                         ConnectionType.RSOCKET.getType(), plainrequest.getMetadata().getClientVersion(),
-                        plainrequest.getMetadata().getLabels());
+                        plainrequest.getMetadata().getAppName(), plainrequest.getMetadata().getLabels());
                 Connection connection = new RsocketConnection(metaInfo, sendingSocket);
                 
                 if (!ApplicationUtils.isStarted() || !connectionManager

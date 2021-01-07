@@ -68,40 +68,40 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
      * @param notifyRequest notifyRequest
      */
     public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequest, boolean isBeta,
-            List<String> betaIps,String content) {
+            List<String> betaIps, String content) {
         
         Set<String> listeners = configChangeListenContext.getListeners(groupKey);
-        if (CollectionUtils.isEmpty(listeners)) {
-            return;
-        }
-        
-        int notifyCount = 0;
-        for (final String client : listeners) {
-            Connection connection = connectionManager.getConnection(client);
-            if (connection == null) {
-                continue;
-            }
-            
-            if (isBeta) {
-                if (betaIps != null && !betaIps.contains(connection.getMetaInfo().getClientIp())) {
+        if (!CollectionUtils.isEmpty(listeners)) {
+            int notifyCount = 0;
+            for (final String client : listeners) {
+                Connection connection = connectionManager.getConnection(client);
+                if (connection == null) {
                     continue;
                 }
+                
+                if (isBeta) {
+                    if (betaIps != null && !betaIps.contains(connection.getMetaInfo().getClientIp())) {
+                        continue;
+                    }
+                }
+                
+                RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client,
+                        connection.getMetaInfo().getClientIp(), connection.getMetaInfo().getConnectionId());
+                push(rpcPushRetryTask);
+                notifyCount++;
             }
-            
-            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client,
-                    connection.getMetaInfo().getClientIp(), connection.getMetaInfo().getConnectionId());
-            push(rpcPushRetryTask);
-            notifyCount++;
+            Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", notifyCount, groupKey);
         }
-        
-        Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", notifyCount, groupKey);
-    
-        notifyInternalConfigChange(groupKey,content,betaIps);
+        notifyInternalConfigChange(groupKey, content, betaIps);
     }
     
-    private void notifyInternalConfigChange(String groupKey,String content,List<String> betaIps) {
-        if (GroupKey.getKey("nacos.internal.connection.limit.rule", "nacos").equals(groupKey)) {
-            if (betaIps!=null&&!betaIps.contains(NetUtils.localIP())){
+    private static final String DATD_ID_CONNECTION_LIMIT_RULE = "nacos.internal.connection.limit.rule";
+    
+    private static final String GROUP_CONNECTION_LIMIT_RULE = "nacos";
+    
+    private void notifyInternalConfigChange(String groupKey, String content, List<String> betaIps) {
+        if (GroupKey.getKey(DATD_ID_CONNECTION_LIMIT_RULE, GROUP_CONNECTION_LIMIT_RULE).equals(groupKey)) {
+            if (betaIps != null && !betaIps.contains(NetUtils.localIP())) {
                 return;
             }
             NotifyCenter.publishEvent(new ConnectionLimitRuleChangeEvent(content));
@@ -118,7 +118,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         String group = strings[1];
         String tenant = strings.length > 2 ? strings[2] : "";
         ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
-        configDataChanged(groupKey, notifyRequest, isBeta, betaIps,event.content);
+        configDataChanged(groupKey, notifyRequest, isBeta, betaIps, event.content);
         
     }
     

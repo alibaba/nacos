@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent> {
     
     public ConnectionManager() {
+        NotifyCenter.registerToPublisher(ConnectionLimitRuleChangeEvent.class, NotifyCenter.ringBufferSize);
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -417,47 +418,47 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     public Class<? extends Event> subscribeType() {
         return ConnectionLimitRuleChangeEvent.class;
     }
-}
-
-class ConnectionLimitRule {
     
-    private int countLimit = -1;
-    
-    private int countLimitPerClientIpDefault = -1;
-    
-    private Map<String, Integer> countLimitPerClientIp = new HashMap<String, Integer>();
-    
-    private Map<String, Integer> countLimitPerClientApp = new HashMap<String, Integer>();
-    
-    public int getCountLimit() {
-        return countLimit;
-    }
-    
-    public void setCountLimit(int countLimit) {
-        this.countLimit = countLimit;
-    }
-    
-    public int getCountLimitPerClientIpDefault() {
-        return countLimitPerClientIpDefault;
-    }
-    
-    public void setCountLimitPerClientIpDefault(int countLimitPerClientIpDefault) {
-        this.countLimitPerClientIpDefault = countLimitPerClientIpDefault;
-    }
-    
-    public Map<String, Integer> getCountLimitPerClientIp() {
-        return countLimitPerClientIp;
-    }
-    
-    public void setCountLimitPerClientIp(Map<String, Integer> countLimitPerClientIp) {
-        this.countLimitPerClientIp = countLimitPerClientIp;
-    }
-    
-    public Map<String, Integer> getCountLimitPerClientApp() {
-        return countLimitPerClientApp;
-    }
-    
-    public void setCountLimitPerClientApp(Map<String, Integer> countLimitPerClientApp) {
-        this.countLimitPerClientApp = countLimitPerClientApp;
+    static class ConnectionLimitRule {
+        
+        private int countLimit = -1;
+        
+        private int countLimitPerClientIpDefault = -1;
+        
+        private Map<String, Integer> countLimitPerClientIp = new HashMap<String, Integer>();
+        
+        private Map<String, Integer> countLimitPerClientApp = new HashMap<String, Integer>();
+        
+        public int getCountLimit() {
+            return countLimit;
+        }
+        
+        public void setCountLimit(int countLimit) {
+            this.countLimit = countLimit;
+        }
+        
+        public int getCountLimitPerClientIpDefault() {
+            return countLimitPerClientIpDefault;
+        }
+        
+        public void setCountLimitPerClientIpDefault(int countLimitPerClientIpDefault) {
+            this.countLimitPerClientIpDefault = countLimitPerClientIpDefault;
+        }
+        
+        public Map<String, Integer> getCountLimitPerClientIp() {
+            return countLimitPerClientIp;
+        }
+        
+        public void setCountLimitPerClientIp(Map<String, Integer> countLimitPerClientIp) {
+            this.countLimitPerClientIp = countLimitPerClientIp;
+        }
+        
+        public Map<String, Integer> getCountLimitPerClientApp() {
+            return countLimitPerClientApp;
+        }
+        
+        public void setCountLimitPerClientApp(Map<String, Integer> countLimitPerClientApp) {
+            this.countLimitPerClientApp = countLimitPerClientApp;
+        }
     }
 }

@@ -72,7 +72,7 @@ public class ConnectionMetaInfo {
     long lastActiveTime;
     
     /**
-     * String appName
+     * String appName.
      */
     String appName;
     
@@ -83,11 +83,12 @@ public class ConnectionMetaInfo {
     }
     
     public ConnectionMetaInfo(String connectionId, String clientIp, int clientPort, int localPort, String connectType,
-            String version, Map<String, String> labels) {
+            String version, String appName, Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.connectType = connectType;
         this.version = version;
+        this.appName = appName;
         this.clientPort = clientPort;
         this.localPort = localPort;
         this.createTime = new Date();

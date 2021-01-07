@@ -19,7 +19,8 @@ package com.alibaba.nacos.core.remote.event;
 import com.alibaba.nacos.common.notify.Event;
 
 /**
- *
+ *  connection limit rule change event.
+ *  @author zunfei.lzf
  */
 public class ConnectionLimitRuleChangeEvent extends Event {
     
