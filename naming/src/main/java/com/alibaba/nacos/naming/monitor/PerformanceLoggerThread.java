@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -97,9 +98,16 @@ public class PerformanceLoggerThread {
     
     class PerformanceLogTask implements Runnable {
         
+        private int logCount = 0;
+        
         @Override
         public void run() {
             try {
+                logCount %= 10;
+                if (logCount == 0) {
+                    Loggers.PERFORMANCE_LOG
+                            .info("PERFORMANCE:|serviceCount|ipCount|maxPushCost|avgPushCost|totalPushCount|failPushCount");
+                }
                 int serviceCount = com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size();
                 int ipCount = MetricsMonitor.getIpCountMonitor().get();
                 long maxPushCost = MetricsMonitor.getMaxPushCostMonitor().get();
@@ -109,6 +117,9 @@ public class PerformanceLoggerThread {
                 Loggers.PERFORMANCE_LOG
                         .info("PERFORMANCE:|{}|{}|{}|{}|{}|{}", serviceCount, ipCount, maxPushCost, avgPushCost,
                                 totalPushCount, failPushCount);
+                Loggers.PERFORMANCE_LOG
+                        .info("Task worker status: \n" + NamingExecuteTaskDispatcher.getInstance().workersStatus());
+                logCount++;
                 MetricsMonitor.getTotalPushCountForAvg().set(0);
                 MetricsMonitor.getTotalPushCostForAvg().set(0);
                 MetricsMonitor.getMaxPushCostMonitor().set(-1);

@@ -42,4 +42,8 @@ public class NamingExecuteTaskDispatcher {
     public void dispatchAndExecuteTask(Object dispatchTag, AbstractExecuteTask task) {
         executeEngine.addTask(dispatchTag, task);
     }
+    
+    public String workersStatus() {
+        return executeEngine.workersStatus();
+    }
 }
