@@ -20,6 +20,8 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
 import java.util.Collection;
@@ -57,15 +59,22 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
-        publishers.put(service, instancePublishInfo);
+        if (null == publishers.put(service, instancePublishInfo)) {
+            MetricsMonitor.getIpCountMonitor().incrementAndGet();
+        }
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
+        Loggers.SRV_LOG.info("Client change for service {}, {}", service, getClientId());
         return true;
     }
     
     @Override
     public InstancePublishInfo removeServiceInstance(Service service) {
         InstancePublishInfo result = publishers.remove(service);
+        if (null != result) {
+            MetricsMonitor.getIpCountMonitor().decrementAndGet();
+        }
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
+        Loggers.SRV_LOG.info("Client remove for service {}, {}", service, getClientId());
         return result;
     }
     

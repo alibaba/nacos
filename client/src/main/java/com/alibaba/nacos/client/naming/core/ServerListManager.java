@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -73,6 +74,9 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     public ServerListManager(Properties properties) {
         initServerAddr(properties);
+        if (!serverList.isEmpty()) {
+            currentIndex.set(new Random().nextInt(serverList.size()));
+        }
     }
     
     private void initServerAddr(Properties properties) {

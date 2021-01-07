@@ -97,7 +97,9 @@ public class ServiceManager {
      * @return removed service
      */
     public Service removeSingleton(Service service) {
-        namespaceSingletonMaps.get(service.getNamespace()).remove(service);
+        if (namespaceSingletonMaps.containsKey(service.getNamespace())) {
+            namespaceSingletonMaps.get(service.getNamespace()).remove(service);
+        }
         return singletonRepository.remove(service);
     }
     
