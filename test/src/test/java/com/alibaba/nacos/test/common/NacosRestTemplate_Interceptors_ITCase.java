@@ -91,7 +91,7 @@ public class NacosRestTemplate_Interceptors_ITCase {
                 }
                 
                 @Override
-                public void close() throws IOException {
+                public void close() {
                 
                 }
             };
