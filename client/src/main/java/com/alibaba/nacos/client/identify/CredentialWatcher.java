@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.identify;
 
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
@@ -27,7 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -50,7 +51,7 @@ public class CredentialWatcher {
     
     private boolean stopped;
     
-    private final ScheduledThreadPoolExecutor executor;
+    private final ScheduledExecutorService executor;
     
     @SuppressWarnings("PMD.AvoidUseTimerRule")
     public CredentialWatcher(String appName, CredentialService serviceInstance) {
@@ -58,7 +59,7 @@ public class CredentialWatcher {
         this.serviceInstance = serviceInstance;
         loadCredential(true);
         
-        executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        executor = ExecutorFactory.newSingleScheduledExecutorService(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
