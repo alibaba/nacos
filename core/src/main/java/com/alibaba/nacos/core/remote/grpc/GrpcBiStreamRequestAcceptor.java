@@ -76,7 +76,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     
-                    if (connectionManager.isOverLimit() || !ApplicationUtils.isStarted()) {
+                    if (!ApplicationUtils.isStarted() || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {
                             connection.request(new ConnectResetRequest(), buildMeta());
@@ -86,9 +86,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         }
                         return;
                     }
-                    
-                    //if connection is already terminated,not register it.
-                    connectionManager.register(connectionId, connection);
                     
                 } else if (plainRequest.getBody() instanceof Response) {
                     Response response = (Response) plainRequest.getBody();
