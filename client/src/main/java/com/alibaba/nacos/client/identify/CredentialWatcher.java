@@ -18,6 +18,8 @@ package com.alibaba.nacos.client.identify;
 
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
@@ -29,7 +31,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -59,15 +60,9 @@ public class CredentialWatcher {
         this.serviceInstance = serviceInstance;
         loadCredential(true);
         
-        executor = ExecutorFactory.newSingleScheduledExecutorService(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.identify.watcher");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+        executor = ExecutorFactory.Managed
+                .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(CredentialWatcher.class),
+                        new NameThreadFactory("com.alibaba.nacos.client.identify.watcher"));
         
         executor.scheduleWithFixedDelay(new Runnable() {
             private long modified = 0;
