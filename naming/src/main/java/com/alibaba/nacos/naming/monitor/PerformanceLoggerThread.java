@@ -47,7 +47,7 @@ public class PerformanceLoggerThread {
     @Autowired
     private ClusterVersionJudgement versionJudgement;
     
-    private static final long PERIOD = 5 * 60;
+    private static final long PERIOD = 1 * 60;
     
     @PostConstruct
     public void init() {
@@ -72,8 +72,9 @@ public class PerformanceLoggerThread {
      */
     @Scheduled(cron = "0/15 * * * * ?")
     public void collectMetrics() {
-        MetricsMonitor.getDomCountMonitor().set(serviceManager.getServiceCount());
-        MetricsMonitor.getIpCountMonitor().set(serviceManager.getInstanceCount());
+        //        MetricsMonitor.getDomCountMonitor().set(serviceManager.getServiceCount());
+        //        MetricsMonitor.getIpCountMonitor().set(serviceManager.getInstanceCount());
+        MetricsMonitor.getDomCountMonitor().set(com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size());
         MetricsMonitor.getAvgPushCostMonitor().set(getAvgPushCost());
         metricsRaftLeader();
     }
@@ -99,8 +100,8 @@ public class PerformanceLoggerThread {
         @Override
         public void run() {
             try {
-                int serviceCount = serviceManager.getServiceCount();
-                int ipCount = serviceManager.getInstanceCount();
+                int serviceCount = com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size();
+                int ipCount = MetricsMonitor.getIpCountMonitor().get();
                 long maxPushCost = MetricsMonitor.getMaxPushCostMonitor().get();
                 long avgPushCost = getAvgPushCost();
                 long totalPushCount = MetricsMonitor.getTotalPushMonitor().longValue();

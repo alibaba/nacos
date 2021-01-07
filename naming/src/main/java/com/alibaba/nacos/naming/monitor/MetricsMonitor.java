@@ -146,6 +146,14 @@ public class MetricsMonitor {
         INSTANCE.failedPush.incrementAndGet();
     }
     
+    public static void incrementInstanceCount() {
+        INSTANCE.ipCount.incrementAndGet();
+    }
+    
+    public static void decrementInstanceCount() {
+        INSTANCE.ipCount.decrementAndGet();
+    }
+    
     public static Counter getDiskException() {
         return Metrics.counter("nacos_exception", "module", "naming", "name", "disk");
     }
