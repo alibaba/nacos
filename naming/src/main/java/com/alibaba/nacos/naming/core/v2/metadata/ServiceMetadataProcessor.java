@@ -25,6 +25,7 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.Constants;
@@ -94,6 +95,7 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
             }
             return Response.newBuilder().setSuccess(true).build();
         } catch (Exception e) {
+            Loggers.RAFT.error("apply service metadata error: ", e);
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
         } finally {
             readLock.unlock();
