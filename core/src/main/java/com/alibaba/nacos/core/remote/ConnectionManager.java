@@ -21,22 +21,29 @@ import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
+import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * connect manager.
@@ -45,12 +52,19 @@ import java.util.concurrent.TimeUnit;
  * @version $Id: ConnectionManager.java, v 0.1 2020年07月13日 7:07 PM liuzunfei Exp $
  */
 @Service
-public class ConnectionManager {
+public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent> {
+    
+    public ConnectionManager() {
+        NotifyCenter.registerToPublisher(ConnectionLimitRuleChangeEvent.class, NotifyCenter.ringBufferSize);
+        NotifyCenter.registerSubscriber(this);
+    }
     
     /**
      * maxLimitClient.
      */
     private int maxClient = -1;
+    
+    private ConnectionLimitRule connectionLimitRule;
     
     /**
      * current loader adjust count,only effective once,use to rebalance.
@@ -58,6 +72,8 @@ public class ConnectionManager {
     private int loadClient = -1;
     
     String redirectAddress = null;
+    
+    private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<String, AtomicInteger>(16);
     
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
@@ -80,16 +96,65 @@ public class ConnectionManager {
      * @param connectionId connectionId
      * @param connection   connection
      */
-    public synchronized void register(String connectionId, Connection connection) {
+    public synchronized boolean register(String connectionId, Connection connection) {
+        
         if (connection.isConnected()) {
-            Connection connectionInner = connections.put(connectionId, connection);
-            if (connectionInner == null) {
-                clientConnectionEventListenerRegistry.notifyClientConnected(connection);
-                Loggers.REMOTE
-                        .info("new connection registered successfully, connectionId = {},connection={} ", connectionId,
-                                connection);
+            if (connections.containsKey(connectionId)) {
+                return true;
             }
+            if (!checkLimit(connection)) {
+                return false;
+            }
+            connections.put(connectionId, connection);
+            connectionForClientIp.get(connection.getMetaInfo().clientIp).getAndIncrement();
+            
+            clientConnectionEventListenerRegistry.notifyClientConnected(connection);
+            Loggers.REMOTE
+                    .info("new connection registered successfully, connectionId = {},connection={} ", connectionId,
+                            connection);
+            return true;
+            
         }
+        return false;
+        
+    }
+    
+    private boolean checkLimit(Connection connection) {
+        
+        if (isOverLimit()) {
+            return false;
+        }
+        
+        String clientIp = connection.getMetaInfo().clientIp;
+        if (!connectionForClientIp.containsKey(clientIp)) {
+            connectionForClientIp.putIfAbsent(clientIp, new AtomicInteger(0));
+        }
+        
+        AtomicInteger currentCount = connectionForClientIp.get(clientIp);
+        
+        if (connectionLimitRule != null) {
+            // 1.check rule of specific client ip limit.
+            if (connectionLimitRule.getCountLimitPerClientIp().containsKey(clientIp)) {
+                Integer integer = connectionLimitRule.getCountLimitPerClientIp().get(clientIp);
+                if (integer != null && integer.intValue() >= 0) {
+                    return currentCount.get() < integer.intValue();
+                }
+            }
+            // 2.check rule of specific client app limit.
+            if (connectionLimitRule.getCountLimitPerClientApp().containsKey(connection.getMetaInfo().getAppName())) {
+                Integer integerApp = connectionLimitRule.getCountLimitPerClientApp()
+                        .get(connection.getMetaInfo().getAppName());
+                if (integerApp != null && integerApp.intValue() >= 0) {
+                    return currentCount.get() < integerApp.intValue();
+                }
+            }
+            
+            // 3.check rule of default client ip.
+            int countLimitPerClientIpDefault = connectionLimitRule.getCountLimitPerClientIpDefault();
+            return countLimitPerClientIpDefault < 0 || currentCount.get() < countLimitPerClientIpDefault;
+        }
+        
+        return true;
         
     }
     
@@ -101,6 +166,11 @@ public class ConnectionManager {
     public synchronized void unregister(String connectionId) {
         Connection remove = this.connections.remove(connectionId);
         if (remove != null) {
+            String clientIp = remove.getMetaInfo().clientIp;
+            int count = connectionForClientIp.get(clientIp).decrementAndGet();
+            if (count == 0) {
+                connectionForClientIp.remove(clientIp);
+            }
             remove.close();
             Loggers.REMOTE.info(" connection unregistered successfully,connectionId = {} ", connectionId);
             clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
@@ -322,11 +392,73 @@ public class ConnectionManager {
      *
      * @return over limit or not.
      */
-    public boolean isOverLimit() {
+    private boolean isOverLimit() {
         return maxClient > 0 && this.connections.size() >= maxClient;
     }
     
     public int countLimited() {
         return maxClient;
+    }
+    
+    @Override
+    public void onEvent(ConnectionLimitRuleChangeEvent event) {
+        String limitRule = event.getLimitRule();
+        try {
+            ConnectionLimitRule connectionLimitRule = new Gson().fromJson(limitRule, ConnectionLimitRule.class);
+            if (connectionLimitRule.getCountLimit() > 0) {
+                this.maxClient = connectionLimitRule.getCountLimit();
+            }
+            this.connectionLimitRule = connectionLimitRule;
+        } catch (Exception e) {
+            Loggers.REMOTE.error("Fail to parse connection limit rule :{}", limitRule, e);
+        }
+    }
+    
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return ConnectionLimitRuleChangeEvent.class;
+    }
+    
+    static class ConnectionLimitRule {
+        
+        private int countLimit = -1;
+        
+        private int countLimitPerClientIpDefault = -1;
+        
+        private Map<String, Integer> countLimitPerClientIp = new HashMap<String, Integer>();
+        
+        private Map<String, Integer> countLimitPerClientApp = new HashMap<String, Integer>();
+        
+        public int getCountLimit() {
+            return countLimit;
+        }
+        
+        public void setCountLimit(int countLimit) {
+            this.countLimit = countLimit;
+        }
+        
+        public int getCountLimitPerClientIpDefault() {
+            return countLimitPerClientIpDefault;
+        }
+        
+        public void setCountLimitPerClientIpDefault(int countLimitPerClientIpDefault) {
+            this.countLimitPerClientIpDefault = countLimitPerClientIpDefault;
+        }
+        
+        public Map<String, Integer> getCountLimitPerClientIp() {
+            return countLimitPerClientIp;
+        }
+        
+        public void setCountLimitPerClientIp(Map<String, Integer> countLimitPerClientIp) {
+            this.countLimitPerClientIp = countLimitPerClientIp;
+        }
+        
+        public Map<String, Integer> getCountLimitPerClientApp() {
+            return countLimitPerClientApp;
+        }
+        
+        public void setCountLimitPerClientApp(Map<String, Integer> countLimitPerClientApp) {
+            this.countLimitPerClientApp = countLimitPerClientApp;
+        }
     }
 }

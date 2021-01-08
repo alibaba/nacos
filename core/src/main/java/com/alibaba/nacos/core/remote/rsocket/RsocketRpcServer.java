@@ -34,6 +34,7 @@ import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.rsocket.DuplexConnection;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
@@ -84,9 +85,9 @@ public class RsocketRpcServer extends BaseRpcServer {
         
         closeChannel = rSocketServerInner.acceptor(((setup, sendingSocket) -> {
             
-            RsocketUtils.PlainRequest palinrequest = null;
+            RsocketUtils.PlainRequest plainrequest = null;
             try {
-                palinrequest = RsocketUtils.parsePlainRequestFromPayload(setup);
+                plainrequest = RsocketUtils.parsePlainRequestFromPayload(setup);
             } catch (Exception e) {
                 Loggers.REMOTE.error(String
                         .format("[%s] error to parse new connection request :%s, error message: %s ", "rsocket",
@@ -97,21 +98,22 @@ public class RsocketRpcServer extends BaseRpcServer {
             
             InetSocketAddress localAddress = (InetSocketAddress) privateConnection.channel().localAddress();
             
-            if (palinrequest == null || !(palinrequest.getBody() instanceof ConnectionSetupRequest)) {
+            if (plainrequest == null || !(plainrequest.getBody() instanceof ConnectionSetupRequest)) {
                 Loggers.REMOTE.info(String.format("[%s] invalid connection setup request, request info : %s", "rsocket",
-                        palinrequest.toString()));
+                        plainrequest.toString()));
                 sendingSocket.dispose();
                 return Mono.just(sendingSocket);
             } else {
                 
                 String connectionId = UUID.randomUUID().toString();
                 ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId,
-                        palinrequest.getMetadata().getClientIp(), remoteAddress.getPort(), localAddress.getPort(),
-                        ConnectionType.RSOCKET.getType(), palinrequest.getMetadata().getClientVersion(),
-                        palinrequest.getMetadata().getLabels());
+                        plainrequest.getMetadata().getClientIp(), remoteAddress.getPort(), localAddress.getPort(),
+                        ConnectionType.RSOCKET.getType(), plainrequest.getMetadata().getClientVersion(),
+                        plainrequest.getMetadata().getAppName(), plainrequest.getMetadata().getLabels());
                 Connection connection = new RsocketConnection(metaInfo, sendingSocket);
                 
-                if (connectionManager.isOverLimit()) {
+                if (!ApplicationUtils.isStarted() || !connectionManager
+                        .register(connection.getMetaInfo().getConnectionId(), connection)) {
                     //Not register to the connection manager if current server is over limit.
                     try {
                         connection.request(new ConnectResetRequest(), buildRequestMeta());
@@ -119,11 +121,8 @@ public class RsocketRpcServer extends BaseRpcServer {
                     } catch (Exception e) {
                         //Do nothing.
                     }
-                    
-                } else {
-                    connectionManager.register(connection.getMetaInfo().getConnectionId(), connection);
+                    return null;
                 }
-                
                 fireOnCloseEvent(sendingSocket, connection);
                 RSocketProxy rSocketProxy = new NacosRsocket(sendingSocket, connectionId,
                         remoteAddress.getAddress().getHostAddress(), remoteAddress.getPort());

@@ -137,7 +137,7 @@ public class NotifyCenter {
     }
     
     /**
-     * Shutdown the serveral publisher instance which notifycenter has.
+     * Shutdown the several publisher instance which notify center has.
      */
     public static void shutdown() {
         if (!CLOSED.compareAndSet(false, true)) {
