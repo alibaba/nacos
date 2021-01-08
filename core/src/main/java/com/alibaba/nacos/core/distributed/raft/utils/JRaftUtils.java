@@ -71,8 +71,8 @@ public class JRaftUtils {
         registry.registerResponseInstance(Log.class.getName(), Response.getDefaultInstance());
         registry.registerResponseInstance(GetRequest.class.getName(), Response.getDefaultInstance());
     
-        registry.registerResponseInstance(WriteRequest.class.getName(), WriteRequest.getDefaultInstance());
-        registry.registerResponseInstance(ReadRequest.class.getName(), ReadRequest.getDefaultInstance());
+        registry.registerResponseInstance(WriteRequest.class.getName(), Response.getDefaultInstance());
+        registry.registerResponseInstance(ReadRequest.class.getName(), Response.getDefaultInstance());
         
         final RpcServer rpcServer = raftRpcFactory.createRpcServer(peerId.getEndpoint());
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),

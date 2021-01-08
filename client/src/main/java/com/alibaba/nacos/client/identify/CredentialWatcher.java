@@ -17,6 +17,8 @@
 package com.alibaba.nacos.client.identify;
 
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
@@ -27,15 +29,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Credential Watcher.
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.AvoidUseTimerRule")
 public class CredentialWatcher {
     
     private static final Logger SPAS_LOGGER = LogUtils.logger(CredentialWatcher.class);
@@ -48,24 +49,20 @@ public class CredentialWatcher {
     
     private String propertyPath;
     
-    private final TimerTask watcher;
-    
-    private final Timer timer;
-    
     private boolean stopped;
+    
+    private final ScheduledExecutorService executor;
     
     public CredentialWatcher(String appName, CredentialService serviceInstance) {
         this.appName = appName;
         this.serviceInstance = serviceInstance;
         loadCredential(true);
-        timer = new Timer(true);
-        watcher = new TimerTask() {
-            
+        
+        executor = ExecutorFactory
+                .newSingleScheduledExecutorService(new NameThreadFactory("com.alibaba.nacos.client.identify.watcher"));
+        
+        executor.scheduleWithFixedDelay(new Runnable() {
             private long modified = 0;
-            
-            {
-                timer.schedule(this, REFRESH_INTERVAL, REFRESH_INTERVAL);
-            }
             
             @Override
             public void run() {
@@ -89,7 +86,7 @@ public class CredentialWatcher {
                     }
                 }
             }
-        };
+        }, REFRESH_INTERVAL, REFRESH_INTERVAL, TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -99,11 +96,10 @@ public class CredentialWatcher {
         if (stopped) {
             return;
         }
-        if (watcher != null) {
-            synchronized (watcher) {
-                watcher.cancel();
+        if (executor != null) {
+            synchronized (executor) {
                 stopped = true;
-                timer.cancel();
+                executor.shutdown();
             }
         }
         SPAS_LOGGER.info("[{}] {} is stopped", appName, this.getClass().getSimpleName());
