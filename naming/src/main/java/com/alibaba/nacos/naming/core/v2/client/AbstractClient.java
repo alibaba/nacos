@@ -124,4 +124,9 @@ public abstract class AbstractClient implements Client {
         }
         return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances);
     }
+    
+    @Override
+    public void release() {
+        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
+    }
 }

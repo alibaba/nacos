@@ -136,4 +136,9 @@ public interface Client {
      * @return true if client has expired, otherwise false
      */
     boolean isExpire(long currentTime);
+    
+    /**
+     * Release current client and release resources if neccessary.
+     */
+    void release();
 }
