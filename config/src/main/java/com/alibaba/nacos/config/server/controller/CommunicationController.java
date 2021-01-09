@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
+import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -180,4 +182,24 @@ public class CommunicationController {
         
     }
     
+    /**
+     * Get client config listener lists of subscriber in local machine.
+     */
+    @GetMapping("/clientMetrics")
+    public Map<String, Object> getClientMetrics(HttpServletRequest request, HttpServletResponse response,
+            @RequestParam("ip") String ip, ModelMap modelMap) {
+        Map<String, Object> metrics = new HashMap<>();
+        List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
+        for (Connection connectionByIp : connectionsByIp) {
+            try {
+                ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp
+                        .request(new ClientConfigMetricRequest(), new RequestMeta());
+                metrics.putAll(request1.getMetrics());
+            } catch (NacosException e) {
+                e.printStackTrace();
+            }
+        }
+        return metrics;
+        
+    }
 }

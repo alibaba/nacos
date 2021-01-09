@@ -351,7 +351,7 @@ public class ServerLoaderController {
         Map<String, Object> responseMap = new HashMap<>(3);
         
         responseMap.put("detail", responseList);
-        responseMap.put("memberCount", count);
+        responseMap.put("memberCount", serverMemberManager.allMembers().size());
         responseMap.put("metricsCount", resultCount);
         
         int max = 0;

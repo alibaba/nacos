@@ -20,12 +20,14 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigReSyncRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
+import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
@@ -60,9 +62,11 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
@@ -489,6 +493,16 @@ public class ClientWorker implements Closeable {
                 .parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
     }
     
+    private Map<String, Object> getMetrics() {
+        Map<String, Object> metrics = new HashMap<String, Object>(1);
+        Map<String, String> metric = new HashMap<>(16);
+        metric.put("listenKeys", String.valueOf(this.cacheMap.get().size()));
+        metric.put("clientVersion", VersionUtils.getFullClientVersion());
+        
+        metrics.put(uuid, JacksonUtils.toJson(metric));
+        return metrics;
+    }
+    
     @Override
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
@@ -578,6 +592,15 @@ public class ClientWorker implements Closeable {
                     }
                     return (request instanceof ConfigChangeNotifyRequest) ? new ConfigChangeNotifyResponse()
                             : new ConfigReSyncResponse();
+                }
+                return null;
+            });
+            
+            rpcClientInner.registerServerRequestHandler((request, requestMeta) -> {
+                if (request instanceof ClientConfigMetricRequest) {
+                    ClientConfigMetricResponse response = new ClientConfigMetricResponse();
+                    response.setMetrics(getMetrics());
+                    return response;
                 }
                 return null;
             });

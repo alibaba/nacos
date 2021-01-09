@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
-import com.alibaba.nacos.common.remote.client.rsocket.RsocketRpcClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -78,8 +77,6 @@ public class RpcClientFactory {
                 if (ConnectionType.GRPC.equals(connectionType)) {
                     moduleClient = new GrpcSdkClient(clientNameInner);
                     
-                } else if (ConnectionType.RSOCKET.equals(connectionType)) {
-                    moduleClient = new RsocketRpcClient(clientNameInner);
                 }
                 if (moduleClient == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
@@ -108,8 +105,6 @@ public class RpcClientFactory {
                 if (ConnectionType.GRPC.equals(connectionType)) {
                     moduleClient = new GrpcClusterClient(clientNameInner);
                     
-                } else if (ConnectionType.RSOCKET.equals(connectionType)) {
-                    moduleClient = new RsocketRpcClient(clientNameInner);
                 }
                 if (moduleClient == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
