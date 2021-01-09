@@ -90,6 +90,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 } else if (plainRequest.getBody() instanceof Response) {
                     Response response = (Response) plainRequest.getBody();
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
+                    connectionManager.refreshActiveTime(plainRequest.getMetadata().getConnectionId());
+                    
                 }
                 
             }

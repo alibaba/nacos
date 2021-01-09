@@ -263,6 +263,14 @@ public abstract class RpcClient implements Closeable {
                 while (true) {
                     try {
                         ReconnectContext reconnectContext = reconnectionSignal.take();
+                        if (reconnectContext.serverInfo != null) {
+                            //clear recommend server if server is not in server list.
+                            String address = reconnectContext.serverInfo.serverIp + Constants.COLON
+                                    + reconnectContext.serverInfo.serverPort;
+                            if (!getServerListFactory().getServerList().contains(address)) {
+                                reconnectContext.serverInfo = null;
+                            }
+                        }
                         reconnect(reconnectContext.serverInfo, reconnectContext.onRequestFail);
                     } catch (Throwable throwable) {
                         //Do nothing

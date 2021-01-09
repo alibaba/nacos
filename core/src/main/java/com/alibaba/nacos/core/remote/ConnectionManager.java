@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -141,9 +142,10 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                 }
             }
             // 2.check rule of specific client app limit.
-            if (connectionLimitRule.getCountLimitPerClientApp().containsKey(connection.getMetaInfo().getAppName())) {
-                Integer integerApp = connectionLimitRule.getCountLimitPerClientApp()
-                        .get(connection.getMetaInfo().getAppName());
+            String appName = connection.getMetaInfo().getAppName();
+            if (StringUtils.isNotBlank(appName) && connectionLimitRule.getCountLimitPerClientApp()
+                    .containsKey(appName)) {
+                Integer integerApp = connectionLimitRule.getCountLimitPerClientApp().get(appName);
                 if (integerApp != null && integerApp.intValue() >= 0) {
                     return currentCount.get() < integerApp.intValue();
                 }
@@ -151,7 +153,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
             
             // 3.check rule of default client ip.
             int countLimitPerClientIpDefault = connectionLimitRule.getCountLimitPerClientIpDefault();
-            return countLimitPerClientIpDefault < 0 || currentCount.get() < countLimitPerClientIpDefault;
+            return countLimitPerClientIpDefault <= 0 || currentCount.get() < countLimitPerClientIpDefault;
         }
         
         return true;
@@ -239,9 +241,10 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                 try {
                     MetricsMonitor.getLongConnectionMonitor().set(connections.size());
                     Set<Map.Entry<String, Connection>> entries = connections.entrySet();
+                    int currentSdkClientCount = currentSdkClientCount();
                     boolean isLoaderClient = loadClient >= 0;
                     int currentMaxClient = isLoaderClient ? loadClient : maxClient;
-                    int expelCount = currentMaxClient < 0 ? currentMaxClient : entries.size() - currentMaxClient;
+                    int expelCount = currentMaxClient < 0 ? currentMaxClient : currentSdkClientCount - currentMaxClient;
                     List<String> expelClient = new LinkedList<String>();
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
@@ -317,18 +320,20 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         Connection connection = getConnection(connectionId);
         
         if (connection != null) {
-            ConnectResetRequest connectResetRequest = new ConnectResetRequest();
-            if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(Constants.COLON)) {
-                String[] split = redirectAddress.split(Constants.COLON);
-                connectResetRequest.setServerIp(split[0]);
-                connectResetRequest.setServerPort(split[1]);
-            }
-            try {
-                connection.request(connectResetRequest, buildMeta());
-            } catch (ConnectionAlreadyClosedException e) {
-                unregister(connectionId);
-            } catch (Exception e) {
-                Loggers.REMOTE.error("error occurs when expel connection :", connectionId, e);
+            if (connection.getMetaInfo().isSdkSource()) {
+                ConnectResetRequest connectResetRequest = new ConnectResetRequest();
+                if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(Constants.COLON)) {
+                    String[] split = redirectAddress.split(Constants.COLON);
+                    connectResetRequest.setServerIp(split[0]);
+                    connectResetRequest.setServerPort(split[1]);
+                }
+                try {
+                    connection.request(connectResetRequest, buildMeta());
+                } catch (ConnectionAlreadyClosedException e) {
+                    unregister(connectionId);
+                } catch (Exception e) {
+                    Loggers.REMOTE.error("error occurs when expel connection :", connectionId, e);
+                }
             }
         }
         
@@ -367,6 +372,16 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         return count;
     }
     
+    /**
+     * get client count from sdk.
+     * @return
+     */
+    public int currentSdkClientCount() {
+        Map<String, String> filter = new HashMap<String, String>(2);
+        filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
+        return currentClientsCount(filter);
+    }
+    
     public Map<String, Connection> currentClients() {
         return connections;
     }
@@ -381,7 +396,10 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         for (Map.Entry<String, Connection> entry : connections.entrySet()) {
             Connection client = entry.getValue();
             try {
-                client.request(new ConnectResetRequest(), buildMeta());
+                if (client.getMetaInfo().isSdkSource()) {
+                    client.request(new ConnectResetRequest(), buildMeta());
+                }
+                
             } catch (Exception e) {
                 //Do Nothing.
             }
@@ -394,7 +412,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
      * @return over limit or not.
      */
     private boolean isOverLimit() {
-        return maxClient > 0 && this.connections.size() >= maxClient;
+        return maxClient > 0 && currentSdkClientCount() >= maxClient;
     }
     
     public int countLimited() {
