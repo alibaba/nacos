@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.event.service;
 
-import com.alibaba.nacos.common.notify.SlowEvent;
+import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 /**
@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
  *
  * @author xiweng.yy
  */
-public class ServiceEvent extends SlowEvent {
+public class ServiceEvent extends Event {
     
     private static final long serialVersionUID = -9173247502346692418L;
     

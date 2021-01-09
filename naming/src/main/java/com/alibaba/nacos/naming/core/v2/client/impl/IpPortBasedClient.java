@@ -103,10 +103,9 @@ public class IpPortBasedClient extends AbstractClient {
         return publishers.values();
     }
     
-    /**
-     * Destroy current client.
-     */
-    public void destroy() {
+    @Override
+    public void release() {
+        super.release();
         if (ephemeral) {
             HealthCheckReactor.cancelCheck(beatCheckTask);
         } else {

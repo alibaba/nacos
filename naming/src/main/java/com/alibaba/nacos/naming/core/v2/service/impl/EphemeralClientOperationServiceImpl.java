@@ -67,8 +67,8 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         Client client = clientManager.getClient(clientId);
         InstancePublishInfo removedInstance = client.removeServiceInstance(singleton);
         client.setLastUpdatedTime();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
         if (null != removedInstance) {
+            NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
             NotifyCenter.publishEvent(
                     new MetadataEvent.InstanceMetadataEvent(singleton, removedInstance.getInstanceId(), true));
         }

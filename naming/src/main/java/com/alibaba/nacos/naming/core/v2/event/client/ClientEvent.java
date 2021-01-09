@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.event.client;
 
-import com.alibaba.nacos.common.notify.SlowEvent;
+import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 
 /**
@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
  *
  * @author xiweng.yy
  */
-public class ClientEvent extends SlowEvent {
+public class ClientEvent extends Event {
     
     private static final long serialVersionUID = -8211818115593181708L;
     
@@ -42,9 +42,9 @@ public class ClientEvent extends SlowEvent {
      * Client changed event. Happened when {@code Client} add or remove service.
      */
     public static class ClientChangedEvent extends ClientEvent {
-    
+        
         private static final long serialVersionUID = 6440402443724824673L;
-    
+        
         public ClientChangedEvent(Client client) {
             super(client);
         }
@@ -54,9 +54,9 @@ public class ClientEvent extends SlowEvent {
      * Client disconnect event. Happened when {@code Client} disconnect with server.
      */
     public static class ClientDisconnectEvent extends ClientEvent {
-    
+        
         private static final long serialVersionUID = 370348024867174101L;
-    
+        
         public ClientDisconnectEvent(Client client) {
             super(client);
         }

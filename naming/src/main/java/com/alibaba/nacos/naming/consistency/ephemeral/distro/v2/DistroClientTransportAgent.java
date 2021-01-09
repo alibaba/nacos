@@ -32,6 +32,7 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.exception.DistroException;
 import com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest;
 import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.concurrent.Executor;
@@ -201,7 +202,7 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
     
         @Override
         public Executor getExecutor() {
-            return null;
+            return GlobalExecutor.getCallbackExecutor();
         }
     
         @Override
