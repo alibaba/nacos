@@ -27,6 +27,7 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.Constants;
 import org.apache.commons.lang3.reflect.TypeUtils;
@@ -48,6 +49,8 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     
     private final NamingMetadataManager namingMetadataManager;
     
+    private final ServiceStorage serviceStorage;
+    
     private final Serializer serializer;
     
     private final Type processType;
@@ -57,8 +60,10 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     private final ReentrantReadWriteLock.ReadLock readLock;
     
     @SuppressWarnings("unchecked")
-    public ServiceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
+    public ServiceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager,
+            ServiceStorage serviceStorage) {
         this.namingMetadataManager = namingMetadataManager;
+        this.serviceStorage = serviceStorage;
         this.serializer = SerializeFactory.getDefault();
         this.processType = TypeUtils.parameterize(MetadataOperation.class, ServiceMetadata.class);
         this.lock = new ReentrantReadWriteLock();
@@ -139,6 +144,7 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         namingMetadataManager.removeServiceMetadata(service);
         ServiceManager.getInstance().removeSingleton(service);
+        serviceStorage.removeData(service);
     }
     
     @Override

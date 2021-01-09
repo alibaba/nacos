@@ -61,8 +61,8 @@ public abstract class AbstractClient implements Client {
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         if (null == publishers.put(service, instancePublishInfo)) {
             MetricsMonitor.getIpCountMonitor().incrementAndGet();
+            NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         }
-        NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         Loggers.SRV_LOG.info("Client change for service {}, {}", service, getClientId());
         return true;
     }
@@ -72,8 +72,8 @@ public abstract class AbstractClient implements Client {
         InstancePublishInfo result = publishers.remove(service);
         if (null != result) {
             MetricsMonitor.getIpCountMonitor().decrementAndGet();
+            NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         }
-        NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         Loggers.SRV_LOG.info("Client remove for service {}, {}", service, getClientId());
         return result;
     }
