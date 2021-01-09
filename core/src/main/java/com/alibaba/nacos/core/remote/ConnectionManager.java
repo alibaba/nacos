@@ -249,6 +249,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                             expelClient.add(client.getMetaInfo().getConnectionId());
                             expelCount--;
                         }
+                        
                     }
                     
                     ConnectResetRequest connectResetRequest = new ConnectResetRequest();

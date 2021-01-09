@@ -87,7 +87,7 @@ public abstract class GrpcClient extends RpcClient {
     private RequestGrpc.RequestFutureStub createNewChannelStub(String serverIp, int serverPort) {
         
         ManagedChannelBuilder<?> o = ManagedChannelBuilder.forAddress(serverIp, serverPort).executor(executor)
-                .usePlaintext();
+                .keepAliveTime(30, TimeUnit.SECONDS).usePlaintext();
         
         ManagedChannel managedChannelTemp = o.build();
         
@@ -183,14 +183,7 @@ public abstract class GrpcClient extends RpcClient {
                 if (isRunning && !isAbandon) {
                     LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Request stream error, switch server,error={}",
                             GrpcClient.this.getName(), throwable);
-                    if (throwable instanceof StatusRuntimeException) {
-                        Status.Code code = ((StatusRuntimeException) throwable).getStatus().getCode();
-                        if (Status.UNAVAILABLE.getCode().equals(code) || Status.CANCELLED.getCode().equals(code)) {
-                            if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
-                                switchServerAsync();
-                            }
-                        }
-                    }
+                    switchServerAsync();
                 } else {
                     LoggerUtils.printIfWarnEnabled(LOGGER, "[{}]ignore error event,isRunning:{},isAbandon={}",
                             GrpcClient.this.getName(), isRunning, isAbandon);
