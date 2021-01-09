@@ -72,7 +72,7 @@ public abstract class GrpcClient extends RpcClient {
     @Override
     public void shutdown() throws NacosException {
         super.shutdown();
-        if (executor!=null){
+        if (executor != null) {
             executor.shutdown();
         }
     }
@@ -239,7 +239,8 @@ public abstract class GrpcClient extends RpcClient {
     public Connection connectToServer(ServerInfo serverInfo) {
         try {
             if (executor == null) {
-                executor = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors()*8, 10L, TimeUnit.SECONDS, new SynchronousQueue(),
+                executor = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors() * 8, 10L,
+                        TimeUnit.SECONDS, new SynchronousQueue(),
                         new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-client-executor-%d")
                                 .build());
             }

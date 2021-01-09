@@ -89,6 +89,11 @@ public class ServiceStorage {
         return result;
     }
     
+    public void removeData(Service service) {
+        serviceDataIndexes.remove(service);
+        serviceClusterIndex.remove(service);
+    }
+    
     private ServiceInfo emptyServiceInfo(Service service) {
         ServiceInfo result = new ServiceInfo();
         result.setName(service.getName());

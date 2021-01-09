@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -43,8 +44,12 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
     
     private final ClientServiceIndexesManager clientServiceIndexesManager;
     
-    public EmptyServiceAutoCleanerV2(ClientServiceIndexesManager clientServiceIndexesManager) {
+    private final ServiceStorage serviceStorage;
+    
+    public EmptyServiceAutoCleanerV2(ClientServiceIndexesManager clientServiceIndexesManager,
+            ServiceStorage serviceStorage) {
         this.clientServiceIndexesManager = clientServiceIndexesManager;
+        this.serviceStorage = serviceStorage;
         GlobalExecutor.scheduleExpiredClientCleaner(this, TimeUnit.SECONDS.toMillis(30),
                 GlobalConfig.getEmptyServiceCleanInterval(), TimeUnit.MILLISECONDS);
         
@@ -75,6 +80,7 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
                     service.getGroupedServiceName());
             clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
             ServiceManager.getInstance().removeSingleton(service);
+            serviceStorage.removeData(service);
             NotifyCenter.publishEvent(new MetadataEvent.ServiceMetadataEvent(service, true));
         }
     }

@@ -48,7 +48,7 @@ public class PerformanceLoggerThread {
     @Autowired
     private ClusterVersionJudgement versionJudgement;
     
-    private static final long PERIOD = 1 * 60;
+    private static final long PERIOD = 60;
     
     @PostConstruct
     public void init() {
@@ -73,8 +73,6 @@ public class PerformanceLoggerThread {
      */
     @Scheduled(cron = "0/15 * * * * ?")
     public void collectMetrics() {
-        //        MetricsMonitor.getDomCountMonitor().set(serviceManager.getServiceCount());
-        //        MetricsMonitor.getIpCountMonitor().set(serviceManager.getInstanceCount());
         MetricsMonitor.getDomCountMonitor().set(com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size());
         MetricsMonitor.getAvgPushCostMonitor().set(getAvgPushCost());
         metricsRaftLeader();

@@ -83,6 +83,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
         if (null == client) {
             return true;
         }
+        client.release();
         NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
         return true;
     }

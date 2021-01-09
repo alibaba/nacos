@@ -65,7 +65,7 @@ public class PersistentIpPortClientManager implements ClientManager {
             return true;
         }
         NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
-        client.destroy();
+        client.release();
         return true;
     }
     
