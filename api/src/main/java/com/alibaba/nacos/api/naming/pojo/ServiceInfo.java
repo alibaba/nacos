@@ -177,8 +177,8 @@ public class ServiceInfo {
                 validHosts.add(host);
             }
         }
-        
-        return true;
+        //No valid hosts, return false.
+        return !validHosts.isEmpty();
     }
     
     @JsonIgnore
