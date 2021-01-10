@@ -48,6 +48,7 @@ import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
@@ -493,7 +494,7 @@ public class ClientWorker implements Closeable {
                 .parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
     }
     
-    private  Map<String, Object> getMetrics(List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
+    private Map<String, Object> getMetrics(List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
         Map<String, Object> metrics = new HashMap<String, Object>(1);
         Map<String, Object> metric = new HashMap<>(16);
         metric.put("listenKeys", String.valueOf(this.cacheMap.get().size()));
@@ -503,7 +504,7 @@ public class ClientWorker implements Closeable {
         metrics.put(uuid, JacksonUtils.toJson(metric));
         return metrics;
     }
-
+    
     private Map<ClientConfigMetricRequest.MetricsKey, Object> getMetricsValue(
             List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
         Map<ClientConfigMetricRequest.MetricsKey, Object> values = new HashMap<>();
@@ -586,6 +587,8 @@ public class ClientWorker implements Closeable {
             Map<String, String> labels = new HashMap<String, String>(2, 1);
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
+            labels.put(Constants.APPNAME, AppNameUtils.getAppName());
+            
             return labels;
         }
         

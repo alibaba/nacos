@@ -31,7 +31,6 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.utils.AppNameUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.NumberUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -108,7 +107,6 @@ public abstract class RpcClient implements Closeable {
         RequestMeta meta = new RequestMeta();
         meta.setClientVersion(VersionUtils.getFullClientVersion());
         meta.setClientIp(NetUtils.localIP());
-        meta.setAppName(AppNameUtils.getAppName());
         meta.setLabels(labels);
         return meta;
     }
