@@ -133,20 +133,17 @@ public class ConfigServletInner {
                 String md5 = Constants.NULL;
                 long lastModified = 0L;
                 CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
-                if (cacheItem != null) {
-                    if (cacheItem.isBeta()) {
-                        if (cacheItem.getIps4Beta().contains(clientIp)) {
-                            isBeta = true;
-                        }
-                    }
-    
-                    final String configType =
-                            (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
-                    response.setHeader("Config-Type", configType);
-                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
-                    String contentTypeHeader = fileTypeEnum.getContentType();
-                    response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
+                if (cacheItem.isBeta() && cacheItem.getIps4Beta().contains(clientIp)) {
+                    isBeta = true;
                 }
+
+                final String configType =
+                        (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
+                response.setHeader("Config-Type", configType);
+                FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
+                String contentTypeHeader = fileTypeEnum.getContentType();
+                response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
+
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
                 PrintWriter out = null;
@@ -162,13 +159,11 @@ public class ConfigServletInner {
                 } else {
                     if (StringUtils.isBlank(tag)) {
                         if (isUseTag(cacheItem, autoTag)) {
-                            if (cacheItem != null) {
-                                if (cacheItem.tagMd5 != null) {
-                                    md5 = cacheItem.tagMd5.get(autoTag);
-                                }
-                                if (cacheItem.tagLastModifiedTs != null) {
-                                    lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
-                                }
+                            if (cacheItem.tagMd5 != null) {
+                                md5 = cacheItem.tagMd5.get(autoTag);
+                            }
+                            if (cacheItem.tagLastModifiedTs != null) {
+                                lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
                             }
                             if (PropertyUtil.isDirectRead()) {
                                 configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
@@ -202,15 +197,13 @@ public class ConfigServletInner {
                             }
                         }
                     } else {
-                        if (cacheItem != null) {
-                            if (cacheItem.tagMd5 != null) {
-                                md5 = cacheItem.tagMd5.get(tag);
-                            }
-                            if (cacheItem.tagLastModifiedTs != null) {
-                                Long lm = cacheItem.tagLastModifiedTs.get(tag);
-                                if (lm != null) {
-                                    lastModified = lm;
-                                }
+                        if (cacheItem.tagMd5 != null) {
+                            md5 = cacheItem.tagMd5.get(tag);
+                        }
+                        if (cacheItem.tagLastModifiedTs != null) {
+                            Long lm = cacheItem.tagLastModifiedTs.get(tag);
+                            if (lm != null) {
+                                lastModified = lm;
                             }
                         }
                         if (PropertyUtil.isDirectRead()) {
