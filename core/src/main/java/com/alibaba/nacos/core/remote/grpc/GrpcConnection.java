@@ -61,9 +61,9 @@ public class GrpcConnection extends Connection {
         try {
             //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
             synchronized (streamObserver) {
-                if (this.isBusy()) {
-                    throw new ConnectionBusyException(this.getMetaInfo().getConnectionId() + ",connection busy.");
-                }
+//                if (this.isBusy()) {
+//                    throw new ConnectionBusyException(this.getMetaInfo().getConnectionId() + ",connection busy.");
+//                }
                 streamObserver.onNext(GrpcUtils.convert(request, wrapMeta(meta)));
             }
         } catch (Exception e) {

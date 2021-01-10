@@ -39,7 +39,7 @@ public class ClientMetricsController {
     
     /**
      * get client metric.
-     * @param clientIp
+     * @param clientIp client ip .
      * @return
      */
     @GetMapping("/metrics")

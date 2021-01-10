@@ -493,14 +493,32 @@ public class ClientWorker implements Closeable {
                 .parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
     }
     
-    private Map<String, Object> getMetrics() {
+    private  Map<String, Object> getMetrics(List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
         Map<String, Object> metrics = new HashMap<String, Object>(1);
-        Map<String, String> metric = new HashMap<>(16);
+        Map<String, Object> metric = new HashMap<>(16);
         metric.put("listenKeys", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
-        
+        Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
+        metric.put("metricValues", metricValues);
         metrics.put(uuid, JacksonUtils.toJson(metric));
         return metrics;
+    }
+
+    private Map<ClientConfigMetricRequest.MetricsKey, Object> getMetricsValue(
+            List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
+        Map<ClientConfigMetricRequest.MetricsKey, Object> values = new HashMap<>();
+        for (ClientConfigMetricRequest.MetricsKey metricsKey : metricsKeys) {
+            if (metricsKey.getType().equals("cacheData")) {
+                values.putIfAbsent(metricsKey, cacheMap.get().get(metricsKey.getKey()));
+            }
+            if (metricsKey.getType().equals("snapshotData")) {
+                String[] configStr = GroupKey.parseKey(metricsKey.getKey());
+                String snapshot = LocalConfigInfoProcessor
+                        .getSnapshot(this.agent.getName(), configStr[0], configStr[1], configStr[2]);
+                values.putIfAbsent(metricsKey, snapshot);
+            }
+        }
+        return values;
     }
     
     @Override
@@ -599,7 +617,7 @@ public class ClientWorker implements Closeable {
             rpcClientInner.registerServerRequestHandler((request, requestMeta) -> {
                 if (request instanceof ClientConfigMetricRequest) {
                     ClientConfigMetricResponse response = new ClientConfigMetricResponse();
-                    response.setMetrics(getMetrics());
+                    response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
                     return response;
                 }
                 return null;

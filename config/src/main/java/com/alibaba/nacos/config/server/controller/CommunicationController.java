@@ -186,14 +186,22 @@ public class CommunicationController {
      * Get client config listener lists of subscriber in local machine.
      */
     @GetMapping("/clientMetrics")
-    public Map<String, Object> getClientMetrics(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("ip") String ip, ModelMap modelMap) {
-        Map<String, Object> metrics = new HashMap<>();
+    public Map<String, Object> getClientMetrics(@RequestParam("ip") String ip,
+            @RequestParam(value = "dataId", required = false) String dataId,
+            @RequestParam(value = "group", required = false) String group,
+            @RequestParam(value = "tenant", required = false) String tenant) {
+        Map<String, Object> metrics = new HashMap<>(16);
         List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
         for (Connection connectionByIp : connectionsByIp) {
             try {
+                ClientConfigMetricRequest clientMetrics = new ClientConfigMetricRequest();
+                if (StringUtils.isNotBlank(dataId)) {
+                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
+                            .build("cacheData", GroupKey2.getKey(dataId, group, tenant)));
+                }
+                
                 ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp
-                        .request(new ClientConfigMetricRequest(), new RequestMeta());
+                        .request(clientMetrics, new RequestMeta());
                 metrics.putAll(request1.getMetrics());
             } catch (NacosException e) {
                 e.printStackTrace();

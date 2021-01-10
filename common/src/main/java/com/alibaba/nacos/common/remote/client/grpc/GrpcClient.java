@@ -126,7 +126,7 @@ public abstract class GrpcClient extends RpcClient {
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest, buildMeta());
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
-            Payload response = responseFuture.get();
+            Payload response = responseFuture.get(3000L, TimeUnit.MILLISECONDS);
             return response != null;
         } catch (Exception e) {
             return false;
