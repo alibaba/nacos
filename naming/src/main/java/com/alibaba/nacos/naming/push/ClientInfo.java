@@ -106,6 +106,15 @@ public class ClientInfo {
             
             return;
         }
+
+        if (versionStr.startsWith(ClientTypeDescription.CSHARP_CLIENT)) {
+            type = ClientType.CSHARP;
+
+            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
+            version = VersionUtil.parseVersion(versionStr);
+
+            return;
+        }
         
         //we're not eager to implement other type yet
         this.type = ClientType.UNKNOWN;
@@ -125,6 +134,10 @@ public class ClientInfo {
          * C client type.
          */
         C,
+        /**
+         * CSharp client type.
+         */
+        CSHARP,
         /**
          * php client type.
          */
@@ -166,6 +179,8 @@ public class ClientInfo {
         public static final String CPP_CLIENT = "vip-client4cpp";
         
         public static final String GO_CLIENT = "Nacos-Go-Client";
+
+        public static final String CSHARP_CLIENT = "Nacos-CSharp-Client";
         
     }
     
