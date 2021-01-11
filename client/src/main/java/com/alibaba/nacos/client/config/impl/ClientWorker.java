@@ -495,24 +495,27 @@ public class ClientWorker implements Closeable {
     }
     
     private Map<String, Object> getMetrics(List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
-        Map<String, Object> metrics = new HashMap<String, Object>(1);
         Map<String, Object> metric = new HashMap<>(16);
         metric.put("listenKeys", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);
+        Map<String, Object> metrics = new HashMap<String, Object>(1);
         metrics.put(uuid, JacksonUtils.toJson(metric));
         return metrics;
     }
     
     private Map<ClientConfigMetricRequest.MetricsKey, Object> getMetricsValue(
             List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
-        Map<ClientConfigMetricRequest.MetricsKey, Object> values = new HashMap<>();
+        if (metricsKeys == null) {
+            return null;
+        }
+        Map<ClientConfigMetricRequest.MetricsKey, Object> values = new HashMap<>(16);
         for (ClientConfigMetricRequest.MetricsKey metricsKey : metricsKeys) {
-            if (metricsKey.getType().equals("cacheData")) {
+            if ("cacheData".equals(metricsKey.getType())) {
                 values.putIfAbsent(metricsKey, cacheMap.get().get(metricsKey.getKey()));
             }
-            if (metricsKey.getType().equals("snapshotData")) {
+            if ("snapshotData".equals(metricsKey.getType())) {
                 String[] configStr = GroupKey.parseKey(metricsKey.getKey());
                 String snapshot = LocalConfigInfoProcessor
                         .getSnapshot(this.agent.getName(), configStr[0], configStr[1], configStr[2]);

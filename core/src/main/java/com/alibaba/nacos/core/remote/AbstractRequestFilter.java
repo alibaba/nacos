@@ -55,12 +55,13 @@ public abstract class AbstractRequestFilter {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
     }
+    
     /**
      * filter request.
      *
-     * @param request request.
-     * @param meta    request meta.
-     * @param handlerClazz  request handler clazz.
+     * @param request      request.
+     * @param meta         request meta.
+     * @param handlerClazz request handler clazz.
      * @return response
      */
     protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz);

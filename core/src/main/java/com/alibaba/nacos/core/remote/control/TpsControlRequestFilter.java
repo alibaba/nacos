@@ -21,6 +21,12 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 
+/**
+ * tps control point.
+ *
+ * @author liuzunfei
+ * @version $Id: TpsControlRequestFilter.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
+ */
 public class TpsControlRequestFilter extends AbstractRequestFilter {
     
     @Override

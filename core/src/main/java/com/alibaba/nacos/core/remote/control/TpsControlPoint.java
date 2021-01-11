@@ -20,6 +20,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * tps control point.
+ *
+ * @author liuzunfei
+ * @version $Id: TpsControlPoint.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
+ */
 public class TpsControlPoint {
     
     private String pointName;
@@ -28,10 +34,14 @@ public class TpsControlPoint {
     
     Map<String, TpsRecorder> tpsRecordForIp = new HashMap<String, TpsRecorder>();
     
+    /**
+     * increase tps.
+     *
+     * @param clientIp client ip .
+     * @return check current tps is allowed.
+     */
     public boolean applyTps(String clientIp) {
-        /**
-         * 1.check ip tps.
-         */
+        //1.check ip tps.
         if (tpsRecordForIp.containsKey(clientIp)) {
             TpsRecorder tpsRecorder = tpsRecordForIp.get(clientIp);
             AtomicLong currentTps = tpsRecorder.getCurrentTps();
@@ -42,19 +52,15 @@ public class TpsControlPoint {
             currentTps.incrementAndGet();
             
         }
-    
-        /**
-         * 2.check total tps.
-         */
+        
+        //2.check total tps.
         long maxTps = tpsRecorder.getMaxTps();
         if (tpsRecorder.isInterceptMode() && maxTps > 0 && tpsRecorder.getCurrentTps().longValue() >= maxTps) {
             return false;
         }
         tpsRecorder.getCurrentTps().incrementAndGet();
-    
-        /**
-         * 3.check pass.
-         */
+        
+        //3.check pass.
         return true;
     }
     
@@ -66,7 +72,7 @@ public class TpsControlPoint {
         this.pointName = pointName;
     }
     
-    protected void refreshRecorder(){
+    protected void refreshRecorder() {
     
     }
     

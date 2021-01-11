@@ -51,7 +51,13 @@ public class ClientConfigMetricRequest extends ServerRequest {
         String type;
         
         String key;
-        
+    
+        /**
+         * budile metrics key.
+         * @param type type.
+         * @param key key.
+         * @return metric key.
+         */
         public static MetricsKey build(String type, String key) {
             MetricsKey metricsKey = new MetricsKey();
             metricsKey.type = type;
@@ -98,5 +104,4 @@ public class ClientConfigMetricRequest extends ServerRequest {
         }
     }
     
-
 }

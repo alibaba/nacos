@@ -35,8 +35,6 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 
 /**
  * request auth filter for remote.
@@ -61,7 +59,6 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
     }
-    
     
     @Override
     public Response filter(Request request, RequestMeta meta, Class handlerClazz) {

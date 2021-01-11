@@ -21,12 +21,18 @@ import com.google.common.cache.CacheBuilder;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * tps record.
+ *
+ * @author liuzunfei
+ * @version $Id: TpsRecorder.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
+ */
 public class TpsRecorder {
     
     private long maxTps = -1;
     
     /**
-     * monitor/intercept
+     * monitor/intercept.
      */
     private String monitorType = "";
     

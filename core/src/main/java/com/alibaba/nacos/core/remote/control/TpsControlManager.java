@@ -24,6 +24,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * tps control manager.
+ *
+ * @author liuzunfei
+ * @version $Id: TpsControlManager.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
+ */
 @Service
 public class TpsControlManager {
     
