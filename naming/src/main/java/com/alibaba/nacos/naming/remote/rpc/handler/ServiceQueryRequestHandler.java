@@ -21,10 +21,13 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.springframework.stereotype.Component;
 
 /**
@@ -42,6 +45,7 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
     }
     
     @Override
+    @Secured(action = ActionTypes.READ, parser = NamingResourceParser.class)
     public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta) throws NacosException {
         String namespaceId = request.getNamespace();
         String groupName = request.getGroupName();
