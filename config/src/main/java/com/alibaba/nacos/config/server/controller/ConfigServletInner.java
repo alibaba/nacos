@@ -128,6 +128,7 @@ public class ConfigServletInner {
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
         if (lockResult > 0) {
+            // lockResult > 0 cacheItem is not null and other thread can`t delete cacheItem
             FileInputStream fis = null;
             try {
                 String md5 = Constants.NULL;
@@ -294,7 +295,12 @@ public class ConfigServletInner {
     private static void releaseConfigReadLock(String groupKey) {
         ConfigCacheService.releaseReadLock(groupKey);
     }
-    
+
+    /**
+     * Try to add read lock.
+     * @param groupKey groupKey string value.
+     * @return 0 - No data and failed. Positive number 0 - Success. Negative number - lock failed。
+     */
     private static int tryConfigReadLock(String groupKey) {
         
         // Lock failed by default.

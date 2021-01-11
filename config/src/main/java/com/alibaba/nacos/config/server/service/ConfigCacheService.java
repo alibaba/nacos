@@ -607,7 +607,7 @@ public class ConfigCacheService {
     }
     
     /**
-     * Try to add read lock. If it successed, then it can call {@link #releaseWriteLock(String)}.And it won't call if
+     * Try to add read lock. If it succeeded, then it can call {@link #releaseWriteLock(String)}.And it won't call if
      * failed.
      *
      * @param groupKey groupKey string value.
@@ -635,7 +635,7 @@ public class ConfigCacheService {
     }
     
     /**
-     * Try to add write lock. If it successed, then it can call {@link #releaseWriteLock(String)}.And it won't call if
+     * Try to add write lock. If it succeeded, then it can call {@link #releaseWriteLock(String)}.And it won't call if
      * failed.
      *
      * @param groupKey groupKey string value.
