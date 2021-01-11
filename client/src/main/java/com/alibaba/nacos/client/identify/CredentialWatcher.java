@@ -53,7 +53,6 @@ public class CredentialWatcher {
     
     private final ScheduledExecutorService executor;
     
-    @SuppressWarnings("PMD.AvoidUseTimerRule")
     public CredentialWatcher(String appName, CredentialService serviceInstance) {
         this.appName = appName;
         this.serviceInstance = serviceInstance;
