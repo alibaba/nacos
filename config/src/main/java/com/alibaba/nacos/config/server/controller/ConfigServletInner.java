@@ -299,7 +299,7 @@ public class ConfigServletInner {
     /**
      * Try to add read lock.
      * @param groupKey groupKey string value.
-     * @return 0 - No data and failed. Positive number 0 - Success. Negative number - lock failed。
+     * @return 0 - No data and failed. Positive number  - Success. Negative number - lock failed。
      */
     private static int tryConfigReadLock(String groupKey) {
         

@@ -611,7 +611,7 @@ public class ConfigCacheService {
      * failed.
      *
      * @param groupKey groupKey string value.
-     * @return 0 - No data and failed. Positive number 0 - Success. Negative number - lock failed。
+     * @return 0 - No data and failed. Positive number  - Success. Negative number - lock failed。
      */
     public static int tryReadLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
