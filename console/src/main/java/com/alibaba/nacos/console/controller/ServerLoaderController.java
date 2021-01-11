@@ -300,7 +300,8 @@ public class ServerLoaderController {
         CompletionService<ServerLoaderMetrics> completionService = new ExecutorCompletionService<ServerLoaderMetrics>(
                 executorService);
         
-        int count = 0;
+        // default include self.
+        int count = 1;
         for (Member member : serverMemberManager.allMembersWithoutSelf()) {
             if (MemberUtil.isSupportedLongCon(member)) {
                 count++;
@@ -309,6 +310,7 @@ public class ServerLoaderController {
             }
         }
         
+        int resultCount = 0;
         List<ServerLoaderMetrics> responseList = new LinkedList<ServerLoaderMetrics>();
         
         try {
@@ -317,12 +319,12 @@ public class ServerLoaderController {
             ServerLoaderMetrics metris = new ServerLoaderMetrics();
             metris.setAddress(serverMemberManager.getSelf().getAddress());
             metris.setMetric(handle.getLoaderMetrics());
+            resultCount++;
             responseList.add(metris);
         } catch (NacosException e) {
             e.printStackTrace();
         }
         
-        int resultCount = 0;
         for (int i = 0; i < count; i++) {
             try {
                 Future<ServerLoaderMetrics> f = completionService.poll(1000, TimeUnit.MILLISECONDS);
@@ -349,7 +351,7 @@ public class ServerLoaderController {
         Map<String, Object> responseMap = new HashMap<>(3);
         
         responseMap.put("detail", responseList);
-        responseMap.put("memberCount", count);
+        responseMap.put("memberCount", serverMemberManager.allMembers().size());
         responseMap.put("metricsCount", resultCount);
         
         int max = 0;

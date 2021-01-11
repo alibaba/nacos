@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
@@ -35,6 +36,8 @@ import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CHANNEL;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_IP;
@@ -70,9 +73,14 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 plainRequest.getMetadata().setConnectionId(connectionId);
                 if (plainRequest.getBody() instanceof ConnectionSetupRequest) {
                     RequestMeta metadata = plainRequest.getMetadata();
+                    Map<String, String> labels = metadata.getLabels();
+                    String appName = "-";
+                    if (labels != null && labels.containsKey(Constants.APPNAME)) {
+                        appName = labels.get(Constants.APPNAME);
+                    }
                     ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(metadata.getConnectionId(), clientIp,
                             metadata.getClientPort(), localPort, ConnectionType.GRPC.getType(),
-                            metadata.getClientVersion(), metadata.getAppName(), metadata.getLabels());
+                            metadata.getClientVersion(), appName, metadata.getLabels());
                     
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     
@@ -90,6 +98,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 } else if (plainRequest.getBody() instanceof Response) {
                     Response response = (Response) plainRequest.getBody();
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
+                    connectionManager.refreshActiveTime(plainRequest.getMetadata().getConnectionId());
+                    
                 }
                 
             }

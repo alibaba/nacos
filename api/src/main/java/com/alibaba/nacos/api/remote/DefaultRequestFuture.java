@@ -115,9 +115,11 @@ public class DefaultRequestFuture implements RequestFuture {
     
     private void callBacInvoke() {
         if (requestCallBack != null) {
-            requestCallBack.getExecutor().execute(new CallBackHandler());
-        } else {
-            new CallBackHandler().run();
+            if (requestCallBack.getExecutor() != null) {
+                requestCallBack.getExecutor().execute(new CallBackHandler());
+            } else {
+                new CallBackHandler().run();
+            }
         }
     }
     
@@ -165,7 +167,7 @@ public class DefaultRequestFuture implements RequestFuture {
             if (timeoutInnerTrigger != null) {
                 timeoutInnerTrigger.triggerOnTimeout();
             }
-            throw new TimeoutException();
+            throw new TimeoutException("request timeout after " + timeout + " milliseconds.");
         }
     }
     
