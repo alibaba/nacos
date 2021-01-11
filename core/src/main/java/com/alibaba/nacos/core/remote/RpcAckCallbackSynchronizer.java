@@ -52,7 +52,7 @@ public class RpcAckCallbackSynchronizer {
             }).build();
     
     /**
-     * notify  ackid.
+     * notify  ack.
      */
     public static void ackNotify(String connectionId, Response response) {
         

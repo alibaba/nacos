@@ -35,8 +35,6 @@ public class RequestMeta {
     
     private String clientVersion = "";
     
-    private String appName = "";
-    
     private Map<String, String> labels = new HashMap<String, String>();
     
     /**
@@ -127,24 +125,6 @@ public class RequestMeta {
      */
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
-    }
-    
-    /**
-     * get app name.
-     *
-     * @return
-     */
-    public String getAppName() {
-        return appName;
-    }
-    
-    /**
-     * set app name.
-     *
-     * @param appName app name.
-     */
-    public void setAppName(String appName) {
-        this.appName = appName;
     }
     
     @Override

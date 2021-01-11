@@ -25,11 +25,6 @@ package com.alibaba.nacos.common.remote;
 public enum ConnectionType {
     
     /**
-     * Rsocket connection.
-     */
-    RSOCKET("RSOCKET", "Rsocket Connection"),
-    
-    /**
      * gRPC connection.
      */
     GRPC("GRPC", "Grpc Connection");
@@ -48,7 +43,7 @@ public enum ConnectionType {
         return null;
     }
     
-    private ConnectionType(String type, String name) {
+    ConnectionType(String type, String name) {
         this.type = type;
         this.name = name;
     }

@@ -34,8 +34,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +85,7 @@ public abstract class GrpcClient extends RpcClient {
     private RequestGrpc.RequestFutureStub createNewChannelStub(String serverIp, int serverPort) {
         
         ManagedChannelBuilder<?> o = ManagedChannelBuilder.forAddress(serverIp, serverPort).executor(executor)
-                .usePlaintext();
+                .keepAliveTime(30, TimeUnit.SECONDS).usePlaintext();
         
         ManagedChannel managedChannelTemp = o.build();
         
@@ -128,7 +126,7 @@ public abstract class GrpcClient extends RpcClient {
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest, buildMeta());
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
-            Payload response = responseFuture.get();
+            Payload response = responseFuture.get(3000L, TimeUnit.MILLISECONDS);
             return response != null;
         } catch (Exception e) {
             return false;
@@ -183,14 +181,7 @@ public abstract class GrpcClient extends RpcClient {
                 if (isRunning && !isAbandon) {
                     LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Request stream error, switch server,error={}",
                             GrpcClient.this.getName(), throwable);
-                    if (throwable instanceof StatusRuntimeException) {
-                        Status.Code code = ((StatusRuntimeException) throwable).getStatus().getCode();
-                        if (Status.UNAVAILABLE.getCode().equals(code) || Status.CANCELLED.getCode().equals(code)) {
-                            if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
-                                switchServerAsync();
-                            }
-                        }
-                    }
+                    switchServerAsync();
                 } else {
                     LoggerUtils.printIfWarnEnabled(LOGGER, "[{}]ignore error event,isRunning:{},isAbandon={}",
                             GrpcClient.this.getName(), isRunning, isAbandon);
