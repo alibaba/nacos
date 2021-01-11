@@ -241,7 +241,7 @@ public abstract class GrpcClient extends RpcClient {
                 
                 BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
-                GrpcConnection grpcConn = new GrpcConnection(serverInfo, super.executor);
+                GrpcConnection grpcConn = new GrpcConnection(serverInfo, executor);
                 
                 //create stream request and bind connection event to this connection.
                 StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);
