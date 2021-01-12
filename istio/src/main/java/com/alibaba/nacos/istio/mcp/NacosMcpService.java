@@ -20,23 +20,27 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.misc.Loggers;
-import com.alibaba.nacos.istio.model.Port;
-import com.alibaba.nacos.istio.model.mcp.Metadata;
-import com.alibaba.nacos.istio.model.mcp.RequestResources;
-import com.alibaba.nacos.istio.model.mcp.Resource;
-import com.alibaba.nacos.istio.model.mcp.ResourceSourceGrpc;
-import com.alibaba.nacos.istio.model.mcp.Resources;
-import com.alibaba.nacos.istio.model.naming.ServiceEntry;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.google.protobuf.Any;
+import com.google.protobuf.Timestamp;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.stub.StreamObserver;
+import istio.mcp.v1alpha1.Mcp;
+import istio.mcp.v1alpha1.MetadataOuterClass;
+import istio.mcp.v1alpha1.ResourceOuterClass;
+import istio.mcp.v1alpha1.ResourceSourceGrpc;
+import istio.networking.v1alpha3.GatewayOuterClass;
+import istio.networking.v1alpha3.ServiceEntryOuterClass;
+import istio.networking.v1alpha3.WorkloadEntryOuterClass;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,15 +57,19 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     
     private final AtomicInteger connectIdGenerator = new AtomicInteger(0);
     
-    private final Map<Integer, StreamObserver<Resources>> connnections = new ConcurrentHashMap<>(16);
+    private final Map<Integer, StreamObserver<Mcp.Resources>> connnections = new ConcurrentHashMap<>(16);
     
-    private final Map<String, Resource> resourceMap = new ConcurrentHashMap<>(16);
+    private final Map<String, ResourceOuterClass.Resource> resourceMap = new ConcurrentHashMap<>(16);
     
     private final Map<String, String> checksumMap = new ConcurrentHashMap<>(16);
     
     private static final String SERVICE_NAME_SPLITTER = "nacos";
     
+    private static final String SERVICEENTY_TYPE = "networking.istio.io/v1alpha3/ServiceEntry";
+    
     private static final String MESSAGE_TYPE_URL = "type.googleapis.com/istio.networking.v1alpha3.ServiceEntry";
+    
+    private static final String MCP_RESOURCES_URL = "type.googleapis.com/istio.mcp.v1alpha1.Resource";
     
     private static final long MCP_PUSH_PERIOD_MILLISECONDS = 10000L;
     
@@ -71,12 +79,16 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     @Autowired
     private IstioConfig istioConfig;
     
+    @Autowired
+    private NacosMcpOverXdsService nacosMcpOverXdsService;
+    
     /**
      * start mcpPushTask{@link McpPushTask}.
      */
     @PostConstruct
     public void init() {
-        if (!istioConfig.isMcpServerEnabled()) {
+        boolean enabled = istioConfig.isMcpServerEnabled();
+        if (!enabled) {
             return;
         }
         GlobalExecutor
@@ -128,21 +140,29 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                 return;
             }
             
-            Resources resources = Resources.newBuilder().addAllResources(resourceMap.values())
+            Mcp.Resources resources = Mcp.Resources.newBuilder().addAllResources(resourceMap.values())
                     .setCollection(CollectionTypes.SERVICE_ENTRY).setNonce(String.valueOf(System.currentTimeMillis()))
                     .build();
-            
-            if (connnections.isEmpty()) {
-                return;
-            }
-            
             Loggers.MAIN.info("MCP push, resource count is: {}", resourceMap.size());
             
             if (Loggers.MAIN.isDebugEnabled()) {
                 Loggers.MAIN.debug("MCP push, sending resources: {}", resources);
             }
+            List<Any> anies = new ArrayList<>();
+            for (ResourceOuterClass.Resource resource:resourceMap.values()) {
+                Any any = Any.newBuilder().setValue(resource.toByteString()).setTypeUrl(MCP_RESOURCES_URL).build();
+                anies.add(any);
+            }
+            DiscoveryResponse discoveryResponse = DiscoveryResponse.newBuilder().addAllResources(anies)
+                    .setNonce(String.valueOf(System.currentTimeMillis())).setTypeUrl(SERVICEENTY_TYPE)
+                    .build();
             
-            for (StreamObserver<Resources> observer : connnections.values()) {
+            nacosMcpOverXdsService.sendResponse(discoveryResponse);
+            if (connnections.isEmpty()) {
+                return;
+            }
+            
+            for (StreamObserver<Mcp.Resources> observer : connnections.values()) {
                 observer.onNext(resources);
             }
         }
@@ -162,14 +182,15 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         return serviceName;
     }
     
-    private Resource convertService(Service service) {
+    private ResourceOuterClass.Resource convertService(Service service) {
         
         String serviceName = convertName(service);
-        
-        ServiceEntry.Builder serviceEntryBuilder = ServiceEntry.newBuilder()
-                .setResolution(ServiceEntry.Resolution.STATIC).setLocation(ServiceEntry.Location.MESH_INTERNAL)
-                .addHosts(serviceName + "." + SERVICE_NAME_SPLITTER)
-                .addPorts(Port.newBuilder().setNumber(8848).setName("http").setProtocol("HTTP").build());
+        ServiceEntryOuterClass.ServiceEntry.Builder serviceEntryBuilder = ServiceEntryOuterClass.ServiceEntry
+                .newBuilder().setResolution(ServiceEntryOuterClass.ServiceEntry.Resolution.STATIC)
+                .setLocation(ServiceEntryOuterClass.ServiceEntry.Location.MESH_INTERNAL)
+                .addHosts(serviceName + "." + SERVICE_NAME_SPLITTER).addPorts(
+                        GatewayOuterClass.Port.newBuilder().setNumber(8848).setName("http").setProtocol("HTTP")
+                                .build());
         
         for (Instance instance : service.allIPs()) {
             
@@ -177,37 +198,37 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                 continue;
             }
             
-            ServiceEntry.Endpoint endpoint = ServiceEntry.Endpoint.newBuilder().setAddress(instance.getIp())
-                    .setWeight((int) instance.getWeight()).putAllLabels(instance.getMetadata())
-                    .putPorts("http", instance.getPort()).build();
+            WorkloadEntryOuterClass.WorkloadEntry workloadEntry = WorkloadEntryOuterClass.WorkloadEntry.newBuilder()
+                    .setAddress(instance.getIp()).setWeight((int) instance.getWeight())
+                    .putAllLabels(instance.getMetadata()).putPorts("http", instance.getPort()).build();
             
-            serviceEntryBuilder.addEndpoints(endpoint);
+            serviceEntryBuilder.addEndpoints(workloadEntry);
         }
         
-        ServiceEntry serviceEntry = serviceEntryBuilder.build();
+        ServiceEntryOuterClass.ServiceEntry serviceEntry = serviceEntryBuilder.build();
         
         Any any = Any.newBuilder().setValue(serviceEntry.toByteString()).setTypeUrl(MESSAGE_TYPE_URL).build();
+        MetadataOuterClass.Metadata metadata = MetadataOuterClass.Metadata.newBuilder().setName(SERVICE_NAME_SPLITTER + "/" + serviceName)
+                .putAllAnnotations(service.getMetadata()).putAnnotations("virtual", "1").setCreateTime(
+                        Timestamp.newBuilder().setSeconds(System.currentTimeMillis()/1000).build()).setVersion(service.getChecksum()).build();
         
-        Metadata metadata = Metadata.newBuilder().setName(SERVICE_NAME_SPLITTER + "/" + serviceName)
-                .putAllAnnotations(service.getMetadata()).putAnnotations("virtual", "1").build();
-        
-        Resource resource = Resource.newBuilder().setBody(any).setMetadata(metadata).build();
+        ResourceOuterClass.Resource resource = ResourceOuterClass.Resource.newBuilder().setBody(any).setMetadata(metadata).build();
         
         return resource;
     }
     
     @Override
-    public StreamObserver<RequestResources> establishResourceStream(StreamObserver<Resources> responseObserver) {
+    public StreamObserver<Mcp.RequestResources> establishResourceStream(StreamObserver<Mcp.Resources> responseObserver) {
         
         int id = connectIdGenerator.incrementAndGet();
         connnections.put(id, responseObserver);
         
-        return new StreamObserver<RequestResources>() {
+        return new StreamObserver<Mcp.RequestResources>() {
             
             private final int connectionId = id;
             
             @Override
-            public void onNext(RequestResources value) {
+            public void onNext(Mcp.RequestResources value) {
                 
                 Loggers.MAIN.info("receiving request, sink: {}, type: {}", value.getSinkNode(), value.getCollection());
                 
@@ -226,7 +247,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                 
                 if (!CollectionTypes.SERVICE_ENTRY.equals(value.getCollection())) {
                     // Return empty resources for other types:
-                    Resources resources = Resources.newBuilder().setCollection(value.getCollection())
+                    Mcp.Resources resources = Mcp.Resources.newBuilder().setCollection(value.getCollection())
                             .setNonce(String.valueOf(System.currentTimeMillis())).build();
                     
                     responseObserver.onNext(resources);
