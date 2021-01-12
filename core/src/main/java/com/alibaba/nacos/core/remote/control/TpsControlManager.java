@@ -16,13 +16,16 @@
 
 package com.alibaba.nacos.core.remote.control;
 
-import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.utils.Loggers;
+import com.google.gson.Gson;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * tps control manager.
@@ -31,38 +34,66 @@ import java.util.concurrent.TimeUnit;
  * @version $Id: TpsControlManager.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
  */
 @Service
-public class TpsControlManager {
+public class TpsControlManager extends Subscriber<TpsControlRuleChangeEvent> {
     
-    private Map<String, TpsControlPoint> points = new ConcurrentHashMap<String, TpsControlPoint>(16);
+    private final Map<String, TpsControlPoint> points = new ConcurrentHashMap<String, TpsControlPoint>(16);
     
     public TpsControlManager() {
-        RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    
-                    Set<Map.Entry<String, TpsControlPoint>> entries = points.entrySet();
-                    long currentMillis = System.currentTimeMillis();
-                    long nextSecondMillis = System.currentTimeMillis() + 1000L;
-                    for (Map.Entry<String, TpsControlPoint> entry : entries) {
-                        TpsControlPoint tpsControlPoint = entry.getValue();
-                        TpsRecorder tpsRecorder = tpsControlPoint.tpsRecorder;
-                        tpsRecorder.checkSecond(currentMillis);
-                        tpsRecorder.checkSecond(nextSecondMillis);
-                        Map<String, TpsRecorder> tpsRecordForIp = tpsControlPoint.tpsRecordForIp;
-                        if (tpsRecordForIp != null) {
-                            for (TpsRecorder tpsIp : tpsRecordForIp.values()) {
-                                tpsIp.checkSecond(currentMillis);
-                                tpsIp.checkSecond(nextSecondMillis);
-                            }
-                        }
-                        
-                    }
-                } catch (Throwable throwable) {
-                    //check point error.
-                }
-                
+        NotifyCenter.registerToPublisher(TpsControlRuleChangeEvent.class, NotifyCenter.ringBufferSize);
+        NotifyCenter.registerSubscriber(this);
+    }
+    
+    /**
+     * register point.
+     *
+     * @param tpsControlPoint tps point.
+     */
+    public void registerTpsControlPoint(TpsControlPoint tpsControlPoint) {
+        Loggers.TPS_CONTROL
+                .info("Register tps control,pointName={}, point={} ", tpsControlPoint.getPointName(), tpsControlPoint);
+        points.putIfAbsent(tpsControlPoint.getPointName(), tpsControlPoint);
+    }
+    
+    /**
+     * apply tps.
+     *
+     * @param clientIp clientIp.
+     * @param pointName pointName.
+     * @return pass or not.
+     */
+    public boolean applyTps(String clientIp, String pointName) {
+        if (points.containsKey(pointName)) {
+            return points.get(pointName).applyTps(clientIp);
+        }
+        return true;
+    }
+    
+    @Override
+    public void onEvent(TpsControlRuleChangeEvent event) {
+        
+        Loggers.TPS_CONTROL
+                .info("Tps control rule change event receive,pointName={}, ruleContent={} ", event.getPointName(),
+                        event.ruleContent);
+        if (event == null || event.getPointName() == null) {
+            return;
+        }
+        try {
+            TpsControlRule tpsControlRule = StringUtils.isBlank(event.ruleContent) ? null
+                    : new Gson().fromJson(event.ruleContent, TpsControlRule.class);
+            if (!points.containsKey(event.getPointName())) {
+                Loggers.TPS_CONTROL.info("Tps control rule change event ignore,pointName={} ", event.getPointName());
+                return;
             }
-        }, 0L, 1L, TimeUnit.SECONDS);
+            
+            points.get(event.getPointName()).applyRule(tpsControlRule);
+        } catch (Exception e) {
+            Loggers.TPS_CONTROL.warn("Tps control rule parse error ,error={} ", e);
+        }
+        
+    }
+    
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return TpsControlRuleChangeEvent.class;
     }
 }

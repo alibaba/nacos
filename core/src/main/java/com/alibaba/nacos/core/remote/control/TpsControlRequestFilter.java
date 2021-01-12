@@ -16,10 +16,17 @@
 
 package com.alibaba.nacos.core.remote.control;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
+import com.alibaba.nacos.core.utils.Loggers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.lang.reflect.Method;
 
 /**
  * tps control point.
@@ -27,10 +34,48 @@ import com.alibaba.nacos.core.remote.AbstractRequestFilter;
  * @author liuzunfei
  * @version $Id: TpsControlRequestFilter.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
  */
+@Service
 public class TpsControlRequestFilter extends AbstractRequestFilter {
+    
+    @Autowired
+    private TpsControlManager tpsControlManager;
+    
+    private Method getMethod(Class handlerClazz) throws NacosException {
+        try {
+            Method method = handlerClazz.getMethod("handle", Request.class, RequestMeta.class);
+            return method;
+        } catch (NoSuchMethodException e) {
+            throw new NacosException(NacosException.SERVER_ERROR, e);
+        }
+    }
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) {
+        Response response = null;
+        try {
+            response = (Response) super.getResponseClazz(handlerClazz).getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            Loggers.AUTH.error("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);
+            
+        }
+        
+        Method method = null;
+        try {
+            method = getMethod(handlerClazz);
+        } catch (NacosException e) {
+            return null;
+        }
+        
+        if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
+            
+            TpsControl tpsControl = method.getAnnotation(TpsControl.class);
+            String pointName = tpsControl.pointName();
+            boolean pass = tpsControlManager.applyTps(meta.getClientIp(), pointName);
+            if (!pass) {
+                response.setErrorInfo(ResponseCode.FAIL.getCode(), "tps control over limit.");
+                return response;
+            }
+        }
         
         return null;
     }

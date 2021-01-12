@@ -30,6 +30,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
+import com.alibaba.nacos.core.remote.control.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,9 @@ import java.util.concurrent.TimeUnit;
 public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     public RpcConfigChangeNotifier() {
+        NotifyCenter.registerToPublisher(ConnectionLimitRuleChangeEvent.class, 16384);
+        NotifyCenter.registerToPublisher(TpsControlRuleChangeEvent.class, 16384);
+        
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -95,16 +99,30 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         notifyInternalConfigChange(groupKey, content, betaIps);
     }
     
-    private static final String DATD_ID_CONNECTION_LIMIT_RULE = "nacos.internal.connection.limit.rule";
+    private static final String DATA_ID_TPS_CONTROL_RULE = "nacos.internal.tps.control_rule_";
+    
+    private static final String DATA_ID_CONNECTION_LIMIT_RULE = "nacos.internal.connection.limit.rule";
     
     private static final String GROUP_CONNECTION_LIMIT_RULE = "nacos";
     
     private void notifyInternalConfigChange(String groupKey, String content, List<String> betaIps) {
-        if (GroupKey.getKey(DATD_ID_CONNECTION_LIMIT_RULE, GROUP_CONNECTION_LIMIT_RULE).equals(groupKey)) {
+        String dataId = GroupKey.parseKey(groupKey)[0];
+        String group = GroupKey.parseKey(groupKey)[1];
+        if (DATA_ID_CONNECTION_LIMIT_RULE.equals(dataId) && GROUP_CONNECTION_LIMIT_RULE.equals(group)) {
             if (betaIps != null && !betaIps.contains(NetUtils.localIP())) {
                 return;
             }
             NotifyCenter.publishEvent(new ConnectionLimitRuleChangeEvent(content));
+        }
+        
+        if (dataId.startsWith(DATA_ID_TPS_CONTROL_RULE) && GROUP_CONNECTION_LIMIT_RULE.equals(group)) {
+            if (betaIps != null && !betaIps.contains(NetUtils.localIP())) {
+                return;
+            }
+            String pointName = dataId.replaceFirst(DATA_ID_TPS_CONTROL_RULE, "");
+            
+            NotifyCenter.publishEvent(new TpsControlRuleChangeEvent(pointName, content));
+            
         }
     }
     
@@ -165,7 +183,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 
                 @Override
                 public void onSuccess() {
-                
+                    
                 }
                 
                 @Override

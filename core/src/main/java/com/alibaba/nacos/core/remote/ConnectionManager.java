@@ -68,7 +68,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     private ConnectionLimitRule connectionLimitRule;
     
     /**
-     * current loader adjust count,only effective once,use to rebalance.
+     * current loader adjust count,only effective once,use to re balance.
      */
     private int loadClient = -1;
     
@@ -245,14 +245,58 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                     boolean isLoaderClient = loadClient >= 0;
                     int currentMaxClient = isLoaderClient ? loadClient : maxClient;
                     int expelCount = currentMaxClient < 0 ? currentMaxClient : currentSdkClientCount - currentMaxClient;
-                    List<String> expelClient = new LinkedList<String>();
+                    List<String> expelClient = new LinkedList<>();
+                    
+                    Map<String, AtomicInteger> expelForIp = new HashMap<>(16);
+                    
+                    //1. calculate expel count  of ip.
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
-                        if (client.getMetaInfo().isSdkSource() && expelCount > 0) {
+                        String appName = client.getMetaInfo().getAppName();
+                        String clientIp = client.getMetaInfo().getClientIp();
+                        if (client.getMetaInfo().isSdkSource() && !expelForIp.containsKey(clientIp)) {
+                            //get limit for current ip.
+                            int countLimitOfIp = connectionLimitRule.getCountLimitOfIp(clientIp);
+                            if (countLimitOfIp < 0) {
+                                int countLimitOfApp = connectionLimitRule.getCountLimitOfApp(appName);
+                                countLimitOfIp = countLimitOfApp < 0 ? countLimitOfIp : countLimitOfApp;
+                            }
+                            if (countLimitOfIp < 0) {
+                                countLimitOfIp = connectionLimitRule.getCountLimitPerClientIpDefault();
+                            }
+                            
+                            if (countLimitOfIp >= 0 && connectionForClientIp.containsKey(clientIp)) {
+                                AtomicInteger currentCountIp = connectionForClientIp.get(clientIp);
+                                if (currentCountIp != null && currentCountIp.get() > countLimitOfIp) {
+                                    expelForIp.put(clientIp, new AtomicInteger(currentCountIp.get() - countLimitOfIp));
+                                }
+                            }
+                        }
+                    }
+                    
+                    //2.get expel connection for ip limit.
+                    for (Map.Entry<String, Connection> entry : entries) {
+                        Connection client = entry.getValue();
+                        String clientIp = client.getMetaInfo().getClientIp();
+                        AtomicInteger integer = expelForIp.get(clientIp);
+                        if (integer != null && integer.intValue() > 0) {
+                            integer.decrementAndGet();
                             expelClient.add(client.getMetaInfo().getConnectionId());
                             expelCount--;
                         }
                         
+                    }
+                    
+                    //3. if total count is still over limit.
+                    if (expelCount > 0) {
+                        for (Map.Entry<String, Connection> entry : entries) {
+                            Connection client = entry.getValue();
+                            if (!expelForIp.containsKey(client.getMetaInfo().clientIp) && client.getMetaInfo()
+                                    .isSdkSource() && expelCount > 0) {
+                                expelClient.add(client.getMetaInfo().getConnectionId());
+                                expelCount--;
+                            }
+                        }
                     }
                     
                     ConnectResetRequest connectResetRequest = new ConnectResetRequest();
@@ -374,6 +418,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     
     /**
      * get client count from sdk.
+     *
      * @return
      */
     public int currentSdkClientCount() {
@@ -422,6 +467,8 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     @Override
     public void onEvent(ConnectionLimitRuleChangeEvent event) {
         String limitRule = event.getLimitRule();
+        Loggers.REMOTE.info("connection limit rule change event receive :{}", limitRule);
+        
         try {
             ConnectionLimitRule connectionLimitRule = new Gson().fromJson(limitRule, ConnectionLimitRule.class);
             if (connectionLimitRule.getCountLimit() > 0) {
@@ -462,6 +509,26 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         
         public void setCountLimitPerClientIpDefault(int countLimitPerClientIpDefault) {
             this.countLimitPerClientIpDefault = countLimitPerClientIpDefault;
+        }
+        
+        public int getCountLimitOfIp(String clientIp) {
+            if (countLimitPerClientIp.containsKey(clientIp)) {
+                Integer integer = countLimitPerClientIp.get(clientIp);
+                if (integer != null && integer.intValue() >= 0) {
+                    return integer.intValue();
+                }
+            }
+            return -1;
+        }
+        
+        public int getCountLimitOfApp(String appName) {
+            if (countLimitPerClientApp.containsKey(appName)) {
+                Integer integer = countLimitPerClientApp.get(appName);
+                if (integer != null && integer.intValue() >= 0) {
+                    return integer.intValue();
+                }
+            }
+            return -1;
         }
         
         public Map<String, Integer> getCountLimitPerClientIp() {
