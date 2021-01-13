@@ -50,6 +50,7 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import static com.alibaba.nacos.api.common.Constants.LINE_BREAK;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
 
@@ -269,7 +270,10 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             reader = new BufferedReader(isr);
             String tempStr;
             while ((tempStr = reader.readLine()) != null) {
-                sbf.append(tempStr);
+                sbf.append(tempStr).append(LINE_BREAK);
+            }
+            if (sbf.indexOf(LINE_BREAK) > 0) {
+                sbf.setLength(sbf.length() - 1);
             }
             reader.close();
             return sbf.toString();
