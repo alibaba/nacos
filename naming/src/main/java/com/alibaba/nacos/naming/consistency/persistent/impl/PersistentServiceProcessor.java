@@ -65,7 +65,7 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
     @Override
     public void afterConstruct() {
         super.afterConstruct();
-        this.protocol.addLogProcessors(Collections.singletonList(this));
+        this.protocol.addRequestProcessors(Collections.singletonList(this));
         this.protocol.protocolMetaData()
                 .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
                         (o, arg) -> hasLeader = StringUtils.isNotBlank(String.valueOf(arg)));
@@ -95,7 +95,7 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
         final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
                 .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Write.desc).build();
         try {
-            protocol.submit(request);
+            protocol.write(request);
         } catch (Exception e) {
             throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }
@@ -108,7 +108,7 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
         final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
                 .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Delete.desc).build();
         try {
-            protocol.submit(request);
+            protocol.write(request);
         } catch (Exception e) {
             throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }

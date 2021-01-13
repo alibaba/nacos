@@ -28,6 +28,7 @@ import com.alipay.sofa.jraft.rpc.RpcProcessor;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Deprecated
 public class NacosLogProcessor extends AbstractProcessor implements RpcProcessor<Log> {
     
     private static final String INTEREST_NAME = Log.class.getName();
