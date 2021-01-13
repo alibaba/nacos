@@ -67,7 +67,7 @@ public class ConfigExportAndImportAPI_CITCase {
     private String SERVER_ADDR = null;
 
     private HttpAgent agent = null;
-    
+
     @BeforeClass
     @AfterClass
     public static void cleanClientCache() throws Exception {
@@ -122,7 +122,7 @@ public class ConfigExportAndImportAPI_CITCase {
             params.put("beta", "false");
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
-    
+
             params.put("dataId", "testHasAppname1.properties");
             params.put("group", "EXPORT_IMPORT_TEST_GROUP");
             params.put("beta", "false");
@@ -279,20 +279,20 @@ public class ConfigExportAndImportAPI_CITCase {
         uploadByteFile.setMediaType("application/zip");
         uploadByteFile.setPrarmName("file");
         String importResult = httpClient.post(SERVER_ADDR + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, Collections.singletonList(uploadByteFile), null);
-        
+
         // test skip data
         JsonNode importResObj = JacksonUtils.toObj(importResult);
         int skipCount = importResObj.get("data").get("skipCount").intValue();
         Assert.assertEquals(1, skipCount);
         JsonNode skipNode = importResObj.get("data").get("skipData").get(0);
         Assert.assertEquals("TEST_IMPORT/SUB_GROUP/test5.properties", skipNode.get("dataId").textValue());
-        
+
         String getDataUrl = "?search=accurate&dataId=&group=TEST_IMPORT&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
         JsonNode resultObj = JacksonUtils.toObj(queryResult);
         JsonNode resultConfigs = resultObj.get("pageItems");
         Assert.assertEquals(3, resultConfigs.size());
-        
+
         for(int i = 0; i < resultConfigs.size(); i++){
             JsonNode config = resultConfigs.get(i);
             if(!"TEST_IMPORT".equals(config.get("group").textValue())){
@@ -312,7 +312,7 @@ public class ConfigExportAndImportAPI_CITCase {
                     Assert.fail();
             }
         }
-    
+
         getDataUrl = "?search=accurate&dataId=&group=TEST_IMPORT_2&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
         resultObj = JacksonUtils.toObj(queryResult);
@@ -320,11 +320,6 @@ public class ConfigExportAndImportAPI_CITCase {
         Assert.assertEquals(1, resultConfigs.size());
         JsonNode jsonNode = resultConfigs.get(0);
         Assert.assertEquals(jsonNode.get("appName").textValue(), "testApp4");
-    }
-    
-    @Test()
-    public void server() throws InterruptedException {
-        Thread.sleep(TimeUnit.HOURS.toMillis(1));
     }
 
     private Map<String, String> processMetaData(ZipUtils.ZipItem metaDataZipItem){
