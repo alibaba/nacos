@@ -425,10 +425,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
                     }
                 }
             }
-        }
-        
-        if (servers != null && !servers.isEmpty()) {
-            
+        } else {
             Random random = new Random(System.currentTimeMillis());
             int index = random.nextInt(servers.size());
             
@@ -597,6 +594,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         beatReactor.shutdown();
         NamingHttpClientManager.getInstance().shutdown();
+        SpasAdapter.freeCredentialInstance();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }

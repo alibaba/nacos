@@ -312,6 +312,9 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
         } else if (ClientInfo.ClientType.GO == clientInfo.type
                 && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushGoVersion())) >= 0) {
             return true;
+        } else if (ClientInfo.ClientType.CSHARP == clientInfo.type
+                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushCSharpVersion())) >= 0) {
+            return true;
         }
         
         return false;
