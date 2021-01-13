@@ -80,11 +80,14 @@ public class JRaftUtils {
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
                 RaftExecutor.getRaftCliServiceExecutor());
         
+        // Deprecated
         rpcServer.registerProcessor(new NacosLogProcessor(server, SerializeFactory.getDefault()));
+        // Deprecated
         rpcServer.registerProcessor(new NacosGetRequestProcessor(server, SerializeFactory.getDefault()));
-    
-        rpcServer.registerProcessor(new NacosWriteRequestProcessor(SerializeFactory.getDefault()));
-        rpcServer.registerProcessor(new NacosReadRequestProcessor(SerializeFactory.getDefault()));
+        
+        rpcServer.registerProcessor(new NacosWriteRequestProcessor(server, SerializeFactory.getDefault()));
+        rpcServer.registerProcessor(new NacosReadRequestProcessor(server, SerializeFactory.getDefault()));
+        
         return rpcServer;
     }
     
