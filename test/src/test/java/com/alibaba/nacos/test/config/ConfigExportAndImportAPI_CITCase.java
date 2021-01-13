@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author klw
@@ -278,7 +279,13 @@ public class ConfigExportAndImportAPI_CITCase {
         uploadByteFile.setMediaType("application/zip");
         uploadByteFile.setPrarmName("file");
         String importResult = httpClient.post(SERVER_ADDR + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, Collections.singletonList(uploadByteFile), null);
-        System.err.println("importResult===========\n"+importResult);
+        
+        // test skip data
+        JsonNode importResObj = JacksonUtils.toObj(importResult);
+        int skipCount = importResObj.get("data").get("skipCount").intValue();
+        Assert.assertEquals(1, skipCount);
+        JsonNode skipNode = importResObj.get("data").get("skipData").get(0);
+        Assert.assertEquals("TEST_IMPORT/SUB_GROUP/test5.properties", skipNode.get("dataId").textValue());
         
         String getDataUrl = "?search=accurate&dataId=&group=TEST_IMPORT&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
@@ -313,6 +320,11 @@ public class ConfigExportAndImportAPI_CITCase {
         Assert.assertEquals(1, resultConfigs.size());
         JsonNode jsonNode = resultConfigs.get(0);
         Assert.assertEquals(jsonNode.get("appName").textValue(), "testApp4");
+    }
+    
+    @Test()
+    public void server() throws InterruptedException {
+        Thread.sleep(TimeUnit.HOURS.toMillis(1));
     }
 
     private Map<String, String> processMetaData(ZipUtils.ZipItem metaDataZipItem){

@@ -563,13 +563,12 @@ public class ConfigController {
                 for (ZipUtils.ZipItem item : itemList) {
                     String[] groupAdnDataId = item.getItemName().split(Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR);
                     if (groupAdnDataId.length != 2) {
-                        Map<String, String> skipitem = new HashMap<>(2, 1);
+                        Map<String, String> skipitem = new HashMap<>(2);
                         skipitem.put("dataId", item.getItemName());
                         skipitem.put("group", "");
                         skipItemList.add(skipitem);
                         continue;
                     }
-
                     String group = groupAdnDataId[0];
                     String dataId = groupAdnDataId[1];
                     String tempDataId = dataId;
@@ -614,10 +613,11 @@ public class ConfigController {
         }
         // merge skip data
         if (!skipItemList.isEmpty()) {
+            Integer skipCount = (Integer) saveResult.get("skipCount");
+            saveResult.put("skipCount", (skipCount == null ? 0 : skipCount) + skipItemList.size());
             List<Map<String, String>> skipData = (List<Map<String, String>>) saveResult.get("skipData");
             if (skipData != null) {
                 skipItemList.addAll(skipData);
-                saveResult.put("skipCount", (Integer) saveResult.getOrDefault("skipCount", 0) + skipItemList.size());
             }
             saveResult.put("skipData", skipItemList);
         }
