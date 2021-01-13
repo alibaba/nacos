@@ -277,7 +277,9 @@ public class ConfigExportAndImportAPI_CITCase {
         uploadByteFile.setFileBytes(ZipUtils.zip(zipItemList));
         uploadByteFile.setMediaType("application/zip");
         uploadByteFile.setPrarmName("file");
-        httpClient.post(SERVER_ADDR + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, Collections.singletonList(uploadByteFile), null);
+        String importResult = httpClient.post(SERVER_ADDR + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, Collections.singletonList(uploadByteFile), null);
+        System.err.println("importResult===========\n"+importResult);
+        
         String getDataUrl = "?search=accurate&dataId=&group=TEST_IMPORT&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
         JsonNode resultObj = JacksonUtils.toObj(queryResult);
