@@ -102,18 +102,6 @@ public class ServerLoaderController {
                 }
             });
     
-    /**
-     * Get server state of current server.
-     *
-     * @return state json.
-     */
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.WRITE)
-    @GetMapping("/max")
-    public ResponseEntity updateMaxClients(@RequestParam Integer count) {
-        Map<String, String> responseMap = new HashMap<>(3);
-        connectionManager.setMaxClientCount(count);
-        return ResponseEntity.ok().body("success");
-    }
     
     /**
      * Get server state of current server.

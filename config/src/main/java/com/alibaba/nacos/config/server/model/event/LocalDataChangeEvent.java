@@ -68,8 +68,8 @@ public class LocalDataChangeEvent extends Event {
         this.isBeta = isBeta;
         this.betaIps = betaIps;
         this.tag = null;
-        this.content = null;
-        this.type = null;
+        this.content = content;
+        this.type = type;
         this.lastModifiedTs = lastModifiedTs;
         
     }

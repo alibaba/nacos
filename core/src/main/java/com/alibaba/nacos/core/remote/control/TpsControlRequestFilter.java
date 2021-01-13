@@ -40,28 +40,12 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
     @Autowired
     private TpsControlManager tpsControlManager;
     
-    private Method getMethod(Class handlerClazz) throws NacosException {
-        try {
-            Method method = handlerClazz.getMethod("handle", Request.class, RequestMeta.class);
-            return method;
-        } catch (NoSuchMethodException e) {
-            throw new NacosException(NacosException.SERVER_ERROR, e);
-        }
-    }
-    
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) {
-        Response response = null;
-        try {
-            response = (Response) super.getResponseClazz(handlerClazz).getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-            Loggers.AUTH.error("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);
-            
-        }
         
         Method method = null;
         try {
-            method = getMethod(handlerClazz);
+            method = getHandleMethod(handlerClazz);
         } catch (NacosException e) {
             return null;
         }
@@ -72,8 +56,16 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
             String pointName = tpsControl.pointName();
             boolean pass = tpsControlManager.applyTps(meta.getClientIp(), pointName);
             if (!pass) {
-                response.setErrorInfo(ResponseCode.FAIL.getCode(), "tps control over limit.");
-                return response;
+                Response response = null;
+                try {
+                    response = super.getDefaultResponseInstance(handlerClazz);
+                    response.setErrorInfo(ResponseCode.FAIL.getCode(), "tps control over limit.");
+                    return response;
+                } catch (Exception e) {
+                    Loggers.AUTH.error("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);
+                    return null;
+                }
+                
             }
         }
         

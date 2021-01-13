@@ -19,9 +19,9 @@ package com.alibaba.nacos.core.remote.control;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.google.gson.Gson;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -57,7 +57,7 @@ public class TpsControlManager extends Subscriber<TpsControlRuleChangeEvent> {
     /**
      * apply tps.
      *
-     * @param clientIp clientIp.
+     * @param clientIp  clientIp.
      * @param pointName pointName.
      * @return pass or not.
      */
@@ -79,7 +79,7 @@ public class TpsControlManager extends Subscriber<TpsControlRuleChangeEvent> {
         }
         try {
             TpsControlRule tpsControlRule = StringUtils.isBlank(event.ruleContent) ? null
-                    : new Gson().fromJson(event.ruleContent, TpsControlRule.class);
+                    : JacksonUtils.toObj(event.ruleContent, TpsControlRule.class);
             if (!points.containsKey(event.getPointName())) {
                 Loggers.TPS_CONTROL.info("Tps control rule change event ignore,pointName={} ", event.getPointName());
                 return;
@@ -96,4 +96,5 @@ public class TpsControlManager extends Subscriber<TpsControlRuleChangeEvent> {
     public Class<? extends Event> subscribeType() {
         return TpsControlRuleChangeEvent.class;
     }
+    
 }

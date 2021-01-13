@@ -24,8 +24,10 @@ import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.Attributes;
+import io.grpc.CompressorRegistry;
 import io.grpc.Context;
 import io.grpc.Contexts;
+import io.grpc.DecompressorRegistry;
 import io.grpc.Grpc;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -103,7 +105,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         
         addServices(handlerRegistry, serverInterceptor);
         
-        server = ServerBuilder.forPort(getServicePort()).executor(getRpcExecutor()).fallbackHandlerRegistry(handlerRegistry)
+        server = ServerBuilder.forPort(getServicePort()).executor(getRpcExecutor())
+                .maxInboundMessageSize(getInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
+                .compressorRegistry(CompressorRegistry.getDefaultInstance())
+                .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
@@ -140,6 +145,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                     }
                 }).build();
         server.start();
+    }
+    
+    private int getInboundMessageSize() {
+        String messageSize = System
+                .getProperty("nacos.remote.server.grpc.maxinbound.message.size", String.valueOf(10 * 1024 * 1024));
+        return Integer.valueOf(messageSize);
     }
     
     private Channel getInternalChannel(ServerCall serverCall) {

@@ -26,12 +26,12 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -61,11 +61,9 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     }
     
     /**
-     * maxLimitClient.
+     * connection limit rule.
      */
-    private int maxClient = -1;
-    
-    private ConnectionLimitRule connectionLimitRule;
+    private ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
     
     /**
      * current loader adjust count,only effective once,use to re balance.
@@ -243,7 +241,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                     Set<Map.Entry<String, Connection>> entries = connections.entrySet();
                     int currentSdkClientCount = currentSdkClientCount();
                     boolean isLoaderClient = loadClient >= 0;
-                    int currentMaxClient = isLoaderClient ? loadClient : maxClient;
+                    int currentMaxClient = isLoaderClient ? loadClient : connectionLimitRule.countLimit;
                     int expelCount = currentMaxClient < 0 ? currentMaxClient : currentSdkClientCount - currentMaxClient;
                     List<String> expelClient = new LinkedList<>();
                     
@@ -345,10 +343,6 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         return meta;
     }
     
-    public void setMaxClientCount(int maxClient) {
-        this.maxClient = maxClient;
-    }
-    
     public void loadCount(int loadClient, String redirectAddress) {
         this.loadClient = loadClient;
         this.redirectAddress = redirectAddress;
@@ -432,36 +426,12 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     }
     
     /**
-     * expel all connections.
-     */
-    public void expelAll() {
-        //reject all new connections.
-        this.maxClient = 0;
-        //send connect reset response to  all clients.
-        for (Map.Entry<String, Connection> entry : connections.entrySet()) {
-            Connection client = entry.getValue();
-            try {
-                if (client.getMetaInfo().isSdkSource()) {
-                    client.request(new ConnectResetRequest(), buildMeta());
-                }
-                
-            } catch (Exception e) {
-                //Do Nothing.
-            }
-        }
-    }
-    
-    /**
      * check if over limit.
      *
      * @return over limit or not.
      */
     private boolean isOverLimit() {
-        return maxClient > 0 && currentSdkClientCount() >= maxClient;
-    }
-    
-    public int countLimited() {
-        return maxClient;
+        return connectionLimitRule.countLimit > 0 && currentSdkClientCount() >= connectionLimitRule.getCountLimit();
     }
     
     @Override
@@ -470,10 +440,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         Loggers.REMOTE.info("connection limit rule change event receive :{}", limitRule);
         
         try {
-            ConnectionLimitRule connectionLimitRule = new Gson().fromJson(limitRule, ConnectionLimitRule.class);
-            if (connectionLimitRule.getCountLimit() > 0) {
-                this.maxClient = connectionLimitRule.getCountLimit();
-            }
+            ConnectionLimitRule connectionLimitRule = JacksonUtils.toObj(limitRule, ConnectionLimitRule.class);
             this.connectionLimitRule = connectionLimitRule;
         } catch (Exception e) {
             Loggers.REMOTE.error("Fail to parse connection limit rule :{}", limitRule, e);
@@ -546,5 +513,9 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         public void setCountLimitPerClientApp(Map<String, Integer> countLimitPerClientApp) {
             this.countLimitPerClientApp = countLimitPerClientApp;
         }
+    }
+    
+    public ConnectionLimitRule getConnectionLimitRule() {
+        return connectionLimitRule;
     }
 }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -24,7 +25,6 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -72,8 +72,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     }
     
     @Override
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     @TpsControl(pointName = "ConfigQuery")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta requestMeta) throws NacosException {
         ConfigQueryRequest configQueryRequest = (ConfigQueryRequest) request;
         
@@ -271,7 +271,10 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             reader = new BufferedReader(isr);
             String tempStr;
             while ((tempStr = reader.readLine()) != null) {
-                sbf.append(tempStr);
+                sbf.append(tempStr).append(Constants.LINE_BREAK);
+            }
+            if (sbf.indexOf(Constants.LINE_BREAK) > 0) {
+                sbf.setLength(sbf.length() - 1);
             }
             reader.close();
             return sbf.toString();

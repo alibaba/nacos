@@ -17,7 +17,11 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
+import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.AbstractPushCallBack;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -65,6 +69,9 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     @Autowired
     private ConnectionManager connectionManager;
     
+    @Autowired
+    private ConfigQueryRequestHandler configQueryRequestHandler;
+    
     /**
      * adaptor to config module ,when server side config change ,invoke this method.
      *
@@ -96,34 +103,63 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             }
             Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", notifyCount, groupKey);
         }
-        notifyInternalConfigChange(groupKey, content, betaIps);
+        notifyInternalConfigChange(groupKey);
     }
     
     private static final String DATA_ID_TPS_CONTROL_RULE = "nacos.internal.tps.control_rule_";
     
     private static final String DATA_ID_CONNECTION_LIMIT_RULE = "nacos.internal.connection.limit.rule";
     
-    private static final String GROUP_CONNECTION_LIMIT_RULE = "nacos";
+    private static final String NACOS_GROUP = "nacos";
     
-    private void notifyInternalConfigChange(String groupKey, String content, List<String> betaIps) {
+    private void notifyInternalConfigChange(String groupKey) {
         String dataId = GroupKey.parseKey(groupKey)[0];
         String group = GroupKey.parseKey(groupKey)[1];
-        if (DATA_ID_CONNECTION_LIMIT_RULE.equals(dataId) && GROUP_CONNECTION_LIMIT_RULE.equals(group)) {
-            if (betaIps != null && !betaIps.contains(NetUtils.localIP())) {
-                return;
+        if (DATA_ID_CONNECTION_LIMIT_RULE.equals(dataId) && NACOS_GROUP.equals(group)) {
+            
+            try {
+                String content = loadLocalConfigLikeClient(dataId, group);
+                NotifyCenter.publishEvent(new ConnectionLimitRuleChangeEvent(content));
+                
+            } catch (NacosException e) {
+                Loggers.REMOTE.error("connection limit rule load fail.", e);
             }
-            NotifyCenter.publishEvent(new ConnectionLimitRuleChangeEvent(content));
         }
         
-        if (dataId.startsWith(DATA_ID_TPS_CONTROL_RULE) && GROUP_CONNECTION_LIMIT_RULE.equals(group)) {
-            if (betaIps != null && !betaIps.contains(NetUtils.localIP())) {
-                return;
+        if (dataId.startsWith(DATA_ID_TPS_CONTROL_RULE) && NACOS_GROUP.equals(group)) {
+            try {
+                String pointName = dataId.replaceFirst(DATA_ID_TPS_CONTROL_RULE, "");
+                
+                String content = loadLocalConfigLikeClient(dataId, group);
+                NotifyCenter.publishEvent(new TpsControlRuleChangeEvent(pointName, content));
+                
+            } catch (NacosException e) {
+                Loggers.REMOTE.error("connection limit rule load fail.", e);
             }
-            String pointName = dataId.replaceFirst(DATA_ID_TPS_CONTROL_RULE, "");
-            
-            NotifyCenter.publishEvent(new TpsControlRuleChangeEvent(pointName, content));
             
         }
+    }
+    
+    private String loadLocalConfigLikeClient(String dataId, String group) throws NacosException {
+        ConfigQueryRequest queryRequest = new ConfigQueryRequest();
+        queryRequest.setDataId(dataId);
+        queryRequest.setGroup(group);
+        RequestMeta meta = new RequestMeta();
+        meta.setClientIp(NetUtils.localIP());
+        ConfigQueryResponse handle = configQueryRequestHandler.handle(queryRequest, meta);
+        if (handle != null) {
+            if (handle.isSuccess()) {
+                return handle.getContent();
+            } else if (handle.getErrorCode() == ConfigQueryResponse.CONFIG_NOT_FOUND) {
+                return null;
+            } else {
+                Loggers.REMOTE.error("connection limit rule load fail,errorCode={}", handle.getErrorCode());
+                throw new NacosException(NacosException.SERVER_ERROR,
+                        "load local config fail,error code=" + handle.getErrorCode());
+            }
+        }
+        throw new NacosException(NacosException.SERVER_ERROR, "load local config fail,response  is null");
+        
     }
     
     @Override

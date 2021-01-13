@@ -31,6 +31,8 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.grpc.CompressorRegistry;
+import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -84,7 +86,10 @@ public abstract class GrpcClient extends RpcClient {
     private RequestGrpc.RequestFutureStub createNewChannelStub(String serverIp, int serverPort) {
         
         ManagedChannelBuilder<?> o = ManagedChannelBuilder.forAddress(serverIp, serverPort).executor(grpcExecutor)
-                .keepAliveTime(30, TimeUnit.SECONDS).usePlaintext();
+                .compressorRegistry(CompressorRegistry.getDefaultInstance())
+                .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
+                .maxInboundMessageSize(getInboundMessageSize())
+                .keepAliveTime(keepAliveTimeMillis(), TimeUnit.MILLISECONDS).usePlaintext();
         
         ManagedChannel managedChannelTemp = o.build();
         
@@ -98,6 +103,17 @@ public abstract class GrpcClient extends RpcClient {
             shuntDownChannel(managedChannelTemp);
             return null;
         }
+    }
+    
+    private int getInboundMessageSize() {
+        String messageSize = System
+                .getProperty("nacos.remote.client.grpc.maxinbound.message.size", String.valueOf(10 * 1024 * 1024));
+        return Integer.valueOf(messageSize);
+    }
+    
+    private int keepAliveTimeMillis() {
+        String keepAliveTimeMillis = System.getProperty("nacos.remote.grpc.keep.alive.millis", String.valueOf(30000));
+        return Integer.valueOf(keepAliveTimeMillis);
     }
     
     /**
