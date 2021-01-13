@@ -134,7 +134,7 @@ public class ServiceInfoHolder implements Closeable {
      */
     public ServiceInfo processServiceInfo(ServiceInfo serviceInfo) {
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
-        if (null == serviceInfo.getHosts() || (pushEmptyProtection && !serviceInfo.validate())) {
+        if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
             return oldService;
         }
@@ -152,6 +152,10 @@ public class ServiceInfoHolder implements Closeable {
             DiskCache.write(serviceInfo, cacheDir);
         }
         return serviceInfo;
+    }
+    
+    private boolean isEmptyOrErrorPush(ServiceInfo serviceInfo) {
+        return null == serviceInfo.getHosts() || (pushEmptyProtection && !serviceInfo.validate());
     }
     
     private boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
