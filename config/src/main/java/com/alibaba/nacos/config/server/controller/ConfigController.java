@@ -538,7 +538,7 @@ public class ConfigController {
         }
         
         List<ConfigAllInfo> configInfoList = null;
-        List<Map<String, String>> skipItemList = null;
+        List<Map<String, String>> unrecognizedList = null;
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
             ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
@@ -559,14 +559,14 @@ public class ConfigController {
             List<ZipUtils.ZipItem> itemList = unziped.getZipItemList();
             if (itemList != null && !itemList.isEmpty()) {
                 configInfoList = new ArrayList<>(itemList.size());
-                skipItemList = new ArrayList<>();
+                unrecognizedList = new ArrayList<>();
                 for (ZipUtils.ZipItem item : itemList) {
                     String[] groupAdnDataId = item.getItemName().split(Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR);
                     if (groupAdnDataId.length != 2) {
                         Map<String, String> skipitem = new HashMap<>(2);
                         skipitem.put("dataId", item.getItemName());
                         skipitem.put("group", "");
-                        skipItemList.add(skipitem);
+                        unrecognizedList.add(skipitem);
                         continue;
                     }
                     String group = groupAdnDataId[0];
@@ -611,15 +611,10 @@ public class ConfigController {
                             requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
-        // merge skip data
-        if (!skipItemList.isEmpty()) {
-            Integer skipCount = (Integer) saveResult.get("skipCount");
-            saveResult.put("skipCount", (skipCount == null ? 0 : skipCount) + skipItemList.size());
-            List<Map<String, String>> skipData = (List<Map<String, String>>) saveResult.get("skipData");
-            if (skipData != null) {
-                skipItemList.addAll(skipData);
-            }
-            saveResult.put("skipData", skipItemList);
+        // unrecognizedCount
+        if (!unrecognizedList.isEmpty()) {
+            saveResult.put("unrecognizedCount", unrecognizedList.size());
+            saveResult.put("unrecognizedData", unrecognizedList);
         }
         return RestResultUtils.success("导入成功", saveResult);
     }

@@ -280,12 +280,12 @@ public class ConfigExportAndImportAPI_CITCase {
         uploadByteFile.setPrarmName("file");
         String importResult = httpClient.post(SERVER_ADDR + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, Collections.singletonList(uploadByteFile), null);
 
-        // test skip data
+        // test unrecognizedData
         JsonNode importResObj = JacksonUtils.toObj(importResult);
-        int skipCount = importResObj.get("data").get("skipCount").intValue();
-        Assert.assertEquals(1, skipCount);
-        JsonNode skipNode = importResObj.get("data").get("skipData").get(0);
-        Assert.assertEquals("TEST_IMPORT/SUB_GROUP/test5.properties", skipNode.get("dataId").textValue());
+        int unrecognizedCount = importResObj.get("data").get("unrecognizedCount").intValue();
+        Assert.assertEquals(1, unrecognizedCount);
+        JsonNode unrecognizedData = importResObj.get("data").get("unrecognizedData").get(0);
+        Assert.assertEquals("TEST_IMPORT/SUB_GROUP/test5.properties", unrecognizedData.get("dataId").textValue());
 
         String getDataUrl = "?search=accurate&dataId=&group=TEST_IMPORT&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
