@@ -54,6 +54,8 @@ public class ServiceInfoHolder implements Closeable {
     
     private final FailoverReactor failoverReactor;
     
+    private final boolean pushEmptyProtection;
+    
     private String cacheDir;
     
     public ServiceInfoHolder(String namespace, Properties properties) {
@@ -64,6 +66,7 @@ public class ServiceInfoHolder implements Closeable {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
         }
         this.failoverReactor = new FailoverReactor(this, cacheDir);
+        this.pushEmptyProtection = isPushEmptyProtect(properties);
     }
     
     private void initCacheDir(String namespace) {
@@ -85,6 +88,16 @@ public class ServiceInfoHolder implements Closeable {
                     .toBoolean(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
         }
         return loadCacheAtStart;
+    }
+    
+    private boolean isPushEmptyProtect(Properties properties) {
+        boolean pushEmptyProtection = false;
+        if (properties != null && StringUtils
+                .isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION))) {
+            pushEmptyProtection = ConvertUtils
+                    .toBoolean(properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION));
+        }
+        return pushEmptyProtection;
     }
     
     public Map<String, ServiceInfo> getServiceInfoMap() {
@@ -121,7 +134,7 @@ public class ServiceInfoHolder implements Closeable {
      */
     public ServiceInfo processServiceInfo(ServiceInfo serviceInfo) {
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
-        if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
+        if (null == serviceInfo.getHosts() || (pushEmptyProtection && !serviceInfo.validate())) {
             //empty or error push, just ignore
             return oldService;
         }

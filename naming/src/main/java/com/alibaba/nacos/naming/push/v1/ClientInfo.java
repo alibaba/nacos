@@ -62,6 +62,10 @@ public class ClientInfo {
          */
         C(ClientTypeDescription.C_CLIENT),
         /**
+         * CSharp client type.
+         */
+        CSHARP(ClientTypeDescription.CSHARP_CLIENT),
+        /**
          * php client type.
          */
         PHP(ClientTypeDescription.PHP_CLIENT),
@@ -123,6 +127,8 @@ public class ClientInfo {
         public static final String GO_CLIENT = "Nacos-Go-Client";
         
         public static final String PHP_CLIENT = "Nacos-Php-Client";
+    
+        public static final String CSHARP_CLIENT = "Nacos-CSharp-Client";
     }
     
 }
