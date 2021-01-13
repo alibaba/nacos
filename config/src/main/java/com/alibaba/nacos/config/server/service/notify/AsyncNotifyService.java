@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSy
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -166,6 +167,7 @@ public class AsyncNotifyService {
                         if (task.isBeta) {
                             header.addParam("isBeta", "true");
                         }
+                        AuthHeaderUtil.addIdentityToHeader(header);
                         restTemplate.get(task.url, header, Query.EMPTY, String.class, new AsyncNotifyCallBack(task));
                     }
                 }

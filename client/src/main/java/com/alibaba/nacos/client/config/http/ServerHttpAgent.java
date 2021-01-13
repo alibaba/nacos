@@ -268,6 +268,7 @@ public class ServerHttpAgent implements HttpAgent {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
         ConfigHttpClientManager.getInstance().shutdown();
+        SpasAdapter.freeCredentialInstance();
         LOGGER.info("{} do shutdown stop", className);
     }
     
