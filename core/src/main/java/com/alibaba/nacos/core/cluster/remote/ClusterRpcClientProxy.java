@@ -28,7 +28,7 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -85,7 +85,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         
         //ensure to create client of new members
         for (Member member : members) {
-            ConnectionType supportedConnectionType = MemberUtils.getSupportedConnectionType(member);
+            ConnectionType supportedConnectionType = MemberUtil.getSupportedConnectionType(member);
             if (supportedConnectionType != null) {
                 createRpcClientAndStart(member, supportedConnectionType);
             }
@@ -94,7 +94,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         //shutdown and remove old members.
         Set<Map.Entry<String, RpcClient>> allClientEntrys = RpcClientFactory.getAllClientEntrys();
         Iterator<Map.Entry<String, RpcClient>> iterator = allClientEntrys.iterator();
-        List<String> newMemberKeys = members.stream().filter(a -> MemberUtils.isSupportedLongCon(a))
+        List<String> newMemberKeys = members.stream().filter(a -> MemberUtil.isSupportedLongCon(a))
                 .map(a -> memberClientKey(a)).collect(Collectors.toList());
         while (iterator.hasNext()) {
             Map.Entry<String, RpcClient> next1 = iterator.next();
@@ -122,7 +122,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             client = RpcClientFactory.createClusterClient(memberClientKey, type, labels);
         }
     
-        if (client.isWaitInited()) {
+        if (client.isWaitInitiated()) {
             Loggers.CLUSTER.info("start a new rpc client to member - > : {}", member);
             
             //one fixed server

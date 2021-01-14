@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
 
 /**
@@ -67,5 +68,10 @@ public class ConnectionBasedClient extends AbstractClient {
     
     public void setLastRenewTime() {
         this.lastRenewTime = System.currentTimeMillis();
+    }
+    
+    @Override
+    public boolean isExpire(long currentTime) {
+        return !isNative() && currentTime - getLastRenewTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
     }
 }

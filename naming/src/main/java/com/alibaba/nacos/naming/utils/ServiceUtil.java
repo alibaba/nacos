@@ -154,6 +154,9 @@ public class ServiceUtil {
         if (start < 0) {
             start = 0;
         }
+        if (start >= result.size()) {
+            return result;
+        }
         int end = start + pageSize;
         if (end > result.size()) {
             end = result.size();

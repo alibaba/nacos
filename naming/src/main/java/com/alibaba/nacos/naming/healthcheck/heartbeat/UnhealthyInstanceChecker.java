@@ -26,7 +26,7 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -45,13 +45,13 @@ import java.util.Optional;
 public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     
     @Override
-    public void doCheck(Client client, Service service, HeartBeatInstancePublishInfo instance) {
+    public void doCheck(Client client, Service service, HealthCheckInstancePublishInfo instance) {
         if (instance.isHealthy() && isUnhealthy(service, instance)) {
             changeHealthyStatus(client, service, instance);
         }
     }
     
-    private boolean isUnhealthy(Service service, HeartBeatInstancePublishInfo instance) {
+    private boolean isUnhealthy(Service service, HealthCheckInstancePublishInfo instance) {
         long beatTimeout = getTimeout(service, instance);
         return System.currentTimeMillis() - instance.getLastHeartBeatTime() > beatTimeout;
     }
@@ -70,7 +70,7 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
         return instanceMetadata.map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.HEART_BEAT_TIMEOUT));
     }
     
-    private void changeHealthyStatus(Client client, Service service, HeartBeatInstancePublishInfo instance) {
+    private void changeHealthyStatus(Client client, Service service, HealthCheckInstancePublishInfo instance) {
         instance.setHealthy(false);
         Object cluster = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME);
         Loggers.EVT_LOG

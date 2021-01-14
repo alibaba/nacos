@@ -18,8 +18,8 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.AbstractRequestCallBack;
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.request.ServerRequest;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -47,33 +47,32 @@ public class RpcPushService {
      * @param request         request.
      * @param requestCallBack requestCallBack.
      */
-    public void pushWithCallback(String connectionId, ServerPushRequest request, PushCallBack requestCallBack,
+    public void pushWithCallback(String connectionId, ServerRequest request, PushCallBack requestCallBack,
             Executor executor) {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
                 connection.asyncRequest(request, null, new AbstractRequestCallBack(requestCallBack.getTimeout()) {
-                
-                            @Override
-                            public Executor getExcutor() {
-                                return executor;
-                            }
-                
-                            @Override
-                            public void onResponse(Response response) {
-                                if (response.isSuccess()) {
-                                    requestCallBack.onSuccess();
-                                } else {
-                                    requestCallBack
-                                            .onFail(new NacosException(response.getErrorCode(), response.getMessage()));
-                                }
-                            }
-                
-                            @Override
-                            public void onException(Throwable e) {
-                                requestCallBack.onFail(e);
-                            }
-                        });
+                    
+                    @Override
+                    public Executor getExecutor() {
+                        return executor;
+                    }
+                    
+                    @Override
+                    public void onResponse(Response response) {
+                        if (response.isSuccess()) {
+                            requestCallBack.onSuccess();
+                        } else {
+                            requestCallBack.onFail(new NacosException(response.getErrorCode(), response.getMessage()));
+                        }
+                    }
+                    
+                    @Override
+                    public void onException(Throwable e) {
+                        requestCallBack.onFail(e);
+                    }
+                });
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
                 requestCallBack.onSuccess();
@@ -81,6 +80,7 @@ public class RpcPushService {
                 Loggers.REMOTE_DIGEST
                         .error("error to send push response to connectionId ={},push response={}", connectionId,
                                 request, e);
+                requestCallBack.onFail(e);
             }
         } else {
             requestCallBack.onSuccess();
@@ -93,7 +93,7 @@ public class RpcPushService {
      * @param connectionId connectionId.
      * @param request      request.
      */
-    public void pushWithoutAck(String connectionId, ServerPushRequest request) {
+    public void pushWithoutAck(String connectionId, ServerRequest request) {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {

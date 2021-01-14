@@ -35,7 +35,7 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
     private List<ConfigListenContext> configListenContexts = new ArrayList<ConfigListenContext>();
     
     /**
-     * add listen congif.
+     * add listen config.
      *
      * @param group  group.
      * @param dataId dataId.
@@ -100,13 +100,13 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
         public ConfigListenContext() {
         
         }
-    
+        
         @Override
         public String toString() {
             return "ConfigListenContext{" + "group='" + group + '\'' + ", md5='" + md5 + '\'' + ", dataId='" + dataId
                     + '\'' + ", tenant='" + tenant + '\'' + '}';
         }
-    
+        
         /**
          * Getter method for property <tt>group</tt>.
          *

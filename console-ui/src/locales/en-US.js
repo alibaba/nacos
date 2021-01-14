@@ -176,6 +176,11 @@ const I18N_CONF = {
     serviceNameRequired: 'Please enter a service name',
     protectThresholdRequired: 'Please enter a protect threshold',
   },
+  InstanceFilter: {
+    title: 'Metadata Filter',
+    addFilter: 'Add Filter',
+    clear: 'Clear',
+  },
   InstanceTable: {
     operation: 'Operation',
     port: 'Port',
@@ -266,8 +271,8 @@ const I18N_CONF = {
     configurationManagement8: 'configuration management',
     queryResults: 'Search Results: Found',
     articleMeetRequirements: 'configuration items',
-    fuzzyd: 'Enter Data ID',
-    fuzzyg: 'Enter Group',
+    fuzzyd: 'Add wildcard \'*\' for fuzzy query',
+    fuzzyg: 'Add wildcard \'*\' for fuzzy query',
     query: 'Search',
     advancedQuery9: 'Advanced Query',
     application0: 'Application:',

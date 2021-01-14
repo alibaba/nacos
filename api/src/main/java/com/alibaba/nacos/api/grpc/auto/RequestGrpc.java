@@ -16,12 +16,9 @@
 
 package com.alibaba.nacos.api.grpc.auto;
 
-import static io.grpc.MethodDescriptor.generateFullMethodName;
-import static io.grpc.stub.ClientCalls.asyncUnaryCall;
-import static io.grpc.stub.ClientCalls.blockingUnaryCall;
-import static io.grpc.stub.ClientCalls.futureUnaryCall;
-import static io.grpc.stub.ServerCalls.asyncUnaryCall;
-import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
+import io.grpc.MethodDescriptor;
+import io.grpc.stub.ClientCalls;
+import io.grpc.stub.ServerCalls;
 
 /**
  */
@@ -45,7 +42,7 @@ public final class RequestGrpc {
                 if ((getRequestMethod = RequestGrpc.getRequestMethod) == null) {
                     RequestGrpc.getRequestMethod = getRequestMethod = io.grpc.MethodDescriptor.<com.alibaba.nacos.api.grpc.auto.Payload, com.alibaba.nacos.api.grpc.auto.Payload>newBuilder()
                             .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
-                            .setFullMethodName(generateFullMethodName("Request", "request"))
+                            .setFullMethodName(MethodDescriptor.generateFullMethodName("Request", "request"))
                             .setSampledToLocalTracing(true).setRequestMarshaller(io.grpc.protobuf.ProtoUtils
                                     .marshaller(com.alibaba.nacos.api.grpc.auto.Payload.getDefaultInstance()))
                             .setResponseMarshaller(io.grpc.protobuf.ProtoUtils
@@ -89,13 +86,13 @@ public final class RequestGrpc {
          */
         public void request(com.alibaba.nacos.api.grpc.auto.Payload request,
                 io.grpc.stub.StreamObserver<com.alibaba.nacos.api.grpc.auto.Payload> responseObserver) {
-            asyncUnimplementedUnaryCall(getRequestMethod(), responseObserver);
+            ServerCalls.asyncUnimplementedUnaryCall(getRequestMethod(), responseObserver);
         }
     
         @java.lang.Override
         public final io.grpc.ServerServiceDefinition bindService() {
             return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor()).addMethod(getRequestMethod(),
-                    asyncUnaryCall(
+                    ServerCalls.asyncUnaryCall(
                             new MethodHandlers<com.alibaba.nacos.api.grpc.auto.Payload, com.alibaba.nacos.api.grpc.auto.Payload>(
                                     this, METHODID_REQUEST))).build();
         }
@@ -125,7 +122,7 @@ public final class RequestGrpc {
          */
         public void request(com.alibaba.nacos.api.grpc.auto.Payload request,
                 io.grpc.stub.StreamObserver<com.alibaba.nacos.api.grpc.auto.Payload> responseObserver) {
-            asyncUnaryCall(getChannel().newCall(getRequestMethod(), getCallOptions()), request, responseObserver);
+            ClientCalls.asyncUnaryCall(getChannel().newCall(getRequestMethod(), getCallOptions()), request, responseObserver);
         }
     }
     
@@ -152,7 +149,7 @@ public final class RequestGrpc {
          * </pre>
          */
         public com.alibaba.nacos.api.grpc.auto.Payload request(com.alibaba.nacos.api.grpc.auto.Payload request) {
-            return blockingUnaryCall(getChannel(), getRequestMethod(), getCallOptions(), request);
+            return ClientCalls.blockingUnaryCall(getChannel(), getRequestMethod(), getCallOptions(), request);
         }
     }
     
@@ -180,7 +177,7 @@ public final class RequestGrpc {
          */
         public com.google.common.util.concurrent.ListenableFuture<com.alibaba.nacos.api.grpc.auto.Payload> request(
                 com.alibaba.nacos.api.grpc.auto.Payload request) {
-            return futureUnaryCall(getChannel().newCall(getRequestMethod(), getCallOptions()), request);
+            return ClientCalls.futureUnaryCall(getChannel().newCall(getRequestMethod(), getCallOptions()), request);
         }
     }
     

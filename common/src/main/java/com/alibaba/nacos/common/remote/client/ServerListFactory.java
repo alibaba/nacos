@@ -28,20 +28,20 @@ public interface ServerListFactory {
     /**
      * switch to a new server and get it.
      *
-     * @return
+     * @return server " ip:port".
      */
     String genNextServer();
     
     /**
      * get current server.
-     * @return
+     * @return server " ip:port".
      */
     String getCurrentServer();
     
     /**
      * get current server.
      *
-     * @return
+     * @return servers.
      */
     List<String> getServerList();
     

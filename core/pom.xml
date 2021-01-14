@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>2.0.0-ALPHA.1</version>
+        <version>2.0.0-1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -57,15 +57,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-consistency</artifactId>
-        </dependency>
-    
-        <dependency>
-            <groupId>io.rsocket</groupId>
-            <artifactId>rsocket-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.rsocket</groupId>
-            <artifactId>rsocket-transport-netty</artifactId>
         </dependency>
         
         <dependency>

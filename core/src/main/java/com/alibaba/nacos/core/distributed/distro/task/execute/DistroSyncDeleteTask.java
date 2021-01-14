@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.distro.task.execute;
 
 import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
@@ -28,8 +29,15 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
  */
 public class DistroSyncDeleteTask extends AbstractDistroExecuteTask {
     
+    private static final DataOperation OPERATION = DataOperation.DELETE;
+    
     public DistroSyncDeleteTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
         super(distroKey, distroComponentHolder);
+    }
+    
+    @Override
+    protected DataOperation getDataOperation() {
+        return OPERATION;
     }
     
     @Override
@@ -37,9 +45,19 @@ public class DistroSyncDeleteTask extends AbstractDistroExecuteTask {
         String type = getDistroKey().getResourceType();
         DistroData distroData = new DistroData();
         distroData.setDistroKey(getDistroKey());
-        distroData.setType(DataOperation.DELETE);
+        distroData.setType(OPERATION);
         return getDistroComponentHolder().findTransportAgent(type)
                 .syncData(distroData, getDistroKey().getTargetServer());
+    }
+    
+    @Override
+    protected void doExecuteWithCallback(DistroCallback callback) {
+        String type = getDistroKey().getResourceType();
+        DistroData distroData = new DistroData();
+        distroData.setDistroKey(getDistroKey());
+        distroData.setType(OPERATION);
+        getDistroComponentHolder().findTransportAgent(type)
+                .syncData(distroData, getDistroKey().getTargetServer(), callback);
     }
     
     @Override

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
+import com.alibaba.nacos.common.utils.IoUtils;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -88,7 +90,7 @@ public class ConcurrentDiskUtil {
                 rlock = null;
             }
             if (fis != null) {
-                fis.close();
+                IoUtils.closeQuietly(fis);
                 fis = null;
             }
         }

@@ -85,25 +85,19 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                         return;
                     }
                     connectionManager.refreshActiveTime(parseObj.getMetadata().getConnectionId());
-                    Response response = requestHandler.handle(request, parseObj.getMetadata());
+                    Response response = requestHandler.handleRequest(request, parseObj.getMetadata());
                     responseObserver.onNext(GrpcUtils.convert(response));
                     responseObserver.onCompleted();
-                    return;
-                } catch (Exception e) {
-    
-                    Loggers.REMOTE_DIGEST.error(String
-                            .format("[%s] fail to handle request ,error message :%s", "grpc", e.getMessage(), e));
+                } catch (Throwable e) {
+                    Loggers.REMOTE_DIGEST.error("[{}] fail to handle request ,error message :{}", "grpc", e.getMessage(), e);
                     responseObserver.onNext(GrpcUtils.convert(buildFailResponse("Error")));
                     responseObserver.onCompleted();
-                    return;
                 }
             } else {
                 Loggers.REMOTE_DIGEST.debug(String.format("[%s] no handler for request type : %s :", "grpc", type));
                 responseObserver.onNext(GrpcUtils.convert(buildFailResponse("RequestHandler Not Found")));
                 responseObserver.onCompleted();
-                return;
             }
-            
         }
     }
     

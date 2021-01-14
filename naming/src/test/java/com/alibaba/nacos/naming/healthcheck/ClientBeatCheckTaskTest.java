@@ -22,7 +22,7 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,7 +56,7 @@ public class ClientBeatCheckTaskTest {
     private GlobalConfig globalConfig;
     
     @Mock
-    private PushService pushService;
+    private UdpPushService pushService;
     
     @Mock
     private SwitchDomain switchDomain;

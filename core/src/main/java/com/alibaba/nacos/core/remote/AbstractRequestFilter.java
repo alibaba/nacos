@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 /**
  * interceptor fo request.
@@ -42,12 +45,23 @@ public abstract class AbstractRequestFilter {
         requestFilters.registerFilter(this);
     }
     
+    protected Class getResponseClazz(Class handlerClazz) throws NacosException {
+        ParameterizedType parameterizedType = (ParameterizedType) handlerClazz.getGenericSuperclass();
+        try {
+            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+            return Class.forName(actualTypeArguments[1].getTypeName());
+            
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR, e);
+        }
+    }
+    
     /**
      * filter request.
      *
-     * @param request request.
-     * @param meta    request meta.
-     * @param handlerClazz  request handler clazz.
+     * @param request      request.
+     * @param meta         request meta.
+     * @param handlerClazz request handler clazz.
      * @return response
      */
     protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz);

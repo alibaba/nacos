@@ -21,10 +21,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 /**
  * registry for client connection event listeners.
@@ -37,30 +33,24 @@ public class ClientConnectionEventListenerRegistry {
     
     final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<ClientConnectionEventListener>();
     
-    protected ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(10, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.core.remote.client.connection.notifier");
-            t.setDaemon(true);
-            return t;
-        }
-    });
-    
     /**
      * notify where a new client connected.
      *
      * @param connection connection that new created.
      */
     public void notifyClientConnected(final Connection connection) {
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                for (ClientConnectionEventListener clientConnectionEventListener : clientConnectionEventListeners) {
-                    clientConnectionEventListener.clientConnected(connection);
-                }
+        
+        for (ClientConnectionEventListener clientConnectionEventListener : clientConnectionEventListeners) {
+            try {
+                clientConnectionEventListener.clientConnected(connection);
+            } catch (Throwable throwable) {
+                Loggers.REMOTE
+                        .info("[NotifyClientConnected] failed for listener {}", clientConnectionEventListener.getName(),
+                                throwable);
+                
             }
-        }, 0L, TimeUnit.MILLISECONDS);
+        }
+        
     }
     
     /**
@@ -69,18 +59,16 @@ public class ClientConnectionEventListenerRegistry {
      * @param connection connection that disconnected.
      */
     public void notifyClientDisConnected(final Connection connection) {
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                for (ClientConnectionEventListener each : clientConnectionEventListeners) {
-                    try {
-                        each.clientDisConnected(connection);
-                    } catch (Exception e) {
-                        Loggers.REMOTE.info("[NotifyClientDisConnected] failed for listener {}", each.getName(), e);
-                    }
-                }
+        
+        for (ClientConnectionEventListener clientConnectionEventListener : clientConnectionEventListeners) {
+            try {
+                clientConnectionEventListener.clientDisConnected(connection);
+            } catch (Throwable throwable) {
+                Loggers.REMOTE.info("[NotifyClientDisConnected] failed for listener {}",
+                        clientConnectionEventListener.getName(), throwable);
             }
-        }, 0L, TimeUnit.MILLISECONDS);
+        }
+        
     }
     
     /**

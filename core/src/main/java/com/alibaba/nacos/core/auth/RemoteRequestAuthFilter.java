@@ -35,8 +35,6 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 
 /**
  * request auth filter for remote.
@@ -62,25 +60,14 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
         }
     }
     
-    private Class getResponseClazz(Class handlerClazz) throws NacosException {
-        ParameterizedType parameterizedType = (ParameterizedType) handlerClazz.getGenericSuperclass();
-        try {
-            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-            return Class.forName(actualTypeArguments[1].getTypeName());
-            
-        } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR, e);
-        }
-    }
-    
     @Override
     public Response filter(Request request, RequestMeta meta, Class handlerClazz) {
         
         Response response = null;
         try {
-            response = (Response) getResponseClazz(handlerClazz).newInstance();
+            response = (Response) super.getResponseClazz(handlerClazz).getDeclaredConstructor().newInstance();
         } catch (Exception e) {
-            Loggers.AUTH.error("auth fail, request: {},exception:", request.getClass().getSimpleName(), e);
+            Loggers.AUTH.error("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);
             
         }
         

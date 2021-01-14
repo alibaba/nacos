@@ -64,12 +64,8 @@ public class IoUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (out != null) {
-                out.close();
-            }
-            if (gis != null) {
-                gis.close();
-            }
+            closeQuietly(out);
+            closeQuietly(gis);
         }
         
         return null;
@@ -95,12 +91,8 @@ public class IoUtils {
             IoUtils.copy(gis, out);
             return out.toByteArray();
         } finally {
-            if (out != null) {
-                out.close();
-            }
-            if (gis != null) {
-                gis.close();
-            }
+            closeQuietly(out);
+            closeQuietly(gis);
         }
     }
     
@@ -109,7 +101,7 @@ public class IoUtils {
      *
      * @param str      strings to be compressed.
      * @param encoding encoding.
-     * @return
+     * @return byte[]
      */
     public static byte[] tryCompress(String str, String encoding) {
         if (str == null || str.length() == 0) {
@@ -146,9 +138,7 @@ public class IoUtils {
             os.write(data.getBytes(encoding));
             os.flush();
         } finally {
-            if (null != os) {
-                os.close();
-            }
+            closeQuietly(os);
         }
     }
     
@@ -335,12 +325,8 @@ public class IoUtils {
             sc = new FileInputStream(sf).getChannel();
             sc.transferTo(0, sc.size(), tc);
         } finally {
-            if (null != sc) {
-                sc.close();
-            }
-            if (null != tc) {
-                tc.close();
-            }
+            closeQuietly(sc);
+            closeQuietly(tc);
         }
     }
     

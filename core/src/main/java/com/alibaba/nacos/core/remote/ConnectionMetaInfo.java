@@ -71,6 +71,11 @@ public class ConnectionMetaInfo {
      */
     long lastActiveTime;
     
+    /**
+     * String appName.
+     */
+    String appName;
+    
     protected Map<String, String> labels = new HashMap<String, String>();
     
     public String getLabel(String labelKey) {
@@ -78,11 +83,12 @@ public class ConnectionMetaInfo {
     }
     
     public ConnectionMetaInfo(String connectionId, String clientIp, int clientPort, int localPort, String connectType,
-            String version, Map<String, String> labels) {
+            String version, String appName, Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.connectType = connectType;
         this.version = version;
+        this.appName = appName;
         this.clientPort = clientPort;
         this.localPort = localPort;
         this.createTime = new Date();
@@ -260,6 +266,14 @@ public class ConnectionMetaInfo {
      */
     public void setLocalPort(int localPort) {
         this.localPort = localPort;
+    }
+    
+    public String getAppName() {
+        return appName;
+    }
+    
+    public void setAppName(String appName) {
+        this.appName = appName;
     }
     
     @Override

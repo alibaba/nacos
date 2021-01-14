@@ -21,8 +21,10 @@ import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
+import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -41,16 +43,22 @@ public class DistroClientComponentRegistry {
     
     private final DistroComponentHolder componentHolder;
     
+    private final DistroTaskEngineHolder taskEngineHolder;
+    
+    private final GlobalConfig globalConfig;
+    
     private final ClientManager clientManager;
     
     private final ClusterRpcClientProxy clusterRpcClientProxy;
     
     public DistroClientComponentRegistry(ServerMemberManager serverMemberManager, DistroProtocol distroProtocol,
-            DistroComponentHolder componentHolder, ClientManagerDelegate clientManager,
-            ClusterRpcClientProxy clusterRpcClientProxy) {
+            DistroComponentHolder componentHolder, DistroTaskEngineHolder taskEngineHolder, GlobalConfig globalConfig,
+            ClientManagerDelegate clientManager, ClusterRpcClientProxy clusterRpcClientProxy) {
         this.serverMemberManager = serverMemberManager;
         this.distroProtocol = distroProtocol;
         this.componentHolder = componentHolder;
+        this.taskEngineHolder = taskEngineHolder;
+        this.globalConfig = globalConfig;
         this.clientManager = clientManager;
         this.clusterRpcClientProxy = clusterRpcClientProxy;
     }
@@ -64,8 +72,11 @@ public class DistroClientComponentRegistry {
         DistroClientDataProcessor dataProcessor = new DistroClientDataProcessor(clientManager, distroProtocol);
         DistroTransportAgent transportAgent = new DistroClientTransportAgent(clusterRpcClientProxy,
                 serverMemberManager);
+        DistroClientTaskFailedHandler taskFailedHandler = new DistroClientTaskFailedHandler(globalConfig,
+                taskEngineHolder);
         componentHolder.registerDataStorage(DistroClientDataProcessor.TYPE, dataProcessor);
         componentHolder.registerDataProcessor(dataProcessor);
         componentHolder.registerTransportAgent(DistroClientDataProcessor.TYPE, transportAgent);
+        componentHolder.registerFailedTaskHandler(DistroClientDataProcessor.TYPE, taskFailedHandler);
     }
 }
