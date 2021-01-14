@@ -28,10 +28,11 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
-import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.grpc.CompressorRegistry;
+import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -53,7 +54,7 @@ public abstract class GrpcClient extends RpcClient {
     
     static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
     
-    private ThreadPoolExecutor executor = null;
+    private ThreadPoolExecutor grpcExecutor = null;
     
     @Override
     public ConnectionType getConnectionType() {
@@ -70,8 +71,8 @@ public abstract class GrpcClient extends RpcClient {
     @Override
     public void shutdown() throws NacosException {
         super.shutdown();
-        if (executor != null) {
-            executor.shutdown();
+        if (grpcExecutor != null) {
+            grpcExecutor.shutdown();
         }
     }
     
@@ -84,8 +85,11 @@ public abstract class GrpcClient extends RpcClient {
      */
     private RequestGrpc.RequestFutureStub createNewChannelStub(String serverIp, int serverPort) {
         
-        ManagedChannelBuilder<?> o = ManagedChannelBuilder.forAddress(serverIp, serverPort).executor(executor)
-                .keepAliveTime(30, TimeUnit.SECONDS).usePlaintext();
+        ManagedChannelBuilder<?> o = ManagedChannelBuilder.forAddress(serverIp, serverPort).executor(grpcExecutor)
+                .compressorRegistry(CompressorRegistry.getDefaultInstance())
+                .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
+                .maxInboundMessageSize(getInboundMessageSize())
+                .keepAliveTime(keepAliveTimeMillis(), TimeUnit.MILLISECONDS).usePlaintext();
         
         ManagedChannel managedChannelTemp = o.build();
         
@@ -99,6 +103,18 @@ public abstract class GrpcClient extends RpcClient {
             shuntDownChannel(managedChannelTemp);
             return null;
         }
+    }
+    
+    private int getInboundMessageSize() {
+        String messageSize = System
+                .getProperty("nacos.remote.client.grpc.maxinbound.message.size", String.valueOf(10 * 1024 * 1024));
+        return Integer.valueOf(messageSize);
+    }
+    
+    private int keepAliveTimeMillis() {
+        String keepAliveTimeMillis = System
+                .getProperty("nacos.remote.grpc.keep.alive.millis", String.valueOf(6 * 60 * 1000));
+        return Integer.valueOf(keepAliveTimeMillis);
     }
     
     /**
@@ -195,9 +211,8 @@ public abstract class GrpcClient extends RpcClient {
                 if (isRunning && !isAbandon) {
                     LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Request stream onCompleted, switch server",
                             GrpcClient.this.getName());
-                    if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
-                        switchServerAsync();
-                    }
+                    switchServerAsync();
+                    
                 } else {
                     LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]Ignore complete event,isRunning:{},isAbandon={}",
                             GrpcClient.this.getName(), isRunning, isAbandon);
@@ -228,19 +243,19 @@ public abstract class GrpcClient extends RpcClient {
     @Override
     public Connection connectToServer(ServerInfo serverInfo) {
         try {
-            if (executor == null) {
-                executor = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors() * 8, 10L,
+            if (grpcExecutor == null) {
+                grpcExecutor = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors() * 8, 10L,
                         TimeUnit.SECONDS, new SynchronousQueue(),
                         new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-client-executor-%d")
                                 .build());
             }
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(),
-                    serverInfo.getServerPort());
+                    serverInfo.getServerPort() + rpcPortOffset());
             if (newChannelStubTemp != null) {
                 
                 BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
-                GrpcConnection grpcConn = new GrpcConnection(serverInfo, executor);
+                GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
                 
                 //create stream request and bind connection event to this connection.
                 StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);
