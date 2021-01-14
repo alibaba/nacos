@@ -39,7 +39,9 @@ import org.mockito.Mock;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +80,8 @@ public class ServiceManagerTest extends BaseTest {
     
     private Instance instance2;
     
+    private List<String> serviceNames;
+    
     @Before
     public void before() {
         super.before();
@@ -89,6 +93,7 @@ public class ServiceManagerTest extends BaseTest {
         mockService();
         mockCluster();
         mockInstance();
+        mockServiceName();
     }
     
     private void mockService() {
@@ -106,6 +111,13 @@ public class ServiceManagerTest extends BaseTest {
         metadata.put("key1", "value1");
         instance.setMetadata(metadata);
         instance2 = new Instance("2.2.2.2", 2);
+    }
+    
+    private void mockServiceName() {
+        serviceNames = new ArrayList<>(5);
+        for (int i = 0; i < 32; i++) {
+            serviceNames.add(String.valueOf(i));
+        }
     }
     
     @Test
@@ -128,12 +140,46 @@ public class ServiceManagerTest extends BaseTest {
     }
     
     @Test
+    public void testGetAllServiceNamesOrder() throws NacosException {
+        assertTrue(serviceManager.getAllServiceNames().isEmpty());
+        for (String serviceName : serviceNames) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceName, true);
+        }
+        assertFalse(serviceManager.getAllServiceNames().isEmpty());
+        assertEquals(1, serviceManager.getAllServiceNames().size());
+        assertEquals(serviceNames.size(), serviceManager.getAllServiceNames(TEST_NAMESPACE).size());
+        Collections.sort(serviceNames);
+        Iterator<String> iterator = serviceManager.getAllServiceNames(TEST_NAMESPACE).iterator();
+        int index = 0;
+        while (iterator.hasNext()) {
+            String next = iterator.next();
+            assertEquals(next, serviceNames.get(index));
+            index++;
+        }
+    }
+    
+    @Test
     public void testGetAllServiceNameList() throws NacosException {
         assertTrue(serviceManager.getAllServiceNameList(TEST_NAMESPACE).isEmpty());
         serviceManager.createEmptyService(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         assertFalse(serviceManager.getAllServiceNameList(TEST_NAMESPACE).isEmpty());
         assertEquals(1, serviceManager.getAllServiceNameList(TEST_NAMESPACE).size());
         assertEquals(TEST_SERVICE_NAME, serviceManager.getAllServiceNameList(TEST_NAMESPACE).get(0));
+    }
+    
+    @Test
+    public void testGetAllServiceNameListOrder() throws NacosException {
+        assertTrue(serviceManager.getAllServiceNameList(TEST_NAMESPACE).isEmpty());
+        for (String serviceName : serviceNames) {
+            serviceManager.createEmptyService(TEST_NAMESPACE, serviceName, true);
+        }
+        assertFalse(serviceManager.getAllServiceNameList(TEST_NAMESPACE).isEmpty());
+        assertEquals(serviceNames.size(), serviceManager.getAllServiceNameList(TEST_NAMESPACE).size());
+        List<String> allServiceNameList = serviceManager.getAllServiceNameList(TEST_NAMESPACE);
+        Collections.sort(serviceNames);
+        for (int i = 0; i < allServiceNameList.size(); i++) {
+            assertEquals(allServiceNameList.get(i), serviceNames.get(i));
+        }
     }
     
     @Test

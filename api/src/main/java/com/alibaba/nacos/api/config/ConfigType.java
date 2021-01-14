@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.config;
 
+import com.alibaba.nacos.api.utils.StringUtils;
+
 /**
  * Config data type.
  *
@@ -51,7 +53,12 @@ public enum ConfigType {
     /**
      * config type is "yaml".
      */
-    YAML("yaml");
+    YAML("yaml"),
+    
+    /**
+     * not a real type.
+     */
+    UNSET("unset");
     
     String type;
     
@@ -61,5 +68,27 @@ public enum ConfigType {
     
     public String getType() {
         return type;
+    }
+    
+    public static ConfigType getDefaultType() {
+        return TEXT;
+    }
+    
+    /**
+     * check input type is valid.
+     *
+     * @param type config type
+     * @return it the type valid
+     */
+    public static Boolean isValidType(String type) {
+        if (StringUtils.isBlank(type)) {
+            return false;
+        }
+        for (ConfigType value : values()) {
+            if (value.type.equals(type)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

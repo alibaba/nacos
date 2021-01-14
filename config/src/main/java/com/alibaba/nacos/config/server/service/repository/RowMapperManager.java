@@ -35,8 +35,10 @@ import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.model.User;
 
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.jdbc.core.RowMapper;
@@ -83,6 +85,8 @@ public final class RowMapperManager {
     public static final RoleInfoRowMapper ROLE_INFO_ROW_MAPPER = new RoleInfoRowMapper();
     
     public static final PermissionRowMapper PERMISSION_ROW_MAPPER = new PermissionRowMapper();
+    
+    public static final MapRowMapper MAP_ROW_MAPPER = new MapRowMapper();
     
     public static Map<String, RowMapper> mapperMap = new HashMap<>(16);
     
@@ -161,10 +165,28 @@ public final class RowMapperManager {
         // PERMISSION_ROW_MAPPER
         
         mapperMap.put(PERMISSION_ROW_MAPPER.getClass().getCanonicalName(), PERMISSION_ROW_MAPPER);
+        
+        // MAP_ROW_MAPPER
+        
+        mapperMap.put(MAP_ROW_MAPPER.getClass().getCanonicalName(), MAP_ROW_MAPPER);
     }
     
     public static <D> RowMapper<D> getRowMapper(String classFullName) {
         return (RowMapper<D>) mapperMap.get(classFullName);
+    }
+    
+    public static final class MapRowMapper implements RowMapper<Map<String, Object>> {
+    
+        @Override
+        public Map<String, Object> mapRow(ResultSet resultSet, int rowNum) throws SQLException {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            Map<String, Object> map = new LinkedHashMap<>(columnCount);
+            for (int i = 1; i <= columnCount; i++) {
+                map.put(metaData.getColumnLabel(i), resultSet.getObject(i));
+            }
+            return map;
+        }
     }
     
     public static final class ConfigInfoWrapperRowMapper implements RowMapper<ConfigInfoWrapper> {

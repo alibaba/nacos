@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -73,24 +74,38 @@ public class User_ITCase extends HttpClient4Test {
             HttpMethod.DELETE);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        // Delete a user:
+        request("/nacos/v1/auth/users",
+                Params.newParams()
+                        .appendParam("username", "username2")
+                        .appendParam("accessToken", accessToken)
+                        .done(),
+                String.class,
+                HttpMethod.DELETE);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
     }
 
 
     @Test
     public void login() {
 
-        ResponseEntity<String> response = request("/nacos/v1/auth/users/login",
-            Params.newParams()
-                .appendParam("username", "nacos")
-                .appendParam("password", "nacos")
-                .done(),
-            String.class,
-            HttpMethod.POST);
-
+        ResponseEntity<String> response = login("nacos", "nacos");
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
         Assert.assertTrue(json.has("accessToken"));
         accessToken = json.get("accessToken").textValue();
+    }
+
+    private ResponseEntity<String> login(String username,String password){
+         return request("/nacos/v1/auth/users/login",
+                Params.newParams()
+                        .appendParam("username", username)
+                        .appendParam("password", password)
+                        .done(),
+                String.class,
+                HttpMethod.POST);
     }
 
     @Test
@@ -210,5 +225,78 @@ public class User_ITCase extends HttpClient4Test {
             }
         }
         Assert.assertFalse(found);
+    }
+
+    @Test
+    public void updateUserWithPermission() {
+        System.setProperty("nacos.core.auth.enabled", "true");
+
+        // admin login
+        login();
+
+        // create username1
+        ResponseEntity<String> response = request("/nacos/v1/auth/users",
+                Params.newParams()
+                        .appendParam("username", "username1")
+                        .appendParam("password", "password1")
+                        .appendParam("accessToken", accessToken)
+                        .done(),
+                String.class,
+                HttpMethod.POST);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        // create username2
+        response= request("/nacos/v1/auth/users",
+                Params.newParams()
+                        .appendParam("username", "username2")
+                        .appendParam("password", "password2")
+                        .appendParam("accessToken", accessToken)
+                        .done(),
+                String.class,
+                HttpMethod.POST);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        // user login
+        response = login("username1", "password1");
+        String user1AccessToken = JacksonUtils.toObj(response.getBody()).get("accessToken").textValue();
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        response = login("username2", "password2");
+        String user2AccessToken = JacksonUtils.toObj(response.getBody()).get("accessToken").textValue();
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        // update by admin
+        response = request("/nacos/v1/auth/users",
+                Params.newParams()
+                        .appendParam("username", "username1")
+                        .appendParam("newPassword", "password3")
+                        .appendParam("accessToken", accessToken)
+                        .done(),
+                String.class,
+                HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        // update by same user
+        response = request("/nacos/v1/auth/users",
+                Params.newParams()
+                        .appendParam("username", "username1")
+                        .appendParam("newPassword", "password4")
+                        .appendParam("accessToken", user1AccessToken)
+                        .done(),
+                String.class,
+                HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        // update by another user
+        response = request("/nacos/v1/auth/users",
+                Params.newParams()
+                        .appendParam("username", "username1")
+                        .appendParam("newPassword", "password5")
+                        .appendParam("accessToken", user2AccessToken)
+                        .done(),
+                String.class,
+                HttpMethod.PUT);
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.FORBIDDEN);
+
+        System.setProperty("nacos.core.auth.enabled", "false");
     }
 }

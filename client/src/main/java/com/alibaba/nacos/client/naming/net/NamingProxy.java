@@ -43,8 +43,10 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -107,6 +109,8 @@ public class NamingProxy implements Closeable {
     
     private ScheduledExecutorService executorService;
     
+    private int maxRetry;
+    
     public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
         
         this.securityProxy = new SecurityProxy(properties, nacosRestTemplate);
@@ -114,6 +118,9 @@ public class NamingProxy implements Closeable {
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
         this.endpoint = endpoint;
+        this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
+                String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
+        
         if (StringUtils.isNotEmpty(serverList)) {
             this.serverList = Arrays.asList(serverList.split(","));
             if (this.serverList.size() == 1) {
@@ -507,14 +514,24 @@ public class NamingProxy implements Closeable {
         
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
         
-        if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
+        if (CollectionUtils.isEmpty(servers) && StringUtils.isBlank(nacosDomain)) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
         
         NacosException exception = new NacosException();
         
-        if (servers != null && !servers.isEmpty()) {
-            
+        if (StringUtils.isNotBlank(nacosDomain)) {
+            for (int i = 0; i < maxRetry; i++) {
+                try {
+                    return callServer(api, params, body, nacosDomain, method);
+                } catch (NacosException e) {
+                    exception = e;
+                    if (NAMING_LOGGER.isDebugEnabled()) {
+                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
+                    }
+                }
+            }
+        } else {
             Random random = new Random(System.currentTimeMillis());
             int index = random.nextInt(servers.size());
             
@@ -529,19 +546,6 @@ public class NamingProxy implements Closeable {
                     }
                 }
                 index = (index + 1) % servers.size();
-            }
-        }
-        
-        if (StringUtils.isNotBlank(nacosDomain)) {
-            for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
-                try {
-                    return callServer(api, params, body, nacosDomain, method);
-                } catch (NacosException e) {
-                    exception = e;
-                    if (NAMING_LOGGER.isDebugEnabled()) {
-                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
-                    }
-                }
             }
         }
         
@@ -588,8 +592,8 @@ public class NamingProxy implements Closeable {
         if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
             url = curServer + api;
         } else {
-            if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
-                curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
+            if (!IPUtil.containsPort(curServer)) {
+                curServer = curServer + IPUtil.IP_PORT_SPLITER + serverPort;
             }
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
@@ -715,6 +719,7 @@ public class NamingProxy implements Closeable {
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NamingHttpClientManager.getInstance().shutdown();
+        SpasAdapter.freeCredentialInstance();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }

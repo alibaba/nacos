@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -32,7 +33,7 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -138,6 +139,7 @@ public class AsyncNotifyService {
                         if (task.isBeta) {
                             header.addParam("isBeta", "true");
                         }
+                        AuthHeaderUtil.addIdentityToHeader(header);
                         restTemplate.get(task.url, header, Query.EMPTY, String.class, new AsyncNotifyCallBack(task));
                     }
                 }
@@ -259,10 +261,10 @@ public class AsyncNotifyService {
                 LOGGER.error("URLEncoder encode error", e);
             }
             if (StringUtils.isBlank(tenant)) {
-                this.url = MessageFormat.format(URL_PATTERN, target, ApplicationUtils.getContextPath(), dataId, group);
+                this.url = MessageFormat.format(URL_PATTERN, target, EnvUtil.getContextPath(), dataId, group);
             } else {
                 this.url = MessageFormat
-                        .format(URL_PATTERN_TENANT, target, ApplicationUtils.getContextPath(), dataId, group, tenant);
+                        .format(URL_PATTERN_TENANT, target, EnvUtil.getContextPath(), dataId, group, tenant);
             }
             if (StringUtils.isNotEmpty(tag)) {
                 url = url + "&tag=" + tag;

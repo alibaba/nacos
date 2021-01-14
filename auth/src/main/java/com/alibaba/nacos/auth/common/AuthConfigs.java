@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.common;
 
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import io.jsonwebtoken.io.Decoders;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -53,7 +53,7 @@ public class AuthConfigs {
     /**
      * Token validity time(seconds).
      */
-    @Value("${nacos.core.auth.default.token.expire.seconds:1800}")
+    @Value("${nacos.core.auth.default.token.expire.seconds:18000}")
     private long tokenValidityInSeconds;
     
     /**
@@ -61,6 +61,15 @@ public class AuthConfigs {
      */
     @Value("${nacos.core.auth.system.type:}")
     private String nacosAuthSystemType;
+    
+    @Value("${nacos.core.auth.server.identity.key:}")
+    private String serverIdentityKey;
+    
+    @Value(("${nacos.core.auth.server.identity.value:}"))
+    private String serverIdentityValue;
+    
+    @Value(("${nacos.core.auth.enable.userAgentAuthWhite:true}"))
+    private boolean enableUserAgentAuthWhite;
     
     public byte[] getSecretKeyBytes() {
         if (secretKeyBytes == null) {
@@ -77,6 +86,18 @@ public class AuthConfigs {
         return nacosAuthSystemType;
     }
     
+    public String getServerIdentityKey() {
+        return serverIdentityKey;
+    }
+    
+    public String getServerIdentityValue() {
+        return serverIdentityValue;
+    }
+    
+    public boolean isEnableUserAgentAuthWhite() {
+        return enableUserAgentAuthWhite;
+    }
+    
     /**
      * auth function is open.
      *
@@ -89,7 +110,7 @@ public class AuthConfigs {
             return BooleanUtils.toBoolean(enabled);
         }
         return BooleanUtils
-                .toBoolean(ApplicationUtils.getProperty("nacos.core.auth.enabled", "false"));
+                .toBoolean(EnvUtil.getProperty("nacos.core.auth.enabled", "false"));
     }
     
     /**
@@ -102,7 +123,7 @@ public class AuthConfigs {
             return cachingEnabled;
         }
         return BooleanUtils
-                .toBoolean(ApplicationUtils.getProperty("nacos.core.auth.caching.enabled", "true"));
+                .toBoolean(EnvUtil.getProperty("nacos.core.auth.caching.enabled", "true"));
     }
     
     @JustForTest

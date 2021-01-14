@@ -27,6 +27,11 @@ import java.io.PrintStream;
  */
 public class ExceptionUtil {
     
+    /**
+     * Represents an empty exception, that is, no exception occurs, only a constant.
+     */
+    public static final Exception NONE_EXCEPTION = new RuntimeException("");
+    
     public static String getAllExceptionMsg(Throwable e) {
         Throwable cause = e;
         StringBuilder strBuilder = new StringBuilder();

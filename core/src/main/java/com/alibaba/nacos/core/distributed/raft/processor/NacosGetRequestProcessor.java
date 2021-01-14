@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft.processor;
 
+import com.alibaba.nacos.consistency.ProtoMessageUtil;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
@@ -27,6 +28,7 @@ import com.alipay.sofa.jraft.rpc.RpcProcessor;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Deprecated
 public class NacosGetRequestProcessor extends AbstractProcessor implements RpcProcessor<GetRequest> {
     
     private static final String INTEREST_NAME = GetRequest.class.getName();
@@ -40,7 +42,7 @@ public class NacosGetRequestProcessor extends AbstractProcessor implements RpcPr
     
     @Override
     public void handleRequest(final RpcContext rpcCtx, GetRequest request) {
-        handleRequest(server, request.getGroup(), rpcCtx, request);
+        handleRequest(server, request.getGroup(), rpcCtx, ProtoMessageUtil.convertToReadRequest(request));
     }
     
     @Override
