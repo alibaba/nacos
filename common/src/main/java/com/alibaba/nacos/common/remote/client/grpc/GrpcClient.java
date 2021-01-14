@@ -159,9 +159,8 @@ public abstract class GrpcClient extends RpcClient {
                             }
                             
                         } catch (Exception e) {
-                            LoggerUtils.printIfErrorEnabled(LOGGER, e.getMessage(),
-                                    "[{}]Handle server request exception: {}", GrpcClient.this.getName(),
-                                    payload.toString());
+                            LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Handle server request exception: {}",
+                                    GrpcClient.this.getName(), payload.toString(), e.getMessage());
                             sendResponse(request.getRequestId(), false);
                         }
                         
@@ -169,7 +168,7 @@ public abstract class GrpcClient extends RpcClient {
                     
                 } catch (Exception e) {
                     
-                    LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Error tp process server push response: {}",
+                    LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Error to process server push response: {}",
                             GrpcClient.this.getName(), payload.getBody().getValue().toStringUtf8());
                 }
             }
@@ -183,7 +182,7 @@ public abstract class GrpcClient extends RpcClient {
                             GrpcClient.this.getName(), throwable);
                     switchServerAsync();
                 } else {
-                    LoggerUtils.printIfWarnEnabled(LOGGER, "[{}]ignore error event,isRunning:{},isAbandon={}",
+                    LoggerUtils.printIfWarnEnabled(LOGGER, "[{}]Ignore error event,isRunning:{},isAbandon={}",
                             GrpcClient.this.getName(), isRunning, isAbandon);
                 }
                 
@@ -200,7 +199,7 @@ public abstract class GrpcClient extends RpcClient {
                         switchServerAsync();
                     }
                 } else {
-                    LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]ignore complete event,isRunning:{},isAbandon={}",
+                    LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]Ignore complete event,isRunning:{},isAbandon={}",
                             GrpcClient.this.getName(), isRunning, isAbandon);
                 }
                 

@@ -145,12 +145,10 @@ public class GrpcConnection extends Connection {
             @Override
             public void onSuccess(@NullableDecl Payload grpcResponse) {
                 Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
-                if (response != null && response.isSuccess()) {
+                if (response != null) {
                     requestCallBack.onResponse(response);
                 } else {
-                    requestCallBack.onException(new NacosException(
-                            (response == null) ? ResponseCode.FAIL.getCode() : response.getErrorCode(),
-                            (response == null) ? "null" : response.getMessage()));
+                    requestCallBack.onException(new NacosException(ResponseCode.FAIL.getCode(), "response is null"));
                 }
             }
             

@@ -54,9 +54,6 @@ import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
-import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
@@ -118,11 +115,14 @@ public class ClientWorker implements Closeable {
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
         group = null2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
-        for (Listener listener : listeners) {
-            cache.addListener(listener);
-        }
-        if (!cache.isSync()) {
+        synchronized (cache) {
+            
+            for (Listener listener : listeners) {
+                cache.addListener(listener);
+            }
+            cache.setSync(false);
             agent.notifyListenConfig();
+            
         }
     }
     
@@ -143,9 +143,8 @@ public class ClientWorker implements Closeable {
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
-            if (!cache.isSync()) {
-                agent.notifyListenConfig();
-            }
+            cache.setSync(false);
+            agent.notifyListenConfig();
         }
         
     }
@@ -169,10 +168,8 @@ public class ClientWorker implements Closeable {
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
-            // if current cache is already at listening status,do not notify.
-            if (!cache.isSync()) {
-                agent.notifyListenConfig();
-            }
+            cache.setSync(false);
+            agent.notifyListenConfig();
         }
         
     }
@@ -693,34 +690,6 @@ public class ClientWorker implements Closeable {
                 }
             }, 0L, TimeUnit.MILLISECONDS);
             
-            // register server change subscriber.
-            NotifyCenter.registerSubscriber(new Subscriber() {
-                @Override
-                public void onEvent(Event event) {
-                    for (RpcClient rpcClient : rpcClientMap.values()) {
-                        RpcClient.ServerInfo currentServer = rpcClient.getCurrentServer();
-                        if (currentServer != null) {
-                            List<String> serverUrls = serverListManager.getServerUrls();
-                            String currentServerIp = currentServer.getServerIp();
-                            int currentServerPort = currentServer.getServerPort() - rpcClient.rpcPortOffset();
-                            String currentAddress = currentServerIp + ":" + currentServerPort;
-                            for (String server : serverUrls) {
-                                if (server.equals(currentAddress)) {
-                                    rpcClient.switchServerAsync();
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                    
-                }
-                
-                @Override
-                public Class<? extends Event> subscribeType() {
-                    return ServerlistChangeEvent.class;
-                }
-            });
-            
         }
         
         @Override
@@ -801,11 +770,14 @@ public class ClientWorker implements Closeable {
                                 if (!changeKeys.contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group,
                                         cacheData.getTenant()))) {
                                     //sync:cache data md5 = server md5 && cache data md5 = all listeners md5.
-                                    if (cacheData.checkListenersMd5Consistent()) {
-                                        cacheData.setSync(true);
-                                    } else {
-                                        cacheData.checkListenerMd5();
+                                    synchronized (cacheData) {
+                                        if (cacheData.checkListenersMd5Consistent()) {
+                                            cacheData.setSync(true);
+                                            continue;
+                                        }
                                     }
+                                    
+                                    cacheData.checkListenerMd5();
                                 }
                                 
                                 cacheData.setInitializing(false);
