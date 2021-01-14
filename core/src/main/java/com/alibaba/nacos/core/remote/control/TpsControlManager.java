@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.control;
 
+import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -27,6 +28,9 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * tps control manager.
@@ -39,10 +43,20 @@ public class TpsControlManager extends Subscriber<TpsControlRuleChangeEvent> {
     
     private final Map<String, TpsControlPoint> points = new ConcurrentHashMap<String, TpsControlPoint>(16);
     
+    private static ScheduledExecutorService executorService = ExecutorFactory
+            .newSingleScheduledExecutorService(new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread thread = new Thread(r, "nacos.core.remote.tps.control.reporter");
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            });
+    
     public TpsControlManager() {
         NotifyCenter.registerToPublisher(TpsControlRuleChangeEvent.class, NotifyCenter.ringBufferSize);
         NotifyCenter.registerSubscriber(this);
-        new Thread(new TpsMonitorReportor()).start();
+        executorService.scheduleWithFixedDelay(new TpsMonitorReporter(), 0, 900, TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -99,56 +113,53 @@ public class TpsControlManager extends Subscriber<TpsControlRuleChangeEvent> {
         return TpsControlRuleChangeEvent.class;
     }
     
-    
-    class TpsMonitorReportor implements Runnable {
+    class TpsMonitorReporter implements Runnable {
         
         long lastSecond = 0L;
         
         @Override
         public void run() {
-            while (true) {
-                try {
-                    
-                    try {
-                        Thread.sleep(900L);
-                    } catch (InterruptedException e) {
-                        //Do nothing.
+            try {
+                long now = System.currentTimeMillis();
+                StringBuilder stringBuilder = new StringBuilder();
+                Set<Map.Entry<String, TpsControlPoint>> entries = points.entrySet();
+                for (Map.Entry<String, TpsControlPoint> entry : entries) {
+                    String point = entry.getKey();
+                    TpsControlPoint value = entry.getValue();
+                    // last second
+                    TpsRecorder.TpsSlot pointSlot = value.getTpsRecorder().getPoint(now - 1000L);
+                    if (pointSlot == null) {
+                        break;
                     }
-                    long now = System.currentTimeMillis();
-                    StringBuilder stringBuilder = new StringBuilder();
-                    Set<Map.Entry<String, TpsControlPoint>> entries = points.entrySet();
-                    for (Map.Entry<String, TpsControlPoint> entry : entries) {
-                        String point = entry.getKey();
-                        TpsControlPoint value = entry.getValue();
-                        // last second
-                        TpsRecorder.TpsSlot pointSlot = value.getTpsRecorder().getPoint(now - 1000L);
-                        if (pointSlot == null || (lastSecond != 0L && lastSecond == pointSlot.second)) {
-                            break;
+                    if (lastSecond != 0L && lastSecond == pointSlot.second) {
+                        break;
+                    }
+                    stringBuilder.append(point).append("|").append("point|").append(pointSlot.second).append("|")
+                            .append(pointSlot.tps).append("\n");
+                    for (Map.Entry<String, TpsRecorder> entryIp : value.tpsRecordForIp.entrySet()) {
+                        String clientIp = entryIp.getKey();
+                        TpsRecorder ipRecord = entryIp.getValue();
+                        TpsRecorder.TpsSlot slotIp = ipRecord.getPoint(now - 1000L);
+                        if (slotIp == null) {
+                            continue;
                         }
-                        stringBuilder.append(point).append("|").append("point|").append(pointSlot.second).append("|")
-                                .append(pointSlot.tps).append("\n");
-                        for (Map.Entry<String, TpsRecorder> entryIp : value.tpsRecordForIp.entrySet()) {
-                            String clientIp = entryIp.getKey();
-                            TpsRecorder ipRecord = entryIp.getValue();
-                            TpsRecorder.TpsSlot slotIp = ipRecord.getPoint(now - 1000L);
-                            if (slotIp == null || (lastSecond != 0L && lastSecond == slotIp.second)) {
-                                continue;
-                            }
-                            stringBuilder.append(point).append("|").append("ip|").append(clientIp).append("|")
-                                    .append(pointSlot.second).append("|").append(pointSlot.tps).append("\n");
+                        if (lastSecond != 0L && lastSecond == slotIp.second) {
+                            continue;
                         }
-                        lastSecond = pointSlot.second;
+                        stringBuilder.append(point).append("|").append("ip|").append(clientIp).append("|")
+                                .append(pointSlot.second).append("|").append(pointSlot.tps).append("\n");
                     }
-                    
-                    if (stringBuilder.length() > 0) {
-                        Loggers.TPS_CONTROL_DIGEST.info("Tps reporting...\n" + stringBuilder.toString());
-                    }
-                } catch (Throwable throwable) {
-                    Loggers.TPS_CONTROL_DIGEST.error("Tps reporting error", throwable);
-                    
+                    lastSecond = pointSlot.second;
                 }
                 
+                if (stringBuilder.length() > 0) {
+                    Loggers.TPS_CONTROL_DIGEST.info("Tps reporting...\n" + stringBuilder.toString());
+                }
+            } catch (Throwable throwable) {
+                Loggers.TPS_CONTROL_DIGEST.error("Tps reporting error", throwable);
+                
             }
+            
         }
     }
     
