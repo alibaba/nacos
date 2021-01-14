@@ -83,6 +83,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
         if (null == client) {
             return true;
         }
+        client.release();
         NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
         return true;
     }
@@ -90,6 +91,11 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     @Override
     public Client getClient(String clientId) {
         return clients.get(clientId);
+    }
+    
+    @Override
+    public boolean contains(String clientId) {
+        return clients.containsKey(clientId);
     }
     
     @Override

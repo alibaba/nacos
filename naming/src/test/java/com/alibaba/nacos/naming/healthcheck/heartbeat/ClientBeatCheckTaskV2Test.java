@@ -17,11 +17,12 @@
 package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -47,7 +48,7 @@ public class ClientBeatCheckTaskV2Test {
     
     private static final int PORT = 10000;
     
-    private static final String CLIENT_ID = IP + ":" + PORT;
+    private static final String CLIENT_ID = IP + IPUtil.IP_PORT_SPLITER + PORT + "#true";
     
     private static final String SERVICE_NAME = "service";
     
@@ -139,7 +140,8 @@ public class ClientBeatCheckTaskV2Test {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
         metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000L);
-        when(namingMetadataManager.getInstanceMetadata(service, IP)).thenReturn(Optional.of(metadata));
+        String address = IP + IPUtil.IP_PORT_SPLITER + PORT;
+        when(namingMetadataManager.getInstanceMetadata(service, address)).thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         beatCheckTask.run();
@@ -147,9 +149,9 @@ public class ClientBeatCheckTaskV2Test {
         assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
     }
     
-    private HeartBeatInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {
+    private HealthCheckInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
-        HeartBeatInstancePublishInfo instance = new HeartBeatInstancePublishInfo(IP, PORT);
+        HealthCheckInstancePublishInfo instance = new HealthCheckInstancePublishInfo(IP, PORT);
         instance.setHealthy(healthy);
         instance.setLastHeartBeatTime(heartbeatTime);
         client.addServiceInstance(service, instance);

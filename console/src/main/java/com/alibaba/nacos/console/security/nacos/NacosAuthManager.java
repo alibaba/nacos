@@ -156,7 +156,7 @@ public class NacosAuthManager implements AuthManager {
             String password = request.getParameter("password");
             bearerToken = resolveTokenFromUser(userName, password);
         }
-    
+        
         return bearerToken;
     }
     

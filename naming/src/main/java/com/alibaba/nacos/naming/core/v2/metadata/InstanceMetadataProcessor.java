@@ -109,7 +109,6 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     private void deleteInstanceMetadata(MetadataOperation<InstanceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         namingMetadataManager.removeInstanceMetadata(service, op.getTag());
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, false));
     }
     
     @Override

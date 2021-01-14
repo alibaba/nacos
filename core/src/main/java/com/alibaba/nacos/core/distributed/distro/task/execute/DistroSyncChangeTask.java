@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.distro.task.execute;
 
 import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
@@ -29,25 +30,51 @@ import com.alibaba.nacos.core.utils.Loggers;
  */
 public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
     
+    private static final DataOperation OPERATION = DataOperation.CHANGE;
+    
     public DistroSyncChangeTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
         super(distroKey, distroComponentHolder);
     }
     
     @Override
+    protected DataOperation getDataOperation() {
+        return OPERATION;
+    }
+    
+    @Override
     protected boolean doExecute() {
         String type = getDistroKey().getResourceType();
-        DistroData distroData = getDistroComponentHolder().findDataStorage(type).getDistroData(getDistroKey());
-        if (null != distroData) {
-            distroData.setType(DataOperation.CHANGE);
-            return getDistroComponentHolder().findTransportAgent(type)
-                    .syncData(distroData, getDistroKey().getTargetServer());
+        DistroData distroData = getDistroData(type);
+        if (null == distroData) {
+            Loggers.DISTRO.warn("[DISTRO] {} with null data to sync, skip", toString());
+            return true;
         }
-        Loggers.DISTRO.warn("[DISTRO-END] {} with null data to sync, skip", toString());
-        return false;
+        return getDistroComponentHolder().findTransportAgent(type)
+                .syncData(distroData, getDistroKey().getTargetServer());
+    }
+    
+    @Override
+    protected void doExecuteWithCallback(DistroCallback callback) {
+        String type = getDistroKey().getResourceType();
+        DistroData distroData = getDistroData(type);
+        if (null == distroData) {
+            Loggers.DISTRO.warn("[DISTRO] {} with null data to sync, skip", toString());
+            return;
+        }
+        getDistroComponentHolder().findTransportAgent(type)
+                .syncData(distroData, getDistroKey().getTargetServer(), callback);
     }
     
     @Override
     public String toString() {
         return "DistroSyncChangeTask for " + getDistroKey().toString();
+    }
+    
+    private DistroData getDistroData(String type) {
+        DistroData result = getDistroComponentHolder().findDataStorage(type).getDistroData(getDistroKey());
+        if (null != result) {
+            result.setType(OPERATION);
+        }
+        return result;
     }
 }

@@ -52,9 +52,9 @@ public abstract class Response {
     }
     
     /**
-     * Check Response  is Successd.
+     * Check Response  is Successed.
      *
-     * @return
+     * @return success or not.
      */
     public boolean isSuccess() {
         return this.resultCode == ResponseCode.SUCCESS.getCode();

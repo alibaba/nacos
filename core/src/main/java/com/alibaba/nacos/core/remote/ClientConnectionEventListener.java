@@ -30,7 +30,7 @@ import javax.annotation.PostConstruct;
 public abstract class ClientConnectionEventListener {
     
     /**
-     * lisnter name.
+     * listener name.
      */
     private String name;
     

@@ -17,15 +17,12 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.grpc.auto.Payload;
-import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ReflectUtils;
-import com.alibaba.nacos.common.utils.UuidUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.Attributes;
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -48,17 +45,15 @@ import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * Grpc implementation as  a rpc server.
+ * Grpc implementation as a rpc server.
  *
  * @author liuzunfei
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
 public abstract class BaseGrpcServer extends BaseRpcServer {
-    
-    private static Executor grpcExecutor;
     
     private Server server;
     
@@ -79,9 +74,6 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     @Autowired
     private ConnectionManager connectionManager;
     
-    @Autowired
-    private RequestHandlerRegistry requestHandlerRegistry;
-    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
@@ -90,8 +82,8 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     @Override
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
-    
-        // server intercetpor to set connection id.
+        
+        // server interceptor to set connection id.
         ServerInterceptor serverInterceptor = new ServerInterceptor() {
             @Override
             public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
@@ -108,38 +100,43 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 return Contexts.interceptCall(ctx, call, headers, next);
             }
         };
-    
+        
         addServices(handlerRegistry, serverInterceptor);
-    
-        grpcExecutor = ExecutorFactory.Managed
-                .newCustomerThreadExecutor("core", Runtime.getRuntime().availableProcessors(),
-                        Runtime.getRuntime().availableProcessors() * 4, 10000,
-                        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-executor-%d").build());
-        server = ServerBuilder.forPort(getServicePort()).executor(grpcExecutor)
-                .fallbackHandlerRegistry(handlerRegistry).addTransportFilter(new ServerTransportFilter() {
+        
+        server = ServerBuilder.forPort(getServicePort()).executor(getRpcExecutor()).fallbackHandlerRegistry(handlerRegistry)
+                .addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
                         InetSocketAddress remoteAddress = (InetSocketAddress) transportAttrs
                                 .get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
                         InetSocketAddress localAddress = (InetSocketAddress) transportAttrs
                                 .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
-                        String remoteIp = remoteAddress.getAddress().getHostAddress().toString();
                         int remotePort = remoteAddress.getPort();
                         int localPort = localAddress.getPort();
-                        Attributes attrWraper = transportAttrs.toBuilder()
-                                .set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid()).set(TRANS_KEY_CLIENT_IP, remoteIp)
-                                .set(TRANS_KEY_CLIENT_PORT, remotePort).set(TRANS_KEY_LOCAL_PORT, localPort).build();
-                        String connectionId = attrWraper.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info(" connection transportReady,connectionId = {} ", connectionId);
-                        return attrWraper;
-    
+                        String remoteIp = remoteAddress.getAddress().getHostAddress();
+                        Attributes attrWrapper = transportAttrs.toBuilder()
+                                .set(TRANS_KEY_CONN_ID, System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort)
+                                .set(TRANS_KEY_CLIENT_IP, remoteIp).set(TRANS_KEY_CLIENT_PORT, remotePort)
+                                .set(TRANS_KEY_LOCAL_PORT, localPort).build();
+                        String connectionId = attrWrapper.get(TRANS_KEY_CONN_ID);
+                        Loggers.REMOTE_DIGEST.info("Connection transportReady,connectionId = {} ", connectionId);
+                        return attrWrapper;
+                        
                     }
-                
+                    
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
-                        String connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
-                        Loggers.REMOTE.info(" connection transportTerminated,connectionId = {} ", connectionId);
-                        connectionManager.unregister(connectionId);
+                        String connectionId = null;
+                        try {
+                            connectionId = transportAttrs.get(TRANS_KEY_CONN_ID);
+                        } catch (Exception e) {
+                            // Ignore
+                        }
+                        if (StringUtils.isNotBlank(connectionId)) {
+                            Loggers.REMOTE_DIGEST
+                                    .info("Connection transportTerminated,connectionId = {} ", connectionId);
+                            connectionManager.unregister(connectionId);
+                        }
                     }
                 }).build();
         server.start();
@@ -147,44 +144,42 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     
     private Channel getInternalChannel(ServerCall serverCall) {
         ServerStream serverStream = (ServerStream) ReflectUtils.getFieldValue(serverCall, "stream");
-        Channel channel = (Channel) ReflectUtils.getFieldValue(serverStream, "channel");
-        return channel;
+        return (Channel) ReflectUtils.getFieldValue(serverStream, "channel");
     }
     
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
-    
+        
         // unary common call register.
-        final MethodDescriptor<Payload, Payload> unarypayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
+        final MethodDescriptor<Payload, Payload> unaryPayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.UNARY)
                 .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME))
-                .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
+                .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-    
+        
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
                 .asyncUnaryCall((request, responseObserver) -> {
                     com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
-                            .setConnectionId(CONTEXT_KEY_CONN_ID.get()).setClientIp(CONTEXT_KEY_CONN_CLIENT_IP.get())
-                            .setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get()).build();
+                            .setConnectionId(CONTEXT_KEY_CONN_ID.get())
+                            .setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get())
+                            .setClientIp(CONTEXT_KEY_CONN_CLIENT_IP.get()).build();
                     Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
                     grpcCommonRequestAcceptor.request(requestNew, responseObserver);
                 });
-    
+        
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)
-                .addMethod(unarypayloadMethod, payloadHandler).build();
+                .addMethod(unaryPayloadMethod, payloadHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
-    
+        
         // bi stream register.
-        final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls
-                .asyncBidiStreamingCall((responseObserver) -> {
-                    return grpcBiStreamRequestAcceptor.requestBiStream(responseObserver);
-                });
-    
+        final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls.asyncBidiStreamingCall(
+                (responseObserver) -> grpcBiStreamRequestAcceptor.requestBiStream(responseObserver));
+        
         final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor
                         .generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-    
+        
         final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
                 .builder(REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
@@ -192,11 +187,18 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     }
     
     @Override
-    public void shundownServer() {
+    public void shutdownServer() {
         if (server != null) {
             server.shutdownNow();
         }
     }
+    
+    /**
+     * get rpc executor.
+     *
+     * @return executor.
+     */
+    public abstract ThreadPoolExecutor getRpcExecutor();
     
     static final Attributes.Key<String> TRANS_KEY_CONN_ID = Attributes.Key.create("conn_id");
     

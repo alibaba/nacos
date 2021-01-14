@@ -20,20 +20,16 @@ import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
 
 /**
- * abstrat rpc server .
+ * abstract rpc server .
  *
  * @author liuzunfei
  * @version $Id: BaseRpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
  */
 public abstract class BaseRpcServer {
-    
-    @Autowired
-    private ConnectionManager connectionManager;
     
     static {
         PayloadRegistry.init();
@@ -44,56 +40,52 @@ public abstract class BaseRpcServer {
      */
     @PostConstruct
     public void start() throws Exception {
-        
-        Loggers.REMOTE.info("Nacos {} Rpc server starting at port {}", getClass().getSimpleName(),
-                (EnvUtil.getPort() + rpcPortOffset()));
+        String serverName = getClass().getSimpleName();
+        Loggers.REMOTE.info("Nacos {} Rpc server starting at port {}", serverName, getServicePort());
         
         startServer();
         
-        Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", getClass().getSimpleName(),
-                (EnvUtil.getPort() + rpcPortOffset()));
+        Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", serverName, getServicePort());
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                Loggers.REMOTE.info("Nacos {} Rpc server stopping", getClass().getSimpleName());
+                Loggers.REMOTE.info("Nacos {} Rpc server stopping", serverName);
                 try {
                     BaseRpcServer.this.stopServer();
-                    Loggers.REMOTE.info("Nacos {} Rpc server stopped successfully...",
-                            BaseRpcServer.this.getClass().getSimpleName());
+                    Loggers.REMOTE.info("Nacos {} Rpc server stopped successfully...", serverName);
                 } catch (Exception e) {
-                    Loggers.REMOTE
-                            .error("Nacos {} Rpc server stopped fail...", BaseRpcServer.this.getClass().getSimpleName(),
-                                    e);
+                    Loggers.REMOTE.error("Nacos {} Rpc server stopped fail...", serverName, e);
                 }
             }
         });
+
     }
     
     /**
      * get connection type.
      *
-     * @return
+     * @return connection type.
      */
     public abstract ConnectionType getConnectionType();
     
     /**
      * Start sever.
      *
-     * @throws Exception excetpion throw if start server fail.
+     * @throws Exception exception throw if start server fail.
      */
     public abstract void startServer() throws Exception;
     
     /**
      * the increase offset of nacos server port for rpc server port.
      *
-     * @return
+     * @return delta port offset of main port.
      */
     public abstract int rpcPortOffset();
     
     /**
      * get service port.
      *
-     * @return
+     * @return service port.
      */
     public int getServicePort() {
         return EnvUtil.getPort() + rpcPortOffset();
@@ -105,14 +97,12 @@ public abstract class BaseRpcServer {
      * @throws Exception throw if stop server fail.
      */
     public final void stopServer() throws Exception {
-        shundownServer();
+        shutdownServer();
     }
     
     /**
      * the increase offset of nacos server port for rpc server port.
-     *
-     * @return
      */
-    public abstract void shundownServer();
-    
+    public abstract void shutdownServer();
+
 }

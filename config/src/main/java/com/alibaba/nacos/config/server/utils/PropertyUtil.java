@@ -38,8 +38,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     private static boolean isHealthCheck = true;
     
-    private static boolean pushContent = false;
-    
     private static int maxContent = 10 * 1024 * 1024;
     
     /**
@@ -102,24 +100,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
      * Inline storage value = ${nacos.standalone}.
      */
     private static boolean embeddedStorage = EnvUtil.getStandaloneMode();
-    
-    /**
-     * Getter method for property <tt>pushContent</tt>.
-     *
-     * @return property value of pushContent
-     */
-    public static boolean isPushContent() {
-        return pushContent;
-    }
-    
-    /**
-     * Setter method for property <tt>pushContent</tt>.
-     *
-     * @param pushContent value to be assigned to property pushContent
-     */
-    public static void setPushContent(boolean pushContent) {
-        PropertyUtil.pushContent = pushContent;
-    }
     
     public static int getNotifyConnectTimeout() {
         return notifyConnectTimeout;
@@ -292,9 +272,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDefaultMaxAggrSize(getInt("defaultMaxAggrSize", defaultMaxAggrSize));
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
-            setPushContent(getBoolean("isPushContent", false));
-            LOGGER.info("isPushContent:{}", pushContent);
-    
             // External data sources are used by default in cluster mode
             setUseExternalDB("mysql".equalsIgnoreCase(getString("spring.datasource.platform", "")));
             

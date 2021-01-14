@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.api.grpc.auto;
 
-import static io.grpc.MethodDescriptor.generateFullMethodName;
-import static io.grpc.stub.ClientCalls.asyncServerStreamingCall;
-import static io.grpc.stub.ClientCalls.blockingServerStreamingCall;
-import static io.grpc.stub.ServerCalls.asyncServerStreamingCall;
-import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
+import io.grpc.MethodDescriptor;
+import io.grpc.stub.ClientCalls;
+import io.grpc.stub.ServerCalls;
 
 /**
+ *
  */
 @javax.annotation.Generated(value = "by gRPC proto compiler (version 1.20.0)", comments = "Source: nacos_grpc_service.proto")
 public final class RequestStreamGrpc {
@@ -43,8 +42,8 @@ public final class RequestStreamGrpc {
             synchronized (RequestStreamGrpc.class) {
                 if ((getRequestStreamMethod = RequestStreamGrpc.getRequestStreamMethod) == null) {
                     RequestStreamGrpc.getRequestStreamMethod = getRequestStreamMethod = io.grpc.MethodDescriptor.<com.alibaba.nacos.api.grpc.auto.Payload, com.alibaba.nacos.api.grpc.auto.Payload>newBuilder()
-                            .setType(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
-                            .setFullMethodName(generateFullMethodName("RequestStream", "requestStream"))
+                            .setType(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING).setFullMethodName(
+                                    MethodDescriptor.generateFullMethodName("RequestStream", "requestStream"))
                             .setSampledToLocalTracing(true).setRequestMarshaller(io.grpc.protobuf.ProtoUtils
                                     .marshaller(com.alibaba.nacos.api.grpc.auto.Payload.getDefaultInstance()))
                             .setResponseMarshaller(io.grpc.protobuf.ProtoUtils
@@ -78,6 +77,7 @@ public final class RequestStreamGrpc {
     }
     
     /**
+     *
      */
     public static abstract class RequestStreamImplBase implements io.grpc.BindableService {
         
@@ -88,19 +88,20 @@ public final class RequestStreamGrpc {
          */
         public void requestStream(com.alibaba.nacos.api.grpc.auto.Payload request,
                 io.grpc.stub.StreamObserver<com.alibaba.nacos.api.grpc.auto.Payload> responseObserver) {
-            asyncUnimplementedUnaryCall(getRequestStreamMethod(), responseObserver);
+            ServerCalls.asyncUnimplementedUnaryCall(getRequestStreamMethod(), responseObserver);
         }
-    
+        
         @java.lang.Override
         public final io.grpc.ServerServiceDefinition bindService() {
             return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor()).addMethod(getRequestStreamMethod(),
-                    asyncServerStreamingCall(
+                    ServerCalls.asyncServerStreamingCall(
                             new MethodHandlers<com.alibaba.nacos.api.grpc.auto.Payload, com.alibaba.nacos.api.grpc.auto.Payload>(
                                     this, METHODID_REQUEST_STREAM))).build();
         }
     }
     
     /**
+     *
      */
     public static final class RequestStreamStub extends io.grpc.stub.AbstractStub<RequestStreamStub> {
         
@@ -111,7 +112,7 @@ public final class RequestStreamGrpc {
         private RequestStreamStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             super(channel, callOptions);
         }
-    
+        
         @java.lang.Override
         protected RequestStreamStub build(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             return new RequestStreamStub(channel, callOptions);
@@ -124,12 +125,14 @@ public final class RequestStreamGrpc {
          */
         public void requestStream(com.alibaba.nacos.api.grpc.auto.Payload request,
                 io.grpc.stub.StreamObserver<com.alibaba.nacos.api.grpc.auto.Payload> responseObserver) {
-            asyncServerStreamingCall(getChannel().newCall(getRequestStreamMethod(), getCallOptions()), request,
-                    responseObserver);
+            ClientCalls
+                    .asyncServerStreamingCall(getChannel().newCall(getRequestStreamMethod(), getCallOptions()), request,
+                            responseObserver);
         }
     }
     
     /**
+     *
      */
     public static final class RequestStreamBlockingStub extends io.grpc.stub.AbstractStub<RequestStreamBlockingStub> {
         
@@ -140,7 +143,7 @@ public final class RequestStreamGrpc {
         private RequestStreamBlockingStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             super(channel, callOptions);
         }
-    
+        
         @java.lang.Override
         protected RequestStreamBlockingStub build(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             return new RequestStreamBlockingStub(channel, callOptions);
@@ -153,11 +156,13 @@ public final class RequestStreamGrpc {
          */
         public java.util.Iterator<com.alibaba.nacos.api.grpc.auto.Payload> requestStream(
                 com.alibaba.nacos.api.grpc.auto.Payload request) {
-            return blockingServerStreamingCall(getChannel(), getRequestStreamMethod(), getCallOptions(), request);
+            return ClientCalls
+                    .blockingServerStreamingCall(getChannel(), getRequestStreamMethod(), getCallOptions(), request);
         }
     }
     
     /**
+     *
      */
     public static final class RequestStreamFutureStub extends io.grpc.stub.AbstractStub<RequestStreamFutureStub> {
         
@@ -168,7 +173,7 @@ public final class RequestStreamGrpc {
         private RequestStreamFutureStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             super(channel, callOptions);
         }
-    
+        
         @java.lang.Override
         protected RequestStreamFutureStub build(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
             return new RequestStreamFutureStub(channel, callOptions);
@@ -188,7 +193,7 @@ public final class RequestStreamGrpc {
             this.serviceImpl = serviceImpl;
             this.methodId = methodId;
         }
-    
+        
         @java.lang.Override
         @java.lang.SuppressWarnings("unchecked")
         public void invoke(Req request, io.grpc.stub.StreamObserver<Resp> responseObserver) {
@@ -201,7 +206,7 @@ public final class RequestStreamGrpc {
                     throw new AssertionError();
             }
         }
-    
+        
         @java.lang.Override
         @java.lang.SuppressWarnings("unchecked")
         public io.grpc.stub.StreamObserver<Req> invoke(io.grpc.stub.StreamObserver<Resp> responseObserver) {
@@ -217,12 +222,12 @@ public final class RequestStreamGrpc {
         
         RequestStreamBaseDescriptorSupplier() {
         }
-    
+        
         @java.lang.Override
         public com.google.protobuf.Descriptors.FileDescriptor getFileDescriptor() {
             return com.alibaba.nacos.api.grpc.auto.NacosGrpcService.getDescriptor();
         }
-    
+        
         @java.lang.Override
         public com.google.protobuf.Descriptors.ServiceDescriptor getServiceDescriptor() {
             return getFileDescriptor().findServiceByName("RequestStream");
@@ -243,7 +248,7 @@ public final class RequestStreamGrpc {
         RequestStreamMethodDescriptorSupplier(String methodName) {
             this.methodName = methodName;
         }
-    
+        
         @java.lang.Override
         public com.google.protobuf.Descriptors.MethodDescriptor getMethodDescriptor() {
             return getServiceDescriptor().findMethodByName(methodName);

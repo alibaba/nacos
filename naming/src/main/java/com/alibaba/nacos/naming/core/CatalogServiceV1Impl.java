@@ -67,23 +67,7 @@ public class CatalogServiceV1Impl implements CatalogService {
         
         ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
         detailView.replace("service", serviceObject);
-        
-        List<com.alibaba.nacos.api.naming.pojo.Cluster> clusters = new ArrayList<>();
-        
-        for (com.alibaba.nacos.naming.core.Cluster cluster : detailedService.getClusterMap().values()) {
-            com.alibaba.nacos.api.naming.pojo.Cluster clusterView = new com.alibaba.nacos.api.naming.pojo.Cluster();
-            clusterView.setName(cluster.getName());
-            clusterView.setHealthChecker(cluster.getHealthChecker());
-            clusterView.setMetadata(cluster.getMetadata());
-            clusterView.setUseIPPort4Check(cluster.isUseIPPort4Check());
-            clusterView.setDefaultPort(cluster.getDefaultPort());
-            clusterView.setDefaultCheckPort(cluster.getDefaultCheckPort());
-            clusterView.setServiceName(cluster.getService().getName());
-            clusters.add(clusterView);
-        }
-        
-        detailView.replace("clusters", JacksonUtils.transferToJsonNode(clusters));
-        
+        detailView.replace("clusters", JacksonUtils.transferToJsonNode(detailedService.getClusterMap().values()));
         return detailView;
     }
     

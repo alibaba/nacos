@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSy
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -37,7 +38,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -94,7 +95,7 @@ public class AsyncNotifyService {
                     Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<NotifySingleRpcTask>();
                     
                     for (Member member : ipList) {
-                        if (MemberUtils.getSupportedConnectionType(member) == null) {
+                        if (MemberUtil.getSupportedConnectionType(member) == null) {
                             httpQueue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(),
                                     evt.isBeta));
                         } else {
@@ -166,6 +167,7 @@ public class AsyncNotifyService {
                         if (task.isBeta) {
                             header.addParam("isBeta", "true");
                         }
+                        AuthHeaderUtil.addIdentityToHeader(header);
                         restTemplate.get(task.url, header, Query.EMPTY, String.class, new AsyncNotifyCallBack(task));
                     }
                 }
@@ -343,7 +345,7 @@ public class AsyncNotifyService {
         }
         
         @Override
-        public Executor getExcutor() {
+        public Executor getExecutor() {
             return ConfigExecutor.getConfigSubServiceExecutor();
         }
         

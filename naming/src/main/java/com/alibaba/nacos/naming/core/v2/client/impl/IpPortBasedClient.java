@@ -16,14 +16,19 @@
 
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
+import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Nacos naming client based ip and port.
@@ -35,21 +40,38 @@ import java.util.Collection;
  */
 public class IpPortBasedClient extends AbstractClient {
     
+    private static final String ID_DELIMITER = "#";
+    
     private final String clientId;
     
     private final boolean ephemeral;
     
-    private final ClientBeatCheckTaskV2 beatCheckTask;
+    private final String responsibleId;
+    
+    private ClientBeatCheckTaskV2 beatCheckTask;
+    
+    private HealthCheckTaskV2 healthCheckTaskV2;
     
     public IpPortBasedClient(String clientId, boolean ephemeral) {
         this.ephemeral = ephemeral;
         this.clientId = clientId;
-        beatCheckTask = new ClientBeatCheckTaskV2(this);
-        scheduleCheckTask();
+        this.responsibleId = getResponsibleTagFromId();
+        if (ephemeral) {
+            beatCheckTask = new ClientBeatCheckTaskV2(this);
+            HealthCheckReactor.scheduleCheck(beatCheckTask);
+        } else {
+            healthCheckTaskV2 = new HealthCheckTaskV2(this);
+            HealthCheckReactor.scheduleCheck(healthCheckTaskV2);
+        }
     }
     
-    private void scheduleCheckTask() {
-        HealthCheckReactor.scheduleCheck(beatCheckTask);
+    private String getResponsibleTagFromId() {
+        int index = clientId.indexOf(IpPortBasedClient.ID_DELIMITER);
+        return clientId.substring(0, index);
+    }
+    
+    public static String getClientId(String address, boolean ephemeral) {
+        return address + ID_DELIMITER + ephemeral;
     }
     
     @Override
@@ -62,28 +84,66 @@ public class IpPortBasedClient extends AbstractClient {
         return ephemeral;
     }
     
+    public String getResponsibleId() {
+        return responsibleId;
+    }
+    
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
-        return super.addServiceInstance(service, parseToHeartBeatInstance(instancePublishInfo));
+        return super.addServiceInstance(service, parseToHealthCheckInstance(instancePublishInfo));
+    }
+    
+    @Override
+    public boolean isExpire(long currentTime) {
+        return isEphemeral() && getAllPublishedService().isEmpty()
+                && currentTime - getLastUpdatedTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
     }
     
     public Collection<InstancePublishInfo> getAllInstancePublishInfo() {
         return publishers.values();
     }
     
-    public void destroy() {
-        HealthCheckReactor.cancelCheck(beatCheckTask);
+    @Override
+    public void release() {
+        super.release();
+        if (ephemeral) {
+            HealthCheckReactor.cancelCheck(beatCheckTask);
+        } else {
+            healthCheckTaskV2.setCancelled(true);
+        }
     }
     
-    private InstancePublishInfo parseToHeartBeatInstance(InstancePublishInfo instancePublishInfo) {
-        if (instancePublishInfo instanceof HeartBeatInstancePublishInfo) {
-            return instancePublishInfo;
+    private HealthCheckInstancePublishInfo parseToHealthCheckInstance(InstancePublishInfo instancePublishInfo) {
+        if (instancePublishInfo instanceof HealthCheckInstancePublishInfo) {
+            return (HealthCheckInstancePublishInfo) instancePublishInfo;
         }
-        HeartBeatInstancePublishInfo result = new HeartBeatInstancePublishInfo();
+        HealthCheckInstancePublishInfo result = new HealthCheckInstancePublishInfo();
         result.setIp(instancePublishInfo.getIp());
         result.setPort(instancePublishInfo.getPort());
         result.setHealthy(instancePublishInfo.isHealthy());
         result.setExtendDatum(instancePublishInfo.getExtendDatum());
+        if (!ephemeral) {
+            result.initHealthCheck();
+        }
         return result;
+    }
+    
+    /**
+     * Load {@code ClientSyncData} and update current client.
+     *
+     * @param client client sync data
+     */
+    public void loadClientSyncData(ClientSyncData client) {
+        List<String> namespaces = client.getNamespaces();
+        List<String> groupNames = client.getGroupNames();
+        List<String> serviceNames = client.getServiceNames();
+        List<InstancePublishInfo> instances = client.getInstancePublishInfos();
+        for (int i = 0; i < namespaces.size(); i++) {
+            Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), ephemeral);
+            Service singleton = ServiceManager.getInstance().getSingleton(service);
+            HealthCheckInstancePublishInfo instance = parseToHealthCheckInstance(instances.get(i));
+            instance.initHealthCheck();
+            publishers.put(singleton, instance);
+        }
     }
 }

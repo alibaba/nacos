@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
@@ -27,7 +26,6 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
-import com.alibaba.nacos.common.remote.exception.ConnectionBusyException;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -62,9 +60,6 @@ public class GrpcConnection extends Connection {
         try {
             //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
             synchronized (streamObserver) {
-                if (this.isBusy()) {
-                    throw new ConnectionBusyException(this.getMetaInfo().getConnectionId() + ",connection busy.");
-                }
                 streamObserver.onNext(GrpcUtils.convert(request, wrapMeta(meta)));
             }
         } catch (Exception e) {
@@ -83,12 +78,6 @@ public class GrpcConnection extends Connection {
         meta.setConnectionId(getMetaInfo().getConnectionId());
         meta.setClientPort(getMetaInfo().getLocalPort());
         meta.setClientIp(NetUtils.localIP());
-        return meta;
-    }
-    
-    Metadata buildMeta(String type) {
-        Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP()).setType(type)
-                .setClientVersion(VersionUtils.getFullClientVersion()).build();
         return meta;
     }
     

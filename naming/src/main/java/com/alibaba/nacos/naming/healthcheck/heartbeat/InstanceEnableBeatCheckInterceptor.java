@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
-import com.alibaba.nacos.naming.core.v2.pojo.HeartBeatInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
@@ -35,7 +35,7 @@ public class InstanceEnableBeatCheckInterceptor extends AbstractBeatCheckInterce
     @Override
     public boolean intercept(InstanceBeatCheckTask object) {
         NamingMetadataManager metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
-        HeartBeatInstancePublishInfo instance = object.getInstancePublishInfo();
+        HealthCheckInstancePublishInfo instance = object.getInstancePublishInfo();
         Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(object.getService(), instance.getInstanceId());
         if (metadata.isPresent() && metadata.get().getExtendData().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
             return ConvertUtils.toBoolean(metadata.get().getExtendData().get(UtilsAndCommons.ENABLE_CLIENT_BEAT).toString());

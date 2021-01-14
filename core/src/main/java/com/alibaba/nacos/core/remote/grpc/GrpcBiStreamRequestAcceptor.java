@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
@@ -35,6 +36,8 @@ import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CHANNEL;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_IP;
@@ -63,23 +66,25 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 
                 String connectionId = CONTEXT_KEY_CONN_ID.get();
                 Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
-                String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
                 int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
-                
+                String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
                 GrpcUtils.PlainRequest plainRequest = GrpcUtils.parse(payload);
-                plainRequest.getMetadata().setClientIp(clientIp);
                 plainRequest.getMetadata().setClientPort(clientPort);
                 plainRequest.getMetadata().setConnectionId(connectionId);
                 if (plainRequest.getBody() instanceof ConnectionSetupRequest) {
-                    ConnectionSetupRequest setupRequest = (ConnectionSetupRequest) plainRequest.getBody();
                     RequestMeta metadata = plainRequest.getMetadata();
-                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(metadata.getConnectionId(),
-                            metadata.getClientIp(), metadata.getClientPort(), localPort, ConnectionType.GRPC.getType(),
-                            metadata.getClientVersion(), metadata.getLabels());
+                    Map<String, String> labels = metadata.getLabels();
+                    String appName = "-";
+                    if (labels != null && labels.containsKey(Constants.APPNAME)) {
+                        appName = labels.get(Constants.APPNAME);
+                    }
+                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(metadata.getConnectionId(), clientIp,
+                            metadata.getClientPort(), localPort, ConnectionType.GRPC.getType(),
+                            metadata.getClientVersion(), appName, metadata.getLabels());
                     
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     
-                    if (connectionManager.isOverLimit() || !ApplicationUtils.isStarted()) {
+                    if (!ApplicationUtils.isStarted() || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {
                             connection.request(new ConnectResetRequest(), buildMeta());
@@ -90,12 +95,11 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         return;
                     }
                     
-                    //if connection is already terminated,not register it.
-                    connectionManager.register(connectionId, connection);
-                    
                 } else if (plainRequest.getBody() instanceof Response) {
                     Response response = (Response) plainRequest.getBody();
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
+                    connectionManager.refreshActiveTime(plainRequest.getMetadata().getConnectionId());
+                    
                 }
                 
             }

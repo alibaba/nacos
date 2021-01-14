@@ -17,10 +17,10 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 /**
- * sdk client for grpc.
+ * gRPC client for cluster.
  *
  * @author liuzunfei
- * @version $Id: GrpcSdkClient.java, v 0.1 2020年09月07日 11:05 AM liuzunfei Exp $
+ * @version $Id: GrpcClusterClient.java, v 0.1 2020年09月07日 11:05 AM liuzunfei Exp $
  */
 public class GrpcClusterClient extends GrpcClient {
     

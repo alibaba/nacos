@@ -16,8 +16,12 @@
 
 package com.alibaba.nacos.naming.core.v2.service;
 
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
 /**
@@ -52,7 +56,9 @@ public interface ClientOperationService {
      * @param subscriber subscribe
      * @param clientId   id of client
      */
-    void subscribeService(Service service, Subscriber subscriber, String clientId);
+    default void subscribeService(Service service, Subscriber subscriber, String clientId) {
+    
+    }
     
     /**
      * Unsubscribe a service.
@@ -61,5 +67,25 @@ public interface ClientOperationService {
      * @param subscriber subscribe
      * @param clientId   id of client
      */
-    void unsubscribeService(Service service, Subscriber subscriber, String clientId);
+    default void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
+    
+    }
+    
+    /**
+     * get publish info.
+     *
+     * @param instance {@link Instance}
+     * @return {@link InstancePublishInfo}
+     */
+    default InstancePublishInfo getPublishInfo(Instance instance) {
+        InstancePublishInfo result = new InstancePublishInfo(instance.getIp(), instance.getPort());
+        if (null != instance.getMetadata() && !instance.getMetadata().isEmpty()) {
+            result.getExtendDatum().putAll(instance.getMetadata());
+        }
+        String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
+                : instance.getClusterName();
+        result.setHealthy(instance.isHealthy());
+        result.getExtendDatum().put(CommonParams.CLUSTER_NAME, clusterName);
+        return result;
+    }
 }

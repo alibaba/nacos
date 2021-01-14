@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.pojo;
 
 import com.alibaba.nacos.common.utils.IPUtil;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -27,7 +28,9 @@ import java.util.Objects;
  *
  * @author xiweng.yy
  */
-public class InstancePublishInfo {
+public class InstancePublishInfo implements Serializable {
+    
+    private static final long serialVersionUID = -74988890439616025L;
     
     private String ip;
     

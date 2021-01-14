@@ -31,8 +31,8 @@
             <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
         </RollingFile>
     
-        <RollingFile name="REMOTE_LOG_FILE" fileName="${sys:JM.LOG.PATH}/rpc.log"
-            filePattern="${sys:JM.LOG.PATH}/rpc.log.%d{yyyy-MM-dd}.%i">
+        <RollingFile name="REMOTE_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/remote.log"
+            filePattern="${sys:JM.LOG.PATH}/nacos/remote.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>
@@ -42,20 +42,6 @@
                 <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
             </Policies>
     
-            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
-        </RollingFile>
-    
-        <RollingFile name="GRPC_LOG_FILE" fileName="${sys:JM.LOG.PATH}/grpc.log"
-            filePattern="${sys:JM.LOG.PATH}/grpc.log.%d{yyyy-MM-dd}.%i">
-            <PatternLayout>
-                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
-            </PatternLayout>
-        
-            <Policies>
-                <TimeBasedTriggeringPolicy/>
-                <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
-            </Policies>
-        
             <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
         </RollingFile>
         
@@ -84,13 +70,7 @@
             additivity="false">
             <AppenderRef ref="REMOTE_LOG_FILE"/>
         </Logger>
-    
-    
-        <Logger name="com.alibaba.nacos.client.grpc" level="${sys:com.alibaba.nacos.grpc.log.level:-info}"
-                additivity="false">
-            <AppenderRef ref="GRPC_LOG_FILE"/>
-        </Logger>
-
+        
         <Logger name="com.alibaba.nacos.client.config" level="${sys:com.alibaba.nacos.config.log.level:-info}"
             additivity="false">
             <AppenderRef ref="CONFIG_LOG_FILE"/>
