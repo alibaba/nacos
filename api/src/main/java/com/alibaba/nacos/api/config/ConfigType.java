@@ -53,7 +53,12 @@ public enum ConfigType {
     /**
      * config type is "yaml".
      */
-    YAML("yaml");
+    YAML("yaml"),
+    
+    /**
+     * not a real type.
+     */
+    UNSET("unset");
     
     String type;
     
