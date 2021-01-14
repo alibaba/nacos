@@ -619,13 +619,6 @@ public class ServiceManager implements RecordListener<Service> {
         return locatedInstance;
     }
     
-    /**
-     * Locate instance.
-     *
-     * @param sources the instanceList in DistroConsistencyServiceImpl.dataStore
-     * @param target    the instance need to locate
-     * @return the located instance
-     */
     private Instance locateInstance(List<Instance> sources, Instance target) {
         if (CollectionUtils.isEmpty(sources)) {
             return null;
