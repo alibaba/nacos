@@ -57,9 +57,9 @@ public @interface NacosConfigListener {
     /**
      * Nacos Config type.
      *
-     * @return "properties"
+     * @return default value is {@link ConfigType#UNSET}
      */
-    ConfigType type() default ConfigType.PROPERTIES;
+    ConfigType type() default ConfigType.UNSET;
     
     /**
      * Specify {@link NacosConfigConverter Nacos configuraion convertor} class to convert target type instance.
