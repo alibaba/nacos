@@ -100,9 +100,7 @@ public class AuthFilter implements Filter {
             Method method = methodsCache.getMethod(req);
             
             if (method == null) {
-                // For #4701, Only support register API.
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND,
-                        "Not found mehtod for path " + req.getMethod() + " " + req.getRequestURI());
+                chain.doFilter(request, response);
                 return;
             }
             
