@@ -53,7 +53,7 @@ public class AuthConfigs {
     /**
      * Token validity time(seconds).
      */
-    @Value("${nacos.core.auth.default.token.expire.seconds:1800}")
+    @Value("${nacos.core.auth.default.token.expire.seconds:18000}")
     private long tokenValidityInSeconds;
     
     /**
@@ -61,6 +61,15 @@ public class AuthConfigs {
      */
     @Value("${nacos.core.auth.system.type:}")
     private String nacosAuthSystemType;
+    
+    @Value("${nacos.core.auth.server.identity.key:}")
+    private String serverIdentityKey;
+    
+    @Value(("${nacos.core.auth.server.identity.value:}"))
+    private String serverIdentityValue;
+    
+    @Value(("${nacos.core.auth.enable.userAgentAuthWhite:true}"))
+    private boolean enableUserAgentAuthWhite;
     
     public byte[] getSecretKeyBytes() {
         if (secretKeyBytes == null) {
@@ -75,6 +84,18 @@ public class AuthConfigs {
     
     public String getNacosAuthSystemType() {
         return nacosAuthSystemType;
+    }
+    
+    public String getServerIdentityKey() {
+        return serverIdentityKey;
+    }
+    
+    public String getServerIdentityValue() {
+        return serverIdentityValue;
+    }
+    
+    public boolean isEnableUserAgentAuthWhite() {
+        return enableUserAgentAuthWhite;
     }
     
     /**

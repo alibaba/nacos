@@ -176,6 +176,11 @@ const I18N_CONF = {
     serviceNameRequired: 'Please enter a service name',
     protectThresholdRequired: 'Please enter a protect threshold',
   },
+  InstanceFilter: {
+    title: 'Metadata Filter',
+    addFilter: 'Add Filter',
+    clear: 'Clear',
+  },
   InstanceTable: {
     operation: 'Operation',
     port: 'Port',

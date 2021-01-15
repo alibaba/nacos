@@ -167,6 +167,10 @@ public class ServiceInfo {
             return true;
         }
         
+        if (hosts == null) {
+            return false;
+        }
+        
         List<Instance> validHosts = new ArrayList<Instance>();
         for (Instance host : hosts) {
             if (!host.isHealthy()) {
@@ -177,8 +181,8 @@ public class ServiceInfo {
                 validHosts.add(host);
             }
         }
-        
-        return true;
+        //No valid hosts, return false.
+        return !validHosts.isEmpty();
     }
     
     @JsonIgnore
