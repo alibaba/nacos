@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
@@ -33,6 +34,9 @@ import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.file.FileChangeEvent;
+import com.alibaba.nacos.sys.file.FileWatcher;
+import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,6 +44,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -59,6 +64,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent> {
     
+    public static final String RULE_FILE_NAME = "limitRule";
+    
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
@@ -70,7 +77,8 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     @PostConstruct
     protected void initLimitRue() {
         try {
-            initRuleFromLocal();
+            loadRuleFromLocal();
+            registerFileWatch();
         } catch (Exception e) {
             Loggers.REMOTE.warn("Fail to init limit rue from local ,error={} ", e);
         }
@@ -543,34 +551,65 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         return connectionLimitRule;
     }
     
-    private synchronized void initRuleFromLocal() throws Exception {
-        File baseDir = new File(EnvUtil.getNacosHome(), "loader" + File.separator);
-        if (!baseDir.exists()) {
-            baseDir.mkdir();
+    private synchronized void loadRuleFromLocal() throws Exception {
+        File limitFile = getRuleFile();
+        if (!limitFile.exists()) {
+            limitFile.createNewFile();
         }
-        File limitFile = new File(baseDir, "limit");
-        if (limitFile.exists()) {
-            String ruleContent = DiskUtils.readFile(limitFile);
-            ConnectionLimitRule connectionLimitRule = JacksonUtils.toObj(ruleContent, ConnectionLimitRule.class);
-            if (connectionLimitRule != null) {
-                this.connectionLimitRule = connectionLimitRule;
-            }
-            Loggers.REMOTE.info("Init loader limit rule from local,rule={}", ruleContent);
+        
+        String ruleContent = DiskUtils.readFile(limitFile);
+        ConnectionLimitRule connectionLimitRule = StringUtils.isBlank(ruleContent) ? new ConnectionLimitRule()
+                : JacksonUtils.toObj(ruleContent, ConnectionLimitRule.class);
+        // apply rule.
+        if (connectionLimitRule != null) {
+            this.connectionLimitRule = connectionLimitRule;
         }
+        Loggers.REMOTE.info("Init loader limit rule from local,rule={}", ruleContent);
         
     }
     
     private synchronized void saveRuleToLocal(ConnectionLimitRule limitRule) throws IOException {
-        File baseDir = new File(EnvUtil.getNacosHome(), "loader" + File.separator);
-        if (!baseDir.exists()) {
-            baseDir.mkdir();
-        }
         
-        File limitFile = new File(baseDir, "limit");
+        File limitFile = getRuleFile();
         if (!limitFile.exists()) {
             limitFile.createNewFile();
         }
         
         DiskUtils.writeFile(limitFile, JacksonUtils.toJson(limitRule).getBytes(Constants.ENCODE), false);
+    }
+    
+    private File getRuleFile() {
+        File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "loader" + File.separator);
+        if (!baseDir.exists()) {
+            baseDir.mkdir();
+        }
+        File pointFile = new File(baseDir, "limit");
+        return pointFile;
+    }
+    
+    private void registerFileWatch() {
+        try {
+            String tpsPath = Paths.get(EnvUtil.getNacosHome(), "data", "loader").toString();
+            WatchFileCenter.registerWatcher(tpsPath, new FileWatcher() {
+                @Override
+                public void onChange(FileChangeEvent event) {
+                    try {
+                        String fileName = event.getContext().toString();
+                        if (RULE_FILE_NAME.equals(fileName)) {
+                            loadRuleFromLocal();
+                        }
+                    } catch (Throwable throwable) {
+                        Loggers.REMOTE.warn("Fail to load rule from local", throwable);
+                    }
+                }
+                
+                @Override
+                public boolean interest(String context) {
+                    return RULE_FILE_NAME.equals(context);
+                }
+            });
+        } catch (NacosException e) {
+            Loggers.REMOTE.warn("Register  connection rule fail ", e);
+        }
     }
 }

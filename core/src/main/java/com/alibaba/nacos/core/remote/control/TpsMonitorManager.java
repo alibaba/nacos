@@ -230,17 +230,15 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     private synchronized void loadRuleFromLocal(TpsControlPoint tpsControlPoint) throws IOException {
         
         File pointFile = getRuleFile(tpsControlPoint.getPointName());
-        if (pointFile.exists()) {
-            String ruleContent = DiskUtils.readFile(pointFile);
-            TpsControlRule tpsControlRule = StringUtils.isBlank(ruleContent) ? new TpsControlRule()
-                    : JacksonUtils.toObj(ruleContent, TpsControlRule.class);
-            Loggers.TPS_CONTROL
-                    .info("Load rule from local,pointName={}, point={} ", tpsControlPoint.getPointName(), ruleContent);
-            tpsControlPoint.applyRule(tpsControlRule);
-            
-        } else {
-            tpsControlPoint.applyRule(new TpsControlRule());
+        if (!pointFile.exists()) {
+            pointFile.createNewFile();
         }
+        String ruleContent = DiskUtils.readFile(pointFile);
+        TpsControlRule tpsControlRule = StringUtils.isBlank(ruleContent) ? new TpsControlRule()
+                : JacksonUtils.toObj(ruleContent, TpsControlRule.class);
+        Loggers.TPS_CONTROL
+                .info("Load rule from local,pointName={}, point={} ", tpsControlPoint.getPointName(), ruleContent);
+        tpsControlPoint.applyRule(tpsControlRule);
         
     }
     
@@ -256,7 +254,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     }
     
     private File getRuleFile(String pointName) {
-        File baseDir = new File(EnvUtil.getNacosHome(), "tps" + File.separator);
+        File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdir();
         }
