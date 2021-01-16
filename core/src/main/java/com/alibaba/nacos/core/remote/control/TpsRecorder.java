@@ -121,11 +121,14 @@ public class TpsRecorder {
         
         AtomicLong tps = new AtomicLong();
         
+        AtomicLong interceptedTps = new AtomicLong();
+        
         public AtomicLong reset(long second) {
             synchronized (this) {
                 if (this.second != second) {
                     this.second = second;
                     tps.set(0L);
+                    interceptedTps.set(0);
                 }
             }
             return tps;
@@ -134,8 +137,7 @@ public class TpsRecorder {
         
         @Override
         public String toString() {
-            return "TpsSlot{" + "second=" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                    .format(new Date(Long.valueOf(second))) + ", tps=" + tps + '}';
+            return "TpsSlot{" + "second=" + second + ", tps=" + tps + '}';
         }
         
     }

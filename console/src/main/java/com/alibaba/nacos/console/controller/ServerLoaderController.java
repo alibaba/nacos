@@ -48,6 +48,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -346,6 +347,7 @@ public class ServerLoaderController {
             }
         }
         Map<String, Object> responseMap = new HashMap<>(3);
+        responseList.sort(Comparator.comparing(ServerLoaderMetrics::getAddress));
         responseMap.put("detail", responseList);
         responseMap.put("memberCount", serverMemberManager.allMembers().size());
         responseMap.put("metricsCount", responseList.size());

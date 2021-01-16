@@ -26,16 +26,20 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.google.gson.Gson;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -55,29 +59,36 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent> {
     
+    @Autowired
+    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
+    
     public ConnectionManager() {
         NotifyCenter.registerToPublisher(ConnectionLimitRuleChangeEvent.class, NotifyCenter.ringBufferSize);
         NotifyCenter.registerSubscriber(this);
     }
     
+    @PostConstruct
+    protected void initLimitRue() {
+        try {
+            initRuleFromLocal();
+        } catch (Exception e) {
+            Loggers.REMOTE.warn("Fail to init limit rue from local ,error={} ", e);
+        }
+    }
+    
     /**
-     * maxLimitClient.
+     * connection limit rule.
      */
-    private int maxClient = -1;
-    
-    private ConnectionLimitRule connectionLimitRule;
+    private ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
     
     /**
-     * current loader adjust count,only effective once,use to rebalance.
+     * current loader adjust count,only effective once,use to re balance.
      */
     private int loadClient = -1;
     
     String redirectAddress = null;
     
     private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<String, AtomicInteger>(16);
-    
-    @Autowired
-    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
     Map<String, Connection> connections = new ConcurrentHashMap<String, Connection>();
     
@@ -243,16 +254,60 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                     Set<Map.Entry<String, Connection>> entries = connections.entrySet();
                     int currentSdkClientCount = currentSdkClientCount();
                     boolean isLoaderClient = loadClient >= 0;
-                    int currentMaxClient = isLoaderClient ? loadClient : maxClient;
+                    int currentMaxClient = isLoaderClient ? loadClient : connectionLimitRule.countLimit;
                     int expelCount = currentMaxClient < 0 ? currentMaxClient : currentSdkClientCount - currentMaxClient;
-                    List<String> expelClient = new LinkedList<String>();
+                    List<String> expelClient = new LinkedList<>();
+                    
+                    Map<String, AtomicInteger> expelForIp = new HashMap<>(16);
+                    
+                    //1. calculate expel count  of ip.
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
-                        if (client.getMetaInfo().isSdkSource() && expelCount > 0) {
+                        String appName = client.getMetaInfo().getAppName();
+                        String clientIp = client.getMetaInfo().getClientIp();
+                        if (client.getMetaInfo().isSdkSource() && !expelForIp.containsKey(clientIp)) {
+                            //get limit for current ip.
+                            int countLimitOfIp = connectionLimitRule.getCountLimitOfIp(clientIp);
+                            if (countLimitOfIp < 0) {
+                                int countLimitOfApp = connectionLimitRule.getCountLimitOfApp(appName);
+                                countLimitOfIp = countLimitOfApp < 0 ? countLimitOfIp : countLimitOfApp;
+                            }
+                            if (countLimitOfIp < 0) {
+                                countLimitOfIp = connectionLimitRule.getCountLimitPerClientIpDefault();
+                            }
+                            
+                            if (countLimitOfIp >= 0 && connectionForClientIp.containsKey(clientIp)) {
+                                AtomicInteger currentCountIp = connectionForClientIp.get(clientIp);
+                                if (currentCountIp != null && currentCountIp.get() > countLimitOfIp) {
+                                    expelForIp.put(clientIp, new AtomicInteger(currentCountIp.get() - countLimitOfIp));
+                                }
+                            }
+                        }
+                    }
+                    
+                    //2.get expel connection for ip limit.
+                    for (Map.Entry<String, Connection> entry : entries) {
+                        Connection client = entry.getValue();
+                        String clientIp = client.getMetaInfo().getClientIp();
+                        AtomicInteger integer = expelForIp.get(clientIp);
+                        if (integer != null && integer.intValue() > 0) {
+                            integer.decrementAndGet();
                             expelClient.add(client.getMetaInfo().getConnectionId());
                             expelCount--;
                         }
                         
+                    }
+                    
+                    //3. if total count is still over limit.
+                    if (expelCount > 0) {
+                        for (Map.Entry<String, Connection> entry : entries) {
+                            Connection client = entry.getValue();
+                            if (!expelForIp.containsKey(client.getMetaInfo().clientIp) && client.getMetaInfo()
+                                    .isSdkSource() && expelCount > 0) {
+                                expelClient.add(client.getMetaInfo().getConnectionId());
+                                expelCount--;
+                            }
+                        }
                     }
                     
                     ConnectResetRequest connectResetRequest = new ConnectResetRequest();
@@ -299,10 +354,6 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         meta.setClientVersion(VersionUtils.getFullClientVersion());
         meta.setClientIp(NetUtils.localIP());
         return meta;
-    }
-    
-    public void setMaxClientCount(int maxClient) {
-        this.maxClient = maxClient;
     }
     
     public void loadCount(int loadClient, String redirectAddress) {
@@ -374,6 +425,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     
     /**
      * get client count from sdk.
+     *
      * @return
      */
     public int currentSdkClientCount() {
@@ -387,47 +439,33 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     }
     
     /**
-     * expel all connections.
-     */
-    public void expelAll() {
-        //reject all new connections.
-        this.maxClient = 0;
-        //send connect reset response to  all clients.
-        for (Map.Entry<String, Connection> entry : connections.entrySet()) {
-            Connection client = entry.getValue();
-            try {
-                if (client.getMetaInfo().isSdkSource()) {
-                    client.request(new ConnectResetRequest(), buildMeta());
-                }
-                
-            } catch (Exception e) {
-                //Do Nothing.
-            }
-        }
-    }
-    
-    /**
      * check if over limit.
      *
      * @return over limit or not.
      */
     private boolean isOverLimit() {
-        return maxClient > 0 && currentSdkClientCount() >= maxClient;
-    }
-    
-    public int countLimited() {
-        return maxClient;
+        return connectionLimitRule.countLimit > 0 && currentSdkClientCount() >= connectionLimitRule.getCountLimit();
     }
     
     @Override
     public void onEvent(ConnectionLimitRuleChangeEvent event) {
         String limitRule = event.getLimitRule();
+        Loggers.REMOTE.info("connection limit rule change event receive :{}", limitRule);
+        
         try {
-            ConnectionLimitRule connectionLimitRule = new Gson().fromJson(limitRule, ConnectionLimitRule.class);
-            if (connectionLimitRule.getCountLimit() > 0) {
-                this.maxClient = connectionLimitRule.getCountLimit();
+            ConnectionLimitRule connectionLimitRule = JacksonUtils.toObj(limitRule, ConnectionLimitRule.class);
+            if (connectionLimitRule != null) {
+                this.connectionLimitRule = connectionLimitRule;
+                
+                try {
+                    saveRuleToLocal(this.connectionLimitRule);
+                } catch (Exception e) {
+                    Loggers.REMOTE.warn("Fail to save rule to local error is {}", e);
+                }
+            } else {
+                Loggers.REMOTE.info("Parse rule is null,Ignore illegal rule  :{}", limitRule);
             }
-            this.connectionLimitRule = connectionLimitRule;
+            
         } catch (Exception e) {
             Loggers.REMOTE.error("Fail to parse connection limit rule :{}", limitRule, e);
         }
@@ -464,6 +502,26 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
             this.countLimitPerClientIpDefault = countLimitPerClientIpDefault;
         }
         
+        public int getCountLimitOfIp(String clientIp) {
+            if (countLimitPerClientIp.containsKey(clientIp)) {
+                Integer integer = countLimitPerClientIp.get(clientIp);
+                if (integer != null && integer.intValue() >= 0) {
+                    return integer.intValue();
+                }
+            }
+            return -1;
+        }
+        
+        public int getCountLimitOfApp(String appName) {
+            if (countLimitPerClientApp.containsKey(appName)) {
+                Integer integer = countLimitPerClientApp.get(appName);
+                if (integer != null && integer.intValue() >= 0) {
+                    return integer.intValue();
+                }
+            }
+            return -1;
+        }
+        
         public Map<String, Integer> getCountLimitPerClientIp() {
             return countLimitPerClientIp;
         }
@@ -479,5 +537,40 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         public void setCountLimitPerClientApp(Map<String, Integer> countLimitPerClientApp) {
             this.countLimitPerClientApp = countLimitPerClientApp;
         }
+    }
+    
+    public ConnectionLimitRule getConnectionLimitRule() {
+        return connectionLimitRule;
+    }
+    
+    private synchronized void initRuleFromLocal() throws Exception {
+        File baseDir = new File(EnvUtil.getNacosHome(), "loader" + File.separator);
+        if (!baseDir.exists()) {
+            baseDir.mkdir();
+        }
+        File limitFile = new File(baseDir, "limit");
+        if (limitFile.exists()) {
+            String ruleContent = DiskUtils.readFile(limitFile);
+            ConnectionLimitRule connectionLimitRule = JacksonUtils.toObj(ruleContent, ConnectionLimitRule.class);
+            if (connectionLimitRule != null) {
+                this.connectionLimitRule = connectionLimitRule;
+            }
+            Loggers.REMOTE.info("Init loader limit rule from local,rule={}", ruleContent);
+        }
+        
+    }
+    
+    private synchronized void saveRuleToLocal(ConnectionLimitRule limitRule) throws IOException {
+        File baseDir = new File(EnvUtil.getNacosHome(), "loader" + File.separator);
+        if (!baseDir.exists()) {
+            baseDir.mkdir();
+        }
+        
+        File limitFile = new File(baseDir, "limit");
+        if (!limitFile.exists()) {
+            limitFile.createNewFile();
+        }
+        
+        DiskUtils.writeFile(limitFile, JacksonUtils.toJson(limitRule).getBytes(Constants.ENCODE), false);
     }
 }

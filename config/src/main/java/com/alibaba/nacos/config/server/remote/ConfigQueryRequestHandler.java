@@ -73,16 +73,16 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     
     @Override
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta requestMeta) throws NacosException {
-        ConfigQueryRequest configQueryRequest = (ConfigQueryRequest) request;
+    public ConfigQueryResponse handle(ConfigQueryRequest configQueryRequest, RequestMeta requestMeta)
+            throws NacosException {
         
         String group = configQueryRequest.getGroup();
         String dataId = configQueryRequest.getDataId();
         String tenant = configQueryRequest.getTenant();
         String clientIp = requestMeta.getClientIp();
         try {
-            ConfigQueryResponse context = getContext(dataId, group, tenant, configQueryRequest.getTag(),
-                    requestMeta.getClientIp(), requestMeta, request.isNotify());
+            ConfigQueryResponse context = getContext(dataId, group, tenant, configQueryRequest.getTag(), clientIp,
+                    requestMeta, configQueryRequest.isNotify());
             return context;
         } catch (Exception e) {
             ConfigQueryResponse contextFail = ConfigQueryResponse

@@ -18,6 +18,8 @@ package com.alibaba.nacos.core.remote.control;
 
 import com.alibaba.nacos.core.utils.Loggers;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -45,11 +47,36 @@ public class TpsControlPoint {
     }
     
     public TpsControlPoint(String pointName, int maxTps, String monitorType) {
-        this.startTime = System.currentTimeMillis();
+        // trim to second,uniform all tps control.
+        this.startTime = getTrimMillsOfSecond(System.currentTimeMillis());
         this.pointName = pointName;
         this.tpsRecorder = new TpsRecorder(startTime, DEFAULT_RECORD_SIZE);
         this.tpsRecorder.setMaxTps(maxTps);
         this.tpsRecorder.setMonitorType(monitorType);
+    }
+    
+    /**
+     * get trim mills of second.
+     *
+     * @param timeStamp
+     * @return
+     */
+    public static long getTrimMillsOfSecond(long timeStamp) {
+        String millString = String.valueOf(timeStamp);
+        String substring = millString.substring(0, millString.length() - 3);
+        return Long.valueOf(substring + "000");
+        
+    }
+    
+    /**
+     * get format string "2021-01-16 17:20:21" of timestamp
+     *
+     * @param timeStamp
+     * @return
+     */
+    public static String getTimeFormatOfSecond(long timeStamp) {
+        String format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timeStamp));
+        return format;
     }
     
     private void stopAllMonitorClient() {
@@ -65,6 +92,8 @@ public class TpsControlPoint {
     public boolean applyTps(String clientIp) {
         
         long now = System.currentTimeMillis();
+        TpsRecorder.TpsSlot currentTps = tpsRecorder.createPointIfAbsent(now);
+        
         //1.check ip tps.
         TpsRecorder.TpsSlot currentIpTps = null;
         if (tpsRecordForIp.containsKey(clientIp)) {
@@ -74,10 +103,12 @@ public class TpsControlPoint {
             long maxTpsOfIp = tpsRecorderIp.getMaxTps();
             boolean overLimit = maxTpsOfIp >= 0 && currentIpTps.tps.longValue() >= maxTpsOfIp;
             if (overLimit) {
-                Loggers.TPS_CONTROL_DIGEST
+                Loggers.TPS_CONTROL_DETAIL
                         .info("tps over limit ,pointName=[{}],clientIp=[{}],barrier=[{}]，monitorType={}",
                                 this.getPointName(), clientIp, "ipRule", tpsRecorderIp.getMonitorType());
                 if (tpsRecorderIp.isInterceptMode()) {
+                    currentIpTps.interceptedTps.incrementAndGet();
+                    currentTps.interceptedTps.incrementAndGet();
                     return false;
                 }
             }
@@ -86,13 +117,12 @@ public class TpsControlPoint {
         
         //2.check total tps.
         long maxTps = tpsRecorder.getMaxTps();
-        TpsRecorder.TpsSlot currentTps = tpsRecorder.createPointIfAbsent(now);
-        
         boolean overLimit = maxTps >= 0 && currentTps.tps.longValue() >= maxTps;
         if (overLimit) {
-            Loggers.TPS_CONTROL_DIGEST.info("tps over limit ,pointName=[{}],clientIp=[{}],barrier=[{}]，monitorType={}",
+            Loggers.TPS_CONTROL_DETAIL.info("tps over limit ,pointName=[{}],clientIp=[{}],barrier=[{}]，monitorType={}",
                     this.getPointName(), clientIp, "pointRule", tpsRecorder.getMonitorType());
             if (tpsRecorder.isInterceptMode()) {
+                currentTps.interceptedTps.incrementAndGet();
                 return false;
             }
         }

@@ -190,7 +190,7 @@ public class DefaultRequestFuture implements RequestFuture {
         
         @Override
         public void run() {
-            setFailResult(new TimeoutException("Timeout After " + requestCallBack.getTimeout() + " millseconds."));
+            setFailResult(new TimeoutException("Timeout After " + requestCallBack.getTimeout() + " milliseconds."));
         }
     }
     

@@ -709,32 +709,36 @@ public class ClientWorker implements Closeable {
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
             
             for (CacheData cache : cacheMap.get().values()) {
-                if (cache.isSync()) {
-                    continue;
-                }
-                if (!CollectionUtils.isEmpty(cache.getListeners())) {
-                    //get listen  config
-                    if (!cache.isUseLocalConfigInfo()) {
-                        List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
-                        if (cacheDatas == null) {
-                            cacheDatas = new LinkedList<CacheData>();
-                            listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
-                        }
-                        cacheDatas.add(cache);
-                        
+                
+                synchronized (cache) {
+                    if (cache.isSync()) {
+                        continue;
                     }
-                } else if (CollectionUtils.isEmpty(cache.getListeners())) {
-                    
-                    if (!cache.isUseLocalConfigInfo()) {
-                        List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
-                        if (cacheDatas == null) {
-                            cacheDatas = new LinkedList<CacheData>();
-                            removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
+                    if (!CollectionUtils.isEmpty(cache.getListeners())) {
+                        //get listen  config
+                        if (!cache.isUseLocalConfigInfo()) {
+                            List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
+                            if (cacheDatas == null) {
+                                cacheDatas = new LinkedList<CacheData>();
+                                listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
+                            }
+                            cacheDatas.add(cache);
+                            
                         }
-                        cacheDatas.add(cache);
+                    } else if (CollectionUtils.isEmpty(cache.getListeners())) {
                         
+                        if (!cache.isUseLocalConfigInfo()) {
+                            List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
+                            if (cacheDatas == null) {
+                                cacheDatas = new LinkedList<CacheData>();
+                                removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
+                            }
+                            cacheDatas.add(cache);
+                            
+                        }
                     }
                 }
+                
             }
             
             if (!listenCachesMap.isEmpty()) {

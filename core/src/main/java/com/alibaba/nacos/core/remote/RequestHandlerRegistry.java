@@ -16,10 +16,18 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.core.remote.control.TpsControl;
+import com.alibaba.nacos.core.remote.control.TpsControlConfig;
+import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
+import com.alibaba.nacos.core.remote.control.TpsControlPoint;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,6 +45,9 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
     
     Map<String, RequestHandler> registryHandlers = new HashMap<String, RequestHandler>();
     
+    @Autowired
+    private TpsMonitorManager tpsMonitorManager;
+    
     /**
      * Get Request Handler By request Type.
      *
@@ -45,15 +56,6 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
      */
     public RequestHandler getByRequestType(String requestType) {
         return registryHandlers.get(requestType);
-    }
-    
-    /**
-     * registry request handler.
-     *
-     * @param requestHandler requestHandler to registry
-     */
-    public void registryHandler(RequestHandler requestHandler) {
-    
     }
     
     @Override
@@ -74,8 +76,19 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
             if (skip) {
                 continue;
             }
-            Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
             
+            try {
+                Method method = clazz.getMethod("handle", Request.class, RequestMeta.class);
+                if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
+                    TpsControl tpsControl = method.getAnnotation(TpsControl.class);
+                    String pointName = tpsControl.pointName();
+                    TpsControlPoint tpsControlPoint = new TpsControlPoint(pointName);
+                    tpsMonitorManager.registerTpsControlPoint(tpsControlPoint);
+                }
+            } catch (Exception e) {
+                //ignore.
+            }
+            Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
             registryHandlers.putIfAbsent(tClass.getName(), requestHandler);
         }
     }

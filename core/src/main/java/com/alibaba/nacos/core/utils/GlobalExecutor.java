@@ -44,13 +44,13 @@ public class GlobalExecutor {
     
     public static final ThreadPoolExecutor sdkRpcExecutor = new ThreadPoolExecutor(
             Runtime.getRuntime().availableProcessors(),
-            Runtime.getRuntime().availableProcessors() * RemoteUtils.getRemoteExecutorTimesOfProcessors(), 10L,
+            Runtime.getRuntime().availableProcessors() * RemoteUtils.getRemoteExecutorTimesOfProcessors(), 60L,
             TimeUnit.SECONDS, new SynchronousQueue(),
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-executor-%d").build());
     
     public static final ThreadPoolExecutor clusterRpcExecutor = new ThreadPoolExecutor(
             Runtime.getRuntime().availableProcessors(),
-            Runtime.getRuntime().availableProcessors() * RemoteUtils.getRemoteExecutorTimesOfProcessors(), 10L,
+            Runtime.getRuntime().availableProcessors() * RemoteUtils.getRemoteExecutorTimesOfProcessors(), 60L,
             TimeUnit.SECONDS, new SynchronousQueue(),
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-cluster-grpc-executor-%d").build());
     

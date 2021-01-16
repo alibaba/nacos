@@ -25,11 +25,11 @@ option java_package = "com.alibaba.nacos.api.grpc.auto";
 
 message Metadata {
 
-  string client_ip = 1;
+    string client_ip = 1;
 
-  int32 client_port = 2;
+    int32 client_port = 2;
 
-  string type = 3;
+    string type = 3;
 
     string connection_id = 4;
 
