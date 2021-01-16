@@ -763,6 +763,33 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public List<ConfigInfo> findConfigInfo(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
+        StringBuilder where = new StringBuilder(
+                "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info WHERE ");
+        List<Object> paramList = new ArrayList<>();
+        where.append(" ID in (");
+        for (int i = 0; i < ids.size(); i++) {
+            if (i != 0) {
+                where.append(", ");
+            }
+            where.append("?");
+            paramList.add(ids.get(i));
+        }
+        where.append(") ");
+        try {
+            return this.jt.query(where.toString(), paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns empty list.
+            return new ArrayList<>();
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
+    @Override
     public ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {

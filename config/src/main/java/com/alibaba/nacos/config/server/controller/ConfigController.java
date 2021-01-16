@@ -23,11 +23,14 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigCompareResult;
+import com.alibaba.nacos.config.server.model.ConfigContentKeyValue;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
@@ -44,10 +47,12 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.javaprop.JavaPropsMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -69,16 +74,22 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.CharArrayReader;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -98,18 +109,30 @@ public class ConfigController {
     
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
     
+    private static final List<String> COMPARABLE_TYPES = Arrays
+            .asList(ConfigType.PROPERTIES.getType(), ConfigType.JSON.getType(), ConfigType.YAML.getType());
+    
     private final ConfigServletInner inner;
     
     private final PersistService persistService;
     
     private final ConfigSubService configSubService;
     
+    private final ObjectMapper jsonMapper;
+    
+    private final YAMLMapper yamlMapper;
+    
+    private final JavaPropsMapper javaPropsMapper;
+    
     @Autowired
     public ConfigController(ConfigServletInner configServletInner, PersistService persistService,
-            ConfigSubService configSubService) {
+            ConfigSubService configSubService, ObjectMapper objectMapper) {
         this.inner = configServletInner;
         this.persistService = persistService;
         this.configSubService = configSubService;
+        this.jsonMapper = objectMapper;
+        this.yamlMapper = new YAMLMapper();
+        this.javaPropsMapper = new JavaPropsMapper();
     }
     
     /**
@@ -632,7 +655,7 @@ public class ConfigController {
             return RestResultUtils.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
         }
         configBeansList.removeAll(Collections.singleton(null));
-    
+        
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
@@ -694,4 +717,145 @@ public class ConfigController {
         return RestResultUtils.success("Clone Completed Successfully", saveResult);
     }
     
+    /**
+     * Compare config content (support types: properties/json/yaml).
+     *
+     * @param ids config ids.
+     * @return RestResult for ConfigCompareResult.
+     * @throws NacosException NacosException.
+     */
+    @GetMapping("compare")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public RestResult<ConfigCompareResult> compareConfig(@RequestParam(value = "ids", required = true) List<Long> ids)
+            throws NacosException {
+        ConfigCompareResult result = new ConfigCompareResult();
+        List<ConfigInfo> configInfoList = persistService.findConfigInfo(ids);
+        if (!CollectionUtils.isEmpty(configInfoList)) {
+            List<Map<String, String>> configMapList = new ArrayList<>(configInfoList.size());
+            Iterator<ConfigInfo> iterator = configInfoList.iterator();
+            while (iterator.hasNext()) {
+                ConfigInfo configInfo = iterator.next();
+                // ignore config that type is unsupport.
+                if (!COMPARABLE_TYPES.contains(configInfo.getType())) {
+                    iterator.remove();
+                    continue;
+                }
+                Map<String, String> configMap = configContentToMap(configInfo);
+                // ignore config that content format is invalid.
+                if (configMap == null) {
+                    iterator.remove();
+                    continue;
+                }
+                configMapList.add(configContentToMap(configInfo));
+            }
+            result.setConfigInfoList(configInfoList);
+            result.setCount(configInfoList.size());
+            Set<String> keySet = new HashSet<>();
+            for (Map<String, String> map : configMapList) {
+                keySet.addAll(map.keySet());
+            }
+            List<String> keyList = new ArrayList<>(keySet);
+            keyList.sort(String::compareTo);
+            List<ConfigContentKeyValue> kvList = new ArrayList<>(configInfoList.size());
+            for (String key : keyList) {
+                ConfigContentKeyValue kv = new ConfigContentKeyValue();
+                kv.setKey(key);
+                List<String> valueList = new ArrayList<>(configInfoList.size());
+                for (Map<String, String> map : configMapList) {
+                    valueList.add(map.getOrDefault(key, ""));
+                }
+                kv.setValueList(valueList);
+                kvList.add(kv);
+            }
+            result.setKeyValueList(kvList);
+        }
+        return RestResultUtils.success("Get Config Compare Result Successfully", result);
+    }
+    
+    /**
+     * Convert config content to map[string,string].
+     *
+     * @param configInfo configInfo.
+     * @return null if config content is invalid, else map[string,string].
+     */
+    private Map<String, String> configContentToMap(ConfigInfo configInfo) {
+        try {
+            if (StringUtils.isBlank(configInfo.getContent())) {
+                return Collections.emptyMap();
+            } else if (ConfigType.PROPERTIES.getType().equals(configInfo.getType())) {
+                Properties properties = new Properties();
+                properties.load(new CharArrayReader(configInfo.getContent().toCharArray()));
+                return unfold(javaPropsMapper.readPropertiesAs(properties,
+                        javaPropsMapper.getTypeFactory().constructMapType(HashMap.class, String.class, Object.class)));
+                
+            } else if (ConfigType.JSON.getType().equals(configInfo.getType())) {
+                return unfold(jsonMapper.readValue(configInfo.getContent(),
+                        jsonMapper.getTypeFactory().constructMapType(HashMap.class, String.class, Object.class)));
+                
+            } else if (ConfigType.YAML.getType().equals(configInfo.getType())) {
+                return unfold(yamlMapper.readValue(configInfo.getContent(),
+                        yamlMapper.getTypeFactory().constructMapType(HashMap.class, String.class, Object.class)));
+            }
+        } catch (IOException e) {
+            // config content's format is invalid, ignore compare.
+        }
+        return null;
+    }
+    
+    /**
+     * Unfold config-map[string,?] to map[string,string] that depth is one.
+     *
+     * @param configMap config map, map's value is Primitive-Data-Types or List or Map.
+     * @return config map[string,string], always not null.
+     */
+    private Map<String, String> unfold(Map<String, Object> configMap) {
+        if (configMap == null || configMap.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> map = new HashMap<>(configMap.size() * 2);
+        doUnfold(map, configMap, new StringBuilder());
+        return map;
+    }
+    
+    /**
+     * Unfold config-map[string,?] to map[string,string] that depth is one.
+     *
+     * @param target map for write.
+     * @param source map for read.
+     * @param prefix map's key prefix.
+     */
+    private void doUnfold(Map<String, String> target, Map<String, Object> source, StringBuilder prefix) {
+        if (target == null || source == null || source.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, Object> entry : source.entrySet()) {
+            if (org.springframework.util.StringUtils.isEmpty(entry.getKey())) {
+                continue;
+            }
+            int delIndex = prefix.length();
+            if (prefix.length() == 0) {
+                prefix.append(entry.getKey());
+            } else {
+                prefix.append(".").append(entry.getKey());
+            }
+            if (entry.getValue() instanceof List) {
+                int i = 0;
+                int subDelIndex = prefix.length();
+                for (Object v : (List<?>) entry.getValue()) {
+                    prefix.append(".[").append(i++).append("]");
+                    if (v instanceof Map) {
+                        doUnfold(target, (Map) v, prefix);
+                    } else {
+                        target.put(prefix.toString(), v != null ? v.toString() : "");
+                    }
+                    prefix.delete(subDelIndex, prefix.length());
+                }
+            } else if (entry.getValue() instanceof Map) {
+                doUnfold(target, (Map) entry.getValue(), prefix);
+            } else {
+                target.put(prefix.toString(), entry.getValue() != null ? entry.getValue().toString() : "");
+            }
+            prefix.delete(delIndex, prefix.length());
+        }
+    }
 }

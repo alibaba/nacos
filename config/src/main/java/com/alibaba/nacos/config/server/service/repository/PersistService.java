@@ -419,6 +419,14 @@ public interface PersistService {
     ConfigInfo findConfigInfo(long id);
     
     /**
+     * Query configuration information by primary key IDs.
+     *
+     * @param ids id list
+     * @return {@link ConfigInfo}
+     */
+    List<ConfigInfo> findConfigInfo(List<Long> ids);
+    
+    /**
      * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
      *
      * @param dataId dataId

@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -28,8 +29,14 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.config.server.controller.parameters.ConfigCompareBean;
+import com.alibaba.nacos.config.server.model.ConfigCompareResult;
+import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -37,17 +44,21 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 
 /**
@@ -63,6 +74,9 @@ public class ConfigAPI_CITCase {
     static ConfigService iconfig = null;
     
     static HttpAgent agent = null;
+    
+    @Autowired
+    private PersistService persistService;
     
     static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
     
@@ -932,6 +946,224 @@ public class ConfigAPI_CITCase {
         } catch (Exception e) {
             Assert.fail();
         }
+    }
+    
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_服务端配置对比，对比格式正确的properties、json、yaml类型配置
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_compareConfig_1() throws Exception {
+        /**
+         * name=Tom
+         * age=10
+         * gender=male
+         * grades[0].courseId=A01
+         * grades[0].score=80
+         * grades[1].courseId=A03
+         * grades[1].score=96
+         * grades[2].courseId=B02
+         * grades[2].score=90
+         */
+        final String propertiesDataId = "config-properties";
+        final String propertiesContent =
+                "name=Tom\n" + "age=10\n" + "gender=male\n" + "grades[0].courseId=A01\n" + "grades[0].score=80\n"
+                        + "grades[1].courseId=A03\n" + "grades[1].score=96\n" + "grades[2].courseId=B02\n"
+                        + "grades[2].score=90";
+        /**
+         * {
+         *     "name": "Tom",
+         *     "age": 10,
+         *     "gender": "male",
+         *     "grades": [
+         *         {
+         *             "courseId": "A01",
+         *             "score": 80
+         *         },
+         *         {
+         *             "courseId": "A03",
+         *             "score": 96
+         *         },
+         *         {
+         *             "courseId": "B02",
+         *             "score": 90
+         *         }
+         *     ]
+         * }
+         */
+        final String jsonDataId = "config-json";
+        final String jsonContent =
+                "{\n" + "  \"name\":\"Tom\",\n" + "  \"age\":10,\n" + "  \"gender\":\"male\",\n" + "  \"grades\":[\n"
+                        + "    {\"courseId\":\"A01\",\n" + "     \"score\":80},\n" + "    {\"courseId\":\"A03\",\n"
+                        + "     \"score\":96},\n" + "    {\"courseId\":\"B02\",\n" + "     \"score\":90}\n" + "    ]\n"
+                        + "}";
+        /**
+         * ---
+         * name: Tom
+         * age: 10
+         * gender: male
+         * grades:
+         * - courseId: A01
+         *   score: 80
+         * - courseId: A03
+         *   score: 96
+         * - courseId: B02
+         *   score: 90
+         */
+        final String yamlDataId = "config-yaml";
+        final String yamlContent =
+                "---\n" + "name: Tom\n" + "age: 10\n" + "gender: male\n" + "grades:\n" + "- courseId: A01\n"
+                        + "  score: 80\n" + "- courseId: A03\n" + "  score: 96\n" + "- courseId: B02\n" + "  score: 90";
+        
+        boolean published = iconfig
+                .publishConfig(propertiesDataId, group, propertiesContent, ConfigType.PROPERTIES.getType());
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(published);
+        published = iconfig.publishConfig(jsonDataId, group, jsonContent, ConfigType.JSON.getType());
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(published);
+        published = iconfig.publishConfig(yamlDataId, group, yamlContent, ConfigType.YAML.getType());
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(published);
+        
+        List<Long> idList = persistService.findAllConfigInfo(1, 100, "").getPageItems().stream()
+                .map(ConfigInfoBase::getId).collect(Collectors.toList());
+        Assert.assertEquals(3, idList.size());
+        Map<String, String> params = new HashMap<>();
+        StringBuilder idsBuilder = new StringBuilder();
+        for (Long id : idList) {
+            idsBuilder.append(id).append(",");
+        }
+        if (idsBuilder.length() > 0) {
+            idsBuilder.deleteCharAt(idsBuilder.length() - 1);
+        }
+        params.put("ids", idsBuilder.toString());
+        HttpRestResult<String> result = agent
+                .httpGet(CONFIG_CONTROLLER_PATH + "/" + "compare", null, params, agent.getEncode(), TIME_OUT);
+        Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+        RestResult<ConfigCompareResult> restResult = JacksonUtils
+                .toObj(result.getData(), new TypeReference<RestResult<ConfigCompareResult>>() {
+                });
+        Assert.assertEquals(3, restResult.getData().getCount());
+    }
+    
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_服务端配置对比，忽略 不存在/格式不正确/类型不支持对比 的配置
+     */
+    @Test(timeout = 8 * TIME_OUT)
+    public void nacos_compareConfig_2() throws Exception {
+        /**
+         * name=Tom
+         * age=10
+         * gender=male
+         * grades[0].courseId=A01
+         * grades[0].score=80
+         * grades[1].courseId=A03
+         * grades[1].score=96
+         * grades[2].courseId=B02
+         * grades[2].score=90
+         */
+        final String propertiesDataId = "config-properties";
+        final String propertiesContent =
+                "name=Tom\n" + "age=10\n" + "gender=male\n" + "grades[0].courseId=A01\n" + "grades[0].score=80\n"
+                        + "grades[1].courseId=A03\n" + "grades[1].score=96\n" + "grades[2].courseId=B02\n"
+                        + "grades[2].score=90";
+        /**
+         * {
+         *     "name": "Tom",
+         *     "age": 10,
+         *     "gender": "male",
+         *     "grades": [
+         *         {
+         *             "courseId": "A01",
+         *             "score": 80
+         *         },
+         *         {
+         *             "courseId": "A03",
+         *             "score": 96
+         *         },
+         *         {
+         *             "courseId": "B02",
+         *             "score": 90
+         *         }
+         *     ]
+         * }
+         */
+        final String jsonDataId = "config-json";
+        final String jsonContent =
+                "{\n" + "  \"name\":\"Tom\",\n" + "  \"age\":10,\n" + "  \"gender\":\"male\",\n" + "  \"grades\":[\n"
+                        + "    {\"courseId\":\"A01\",\n" + "     \"score\":80},\n" + "    {\"courseId\":\"A03\",\n"
+                        + "     \"score\":96},\n" + "    {\"courseId\":\"B02\",\n" + "     \"score\":90}\n" + "    ]\n"
+                        + "}";
+        /**
+         * ---
+         * name: Tom
+         * age: 10
+         * gender: male
+         * grades:
+         * - courseId: A01
+         *   score: 80
+         * - courseId: A03
+         *   score: 96
+         * - courseId: B02
+         *   score: 90
+         */
+        final String yamlDataId = "config-yaml";
+        final String yamlContent =
+                "---\n" + "name: Tom\n" + "age: 10\n" + "gender: male\n" + "grades:\n" + "- courseId: A01\n"
+                        + "  score: 80\n" + "- courseId: A03\n" + "  score: 96\n" + "- courseId: B02\n" + "  score: 90";
+        
+        /**
+         * a=a1
+         * b=b1
+         * c=c1
+         */
+        final String textDataId = "config-text";
+        final String textContent = "a=a1\n" + "b=b1\n" + "c=c1\n";
+        
+        /**
+         * {
+         *     "a","b","c",,
+         * }
+         */
+        final String wrongJsonDataId = "config-wrongJson";
+        final String wrongJsonContent = " { \"a\",\"b\",\"c\",,}";
+        
+        boolean published = iconfig
+                .publishConfig(propertiesDataId, group, propertiesContent, ConfigType.PROPERTIES.getType());
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(published);
+        published = iconfig.publishConfig(jsonDataId, group, jsonContent, ConfigType.JSON.getType());
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(published);
+        published = iconfig.publishConfig(yamlDataId, group, yamlContent, ConfigType.YAML.getType());
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(published);
+        published = iconfig.publishConfig(textDataId, group, textContent, ConfigType.TEXT.getType());
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(published);
+        published = iconfig.publishConfig(wrongJsonDataId, group, wrongJsonContent, ConfigType.JSON.getType());
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(published);
+        
+        List<Long> idList = persistService.findAllConfigInfo(1, 100, "").getPageItems().stream()
+                .map(ConfigInfoBase::getId).collect(Collectors.toList());
+        Assert.assertEquals(5, idList.size());
+        Map<String, String> params = new HashMap<>();
+        StringBuilder idsBuilder = new StringBuilder();
+        for (Long id : idList) {
+            idsBuilder.append(id).append(",");
+        }
+        idsBuilder.append("-1");
+        params.put("ids", idsBuilder.toString());
+        HttpRestResult<String> result = agent
+                .httpGet(CONFIG_CONTROLLER_PATH + "/" + "compare", null, params, agent.getEncode(), TIME_OUT);
+        Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+        RestResult<ConfigCompareResult> restResult = JacksonUtils
+                .toObj(result.getData(), new TypeReference<RestResult<ConfigCompareResult>>() {
+                });
+        Assert.assertEquals(3, restResult.getData().getCount());
     }
     
 }

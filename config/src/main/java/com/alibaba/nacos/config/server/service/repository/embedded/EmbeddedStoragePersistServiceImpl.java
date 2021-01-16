@@ -773,6 +773,26 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public List<ConfigInfo> findConfigInfo(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
+        StringBuilder where = new StringBuilder(
+                "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info WHERE ");
+        List<Object> paramList = new ArrayList<>();
+        where.append(" ID in (");
+        for (int i = 0; i < ids.size(); i++) {
+            if (i != 0) {
+                where.append(", ");
+            }
+            where.append("?");
+            paramList.add(ids.get(i));
+        }
+        where.append(") ");
+        return databaseOperate.queryMany(where.toString(), paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
+    }
+    
+    @Override
     public ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info "
@@ -2275,6 +2295,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         return true;
     }
     
+    //
     @Override
     public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
             final String appName, final List<Long> ids) {
