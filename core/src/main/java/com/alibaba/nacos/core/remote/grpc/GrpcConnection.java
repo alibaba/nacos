@@ -83,14 +83,14 @@ public class GrpcConnection extends Connection {
     
     private DefaultRequestFuture sendRequestInner(Request request, RequestMeta meta, RequestCallBack callBack)
             throws NacosException {
-        String requestId = String.valueOf(PushAckIdGenerator.getNextId());
+        final String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
-        sendRequestNoAck(request, meta);
         
         DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(getMetaInfo().getConnectionId(), requestId,
                 callBack, () -> RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), requestId));
         
         RpcAckCallbackSynchronizer.syncCallback(getMetaInfo().getConnectionId(), requestId, defaultPushFuture);
+        sendRequestNoAck(request, meta);
         return defaultPushFuture;
     }
     

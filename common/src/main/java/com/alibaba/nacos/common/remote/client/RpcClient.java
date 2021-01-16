@@ -49,7 +49,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
@@ -374,8 +373,6 @@ public abstract class RpcClient implements Closeable {
         rpcClientStatus.set(RpcClientStatus.SHUTDOWN);
         closeConnection(currentConnection);
     }
-    
-    private final ReentrantLock switchingLock = new ReentrantLock();
     
     private boolean serverCheck() {
         ServerCheckRequest serverCheckRequest = new ServerCheckRequest();

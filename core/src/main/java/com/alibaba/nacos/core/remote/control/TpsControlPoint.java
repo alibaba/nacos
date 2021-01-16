@@ -58,7 +58,7 @@ public class TpsControlPoint {
     /**
      * get trim mills of second.
      *
-     * @param timeStamp
+     * @param timeStamp timestamp milliseconds.
      * @return
      */
     public static long getTrimMillsOfSecond(long timeStamp) {
@@ -69,9 +69,9 @@ public class TpsControlPoint {
     }
     
     /**
-     * get format string "2021-01-16 17:20:21" of timestamp
+     * get format string "2021-01-16 17:20:21" of timestamp.
      *
-     * @param timeStamp
+     * @param timeStamp timestamp milliseconds.
      * @return
      */
     public static String getTimeFormatOfSecond(long timeStamp) {

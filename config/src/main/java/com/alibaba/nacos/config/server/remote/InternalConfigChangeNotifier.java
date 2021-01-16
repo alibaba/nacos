@@ -41,16 +41,15 @@ import org.springframework.stereotype.Component;
 @Component(value = "internalConfigChangeNotifier")
 public class InternalConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
+    @Autowired
+    private ConfigQueryRequestHandler configQueryRequestHandler;
+    
     public InternalConfigChangeNotifier() {
         NotifyCenter.registerToPublisher(ConnectionLimitRuleChangeEvent.class, 16384);
         NotifyCenter.registerToPublisher(TpsControlRuleChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(this);
         
     }
-    
-    @Autowired
-    private ConfigQueryRequestHandler configQueryRequestHandler;
-    
     
     private static final String DATA_ID_TPS_CONTROL_RULE = "nacos.internal.tps.control_rule_";
     

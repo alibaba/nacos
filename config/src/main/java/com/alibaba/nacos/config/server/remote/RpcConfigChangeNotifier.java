@@ -82,10 +82,9 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     /**
      * adaptor to config module ,when server side config change ,invoke this method.
      *
-     * @param groupKey      groupKey
-     * @param notifyRequest notifyRequest
+     * @param groupKey groupKey
      */
-    public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequest, boolean isBeta,
+    public void configDataChanged(String groupKey, String dataId, String group, String tenant, boolean isBeta,
             List<String> betaIps) {
         
         Set<String> listeners = configChangeListenContext.getListeners(groupKey);
@@ -103,6 +102,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                         continue;
                     }
                 }
+                ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
                 
                 RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client, clientIp,
                         connection.getMetaInfo().getAppName());
@@ -122,8 +122,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         String dataId = strings[0];
         String group = strings[1];
         String tenant = strings.length > 2 ? strings[2] : "";
-        ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
-        configDataChanged(groupKey, notifyRequest, isBeta, betaIps);
+        configDataChanged(groupKey, dataId, group, tenant, isBeta, betaIps);
         
     }
     

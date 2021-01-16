@@ -183,7 +183,6 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                 long tempSecond = TpsControlPoint.getTrimMillsOfSecond(now - 1000L);
                 String formatString = TpsControlPoint.getTimeFormatOfSecond(tempSecond);
                 for (Map.Entry<String, TpsControlPoint> entry : entries) {
-                    String point = entry.getKey();
                     TpsControlPoint value = entry.getValue();
                     //get last second
                     TpsRecorder.TpsSlot pointSlot = value.getTpsRecorder().getPoint(now - 1000L);
@@ -194,6 +193,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                     if (lastReportSecond != 0L && lastReportSecond == pointSlot.second) {
                         continue;
                     }
+                    String point = entry.getKey();
                     tempSecond = pointSlot.second;
                     stringBuilder.append(point).append("|").append("point|").append(formatString).append("|")
                             .append(pointSlot.tps.get()).append("|").append(pointSlot.interceptedTps.get())
