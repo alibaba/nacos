@@ -466,27 +466,24 @@ public class ServiceManager implements RecordListener<Service> {
             throws NacosException {
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
-            synchronized (this) {
-                if(getService(namespaceId, serviceName) == null) {
-                    Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
-                    service = new Service();
-                    service.setName(serviceName);
-                    service.setNamespaceId(namespaceId);
-                    service.setGroupName(NamingUtils.getGroupName(serviceName));
-                    // now validate the service. if failed, exception will be thrown
-                    service.setLastModifiedMillis(System.currentTimeMillis());
-                    service.recalculateChecksum();
-                    if (cluster != null) {
-                        cluster.setService(service);
-                        service.getClusterMap().put(cluster.getName(), cluster);
-                    }
-                    service.validate();
-
-                    putServiceAndInit(service);
-                    if (!local) {
-                        addOrReplaceService(service);
-                    }
-                }
+            
+            Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
+            service = new Service();
+            service.setName(serviceName);
+            service.setNamespaceId(namespaceId);
+            service.setGroupName(NamingUtils.getGroupName(serviceName));
+            // now validate the service. if failed, exception will be thrown
+            service.setLastModifiedMillis(System.currentTimeMillis());
+            service.recalculateChecksum();
+            if (cluster != null) {
+                cluster.setService(service);
+                service.getClusterMap().put(cluster.getName(), cluster);
+            }
+            service.validate();
+            
+            putServiceAndInit(service);
+            if (!local) {
+                addOrReplaceService(service);
             }
         }
     }
@@ -881,11 +878,12 @@ public class ServiceManager implements RecordListener<Service> {
                 }
             }
         }
-        serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
+        serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
     }
     
     private void putServiceAndInit(Service service) throws NacosException {
         putService(service);
+        service = getService(service.getNamespaceId(), service.getName());
         service.init();
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
