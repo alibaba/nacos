@@ -32,7 +32,6 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.config.server.controller.parameters.ConfigCompareBean;
 import com.alibaba.nacos.config.server.model.ConfigCompareResult;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
@@ -51,7 +50,7 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1026,7 +1025,8 @@ public class ConfigAPI_CITCase {
         Thread.sleep(TIME_OUT);
         Assert.assertTrue(published);
         
-        List<Long> idList = persistService.findAllConfigInfo(1, 100, "").getPageItems().stream()
+        List<Long> idList = persistService.findAllConfigInfo(1, 1000, "").getPageItems().stream()
+                .filter(t -> Arrays.asList(propertiesDataId, jsonDataId, yamlDataId).contains(t.getDataId()))
                 .map(ConfigInfoBase::getId).collect(Collectors.toList());
         Assert.assertEquals(3, idList.size());
         Map<String, String> params = new HashMap<>();
@@ -1148,7 +1148,8 @@ public class ConfigAPI_CITCase {
         Assert.assertTrue(published);
         
         List<Long> idList = persistService.findAllConfigInfo(1, 100, "").getPageItems().stream()
-                .map(ConfigInfoBase::getId).collect(Collectors.toList());
+                .filter(t -> Arrays.asList(propertiesDataId, jsonDataId, yamlDataId, textDataId, wrongJsonDataId)
+                        .contains(t.getDataId())).map(ConfigInfoBase::getId).collect(Collectors.toList());
         Assert.assertEquals(5, idList.size());
         Map<String, String> params = new HashMap<>();
         StringBuilder idsBuilder = new StringBuilder();
