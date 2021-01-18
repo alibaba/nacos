@@ -1,0 +1,70 @@
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.alibaba.nacos.naming.healthcheck.v2;
+
+import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Health status synchronizer for persistent service, implementation by CP.
+ *
+ * @author xiweng.yy
+ */
+@Component
+public class PersistentHealthStatusSynchronizer implements HealthStatusSynchronizer {
+    
+    public PersistentHealthStatusSynchronizer(PersistentClientOperationServiceImpl persistentClientOperationService) {
+        this.persistentClientOperationService = persistentClientOperationService;
+    }
+    
+    private final PersistentClientOperationServiceImpl persistentClientOperationService;
+    
+    @Override
+    public void instanceHealthStatusChange(boolean isHealthy, Client client, Service service,
+            InstancePublishInfo instance) {
+        Instance updateInstance = parseInstance(service, instance);
+        updateInstance.setHealthy(isHealthy);
+        persistentClientOperationService.registerInstance(service, updateInstance, client.getClientId());
+    }
+    
+    private Instance parseInstance(Service service, InstancePublishInfo instanceInfo) {
+        Instance result = new Instance();
+        result.setIp(instanceInfo.getIp());
+        result.setPort(instanceInfo.getPort());
+        result.setServiceName(NamingUtils.getGroupedName(service.getName(), service.getGroup()));
+        Map<String, String> instanceMetadata = new HashMap<>(instanceInfo.getExtendDatum().size());
+        for (Map.Entry<String, Object> entry : instanceInfo.getExtendDatum().entrySet()) {
+            if (CommonParams.CLUSTER_NAME.equals(entry.getKey())) {
+                result.setClusterName(entry.getValue().toString());
+            } else {
+                instanceMetadata.put(entry.getKey(), entry.getValue().toString());
+            }
+        }
+        result.setMetadata(instanceMetadata);
+        result.setEphemeral(service.isEphemeral());
+        return result;
+    }
+}

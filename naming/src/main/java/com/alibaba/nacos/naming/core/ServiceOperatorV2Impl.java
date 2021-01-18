@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -41,8 +42,11 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     
     private final NamingMetadataOperateService metadataOperateService;
     
-    public ServiceOperatorV2Impl(NamingMetadataOperateService metadataOperateService) {
+    private final ServiceStorage serviceStorage;
+    
+    public ServiceOperatorV2Impl(NamingMetadataOperateService metadataOperateService, ServiceStorage serviceStorage) {
         this.metadataOperateService = metadataOperateService;
+        this.serviceStorage = serviceStorage;
     }
     
     @Override
@@ -66,7 +70,12 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     
     @Override
     public void delete(String namespaceId, String serviceName) throws NacosException {
-        metadataOperateService.deleteServiceMetadata(getServiceFromGroupedServiceName(namespaceId, serviceName, true));
+        Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, true);
+        if (!serviceStorage.getPushData(service).getHosts().isEmpty()) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "Service " + serviceName + " is not empty, can't be delete. Please unregister instance first");
+        }
+        metadataOperateService.deleteServiceMetadata(service);
     }
     
     @Override
