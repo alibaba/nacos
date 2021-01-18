@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.core.remote.control.TpsControl;
 import com.alibaba.nacos.core.remote.control.TpsControlConfig;
 import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
-import com.alibaba.nacos.core.remote.control.TpsControlPoint;
+import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -82,8 +82,8 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
                 if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
                     TpsControl tpsControl = method.getAnnotation(TpsControl.class);
                     String pointName = tpsControl.pointName();
-                    TpsControlPoint tpsControlPoint = new TpsControlPoint(pointName);
-                    tpsMonitorManager.registerTpsControlPoint(tpsControlPoint);
+                    TpsMonitorPoint tpsMonitorPoint = new TpsMonitorPoint(pointName);
+                    tpsMonitorManager.registerTpsControlPoint(tpsMonitorPoint);
                 }
             } catch (Exception e) {
                 //ignore.

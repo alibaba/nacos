@@ -18,7 +18,6 @@ package com.alibaba.nacos.api.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 
 import java.util.Map;
@@ -34,43 +33,39 @@ public interface Requester {
     /**
      * send request. default time out 3 seconds.
      *
-     * @param request     request.
-     * @param requestMeta requestMeta.
+     * @param request request.
      * @return response.
      * @throws NacosException exception throw.
      */
-    public Response request(Request request, RequestMeta requestMeta) throws NacosException;
+    Response request(Request request) throws NacosException;
     
     /**
      * send request.
      *
      * @param request      request.
-     * @param requestMeta  requestMeta.
      * @param timeoutMills mills of timeouts.
      * @return response  response returned.
      * @throws NacosException exception throw.
      */
-    public Response request(Request request, RequestMeta requestMeta, long timeoutMills) throws NacosException;
+    Response request(Request request, long timeoutMills) throws NacosException;
     
     /**
      * send request.
      *
-     * @param request     request.
-     * @param requestMeta meta of request.
+     * @param request request.
      * @return request future.
      * @throws NacosException exception throw.
      */
-    public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException;
+    RequestFuture requestFuture(Request request) throws NacosException;
     
     /**
      * send async request.
-     * @param request request.
-     * @param requestMeta     meta of request.
+     *
+     * @param request         request.
      * @param requestCallBack callback of request.
      * @throws NacosException exception throw.
      */
-    public void asyncRequest(Request request, RequestMeta requestMeta, RequestCallBack requestCallBack)
-            throws NacosException;
+    void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException;
     
     /**
      * get connection labels.

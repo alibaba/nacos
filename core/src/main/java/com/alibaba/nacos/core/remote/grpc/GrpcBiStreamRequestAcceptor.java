@@ -68,26 +68,24 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
                 int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
                 String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
-                GrpcUtils.PlainRequest plainRequest = GrpcUtils.parse(payload);
-                plainRequest.getMetadata().setClientPort(clientPort);
-                plainRequest.getMetadata().setConnectionId(connectionId);
-                if (plainRequest.getBody() instanceof ConnectionSetupRequest) {
-                    RequestMeta metadata = plainRequest.getMetadata();
-                    Map<String, String> labels = metadata.getLabels();
+                Object parseObj = GrpcUtils.parse(payload);
+                if (parseObj != null && parseObj instanceof ConnectionSetupRequest) {
+                    ConnectionSetupRequest setUpRequest = (ConnectionSetupRequest) parseObj;
+                    Map<String, String> labels = setUpRequest.getLabels();
                     String appName = "-";
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
-                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(metadata.getConnectionId(), clientIp,
-                            metadata.getClientPort(), localPort, ConnectionType.GRPC.getType(),
-                            metadata.getClientVersion(), appName, metadata.getLabels());
+                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId, clientIp, clientPort, localPort,
+                            ConnectionType.GRPC.getType(), setUpRequest.getClientVersion(), appName,
+                            setUpRequest.getLabels());
                     
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     
                     if (!ApplicationUtils.isStarted() || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {
-                            connection.request(new ConnectResetRequest(), buildMeta());
+                            connection.request(new ConnectResetRequest());
                             connection.close();
                         } catch (Exception e) {
                             //Do nothing.
@@ -95,11 +93,10 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         return;
                     }
                     
-                } else if (plainRequest.getBody() instanceof Response) {
-                    Response response = (Response) plainRequest.getBody();
+                } else if (parseObj != null && parseObj instanceof Response) {
+                    Response response = (Response) parseObj;
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
-                    connectionManager.refreshActiveTime(plainRequest.getMetadata().getConnectionId());
-                    
+                    connectionManager.refreshActiveTime(connectionId);
                 }
                 
             }

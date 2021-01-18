@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     
-    public final Map<String, TpsControlPoint> points = new ConcurrentHashMap<String, TpsControlPoint>(16);
+    public final Map<String, TpsMonitorPoint> points = new ConcurrentHashMap<String, TpsMonitorPoint>(16);
     
     private static ScheduledExecutorService executorService = ExecutorFactory
             .newSingleScheduledExecutorService(new ThreadFactory() {
@@ -72,25 +72,25 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     /**
      * register point.
      *
-     * @param tpsControlPoint tps point.
+     * @param tpsMonitorPoint tps point.
      */
-    public void registerTpsControlPoint(TpsControlPoint tpsControlPoint) {
+    public void registerTpsControlPoint(TpsMonitorPoint tpsMonitorPoint) {
         Loggers.TPS_CONTROL
-                .info("Register tps control,pointName={}, point={} ", tpsControlPoint.getPointName(), tpsControlPoint);
+                .info("Register tps control,pointName={}, point={} ", tpsMonitorPoint.getPointName(), tpsMonitorPoint);
         try {
-            loadRuleFromLocal(tpsControlPoint);
+            loadRuleFromLocal(tpsMonitorPoint);
         } catch (IOException e) {
             Loggers.TPS_CONTROL
-                    .error("Fail to init rule from local,pointName={},error={}", tpsControlPoint.getPointName(), e);
+                    .error("Fail to init rule from local,pointName={},error={}", tpsMonitorPoint.getPointName(), e);
         }
-        if (points.putIfAbsent(tpsControlPoint.getPointName(), tpsControlPoint) == null) {
-            registerFileWatch(tpsControlPoint);
+        if (points.putIfAbsent(tpsMonitorPoint.getPointName(), tpsMonitorPoint) == null) {
+            registerFileWatch(tpsMonitorPoint);
         }
     }
     
-    private void registerFileWatch(TpsControlPoint tpsControlPoint) {
+    private void registerFileWatch(TpsMonitorPoint tpsMonitorPoint) {
         try {
-            String tpsPath = Paths.get(EnvUtil.getNacosHome(), "tps").toString();
+            String tpsPath = Paths.get(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator).toString();
             WatchFileCenter.registerWatcher(tpsPath, new FileWatcher() {
                 @Override
                 public void onChange(FileChangeEvent event) {
@@ -101,7 +101,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                         }
                     } catch (Throwable throwable) {
                         Loggers.TPS_CONTROL.warn("Fail to load rule from local,pointName={},error={}",
-                                tpsControlPoint.getPointName(), throwable);
+                                tpsMonitorPoint.getPointName(), throwable);
                     }
                 }
                 
@@ -117,7 +117,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
             });
         } catch (NacosException e) {
             Loggers.TPS_CONTROL
-                    .warn("Register tps point rule fail ,pointName={},error={}", tpsControlPoint.getPointName(), e);
+                    .warn("Register tps point rule fail ,pointName={},error={}", tpsMonitorPoint.getPointName(), e);
         }
     }
     
@@ -178,12 +178,12 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
             try {
                 long now = System.currentTimeMillis();
                 StringBuilder stringBuilder = new StringBuilder();
-                Set<Map.Entry<String, TpsControlPoint>> entries = points.entrySet();
+                Set<Map.Entry<String, TpsMonitorPoint>> entries = points.entrySet();
                 
-                long tempSecond = TpsControlPoint.getTrimMillsOfSecond(now - 1000L);
-                String formatString = TpsControlPoint.getTimeFormatOfSecond(tempSecond);
-                for (Map.Entry<String, TpsControlPoint> entry : entries) {
-                    TpsControlPoint value = entry.getValue();
+                long tempSecond = TpsMonitorPoint.getTrimMillsOfSecond(now - 1000L);
+                String formatString = TpsMonitorPoint.getTimeFormatOfSecond(tempSecond);
+                for (Map.Entry<String, TpsMonitorPoint> entry : entries) {
+                    TpsMonitorPoint value = entry.getValue();
                     //get last second
                     TpsRecorder.TpsSlot pointSlot = value.getTpsRecorder().getPoint(now - 1000L);
                     if (pointSlot == null) {
@@ -227,9 +227,9 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
         }
     }
     
-    private synchronized void loadRuleFromLocal(TpsControlPoint tpsControlPoint) throws IOException {
+    private synchronized void loadRuleFromLocal(TpsMonitorPoint tpsMonitorPoint) throws IOException {
         
-        File pointFile = getRuleFile(tpsControlPoint.getPointName());
+        File pointFile = getRuleFile(tpsMonitorPoint.getPointName());
         if (!pointFile.exists()) {
             pointFile.createNewFile();
         }
@@ -237,8 +237,8 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
         TpsControlRule tpsControlRule = StringUtils.isBlank(ruleContent) ? new TpsControlRule()
                 : JacksonUtils.toObj(ruleContent, TpsControlRule.class);
         Loggers.TPS_CONTROL
-                .info("Load rule from local,pointName={}, point={} ", tpsControlPoint.getPointName(), ruleContent);
-        tpsControlPoint.applyRule(tpsControlRule);
+                .info("Load rule from local,pointName={}, point={} ", tpsMonitorPoint.getPointName(), ruleContent);
+        tpsMonitorPoint.applyRule(tpsControlRule);
         
     }
     

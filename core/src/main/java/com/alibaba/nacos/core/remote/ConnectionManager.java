@@ -329,7 +329,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                         try {
                             Connection connection = getConnection(expelledClientId);
                             if (connection != null) {
-                                connection.asyncRequest(connectResetRequest, buildMeta(), null);
+                                connection.asyncRequest(connectResetRequest, null);
                                 Loggers.REMOTE
                                         .info("send connection reset server , connection id = {},recommendServerIp={}, recommendServerPort={}",
                                                 expelledClientId, connectResetRequest.getServerIp(),
@@ -387,7 +387,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                     connectResetRequest.setServerPort(split[1]);
                 }
                 try {
-                    connection.request(connectResetRequest, buildMeta());
+                    connection.request(connectResetRequest);
                 } catch (ConnectionAlreadyClosedException e) {
                     unregister(connectionId);
                 } catch (Exception e) {
@@ -583,7 +583,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         if (!baseDir.exists()) {
             baseDir.mkdir();
         }
-        File pointFile = new File(baseDir, "limit");
+        File pointFile = new File(baseDir, RULE_FILE_NAME);
         return pointFile;
     }
     

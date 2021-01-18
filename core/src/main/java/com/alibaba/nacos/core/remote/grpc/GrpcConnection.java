@@ -21,12 +21,9 @@ import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
@@ -35,8 +32,6 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
-
-import java.util.Map;
 
 /**
  * grpc connection.
@@ -56,11 +51,11 @@ public class GrpcConnection extends Connection {
         this.channel = channel;
     }
     
-    private void sendRequestNoAck(Request request, RequestMeta meta) throws NacosException {
+    private void sendRequestNoAck(Request request) throws NacosException {
         try {
             //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
             synchronized (streamObserver) {
-                streamObserver.onNext(GrpcUtils.convert(request, wrapMeta(meta)));
+                streamObserver.onNext(GrpcUtils.convert(request));
             }
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
@@ -70,19 +65,7 @@ public class GrpcConnection extends Connection {
         }
     }
     
-    private RequestMeta wrapMeta(RequestMeta meta) {
-        if (meta == null) {
-            meta = new RequestMeta();
-        }
-        meta.setClientVersion(VersionUtils.getFullClientVersion());
-        meta.setConnectionId(getMetaInfo().getConnectionId());
-        meta.setClientPort(getMetaInfo().getLocalPort());
-        meta.setClientIp(NetUtils.localIP());
-        return meta;
-    }
-    
-    private DefaultRequestFuture sendRequestInner(Request request, RequestMeta meta, RequestCallBack callBack)
-            throws NacosException {
+    private DefaultRequestFuture sendRequestInner(Request request, RequestCallBack callBack) throws NacosException {
         final String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
         
@@ -90,18 +73,18 @@ public class GrpcConnection extends Connection {
                 callBack, () -> RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), requestId));
         
         RpcAckCallbackSynchronizer.syncCallback(getMetaInfo().getConnectionId(), requestId, defaultPushFuture);
-        sendRequestNoAck(request, meta);
+        sendRequestNoAck(request);
         return defaultPushFuture;
     }
     
     @Override
-    public Response request(Request request, RequestMeta requestMeta) throws NacosException {
-        return request(request, requestMeta, 3000L);
+    public Response request(Request request) throws NacosException {
+        return request(request, 3000L);
     }
     
     @Override
-    public Response request(Request request, RequestMeta requestMeta, long timeoutMills) throws NacosException {
-        DefaultRequestFuture pushFuture = (DefaultRequestFuture) sendRequestInner(request, requestMeta, null);
+    public Response request(Request request, long timeoutMills) throws NacosException {
+        DefaultRequestFuture pushFuture = (DefaultRequestFuture) sendRequestInner(request, null);
         try {
             return pushFuture.get(timeoutMills);
         } catch (Exception e) {
@@ -112,19 +95,13 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException {
-        return sendRequestInner(request, requestMeta, null);
+    public RequestFuture requestFuture(Request request) throws NacosException {
+        return sendRequestInner(request, null);
     }
     
     @Override
-    public void asyncRequest(Request request, RequestMeta requestMeta, RequestCallBack requestCallBack)
-            throws NacosException {
-        sendRequestInner(request, requestMeta, requestCallBack);
-    }
-    
-    @Override
-    public Map<String, String> getLabels() {
-        return null;
+    public void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException {
+        sendRequestInner(request, requestCallBack);
     }
     
     @Override

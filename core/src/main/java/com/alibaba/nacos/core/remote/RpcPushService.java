@@ -52,7 +52,7 @@ public class RpcPushService {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                connection.asyncRequest(request, null, new AbstractRequestCallBack(requestCallBack.getTimeout()) {
+                connection.asyncRequest(request, new AbstractRequestCallBack(requestCallBack.getTimeout()) {
                     
                     @Override
                     public Executor getExecutor() {
@@ -97,7 +97,7 @@ public class RpcPushService {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                connection.request(request, null);
+                connection.request(request);
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {

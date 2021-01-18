@@ -30,6 +30,8 @@ import java.util.Map;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
     
+    private String connectionId;
+    
     private boolean abandon = false;
     
     protected RpcClient.ServerInfo serverInfo;
@@ -38,6 +40,14 @@ public abstract class Connection implements Requester {
     
     public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
+    }
+    
+    public String getConnectionId() {
+        return connectionId;
+    }
+    
+    public void setConnectionId(String connectionId) {
+        this.connectionId = connectionId;
     }
     
     @Override

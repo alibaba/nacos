@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +58,7 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                 Response response = null;
                 try {
                     response = super.getDefaultResponseInstance(handlerClazz);
-                    response.setErrorInfo(ResponseCode.FAIL.getCode(), "tps control over limit.");
+                    response.setErrorInfo(NacosException.OVER_THRESHOLD, "Tps Flow restricted");
                     return response;
                 } catch (Exception e) {
                     Loggers.AUTH.error("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);

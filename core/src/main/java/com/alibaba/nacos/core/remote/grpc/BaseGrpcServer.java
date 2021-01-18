@@ -158,12 +158,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
                 .asyncUnaryCall((request, responseObserver) -> {
-                    com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
-                            .setConnectionId(CONTEXT_KEY_CONN_ID.get())
-                            .setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get())
-                            .setClientIp(CONTEXT_KEY_CONN_CLIENT_IP.get()).build();
-                    Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
-                    grpcCommonRequestAcceptor.request(requestNew, responseObserver);
+                    grpcCommonRequestAcceptor.request(request, responseObserver);
                 });
         
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)

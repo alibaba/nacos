@@ -30,7 +30,7 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: TpsControlPoint.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
  */
-public class TpsControlPoint {
+public class TpsMonitorPoint {
     
     public static final int DEFAULT_RECORD_SIZE = 10;
     
@@ -42,11 +42,11 @@ public class TpsControlPoint {
     
     Map<String, TpsRecorder> tpsRecordForIp = new HashMap<String, TpsRecorder>();
     
-    public TpsControlPoint(String pointName) {
+    public TpsMonitorPoint(String pointName) {
         this(pointName, -1, "monitor");
     }
     
-    public TpsControlPoint(String pointName, int maxTps, String monitorType) {
+    public TpsMonitorPoint(String pointName, int maxTps, String monitorType) {
         // trim to second,uniform all tps control.
         this.startTime = getTrimMillsOfSecond(System.currentTimeMillis());
         this.pointName = pointName;

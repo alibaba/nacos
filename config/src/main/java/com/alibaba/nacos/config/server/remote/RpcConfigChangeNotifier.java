@@ -29,7 +29,7 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
-import com.alibaba.nacos.core.remote.control.TpsControlPoint;
+import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -64,9 +64,9 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     @PostConstruct
     private void registerTpsPoint() {
         
-        tpsMonitorManager.registerTpsControlPoint(new TpsControlPoint(POINT_CONFIG_PUSH));
-        tpsMonitorManager.registerTpsControlPoint(new TpsControlPoint(POINT_CONFIG_PUSH_SUCCESS));
-        tpsMonitorManager.registerTpsControlPoint(new TpsControlPoint(POINT_CONFIG_PUSH_FAIL));
+        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH));
+        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_SUCCESS));
+        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_FAIL));
         
     }
     

@@ -28,7 +28,7 @@ public class RemoteUtils {
     
     public static final float LOADER_FACTOR = 0.1f;
     
-    private static final int REMOTE_EXECUTOR_TIMES_OF_PROCESSORS = 2;
+    private static final int REMOTE_EXECUTOR_TIMES_OF_PROCESSORS = 64;
     
     /**
      * get remote executors thread times of processors,default is 64. see the usage of this method for detail.

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.remote;
 
 import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
-import com.alibaba.nacos.core.remote.control.TpsControlPoint;
+import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -36,7 +36,7 @@ public class TpsMonitorManagerTest {
         testPoints = Arrays
                 .asList("test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10");
         for (String point : testPoints) {
-            tpsMonitorManager.registerTpsControlPoint(new TpsControlPoint(point));
+            tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(point));
         }
         
     }

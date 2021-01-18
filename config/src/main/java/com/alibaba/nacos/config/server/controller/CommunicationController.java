@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
@@ -171,7 +170,7 @@ public class CommunicationController {
             notifyRequest.setTenant(tenant);
             for (Connection connectionByIp : listeners) {
                 try {
-                    connectionByIp.request(notifyRequest, new RequestMeta());
+                    connectionByIp.request(notifyRequest);
                 } catch (NacosException e) {
                     e.printStackTrace();
                 }
@@ -201,7 +200,7 @@ public class CommunicationController {
                 }
                 
                 ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp
-                        .request(clientMetrics, new RequestMeta());
+                        .request(clientMetrics);
                 metrics.putAll(request1.getMetrics());
             } catch (NacosException e) {
                 e.printStackTrace();

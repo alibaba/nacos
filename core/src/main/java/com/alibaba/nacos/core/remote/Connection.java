@@ -19,6 +19,8 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.remote.Requester;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.Map;
+
 /**
  * Connection.
  *
@@ -32,6 +34,11 @@ public abstract class Connection implements Requester {
     
     public Connection(ConnectionMetaInfo metaInfo) {
         this.metaInfo = metaInfo;
+    }
+    
+    @Override
+    public Map<String, String> getLabels() {
+        return metaInfo.getLabels();
     }
     
     /**

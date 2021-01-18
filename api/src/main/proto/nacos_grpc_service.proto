@@ -24,21 +24,8 @@ option java_multiple_files = true;
 option java_package = "com.alibaba.nacos.api.grpc.auto";
 
 message Metadata {
-
-    string client_ip = 1;
-
-    int32 client_port = 2;
-
     string type = 3;
-
-    string connection_id = 4;
-
-    string client_version = 5;
-
-    map<string,string> labels = 6;
-
     map<string, string> headers = 7;
-
 }
 
 
