@@ -17,9 +17,7 @@
 package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
