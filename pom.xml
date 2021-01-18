@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-SNAPSHOT</tag>
+        <tag>nacos-all-2.0.0-1-SNAPSHOT</tag>
     </scm>
     
     <mailingLists>
