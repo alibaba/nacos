@@ -170,7 +170,7 @@ public class CommunicationController {
             notifyRequest.setTenant(tenant);
             for (Connection connectionByIp : listeners) {
                 try {
-                    connectionByIp.request(notifyRequest);
+                    connectionByIp.request(notifyRequest, 3000L);
                 } catch (NacosException e) {
                     e.printStackTrace();
                 }
@@ -200,7 +200,7 @@ public class CommunicationController {
                 }
                 
                 ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp
-                        .request(clientMetrics);
+                        .request(clientMetrics, 3000L);
                 metrics.putAll(request1.getMetrics());
             } catch (NacosException e) {
                 e.printStackTrace();

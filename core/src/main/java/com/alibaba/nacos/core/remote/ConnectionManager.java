@@ -387,7 +387,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                     connectResetRequest.setServerPort(split[1]);
                 }
                 try {
-                    connection.request(connectResetRequest);
+                    connection.request(connectResetRequest, 3000L);
                 } catch (ConnectionAlreadyClosedException e) {
                     unregister(connectionId);
                 } catch (Exception e) {

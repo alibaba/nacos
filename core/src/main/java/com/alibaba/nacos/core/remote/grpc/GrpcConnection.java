@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.remote.Connection;
-import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
+import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.StatusRuntimeException;
@@ -45,7 +45,7 @@ public class GrpcConnection extends Connection {
     
     private Channel channel;
     
-    public GrpcConnection(ConnectionMetaInfo metaInfo, StreamObserver streamObserver, Channel channel) {
+    public GrpcConnection(ConnectionMeta metaInfo, StreamObserver streamObserver, Channel channel) {
         super(metaInfo);
         this.streamObserver = streamObserver;
         this.channel = channel;
@@ -75,11 +75,6 @@ public class GrpcConnection extends Connection {
         RpcAckCallbackSynchronizer.syncCallback(getMetaInfo().getConnectionId(), requestId, defaultPushFuture);
         sendRequestNoAck(request);
         return defaultPushFuture;
-    }
-    
-    @Override
-    public Response request(Request request) throws NacosException {
-        return request(request, 3000L);
     }
     
     @Override
@@ -124,14 +119,6 @@ public class GrpcConnection extends Connection {
                 serverCallStreamObserver.onCompleted();
             }
         }
-    }
-    
-    @Override
-    public boolean isBusy() {
-        if (streamObserver instanceof ServerCallStreamObserver) {
-            return !((ServerCallStreamObserver) streamObserver).isReady();
-        }
-        return false;
     }
     
     @Override

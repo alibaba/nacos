@@ -29,7 +29,7 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: ConnectionMetaInfo.java, v 0.1 2020年07月13日 7:28 PM liuzunfei Exp $
  */
-public class ConnectionMetaInfo {
+public class ConnectionMeta {
     
     /**
      * ConnectionType.
@@ -82,7 +82,7 @@ public class ConnectionMetaInfo {
         return labels.get(labelKey);
     }
     
-    public ConnectionMetaInfo(String connectionId, String clientIp, int clientPort, int localPort, String connectType,
+    public ConnectionMeta(String connectionId, String clientIp, int clientPort, int localPort, String connectType,
             String version, String appName, Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;

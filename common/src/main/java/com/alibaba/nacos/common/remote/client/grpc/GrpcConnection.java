@@ -68,11 +68,6 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public Response request(Request request) throws NacosException {
-        return request(request, 3000L);
-    }
-    
-    @Override
     public Response request(Request request, long timeouts) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request);
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);

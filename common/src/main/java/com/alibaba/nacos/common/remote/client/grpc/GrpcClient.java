@@ -220,7 +220,7 @@ public abstract class GrpcClient extends RpcClient {
     private void sendResponse(String ackId, boolean success) {
         try {
             PushAckRequest request = PushAckRequest.build(ackId, success);
-            this.currentConnection.request(request);
+            this.currentConnection.request(request, 3000L);
         } catch (Exception e) {
             LOGGER.error("[{}]Error to send ack response, ackId->{}", this.currentConnection.getConnectionId(), ackId);
         }

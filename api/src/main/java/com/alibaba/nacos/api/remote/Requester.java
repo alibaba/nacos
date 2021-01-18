@@ -20,8 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 
-import java.util.Map;
-
 /**
  * connection interface,define basic operation.
  *
@@ -29,15 +27,6 @@ import java.util.Map;
  * @version $Id: Requester.java, v 0.1 2020年09月11日 4:05 PM liuzunfei Exp $
  */
 public interface Requester {
-    
-    /**
-     * send request. default time out 3 seconds.
-     *
-     * @param request request.
-     * @return response.
-     * @throws NacosException exception throw.
-     */
-    Response request(Request request) throws NacosException;
     
     /**
      * send request.
@@ -68,21 +57,8 @@ public interface Requester {
     void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException;
     
     /**
-     * get connection labels.
-     *
-     * @return labels.
-     */
-    public Map<String, String> getLabels();
-    
-    /**
      * close connection.
      */
-    public void close();
+    void close();
     
-    /**
-     * check this requester is busy.
-     *
-     * @return busy or not.
-     */
-    public boolean isBusy();
 }

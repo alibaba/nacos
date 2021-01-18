@@ -30,13 +30,12 @@ import java.util.Map;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
     
-    private final ConnectionMetaInfo metaInfo;
+    private final ConnectionMeta metaInfo;
     
-    public Connection(ConnectionMetaInfo metaInfo) {
+    public Connection(ConnectionMeta metaInfo) {
         this.metaInfo = metaInfo;
     }
     
-    @Override
     public Map<String, String> getLabels() {
         return metaInfo.getLabels();
     }
@@ -60,13 +59,8 @@ public abstract class Connection implements Requester {
      *
      * @return property value of metaInfo
      */
-    public ConnectionMetaInfo getMetaInfo() {
+    public ConnectionMeta getMetaInfo() {
         return metaInfo;
-    }
-    
-    @Override
-    public boolean isBusy() {
-        return false;
     }
     
     @Override

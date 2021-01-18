@@ -29,7 +29,7 @@ import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
+import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.grpc.stub.ServerCallStreamObserver;
@@ -76,7 +76,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
-                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId, clientIp, clientPort, localPort,
+                    ConnectionMeta metaInfo = new ConnectionMeta(connectionId, clientIp, clientPort, localPort,
                             ConnectionType.GRPC.getType(), setUpRequest.getClientVersion(), appName,
                             setUpRequest.getLabels());
                     
@@ -85,7 +85,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (!ApplicationUtils.isStarted() || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {
-                            connection.request(new ConnectResetRequest());
+                            connection.request(new ConnectResetRequest(), 3000L);
                             connection.close();
                         } catch (Exception e) {
                             //Do nothing.
