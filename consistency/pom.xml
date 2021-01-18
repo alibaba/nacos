@@ -87,7 +87,7 @@
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>2.0.0-1-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     
     <properties>

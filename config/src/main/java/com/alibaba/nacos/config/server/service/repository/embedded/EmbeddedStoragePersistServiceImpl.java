@@ -2351,6 +2351,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 configAdvanceInfo = new HashMap<>(16);
             }
             configAdvanceInfo.put("type", type);
+            configAdvanceInfo.put("desc", configInfo.getDesc());
             try {
                 addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify, callFinally);
                 succCount++;
