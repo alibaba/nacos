@@ -88,6 +88,8 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
         try {
             switch (DataOperation.valueOf(request.getOperation())) {
                 case ADD:
+                    addClusterMetadataToService(op);
+                    break;
                 case CHANGE:
                     updateServiceMetadata(op);
                     break;
@@ -104,6 +106,18 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
         } finally {
             readLock.unlock();
+        }
+    }
+    
+    private void addClusterMetadataToService(MetadataOperation<ServiceMetadata> op) {
+        Service service = Service
+                .newService(op.getNamespace(), op.getGroup(), op.getServiceName(), op.getMetadata().isEphemeral());
+        Optional<ServiceMetadata> currentMetadata = namingMetadataManager.getServiceMetadata(service);
+        if (currentMetadata.isPresent()) {
+            currentMetadata.get().getClusters().putAll(op.getMetadata().getClusters());
+        } else {
+            Service singleton = ServiceManager.getInstance().getSingleton(service);
+            namingMetadataManager.updateServiceMetadata(singleton, op.getMetadata());
         }
     }
     
