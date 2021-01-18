@@ -97,39 +97,58 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             responseObserver.onCompleted();
             return;
         }
+        
         Object parseObj = null;
         try {
             parseObj = GrpcUtils.parse(grpcRequest);
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST
                     .warn("[{}] Invalid request receive from connection [{}] ,error={}", "grpc", connectionId, e);
+            responseObserver.onNext(GrpcUtils.convert(buildErrorResponse(NacosException.BAD_GATEWAY, e.getMessage())));
+            responseObserver.onCompleted();
+            return;
         }
         
-        if (parseObj != null) {
-            Request request = (Request) parseObj;
-            try {
-                Connection connection = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
-                RequestMeta requestMeta = new RequestMeta();
-                requestMeta.setClientIp(CONTEXT_KEY_CONN_CLIENT_IP.get());
-                requestMeta.setConnectionId(CONTEXT_KEY_CONN_ID.get());
-                requestMeta.setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get());
-                requestMeta.setClientVersion(connection.getMetaInfo().getVersion());
-                requestMeta.setLabels(connection.getMetaInfo().getLabels());
-                connectionManager.refreshActiveTime(requestMeta.getConnectionId());
-                Response response = requestHandler.handleRequest(request, requestMeta);
-                responseObserver.onNext(GrpcUtils.convert(response));
-                responseObserver.onCompleted();
-            } catch (Throwable e) {
-                Loggers.REMOTE_DIGEST
-                        .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc",
-                                connectionId, e);
-                responseObserver
-                        .onNext(GrpcUtils.convert(buildErrorResponse(ResponseCode.FAIL.getCode(), e.getMessage())));
-                responseObserver.onCompleted();
-                return;
-            }
-            
+        if (parseObj == null) {
+            Loggers.REMOTE_DIGEST.warn("[{}] Invalid request receive  ,parse request is null", connectionId);
+            responseObserver
+                    .onNext(GrpcUtils.convert(buildErrorResponse(NacosException.BAD_GATEWAY, "Invalid request")));
+            responseObserver.onCompleted();
+            return;
         }
+        
+        if (!(parseObj instanceof Request)) {
+            Loggers.REMOTE_DIGEST
+                    .warn("[{}] Invalid request receive  ,parsed payload is not a request,parseObj={}", connectionId,
+                            parseObj);
+            responseObserver
+                    .onNext(GrpcUtils.convert(buildErrorResponse(NacosException.BAD_GATEWAY, "Invalid request")));
+            responseObserver.onCompleted();
+            return;
+        }
+        
+        Request request = (Request) parseObj;
+        try {
+            Connection connection = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
+            RequestMeta requestMeta = new RequestMeta();
+            requestMeta.setClientIp(CONTEXT_KEY_CONN_CLIENT_IP.get());
+            requestMeta.setConnectionId(CONTEXT_KEY_CONN_ID.get());
+            requestMeta.setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get());
+            requestMeta.setClientVersion(connection.getMetaInfo().getVersion());
+            requestMeta.setLabels(connection.getMetaInfo().getLabels());
+            connectionManager.refreshActiveTime(requestMeta.getConnectionId());
+            Response response = requestHandler.handleRequest(request, requestMeta);
+            responseObserver.onNext(GrpcUtils.convert(response));
+            responseObserver.onCompleted();
+        } catch (Throwable e) {
+            Loggers.REMOTE_DIGEST
+                    .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,
+                            e);
+            responseObserver.onNext(GrpcUtils.convert(buildErrorResponse(ResponseCode.FAIL.getCode(), e.getMessage())));
+            responseObserver.onCompleted();
+            return;
+        }
+        
     }
     
     private Response buildErrorResponse(int errorCode, String msg) {

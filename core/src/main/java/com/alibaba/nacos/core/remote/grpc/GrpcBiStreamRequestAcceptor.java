@@ -31,6 +31,7 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
@@ -68,8 +69,22 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
                 int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
                 String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
-                Object parseObj = GrpcUtils.parse(payload);
-                if (parseObj != null && parseObj instanceof ConnectionSetupRequest) {
+                Object parseObj = null;
+                try {
+                    parseObj = GrpcUtils.parse(payload);
+                } catch (Throwable throwable) {
+                    Loggers.REMOTE_DIGEST
+                            .warn("[{}]Grpc request bi stream,payload parse error={}", connectionId, throwable);
+                    return;
+                }
+                
+                if (parseObj == null) {
+                    Loggers.REMOTE_DIGEST
+                            .warn("[{}]Grpc request bi stream,payload parse null ,body={},meta={}", connectionId,
+                                    payload.getBody().getValue().toStringUtf8(), payload.getMetadata());
+                    return;
+                }
+                if (parseObj instanceof ConnectionSetupRequest) {
                     ConnectionSetupRequest setUpRequest = (ConnectionSetupRequest) parseObj;
                     Map<String, String> labels = setUpRequest.getLabels();
                     String appName = "-";
@@ -97,6 +112,11 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     Response response = (Response) parseObj;
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
                     connectionManager.refreshActiveTime(connectionId);
+                } else {
+                    Loggers.REMOTE_DIGEST
+                            .warn("[{}]Grpc request bi stream,unknown payload receive ,parseObj={}", connectionId,
+                                    parseObj);
+                    return;
                 }
                 
             }
@@ -122,13 +142,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
         };
         
         return streamObserver;
-    }
-    
-    private RequestMeta buildMeta() {
-        RequestMeta meta = new RequestMeta();
-        meta.setClientVersion(VersionUtils.getFullClientVersion());
-        meta.setClientIp(NetUtils.localIP());
-        return meta;
     }
     
 }

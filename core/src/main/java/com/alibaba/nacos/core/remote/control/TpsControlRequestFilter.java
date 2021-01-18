@@ -61,7 +61,8 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                     response.setErrorInfo(NacosException.OVER_THRESHOLD, "Tps Flow restricted");
                     return response;
                 } catch (Exception e) {
-                    Loggers.AUTH.error("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);
+                    Loggers.TPS_CONTROL_DETAIL
+                            .warn("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);
                     return null;
                 }
                 
