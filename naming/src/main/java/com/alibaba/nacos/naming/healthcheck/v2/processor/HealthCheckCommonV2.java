@@ -23,6 +23,7 @@ import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
+import com.alibaba.nacos.naming.healthcheck.v2.PersistentHealthStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -46,6 +47,9 @@ public class HealthCheckCommonV2 {
     
     @Autowired
     private SwitchDomain switchDomain;
+    
+    @Autowired
+    private PersistentHealthStatusSynchronizer healthStatusSynchronizer;
     
     /**
      * Re-evaluate check responsce time.
@@ -95,8 +99,7 @@ public class HealthCheckCommonV2 {
                 if (instance.getOkCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
                     if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
                             .responsible(serviceName)) {
-                        instance.setHealthy(true);
-                        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+                        healthStatusSynchronizer.instanceHealthStatusChange(true, task.getClient(), service, instance);
                         Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
                                 serviceName, instance.getIp(), instance.getPort(), clusterName,
                                 UtilsAndCommons.LOCALHOST_SITE, msg);
@@ -130,8 +133,7 @@ public class HealthCheckCommonV2 {
                 if (instance.getFailCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
                     if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
                             .responsible(serviceName)) {
-                        instance.setHealthy(false);
-                        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+                        healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
                         Loggers.EVT_LOG
                                 .info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
                                         serviceName, instance.getIp(), instance.getPort(), clusterName,
@@ -166,8 +168,7 @@ public class HealthCheckCommonV2 {
                 String clusterName = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
                 if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
                         .responsible(serviceName)) {
-                    instance.setHealthy(false);
-                    NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
+                    healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
                     Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
                             serviceName, instance.getIp(), instance.getPort(), clusterName,
                             UtilsAndCommons.LOCALHOST_SITE, msg);

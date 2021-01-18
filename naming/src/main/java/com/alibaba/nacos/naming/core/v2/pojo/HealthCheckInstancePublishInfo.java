@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class HealthCheckInstancePublishInfo extends InstancePublishInfo {
     
+    private static final long serialVersionUID = 5424801693490263492L;
+    
     private long lastHeartBeatTime = System.currentTimeMillis();
     
     private HealthCheckStatus healthCheckStatus;
