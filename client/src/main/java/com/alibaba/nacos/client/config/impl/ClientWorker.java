@@ -208,10 +208,12 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
-            cache.removeListener(listener);
-            if (cache.getListeners().isEmpty()) {
-                cache.setSync(false);
-                agent.removeCache(dataId, group);
+            synchronized (cache) {
+                cache.removeListener(listener);
+                if (cache.getListeners().isEmpty()) {
+                    cache.setSync(false);
+                    agent.removeCache(dataId, group);
+                }
             }
         }
     }
@@ -564,8 +566,6 @@ public class ClientWorker implements Closeable {
         
         private Object bellItem = new Object();
         
-        private Map<String, RpcClient> rpcClientMap = new HashMap<String, RpcClient>();
-        
         public ConfigRpcTransportClient(Properties properties, ServerListManager serverListManager) {
             super(properties, serverListManager);
         }
@@ -741,6 +741,8 @@ public class ClientWorker implements Closeable {
                 
             }
             
+            boolean hasChangedKeys = false;
+            
             if (!listenCachesMap.isEmpty()) {
                 for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
@@ -757,6 +759,7 @@ public class ClientWorker implements Closeable {
                             Set<String> changeKeys = new HashSet<String>();
                             //handle changed keys,notify listener
                             if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedConfigs())) {
+                                hasChangedKeys = true;
                                 for (ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
                                         .getChangedConfigs()) {
                                     String changeKey = GroupKey
@@ -765,17 +768,22 @@ public class ClientWorker implements Closeable {
                                     changeKeys.add(changeKey);
                                     boolean isInitializing = cacheMap.get().get(changeKey).isInitializing();
                                     refreshContentAndCheck(changeKey, !isInitializing);
-                                    
                                 }
+                                
                             }
                             
                             //handler content configs
                             for (CacheData cacheData : listenCaches) {
-                                if (!changeKeys.contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group,
-                                        cacheData.getTenant()))) {
+                                String groupKey = GroupKey
+                                        .getKeyTenant(cacheData.dataId, cacheData.group, cacheData.getTenant());
+                                if (!changeKeys.contains(groupKey)) {
                                     //sync:cache data md5 = server md5 && cache data md5 = all listeners md5.
                                     synchronized (cacheData) {
-                                        if (cacheData.checkListenersMd5Consistent()) {
+                                        if (!cacheData.getListeners().isEmpty() && cacheData
+                                                .checkListenersMd5Consistent()) {
+                                            LOGGER.info(
+                                                    " Check listeners consistent,set cacheData sync flag, groupKey={}, sync={}",
+                                                    groupKey, true);
                                             cacheData.setSync(true);
                                             continue;
                                         }
@@ -789,14 +797,10 @@ public class ClientWorker implements Closeable {
                             
                         }
                     } catch (Exception e) {
-                        if (e instanceof NacosException
-                                && ((NacosException) e).getErrCode() == NacosException.CLIENT_DISCONNECT) {
-                            LOGGER.warn("async listen config change fail ,client is not connected.");
-                        } else {
-                            LOGGER.error("async listen config change error ", e);
-                        }
+                        
+                        LOGGER.error("Async listen config change error ", e);
                         try {
-                            Thread.sleep(10L);
+                            Thread.sleep(50L);
                         } catch (InterruptedException interruptedException) {
                             //ignore
                         }
@@ -828,11 +832,16 @@ public class ClientWorker implements Closeable {
                         LOGGER.error("async remove listen config change error ", e);
                     }
                     try {
-                        Thread.sleep(10L);
+                        Thread.sleep(50L);
                     } catch (InterruptedException interruptedException) {
                         //ignore
                     }
                 }
+            }
+            
+            //If has changed keys,notify re sync md5.
+            if (hasChangedKeys) {
+                notifyListenConfig();
             }
         }
         

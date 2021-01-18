@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -191,7 +192,10 @@ public abstract class GrpcClient extends RpcClient {
                 if (isRunning && !isAbandon) {
                     LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Request stream error, switch server,error={}",
                             grpcConn.getConnectionId(), throwable);
-                    switchServerAsync();
+                    if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
+                        switchServerAsync();
+                    }
+                    
                 } else {
                     LoggerUtils.printIfWarnEnabled(LOGGER, "[{}]Ignore error event,isRunning:{},isAbandon={}",
                             grpcConn.getConnectionId(), isRunning, isAbandon);
@@ -206,7 +210,9 @@ public abstract class GrpcClient extends RpcClient {
                 if (isRunning && !isAbandon) {
                     LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Request stream onCompleted, switch server",
                             grpcConn.getConnectionId());
-                    switchServerAsync();
+                    if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
+                        switchServerAsync();
+                    }
                     
                 } else {
                     LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]Ignore complete event,isRunning:{},isAbandon={}",

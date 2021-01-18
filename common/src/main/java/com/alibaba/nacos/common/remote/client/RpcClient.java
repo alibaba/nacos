@@ -423,8 +423,8 @@ public abstract class RpcClient implements Closeable {
                     //2.create a new channel to new server
                     Connection connectionNew = connectToServer(serverInfo);
                     if (connectionNew != null) {
-                        LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] success to connect a server  [{}]", name,
-                                serverInfo.getAddress());
+                        LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] success to connect a server  [{}],connectionId={}",
+                                name, serverInfo.getAddress(), connectionNew.getConnectionId());
                         //successfully create a new connect.
                         if (currentConnection != null) {
                             LoggerUtils.printIfInfoEnabled(LOGGER,

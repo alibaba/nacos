@@ -61,6 +61,14 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         String type = grpcRequest.getMetadata().getType();
         
+        //server is on starting.
+        if (!ApplicationUtils.isStarted()) {
+            responseObserver.onNext(GrpcUtils.convert(
+                    buildErrorResponse(NacosException.INVALID_SERVER_STATUS, "Server is starting,please try later.")));
+            responseObserver.onCompleted();
+            return;
+        }
+        
         // server check.
         if (ServerCheckRequest.class.getName().equals(type)) {
             responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse(CONTEXT_KEY_CONN_ID.get())));
@@ -74,14 +82,6 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             Loggers.REMOTE_DIGEST.warn(String.format("[%s] No handler for request type : %s :", "grpc", type));
             responseObserver.onNext(GrpcUtils
                     .convert(buildErrorResponse(NacosException.NO_HANDLER, "RequestHandler Not Found")));
-            responseObserver.onCompleted();
-            return;
-        }
-        
-        //server is on starting.
-        if (!ApplicationUtils.isStarted()) {
-            responseObserver.onNext(GrpcUtils.convert(
-                    buildErrorResponse(NacosException.INVALID_SERVER_STATUS, "Server is starting,please try later.")));
             responseObserver.onCompleted();
             return;
         }

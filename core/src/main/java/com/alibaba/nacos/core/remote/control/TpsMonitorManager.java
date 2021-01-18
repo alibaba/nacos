@@ -90,7 +90,8 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     
     private void registerFileWatch(TpsMonitorPoint tpsMonitorPoint) {
         try {
-            String tpsPath = Paths.get(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator).toString();
+            String tpsPath = Paths.get(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator)
+                    .toString();
             WatchFileCenter.registerWatcher(tpsPath, new FileWatcher() {
                 @Override
                 public void onChange(FileChangeEvent event) {
@@ -236,8 +237,8 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
         String ruleContent = DiskUtils.readFile(pointFile);
         TpsControlRule tpsControlRule = StringUtils.isBlank(ruleContent) ? new TpsControlRule()
                 : JacksonUtils.toObj(ruleContent, TpsControlRule.class);
-        Loggers.TPS_CONTROL
-                .info("Load rule from local,pointName={}, point={} ", tpsMonitorPoint.getPointName(), ruleContent);
+        Loggers.TPS_CONTROL.info("Load rule from local,pointName={}, ruleContent={} ", tpsMonitorPoint.getPointName(),
+                ruleContent);
         tpsMonitorPoint.applyRule(tpsControlRule);
         
     }
@@ -250,7 +251,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
         }
         String content = JacksonUtils.toJson(tpsControlRule);
         DiskUtils.writeFile(pointFile, content.getBytes(Constants.ENCODE), false);
-        Loggers.TPS_CONTROL.info("Save rule to local,pointName={}, rule ={} ", pointName, content);
+        Loggers.TPS_CONTROL.info("Save rule to local,pointName={}, ruleContent ={} ", pointName, content);
     }
     
     private File getRuleFile(String pointName) {
