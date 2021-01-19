@@ -76,6 +76,7 @@ public class ClusterController {
         AbstractHealthChecker healthChecker = HealthCheckerFactory
                 .deserialize(WebUtils.required(request, "healthChecker"));
         clusterMetadata.setHealthChecker(healthChecker);
+        clusterMetadata.setHealthyCheckType(healthChecker.getType());
         clusterMetadata.setExtendData(
                 UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
         clusterOperatorV2.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
