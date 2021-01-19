@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
@@ -55,13 +56,30 @@ public class GrpcConnection extends Connection {
         try {
             //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
             synchronized (streamObserver) {
-                streamObserver.onNext(GrpcUtils.convert(request));
+                
+                Payload payload = GrpcUtils.convert(request);
+                traceIfNecessary(payload);
+                streamObserver.onNext(payload);
             }
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
                 throw new ConnectionAlreadyClosedException(e);
             }
             throw e;
+        }
+    }
+    
+    private void traceIfNecessary(Payload payload) {
+        String connectionId = null;
+        if (this.isTraced()) {
+            try {
+                connectionId = getMetaInfo().getConnectionId();
+                Loggers.REMOTE_DIGEST.info("[{}]Send request to client ,payload={}", connectionId,
+                        payload.toByteString().toStringUtf8());
+            } catch (Throwable throwable) {
+                Loggers.REMOTE_DIGEST
+                        .warn("[{}]Send request to client trace error, ,error={}", connectionId, throwable);
+            }
         }
     }
     
@@ -101,14 +119,22 @@ public class GrpcConnection extends Connection {
     
     @Override
     public void close() {
+        String connectionId = null;
+        
         try {
             if (isConnected()) {
+                connectionId = getMetaInfo().getConnectionId();
+                
+                if (isTraced()) {
+                    Loggers.REMOTE_DIGEST.warn("[{}] try to close connection ", connectionId);
+                }
+                
                 closeBiStream();
                 channel.close();
             }
             
         } catch (Exception e) {
-            Loggers.REMOTE.debug(String.format("[%s] connection close exception  : %s", "grpc", e.getMessage()));
+            Loggers.REMOTE_DIGEST.warn("[{}] connection  close exception  : {}", connectionId, e);
         }
     }
     

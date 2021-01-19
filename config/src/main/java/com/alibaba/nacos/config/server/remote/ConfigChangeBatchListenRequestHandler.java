@@ -51,7 +51,7 @@ public class ConfigChangeBatchListenRequestHandler
             throws NacosException {
         ConfigBatchListenRequest configChangeListenRequest = (ConfigBatchListenRequest) request;
         String connectionId = StringPool.get(meta.getConnectionId());
-        String header = request.getHeader("Vipserver-Tag");
+        String tag = request.getHeader("Vipserver-Tag");
         
         ConfigChangeBatchListenResponse configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
         for (ConfigBatchListenRequest.ConfigListenContext listenContext : request.getConfigListenContexts()) {
@@ -63,7 +63,7 @@ public class ConfigChangeBatchListenRequestHandler
             
             if (configChangeListenRequest.isListen()) {
                 configChangeListenContext.addListen(groupKey, md5, connectionId);
-                boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), header);
+                boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag);
                 if (!isUptoDate) {
                     configChangeBatchListenResponse.addChangeConfig(listenContext.getDataId(), listenContext.getGroup(),
                             listenContext.getTenant());

@@ -107,6 +107,16 @@ public class ConnectionMeta {
     }
     
     /**
+     * check if this connection is sdk source.
+     *
+     * @return if this connection is sdk source.
+     */
+    public boolean isClusterSource() {
+        String source = labels.get(RemoteConstants.LABEL_SOURCE);
+        return RemoteConstants.LABEL_SOURCE_CLUSTER.equalsIgnoreCase(source);
+    }
+    
+    /**
      * Getter method for property <tt>labels</tt>.
      *
      * @return property value of labels

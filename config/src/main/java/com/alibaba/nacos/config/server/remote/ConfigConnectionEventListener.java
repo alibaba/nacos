@@ -44,8 +44,7 @@ public class ConfigConnectionEventListener extends ClientConnectionEventListener
     @Override
     public void clientDisConnected(Connection connect) {
         String connectionId = connect.getMetaInfo().getConnectionId();
-        Loggers.REMOTE.info("client disconnected,clear config listen context, connetionId is {},client ip is {}",
-                connectionId, connect.getMetaInfo().getClientIp());
+        Loggers.REMOTE_DIGEST.info("[{}]client disconnected,clear config listen context", connectionId);
         configChangeListenContext.clearContextForConnectionId(connectionId);
     }
     

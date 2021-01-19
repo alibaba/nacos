@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -47,6 +48,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +74,17 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     public ConnectionManager() {
         NotifyCenter.registerToPublisher(ConnectionLimitRuleChangeEvent.class, NotifyCenter.ringBufferSize);
         NotifyCenter.registerSubscriber(this);
+    }
+    
+    /**
+     * if monitor detail.
+     *
+     * @param clientIp client ip.
+     * @return
+     */
+    public boolean traced(String clientIp) {
+        return connectionLimitRule != null && connectionLimitRule.getMonitorIpList() != null && connectionLimitRule
+                .getMonitorIpList().contains(clientIp);
     }
     
     @PostConstruct
@@ -125,11 +138,14 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
             if (!checkLimit(connection)) {
                 return false;
             }
+            if (traced(connection.getMetaInfo().clientIp)) {
+                connection.setTraced(true);
+            }
             connections.put(connectionId, connection);
             connectionForClientIp.get(connection.getMetaInfo().clientIp).getAndIncrement();
             
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
-            Loggers.REMOTE
+            Loggers.REMOTE_DIGEST
                     .info("new connection registered successfully, connectionId = {},connection={} ", connectionId,
                             connection);
             return true;
@@ -141,6 +157,9 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     
     private boolean checkLimit(Connection connection) {
         
+        if (connection.getMetaInfo().isClusterSource()) {
+            return true;
+        }
         if (isOverLimit()) {
             return false;
         }
@@ -193,7 +212,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                 connectionForClientIp.remove(clientIp);
             }
             remove.close();
-            Loggers.REMOTE.info(" connection unregistered successfully,connectionId = {} ", connectionId);
+            Loggers.REMOTE_DIGEST.info(" connection unregistered successfully,connectionId = {} ", connectionId);
             clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
         }
     }
@@ -486,6 +505,8 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     
     static class ConnectionLimitRule {
         
+        private Set<String> monitorIpList = new HashSet<String>();
+        
         private int countLimit = -1;
         
         private int countLimitPerClientIpDefault = -1;
@@ -545,6 +566,14 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         public void setCountLimitPerClientApp(Map<String, Integer> countLimitPerClientApp) {
             this.countLimitPerClientApp = countLimitPerClientApp;
         }
+        
+        public Set<String> getMonitorIpList() {
+            return monitorIpList;
+        }
+        
+        public void setMonitorIpList(Set<String> monitorIpList) {
+            this.monitorIpList = monitorIpList;
+        }
     }
     
     public ConnectionLimitRule getConnectionLimitRule() {
@@ -563,6 +592,16 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         // apply rule.
         if (connectionLimitRule != null) {
             this.connectionLimitRule = connectionLimitRule;
+            Set<String> monitorIpList = connectionLimitRule.monitorIpList;
+            for (Connection connection : this.connections.values()) {
+                String clientIp = connection.getMetaInfo().getClientIp();
+                if (!CollectionUtils.isEmpty(monitorIpList) && monitorIpList.contains(clientIp)) {
+                    connection.setTraced(true);
+                } else {
+                    connection.setTraced(false);
+                }
+            }
+            
         }
         Loggers.REMOTE.info("Init loader limit rule from local,rule={}", ruleContent);
         

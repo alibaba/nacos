@@ -46,6 +46,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.CACHE_DATA;
+import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA;
+
 /**
  * Controller for other node notification.
  *
@@ -196,7 +199,9 @@ public class CommunicationController {
                 ClientConfigMetricRequest clientMetrics = new ClientConfigMetricRequest();
                 if (StringUtils.isNotBlank(dataId)) {
                     clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
-                            .build("cacheData", GroupKey2.getKey(dataId, group, tenant)));
+                            .build(CACHE_DATA, GroupKey2.getKey(dataId, group, tenant)));
+                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
+                            .build(SNAPSHOT_DATA, GroupKey2.getKey(dataId, group, tenant)));
                 }
                 
                 ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp

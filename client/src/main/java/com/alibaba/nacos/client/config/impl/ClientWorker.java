@@ -93,6 +93,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
+import static com.alibaba.nacos.api.common.Constants.ENCODE;
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
@@ -495,8 +496,14 @@ public class ClientWorker implements Closeable {
     
     private Map<String, Object> getMetrics(List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
         Map<String, Object> metric = new HashMap<>(16);
-        metric.put("listenKeys", String.valueOf(this.cacheMap.get().size()));
+        metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
+        metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
+        boolean isFixServer = agent.serverListManager.isFixed;
+        metric.put("isFixedServer", isFixServer);
+        metric.put("addressUrl", agent.serverListManager.addressServerUrl);
+        metric.put("serverUrls", agent.serverListManager.getUrlString());
+        
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);
         Map<String, Object> metrics = new HashMap<String, Object>(1);
@@ -511,14 +518,17 @@ public class ClientWorker implements Closeable {
         }
         Map<ClientConfigMetricRequest.MetricsKey, Object> values = new HashMap<>(16);
         for (ClientConfigMetricRequest.MetricsKey metricsKey : metricsKeys) {
-            if ("cacheData".equals(metricsKey.getType())) {
-                values.putIfAbsent(metricsKey, cacheMap.get().get(metricsKey.getKey()));
+            if (ClientConfigMetricRequest.MetricsKey.CACHE_DATA.equals(metricsKey.getType())) {
+                CacheData cacheData = cacheMap.get().get(metricsKey.getKey());
+                values.putIfAbsent(metricsKey,
+                        cacheData == null ? null : cacheData.getContent() + ":" + cacheData.getMd5());
             }
-            if ("snapshotData".equals(metricsKey.getType())) {
+            if (ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA.equals(metricsKey.getType())) {
                 String[] configStr = GroupKey.parseKey(metricsKey.getKey());
                 String snapshot = LocalConfigInfoProcessor
                         .getSnapshot(this.agent.getName(), configStr[0], configStr[1], configStr[2]);
-                values.putIfAbsent(metricsKey, snapshot);
+                values.putIfAbsent(metricsKey,
+                        snapshot == null ? null : snapshot + ":" + MD5Utils.md5Hex(snapshot, ENCODE));
             }
         }
         return values;

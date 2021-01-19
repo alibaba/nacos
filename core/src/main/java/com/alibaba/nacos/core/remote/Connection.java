@@ -30,6 +30,8 @@ import java.util.Map;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
     
+    private boolean traced = false;
+    
     private final ConnectionMeta metaInfo;
     
     public Connection(ConnectionMeta metaInfo) {
@@ -38,6 +40,14 @@ public abstract class Connection implements Requester {
     
     public Map<String, String> getLabels() {
         return metaInfo.getLabels();
+    }
+    
+    public boolean isTraced() {
+        return traced;
+    }
+    
+    public void setTraced(boolean traced) {
+        this.traced = traced;
     }
     
     /**
