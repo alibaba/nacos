@@ -69,6 +69,10 @@ public class HealthCheckInstancePublishInfo extends InstancePublishInfo {
         healthCheckStatus.checkFailCount.set(0);
     }
     
+    public void setCheckRt(long checkRt) {
+        healthCheckStatus.checkRt = checkRt;
+    }
+    
     @JsonIgnore
     public AtomicInteger getOkCount() {
         return healthCheckStatus.checkOkCount;
