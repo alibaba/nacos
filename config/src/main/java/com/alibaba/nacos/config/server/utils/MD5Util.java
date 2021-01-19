@@ -16,9 +16,10 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,11 +55,17 @@ public class MD5Util {
         String tag = request.getHeader("Vipserver-Tag");
         for (Map.Entry<String, String> entry : clientMd5Map.entrySet()) {
             String groupKey = entry.getKey();
+            // process 'public' tenant
+            String[] strings = GroupKey2.parseKey(groupKey);
+            if (strings.length == 3 && StringUtils.isNotEmpty(strings[2])) {
+                groupKey = GroupKey2
+                        .getKey(strings[0], strings[1], NamespaceUtil.processNamespaceParameter(strings[2]));
+            }
             String clientMd5 = entry.getValue();
             String ip = RequestUtil.getRemoteIp(request);
             boolean isUptodate = ConfigCacheService.isUptodate(groupKey, clientMd5, ip, tag);
             if (!isUptodate) {
-                changedGroupKeys.add(groupKey);
+                changedGroupKeys.add(entry.getKey());
             }
         }
         return changedGroupKeys;
