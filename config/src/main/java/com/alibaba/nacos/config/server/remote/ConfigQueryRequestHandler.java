@@ -36,6 +36,7 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.control.TpsControl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -72,6 +73,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     }
     
     @Override
+    @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public ConfigQueryResponse handle(ConfigQueryRequest configQueryRequest, RequestMeta requestMeta)
             throws NacosException {

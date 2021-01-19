@@ -79,7 +79,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     /**
      * if monitor detail.
      *
-     * @param clientIp client ip.
+     * @param clientIp clientIp.
      * @return
      */
     public boolean traced(String clientIp) {

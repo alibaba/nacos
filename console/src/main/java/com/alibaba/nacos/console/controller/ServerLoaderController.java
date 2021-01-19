@@ -93,22 +93,8 @@ public class ServerLoaderController {
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.READ)
     @GetMapping("/current")
     public ResponseEntity currentClients() {
-        Map<String, String> responseMap = new HashMap<>(3);
         Map<String, Connection> stringConnectionMap = connectionManager.currentClients();
         return ResponseEntity.ok().body(stringConnectionMap);
-    }
-    
-    /**
-     * Get server state of current server.
-     *
-     * @return state json.
-     */
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.WRITE)
-    @GetMapping("/max")
-    public ResponseEntity updateMaxClients(@RequestParam Integer count) {
-        Map<String, String> responseMap = new HashMap<>(3);
-        connectionManager.setMaxClientCount(count);
-        return ResponseEntity.ok().body("success");
     }
     
     /**

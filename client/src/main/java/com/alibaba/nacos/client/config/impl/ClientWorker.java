@@ -979,6 +979,10 @@ public class ClientWorker implements Closeable {
                 request.putAdditonalParam("appName", appName);
                 request.putAdditonalParam("betaIps", betaIps);
                 ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
+                if (!response.isSuccess()) {
+                    LOGGER.warn("[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
+                            this.getName(), dataId, group, tenant, response.getErrorCode(), response.getMessage());
+                }
                 return response.isSuccess();
             } catch (Exception e) {
                 LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
