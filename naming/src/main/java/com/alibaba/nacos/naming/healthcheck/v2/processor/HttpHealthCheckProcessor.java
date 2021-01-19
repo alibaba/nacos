@@ -78,7 +78,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
                         service.getGroupedServiceName(), instance.getExtendDatum().get(CommonParams.CLUSTER_NAME),
                         instance.getIp(), instance.getPort());
                 healthCheckCommon
-                        .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getTcpHealthParams());
+                        .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getHttpHealthParams());
                 return;
             }
             
