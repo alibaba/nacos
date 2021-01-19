@@ -63,7 +63,7 @@ class EditClusterDialog extends React.Component {
       name,
       serviceName,
       metadataText,
-      defCkport,
+      defaultCheckPort,
       useIPPort4Check,
       healthChecker,
     } = this.state.editCluster;
@@ -74,7 +74,7 @@ class EditClusterDialog extends React.Component {
         serviceName,
         clusterName: name,
         metadata: metadataText,
-        checkPort: defCkport,
+        checkPort: defaultCheckPort,
         useInstancePort4Check: useIPPort4Check,
         healthChecker: JSON.stringify(healthChecker),
       },

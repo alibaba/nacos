@@ -102,4 +102,9 @@ public class InstancePublishInfo implements Serializable {
     public int hashCode() {
         return Objects.hash(ip, port, extendDatum, healthy);
     }
+    
+    @Override
+    public String toString() {
+        return "InstancePublishInfo{" + "ip='" + ip + '\'' + ", port=" + port + ", healthy=" + healthy + '}';
+    }
 }
