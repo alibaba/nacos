@@ -86,7 +86,6 @@ public class TpsMonitorPoint {
         monitorKeysRecorder.clear();
     }
     
-    
     /**
      * increase tps.
      *

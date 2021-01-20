@@ -69,7 +69,7 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                             }
                         }
                     } catch (Throwable throwable) {
-                    
+                        //ignore
                     }
                 }
             }

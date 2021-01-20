@@ -161,18 +161,18 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         @Override
         public void run() {
             tryTimes++;
-            if (!tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH,connectionId, clientIp)) {
+            if (!tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH, connectionId, clientIp)) {
                 push(this);
             } else {
                 rpcPushService.pushWithCallback(connectionId, notifyRequest, new AbstractPushCallBack(3000L) {
                     @Override
                     public void onSuccess() {
-                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_SUCCESS,connectionId, clientIp);
+                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_SUCCESS, connectionId, clientIp);
                     }
                     
                     @Override
                     public void onFail(Throwable e) {
-                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_FAIL,connectionId, clientIp);
+                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_FAIL, connectionId, clientIp);
                         Loggers.REMOTE_PUSH.warn("Push fail", e);
                         push(RpcPushTask.this);
                     }
