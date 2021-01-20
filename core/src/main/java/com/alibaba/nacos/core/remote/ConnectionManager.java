@@ -19,9 +19,13 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
+import com.alibaba.nacos.api.remote.request.ClientDetectionRequest;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -54,6 +58,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -67,6 +73,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent> {
     
     public static final String RULE_FILE_NAME = "limitRule";
+    
+    private static final long KEEP_ALIVE_TIME = 10000L;
     
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
@@ -289,6 +297,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                     
                     //1. calculate expel count  of ip.
                     for (Map.Entry<String, Connection> entry : entries) {
+                        
                         Connection client = entry.getValue();
                         String appName = client.getMetaInfo().getAppName();
                         String clientIp = client.getMetaInfo().getClientIp();
@@ -312,6 +321,8 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                         }
                     }
                     
+                    Set<String> outDatedConnections = new HashSet<>();
+                    long now = System.currentTimeMillis();
                     //2.get expel connection for ip limit.
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
@@ -321,6 +332,8 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                             integer.decrementAndGet();
                             expelClient.add(client.getMetaInfo().getConnectionId());
                             expelCount--;
+                        } else if (now - client.getMetaInfo().getLastActiveTime() >= KEEP_ALIVE_TIME) {
+                            outDatedConnections.add(client.getMetaInfo().getConnectionId());
                         }
                         
                     }
@@ -333,24 +346,29 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                                     .isSdkSource() && expelCount > 0) {
                                 expelClient.add(client.getMetaInfo().getConnectionId());
                                 expelCount--;
+                                outDatedConnections.remove(client.getMetaInfo().getConnectionId());
                             }
                         }
                     }
                     
-                    ConnectResetRequest connectResetRequest = new ConnectResetRequest();
+                    String serverIp = null;
+                    String serverPort = null;
                     if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(Constants.COLON)) {
                         String[] split = redirectAddress.split(Constants.COLON);
-                        connectResetRequest.setServerIp(split[0]);
-                        connectResetRequest.setServerPort(split[1]);
+                        serverIp = split[0];
+                        serverPort = split[1];
                     }
                     
                     for (String expelledClientId : expelClient) {
                         try {
                             Connection connection = getConnection(expelledClientId);
                             if (connection != null) {
+                                ConnectResetRequest connectResetRequest = new ConnectResetRequest();
+                                connectResetRequest.setServerIp(serverIp);
+                                connectResetRequest.setServerPort(serverPort);
                                 connection.asyncRequest(connectResetRequest, null);
-                                Loggers.REMOTE
-                                        .info("send connection reset server , connection id = {},recommendServerIp={}, recommendServerPort={}",
+                                Loggers.REMOTE_DIGEST
+                                        .info("send connection reset request , connection id = {},recommendServerIp={}, recommendServerPort={}",
                                                 expelledClientId, connectResetRequest.getServerIp(),
                                                 connectResetRequest.getServerPort());
                             }
@@ -358,14 +376,76 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                         } catch (ConnectionAlreadyClosedException e) {
                             unregister(expelledClientId);
                         } catch (Exception e) {
-                            Loggers.REMOTE.error("error occurs when expel connection :", expelledClientId, e);
+                            Loggers.REMOTE_DIGEST.error("error occurs when expel connection :", expelledClientId, e);
+                        }
+                    }
+                    
+                    //4.client active detection.
+                    List<RequestFuture> detectionFutures = new ArrayList<>();
+                    if (CollectionUtils.isNotEmpty(outDatedConnections)) {
+                        Set<String> successConnections = new HashSet<>();
+                        CountDownLatch latch = new CountDownLatch(outDatedConnections.size());
+                        for (String outDateConnectionId : outDatedConnections) {
+                            try {
+                                Connection connection = getConnection(outDateConnectionId);
+                                if (connection != null) {
+                                    ClientDetectionRequest clientDetectionRequest = new ClientDetectionRequest();
+                                    connection.asyncRequest(clientDetectionRequest, new RequestCallBack() {
+                                        @Override
+                                        public Executor getExecutor() {
+                                            return null;
+                                        }
+                                        
+                                        @Override
+                                        public long getTimeout() {
+                                            return 1000L;
+                                        }
+                                        
+                                        @Override
+                                        public void onResponse(Response response) {
+                                            latch.countDown();
+                                            if (response != null && response.isSuccess()) {
+                                                connection.freshActiveTime();
+                                                successConnections.add(outDateConnectionId);
+                                            }
+                                        }
+                                        
+                                        @Override
+                                        public void onException(Throwable e) {
+                                            latch.countDown();
+                                        }
+                                    });
+                                    
+                                    Loggers.REMOTE_DIGEST
+                                            .info("[{}]send connection active request ", outDateConnectionId);
+                                }
+                                
+                            } catch (ConnectionAlreadyClosedException e) {
+                                unregister(outDateConnectionId);
+                                latch.countDown();
+                            } catch (Exception e) {
+                                Loggers.REMOTE_DIGEST
+                                        .error("[{}]Error occurs when check client active detection ,error={}",
+                                                outDateConnectionId, e);
+                                latch.countDown();
+                            }
+                        }
+                        
+                        latch.await(3000L, TimeUnit.MILLISECONDS);
+                        
+                        for (String outDateConnectionId : outDatedConnections) {
+                            if (!successConnections.contains(outDateConnectionId)) {
+                                unregister(outDateConnectionId);
+                            }
                         }
                     }
                     
                     //reset loader client
-                    if (isLoaderClient) {
-                        loadClient = -1;
-                        redirectAddress = null;
+                    {
+                        if (isLoaderClient) {
+                            loadClient = -1;
+                            redirectAddress = null;
+                        }
                     }
                     
                 } catch (Throwable e) {

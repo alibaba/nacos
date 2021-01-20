@@ -21,9 +21,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
+import com.alibaba.nacos.api.remote.request.ClientDetectionRequest;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.ClientDetectionResponse;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -45,6 +47,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
@@ -80,6 +83,13 @@ public abstract class RpcClient implements Closeable {
     private static final int RETRY_TIMES = 3;
     
     private static final long DEFAULT_TIMEOUT_MILLS = 3000L;
+    
+    /**
+     * default keep alive time 10s.
+     */
+    private long keepAliveTime = 10000L;
+    
+    private long lastActiveTimeStamp = System.currentTimeMillis();
     
     /**
      * listener called where connection's status changed.
@@ -182,15 +192,16 @@ public abstract class RpcClient implements Closeable {
      *
      * @param serverListFactory serverListFactory
      */
-    public void init(ServerListFactory serverListFactory) {
+    public RpcClient init(ServerListFactory serverListFactory) {
         if (!isWaitInitiated()) {
-            return;
+            return this;
         }
         this.serverListFactory = serverListFactory;
         rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
         
         LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]RpcClient init, ServerListFactory ={}", name,
                 serverListFactory.getClass().getName());
+        return this;
     }
     
     /**
@@ -198,9 +209,21 @@ public abstract class RpcClient implements Closeable {
      *
      * @param labels labels
      */
-    public void initLabels(Map<String, String> labels) {
+    public RpcClient initLabels(Map<String, String> labels) {
         this.labels.putAll(labels);
         LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]RpcClient init label, labels={}", name, this.labels);
+        return this;
+    }
+    
+    /**
+     * init keepalive time.
+     *
+     * @param keepAliveTime keepAliveTime
+     * @param timeUnit      timeUnit
+     */
+    public RpcClient initKeepAlive(long keepAliveTime, TimeUnit timeUnit) {
+        this.keepAliveTime = keepAliveTime * timeUnit.toMillis(keepAliveTime);
+        return this;
     }
     
     /**
@@ -248,7 +271,25 @@ public abstract class RpcClient implements Closeable {
             public void run() {
                 while (true) {
                     try {
-                        ReconnectContext reconnectContext = reconnectionSignal.take();
+                        ReconnectContext reconnectContext = reconnectionSignal
+                                .poll(keepAliveTime, TimeUnit.MILLISECONDS);
+                        if (reconnectContext == null) {
+                            //check alive time.
+                            long now = System.currentTimeMillis();
+                            if (now - lastActiveTimeStamp >= keepAliveTime) {
+                                boolean isHealthy = healthCheck();
+                                if (!isHealthy) {
+                                    reconnectContext = new ReconnectContext(null, false);
+                                } else {
+                                    lastActiveTimeStamp = now;
+                                    continue;
+                                }
+                            } else {
+                                continue;
+                            }
+                            
+                        }
+                        
                         if (reconnectContext.serverInfo != null) {
                             //clear recommend server if server is not in server list.
                             String address = reconnectContext.serverInfo.serverIp + Constants.COLON
@@ -311,6 +352,18 @@ public abstract class RpcClient implements Closeable {
         }
         
         registerServerRequestHandler(new ConnectResetRequestHandler());
+        
+        //register client detection request.
+        registerServerRequestHandler(new ServerRequestHandler() {
+            @Override
+            public Response requestReply(Request request) {
+                if (request instanceof ClientDetectionRequest) {
+                    return new ClientDetectionResponse();
+                }
+                
+                return null;
+            }
+        });
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -367,6 +420,9 @@ public abstract class RpcClient implements Closeable {
     
     private boolean healthCheck() {
         HealthCheckRequest healthCheckRequest = new HealthCheckRequest();
+        if (this.currentConnection == null) {
+            return false;
+        }
         try {
             Response response = this.currentConnection.request(healthCheckRequest, 3000L);
             //not only check server is ok ,also check connection is register.
@@ -567,6 +623,7 @@ public abstract class RpcClient implements Closeable {
                     throw new NacosException(response.getErrorCode(), response.getMessage());
                 }
                 // return response.
+                lastActiveTimeStamp = System.currentTimeMillis();
                 return response;
                 
             } catch (Exception e) {
@@ -619,6 +676,7 @@ public abstract class RpcClient implements Closeable {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
                 }
                 this.currentConnection.asyncRequest(request, callback);
+                lastActiveTimeStamp = System.currentTimeMillis();
                 return;
             } catch (Exception e) {
                 if (waitReconnect) {
@@ -668,6 +726,7 @@ public abstract class RpcClient implements Closeable {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
                 }
                 RequestFuture requestFuture = this.currentConnection.requestFuture(request);
+                lastActiveTimeStamp = System.currentTimeMillis();
                 return requestFuture;
             } catch (Exception e) {
                 if (waitReconnect) {
@@ -718,6 +777,7 @@ public abstract class RpcClient implements Closeable {
         
         LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]receive server push request,request={},requestId={}", name,
                 request.getClass().getSimpleName(), request.getRequestId());
+        lastActiveTimeStamp = System.currentTimeMillis();
         for (ServerRequestHandler serverRequestHandler : serverRequestHandlers) {
             try {
                 Response response = serverRequestHandler.requestReply(request);
