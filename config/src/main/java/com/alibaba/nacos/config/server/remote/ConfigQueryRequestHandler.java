@@ -73,7 +73,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     }
     
     @Override
-    @TpsControl(pointName = "ConfigQuery")
+    @TpsControl(pointName = "ConfigQuery", parsers = {ConfigQueryGroupKeyParser.class, ConfigQueryGroupParser.class})
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public ConfigQueryResponse handle(ConfigQueryRequest configQueryRequest, RequestMeta requestMeta)
             throws NacosException {

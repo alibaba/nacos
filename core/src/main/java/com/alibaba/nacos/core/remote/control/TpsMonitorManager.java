@@ -35,6 +35,8 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -129,9 +131,24 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
      * @param pointName pointName.
      * @return pass or not.
      */
-    public boolean applyTps(String clientIp, String pointName) {
+    public boolean applyTpsForClientIp(String pointName, String connectionId, String clientIp) {
         if (points.containsKey(pointName)) {
-            return points.get(pointName).applyTps(clientIp);
+            
+            return points.get(pointName).applyTps(connectionId, Arrays.asList(new ClientIpMonitorKey(clientIp)));
+        }
+        return true;
+    }
+    
+    /**
+     * apply tps.
+     *
+     * @param pointName      pointName.
+     * @param monitorKeyList monitorKeyList.
+     * @return pass or not.
+     */
+    public boolean applyTps(String pointName, String connectionId, List<MonitorKey> monitorKeyList) {
+        if (points.containsKey(pointName)) {
+            return points.get(pointName).applyTps(connectionId, monitorKeyList);
         }
         return true;
     }
@@ -199,20 +216,20 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                     stringBuilder.append(point).append("|").append("point|").append(formatString).append("|")
                             .append(pointSlot.tps.get()).append("|").append(pointSlot.interceptedTps.get())
                             .append("\n");
-                    for (Map.Entry<String, TpsRecorder> entryIp : value.tpsRecordForIp.entrySet()) {
-                        String clientIp = entryIp.getKey();
-                        TpsRecorder ipRecord = entryIp.getValue();
-                        TpsRecorder.TpsSlot slotIp = ipRecord.getPoint(now - 1000L);
-                        if (slotIp == null) {
+                    for (Map.Entry<String, TpsRecorder> monitorKeyEntry : value.monitorKeysRecorder.entrySet()) {
+                        String monitorKey = monitorKeyEntry.getKey();
+                        TpsRecorder ipRecord = monitorKeyEntry.getValue();
+                        TpsRecorder.TpsSlot keySlot = ipRecord.getPoint(now - 1000L);
+                        if (keySlot == null) {
                             continue;
                         }
                         //already reported.
-                        if (lastReportSecond != 0L && lastReportSecond == slotIp.second) {
+                        if (lastReportSecond != 0L && lastReportSecond == keySlot.second) {
                             continue;
                         }
-                        stringBuilder.append(point).append("|").append("ip|").append(clientIp).append("|")
-                                .append(formatString).append("|").append(slotIp.tps.get()).append("|")
-                                .append(slotIp.interceptedTps.get()).append("\n");
+                        stringBuilder.append(point).append("|").append(monitorKey).append("|").append(formatString)
+                                .append("|").append(keySlot.tps.get()).append("|").append(keySlot.interceptedTps.get())
+                                .append("\n");
                     }
                 }
                 

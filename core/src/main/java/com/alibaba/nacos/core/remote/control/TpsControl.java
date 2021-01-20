@@ -35,4 +35,11 @@ public @interface TpsControl {
      */
     String pointName();
     
+    /**
+     * Resource name parser. Should have lower priority than resource().
+     *
+     * @return class type of resource parser
+     */
+    Class[] parsers() default {};
+    
 }

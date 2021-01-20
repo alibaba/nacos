@@ -16,12 +16,19 @@
 
 package com.alibaba.nacos.test.remote;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.remote.control.ClientIpMonitorKey;
+import com.alibaba.nacos.core.remote.control.MonitorType;
+import com.alibaba.nacos.core.remote.control.TpsControlRule;
 import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
+import com.alibaba.nacos.core.remote.control.TpsRecorder;
+import org.apache.commons.collections.map.HashedMap;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class TpsMonitorManagerTest {
@@ -36,17 +43,44 @@ public class TpsMonitorManagerTest {
         testPoints = Arrays
                 .asList("test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10");
         for (String point : testPoints) {
-            tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(point));
+            TpsMonitorPoint tpsMonitorPoint = new TpsMonitorPoint(point);
+            TpsControlRule tpsControlRule = new TpsControlRule();
+            Map<String, TpsControlRule.Rule> monitorKeyRule = new HashedMap();
+            monitorKeyRule.put(new ClientIpMonitorKey("1").build(),
+                    new TpsControlRule.Rule(10, MonitorType.INTERCEPT.getType()));
+            monitorKeyRule.put(new ClientIpMonitorKey("5").build(),
+                    new TpsControlRule.Rule(10, MonitorType.INTERCEPT.getType()));
+            tpsControlRule.setMonitorKeyRule(monitorKeyRule);
+            tpsControlRule.setPointRule(new TpsControlRule.Rule(100,MonitorType.INTERCEPT.getType()));
+            tpsMonitorManager.registerTpsControlPoint(tpsMonitorPoint);
+            System.out.println(JacksonUtils.toJson(tpsControlRule));
+            tpsMonitorPoint.applyRule(tpsControlRule);
+            
         }
         
     }
     
+    
+    @Test
+    public void printlnJson() {
+        TpsControlRule tpsControlRule = new TpsControlRule();
+        Map<String, TpsControlRule.Rule> monitorKeyRule = new HashedMap();
+        monitorKeyRule.put(new ClientIpMonitorKey("1").build(),
+                new TpsControlRule.Rule(10, MonitorType.INTERCEPT.getType()));
+        monitorKeyRule.put(new ClientIpMonitorKey("5").build(),
+                new TpsControlRule.Rule(10, MonitorType.INTERCEPT.getType()));
+        tpsControlRule.setMonitorKeyRule(monitorKeyRule);
+        tpsControlRule.setPointRule(new TpsControlRule.Rule(100,MonitorType.INTERCEPT.getType()));
+        System.out.println(JacksonUtils.toJson(tpsControlRule));
+    }
     @Test
     public void runTest() {
         long start = System.currentTimeMillis();
         Random random = new Random();
         for (int i = 0; i < 10000; i++) {
-            tpsMonitorManager.applyTps("", testPoints.get(random.nextInt(testPoints.size())));
+            tpsMonitorManager.applyTps(testPoints.get(random.nextInt(testPoints.size())), "connectionId1",
+                    Arrays.asList(new ClientIpMonitorKey(""+new Random().nextInt(10))));
+            //tpsMonitorManager.applyTpsForClientIp(testPoints.get(random.nextInt(testPoints.size())), "", "");
             try {
                 Thread.sleep(1L);
             } catch (InterruptedException e) {
@@ -56,5 +90,10 @@ public class TpsMonitorManagerTest {
         long end = System.currentTimeMillis();
         System.out.println("Time costs:" + (end - start));
         System.out.println(tpsMonitorManager.points.get("test1").getTpsRecorder().getSlotList());
+        for (Map.Entry<String, TpsRecorder> entry : tpsMonitorManager.points.get("test1").monitorKeysRecorder.entrySet()) {
+            System.out.println("Monitor Key:" + entry.getKey());
+            System.out.println(entry.getValue().getSlotList());
+            
+        }
     }
 }
