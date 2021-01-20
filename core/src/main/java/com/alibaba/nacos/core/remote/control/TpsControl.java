@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote.client;
+package com.alibaba.nacos.core.remote.control;
 
-import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.response.Response;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * ServerRequestHandler, to process the request from server side.
+ * tps control manager.
  *
  * @author liuzunfei
- * @version $Id: ServerRequestHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
+ * @version $Id: TpsControlManager.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
  */
-public interface ServerRequestHandler {
+@Retention(RetentionPolicy.RUNTIME)
+public @interface TpsControl {
     
     /**
-     * Handle request from server.
+     * The action type of the request.
      *
-     * @param request request
-     * @return response.
+     * @return action type, default READ
      */
-    Response requestReply(Request request);
+    String pointName();
     
 }

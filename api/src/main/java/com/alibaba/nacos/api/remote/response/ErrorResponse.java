@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.request;
+package com.alibaba.nacos.api.remote.response;
 
 /**
- * HeartBeatRequest.
+ * UnKnowResponse.
  *
  * @author liuzunfei
- * @version $Id: HeartBeatRequest.java, v 0.1 2020年07月14日 11:38 AM liuzunfei Exp $
+ * @version $Id: UnKnowResponse.java, v 0.1 2020年07月16日 9:47 PM liuzunfei Exp $
  */
-public class HeartBeatRequest extends InternalRequest {
-
+public class ErrorResponse extends Response {
+    
 }

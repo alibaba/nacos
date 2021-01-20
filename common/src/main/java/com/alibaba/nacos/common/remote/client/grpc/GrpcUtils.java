@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.exception.RemoteException;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -97,10 +96,7 @@ public class GrpcUtils {
         Payload.Builder payloadBuilder = Payload.newBuilder();
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         if (meta != null) {
-            metaBuilder.setClientIp(meta.getClientIp()).setClientPort(meta.getClientPort())
-                    .setConnectionId(meta.getConnectionId()).putAllLabels(meta.getLabels())
-                    .setClientVersion(meta.getClientVersion()).putAllHeaders(request.getHeaders())
-                    .setType(request.getClass().getName());
+            metaBuilder.putAllHeaders(request.getHeaders()).setType(request.getClass().getName());
         }
         payloadBuilder.setMetadata(metaBuilder.build());
         
@@ -118,17 +114,17 @@ public class GrpcUtils {
      * convert request to payload.
      *
      * @param request request.
-     * @param meta    meta
      * @return payload.
      */
-    public static Payload convert(Request request, Metadata meta) {
+    public static Payload convert(Request request) {
         
-        Metadata newMeta = meta.toBuilder().putAllHeaders(request.getHeaders()).build();
+        Metadata newMeta = Metadata.newBuilder().setType(request.getClass().getName())
+                .putAllHeaders(request.getHeaders()).build();
         request.clearHeaders();
         String jsonString = toJson(request);
         
         Payload.Builder builder = Payload.newBuilder();
-
+        
         Payload payload = builder
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .setMetadata(newMeta).build();
@@ -145,9 +141,7 @@ public class GrpcUtils {
     public static Payload convert(Response response) {
         String jsonString = toJson(response);
         
-        Metadata.Builder metaBuilder = Metadata.newBuilder();
-        metaBuilder.setClientVersion(VersionUtils.getFullClientVersion()).setType(response.getClass().getName());
-        
+        Metadata.Builder metaBuilder = Metadata.newBuilder().setType(response.getClass().getName());
         Payload payload = Payload.newBuilder()
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .setMetadata(metaBuilder.build()).build();
@@ -160,32 +154,19 @@ public class GrpcUtils {
      * @param payload payload to be parsed.
      * @return payload
      */
-    public static PlainRequest parse(Payload payload) {
-        PlainRequest plainRequest = new PlainRequest();
+    public static Object parse(Payload payload) {
         Class classType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
         if (classType != null) {
             Object obj = toObj(payload.getBody().getValue().toString(Charset.forName(Constants.ENCODE)), classType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }
-            plainRequest.body = obj;
+            return obj;
         } else {
-            throw new RemoteException(NacosException.SERVER_ERROR, "unknown payload type:" + payload.getMetadata().getType());
+            throw new RemoteException(NacosException.SERVER_ERROR,
+                    "Unknown payload type:" + payload.getMetadata().getType());
         }
         
-        plainRequest.type = payload.getMetadata().getType();
-        plainRequest.metadata = convertMeta(payload.getMetadata());
-        return plainRequest;
-    }
-    
-    private static RequestMeta convertMeta(Metadata metadata) {
-        RequestMeta requestMeta = new RequestMeta();
-        requestMeta.setClientIp(metadata.getClientIp());
-        requestMeta.setClientPort(metadata.getClientPort());
-        requestMeta.setConnectionId(metadata.getConnectionId());
-        requestMeta.setClientVersion(metadata.getClientVersion());
-        requestMeta.setLabels(metadata.getLabelsMap());
-        return requestMeta;
     }
     
     public static class PlainRequest {
@@ -193,26 +174,6 @@ public class GrpcUtils {
         String type;
         
         Object body;
-        
-        RequestMeta metadata;
-        
-        /**
-         * Getter method for property <tt>metadata</tt>.
-         *
-         * @return property value of metadata
-         */
-        public RequestMeta getMetadata() {
-            return metadata;
-        }
-        
-        /**
-         * Setter method for property <tt>metadata</tt>.
-         *
-         * @param metadata value to be assigned to property metadata
-         */
-        public void setMetadata(RequestMeta metadata) {
-            this.metadata = metadata;
-        }
         
         /**
          * Getter method for property <tt>type</tt>.

@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
@@ -46,6 +45,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.CACHE_DATA;
+import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA;
 
 /**
  * Controller for other node notification.
@@ -171,7 +173,7 @@ public class CommunicationController {
             notifyRequest.setTenant(tenant);
             for (Connection connectionByIp : listeners) {
                 try {
-                    connectionByIp.request(notifyRequest, new RequestMeta());
+                    connectionByIp.request(notifyRequest, 3000L);
                 } catch (NacosException e) {
                     e.printStackTrace();
                 }
@@ -197,11 +199,13 @@ public class CommunicationController {
                 ClientConfigMetricRequest clientMetrics = new ClientConfigMetricRequest();
                 if (StringUtils.isNotBlank(dataId)) {
                     clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
-                            .build("cacheData", GroupKey2.getKey(dataId, group, tenant)));
+                            .build(CACHE_DATA, GroupKey2.getKey(dataId, group, tenant)));
+                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
+                            .build(SNAPSHOT_DATA, GroupKey2.getKey(dataId, group, tenant)));
                 }
                 
                 ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp
-                        .request(clientMetrics, new RequestMeta());
+                        .request(clientMetrics, 3000L);
                 metrics.putAll(request1.getMetrics());
             } catch (NacosException e) {
                 e.printStackTrace();

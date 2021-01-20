@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -44,10 +45,15 @@ public abstract class RequestHandler<T extends Request, S extends Response> {
      */
     public Response handleRequest(T request, RequestMeta meta) throws NacosException {
         for (AbstractRequestFilter filter : requestFilters.filters) {
-            Response filterResult = filter.filter(request, meta, this.getClass());
-            if (filterResult != null && !filterResult.isSuccess()) {
-                return filterResult;
+            try {
+                Response filterResult = filter.filter(request, meta, this.getClass());
+                if (filterResult != null && !filterResult.isSuccess()) {
+                    return filterResult;
+                }
+            } catch (Throwable throwable) {
+                Loggers.REMOTE.error("filter error", throwable);
             }
+            
         }
         return handle(request, meta);
     }

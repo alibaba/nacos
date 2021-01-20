@@ -33,7 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 
 /**
@@ -51,29 +50,12 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
     @Autowired
     private AuthManager authManager;
     
-    private Method getMethod(Class handlerClazz) throws NacosException {
-        try {
-            Method method = handlerClazz.getMethod("handle", Request.class, RequestMeta.class);
-            return method;
-        } catch (NoSuchMethodException e) {
-            throw new NacosException(NacosException.SERVER_ERROR, e);
-        }
-    }
-    
     @Override
-    public Response filter(Request request, RequestMeta meta, Class handlerClazz) {
-        
-        Response response = null;
-        try {
-            response = (Response) super.getResponseClazz(handlerClazz).getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-            Loggers.AUTH.error("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);
-            
-        }
+    public Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
         
         try {
             
-            Method method = getMethod(handlerClazz);
+            Method method = getHandleMethod(handlerClazz);
             if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
                 
                 if (Loggers.AUTH.isDebugEnabled()) {
@@ -102,16 +84,16 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 Loggers.AUTH.debug("access denied, request: {}, reason: {}", request.getClass().getSimpleName(),
                         e.getErrMsg());
             }
-            response.setErrorInfo(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
-            return response;
-        } catch (IllegalArgumentException e) {
-            response.setErrorInfo(HttpServletResponse.SC_BAD_REQUEST, ExceptionUtil.getAllExceptionMsg(e));
-            return response;
+            Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);
+            defaultResponseInstance.setErrorInfo(NacosException.NO_RIGHT, e.getMessage());
+            return defaultResponseInstance;
         } catch (Exception e) {
-            response.setErrorInfo(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.getMessage());
-            return response;
+            Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);
+            
+            defaultResponseInstance.setErrorInfo(NacosException.SERVER_ERROR, ExceptionUtil.getAllExceptionMsg(e));
+            return defaultResponseInstance;
         }
         
-        return response;
+        return null;
     }
 }

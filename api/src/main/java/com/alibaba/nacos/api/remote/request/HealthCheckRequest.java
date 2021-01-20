@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.response;
+package com.alibaba.nacos.api.remote.request;
 
 /**
- * response indicates that the connection of the request is unregisterd.
+ * request to check server if unimpeded.
  *
  * @author liuzunfei
- * @version $Id: ConnectionUnregisterResponse.java, v 0.1 2020年07月22日 8:44 PM liuzunfei Exp $
+ * @version $Id: ServerCheckRequest.java, v 0.1 2020年07月22日 8:32 PM liuzunfei Exp $
  */
-public class ConnectionUnregisterResponse extends Response {
-    
+public class HealthCheckRequest extends InternalRequest {
+
 }

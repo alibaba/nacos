@@ -14,14 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.response;
+package com.alibaba.nacos.core.remote.control;
 
 /**
- * HeartBeatResponse.
+ * MonitorType.
  *
  * @author liuzunfei
- * @version $Id: HeartBeatResponse.java, v 0.1 2020年07月14日 3:03 PM liuzunfei Exp $
+ * @version $Id: MonitorType.java, v 0.1 2021年01月12日 20:38 PM liuzunfei Exp $
  */
-public class HeartBeatResponse extends Response {
+public enum MonitorType {
+    // monitor mode.
+    MONITOR("monitor", "only monitor ,not reject  request."),
+    //intercept mode.
+    INTERCEPT("intercept", "reject  request if tps over limit");
+    
+    String type;
+    
+    String desc;
+    
+    MonitorType(String type, String desc) {
+        this.type = type;
+        this.desc = desc;
+    }
     
 }

@@ -51,11 +51,16 @@ public class ClientConfigMetricRequest extends ServerRequest {
         String type;
         
         String key;
-    
+        
+        public static final String CACHE_DATA = "cacheData";
+        
+        public static final String SNAPSHOT_DATA = "snapshotData";
+        
         /**
-         * budile metrics key.
+         * build metrics key.
+         *
          * @param type type.
-         * @param key key.
+         * @param key  key.
          * @return metric key.
          */
         public static MetricsKey build(String type, String key) {
@@ -80,12 +85,12 @@ public class ClientConfigMetricRequest extends ServerRequest {
         public void setKey(String key) {
             this.key = key;
         }
-    
+        
         @Override
         public String toString() {
             return "MetricsKey{" + "type='" + type + '\'' + ", key='" + key + '\'' + '}';
         }
-    
+        
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -97,7 +102,7 @@ public class ClientConfigMetricRequest extends ServerRequest {
             MetricsKey that = (MetricsKey) o;
             return Objects.equals(type, that.type) && Objects.equals(key, that.key);
         }
-    
+        
         @Override
         public int hashCode() {
             return Objects.hash(type, key);

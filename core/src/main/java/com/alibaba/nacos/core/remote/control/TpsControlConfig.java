@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote.client;
-
-import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.response.Response;
+package com.alibaba.nacos.core.remote.control;
 
 /**
- * ServerRequestHandler, to process the request from server side.
+ * tps control manager.
  *
  * @author liuzunfei
- * @version $Id: ServerRequestHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
+ * @version $Id: TpsControlManager.java, v 0.1 2021年01月12日 12:38 PM liuzunfei Exp $
  */
-public interface ServerRequestHandler {
+public class TpsControlConfig {
     
     /**
-     * Handle request from server.
-     *
-     * @param request request
-     * @return response.
+     * tps control is enabled.
+     * @return true/false.
      */
-    Response requestReply(Request request);
-    
+    public static final boolean isTpsControlEnabled() {
+        return true;
+    }
 }

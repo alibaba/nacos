@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.common.remote.client.Connection;
@@ -36,7 +36,6 @@ import io.grpc.stub.StreamObserver;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -69,13 +68,8 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public Response request(Request request, RequestMeta requestMeta) throws NacosException {
-        return request(request, requestMeta, 3000L);
-    }
-    
-    @Override
-    public Response request(Request request, RequestMeta requestMeta, long timeouts) throws NacosException {
-        Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
+    public Response request(Request request, long timeouts) throws NacosException {
+        Payload grpcRequest = GrpcUtils.convert(request);
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
         Payload grpcResponse = null;
         try {
@@ -84,13 +78,13 @@ public class GrpcConnection extends Connection {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
         
-        Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
+        Response response = (Response) GrpcUtils.parse(grpcResponse);
         return response;
     }
     
     @Override
-    public RequestFuture requestFuture(Request request, RequestMeta requestMeta) throws NacosException {
-        Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
+    public RequestFuture requestFuture(Request request) throws NacosException {
+        Payload grpcRequest = GrpcUtils.convert(request);
         
         final ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
         return new RequestFuture() {
@@ -101,24 +95,22 @@ public class GrpcConnection extends Connection {
             }
             
             @Override
-            public Response get() throws InterruptedException, ExecutionException {
-                Payload grpcResponse = null;
-                grpcResponse = requestFuture.get();
-                Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
+            public Response get() throws Exception {
+                Payload grpcResponse = requestFuture.get();
+                Response response = (Response) GrpcUtils.parse(grpcResponse);
+                if (response instanceof ErrorResponse) {
+                    throw new NacosException(response.getErrorCode(), response.getMessage());
+                }
                 return response;
             }
             
             @Override
-            public Response get(long timeout) throws TimeoutException, InterruptedException, ExecutionException {
-                Payload grpcResponse = null;
-                try {
-                    grpcResponse = requestFuture.get(timeout, TimeUnit.MILLISECONDS);
-                } catch (TimeoutException e) {
-                    throw e;
-                } catch (ExecutionException e) {
-                    throw e;
+            public Response get(long timeout) throws Exception {
+                Payload grpcResponse = requestFuture.get(timeout, TimeUnit.MILLISECONDS);
+                Response response = (Response) GrpcUtils.parse(grpcResponse);
+                if (response instanceof ErrorResponse) {
+                    throw new NacosException(response.getErrorCode(), response.getMessage());
                 }
-                Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
                 return response;
             }
         };
@@ -129,28 +121,30 @@ public class GrpcConnection extends Connection {
         payloadStreamObserver.onNext(convert);
     }
     
-    public void sendRequest(Request request, RequestMeta meta) {
-        Payload convert = GrpcUtils.convert(request, meta);
+    public void sendRequest(Request request) {
+        Payload convert = GrpcUtils.convert(request);
         payloadStreamObserver.onNext(convert);
     }
     
     @Override
-    public void asyncRequest(Request request, RequestMeta requestMeta, final RequestCallBack requestCallBack)
-            throws NacosException {
-        Payload grpcRequest = GrpcUtils.convert(request, requestMeta);
+    public void asyncRequest(Request request, final RequestCallBack requestCallBack) throws NacosException {
+        Payload grpcRequest = GrpcUtils.convert(request);
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
         
         //set callback .
         Futures.addCallback(requestFuture, new FutureCallback<Payload>() {
             @Override
             public void onSuccess(@NullableDecl Payload grpcResponse) {
-                Response response = (Response) GrpcUtils.parse(grpcResponse).getBody();
-                if (response != null && response.isSuccess()) {
-                    requestCallBack.onResponse(response);
+                Response response = (Response) GrpcUtils.parse(grpcResponse);
+                
+                if (response != null) {
+                    if (response instanceof ErrorResponse) {
+                        requestCallBack.onException(new NacosException(response.getErrorCode(), response.getMessage()));
+                    } else {
+                        requestCallBack.onResponse(response);
+                    }
                 } else {
-                    requestCallBack.onException(new NacosException(
-                            (response == null) ? ResponseCode.FAIL.getCode() : response.getErrorCode(),
-                            (response == null) ? "null" : response.getMessage()));
+                    requestCallBack.onException(new NacosException(ResponseCode.FAIL.getCode(), "response is null"));
                 }
             }
             
