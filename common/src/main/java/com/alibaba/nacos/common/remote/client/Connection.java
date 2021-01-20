@@ -18,9 +18,6 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.remote.Requester;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * connection on client side.
  *
@@ -30,19 +27,22 @@ import java.util.Map;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
     
+    private String connectionId;
+    
     private boolean abandon = false;
     
     protected RpcClient.ServerInfo serverInfo;
-    
-    protected Map<String, String> labels = new HashMap<String, String>();
     
     public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
     }
     
-    @Override
-    public boolean isBusy() {
-        return false;
+    public String getConnectionId() {
+        return connectionId;
+    }
+    
+    public void setConnectionId(String connectionId) {
+        this.connectionId = connectionId;
     }
     
     /**
@@ -63,29 +63,4 @@ public abstract class Connection implements Requester {
         this.abandon = abandon;
     }
     
-    /**
-     * Getter method for property <tt>labels</tt>.
-     *
-     * @return property value of labels
-     */
-    @Override
-    public Map<String, String> getLabels() {
-        return labels;
-    }
-    
-    /**
-     * Setter method for property <tt>labels</tt>.
-     *
-     * @param labels value to be assigned to property labels
-     */
-    public void putLabels(Map<String, String> labels) {
-        this.labels = labels;
-    }
-    
-    /**
-     * Setter method for property <tt>labels</tt>.
-     */
-    public void putLabel(String labelName, String labelValue) {
-        this.labels.put(labelName, labelValue);
-    }
 }

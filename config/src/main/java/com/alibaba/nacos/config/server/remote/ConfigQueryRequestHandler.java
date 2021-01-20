@@ -36,6 +36,7 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.control.TpsControl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -72,17 +73,13 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     }
     
     @Override
+    @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta requestMeta) throws NacosException {
-        ConfigQueryRequest configQueryRequest = (ConfigQueryRequest) request;
+    public ConfigQueryResponse handle(ConfigQueryRequest configQueryRequest, RequestMeta requestMeta)
+            throws NacosException {
         
-        String group = configQueryRequest.getGroup();
-        String dataId = configQueryRequest.getDataId();
-        String tenant = configQueryRequest.getTenant();
-        String clientIp = requestMeta.getClientIp();
         try {
-            ConfigQueryResponse context = getContext(dataId, group, tenant, configQueryRequest.getTag(),
-                    requestMeta.getClientIp(), requestMeta, request.isNotify());
+            ConfigQueryResponse context = getContext(configQueryRequest, requestMeta, configQueryRequest.isNotify());
             return context;
         } catch (Exception e) {
             ConfigQueryResponse contextFail = ConfigQueryResponse
@@ -92,14 +89,19 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         
     }
     
-    private ConfigQueryResponse getContext(String dataId, String group, String tenant, String tag, String clientIp,
-            RequestMeta meta, boolean notify) throws UnsupportedEncodingException {
-        
+    private ConfigQueryResponse getContext(ConfigQueryRequest configQueryRequest, RequestMeta meta, boolean notify)
+            throws UnsupportedEncodingException {
+        String dataId = configQueryRequest.getDataId();
+        String group = configQueryRequest.getGroup();
+        String tenant = configQueryRequest.getTenant();
+        String clientIp = meta.getClientIp();
+        String tag = configQueryRequest.getTag();
         ConfigQueryResponse response = new ConfigQueryResponse();
         
-        final String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        final String groupKey = GroupKey2
+                .getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(), configQueryRequest.getTenant());
         
-        String autoTag = meta.getLabels().get("Vipserver-Tag");
+        String autoTag = configQueryRequest.getHeader("Vipserver-Tag");
         
         String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
         

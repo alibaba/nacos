@@ -33,6 +33,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.control.TpsControl;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -58,6 +59,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
     }
     
     @Override
+    @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, resource = "", parser = ConfigResourceParser.class)
     public ConfigPublishResponse handle(ConfigPublishRequest request, RequestMeta meta) throws NacosException {
         

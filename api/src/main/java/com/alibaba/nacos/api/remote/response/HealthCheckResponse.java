@@ -17,11 +17,11 @@
 package com.alibaba.nacos.api.remote.response;
 
 /**
- * UnKnowResponse.
+ * response of server check.
  *
  * @author liuzunfei
- * @version $Id: UnKnowResponse.java, v 0.1 2020年07月16日 9:47 PM liuzunfei Exp $
+ * @version $Id: ServerCheckResponse.java, v 0.1 2020年07月22日 8:37 PM liuzunfei Exp $
  */
-public class UnKnowResponse extends Response {
+public class HealthCheckResponse extends Response {
     
 }

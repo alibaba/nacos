@@ -29,7 +29,7 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: ConnectionMetaInfo.java, v 0.1 2020年07月13日 7:28 PM liuzunfei Exp $
  */
-public class ConnectionMetaInfo {
+public class ConnectionMeta {
     
     /**
      * ConnectionType.
@@ -82,7 +82,7 @@ public class ConnectionMetaInfo {
         return labels.get(labelKey);
     }
     
-    public ConnectionMetaInfo(String connectionId, String clientIp, int clientPort, int localPort, String connectType,
+    public ConnectionMeta(String connectionId, String clientIp, int clientPort, int localPort, String connectType,
             String version, String appName, Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
@@ -104,6 +104,16 @@ public class ConnectionMetaInfo {
     public boolean isSdkSource() {
         String source = labels.get(RemoteConstants.LABEL_SOURCE);
         return RemoteConstants.LABEL_SOURCE_SDK.equalsIgnoreCase(source);
+    }
+    
+    /**
+     * check if this connection is sdk source.
+     *
+     * @return if this connection is sdk source.
+     */
+    public boolean isClusterSource() {
+        String source = labels.get(RemoteConstants.LABEL_SOURCE);
+        return RemoteConstants.LABEL_SOURCE_CLUSTER.equalsIgnoreCase(source);
     }
     
     /**

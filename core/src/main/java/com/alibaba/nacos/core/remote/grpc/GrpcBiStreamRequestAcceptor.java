@@ -21,16 +21,14 @@ import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
-import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
+import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
@@ -57,55 +55,109 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
     @Autowired
     ConnectionManager connectionManager;
     
+    private void traceDetailIfNecessary(Payload grpcRequest) {
+        String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+        String connectionId = CONTEXT_KEY_CONN_ID.get();
+        
+        try {
+            if (connectionManager.traced(clientIp)) {
+                Loggers.REMOTE_DIGEST.info("[{}]Bi stream request receive, meta={},body={}", connectionId,
+                        grpcRequest.getMetadata().toByteString().toStringUtf8(),
+                        grpcRequest.getBody().toByteString().toStringUtf8());
+            }
+        } catch (Throwable throwable) {
+            Loggers.REMOTE_DIGEST.error("[{}]Bi stream request error,payload={},error={}", connectionId,
+                    grpcRequest.toByteString().toStringUtf8(), throwable);
+        }
+        
+    }
+    
     @Override
     public StreamObserver<Payload> requestBiStream(StreamObserver<Payload> responseObserver) {
         
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
+            
+            final String connectionId = CONTEXT_KEY_CONN_ID.get();
+            
+            final Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
+            
+            final int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
+            
+            final String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+            
             @Override
             public void onNext(Payload payload) {
                 
-                String connectionId = CONTEXT_KEY_CONN_ID.get();
-                Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
-                int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
-                String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
-                GrpcUtils.PlainRequest plainRequest = GrpcUtils.parse(payload);
-                plainRequest.getMetadata().setClientPort(clientPort);
-                plainRequest.getMetadata().setConnectionId(connectionId);
-                if (plainRequest.getBody() instanceof ConnectionSetupRequest) {
-                    RequestMeta metadata = plainRequest.getMetadata();
-                    Map<String, String> labels = metadata.getLabels();
+                traceDetailIfNecessary(payload);
+                
+                Object parseObj = null;
+                try {
+                    parseObj = GrpcUtils.parse(payload);
+                } catch (Throwable throwable) {
+                    Loggers.REMOTE_DIGEST
+                            .warn("[{}]Grpc request bi stream,payload parse error={}", connectionId, throwable);
+                    return;
+                }
+                
+                if (parseObj == null) {
+                    Loggers.REMOTE_DIGEST
+                            .warn("[{}]Grpc request bi stream,payload parse null ,body={},meta={}", connectionId,
+                                    payload.getBody().getValue().toStringUtf8(), payload.getMetadata());
+                    return;
+                }
+                if (parseObj instanceof ConnectionSetupRequest) {
+                    ConnectionSetupRequest setUpRequest = (ConnectionSetupRequest) parseObj;
+                    Map<String, String> labels = setUpRequest.getLabels();
                     String appName = "-";
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
-                    ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(metadata.getConnectionId(), clientIp,
-                            metadata.getClientPort(), localPort, ConnectionType.GRPC.getType(),
-                            metadata.getClientVersion(), appName, metadata.getLabels());
+                    ConnectionMeta metaInfo = new ConnectionMeta(connectionId, clientIp, clientPort, localPort,
+                            ConnectionType.GRPC.getType(), setUpRequest.getClientVersion(), appName,
+                            setUpRequest.getLabels());
                     
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
-                    
-                    if (!ApplicationUtils.isStarted() || !connectionManager.register(connectionId, connection)) {
+                    boolean started = ApplicationUtils.isStarted();
+                    if (!started || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {
-                            connection.request(new ConnectResetRequest(), buildMeta());
+                            Loggers.REMOTE_DIGEST.warn("[{}]Connection register fail,reason:{}", connectionId,
+                                    started ? " server is not started" : " server is over limited.");
+                            connection.request(new ConnectResetRequest(), 3000L);
                             connection.close();
                         } catch (Exception e) {
                             //Do nothing.
+                            if (connectionManager.traced(clientIp)) {
+                                Loggers.REMOTE_DIGEST
+                                        .warn("[{}]Send connect reset request error,error={}", connectionId, e);
+                            }
                         }
                         return;
                     }
                     
-                } else if (plainRequest.getBody() instanceof Response) {
-                    Response response = (Response) plainRequest.getBody();
+                } else if (parseObj != null && parseObj instanceof Response) {
+                    Response response = (Response) parseObj;
+                    if (connectionManager.traced(clientIp)) {
+                        Loggers.REMOTE_DIGEST
+                                .warn("[{}]Receive response of server request  ,response={}", connectionId, response);
+                    }
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
-                    connectionManager.refreshActiveTime(plainRequest.getMetadata().getConnectionId());
-                    
+                    connectionManager.refreshActiveTime(connectionId);
+                } else {
+                    Loggers.REMOTE_DIGEST
+                            .warn("[{}]Grpc request bi stream,unknown payload receive ,parseObj={}", connectionId,
+                                    parseObj);
+                    return;
                 }
                 
             }
             
             @Override
             public void onError(Throwable t) {
+                if (connectionManager.traced(clientIp)) {
+                    Loggers.REMOTE_DIGEST.warn("[{}]Bi stream on error,error={}", connectionId, t);
+                }
+                
                 if (responseObserver instanceof ServerCallStreamObserver) {
                     ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) responseObserver);
                     if (serverCallStreamObserver.isCancelled()) {
@@ -120,18 +172,22 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             @Override
             public void onCompleted() {
-                responseObserver.onCompleted();
+                if (connectionManager.traced(clientIp)) {
+                    Loggers.REMOTE_DIGEST.warn("[{}]Bi stream on completed", connectionId);
+                }
+                if (responseObserver instanceof ServerCallStreamObserver) {
+                    ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) responseObserver);
+                    if (serverCallStreamObserver.isCancelled()) {
+                        //client close the stream.
+                        return;
+                    } else {
+                        serverCallStreamObserver.onCompleted();
+                    }
+                }
             }
         };
         
         return streamObserver;
-    }
-    
-    private RequestMeta buildMeta() {
-        RequestMeta meta = new RequestMeta();
-        meta.setClientVersion(VersionUtils.getFullClientVersion());
-        meta.setClientIp(NetUtils.localIP());
-        return meta;
     }
     
 }
