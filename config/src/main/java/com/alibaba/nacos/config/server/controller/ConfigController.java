@@ -563,10 +563,9 @@ public class ConfigController {
                 for (ZipUtils.ZipItem item : itemList) {
                     String[] groupAdnDataId = item.getItemName().split(Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR);
                     if (groupAdnDataId.length != 2) {
-                        Map<String, String> skipitem = new HashMap<>(2);
-                        skipitem.put("dataId", item.getItemName());
-                        skipitem.put("group", "");
-                        unrecognizedList.add(skipitem);
+                        Map<String, String> unrecognizedItem = new HashMap<>(1);
+                        unrecognizedItem.put("name", item.getItemName());
+                        unrecognizedList.add(unrecognizedItem);
                         continue;
                     }
                     String group = groupAdnDataId[0];

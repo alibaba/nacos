@@ -1036,8 +1036,7 @@ class ConfigurationManagement extends React.Component {
                   {ret.data.unrecognizedData ? ret.data.unrecognizedData.length : 0}
                 </h5>
                 <Table dataSource={ret.data.unrecognizedData}>
-                  <Table.Column title="Data Id" dataIndex="dataId" />
-                  <Table.Column title="Group" dataIndex="group" />
+                  <Table.Column title="Unrecognized Item" dataIndex="name" />
                 </Table>
               </div>
             </div>
@@ -1066,8 +1065,7 @@ class ConfigurationManagement extends React.Component {
                   {ret.data.unrecognizedData ? ret.data.unrecognizedData.length : 0}
                 </h5>
                 <Table dataSource={ret.data.unrecognizedData}>
-                  <Table.Column title="Data Id" dataIndex="dataId" />
-                  <Table.Column title="Group" dataIndex="group" />
+                  <Table.Column title="Unrecognized Item" dataIndex="name" />
                 </Table>
               </div>
             </div>
