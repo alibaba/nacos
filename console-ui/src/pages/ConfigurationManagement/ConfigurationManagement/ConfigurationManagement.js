@@ -1030,21 +1030,42 @@ class ConfigurationManagement extends React.Component {
                   <Table.Column title="Group" dataIndex="group" />
                 </Table>
               </div>
+              <div>
+                <h5>
+                  {locale.unrecognizedEntries}:{' '}
+                  {ret.data.unrecognizedData ? ret.data.unrecognizedData.length : 0}
+                </h5>
+                <Table dataSource={ret.data.unrecognizedData}>
+                  <Table.Column title="Unrecognized Item" dataIndex="itemName" />
+                </Table>
+              </div>
             </div>
           ),
         });
-      } else if (ret.data.skipCount && ret.data.skipCount > 0) {
+      } else if (
+        (ret.data.skipData && ret.data.skipData.length > 0) ||
+        (ret.data.unrecognizedData && ret.data.unrecognizedData.length > 0)
+      ) {
         Dialog.alert({
           title: isImport ? locale.importSucc : locale.cloneSucc,
           content: (
             <div style={{ width: '500px' }}>
               <div>
                 <h5>
-                  {locale.skippedEntries}: {ret.data.skipData.length}
+                  {locale.skippedEntries}: {ret.data.skipData ? ret.data.skipData.length : 0}
                 </h5>
                 <Table dataSource={ret.data.skipData}>
                   <Table.Column title="Data Id" dataIndex="dataId" />
                   <Table.Column title="Group" dataIndex="group" />
+                </Table>
+              </div>
+              <div>
+                <h5>
+                  {locale.unrecognizedEntries}:{' '}
+                  {ret.data.unrecognizedData ? ret.data.unrecognizedData.length : 0}
+                </h5>
+                <Table dataSource={ret.data.unrecognizedData}>
+                  <Table.Column title="Unrecognized Item" dataIndex="itemName" />
                 </Table>
               </div>
             </div>
