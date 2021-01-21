@@ -275,8 +275,7 @@ public abstract class RpcClient implements Closeable {
                                 .poll(keepAliveTime, TimeUnit.MILLISECONDS);
                         if (reconnectContext == null) {
                             //check alive time.
-                            long now = System.currentTimeMillis();
-                            if (now - lastActiveTimeStamp >= keepAliveTime) {
+                            if (System.currentTimeMillis() - lastActiveTimeStamp >= keepAliveTime) {
                                 boolean isHealthy = healthCheck();
                                 if (!isHealthy) {
                                     if (currentConnection == null) {
@@ -293,7 +292,8 @@ public abstract class RpcClient implements Closeable {
                                     }
                                     
                                 } else {
-                                    lastActiveTimeStamp = now;
+                                    lastActiveTimeStamp = System.currentTimeMillis();
+                                    ;
                                     continue;
                                 }
                             } else {
