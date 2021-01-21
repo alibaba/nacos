@@ -581,7 +581,7 @@ public class ClientWorker implements Closeable {
         /**
          * 5 minutes to check all listen cache keys.
          */
-        private static final long ALL_SYNC_INTERNAL = 1 * 60 * 1000L;
+        private static final long ALL_SYNC_INTERNAL = 5 * 60 * 1000L;
         
         public ConfigRpcTransportClient(Properties properties, ServerListManager serverListManager) {
             super(properties, serverListManager);
