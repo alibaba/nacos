@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.auth.RequestMappingInfo;
 import com.alibaba.nacos.core.auth.RequestMappingInfo.RequestMappingInfoComparator;
@@ -65,9 +67,6 @@ public class ControllerMethodsCache {
     
     public Method getMethod(HttpServletRequest request) {
         String path = getPath(request);
-        if (path == null) {
-            return null;
-        }
         String httpMethod = request.getMethod();
         String urlKey = httpMethod + REQUEST_PATH_SEPARATOR + path.replaceFirst(EnvUtil.getContextPath(), "");
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
@@ -94,13 +93,12 @@ public class ControllerMethodsCache {
     }
     
     private String getPath(HttpServletRequest request) {
-        String path = null;
         try {
-            path = new URI(request.getRequestURI()).getPath();
+            return new URI(request.getRequestURI()).getPath();
         } catch (URISyntaxException e) {
             LOGGER.error("parse request to path error", e);
+            throw new NacosRuntimeException(NacosException.NOT_FOUND, "Invalid URI");
         }
-        return path;
     }
     
     private List<RequestMappingInfo> findMatchedInfo(List<RequestMappingInfo> requestMappingInfos,
@@ -219,6 +217,9 @@ public class ControllerMethodsCache {
         if (requestMappingInfos == null) {
             urlLookup.putIfAbsent(urlKey, new ArrayList<>());
             requestMappingInfos = urlLookup.get(urlKey);
+            // For issue #4701.
+            String urlKeyBackup = urlKey + "/";
+            urlLookup.putIfAbsent(urlKeyBackup, requestMappingInfos);
         }
         requestMappingInfos.add(requestMappingInfo);
         methods.put(requestMappingInfo, method);

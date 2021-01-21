@@ -679,6 +679,7 @@ public class ConfigController {
             if (StringUtils.isNotBlank(ci.getAppName())) {
                 ci4save.setAppName(ci.getAppName());
             }
+            ci4save.setDesc(ci.getDesc());
             configInfoList4Clone.add(ci4save);
         }
         
