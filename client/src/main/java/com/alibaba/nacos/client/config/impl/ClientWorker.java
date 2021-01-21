@@ -576,6 +576,13 @@ public class ClientWorker implements Closeable {
         
         private Object bellItem = new Object();
         
+        private long lastAllSyncTime = System.currentTimeMillis();
+        
+        /**
+         * 5 minutes to check all listen cache keys.
+         */
+        private static final long ALL_SYNC_INTERNAL = 1 * 60 * 1000L;
+        
         public ConfigRpcTransportClient(Properties properties, ServerListManager serverListManager) {
             super(properties, serverListManager);
         }
@@ -717,13 +724,16 @@ public class ClientWorker implements Closeable {
             
             Map<String, List<CacheData>> listenCachesMap = new HashMap<String, List<CacheData>>(16);
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
-            
+            long now = System.currentTimeMillis();
+            boolean needAllSync = now - lastAllSyncTime >= ALL_SYNC_INTERNAL;
             for (CacheData cache : cacheMap.get().values()) {
                 
                 synchronized (cache) {
-                    if (cache.isSync()) {
+                    
+                    if (cache.isSync() && !needAllSync) {
                         continue;
                     }
+                    
                     if (!CollectionUtils.isEmpty(cache.getListeners())) {
                         //get listen  config
                         if (!cache.isUseLocalConfigInfo()) {
@@ -849,6 +859,9 @@ public class ClientWorker implements Closeable {
                 }
             }
             
+            if (needAllSync) {
+                lastAllSyncTime = now;
+            }
             //If has changed keys,notify re sync md5.
             if (hasChangedKeys) {
                 notifyListenConfig();
