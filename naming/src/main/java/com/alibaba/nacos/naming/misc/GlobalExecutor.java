@@ -101,8 +101,8 @@ public class GlobalExecutor {
     
     private static final ScheduledExecutorService NAMING_HEALTH_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    Integer.getInteger("com.alibaba.nacos.naming.health.thread.num", DEFAULT_THREAD_COUNT),
-                    new NameThreadFactory("com.alibaba.nacos.naming.health"));
+                    Integer.max(Integer.getInteger("com.alibaba.nacos.naming.health.thread.num", DEFAULT_THREAD_COUNT),
+                            1), new NameThreadFactory("com.alibaba.nacos.naming.health"));
     
     private static final ScheduledExecutorService RETRANSMITTER_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
