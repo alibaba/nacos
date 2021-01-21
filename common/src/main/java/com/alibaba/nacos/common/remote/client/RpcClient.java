@@ -279,7 +279,19 @@ public abstract class RpcClient implements Closeable {
                             if (now - lastActiveTimeStamp >= keepAliveTime) {
                                 boolean isHealthy = healthCheck();
                                 if (!isHealthy) {
-                                    reconnectContext = new ReconnectContext(null, false);
+                                    if (currentConnection == null) {
+                                        continue;
+                                    }
+                                    LoggerUtils.printIfInfoEnabled(LOGGER,
+                                            "[{}]Server healthy check fail,currentConnection={}", name,
+                                            currentConnection.getConnectionId());
+                                    if (rpcClientStatus
+                                            .compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
+                                        reconnectContext = new ReconnectContext(null, false);
+                                    } else {
+                                        continue;
+                                    }
+                                    
                                 } else {
                                     lastActiveTimeStamp = now;
                                     continue;
