@@ -59,7 +59,8 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
     }
     
     @Override
-    @TpsControl(pointName = "ConfigPublish")
+    @TpsControl(pointName = "ConfigPublish", parsers = {ConfigPublishGroupKeyParser.class,
+            ConfigPublishGroupParser.class})
     @Secured(action = ActionTypes.WRITE, resource = "", parser = ConfigResourceParser.class)
     public ConfigPublishResponse handle(ConfigPublishRequest request, RequestMeta meta) throws NacosException {
         

@@ -31,7 +31,7 @@ public class TpsControlRule {
     
     private Rule pointRule;
     
-    private Map<String, Rule> ipRule = new HashMap<String, Rule>();
+    private Map<String, Rule> monitorKeyRule = new HashMap<String, Rule>();
     
     public String getPointName() {
         return pointName;
@@ -49,12 +49,12 @@ public class TpsControlRule {
         this.pointRule = pointRule;
     }
     
-    public Map<String, Rule> getIpRule() {
-        return ipRule;
+    public Map<String, Rule> getMonitorKeyRule() {
+        return monitorKeyRule;
     }
     
-    public void setIpRule(Map<String, Rule> ipRule) {
-        this.ipRule = ipRule;
+    public void setMonitorKeyRule(Map<String, Rule> monitorKeyRule) {
+        this.monitorKeyRule = monitorKeyRule;
     }
     
     public static class Rule {
@@ -74,23 +74,23 @@ public class TpsControlRule {
             this.maxTps = maxTps;
             this.monitorType = monitorType;
         }
-    
+        
         public long getMaxTps() {
             return maxTps;
         }
-    
+        
         public void setMaxTps(long maxTps) {
             this.maxTps = maxTps;
         }
-    
+        
         public String getMonitorType() {
             return monitorType;
         }
-    
+        
         public void setMonitorType(String monitorType) {
             this.monitorType = monitorType;
         }
-    
+        
         @Override
         public String toString() {
             return "Rule{" + "maxTps=" + maxTps + ", monitorType='" + monitorType + '\'' + '}';
@@ -99,7 +99,7 @@ public class TpsControlRule {
     
     @Override
     public String toString() {
-        return "TpsControlRule{" + "pointName='" + pointName + '\'' + ", pointRule=" + pointRule + ", ipRule=" + ipRule
-                + '}';
+        return "TpsControlRule{" + "pointName='" + pointName + '\'' + ", pointRule=" + pointRule + ", monitorKeyRule="
+                + monitorKeyRule + '}';
     }
 }

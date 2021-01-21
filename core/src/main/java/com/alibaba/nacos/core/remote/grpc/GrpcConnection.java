@@ -122,16 +122,14 @@ public class GrpcConnection extends Connection {
         String connectionId = null;
         
         try {
-            if (isConnected()) {
-                connectionId = getMetaInfo().getConnectionId();
-                
-                if (isTraced()) {
-                    Loggers.REMOTE_DIGEST.warn("[{}] try to close connection ", connectionId);
-                }
-                
-                closeBiStream();
-                channel.close();
+            connectionId = getMetaInfo().getConnectionId();
+            
+            if (isTraced()) {
+                Loggers.REMOTE_DIGEST.warn("[{}] try to close connection ", connectionId);
             }
+            
+            closeBiStream();
+            channel.close();
             
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.warn("[{}] connection  close exception  : {}", connectionId, e);

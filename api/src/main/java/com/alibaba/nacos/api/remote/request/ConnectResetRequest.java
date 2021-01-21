@@ -17,10 +17,10 @@
 package com.alibaba.nacos.api.remote.request;
 
 /**
- * ConnectResetResponse.
+ * ConnectResetRequest.
  *
  * @author liuzunfei
- * @version $Id: ConnectResetResponse.java, v 0.1 2020年07月15日 11:11 AM liuzunfei Exp $
+ * @version $Id: ConnectResetRequest.java, v 0.1 2020年07月15日 11:11 AM liuzunfei Exp $
  */
 public class ConnectResetRequest extends ServerRequest {
     

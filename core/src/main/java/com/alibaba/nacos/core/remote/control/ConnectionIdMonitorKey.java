@@ -17,39 +17,26 @@
 package com.alibaba.nacos.core.remote.control;
 
 /**
- * MonitorType.
+ * ConnectionIdMonitorKey.
  *
  * @author liuzunfei
- * @version $Id: MonitorType.java, v 0.1 2021年01月12日 20:38 PM liuzunfei Exp $
+ * @version $Id: ConnectionIdMonitorKey.java, v 0.1 2021年01月20日 20:38 PM liuzunfei Exp $
  */
-public enum MonitorType {
-    // monitor mode.
-    MONITOR("monitor", "only monitor ,not reject  request."),
-    //intercept mode.
-    INTERCEPT("intercept", "reject  request if tps over limit");
+public class ConnectionIdMonitorKey extends MonitorKey {
     
-    String type;
+    String key;
     
-    String desc;
+    public ConnectionIdMonitorKey() {
     
-    MonitorType(String type, String desc) {
-        this.type = type;
-        this.desc = desc;
     }
     
+    public ConnectionIdMonitorKey(String clientIp) {
+        this.key = clientIp;
+    }
+    
+    @Override
     public String getType() {
-        return type;
+        return "connectionId";
     }
     
-    public void setType(String type) {
-        this.type = type;
-    }
-    
-    public String getDesc() {
-        return desc;
-    }
-    
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
 }
