@@ -26,6 +26,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * tps control point.
@@ -52,8 +54,28 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
         if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
             
             TpsControl tpsControl = method.getAnnotation(TpsControl.class);
+            
             String pointName = tpsControl.pointName();
-            boolean pass = tpsMonitorManager.applyTps(meta.getClientIp(), pointName);
+            Class[] parsers = tpsControl.parsers();
+            List<MonitorKey> monitorKeys = new ArrayList<>();
+            monitorKeys.add(new ClientIpMonitorKey(meta.getClientIp()));
+            if (parsers != null) {
+                for (Class clazz : parsers) {
+                    try {
+                        if (MonitorKeyParser.class.isAssignableFrom(clazz)) {
+                            MonitorKey parseKey = ((MonitorKeyParser) (clazz.newInstance())).parse(request, meta);
+                            if (parseKey != null) {
+                                monitorKeys.add(parseKey);
+                            }
+                        }
+                    } catch (Throwable throwable) {
+                        //ignore
+                    }
+                }
+            }
+            
+            boolean pass = tpsMonitorManager.applyTps(pointName, meta.getConnectionId(), monitorKeys);
+            
             if (!pass) {
                 Response response = null;
                 try {
@@ -62,7 +84,7 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                     return response;
                 } catch (Exception e) {
                     Loggers.TPS_CONTROL_DETAIL
-                            .warn("auth fail, request: {},exception:{}", request.getClass().getSimpleName(), e);
+                            .warn("Tps monitor fail , request: {},exception:{}", request.getClass().getSimpleName(), e);
                     return null;
                 }
                 

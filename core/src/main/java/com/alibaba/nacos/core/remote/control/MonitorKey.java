@@ -16,40 +16,43 @@
 
 package com.alibaba.nacos.core.remote.control;
 
+import com.alibaba.nacos.api.common.Constants;
+
 /**
  * MonitorType.
  *
  * @author liuzunfei
- * @version $Id: MonitorType.java, v 0.1 2021年01月12日 20:38 PM liuzunfei Exp $
+ * @version $Id: MonitorKey.java, v 0.1 2021年01月20日 20:38 PM liuzunfei Exp $
  */
-public enum MonitorType {
-    // monitor mode.
-    MONITOR("monitor", "only monitor ,not reject  request."),
-    //intercept mode.
-    INTERCEPT("intercept", "reject  request if tps over limit");
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+public abstract class MonitorKey {
     
-    String type;
+    String key;
     
-    String desc;
+    public MonitorKey() {
     
-    MonitorType(String type, String desc) {
-        this.type = type;
-        this.desc = desc;
     }
     
-    public String getType() {
-        return type;
+    public MonitorKey(String key) {
+        this.key = key;
     }
     
-    public void setType(String type) {
-        this.type = type;
+    /**
+     * get monitor key type.
+     *
+     * @return
+     */
+    public abstract String getType();
+    
+    public String getKey() {
+        return this.key;
     }
     
-    public String getDesc() {
-        return desc;
+    public void setKey(String key) {
+        this.key = key;
     }
     
-    public void setDesc(String desc) {
-        this.desc = desc;
+    public String build() {
+        return this.getType() + Constants.COLON + this.getKey();
     }
 }

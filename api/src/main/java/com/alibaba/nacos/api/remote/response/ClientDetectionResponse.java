@@ -14,32 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.control;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+package com.alibaba.nacos.api.remote.response;
 
 /**
- * tps control manager.
+ * response of client active detection check.
  *
  * @author liuzunfei
- * @version $Id: TpsControlManager.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
+ * @version $Id: ServerCheckResponse.java, v 0.1 2021年01月20日 10:37 PM liuzunfei Exp $
  */
-@Retention(RetentionPolicy.RUNTIME)
-public @interface TpsControl {
-    
-    /**
-     * The action type of the request.
-     *
-     * @return action type, default READ
-     */
-    String pointName();
-    
-    /**
-     * Resource name parser. Should have lower priority than resource().
-     *
-     * @return class type of resource parser
-     */
-    Class[] parsers() default {};
-    
+public class ClientDetectionResponse extends Response {
+
 }
