@@ -1004,7 +1004,10 @@ class ConfigurationManagement extends React.Component {
     const resultCode = ret.code;
     if (resultCode === 200) {
       confirm.hide();
-      if (ret.data.failData && ret.data.failData.length > 0) {
+      let failCount = ret.data.failData ? ret.data.failData.length : 0;
+      let skipCount = ret.data.skipData ? ret.data.skipData.length : 0;
+      let unrecognizedCount = ret.data.unrecognizedCount ? ret.data.unrecognizedCount : 0;
+      if (failCount > 0) {
         Dialog.alert({
           title: isImport ? locale.importAbort : locale.cloneAbort,
           content: (
@@ -1014,7 +1017,7 @@ class ConfigurationManagement extends React.Component {
               </h4>
               <div style={{ marginTop: 20 }}>
                 <h5>
-                  {locale.failureEntries}: {ret.data.failData.length}
+                  {locale.failureEntries}: {failCount}
                 </h5>
                 <Table dataSource={ret.data.failData}>
                   <Table.Column title="Data Id" dataIndex="dataId" />
@@ -1023,7 +1026,7 @@ class ConfigurationManagement extends React.Component {
               </div>
               <div>
                 <h5>
-                  {locale.unprocessedEntries}: {ret.data.skipData ? ret.data.skipData.length : 0}
+                  {locale.unprocessedEntries}: {skipCount}
                 </h5>
                 <Table dataSource={ret.data.skipData}>
                   <Table.Column title="Data Id" dataIndex="dataId" />
@@ -1032,27 +1035,27 @@ class ConfigurationManagement extends React.Component {
               </div>
               <div>
                 <h5>
-                  {locale.unrecognizedEntries}:{' '}
-                  {ret.data.unrecognizedData ? ret.data.unrecognizedData.length : 0}
+                  {locale.unrecognizedEntries}: {unrecognizedCount}
                 </h5>
                 <Table dataSource={ret.data.unrecognizedData}>
-                  <Table.Column title="Unrecognized Item" dataIndex="itemName" />
+                  <Table.Column title="Item Name" dataIndex="itemName" />
                 </Table>
               </div>
             </div>
           ),
         });
-      } else if (
-        (ret.data.skipData && ret.data.skipData.length > 0) ||
-        (ret.data.unrecognizedData && ret.data.unrecognizedData.length > 0)
-      ) {
+      } else if (skipCount > 0 || unrecognizedCount > 0) {
+        let message = `${isImport ? locale.importSuccEntries : locale.cloneSuccEntries}${
+          ret.data.succCount
+        }`;
         Dialog.alert({
           title: isImport ? locale.importSucc : locale.cloneSucc,
           content: (
             <div style={{ width: '500px' }}>
+              <h5>{message}</h5>
               <div>
                 <h5>
-                  {locale.skippedEntries}: {ret.data.skipData ? ret.data.skipData.length : 0}
+                  {locale.skippedEntries}: {skipCount}
                 </h5>
                 <Table dataSource={ret.data.skipData}>
                   <Table.Column title="Data Id" dataIndex="dataId" />
@@ -1061,11 +1064,10 @@ class ConfigurationManagement extends React.Component {
               </div>
               <div>
                 <h5>
-                  {locale.unrecognizedEntries}:{' '}
-                  {ret.data.unrecognizedData ? ret.data.unrecognizedData.length : 0}
+                  {locale.unrecognizedEntries}: {unrecognizedCount}
                 </h5>
                 <Table dataSource={ret.data.unrecognizedData}>
-                  <Table.Column title="Unrecognized Item" dataIndex="itemName" />
+                  <Table.Column title="Item Name" dataIndex="itemName" />
                 </Table>
               </div>
             </div>
