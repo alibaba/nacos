@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 the original author or authors.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,38 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api;
 
 /**
- * <p>
- * Support for reading the value of the specified variable from the -D parameter
- * </P>
- * Properties that are preferred to which in {@link PropertyKeyConst}
+ * Support for reading the value of the specified variable from the -D parameter.
+ *
+ * <p>Properties that are preferred to which in {@link PropertyKeyConst}
  *
  * @author pbting
- * @date 2019-02-22 3:38 PM
  */
 public interface SystemPropertyKeyConst {
-
+    
     String NAMING_SERVER_PORT = "nacos.naming.exposed.port";
-
+    
     String NAMING_WEB_CONTEXT = "nacos.naming.web.context";
-
+    
     /**
-     * In the cloud (Alibaba Cloud or other cloud vendors) environment,
-     * whether to enable namespace resolution in the cloud environment.
+     * In the cloud (Alibaba Cloud or other cloud vendors) environment, whether to enable namespace resolution in the
+     * cloud environment.
      * <p>
      * The default is on.
      * </p>
      */
     String IS_USE_CLOUD_NAMESPACE_PARSING = "nacos.use.cloud.namespace.parsing";
-
+    
     /**
-     * In the cloud environment, if the process level requires a globally uniform namespace,
-     * it can be specified with the -D parameter.
+     * In the cloud environment, if the process level requires a globally uniform namespace, it can be specified with
+     * the -D parameter.
      */
     String ANS_NAMESPACE = "ans.namespace";
-
+    
     /**
      * It is also supported by the -D parameter.
      */

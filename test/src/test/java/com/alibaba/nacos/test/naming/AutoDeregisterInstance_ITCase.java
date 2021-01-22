@@ -15,14 +15,14 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
-import com.alibaba.nacos.naming.NamingApp;
-import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,8 +46,8 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  * @date 2018/11/13
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AutoDeregisterInstance_ITCase {
 
     private NamingService naming;
@@ -65,7 +65,7 @@ public class AutoDeregisterInstance_ITCase {
         }
 
         while (true) {
-            if (!"UP".equals(naming.getServerStatus()) || RunningConfig.getServerPort() == 0) {
+            if (!"UP".equals(naming.getServerStatus()) || EnvUtil.getPort() == 0) {
                 Thread.sleep(1000L);
                 continue;
             }
@@ -74,7 +74,7 @@ public class AutoDeregisterInstance_ITCase {
     }
 
     @After
-    public void destroy() {
+    public void destroy() throws Exception{
         NamingBase.destoryServer(port);
     }
 

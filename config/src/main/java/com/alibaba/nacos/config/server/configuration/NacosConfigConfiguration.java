@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.configuration;
 
+import com.alibaba.nacos.config.server.filter.NacosWebFilter;
+import com.alibaba.nacos.config.server.filter.CurcuitFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -25,4 +31,37 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class NacosConfigConfiguration {
+    
+    @Bean
+    public FilterRegistrationBean nacosWebFilterRegistration() {
+        FilterRegistrationBean<NacosWebFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(nacosWebFilter());
+        registration.addUrlPatterns("/v1/cs/*");
+        registration.setName("nacosWebFilter");
+        registration.setOrder(1);
+        return registration;
+    }
+    
+    @Bean
+    public NacosWebFilter nacosWebFilter() {
+        return new NacosWebFilter();
+    }
+    
+    @Conditional(ConditionDistributedEmbedStorage.class)
+    @Bean
+    public FilterRegistrationBean transferToLeaderRegistration() {
+        FilterRegistrationBean<CurcuitFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(transferToLeader());
+        registration.addUrlPatterns("/v1/cs/*");
+        registration.setName("curcuitFilter");
+        registration.setOrder(6);
+        return registration;
+    }
+    
+    @Conditional(ConditionDistributedEmbedStorage.class)
+    @Bean
+    public CurcuitFilter transferToLeader() {
+        return new CurcuitFilter();
+    }
+    
 }

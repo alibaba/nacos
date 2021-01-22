@@ -13,225 +13,256 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.api.utils.StringUtils;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN;
 
 /**
- * Instance
+ * Instance.
  *
  * @author nkorange
  */
-public class Instance {
-
+@JsonInclude(Include.NON_NULL)
+public class Instance implements Serializable {
+    
+    private static final long serialVersionUID = -742906310567291979L;
+    
     /**
      * unique id of this instance.
      */
     private String instanceId;
-
+    
     /**
-     * instance ip
+     * instance ip.
      */
     private String ip;
-
+    
     /**
-     * instance port
+     * instance port.
      */
     private int port;
-
+    
     /**
-     * instance weight
+     * instance weight.
      */
     private double weight = 1.0D;
-
+    
     /**
-     * instance health status
+     * instance health status.
      */
     private boolean healthy = true;
-
+    
     /**
-     * If instance is enabled to accept request
+     * If instance is enabled to accept request.
      */
     private boolean enabled = true;
-
+    
     /**
-     * If instance is ephemeral
+     * If instance is ephemeral.
      *
      * @since 1.0.0
      */
     private boolean ephemeral = true;
-
+    
     /**
-     * cluster information of instance
+     * cluster information of instance.
      */
     private String clusterName;
-
+    
     /**
-     * Service information of instance
+     * Service information of instance.
      */
     private String serviceName;
-
+    
     /**
-     * user extended attributes
+     * user extended attributes.
      */
     private Map<String, String> metadata = new HashMap<String, String>();
-
+    
     public String getInstanceId() {
-        return instanceId;
+        return this.instanceId;
     }
-
-    public void setInstanceId(String instanceId) {
+    
+    public void setInstanceId(final String instanceId) {
         this.instanceId = instanceId;
     }
-
+    
     public String getIp() {
-        return ip;
+        return this.ip;
     }
-
-    public void setIp(String ip) {
+    
+    public void setIp(final String ip) {
         this.ip = ip;
     }
-
+    
     public int getPort() {
-        return port;
+        return this.port;
     }
-
-    public void setPort(int port) {
+    
+    public void setPort(final int port) {
         this.port = port;
     }
-
+    
     public double getWeight() {
-        return weight;
+        return this.weight;
     }
-
-    public void setWeight(double weight) {
+    
+    public void setWeight(final double weight) {
         this.weight = weight;
     }
-
+    
     public boolean isHealthy() {
-        return healthy;
+        return this.healthy;
     }
-
-    public void setHealthy(boolean healthy) {
+    
+    public void setHealthy(final boolean healthy) {
         this.healthy = healthy;
     }
-
+    
     public String getClusterName() {
-        return clusterName;
+        return this.clusterName;
     }
-
-    public void setClusterName(String clusterName) {
+    
+    public void setClusterName(final String clusterName) {
         this.clusterName = clusterName;
     }
-
+    
     public String getServiceName() {
-        return serviceName;
+        return this.serviceName;
     }
-
-    public void setServiceName(String serviceName) {
+    
+    public void setServiceName(final String serviceName) {
         this.serviceName = serviceName;
     }
-
+    
     public Map<String, String> getMetadata() {
-        return metadata;
+        return this.metadata;
     }
-
-    public void setMetadata(Map<String, String> metadata) {
+    
+    public void setMetadata(final Map<String, String> metadata) {
         this.metadata = metadata;
     }
-
-    public void addMetadata(String key, String value) {
-        if (this.metadata == null) {
-            this.metadata = new HashMap<String, String>(4);
+    
+    /**
+     * add meta data.
+     *
+     * @param key   meta data key
+     * @param value meta data value
+     */
+    public void addMetadata(final String key, final String value) {
+        if (metadata == null) {
+            metadata = new HashMap<String, String>(4);
         }
-        this.metadata.put(key, value);
+        metadata.put(key, value);
     }
-
+    
     public boolean isEnabled() {
-        return enabled;
+        return this.enabled;
     }
-
-    public void setEnabled(boolean enabled) {
+    
+    public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
     }
-
+    
     public boolean isEphemeral() {
-        return ephemeral;
+        return this.ephemeral;
     }
-
-    public void setEphemeral(boolean ephemeral) {
+    
+    public void setEphemeral(final boolean ephemeral) {
         this.ephemeral = ephemeral;
     }
-
+    
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port=" + port + ", weight="
+                + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral=" + ephemeral
+                + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName + '\'' + ", metadata="
+                + metadata + '}';
     }
-
+    
     public String toInetAddr() {
         return ip + ":" + port;
     }
-
+    
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (!(obj instanceof Instance)) {
             return false;
         }
-
-        Instance host = (Instance) obj;
-
-        return strEquals(toString(), host.toString());
+        
+        final Instance host = (Instance) obj;
+        return Instance.strEquals(host.toString(), toString());
     }
-
+    
     @Override
     public int hashCode() {
         return toString().hashCode();
     }
-
-    private static boolean strEquals(String str1, String str2) {
+    
+    private static boolean strEquals(final String str1, final String str2) {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
-
+    
     public long getInstanceHeartBeatInterval() {
-        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_INTERVAL, Constants.DEFAULT_HEART_BEAT_INTERVAL);
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_INTERVAL,
+                Constants.DEFAULT_HEART_BEAT_INTERVAL);
     }
-
+    
     public long getInstanceHeartBeatTimeOut() {
-        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, Constants.DEFAULT_HEART_BEAT_TIMEOUT);
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_TIMEOUT,
+                Constants.DEFAULT_HEART_BEAT_TIMEOUT);
     }
-
+    
     public long getIpDeleteTimeout() {
-        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.IP_DELETE_TIMEOUT, Constants.DEFAULT_IP_DELETE_TIMEOUT);
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.IP_DELETE_TIMEOUT,
+                Constants.DEFAULT_IP_DELETE_TIMEOUT);
     }
-
+    
     public String getInstanceIdGenerator() {
-        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.INSTANCE_ID_GENERATOR, Constants.DEFAULT_INSTANCE_ID_GENERATOR);
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.INSTANCE_ID_GENERATOR,
+                Constants.DEFAULT_INSTANCE_ID_GENERATOR);
     }
-
-    private long getMetaDataByKeyWithDefault( String key, long defaultValue) {
+    
+    /**
+     * Returns {@code true} if this metadata contains the specified key.
+     *
+     * @param key metadata key
+     * @return {@code true} if this metadata contains the specified key
+     */
+    public boolean containsMetadata(final String key) {
+        if (getMetadata() == null || getMetadata().isEmpty()) {
+            return false;
+        }
+        return getMetadata().containsKey(key);
+    }
+    
+    private long getMetaDataByKeyWithDefault(final String key, final long defaultValue) {
         if (getMetadata() == null || getMetadata().isEmpty()) {
             return defaultValue;
         }
-        String value = getMetadata().get(key);
+        final String value = getMetadata().get(key);
         if (!StringUtils.isEmpty(value) && value.matches(NUMBER_PATTERN)) {
             return Long.parseLong(value);
         }
         return defaultValue;
     }
-
-    private String getMetaDataByKeyWithDefault( String key, String defaultValue) {
+    
+    private String getMetaDataByKeyWithDefault(final String key, final String defaultValue) {
         if (getMetadata() == null || getMetadata().isEmpty()) {
             return defaultValue;
         }
         return getMetadata().get(key);
     }
-
+    
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.raft;
 
 import com.alibaba.nacos.naming.BaseTest;
@@ -27,19 +28,15 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Spy;
 
-/**
- * @author nkorange
- * @author jifengnan 2019-05-18
- */
 public class RaftStoreTest extends BaseTest {
-
+    
     @InjectMocks
     @Spy
     public RaftCore raftCore;
-
+    
     @Spy
     public RaftStore raftStore;
-
+    
     @Test
     public void wrietDatum() throws Exception {
         Datum<Instances> datum = new Datum<>();
@@ -51,11 +48,11 @@ public class RaftStoreTest extends BaseTest {
         datum.value.getInstanceList().add(instance);
         instance = new Instance("2.2.2.2", 2, TEST_CLUSTER_NAME);
         datum.value.getInstanceList().add(instance);
-
+        
         raftStore.write(datum);
         raftCore.init();
         Datum result = raftCore.getDatum(key);
-
+        
         Assert.assertEquals(key, result.key);
         Assert.assertEquals(1, result.timestamp.intValue());
         Assert.assertEquals(datum.value.toString(), result.value.toString());

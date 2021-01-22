@@ -13,27 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.filter;
 
 /**
- * Config Request Interface
+ * Config Request Interface.
  *
  * @author Nacos
  */
 public interface IConfigRequest {
+    
     /**
-     * get param
+     * get param.
      *
      * @param key key
      * @return value
      */
     Object getParameter(String key);
-
+    
     /**
-     * get config context
+     * get config context.
      *
-     * @return
+     * @return {@link IConfigContext}
      */
     IConfigContext getConfigContext();
-
+    
 }

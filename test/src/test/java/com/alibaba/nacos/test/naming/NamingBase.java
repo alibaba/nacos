@@ -16,28 +16,26 @@
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.naming.net.HttpClient;
+import com.alibaba.nacos.client.naming.net.NamingHttpClientManager;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.test.base.HttpClient4Test;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URL;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author nkorange
  */
-public class NamingBase {
+public class NamingBase extends HttpClient4Test {
 
+    private static final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
 
     public static final String TEST_DOM_1 = "nacos.test.1";
     public static final String TEST_IP_4_DOM_1 = "127.0.0.1";
@@ -65,13 +63,6 @@ public class NamingBase {
     public static final int TEST_PORT = 8080;
 
     public static final int TIME_OUT = 3000;
-
-
-    @Autowired
-    protected TestRestTemplate restTemplate;
-
-
-    protected URL base;
 
     public static String randomDomainName() {
         StringBuilder sb = new StringBuilder();
@@ -181,65 +172,47 @@ public class NamingBase {
         return true;
     }
 
-    public static void prepareServer(int localPort) {
-        prepareServer(localPort, "UP");
+    public static void prepareServer(int localPort) throws Exception{
+        prepareServer(localPort, "UP", "/nacos");
+    }
+    
+    public static void prepareServer(int localPort,String contextPath) throws Exception{
+        prepareServer(localPort, "UP", contextPath);
     }
 
-    public static void prepareServer(int localPort, String status) {
-        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
-        List<String> headers = new ArrayList<String>();
-        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
-        headers.add("Nacos-Server");
-        HttpClient.HttpResult result =
-            HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
+    public static void prepareServer(int localPort, String status,String contextPath) throws Exception {
+        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
 
-        Assert.assertEquals(HttpStatus.SC_OK, result.code);
+        url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
 
-
-        url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
-        headers = new ArrayList<String>();
-        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
-        headers.add("Nacos-Server");
-        result =
-            HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
-
-        Assert.assertEquals(HttpStatus.SC_OK, result.code);
+        result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }
-
-    public static void destoryServer(int localPort) {
-        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
-        List<String> headers = new ArrayList<String>();
-        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
-        headers.add("Nacos-Server");
-        HttpClient.HttpResult result =
-            HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
-
-        Assert.assertEquals(HttpStatus.SC_OK, result.code);
+    
+    public static void destoryServer(int localPort) throws Exception{
+        destoryServer(localPort, "/nacos");
     }
+    
+    public static void destoryServer(int localPort, String contextPath) throws Exception{
+        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
 
-    protected <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
-
-        HttpHeaders headers = new HttpHeaders();
-
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), HttpMethod.GET, entity, clazz);
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }
-
-    protected <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
-
-        HttpHeaders headers = new HttpHeaders();
-
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), httpMethod, entity, clazz);
+    
+    public static String normalizeContextPath(String contextPath) {
+        if (StringUtils.isBlank(contextPath) || "/".equals(contextPath)) {
+            return StringUtils.EMPTY;
+        }
+        return contextPath.startsWith("/") ? contextPath : "/" + contextPath;
     }
 }
