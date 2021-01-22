@@ -216,8 +216,9 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                     stringBuilder.append(point).append("|").append("point|").append(formatString).append("|")
                             .append(pointSlot.tps.get()).append("|").append(pointSlot.interceptedTps.get())
                             .append("\n");
-                    for (Map.Entry<String, TpsRecorder> monitorKeyEntry : value.monitorKeysRecorder.entrySet()) {
-                        String monitorKey = monitorKeyEntry.getKey();
+                    for (Map.Entry<MonitorKeyMatcher, TpsRecorder> monitorKeyEntry : value.monitorKeysRecorder
+                            .entrySet()) {
+                        MonitorKeyMatcher monitorKey = monitorKeyEntry.getKey();
                         TpsRecorder ipRecord = monitorKeyEntry.getValue();
                         TpsRecorder.TpsSlot keySlot = ipRecord.getPoint(now - 1000L);
                         if (keySlot == null) {
