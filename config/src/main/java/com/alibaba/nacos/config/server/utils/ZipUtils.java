@@ -133,11 +133,12 @@ public class ZipUtils {
                     while ((offset = zipIn.read(buffer)) != -1) {
                         out.write(buffer, 0, offset);
                     }
-                    if (".meta.yml".equals(entry.getName())) {
-                        metaDataItem = new ZipItem(entry.getName(), out.toString("UTF-8"));
-                    } else {
-                        itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
+                    String entryName = entry.getName();
+                    if (".meta.yml".equals(entryName)) {
+                        metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
+                        continue;
                     }
+                    itemList.add(new ZipItem(entryName, out.toString("UTF-8")));
                 } catch (IOException e) {
                     LOGGER.error("unzip error", e);
                 }
