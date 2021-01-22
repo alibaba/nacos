@@ -74,9 +74,9 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     public static final String RULE_FILE_NAME = "limitRule";
     
     /**
-     * double of client keep alive.
+     * 4 times of client keep alive.
      */
-    private static final long KEEP_ALIVE_TIME = 21000L;
+    private static final long KEEP_ALIVE_TIME = 20000L;
     
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;

@@ -87,7 +87,7 @@ public abstract class RpcClient implements Closeable {
     /**
      * default keep alive time 10s.
      */
-    private long keepAliveTime = 10000L;
+    private long keepAliveTime = 5000L;
     
     private long lastActiveTimeStamp = System.currentTimeMillis();
     
