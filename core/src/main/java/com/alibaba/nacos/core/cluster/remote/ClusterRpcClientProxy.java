@@ -68,7 +68,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             List<Member> members = serverMemberManager.allMembersWithoutSelf();
             refresh(members);
             Loggers.CLUSTER
-                    .warn("[ClusterRpcClientProxy] succss to refresh cluster rpc client on start up,members ={} ",
+                    .warn("[ClusterRpcClientProxy] success to refresh cluster rpc client on start up,members ={} ",
                             members);
         } catch (NacosException e) {
             Loggers.CLUSTER.warn("[ClusterRpcClientProxy] fail to refresh cluster rpc client,{} ", e.getMessage());
@@ -85,14 +85,14 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         
         //ensure to create client of new members
         for (Member member : members) {
-            ConnectionType supportedConnectionType = MemberUtil.getSupportedConnectionType(member);
-            if (supportedConnectionType != null) {
-                createRpcClientAndStart(member, supportedConnectionType);
+            
+            if (MemberUtil.isSupportedLongCon(member)) {
+                createRpcClientAndStart(member, ConnectionType.GRPC);
             }
         }
         
         //shutdown and remove old members.
-        Set<Map.Entry<String, RpcClient>> allClientEntrys = RpcClientFactory.getAllClientEntrys();
+        Set<Map.Entry<String, RpcClient>> allClientEntrys = RpcClientFactory.getAllClientEntries();
         Iterator<Map.Entry<String, RpcClient>> iterator = allClientEntrys.iterator();
         List<String> newMemberKeys = members.stream().filter(a -> MemberUtil.isSupportedLongCon(a))
                 .map(a -> memberClientKey(a)).collect(Collectors.toList());
@@ -121,7 +121,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             RpcClientFactory.destroyClient(memberClientKey);
             client = RpcClientFactory.createClusterClient(memberClientKey, type, labels);
         }
-    
+        
         if (client.isWaitInitiated()) {
             Loggers.CLUSTER.info("start a new rpc client to member - > : {}", member);
             
@@ -136,13 +136,13 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
                 public String getCurrentServer() {
                     return member.getAddress();
                 }
-    
+                
                 @Override
                 public List<String> getServerList() {
                     return Lists.newArrayList(member.getAddress());
                 }
             });
-        
+            
             client.start();
         }
     }

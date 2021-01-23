@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -843,17 +844,25 @@ public class ClientWorker implements Closeable {
         
         private synchronized RpcClient ensureRpcClient(String taskId) throws NacosException {
             Map<String, String> labels = getLabels();
-            Map<String, String> newlabels = new HashMap<String, String>(labels);
-            newlabels.put("taskId", taskId);
+            Map<String, String> newLabels = new HashMap<String, String>(labels);
+            newLabels.put("taskId", taskId);
             
             RpcClient rpcClient = RpcClientFactory
-                    .createClient("config-" + taskId + "-" + uuid, getConnectionType(), newlabels);
+                    .createClient("config-" + taskId + "-" + uuid, getConnectionType(), newLabels);
             if (rpcClient.isWaitInitiated()) {
                 initRpcClientHandler(rpcClient);
+                rpcClient.initClientAbilities(initAbilities());
                 rpcClient.start();
             }
             
             return rpcClient;
+        }
+        
+        private ClientAbilities initAbilities() {
+            ClientAbilities clientAbilities = new ClientAbilities();
+            clientAbilities.getRemoteAbility().setSupportRemoteConnection(true);
+            clientAbilities.getConfigAbility().setSupportRemoteMetrics(true);
+            return clientAbilities;
         }
         
         /**

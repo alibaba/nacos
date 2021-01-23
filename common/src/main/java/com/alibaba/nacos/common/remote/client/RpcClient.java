@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PayloadRegistry;
@@ -84,6 +85,8 @@ public abstract class RpcClient implements Closeable {
     
     private static final long DEFAULT_TIMEOUT_MILLS = 3000L;
     
+    protected ClientAbilities clientAbilities;
+    
     /**
      * default keep alive time 10s.
      */
@@ -122,6 +125,10 @@ public abstract class RpcClient implements Closeable {
         rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
         LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor, ServerListFactory ={}",
                 serverListFactory.getClass().getName());
+    }
+    
+    public void initClientAbilities(ClientAbilities clientAbilities) {
+        this.clientAbilities = clientAbilities;
     }
     
     /**

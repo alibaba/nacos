@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote.client.grpc;
+package com.alibaba.nacos.api.ability;
 
 /**
- * gRPC client for ops.
+ * remote abilities of nacos client.
  *
  * @author liuzunfei
- * @version $Id: GrpcOpsClient.java, v 0.1 2020年09月07日 11:05 AM liuzunfei Exp $
+ * @version $Id: ClientRemoteAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class GrpcOpsClient extends GrpcClient {
+public class ClientRemoteAbility {
     
     /**
-     * Empty constructor.
-     *
-     * @param name name of client.
+     * if support remote connection.
      */
-    public GrpcOpsClient(String name) {
-        super(name);
+    private boolean supportRemoteConnection;
+    
+    public boolean isSupportRemoteConnection() {
+        return this.supportRemoteConnection;
     }
     
-    @Override
-    public int rpcPortOffset() {
-        return 1002;
+    public void setSupportRemoteConnection(boolean supportRemoteConnection) {
+        this.supportRemoteConnection = supportRemoteConnection;
     }
-    
 }

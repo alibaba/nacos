@@ -117,6 +117,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             setUpRequest.getLabels());
                     
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
+                    connection.setAbilities(setUpRequest.getAbilities());
                     boolean started = ApplicationUtils.isStarted();
                     if (!started || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
