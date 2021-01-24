@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -23,8 +24,12 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Raft peer.
+ *
+ * @deprecated will remove in 1.4.x
  * @author nacos
  */
+@Deprecated
 public class RaftPeer {
 
     public String ip;
@@ -37,15 +42,13 @@ public class RaftPeer {
 
     public volatile long heartbeatDueMs = RandomUtils.nextLong(0, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
 
-    public State state = State.FOLLOWER;
-
+    public volatile State state = State.FOLLOWER;
     /**
      * 15000到20000间随机数
      */
     public void resetLeaderDue() {
         leaderDueMs = GlobalExecutor.LEADER_TIMEOUT_MS + RandomUtils.nextLong(0, GlobalExecutor.RANDOM_MS);
     }
-
     /**
      * 5000
      */
@@ -55,15 +58,15 @@ public class RaftPeer {
 
     public enum State {
         /**
-         * Leader of the cluster, only one leader stands in a cluster
+         * Leader of the cluster, only one leader stands in a cluster.
          */
         LEADER,
         /**
-         * Follower of the cluster, report to and copy from leader
+         * Follower of the cluster, report to and copy from leader.
          */
         FOLLOWER,
         /**
-         * Candidate leader to be elected
+         * Candidate leader to be elected.
          */
         CANDIDATE
     }
@@ -86,5 +89,11 @@ public class RaftPeer {
         RaftPeer other = (RaftPeer) obj;
 
         return StringUtils.equals(ip, other.ip);
+    }
+
+    @Override
+    public String toString() {
+        return "RaftPeer{" + "ip='" + ip + '\'' + ", voteFor='" + voteFor + '\'' + ", term=" + term + ", leaderDueMs="
+                + leaderDueMs + ", heartbeatDueMs=" + heartbeatDueMs + ", state=" + state + '}';
     }
 }

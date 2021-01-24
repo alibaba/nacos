@@ -13,66 +13,68 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberChangeListener;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.Response;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.net.HttpURLConnection;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
-
 /**
+ * Sets of raft peers.
+ *
  * @author nacos
+ * @deprecated will remove in 1.4.x
  */
+@Deprecated
 @Component
-@DependsOn("serverListManager")
-public class RaftPeerSet implements ServerChangeListener, ApplicationContextAware {
+@DependsOn("ProtocolManager")
+public class RaftPeerSet extends MemberChangeListener implements Closeable {
 
-    @Autowired
-    private ServerListManager serverListManager;
-
-    private ApplicationContext applicationContext;
+    private final ServerMemberManager memberManager;
 
     private AtomicLong localTerm = new AtomicLong(0L);
 
     private RaftPeer leader = null;
 
-    private Map<String, RaftPeer> peers = new HashMap<>();
+    private volatile Map<String, RaftPeer> peers = new HashMap<>(8);
 
     private Set<String> sites = new HashSet<>();
 
-    private boolean ready = false;
+    private volatile boolean ready = false;
 
-    public RaftPeerSet() {
+    private Set<Member> oldMembers = new HashSet<>();
 
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-
-        this.applicationContext = applicationContext;
+    public RaftPeerSet(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
     }
 
     @PostConstruct
@@ -80,15 +82,25 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         /**
          * 注册监听  集群内节点的变化
          */
-        serverListManager.listen(this);
+        NotifyCenter.registerSubscriber(this);
+        changePeers(memberManager.allMembers());
     }
 
+    @Override
+    public void shutdown() throws NacosException {
+        this.localTerm.set(-1);
+        this.leader = null;
+        this.peers.clear();
+        this.sites.clear();
+        this.ready = false;
+        this.oldMembers.clear();
+    }
     /**
      * 返回leader
      * @return
      */
     public RaftPeer getLeader() {
-        if (STANDALONE_MODE) {
+        if (EnvUtil.getStandaloneMode()) {
             return local();
         }
         return leader;
@@ -102,6 +114,11 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return ready;
     }
 
+    /**
+     * Remove raft node.
+     *
+     * @param servers node address need to be removed
+     */
     public void remove(List<String> servers) {
         for (String server : servers) {
             peers.remove(server);
@@ -109,9 +126,10 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     /**
-     * 修改peers内得节点信息
-     * @param peer
-     * @return
+     * Update raft peer.
+     *修改peers内得节点信息
+     * @param peer new peer.
+     * @return new peer
      */
     public RaftPeer update(RaftPeer peer) {
         peers.put(peer.ip, peer);
@@ -119,12 +137,13 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     /**
-     * ip对应得节点是否为leader
-     * @param ip
-     * @return
+     * Judge whether input address is leader.
+     *ip对应得节点是否为leader
+     * @param ip peer address
+     * @return true if is leader or stand alone, otherwise false
      */
     public boolean isLeader(String ip) {
-        if (STANDALONE_MODE) {
+        if (EnvUtil.getStandaloneMode()) {
             return true;
         }
 
@@ -141,8 +160,9 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     /**
-     * 集群中得其他节点
-     * @return
+     * Get all servers excludes current peer.
+     *集群中得其他节点
+     * @return all servers excludes current peer
      */
     public Set<String> allServersWithoutMySelf() {
         Set<String> servers = new HashSet<String>(peers.keySet());
@@ -155,7 +175,6 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
 
         return servers;
     }
-
     /**
      * 获得集群内所有节点列表
      * @return
@@ -169,9 +188,10 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     /**
-     * 选举leader
-     * @param candidate  remote节点
-     * @return
+     * Calculate and decide which peer is leader. If has new peer has more than half vote, change leader to new peer.
+     *选举leader
+     * @param candidate new candidate
+     * @return new leader if new candidate has more than half vote, otherwise old leader
      */
     public RaftPeer decideLeader(RaftPeer candidate) {
         /**
@@ -189,7 +209,6 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
             if (StringUtils.isEmpty(peer.voteFor)) {
                 continue;
             }
-
             /**
              * 累计各节点得票数
              */
@@ -208,7 +227,6 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
                 maxApprovePeer = peer.voteFor;
             }
         }
-
         /**
          * 获得合法票数
          */
@@ -218,7 +236,6 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
              */
             RaftPeer peer = peers.get(maxApprovePeer);
             peer.state = RaftPeer.State.LEADER;
-
             /**
              * 修改本机对应得leader
              */
@@ -227,7 +244,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
                 /**
                  * 发布事件   nacos没有监听   留待接入方接听
                  */
-                applicationContext.publishEvent(new LeaderElectFinishedEvent(this, leader));
+                ApplicationUtils.publishEvent(new LeaderElectFinishedEvent(this, leader, local()));
                 Loggers.RAFT.info("{} has become the LEADER", leader.ip);
             }
         }
@@ -236,10 +253,10 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     /**
-     * follower设置leader
-     *
-     * @param candidate
-     * @return
+     * Set leader as new candidate.
+     *follower设置leader
+     * @param candidate new candidate
+     * @return new leader
      */
     public RaftPeer makeLeader(RaftPeer candidate) {
         /**
@@ -247,11 +264,11 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
          */
         if (!Objects.equals(leader, candidate)) {
             leader = candidate;
-            applicationContext.publishEvent(new MakeLeaderEvent(this, leader));
-            Loggers.RAFT.info("{} has become the LEADER, local: {}, leader: {}",
-                leader.ip, JSON.toJSONString(local()), JSON.toJSONString(leader));
+            ApplicationUtils.publishEvent(new MakeLeaderEvent(this, leader, local()));
+            Loggers.RAFT
+                    .info("{} has become the LEADER, local: {}, leader: {}", leader.ip, JacksonUtils.toJson(local()),
+                            JacksonUtils.toJson(leader));
         }
-
         /**
          * 获取前leader节点的实时信息
          */
@@ -265,23 +282,31 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
                     /**
                      * 查询上一个leader节点的信息
                      */
-                    String url = RaftCore.buildURL(peer.ip, RaftCore.API_GET_PEER);
-                    HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler<Integer>() {
+                    String url = RaftCore.buildUrl(peer.ip, RaftCore.API_GET_PEER);
+                    HttpClient.asyncHttpGet(url, null, params, new Callback<String>() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT.error("[NACOS-RAFT] get peer failed: {}, peer: {}",
-                                    response.getResponseBody(), peer.ip);
+                        public void onReceive(RestResult<String> result) {
+                            if (!result.ok()) {
+                                Loggers.RAFT
+                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", result.getCode(), peer.ip);
                                 peer.state = RaftPeer.State.FOLLOWER;
-                                return 1;
+                                return;
                             }
 
                             /**
                              * 修改前leader节点的实时信息
                              */
-                            update(JSON.parseObject(response.getResponseBody(), RaftPeer.class));
+                            update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
+                        }
 
-                            return 0;
+                        @Override
+                        public void onError(Throwable throwable) {
+
+                        }
+
+                        @Override
+                        public void onCancel() {
+
                         }
                     });
                 } catch (Exception e) {
@@ -290,7 +315,6 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
                 }
             }
         }
-
         /**
          * 修改现在leader节点信息
          */
@@ -298,19 +322,19 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     /**
-     * 获取本地节点信息
-     * @return
+     * Get local raft peer.
+     *获取本地节点信息
+     * @return local raft peer
      */
     public RaftPeer local() {
         /**
          * 本地节点对应得RaftPeer
          */
-        RaftPeer peer = peers.get(NetUtils.localServer());
-
+        RaftPeer peer = peers.get(EnvUtil.getLocalAddress());
         /**
          * standalone模式  且peer为null
          */
-        if (peer == null && SystemUtils.STANDALONE_MODE) {
+        if (peer == null && EnvUtil.getStandaloneMode()) {
             RaftPeer localPeer = new RaftPeer();
             localPeer.ip = NetUtils.localServer();
             localPeer.term.set(localTerm.get());
@@ -318,8 +342,9 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
             return localPeer;
         }
         if (peer == null) {
-            throw new IllegalStateException("unable to find local peer: " + NetUtils.localServer() + ", all peers: "
-                + Arrays.toString(peers.keySet().toArray()));
+            throw new IllegalStateException(
+                    "unable to find local peer: " + NetUtils.localServer() + ", all peers: " + Arrays
+                            .toString(peers.keySet().toArray()));
         }
 
         return peer;
@@ -328,7 +353,6 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     public RaftPeer get(String server) {
         return peers.get(server);
     }
-
     /**
      * 合法票数
      * @return
@@ -338,15 +362,13 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     /**
-     * 重置
+     * Reset set.
      */
     public void reset() {
-
         /**
          * 本机对应得leader为null
          */
         leader = null;
-
         /**
          * 集群内所有节点得选举对象为null
          */
@@ -367,39 +389,48 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return peers.containsKey(remote.ip);
     }
 
-    /**
-     * 集群内节点列表变化通知   更新集群内节点列表
-     * @param latestMembers
-     */
     @Override
-    public void onChangeServerList(List<Server> latestMembers) {
+    public void onEvent(MembersChangeEvent event) {
+        Collection<Member> members = event.getMembers();
+        Collection<Member> newMembers = new HashSet<>(members);
+        newMembers.removeAll(oldMembers);
+        /**
+         * ip已存在
+         */
+        // If an IP change occurs, the change starts
+        if (!newMembers.isEmpty()) {
+            changePeers(members);
+        }
 
-        Map<String, RaftPeer> tmpPeers = new HashMap<>(8);
-        for (Server member : latestMembers) {
+        oldMembers.clear();
+        oldMembers.addAll(members);
+    }
 
-            /**
-             * ip已存在
-             */
-            if (peers.containsKey(member.getKey())) {
-                tmpPeers.put(member.getKey(), peers.get(member.getKey()));
+    protected void changePeers(Collection<Member> members) {
+        Map<String, RaftPeer> tmpPeers = new HashMap<>(members.size());
+
+        for (Member member : members) {
+
+            final String address = member.getAddress();
+            if (peers.containsKey(address)) {
+                tmpPeers.put(address, peers.get(address));
                 continue;
             }
 
             RaftPeer raftPeer = new RaftPeer();
-            raftPeer.ip = member.getKey();
+            raftPeer.ip = address;
 
             // first time meet the local server:
             /**
              * 本机  则设置term
              */
-            if (NetUtils.localServer().equals(member.getKey())) {
+            if (EnvUtil.getLocalAddress().equals(address)) {
                 raftPeer.term.set(localTerm.get());
             }
-
             /**
              * 新增ip
              */
-            tmpPeers.put(member.getKey(), raftPeer);
+            tmpPeers.put(address, raftPeer);
         }
 
         // replace raft peer set:
@@ -408,15 +439,13 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
          */
         peers = tmpPeers;
 
-        if (RunningConfig.getServerPort() > 0) {
-            ready = true;
-        }
-
-        Loggers.RAFT.info("raft peers changed: " + latestMembers);
+        ready = true;
+        Loggers.RAFT.info("raft peers changed: " + members);
     }
 
     @Override
-    public void onChangeHealthyServerList(List<Server> latestReachableMembers) {
-
+    public String toString() {
+        return "RaftPeerSet{" + "localTerm=" + localTerm + ", leader=" + leader + ", peers=" + peers + ", sites="
+                + sites + '}';
     }
 }

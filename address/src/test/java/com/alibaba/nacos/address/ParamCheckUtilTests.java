@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 the original author or authors.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.address;
 
-import com.alibaba.nacos.address.util.AddressServerParamCheckUtil;
+import com.alibaba.nacos.common.utils.IPUtil;
 import org.junit.Test;
 
-/**
- * @author pbting
- * @date 2019-06-19 11:31 AM
- */
 public class ParamCheckUtilTests {
-
+    
     @Test
-    public void checkIps() {
+    public void checkIPs() {
         String[] ips = {"127.0.0.1"};
-        System.out.println(AddressServerParamCheckUtil.checkIps(ips));
-
+        System.out.println(IPUtil.checkIPs(ips));
+        
         String[] illlegalIps = {"127.100.19", "127.0.0.1"};
-        System.err.println(AddressServerParamCheckUtil.checkIps(illlegalIps));
+        System.err.println(IPUtil.checkIPs(illlegalIps));
     }
 }

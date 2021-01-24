@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.manager;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -23,100 +27,43 @@ import org.slf4j.Logger;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * 用于处理一定要执行成功的任务 单线程的方式处理任务，保证任务一定被成功处理
+ * TaskManager, is aim to process the task which is need to be done.
+ * And this class process the task by single thread to ensure task should be process successfully.
  *
  * @author huali
  */
-public final class TaskManager implements TaskManagerMBean {
+public final class TaskManager extends NacosDelayTaskExecuteEngine implements TaskManagerMBean {
 
-    private static final Logger log = LogUtil.defaultLog;
-
-    private final ConcurrentHashMap<String, AbstractTask> tasks = new ConcurrentHashMap<String, AbstractTask>();
-
-    private final ConcurrentHashMap<String, TaskProcessor> taskProcessors =
-        new ConcurrentHashMap<String, TaskProcessor>();
-
-    private TaskProcessor defaultTaskProcessor;
-
-    Thread processingThread;
-
-    private final AtomicBoolean closed = new AtomicBoolean(true);
+    private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
 
     private String name;
 
-
-    class ProcessRunnable implements Runnable {
-
-        @Override
-        public void run() {
-            while (!TaskManager.this.closed.get()) {
-                try {
-                    Thread.sleep(100);
-                    TaskManager.this.process();
-                } catch (Throwable e) {
-                }
-            }
-
-        }
-
-    }
-
-    ReentrantLock lock = new ReentrantLock();
-
     Condition notEmpty = this.lock.newCondition();
 
-    public TaskManager() {
-        this(null);
-    }
-
-    public AbstractTask getTask(String type) {
-        return this.tasks.get(type);
-    }
-
-    public TaskProcessor getTaskProcessor(String type) {
-        return this.taskProcessors.get(type);
+    public TaskManager(String name) {
+        super(name, LOGGER, 100L);
+        this.name = name;
     }
 
     /**
-     * 启动ProcessRunnable
-     * @param name
+     * Close task manager.
      */
-    @SuppressWarnings("PMD.AvoidManuallyCreateThreadRule")
-    public TaskManager(String name) {
-        this.name = name;
-        /**
-         * ProcessRunnable  init
-         */
-        if (null != name && name.length() > 0) {
-            this.processingThread = new Thread(new ProcessRunnable(), name);
-        } else {
-            this.processingThread = new Thread(new ProcessRunnable());
-        }
-        this.processingThread.setDaemon(true);
-        this.closed.set(false);
-        /**
-         * ProcessRunnable启动
-         */
-        this.processingThread.start();
-    }
-
-    public int size() {
-        return tasks.size();
-    }
-
     public void close() {
-        this.closed.set(true);
-        this.processingThread.interrupt();
+        try {
+            super.shutdown();
+        } catch (NacosException ignored) {
+        }
     }
 
+    /**
+     * Await for lock.
+     *
+     * @throws InterruptedException InterruptedException.
+     */
     public void await() throws InterruptedException {
         this.lock.lock();
         try {
@@ -128,6 +75,14 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
 
+    /**
+     * Await for lock by timeout.
+     *
+     * @param timeout timeout value.
+     * @param unit time unit.
+     * @return success or not.
+     * @throws InterruptedException InterruptedException.
+     */
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         this.lock.lock();
         boolean isawait = false;
@@ -141,106 +96,23 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
 
-    public void addProcessor(String type, TaskProcessor taskProcessor) {
-        this.taskProcessors.put(type, taskProcessor);
+    @Override
+    public void addTask(Object key, AbstractDelayTask newTask) {
+        super.addTask(key, newTask);
+        MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
     }
 
-    public void removeProcessor(String type) {
-        this.taskProcessors.remove(type);
+    @Override
+    public AbstractDelayTask removeTask(Object key) {
+        AbstractDelayTask result = super.removeTask(key);
+        MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
+        return result;
     }
 
-    public void removeTask(String type) {
-        this.lock.lock();
-        try {
-            this.tasks.remove(type);
-            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
-        } finally {
-            this.lock.unlock();
-        }
-    }
-
-    /**
-     * 将任务加入到任务Map中
-     *
-     * @param type
-     * @param task
-     */
-    public void addTask(String type, AbstractTask task) {
-        this.lock.lock();
-        try {
-            /**
-             * 加入任务列表   等待处理
-             */
-            AbstractTask oldTask = tasks.put(type, task);
-            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
-            if (null != oldTask) {
-                task.merge(oldTask);
-            }
-        } finally {
-            this.lock.unlock();
-        }
-    }
-
-    /**
-     * 处理任务
-     */
-    protected void process() {
-        for (Map.Entry<String, AbstractTask> entry : this.tasks.entrySet()) {
-            AbstractTask task = null;
-            this.lock.lock();
-            try {
-                // 获取任务
-                task = entry.getValue();
-                if (null != task) {
-                    /**
-                     * 判断时间间隔  是否需要处理当前task
-                     */
-                    if (!task.shouldProcess()) {
-                        // 任务当前不需要被执行，直接跳过
-                        continue;
-                    }
-                    // 先将任务从任务Map中删除
-                    this.tasks.remove(entry.getKey());
-                    MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
-                }
-            } finally {
-                this.lock.unlock();
-            }
-
-            if (null != task) {
-                // 获取任务处理器
-                /**
-                 * 如果没有执行处理器  则使用默认的处理器
-                 */
-                TaskProcessor processor = this.taskProcessors.get(entry.getKey());
-                if (null == processor) {
-                    // 如果没有根据任务类型设置的处理器，使用默认处理器
-                    processor = this.getDefaultTaskProcessor();
-                }
-                if (null != processor) {
-                    boolean result = false;
-                    try {
-                        // 处理任务
-                        /**
-                         * 处理任务
-                         * 处理任务
-                         * 处理任务
-                         */
-                        result = processor.process(entry.getKey(), task);
-                    } catch (Throwable t) {
-                        log.error("task_fail", "处理task失败", t);
-                    }
-                    if (!result) {
-                        // 任务处理失败，设置最后处理时间
-                        task.setLastProcessTime(System.currentTimeMillis());
-
-                        // 将任务重新加入到任务Map中
-                        this.addTask(entry.getKey(), task);
-                    }
-                }
-            }
-        }
-
+    @Override
+    protected void processTasks() {
+        super.processTasks();
+        MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
         if (tasks.isEmpty()) {
             this.lock.lock();
             try {
@@ -251,34 +123,12 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
 
-    public boolean isEmpty() {
-        return tasks.isEmpty();
-    }
-
-    public TaskProcessor getDefaultTaskProcessor() {
-        this.lock.lock();
-        try {
-            return this.defaultTaskProcessor;
-        } finally {
-            this.lock.unlock();
-        }
-    }
-
-    public void setDefaultTaskProcessor(TaskProcessor defaultTaskProcessor) {
-        this.lock.lock();
-        try {
-            this.defaultTaskProcessor = defaultTaskProcessor;
-        } finally {
-            this.lock.unlock();
-        }
-    }
-
     @Override
     public String getTaskInfos() {
         StringBuilder sb = new StringBuilder();
-        for (String taskType : this.taskProcessors.keySet()) {
+        for (Object taskType : getAllProcessorKey()) {
             sb.append(taskType).append(":");
-            AbstractTask task = this.tasks.get(taskType);
+            AbstractDelayTask task = this.tasks.get(taskType);
             if (task != null) {
                 sb.append(new Date(task.getLastProcessTime()).toString());
             } else {
@@ -290,12 +140,15 @@ public final class TaskManager implements TaskManagerMBean {
         return sb.toString();
     }
 
+    /**
+     * Init and register the mbean object.
+     */
     public void init() {
         try {
             ObjectName oName = new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
             ManagementFactory.getPlatformMBeanServer().registerMBean(this, oName);
         } catch (Exception e) {
-            log.error("registerMBean_fail", "注册mbean出错", e);
+            LOGGER.error("registerMBean_fail", "注册mbean出错", e);
         }
     }
 }

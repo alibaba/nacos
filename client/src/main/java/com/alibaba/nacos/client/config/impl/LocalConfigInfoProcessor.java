@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.utils.ConcurrentDiskUtil;
-import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.client.config.utils.JVMUtil;
+import com.alibaba.nacos.client.config.utils.JvmUtil;
 import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
 import com.alibaba.nacos.client.utils.LogUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -30,14 +31,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Local Disaster Recovery Directory Tool
+ * Local Disaster Recovery Directory Tool.
  *
  * @author Nacos
  */
 public class LocalConfigInfoProcessor {
 
     private static final Logger LOGGER = LogUtils.logger(LocalConfigInfoProcessor.class);
-
     /**
      * 获取容错文件中的内容
      * @param serverName
@@ -46,10 +46,7 @@ public class LocalConfigInfoProcessor {
      * @param tenant
      * @return
      */
-    static public String getFailover(String serverName, String dataId, String group, String tenant) {
-        /**
-         * C:\Users\Administrator\nacos\config\fixed-192.168.50.64_8848_nacos\data\config-data\DEFAULT_GROUP\test
-         */
+    public static String getFailover(String serverName, String dataId, String group, String tenant) {
         File localPath = getFailoverFile(serverName, dataId, group, tenant);
         if (!localPath.exists() || !localPath.isFile()) {
             return null;
@@ -64,9 +61,9 @@ public class LocalConfigInfoProcessor {
     }
 
     /**
-     * 获取本地缓存文件内容。NULL表示没有本地文件或抛出异常。
+     * 获取本地缓存文件内容。NULL表示没有本地文件或抛出异常.
      */
-    static public String getSnapshot(String name, String dataId, String group, String tenant) {
+    public static String getSnapshot(String name, String dataId, String group, String tenant) {
         if (!SnapShotSwitch.getIsSnapShot()) {
             return null;
         }
@@ -86,12 +83,12 @@ public class LocalConfigInfoProcessor {
         }
     }
 
-    static private String readFile(File file) throws IOException {
+    private static String readFile(File file) throws IOException {
         if (!file.exists() || !file.isFile()) {
             return null;
         }
 
-        if (JVMUtil.isMultiInstance()) {
+        if (JvmUtil.isMultiInstance()) {
             return ConcurrentDiskUtil.getFileContent(file, Constants.ENCODE);
         } else {
             InputStream is = null;
@@ -103,21 +100,22 @@ public class LocalConfigInfoProcessor {
                     if (null != is) {
                         is.close();
                     }
-                } catch (IOException ioe) {
+                } catch (IOException ignored) {
                 }
             }
         }
     }
 
     /**
-     * 保存服务端内容到快照文件
-     * @param envName
-     * @param dataId
-     * @param group
-     * @param tenant
-     * @param config
+     * Save snapshot.
+     *保存服务端内容到快照文件
+     * @param envName env name
+     * @param dataId  data id
+     * @param group   group
+     * @param tenant  tenant
+     * @param config  config
      */
-    static public void saveSnapshot(String envName, String dataId, String group, String tenant, String config) {
+    public static void saveSnapshot(String envName, String dataId, String group, String tenant, String config) {
         if (!SnapShotSwitch.getIsSnapShot()) {
             return;
         }
@@ -143,13 +141,11 @@ public class LocalConfigInfoProcessor {
                         LOGGER.error("[{}] save snapshot error", envName);
                     }
                 }
-
                 /**
                  * 写入快照文件
                  */
-                if (JVMUtil.isMultiInstance()) {
-                    ConcurrentDiskUtil.writeFileContent(file, config,
-                        Constants.ENCODE);
+                if (JvmUtil.isMultiInstance()) {
+                    ConcurrentDiskUtil.writeFileContent(file, config, Constants.ENCODE);
                 } else {
                     IoUtils.writeStringToFile(file, config, Constants.ENCODE);
                 }
@@ -160,9 +156,9 @@ public class LocalConfigInfoProcessor {
     }
 
     /**
-     * 清除snapshot目录下所有缓存文件。
+     * 清除snapshot目录下所有缓存文件.
      */
-    static public void cleanAllSnapshot() {
+    public static void cleanAllSnapshot() {
         try {
             File rootFile = new File(LOCAL_SNAPSHOT_PATH);
             File[] files = rootFile.listFiles();
@@ -179,7 +175,12 @@ public class LocalConfigInfoProcessor {
         }
     }
 
-    static public void cleanEnvSnapshot(String envName) {
+    /**
+     * Clean snapshot.
+     *
+     * @param envName env name
+     */
+    public static void cleanEnvSnapshot(String envName) {
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + "_nacos");
         tmp = new File(tmp, "snapshot");
         try {
@@ -216,13 +217,16 @@ public class LocalConfigInfoProcessor {
     }
 
     public static final String LOCAL_FILEROOT_PATH;
+
     public static final String LOCAL_SNAPSHOT_PATH;
 
     static {
-        LOCAL_FILEROOT_PATH = System.getProperty("JM.LOG.PATH", System.getProperty("user.home")) + File.separator
-            + "nacos" + File.separator + "config";
-        LOCAL_SNAPSHOT_PATH = System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator
-            + "nacos" + File.separator + "config";
+        LOCAL_FILEROOT_PATH =
+                System.getProperty("JM.LOG.PATH", System.getProperty("user.home")) + File.separator + "nacos"
+                        + File.separator + "config";
+        LOCAL_SNAPSHOT_PATH =
+                System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator + "nacos"
+                        + File.separator + "config";
         LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
 

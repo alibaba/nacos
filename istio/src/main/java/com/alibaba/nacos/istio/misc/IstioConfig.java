@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.istio.misc;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Stores some configurations for Istio integration
+ * Stores some configurations for Istio integration.
  *
  * @author nkorange
  * @since 1.1.4
  */
 @Component
 public class IstioConfig {
-
+    
     @Value("${nacos.istio.mcp.server.enabled:false}")
     private boolean mcpServerEnabled = false;
-
+    
     public boolean isMcpServerEnabled() {
         return mcpServerEnabled;
     }

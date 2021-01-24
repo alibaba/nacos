@@ -13,28 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
+import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
+import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
+ * Host reactor.
+ *
  * @author xuanyin
  */
-public class HostReactor {
+public class HostReactor implements Closeable {
 
     private static final long DEFAULT_DELAY = 1000L;
 
@@ -42,26 +64,29 @@ public class HostReactor {
 
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
 
-    private Map<String, ServiceInfo> serviceInfoMap;
+    private final Map<String, ServiceInfo> serviceInfoMap;
 
-    private Map<String, Object> updatingMap;
+    private final Map<String, Object> updatingMap;
 
-    private PushReceiver pushReceiver;
+    private final PushReceiver pushReceiver;
 
-    private EventDispatcher eventDispatcher;
+    private final BeatReactor beatReactor;
 
-    private NamingProxy serverProxy;
+    private final NamingProxy serverProxy;
 
-    private FailoverReactor failoverReactor;
+    private final FailoverReactor failoverReactor;
 
-    private String cacheDir;
+    private final String cacheDir;
 
-    private ScheduledExecutorService executor;
+    private final boolean pushEmptyProtection;
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
-        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+    private final ScheduledExecutorService executor;
+
+    private final InstancesChangeNotifier notifier;
+
+    public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
+        this(serverProxy, beatReactor, cacheDir, false, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
-
     /**
      *
      * @param eventDispatcher
@@ -70,10 +95,10 @@ public class HostReactor {
      * @param loadCacheAtStart
      * @param pollingThreadCount
      */
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
-                       boolean loadCacheAtStart, int pollingThreadCount) {
-
-        executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
+    public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir, boolean loadCacheAtStart,
+            boolean pushEmptyProtection, int pollingThreadCount) {
+        // init executorService
+        this.executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
@@ -83,7 +108,7 @@ public class HostReactor {
             }
         });
 
-        this.eventDispatcher = eventDispatcher;
+        this.beatReactor = beatReactor;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
         /**
@@ -94,7 +119,7 @@ public class HostReactor {
         } else {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
         }
-
+        this.pushEmptyProtection = pushEmptyProtection;
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         /**
          * 容错
@@ -105,11 +130,16 @@ public class HostReactor {
          * udp接收数据
          */
         this.pushReceiver = new PushReceiver(this);
+        this.notifier = new InstancesChangeNotifier();
+
+        NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
+        NotifyCenter.registerSubscriber(notifier);
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {
         return serviceInfoMap;
     }
+
 
     /**
      * 设置调度任务
@@ -121,17 +151,45 @@ public class HostReactor {
     }
 
     /**
-     * 处理数据
-     * @param json
-     * @return
+     * subscribe instancesChangeEvent.
+     *
+     * @param serviceName   combineServiceName, such as 'xxx@@xxx'
+     * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
+     * @param eventListener custom listener
      */
-    public ServiceInfo processServiceJSON(String json) {
-        ServiceInfo serviceInfo = JSON.parseObject(json, ServiceInfo.class);
+    public void subscribe(String serviceName, String clusters, EventListener eventListener) {
+        notifier.registerListener(serviceName, clusters, eventListener);
+        getServiceInfo(serviceName, clusters);
+    }
+
+    /**
+     * unsubscribe instancesChangeEvent.
+     *
+     * @param serviceName   combineServiceName, such as 'xxx@@xxx'
+     * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
+     * @param eventListener custom listener
+     */
+    public void unSubscribe(String serviceName, String clusters, EventListener eventListener) {
+        notifier.deregisterListener(serviceName, clusters, eventListener);
+    }
+
+    public List<ServiceInfo> getSubscribeServices() {
+        return notifier.getSubscribeServices();
+    }
+
+    /**
+     * Process service json.
+     *处理数据
+     * @param json service json
+     * @return service info
+     */
+    public ServiceInfo processServiceJson(String json) {
+        ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         /**
          * 校验
          */
-        if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
+        if (pushEmptyProtection && !serviceInfo.validate()) {
             //empty or error push, just ignore
             return oldService;
         }
@@ -139,13 +197,13 @@ public class HostReactor {
         boolean changed = false;
 
         if (oldService != null) {
+
             if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
-                NAMING_LOGGER.warn("out of date data received, old-t: " + oldService.getLastRefTime()
-                    + ", new-t: " + serviceInfo.getLastRefTime());
+                NAMING_LOGGER.warn("out of date data received, old-t: " + oldService.getLastRefTime() + ", new-t: "
+                        + serviceInfo.getLastRefTime());
             }
 
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-
             /**
              * 获取oldHostMap中的地址信息
              */
@@ -153,7 +211,6 @@ public class HostReactor {
             for (Instance host : oldService.getHosts()) {
                 oldHostMap.put(host.toInetAddr(), host);
             }
-
             /**
              * 获取serviceInfo中的地址信息
              */
@@ -161,7 +218,6 @@ public class HostReactor {
             for (Instance host : serviceInfo.getHosts()) {
                 newHostMap.put(host.toInetAddr(), host);
             }
-
             /**
              * 变化的地址
              */
@@ -176,7 +232,11 @@ public class HostReactor {
             Set<Instance> remvHosts = new HashSet<Instance>();
 
             List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
+                    newHostMap.entrySet());
                 newHostMap.entrySet());
+            /**
+             * 比对newHostMap和oldHostMap   获取新增或者修改的地址
+             */
             /**
              * 比对newHostMap和oldHostMap   获取新增或者修改的地址
              */
@@ -186,12 +246,11 @@ public class HostReactor {
                 /**
                  * 修改的地址
                  */
-                if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(),
-                    oldHostMap.get(key).toString())) {
+                if (oldHostMap.containsKey(key) && !StringUtils
+                        .equals(host.toString(), oldHostMap.get(key).toString())) {
                     modHosts.add(host);
                     continue;
                 }
-
                 /**
                  * 新增的地址
                  */
@@ -199,7 +258,6 @@ public class HostReactor {
                     newHosts.add(host);
                 }
             }
-
             /**
              * 比对newHostMap和oldHostMap   获取删除的地址
              */
@@ -209,7 +267,6 @@ public class HostReactor {
                 if (newHostMap.containsKey(key)) {
                     continue;
                 }
-
                 /**
                  * 删除的地址
                  */
@@ -221,20 +278,21 @@ public class HostReactor {
 
             if (newHosts.size() > 0) {
                 changed = true;
-                NAMING_LOGGER.info("new ips(" + newHosts.size() + ") service: "
-                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(newHosts));
+                NAMING_LOGGER.info("new ips(" + newHosts.size() + ") service: " + serviceInfo.getKey() + " -> "
+                        + JacksonUtils.toJson(newHosts));
             }
 
             if (remvHosts.size() > 0) {
                 changed = true;
-                NAMING_LOGGER.info("removed ips(" + remvHosts.size() + ") service: "
-                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(remvHosts));
+                NAMING_LOGGER.info("removed ips(" + remvHosts.size() + ") service: " + serviceInfo.getKey() + " -> "
+                        + JacksonUtils.toJson(remvHosts));
             }
 
             if (modHosts.size() > 0) {
                 changed = true;
-                NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
-                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(modHosts));
+                updateBeatInfo(modHosts);
+                NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: " + serviceInfo.getKey() + " -> "
+                        + JacksonUtils.toJson(modHosts));
             }
 
             serviceInfo.setJsonFromServer(json);
@@ -243,7 +301,8 @@ public class HostReactor {
                 /**
                  * 通知监听器   服务有变化
                  */
-                eventDispatcher.serviceChanged(serviceInfo);
+                NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+                        serviceInfo.getClusters(), serviceInfo.getHosts()));
                 /**
                  * 将数据从内存写入磁盘
                  */
@@ -252,34 +311,42 @@ public class HostReactor {
 
         } else {
             changed = true;
-            NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> " + JSON
-                .toJSONString(serviceInfo.getHosts()));
+            NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> "
+                    + JacksonUtils.toJson(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
             /**
              * 通知监听器   服务有变化
              */
-            eventDispatcher.serviceChanged(serviceInfo);
-
+            NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+                    serviceInfo.getClusters(), serviceInfo.getHosts()));
             serviceInfo.setJsonFromServer(json);
             /**
              * 将数据从内存写入磁盘
              */
             DiskCache.write(serviceInfo, cacheDir);
         }
-
         /**
          * prometheus监控
          */
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
 
         if (changed) {
-            NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() +
-                " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+            NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> "
+                    + JacksonUtils.toJson(serviceInfo.getHosts()));
         }
 
         return serviceInfo;
     }
 
+    private void updateBeatInfo(Set<Instance> modHosts) {
+        for (Instance instance : modHosts) {
+            String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
+            if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
+                BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
+                beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
+            }
+        }
+    }
     /**
      * 从本地缓存中获取serviceInfo
      * @param serviceName
@@ -292,7 +359,6 @@ public class HostReactor {
 
         return serviceInfoMap.get(key);
     }
-
     /**
      * 向服务端查询实例
      * @param serviceName
@@ -300,17 +366,17 @@ public class HostReactor {
      * @return
      * @throws NacosException
      */
-    public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
+    public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters)
+            throws NacosException {
         /**
          * 向服务端查询实例
          */
         String result = serverProxy.queryList(serviceName, clusters, 0, false);
         if (StringUtils.isNotEmpty(result)) {
-            return JSON.parseObject(result, ServiceInfo.class);
+            return JacksonUtils.toObj(result, ServiceInfo.class);
         }
         return null;
     }
-
     /**
      * 从本地缓存中获取serviceInfo
      * @param serviceName
@@ -332,12 +398,10 @@ public class HostReactor {
         if (failoverReactor.isFailoverSwitch()) {
             return failoverReactor.getService(key);
         }
-
         /**
          * 从本地缓存中获取serviceInfo
          */
         ServiceInfo serviceObj = getServiceInfo0(serviceName, clusters);
-
         /**
          * 缓存中没有
          */
@@ -345,7 +409,6 @@ public class HostReactor {
             serviceObj = new ServiceInfo(serviceName, clusters);
 
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
-
             /**
              * 设置更新标志
              */
@@ -365,7 +428,6 @@ public class HostReactor {
             /**
              * 有其他线程在执行更新操作   且没有执行结束
              */
-
             if (UPDATE_HOLD_INTERVAL > 0) {
                 // hold a moment waiting for update finish
                 synchronized (serviceObj) {
@@ -375,12 +437,12 @@ public class HostReactor {
                          */
                         serviceObj.wait(UPDATE_HOLD_INTERVAL);
                     } catch (InterruptedException e) {
-                        NAMING_LOGGER.error("[getServiceInfo] serviceName:" + serviceName + ", clusters:" + clusters, e);
+                        NAMING_LOGGER
+                                .error("[getServiceInfo] serviceName:" + serviceName + ", clusters:" + clusters, e);
                     }
                 }
             }
         }
-
         /**
          * 设置定时任务   不断从nacos服务端获取最新服务列表
          */
@@ -389,12 +451,19 @@ public class HostReactor {
         return serviceInfoMap.get(serviceObj.getKey());
     }
 
-
+    private void updateServiceNow(String serviceName, String clusters) {
+        try {
+            updateService(serviceName, clusters);
+        } catch (NacosException e) {
+            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
+        }
+    }
 
     /**
-     * 调度更新
-     * @param serviceName
-     * @param clusters
+     * Schedule update if absent.
+     *调度更新
+     * @param serviceName service name
+     * @param clusters    clusters
      */
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
@@ -405,7 +474,6 @@ public class HostReactor {
             if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
                 return;
             }
-
             /**
              * 设置更新任务   从nacos集群中获取服务列表
              */
@@ -415,30 +483,25 @@ public class HostReactor {
     }
 
     /**
-     * 向nacos集群查询
-     * @param serviceName
-     * @param clusters
+     * Update service now.
+     *向nacos集群查询
+     * @param serviceName service name
+     * @param clusters    clusters
      */
-    public void updateServiceNow(String serviceName, String clusters) {
-        /**
-         * 从本地缓存中获取serviceInfo
-         */
+    public void updateService(String serviceName, String clusters) throws NacosException {
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
-
             /**
              * 向服务端查询实例
              */
-            String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
+            String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUdpPort(), false);
 
             if (StringUtils.isNotEmpty(result)) {
                 /**
                  * 处理数据
                  */
-                processServiceJSON(result);
+                processServiceJson(result);
             }
-        } catch (Exception e) {
-            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         } finally {
             if (oldService != null) {
                 synchronized (oldService) {
@@ -449,33 +512,67 @@ public class HostReactor {
     }
 
     /**
+     * Refresh only.
      * 刷新数据   但没有后续操作
-     * @param serviceName
-     * @param clusters
+     * @param serviceName service name
+     * @param clusters    cluster
      */
     public void refreshOnly(String serviceName, String clusters) {
         try {
             /**
              * 向服务端查询实例
              */
-            serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
+            serverProxy.queryList(serviceName, clusters, pushReceiver.getUdpPort(), false);
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         }
     }
 
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
+        pushReceiver.shutdown();
+        failoverReactor.shutdown();
+        NotifyCenter.deregisterSubscriber(notifier);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
+
     public class UpdateTask implements Runnable {
+
         long lastRefTime = Long.MAX_VALUE;
-        private String clusters;
-        private String serviceName;
+
+        private final String clusters;
+
+        private final String serviceName;
+
+        /**
+         * the fail situation. 1:can't connect to server 2:serviceInfo's hosts is empty
+         */
+        private int failCount = 0;
 
         public UpdateTask(String serviceName, String clusters) {
             this.serviceName = serviceName;
             this.clusters = clusters;
         }
 
+        private void incFailCount() {
+            int limit = 6;
+            if (failCount == limit) {
+                return;
+            }
+            failCount++;
+        }
+
+        private void resetFailCount() {
+            failCount = 0;
+        }
+
         @Override
         public void run() {
+            long delayTime = DEFAULT_DELAY;
+
             try {
                 /**
                  * 缓存中获取
@@ -486,14 +583,9 @@ public class HostReactor {
                     /**
                      * 缓存中没有  则向nacos集群查询
                      */
-                    updateServiceNow(serviceName, clusters);
-                    /**
-                     * 下次调度
-                     */
-                    executor.schedule(this, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
+                    updateService(serviceName, clusters);
                     return;
                 }
-
                 /**
                  * 比较上次应答时间   若serviceObj对应得上次应答时间  小于记录得应答时间   则立即更新
                  */
@@ -501,7 +593,7 @@ public class HostReactor {
                     /**
                      * 立即更新
                      */
-                    updateServiceNow(serviceName, clusters);
+                    updateService(serviceName, clusters);
                     serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
                 } else {
                     // if serviceName already updated by push, we should not override it
@@ -514,23 +606,27 @@ public class HostReactor {
 
                 lastRefTime = serviceObj.getLastRefTime();
 
-                if (!eventDispatcher.isSubscribed(serviceName, clusters) &&
-                    !futureMap.containsKey(ServiceInfo.getKey(serviceName, clusters))) {
-                    // abort the update task:
+                if (!notifier.isSubscribed(serviceName, clusters) && !futureMap
+                        .containsKey(ServiceInfo.getKey(serviceName, clusters))) {
+                    // abort the update task
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
                     return;
                 }
-
+                if (CollectionUtils.isEmpty(serviceObj.getHosts())) {
+                    incFailCount();
+                    return;
+                }
                 /**
                  * 下次任务
                  */
-                executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
-
-
+                delayTime = serviceObj.getCacheMillis();
+                resetFailCount();
             } catch (Throwable e) {
+                incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
+            } finally {
+                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
             }
-
         }
     }
 }

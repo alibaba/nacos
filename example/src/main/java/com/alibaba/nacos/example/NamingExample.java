@@ -13,47 +13,67 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.example;
 
-import java.util.Properties;
+package com.alibaba.nacos.example;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.Event;
-import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 
+import java.util.Properties;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 /**
+ * Nacos naming example.
+ *
  * @author nkorange
  */
 public class NamingExample {
 
-    public static void main(String[] args) throws NacosException, InterruptedException {
+    public static void main(String[] args) throws NacosException {
 
         Properties properties = new Properties();
-        properties.setProperty("serverAddr", "192.168.50.39:8848");
-//        properties.setProperty("namespace", "3c758c4d-43de-41bb-b75a-920471a52d76");
+        properties.setProperty("serverAddr", System.getProperty("serverAddr"));
+        properties.setProperty("namespace", System.getProperty("namespace"));
 
         NamingService naming = NamingFactory.createNamingService(properties);
 
-        naming.registerInstance("userProvider", "11.11.11.111", 8887, "TEST1");
+        naming.registerInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
 
-        naming.registerInstance("userProvider", "11.11.11.111", 8888, "TEST1");
+        naming.registerInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
 
-        naming.registerInstance("videoProvider", "11.11.11.111", 8889, "TEST1");
+        System.out.println(naming.getAllInstances("nacos.test.3"));
 
-        naming.registerInstance("videoProvider", "2.2.2.21", 9999, "DEFAULT");
+        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
 
-        naming.registerInstance("videoProvider", "5.5.5.5", 9999, "DEFAULT");
+        System.out.println(naming.getAllInstances("nacos.test.3"));
 
-        System.out.println("1----------------" + naming.getAllInstances("userProvider"));
+        Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+                new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = new Thread(r);
+                        thread.setName("test-thread");
+                        return thread;
+                    }
+                });
 
-        naming.deregisterInstance("videoProvider", "5.5.5.5", 9999, "DEFAULT");
+        naming.subscribe("nacos.test.3", new AbstractEventListener() {
 
-        System.out.println("2----------------" + naming.getAllInstances("videoProvider"));
+            //EventListener onEvent is sync to handle, If process too low in onEvent, maybe block other onEvent callback.
+            //So you can override getExecutor() to async handle event.
+            @Override
+            public Executor getExecutor() {
+                return executor;
+            }
 
-        naming.subscribe("videoProvider", new EventListener() {
             @Override
             public void onEvent(Event event) {
                 System.out.println(((NamingEvent) event).getServiceName());

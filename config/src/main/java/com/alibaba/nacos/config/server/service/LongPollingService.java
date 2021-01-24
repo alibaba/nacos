@@ -13,35 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
- * 长轮询服务。负责处理
+ * LongPollingService.
  *
  * @author Nacos
  */
 @Service
-public class LongPollingService extends AbstractEventListener {
+public class LongPollingService {
 
     private static final int FIXED_POLLING_INTERVAL_MS = 10000;
 
@@ -95,7 +114,7 @@ public class LongPollingService extends AbstractEventListener {
 
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.ip.equals(clientIp)) {
-                // 一个ip可能有多个监听
+                // One ip can have multiple listener.
                 if (!lisentersGroupkeyStatus.equals(clientLongPolling.clientMd5Map)) {
                     lisentersGroupkeyStatus.putAll(clientLongPolling.clientMd5Map);
                 }
@@ -106,10 +125,11 @@ public class LongPollingService extends AbstractEventListener {
     }
 
     /**
-     * 聚合采样结果中的采样ip和监听配置的信息；合并策略用后面的覆盖前面的是没有问题的
+     * Aggregate the sampling IP and monitoring configuration information in the sampling results. There is no problem
+     * for the merging strategy to cover the previous one with the latter.
      *
-     * @param sampleResults sample Results
-     * @return Results
+     * @param sampleResults sample Results.
+     * @return Results.
      */
     public SampleResult mergeSampleResult(List<SampleResult> sampleResults) {
         SampleResult mergeResult = new SampleResult();
@@ -124,14 +144,19 @@ public class LongPollingService extends AbstractEventListener {
         return mergeResult;
     }
 
+    /**
+     * Collect application subscribe configinfos.
+     *
+     * @return configinfos results.
+     */
     public Map<String, Set<String>> collectApplicationSubscribeConfigInfos() {
         if (allSubs == null || allSubs.isEmpty()) {
             return null;
         }
         HashMap<String, Set<String>> app2Groupkeys = new HashMap<String, Set<String>>(50);
         for (ClientLongPolling clientLongPolling : allSubs) {
-            if (StringUtils.isEmpty(clientLongPolling.appName) || "unknown".equalsIgnoreCase(
-                clientLongPolling.appName)) {
+            if (StringUtils.isEmpty(clientLongPolling.appName) || "unknown"
+                    .equalsIgnoreCase(clientLongPolling.appName)) {
                 continue;
             }
             Set<String> appSubscribeConfigs = app2Groupkeys.get(clientLongPolling.appName);
@@ -157,7 +182,7 @@ public class LongPollingService extends AbstractEventListener {
                 try {
                     Thread.sleep(SAMPLE_PERIOD);
                 } catch (InterruptedException e) {
-                    LogUtil.clientLog.error("sleep wrong", e);
+                    LogUtil.CLIENT_LOG.error("sleep wrong", e);
                 }
             }
         }
@@ -172,8 +197,8 @@ public class LongPollingService extends AbstractEventListener {
         for (int i = 0; i < SAMPLE_TIMES; i++) {
             SampleResult sampleTmp = getSubscribleInfoByIp(ip);
             if (sampleTmp != null) {
-                if (sampleTmp.getLisentersGroupkeyStatus() != null
-                    && !sampleResult.getLisentersGroupkeyStatus().equals(sampleTmp.getLisentersGroupkeyStatus())) {
+                if (sampleTmp.getLisentersGroupkeyStatus() != null && !sampleResult.getLisentersGroupkeyStatus()
+                        .equals(sampleTmp.getLisentersGroupkeyStatus())) {
                     sampleResult.getLisentersGroupkeyStatus().putAll(sampleTmp.getLisentersGroupkeyStatus());
                 }
             }
@@ -181,7 +206,7 @@ public class LongPollingService extends AbstractEventListener {
                 try {
                     Thread.sleep(SAMPLE_PERIOD);
                 } catch (InterruptedException e) {
-                    LogUtil.clientLog.error("sleep wrong", e);
+                    LogUtil.CLIENT_LOG.error("sleep wrong", e);
                 }
             }
         }
@@ -205,14 +230,15 @@ public class LongPollingService extends AbstractEventListener {
     }
 
     /**
-     * 客户端长轮询监听
-     * @param req
-     * @param rsp
-     * @param clientMd5Map
-     * @param probeRequestSize
+     * Add LongPollingClient.
+     *客户端长轮询监听
+     * @param req              HttpServletRequest.
+     * @param rsp              HttpServletResponse.
+     * @param clientMd5Map     clientMd5Map.
+     * @param probeRequestSize probeRequestSize.
      */
     public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
-                                     int probeRequestSize) {
+            int probeRequestSize) {
 
         String str = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
         /**
@@ -226,10 +252,11 @@ public class LongPollingService extends AbstractEventListener {
          * 提前500ms返回响应，为避免客户端超时 @qiaoyi.dingqy 2013.10.22改动  add delay time for LoadBalance
          * 客户端默认时间为30s
          */
+        // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
         long timeout = Math.max(10000, Long.parseLong(str) - delayTime);
         if (isFixedPolling()) {
             timeout = Math.max(10000, getFixedPollingInterval());
-            // do nothing but set fix polling timeout
+            // Do nothing but set fix polling timeout.
         } else {
             long start = System.currentTimeMillis();
             /**
@@ -241,59 +268,35 @@ public class LongPollingService extends AbstractEventListener {
                  * 有变化的groupKey  组装响应对象
                  */
                 generateResponse(req, rsp, changedGroups);
-                LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
-                    System.currentTimeMillis() - start, "instant", RequestUtil.getRemoteIp(req), "polling",
-                    clientMd5Map.size(), probeRequestSize, changedGroups.size());
+                LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
+                        RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
+                        changedGroups.size());
                 return;
             } else if (noHangUpFlag != null && noHangUpFlag.equalsIgnoreCase(TRUE_STR)) {
                 /**
                  * 没有变化的groupKey且客户端要求服务端不挂断  直接返回
                  */
-                LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
-                    RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
-                    changedGroups.size());
+                LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
+                        RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
+                        changedGroups.size());
                 return;
             }
         }
         String ip = RequestUtil.getRemoteIp(req);
-        // 一定要由HTTP线程调用，否则离开后容器会立即发送响应
-        final AsyncContext asyncContext = req.startAsync();
-        // AsyncContext.setTimeout()的超时时间不准，所以只能自己控制
-        asyncContext.setTimeout(0L);
 
+        // Must be called by http thread, or send response.
+        final AsyncContext asyncContext = req.startAsync();
+
+        // AsyncContext.setTimeout() is incorrect, Control by oneself
+        asyncContext.setTimeout(0L);
         /**
          * 没有变化的groupKey  且客户端允许服务器挂起请求
          */
-        scheduler.execute(
-            new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
+        ConfigExecutor.executeLongPolling(
+                new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
 
-    @Override
-    public List<Class<? extends Event>> interest() {
-        List<Class<? extends Event>> eventTypes = new ArrayList<Class<? extends Event>>();
-        eventTypes.add(LocalDataChangeEvent.class);
-        return eventTypes;
-    }
-
-    @Override
-    public void onEvent(Event event) {
-        if (isFixedPolling()) {
-            // ignore
-        } else {
-            /**
-             * 监听LocalDataChangeEvent
-             */
-            if (event instanceof LocalDataChangeEvent) {
-                LocalDataChangeEvent evt = (LocalDataChangeEvent)event;
-                /**
-                 * 发布DataChangeTask
-                 */
-                scheduler.execute(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
-            }
-        }
-    }
-
-    static public boolean isSupportLongPolling(HttpServletRequest req) {
+    public static boolean isSupportLongPolling(HttpServletRequest req) {
         return null != req.getHeader(LONG_POLLING_HEADER);
     }
 
@@ -301,37 +304,55 @@ public class LongPollingService extends AbstractEventListener {
     public LongPollingService() {
         allSubs = new ConcurrentLinkedQueue<ClientLongPolling>();
 
-        scheduler = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+        ConfigExecutor.scheduleLongPolling(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+
+        // Register LocalDataChangeEvent to NotifyCenter.
+        NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
+
+        // Register A Subscriber to subscribe LocalDataChangeEvent.
+        NotifyCenter.registerSubscriber(new Subscriber() {
+
             @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.LongPolling");
-                return t;
+            public void onEvent(Event event) {
+                if (isFixedPolling()) {
+                    // Ignore.
+                } else {
+                    /**
+                     * 监听LocalDataChangeEvent
+                     */
+                    if (event instanceof LocalDataChangeEvent) {
+                        LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
+                        /**
+                         * 发布DataChangeTask
+                         */
+                        ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
+                    }
+                }
+            }
+
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return LocalDataChangeEvent.class;
             }
         });
-        scheduler.scheduleWithFixedDelay(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+
     }
 
-    // =================
+    public static final String LONG_POLLING_HEADER = "Long-Pulling-Timeout";
 
-    static public final String LONG_POLLING_HEADER = "Long-Pulling-Timeout";
-    static public final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
-
-    final ScheduledExecutorService scheduler;
+    public static final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
 
     /**
-     * 长轮询订阅关系
+     * ClientLongPolling subscibers.
      */
     final Queue<ClientLongPolling> allSubs;
 
-    // =================
-
     class DataChangeTask implements Runnable {
+
         @Override
         public void run() {
             try {
-                ConfigService.getContentBetaMd5(groupKey);
+                ConfigCacheService.getContentBetaMd5(groupKey);
                 /**
                  * 遍历订阅
                  */
@@ -341,12 +362,12 @@ public class LongPollingService extends AbstractEventListener {
                      * 过滤   筛选出订阅了groupKey的ClientLongPolling
                      */
                     if (clientSub.clientMd5Map.containsKey(groupKey)) {
-                        // 如果beta发布且不在beta列表直接跳过
-                        if (isBeta && !betaIps.contains(clientSub.ip)) {
+                        // If published tag is not in the beta list, then it skipped.
+                        if (isBeta && !CollectionUtils.contains(betaIps, clientSub.ip)) {
                             continue;
                         }
 
-                        // 如果tag发布且不在tag列表直接跳过
+                        // If published tag is not in the tag list, then it skipped.
                         if (StringUtils.isNotBlank(tag) && !tag.equals(clientSub.tag)) {
                             continue;
                         }
@@ -355,23 +376,18 @@ public class LongPollingService extends AbstractEventListener {
                          * 记录应答时间
                          */
                         getRetainIps().put(clientSub.ip, System.currentTimeMillis());
-                        iter.remove(); // 删除订阅关系
-                        LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
-                            (System.currentTimeMillis() - changeTime),
-                            "in-advance",
-                            RequestUtil.getRemoteIp((HttpServletRequest)clientSub.asyncContext.getRequest()),
-                            "polling",
-                            clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
+                        iter.remove(); // Delete subscribers' relationships.
+                        LogUtil.CLIENT_LOG
+                                .info("{}|{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - changeTime), "in-advance",
+                                        RequestUtil
+                                                .getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
+                                        "polling", clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
                         clientSub.sendResponse(Arrays.asList(groupKey));
                     }
                 }
             } catch (Throwable t) {
-                LogUtil.defaultLog.error("data change error:" + t.getMessage(), t.getCause());
+                LogUtil.DEFAULT_LOG.error("data change error: {}", ExceptionUtil.getStackTrace(t));
             }
-        }
-
-        DataChangeTask(String groupKey) {
-            this(groupKey, false, null);
         }
 
         DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps) {
@@ -386,24 +402,24 @@ public class LongPollingService extends AbstractEventListener {
         }
 
         final String groupKey;
+
         final long changeTime = System.currentTimeMillis();
+
         final boolean isBeta;
+
         final List<String> betaIps;
+
         final String tag;
     }
 
-    // =================
-
     class StatTask implements Runnable {
+
         @Override
         public void run() {
-            memoryLog.info("[long-pulling] client count " + allSubs.size());
+            MEMORY_LOG.info("[long-pulling] client count " + allSubs.size());
             MetricsMonitor.getLongPollingMonitor().set(allSubs.size());
         }
     }
-
-    // =================
-
     /**
      * 客户端长轮询应答
      */
@@ -414,7 +430,7 @@ public class LongPollingService extends AbstractEventListener {
             /**
              * 创建线程  在失效时间进行应答客户端请求
              */
-            asyncTimeoutFuture = scheduler.schedule(new Runnable() {
+            asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -422,23 +438,20 @@ public class LongPollingService extends AbstractEventListener {
                          * 记录应答时间
                          */
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
-                        /**
-                         * 删除订阅关系
-                         */
-                        allSubs.remove(ClientLongPolling.this);
 
+                        // Delete subsciber's relations.
+                        allSubs.remove(ClientLongPolling.this);
+                        /**
+                         * 固定
+                         */
                         if (isFixedPolling()) {
-                            /**
-                             * 固定
-                             */
-                            LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
-                                (System.currentTimeMillis() - createTime),
-                                "fix", RequestUtil.getRemoteIp((HttpServletRequest)asyncContext.getRequest()),
-                                "polling",
-                                clientMd5Map.size(), probeRequestSize);
-                            List<String> changedGroups = MD5Util.compareMd5(
-                                (HttpServletRequest)asyncContext.getRequest(),
-                                (HttpServletResponse)asyncContext.getResponse(), clientMd5Map);
+                            LogUtil.CLIENT_LOG
+                                    .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
+                                            RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+                                            "polling", clientMd5Map.size(), probeRequestSize);
+                            List<String> changedGroups = MD5Util
+                                    .compareMd5((HttpServletRequest) asyncContext.getRequest(),
+                                            (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
                             if (changedGroups.size() > 0) {
                                 sendResponse(changedGroups);
                             } else {
@@ -448,44 +461,39 @@ public class LongPollingService extends AbstractEventListener {
                             /**
                              * 非固定
                              */
-                            LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
-                                (System.currentTimeMillis() - createTime),
-                                "timeout", RequestUtil.getRemoteIp((HttpServletRequest)asyncContext.getRequest()),
-                                "polling",
-                                clientMd5Map.size(), probeRequestSize);
+                            LogUtil.CLIENT_LOG
+                                    .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
+                                            RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+                                            "polling", clientMd5Map.size(), probeRequestSize);
                             /**
                              * 到达失效时间   对客户端进行应答
                              */
                             sendResponse(null);
                         }
                     } catch (Throwable t) {
-                        LogUtil.defaultLog.error("long polling error:" + t.getMessage(), t.getCause());
+                        LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
                     }
 
                 }
 
             }, timeoutTime, TimeUnit.MILLISECONDS);
-
             /**
              * 建立长轮询订阅
              */
             allSubs.add(this);
         }
-
         /**
          * 应答
          * @param changedGroups
          */
         void sendResponse(List<String> changedGroups) {
-            /**
-             *  取消超时任务
-             */
+
+            // Cancel time out task.
             if (null != asyncTimeoutFuture) {
                 asyncTimeoutFuture.cancel(false);
             }
             generateResponse(changedGroups);
         }
-
         /**
          * 应答
          * @param changedGroups
@@ -495,36 +503,34 @@ public class LongPollingService extends AbstractEventListener {
              * 配置没有发生变化
              */
             if (null == changedGroups) {
-                /**
-                 * 告诉容器发送HTTP响应
-                 */
+
+                // Tell web container to send http response.
                 asyncContext.complete();
                 return;
             }
 
-            HttpServletResponse response = (HttpServletResponse)asyncContext.getResponse();
-
+            HttpServletResponse response = (HttpServletResponse) asyncContext.getResponse();
             /**
              * 返回发生变化的配置
              */
             try {
-                String respString = MD5Util.compareMd5ResultString(changedGroups);
+                final String respString = MD5Util.compareMd5ResultString(changedGroups);
 
-                // 禁用缓存
+                // Disable cache.
                 response.setHeader("Pragma", "no-cache");
                 response.setDateHeader("Expires", 0);
                 response.setHeader("Cache-Control", "no-cache,no-store");
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println(respString);
                 asyncContext.complete();
-            } catch (Exception se) {
-                pullLog.error(se.toString(), se);
+            } catch (Exception ex) {
+                PULL_LOG.error(ex.toString(), ex);
                 asyncContext.complete();
             }
         }
 
         ClientLongPolling(AsyncContext ac, Map<String, String> clientMd5Map, String ip, int probeRequestSize,
-                          long timeoutTime, String appName, String tag) {
+                long timeoutTime, String appName, String tag) {
             this.asyncContext = ac;
             this.clientMd5Map = clientMd5Map;
             this.probeRequestSize = probeRequestSize;
@@ -535,20 +541,31 @@ public class LongPollingService extends AbstractEventListener {
             this.tag = tag;
         }
 
-        // =================
-
         final AsyncContext asyncContext;
+
         final Map<String, String> clientMd5Map;
+
         final long createTime;
+
         final String ip;
+
         final String appName;
+
         final String tag;
+
         final int probeRequestSize;
+
         final long timeoutTime;
 
         Future<?> asyncTimeoutFuture;
-    }
 
+        @Override
+        public String toString() {
+            return "ClientLongPolling{" + "clientMd5Map=" + clientMd5Map + ", createTime=" + createTime + ", ip='" + ip
+                    + '\'' + ", appName='" + appName + '\'' + ", tag='" + tag + '\'' + ", probeRequestSize="
+                    + probeRequestSize + ", timeoutTime=" + timeoutTime + '}';
+        }
+    }
     /**
      * 组装响应对象
      * @param request
@@ -564,15 +581,15 @@ public class LongPollingService extends AbstractEventListener {
             /**
              * list转String
              */
-            String respString = MD5Util.compareMd5ResultString(changedGroups);
-            // 禁用缓存
+            final String respString = MD5Util.compareMd5ResultString(changedGroups);
+            // Disable cache.禁用缓存
             response.setHeader("Pragma", "no-cache");
             response.setDateHeader("Expires", 0);
             response.setHeader("Cache-Control", "no-cache,no-store");
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().println(respString);
-        } catch (Exception se) {
-            pullLog.error(se.toString(), se);
+        } catch (Exception ex) {
+            PULL_LOG.error(ex.toString(), ex);
         }
     }
 
@@ -583,5 +600,4 @@ public class LongPollingService extends AbstractEventListener {
     public void setRetainIps(Map<String, Long> retainIps) {
         this.retainIps = retainIps;
     }
-
 }

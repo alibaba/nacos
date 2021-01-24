@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
@@ -25,23 +26,23 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ * Delegate of health check.
+ *
  * @author nacos
  */
 @Component("healthCheckDelegate")
 public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
 
-    private Map<String, HealthCheckProcessor> healthCheckProcessorMap
-        = new HashMap<>();
+    private Map<String, HealthCheckProcessor> healthCheckProcessorMap = new HashMap<>();
 
     public HealthCheckProcessorDelegate(HealthCheckExtendProvider provider) {
         provider.init();
     }
 
     @Autowired
-    public void addProcessor(Collection<HealthCheckProcessor> processors){
-        healthCheckProcessorMap.putAll(processors.stream()
-            .filter(processor -> processor.getType() != null)
-            .collect(Collectors.toMap(HealthCheckProcessor::getType, processor -> processor)));
+    public void addProcessor(Collection<HealthCheckProcessor> processors) {
+        healthCheckProcessorMap.putAll(processors.stream().filter(processor -> processor.getType() != null)
+                .collect(Collectors.toMap(HealthCheckProcessor::getType, processor -> processor)));
     }
 
     @Override
@@ -51,7 +52,7 @@ public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
          */
         String type = task.getCluster().getHealthChecker().getType();
         HealthCheckProcessor processor = healthCheckProcessorMap.get(type);
-        if(processor == null){
+        if (processor == null) {
             processor = healthCheckProcessorMap.get(NoneHealthCheckProcessor.TYPE);
         }
 

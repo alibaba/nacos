@@ -13,24 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.healthcheck;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.healthcheck.events.InstanceHeartbeatTimeoutEvent;
-import com.alibaba.nacos.naming.misc.*;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.HttpClient;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.Response;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.net.HttpURLConnection;
 import java.util.List;
-
 
 /**
  * Check and update statues of ephemeral instances, remove them if they have been expired.
@@ -45,27 +51,26 @@ public class ClientBeatCheckTask implements Runnable {
         this.service = service;
     }
 
-
-    @JSONField(serialize = false)
+    @JsonIgnore
     public PushService getPushService() {
-        return SpringContext.getAppContext().getBean(PushService.class);
+        return ApplicationUtils.getBean(PushService.class);
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public DistroMapper getDistroMapper() {
-        return SpringContext.getAppContext().getBean(DistroMapper.class);
+        return ApplicationUtils.getBean(DistroMapper.class);
     }
 
     public GlobalConfig getGlobalConfig() {
-        return SpringContext.getAppContext().getBean(GlobalConfig.class);
+        return ApplicationUtils.getBean(GlobalConfig.class);
     }
 
     public SwitchDomain getSwitchDomain() {
-        return SpringContext.getAppContext().getBean(SwitchDomain.class);
+        return ApplicationUtils.getBean(SwitchDomain.class);
     }
 
     public String taskKey() {
-        return service.getName();
+        return KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName());
     }
 
     @Override
@@ -81,6 +86,7 @@ public class ClientBeatCheckTask implements Runnable {
             if (!getSwitchDomain().isHealthCheckEnabled()) {
                 return;
             }
+
 
             /**
              * 获取所有的临时节点
@@ -99,17 +105,20 @@ public class ClientBeatCheckTask implements Runnable {
                              * 设置为不健康的实例
                              */
                             instance.setHealthy(false);
-                            Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
-                                instance.getIp(), instance.getPort(), instance.getClusterName(), service.getName(),
-                                UtilsAndCommons.LOCALHOST_SITE, instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
+                            Loggers.EVT_LOG
+                                    .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
+                                            instance.getIp(), instance.getPort(), instance.getClusterName(),
+                                            service.getName(), UtilsAndCommons.LOCALHOST_SITE,
+                                            instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
                             /**
                              * 发布ServiceChangeEvent  udp通知？
                              */
                             getPushService().serviceChanged(service);
+
                             /**
                              * 发布InstanceHeartbeatTimeoutEvent   留待二次开发
                              */
-                            SpringContext.getAppContext().publishEvent(new InstanceHeartbeatTimeoutEvent(this, instance));
+                            ApplicationUtils.publishEvent(new InstanceHeartbeatTimeoutEvent(this, instance));
                         }
                     }
                 }
@@ -128,17 +137,17 @@ public class ClientBeatCheckTask implements Runnable {
                 if (instance.isMarked()) {
                     continue;
                 }
-
                 /**
                  * 超过待删除时间  则删除
                  */
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getIpDeleteTimeout()) {
                     // delete instance
-                    Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(), JSON.toJSONString(instance));
+                    Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(),
+                            JacksonUtils.toJson(instance));
                     /**
                      * 删除实例
                      */
-                    deleteIP(instance);
+                    deleteIp(instance);
                 }
             }
 
@@ -147,46 +156,53 @@ public class ClientBeatCheckTask implements Runnable {
         }
 
     }
-
-
     /**
      * 删除实例
      * @param instance
      */
-    private void deleteIP(Instance instance) {
+    private void deleteIp(Instance instance) {
 
         try {
             NamingProxy.Request request = NamingProxy.Request.newRequest();
-            request.appendParam("ip", instance.getIp())
-                .appendParam("port", String.valueOf(instance.getPort()))
-                .appendParam("ephemeral", "true")
-                .appendParam("clusterName", instance.getClusterName())
-                .appendParam("serviceName", service.getName())
-                .appendParam("namespaceId", service.getNamespaceId());
-
+            request.appendParam("ip", instance.getIp()).appendParam("port", String.valueOf(instance.getPort()))
+                    .appendParam("ephemeral", "true").appendParam("clusterName", instance.getClusterName())
+                    .appendParam("serviceName", service.getName()).appendParam("namespaceId", service.getNamespaceId());
             /**
              * 向本机发起删除交易
              */
-            String url = "http://127.0.0.1:" + RunningConfig.getServerPort() + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
+            String url = "http://" + IPUtil.localHostIP() + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort() + EnvUtil.getContextPath()
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
 
             // delete instance asynchronously:
             /**
              * 删除操作
              */
-            HttpClient.asyncHttpDelete(url, null, null, new AsyncCompletionHandler() {
+            HttpClient.asyncHttpDelete(url, null, null, new Callback<String>() {
                 @Override
-                public Object onCompleted(Response response) throws Exception {
-                    if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                        Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",
-                            instance.toJSON(), response.getResponseBody(), response.getStatusCode());
+                public void onReceive(RestResult<String> result) {
+                    if (!result.ok()) {
+                        Loggers.SRV_LOG
+                                .error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",
+                                        instance.toJson(), result.getMessage(), result.getCode());
                     }
-                    return null;
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    Loggers.SRV_LOG
+                            .error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJson(),
+                                    throwable);
+                }
+
+                @Override
+                public void onCancel() {
+
                 }
             });
 
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJSON(), e);
+            Loggers.SRV_LOG
+                    .error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJson(), e);
         }
     }
 }

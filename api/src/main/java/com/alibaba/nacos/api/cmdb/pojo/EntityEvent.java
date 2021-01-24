@@ -13,38 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.cmdb.pojo;
 
 /**
+ * CMDB entity event.
+ *
  * @author nkorange
  * @since 0.7.0
  */
 public class EntityEvent {
-
+    
     private EntityEventType type;
+    
     private String entityName;
+    
     private String entityType;
-
+    
     public EntityEventType getType() {
         return type;
     }
-
+    
     public void setType(EntityEventType type) {
         this.type = type;
     }
-
+    
     public String getEntityName() {
         return entityName;
     }
-
+    
     public void setEntityName(String entityName) {
         this.entityName = entityName;
     }
-
+    
     public String getEntityType() {
         return entityType;
     }
-
+    
     public void setEntityType(String entityType) {
         this.entityType = entityType;
     }

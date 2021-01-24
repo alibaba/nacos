@@ -15,45 +15,31 @@
  */
 package com.alibaba.nacos.test.naming;
 
-import java.net.URL;
+import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.test.base.Params;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.naming.NamingApp;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URL;
 
 /**
  * @author nkorange
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
-    "server.port=7001"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class RestAPI_ITCase {
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class RestAPI_ITCase extends NamingBase {
 
     @LocalServerPort
     private int port;
-
-    private URL base;
-
-    @Autowired
-    private TestRestTemplate restTemplate;
 
     @Before
     public void setUp() throws Exception {
@@ -77,11 +63,11 @@ public class RestAPI_ITCase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertTrue(json.getIntValue("serviceCount") > 0);
-        Assert.assertTrue(json.getIntValue("instanceCount") > 0);
-        Assert.assertTrue(json.getIntValue("responsibleServiceCount") > 0);
-        Assert.assertTrue(json.getIntValue("responsibleInstanceCount") > 0);
+        JsonNode json = JacksonUtils.toObj(response.getBody());
+        Assert.assertTrue(json.get("serviceCount").asInt() > 0);
+        Assert.assertTrue(json.get("instanceCount").asInt() > 0);
+        Assert.assertTrue(json.get("responsibleServiceCount").asInt() > 0);
+        Assert.assertTrue(json.get("responsibleInstanceCount").asInt() > 0);
     }
 
     /**
@@ -133,8 +119,8 @@ public class RestAPI_ITCase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertEquals(serviceName, json.getString("name"));
+        JsonNode json = JacksonUtils.toObj(response.getBody());
+        Assert.assertEquals(serviceName, json.get("name").asText());
 
         namingServiceDelete(serviceName);
     }
@@ -157,8 +143,8 @@ public class RestAPI_ITCase {
             String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JSONObject json = JSON.parseObject(response.getBody());
-        int count = json.getIntValue("count");
+        JsonNode json = JacksonUtils.toObj(response.getBody());
+        int count = json.get("count").asInt();
         Assert.assertTrue(count >= 0);
 
         response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
@@ -180,8 +166,8 @@ public class RestAPI_ITCase {
             String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        json = JSON.parseObject(response.getBody());
-        Assert.assertEquals(count + 1, json.getIntValue("count"));
+        json = JacksonUtils.toObj(response.getBody());
+        Assert.assertEquals(count + 1, json.get("count").asInt());
 
         namingServiceDelete(serviceName);
     }
@@ -225,14 +211,15 @@ public class RestAPI_ITCase {
             String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JSONObject json = JSON.parseObject(response.getBody());
+        JsonNode json = JacksonUtils.toObj(response.getBody());
         System.out.println(json);
-        Assert.assertEquals(0.3f, json.getFloatValue("protectThreshold"), 0.0f);
+        Assert.assertEquals(0.3f, json.get("protectThreshold").floatValue(), 0.0f);
 
         namingServiceDelete(serviceName);
     }
 
     @Test
+    @Ignore
     public void testInvalidNamespace() {
 
         String serviceName = NamingBase.randomDomainName();
@@ -270,32 +257,6 @@ public class RestAPI_ITCase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("ok", response.getBody());
-    }
-
-    <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
-
-        HttpHeaders headers = new HttpHeaders();
-
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), HttpMethod.GET, entity, clazz);
-    }
-
-    <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
-
-        HttpHeaders headers = new HttpHeaders();
-
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), httpMethod, entity, clazz);
     }
 
 }

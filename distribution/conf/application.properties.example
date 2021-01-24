@@ -1,12 +1,177 @@
-# spring
+#
+# Copyright 1999-2018 Alibaba Group Holding Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-server.contextPath=/nacos
+#*************** Spring Boot Related Configurations ***************#
+### Default web context path:
 server.servlet.contextPath=/nacos
+### Default web server port:
 server.port=8848
 
+#*************** Network Related Configurations ***************#
+### If prefer hostname over ip for Nacos server addresses in cluster.conf:
+# nacos.inetutils.prefer-hostname-over-ip=false
 
-db.num=2
-db.url.0=jdbc:mysql://11.162.196.16:3306/nacos_devtest?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
-db.url.1=jdbc:mysql://11.163.152.9:3306/nacos_devtest?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
-db.user=nacos_devtest
-db.password=nacos
+### Specify local server's IP:
+# nacos.inetutils.ip-address=
+
+
+#*************** Config Module Related Configurations ***************#
+### If use MySQL as datasource:
+# spring.datasource.platform=mysql
+
+### Count of DB:
+# db.num=1
+
+### Connect URL of DB:
+# db.url.0=jdbc:mysql://127.0.0.1:3306/nacos?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
+# db.user.0=nacos
+# db.password.0=nacos
+
+
+#*************** Naming Module Related Configurations ***************#
+### Data dispatch task execution period in milliseconds:
+# nacos.naming.distro.taskDispatchPeriod=200
+
+### Data count of batch sync task:
+# nacos.naming.distro.batchSyncKeyCount=1000
+
+### Retry delay in milliseconds if sync task failed:
+# nacos.naming.distro.syncRetryDelay=5000
+
+### If enable data warmup. If set to false, the server would accept request without local data preparation:
+# nacos.naming.data.warmup=true
+
+### If enable the instance auto expiration, kind like of health check of instance:
+# nacos.naming.expireInstance=true
+
+nacos.naming.empty-service.auto-clean=true
+nacos.naming.empty-service.clean.initial-delay-ms=50000
+nacos.naming.empty-service.clean.period-time-ms=30000
+
+
+#*************** CMDB Module Related Configurations ***************#
+### The interval to dump external CMDB in seconds:
+# nacos.cmdb.dumpTaskInterval=3600
+
+### The interval of polling data change event in seconds:
+# nacos.cmdb.eventTaskInterval=10
+
+### The interval of loading labels in seconds:
+# nacos.cmdb.labelTaskInterval=300
+
+### If turn on data loading task:
+# nacos.cmdb.loadDataAtStart=false
+
+
+#*************** Metrics Related Configurations ***************#
+### Metrics for prometheus
+#management.endpoints.web.exposure.include=*
+
+### Metrics for elastic search
+management.metrics.export.elastic.enabled=false
+#management.metrics.export.elastic.host=http://localhost:9200
+
+### Metrics for influx
+management.metrics.export.influx.enabled=false
+#management.metrics.export.influx.db=springboot
+#management.metrics.export.influx.uri=http://localhost:8086
+#management.metrics.export.influx.auto-create-db=true
+#management.metrics.export.influx.consistency=one
+#management.metrics.export.influx.compressed=true
+
+
+#*************** Access Log Related Configurations ***************#
+### If turn on the access log:
+server.tomcat.accesslog.enabled=true
+
+### The access log pattern:
+server.tomcat.accesslog.pattern=%h %l %u %t "%r" %s %b %D %{User-Agent}i %{Request-Source}i
+
+### The directory of access log:
+server.tomcat.basedir=
+
+
+#*************** Access Control Related Configurations ***************#
+### If enable spring security, this option is deprecated in 1.2.0:
+#spring.security.enabled=false
+
+### The ignore urls of auth, is deprecated in 1.2.0:
+nacos.security.ignore.urls=/,/error,/**/*.css,/**/*.js,/**/*.html,/**/*.map,/**/*.svg,/**/*.png,/**/*.ico,/console-ui/public/**,/v1/auth/**,/v1/console/health/**,/actuator/**,/v1/console/server/**
+
+### The auth system to use, currently only 'nacos' is supported:
+nacos.core.auth.system.type=nacos
+
+### If turn on auth system:
+nacos.core.auth.enabled=false
+
+### The token expiration in seconds:
+nacos.core.auth.default.token.expire.seconds=18000
+
+### The default token:
+nacos.core.auth.default.token.secret.key=SecretKey012345678901234567890123456789012345678901234567890123456789
+
+### Turn on/off caching of auth information. By turning on this switch, the update of auth information would have a 15 seconds delay.
+nacos.core.auth.caching.enabled=true
+
+
+#*************** Istio Related Configurations ***************#
+### If turn on the MCP server:
+nacos.istio.mcp.server.enabled=false
+
+
+
+###*************** Add from 1.3.0 ***************###
+
+
+#*************** Core Related Configurations ***************#
+
+### set the WorkerID manually
+# nacos.core.snowflake.worker-id=
+
+### Member-MetaData
+# nacos.core.member.meta.site=
+# nacos.core.member.meta.adweight=
+# nacos.core.member.meta.weight=
+
+### MemberLookup
+### Addressing pattern category, If set, the priority is highest
+# nacos.core.member.lookup.type=[file,address-server]
+## Set the cluster list with a configuration file or command-line argument
+# nacos.member.list=192.168.16.101:8847?raft_port=8807,192.168.16.101?raft_port=8808,192.168.16.101:8849?raft_port=8809
+## for AddressServerMemberLookup
+# Maximum number of retries to query the address server upon initialization
+# nacos.core.address-server.retry=5
+## Server domain name address of [address-server] mode
+# address.server.domain=jmenv.tbsite.net
+## Server port of [address-server] mode
+# address.server.port=8080
+## Request address of [address-server] mode
+# address.server.url=/nacos/serverlist
+
+#*************** JRaft Related Configurations ***************#
+
+### Sets the Raft cluster election timeout, default value is 5 second
+# nacos.core.protocol.raft.data.election_timeout_ms=5000
+### Sets the amount of time the Raft snapshot will execute periodically, default is 30 minute
+# nacos.core.protocol.raft.data.snapshot_interval_secs=30
+### raft internal worker threads
+# nacos.core.protocol.raft.data.core_thread_num=8
+### Number of threads required for raft business request processing
+# nacos.core.protocol.raft.data.cli_service_thread_num=4
+### raft linear read strategy. Safe linear reads are used by default, that is, the Leader tenure is confirmed by heartbeat
+# nacos.core.protocol.raft.data.read_index_type=ReadOnlySafe
+### rpc request timeout, default 5 seconds
+# nacos.core.protocol.raft.data.rpc_request_timeout_ms=5000

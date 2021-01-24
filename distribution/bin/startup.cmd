@@ -21,54 +21,75 @@ rem added double quotation marks to avoid the issue caused by the folder names c
 rem removed the last 5 chars(which means \bin\) to get the base DIR.
 set BASE_DIR="%BASE_DIR:~0,-5%"
 
-set DEFAULT_SEARCH_LOCATIONS="classpath:/,classpath:/config/,file:./,file:./config/"
-set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%/conf/
+set CUSTOM_SEARCH_LOCATIONS=file:%BASE_DIR%/conf/
 
-set MODE="standalone"
+set MODE="cluster"
 set FUNCTION_MODE="all"
 set SERVER=nacos-server
 set MODE_INDEX=-1
 set FUNCTION_MODE_INDEX=-1
 set SERVER_INDEX=-1
+set EMBEDDED_STORAGE_INDEX=-1
+set EMBEDDED_STORAGE=""
 
 
 set i=0
 for %%a in (%*) do (
-   if "%%a" == "-m" ( set /a MODE_INDEX=!i!+1 )
-   if "%%a" == "-f" ( set /a FUNCTION_MODE_INDEX=!i!+1 )
-   if "%%a" == "-s" ( set /a SERVER_INDEX=!i!+1 )
-   set /a i+=1
+    if "%%a" == "-m" ( set /a MODE_INDEX=!i!+1 )
+    if "%%a" == "-f" ( set /a FUNCTION_MODE_INDEX=!i!+1 )
+    if "%%a" == "-s" ( set /a SERVER_INDEX=!i!+1 )
+    if "%%a" == "-p" ( set /a EMBEDDED_STORAGE_INDEX=!i!+1 )
+    set /a i+=1
 )
 
 set i=0
 for %%a in (%*) do (
-   if %MODE_INDEX% == !i! ( set MODE="%%a" )
-   if %FUNCTION_MODE_INDEX% == !i! ( set FUNCTION_MODE="%%a" )
-   if %SERVER_INDEX% == !i! (set SERVER="%%a")
-   set /a i+=1
+    if %MODE_INDEX% == !i! ( set MODE="%%a" )
+    if %FUNCTION_MODE_INDEX% == !i! ( set FUNCTION_MODE="%%a" )
+    if %SERVER_INDEX% == !i! (set SERVER="%%a")
+    if %EMBEDDED_STORAGE_INDEX% == !i! (set EMBEDDED_STORAGE="%%a")
+    set /a i+=1
 )
 
+rem if nacos startup mode is standalone
 if %MODE% == "standalone" (
-    set "JAVA_OPT=%JAVA_OPT% -Xms512m -Xmx512m -Xmn256m"
-    set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
-) else (
-    set "JAVA_OPT=%JAVA_OPT% -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
-    set "JAVA_OPT=%JAVA_OPT% -XX:-OmitStackTraceInFastThrow XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%BASE_DIR%\logs\java_heapdump.hprof"
-    set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"
+    echo "nacos is starting with standalone"
+	  set "NACOS_OPTS=-Dnacos.standalone=true"
+    set "NACOS_JVM_OPTS=-Xms512m -Xmx512m -Xmn256m"
 )
 
+rem if nacos startup mode is cluster
+if %MODE% == "cluster" (
+    echo "nacos is starting with cluster"
+	  if %EMBEDDED_STORAGE% == "embedded" (
+	      set "NACOS_OPTS=-DembeddedStorage=true"
+	  )
+
+    set "NACOS_JVM_OPTS=-server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m -XX:-OmitStackTraceInFastThrow -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%BASE_DIR%\logs\java_heapdump.hprof -XX:-UseLargePages"
+)
+
+rem set nacos's functionMode
 if %FUNCTION_MODE% == "config" (
-  set "JAVA_OPT=%JAVA_OPT% -Dnacos.functionMode=config"
+    set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.functionMode=config"
 )
+
 if %FUNCTION_MODE% == "naming" (
-  set "JAVA_OPT=%JAVA_OPT% -Dnacos.functionMode=naming"
+    set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.functionMode=naming"
 )
 
-set "JAVA_OPT=%JAVA_OPT% -Dloader.path=%BASE_DIR%/plugins/health,%BASE_DIR%/plugins/cmdb,%BASE_DIR%/plugins/mysql"
+rem set nacos options
+set "NACOS_OPTS=%NACOS_OPTS% -Dloader.path=%BASE_DIR%/plugins/health,%BASE_DIR%/plugins/cmdb"
+set "NACOS_OPTS=%NACOS_OPTS% -Dnacos.home=%BASE_DIR%"
+set "NACOS_OPTS=%NACOS_OPTS% -jar %BASE_DIR%\target\%SERVER%.jar"
 
-set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
-set "JAVA_OPT=%JAVA_OPT% -jar %BASE_DIR%\target\%SERVER%.jar"
-set "JAVA_OPT=%JAVA_OPT% --spring.config.location=%CUSTOM_SEARCH_LOCATIONS%"
-set "JAVA_OPT=%JAVA_OPT% --logging.config=%BASE_DIR%/conf/nacos-logback.xml"
+rem set nacos spring config location
+set "NACOS_CONFIG_OPTS=--spring.config.additional-location=%CUSTOM_SEARCH_LOCATIONS%"
 
-call "%JAVA%" %JAVA_OPT% nacos.nacos %*
+rem set nacos log4j file location
+set "NACOS_LOG4J_OPTS=--logging.config=%BASE_DIR%/conf/nacos-logback.xml"
+
+
+set COMMAND="%JAVA%" %NACOS_JVM_OPTS% %NACOS_OPTS% %NACOS_CONFIG_OPTS% %NACOS_LOG4J_OPTS% nacos.nacos %*
+
+rem start nacos command
+%COMMAND%

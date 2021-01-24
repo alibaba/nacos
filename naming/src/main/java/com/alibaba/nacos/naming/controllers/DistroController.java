@@ -13,26 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.naming.cluster.transport.Serializer;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroHttpData;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -46,13 +53,7 @@ import java.util.Map;
 public class DistroController {
 
     @Autowired
-    private Serializer serializer;
-
-    @Autowired
-    private DistroConsistencyServiceImpl consistencyService;
-
-    @Autowired
-    private DataStore dataStore;
+    private DistroProtocol distroProtocol;
 
     @Autowired
     private ServiceManager serviceManager;
@@ -61,9 +62,11 @@ public class DistroController {
     private SwitchDomain switchDomain;
 
     /**
-     * 接受其他节点发送的datum
-     * @return
-     * @throws Exception
+     * Synchronize datum.
+     *接受其他节点发送的datum
+     * @param dataMap data map
+     * @return 'ok' if success
+     * @throws Exception if failed
      */
     @PutMapping("/datum")
     public ResponseEntity onSyncDatum(@RequestBody Map<String, Datum<Instances>> dataMap) throws Exception {
@@ -83,72 +86,77 @@ public class DistroController {
                 /**
                  * 本地节点没有namespaceId和serviceName对应的service  则新增
                  */
-                if (!serviceManager.containService(namespaceId, serviceName)
-                    && switchDomain.isDefaultInstanceEphemeral()) {
+                if (!serviceManager.containService(namespaceId, serviceName) && switchDomain
+                        .isDefaultInstanceEphemeral()) {
                     serviceManager.createEmptyService(namespaceId, serviceName, true);
                 }
-
                 /**
                  * 缓存key对应的value（Record）
                  */
-                consistencyService.onPut(entry.getKey(), entry.getValue().value);
+                DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(entry.getKey()), entry.getValue());
+                distroProtocol.onReceive(distroHttpData);
             }
         }
         return ResponseEntity.ok("ok");
     }
 
     /**
+     * Checksum.
      * 接受其他节点的checksum数据
-     * @return
-     * @throws Exception
+     * @param source  source server
+     * @param dataMap checksum map
+     * @return 'ok'
      */
     @PutMapping("/checksum")
     public ResponseEntity syncChecksum(@RequestParam String source, @RequestBody Map<String, String> dataMap) {
-
         /**
          * 处理其他节点的checksum
          */
-        consistencyService.onReceiveChecksums(dataMap, source);
+        DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(source), dataMap);
+        distroProtocol.onVerify(distroHttpData);
         return ResponseEntity.ok("ok");
     }
 
     /**
+     * Get datum.
      * 其他nacos节点向本机查询keys对应的Datum
-     * @param body
-     * @return
-     * @throws Exception
+     *
+     * @param body keys of data
+     * @return datum
+     * @throws Exception if failed
      */
     @GetMapping("/datum")
-    public ResponseEntity get(@RequestBody JSONObject body) throws Exception {
-
+    public ResponseEntity get(@RequestBody String body) throws Exception {
         /**
          * 请求体为key的集合   key1，key2，key3，key4。。。
          */
-        String keys = body.getString("keys");
+        JsonNode bodyNode = JacksonUtils.toObj(body);
+        String keys = bodyNode.get("keys").asText();
         String keySplitter = ",";
-        Map<String, Datum> datumMap = new HashMap<>(64);
+        DistroHttpCombinedKey distroKey = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, "");
         for (String key : keys.split(keySplitter)) {
             /**
              * 请求体为key的集合   key1，key2，key3，key4。。。
              */
-            Datum datum = consistencyService.get(key);
-            if (datum == null) {
-                continue;
-            }
-            datumMap.put(key, datum);
+            distroKey.getActualResourceTypes().add(key);
         }
-
-        String content = new String(serializer.serialize(datumMap), StandardCharsets.UTF_8);
-        return ResponseEntity.ok(content);
+        DistroData distroData = distroProtocol.onQuery(distroKey);
+        return ResponseEntity.ok(distroData.getContent());
     }
 
     /**
+     * Get all datums.
      * 返回本地的dataStore中的dataMap
-     * @return
+     *
+     * @return all datums
      */
     @GetMapping("/datums")
     public ResponseEntity getAllDatums() {
-        String content = new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8);
-        return ResponseEntity.ok(content);
+        DistroData distroData = distroProtocol.onSnapshot(KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
+        return ResponseEntity.ok(distroData.getContent());
+    }
+
+    private DistroKey createDistroKey(String resourceKey) {
+        return new DistroKey(resourceKey, KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
     }
 }

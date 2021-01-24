@@ -16,12 +16,16 @@
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.naming.net.HttpClient;
+import com.alibaba.nacos.client.naming.net.NamingHttpClientManager;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.test.base.HttpClient4Test;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +33,9 @@ import java.util.Map;
 /**
  * @author nkorange
  */
-public class NamingBase {
+public class NamingBase extends HttpClient4Test {
 
+    private static final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
 
     public static final String TEST_DOM_1 = "nacos.test.1";
     public static final String TEST_IP_4_DOM_1 = "127.0.0.1";
@@ -167,18 +172,47 @@ public class NamingBase {
         return true;
     }
 
-    public static void prepareServer(int localPort) {
-        prepareServer(localPort, "UP");
+    public static void prepareServer(int localPort) throws Exception{
+        prepareServer(localPort, "UP", "/nacos");
+    }
+    
+    public static void prepareServer(int localPort,String contextPath) throws Exception{
+        prepareServer(localPort, "UP", contextPath);
     }
 
-    public static void prepareServer(int localPort, String status) {
-        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
-        List<String> headers = new ArrayList<String>();
-        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
-        headers.add("Nacos-Server");
-        HttpClient.HttpResult result =
-            HttpClient.request(url, headers, new HashMap<String, String>(), "UTF-8", "PUT");
+    public static void prepareServer(int localPort, String status,String contextPath) throws Exception {
+        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
 
-        Assert.assertEquals(HttpStatus.SC_OK, result.code);
+        url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
+
+        result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
+    }
+    
+    public static void destoryServer(int localPort) throws Exception{
+        destoryServer(localPort, "/nacos");
+    }
+    
+    public static void destoryServer(int localPort, String contextPath) throws Exception{
+        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
+
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
+    }
+    
+    public static String normalizeContextPath(String contextPath) {
+        if (StringUtils.isBlank(contextPath) || "/".equals(contextPath)) {
+            return StringUtils.EMPTY;
+        }
+        return contextPath.startsWith("/") ? contextPath : "/" + contextPath;
     }
 }

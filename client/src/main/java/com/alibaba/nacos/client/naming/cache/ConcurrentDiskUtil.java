@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.cache;
+
+import com.alibaba.nacos.common.utils.IoUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,26 +32,27 @@ import java.nio.charset.CharsetDecoder;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
+ * Concurrent Disk util.
+ *
  * @author nkorange
  */
 public class ConcurrentDiskUtil {
 
     /**
-     * get file content
+     * get file content.
      *
      * @param path        file path
      * @param charsetName charsetName
      * @return content
      * @throws IOException IOException
      */
-    public static String getFileContent(String path, String charsetName)
-        throws IOException {
+    public static String getFileContent(String path, String charsetName) throws IOException {
         File file = new File(path);
         return getFileContent(file, charsetName);
     }
 
     /**
-     * get file content
+     * get file content.
      * 获取文件内容
      *
      * @param file        file
@@ -56,8 +60,7 @@ public class ConcurrentDiskUtil {
      * @return content
      * @throws IOException IOException
      */
-    public static String getFileContent(File file, String charsetName)
-        throws IOException {
+    public static String getFileContent(File file, String charsetName) throws IOException {
         RandomAccessFile fis = null;
         FileLock rlock = null;
         try {
@@ -78,14 +81,13 @@ public class ConcurrentDiskUtil {
                      */
                     if (i > RETRY_COUNT) {
                         NAMING_LOGGER.error("[NA] read " + file.getName() + " fail;retryed time: " + i, e);
-                        throw new IOException("read " + file.getAbsolutePath()
-                            + " conflict");
+                        throw new IOException("read " + file.getAbsolutePath() + " conflict");
                     }
                     sleep(SLEEP_BASETIME * i);
                     NAMING_LOGGER.warn("read " + file.getName() + " conflict;retry time: " + i);
                 }
             } while (null == rlock);
-            int fileSize = (int)fcin.size();
+            int fileSize = (int) fcin.size();
             ByteBuffer byteBuffer = ByteBuffer.allocate(fileSize);
             fcin.read(byteBuffer);
             byteBuffer.flip();
@@ -96,14 +98,14 @@ public class ConcurrentDiskUtil {
                 rlock = null;
             }
             if (fis != null) {
-                fis.close();
+                IoUtils.closeQuietly(fis);
                 fis = null;
             }
         }
     }
 
     /**
-     * write file content
+     * write file content.
      *
      * @param path        file path
      * @param content     content
@@ -111,14 +113,13 @@ public class ConcurrentDiskUtil {
      * @return whether write ok
      * @throws IOException IOException
      */
-    public static Boolean writeFileContent(String path, String content,
-                                           String charsetName) throws IOException {
+    public static Boolean writeFileContent(String path, String content, String charsetName) throws IOException {
         File file = new File(path);
         return writeFileContent(file, content, charsetName);
     }
 
     /**
-     * write file content
+     * write file content.
      *
      * @param file        file
      * @param content     content
@@ -126,8 +127,7 @@ public class ConcurrentDiskUtil {
      * @return whether write ok
      * @throws IOException IOException
      */
-    public static Boolean writeFileContent(File file, String content,
-                                           String charsetName) throws IOException {
+    public static Boolean writeFileContent(File file, String content, String charsetName) throws IOException {
 
         if (!file.exists() && !file.createNewFile()) {
             return false;
@@ -152,23 +152,22 @@ public class ConcurrentDiskUtil {
                     ++i;
                     if (i > RETRY_COUNT) {
                         NAMING_LOGGER.error("[NA] write {} fail;retryed time:{}", file.getName(), i);
-                        throw new IOException("write " + file.getAbsolutePath()
-                            + " conflict", e);
+                        throw new IOException("write " + file.getAbsolutePath() + " conflict", e);
                     }
                     sleep(SLEEP_BASETIME * i);
                     NAMING_LOGGER.warn("write " + file.getName() + " conflict;retry time: " + i);
                 }
             } while (null == lock);
 
+            byte[] contentBytes = content.getBytes(charsetName);
             /**
              * 写入数据
              */
-            ByteBuffer sendBuffer = ByteBuffer.wrap(content
-                .getBytes(charsetName));
+            ByteBuffer sendBuffer = ByteBuffer.wrap(contentBytes);
             while (sendBuffer.hasRemaining()) {
                 channel.write(sendBuffer);
             }
-            channel.truncate(content.length());
+            channel.truncate(contentBytes.length);
         } catch (FileNotFoundException e) {
             throw new IOException("file not exist");
         } finally {
@@ -202,15 +201,14 @@ public class ConcurrentDiskUtil {
     }
 
     /**
-     * transfer ByteBuffer to String
+     * transfer ByteBuffer to String.
      *
      * @param buffer      buffer
      * @param charsetName charsetName
      * @return String
      * @throws IOException IOException
      */
-    public static String byteBufferToString(ByteBuffer buffer,
-                                            String charsetName) throws IOException {
+    public static String byteBufferToString(ByteBuffer buffer, String charsetName) throws IOException {
         Charset charset = null;
         CharsetDecoder decoder = null;
         CharBuffer charBuffer = null;
@@ -229,5 +227,6 @@ public class ConcurrentDiskUtil {
     }
 
     private static final int RETRY_COUNT = 10;
+
     private static final int SLEEP_BASETIME = 10;
 }

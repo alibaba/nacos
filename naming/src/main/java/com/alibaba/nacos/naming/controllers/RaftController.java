@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
@@ -34,10 +34,17 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.web.NeedAuth;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -52,89 +59,100 @@ import java.util.Map;
  *
  * @author nkorange
  * @since 1.0.0
+ * @deprecated will remove in 1.4.x
  */
+@Deprecated
 @RestController
 @RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft",
-    UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft"})
+        UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft"})
 public class RaftController {
 
-    @Autowired
-    private RaftConsistencyServiceImpl raftConsistencyService;
+    private final RaftConsistencyServiceImpl raftConsistencyService;
 
-    @Autowired
-    private ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
 
-    @Autowired
-    private RaftCore raftCore;
+    private final RaftCore raftCore;
 
-    /**
-     * 处理其他节点发送得投票
-     * @param request
-     * @param response
-     * @return
-     * @throws Exception
-     */
-    @NeedAuth
-    @PostMapping("/vote")
-    public JSONObject vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    private final ClusterVersionJudgement versionJudgement;
 
-        /**
-         * 处理其他节点发送得投票
-         */
-        RaftPeer peer = raftCore.receivedVote(
-            JSON.parseObject(WebUtils.required(request, "vote"), RaftPeer.class));
-
-        return JSON.parseObject(JSON.toJSONString(peer));
+    public RaftController(RaftConsistencyServiceImpl raftConsistencyService, ServiceManager serviceManager,
+            RaftCore raftCore, ClusterVersionJudgement versionJudgement) {
+        this.raftConsistencyService = raftConsistencyService;
+        this.serviceManager = serviceManager;
+        this.raftCore = raftCore;
+        this.versionJudgement = versionJudgement;
     }
 
     /**
-     * follower接受leader心跳
-     * @param request
-     * @param response
-     * @return
-     * @throws Exception
+     * Raft vote api.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return peer information
+     * @throws Exception exception
      */
-    @NeedAuth
-    @PostMapping("/beat")
-    public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    @PostMapping("/vote")
+    public JsonNode vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
+        /**
+         * 处理其他节点发送得投票
+         */
+        RaftPeer peer = raftCore.receivedVote(JacksonUtils.toObj(WebUtils.required(request, "vote"), RaftPeer.class));
 
+        return JacksonUtils.transferToJsonNode(peer);
+    }
+
+    /**
+     * Beat api.
+     *follower接受leader心跳
+     * @param request  http request
+     * @param response http response
+     * @return peer information
+     * @throws Exception exception
+     */
+    @PostMapping("/beat")
+    public JsonNode beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         /**
          * 解析请求对象
          */
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), StandardCharsets.UTF_8);
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
-
-        JSONObject json = JSON.parseObject(value);
-
         /**
          * 获取beat对应得内容
          */
-        JSONObject beat = JSON.parseObject(json.getString("beat"));
+        JsonNode json = JacksonUtils.toObj(value);
 
         /**
          * 接受leader心跳并处理
          */
-        RaftPeer peer = raftCore.receivedBeat(beat);
+        RaftPeer peer = raftCore.receivedBeat(JacksonUtils.toObj(json.get("beat").asText()));
 
-        return JSON.parseObject(JSON.toJSONString(peer));
+        return JacksonUtils.transferToJsonNode(peer);
     }
 
     /**
-     * 查询当前节点信息
-     * @param request
-     * @param response
-     * @return
+     * Get peer information.
+     *查询当前节点信息
+     * @param request  http request
+     * @param response http response
+     * @return peer information
      */
-    @NeedAuth
     @GetMapping("/peer")
-    public JSONObject getPeer(HttpServletRequest request, HttpServletResponse response) {
+    public JsonNode getPeer(HttpServletRequest request, HttpServletResponse response) {
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         /**
          * 获得集群内所有节点列表
          */
         List<RaftPeer> peers = raftCore.getPeers();
         RaftPeer peer = null;
-
         /**
          * 获取当前节点信息
          */
@@ -149,55 +167,80 @@ public class RaftController {
             peer.ip = NetUtils.localServer();
         }
 
-        /**
-         * 返回
-         */
-        return JSON.parseObject(JSON.toJSONString(peer));
+        return JacksonUtils.transferToJsonNode(peer);
     }
 
-    @NeedAuth
+    /**
+     * Datum reload request.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return 'ok' if success
+     * @throws Exception exception
+     */
     @PutMapping("/datum/reload")
     public String reloadDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         String key = WebUtils.required(request, "key");
         raftCore.loadDatum(key);
         return "ok";
     }
 
-    @NeedAuth
+    /**
+     * Publish datum.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return 'ok' if success
+     * @throws Exception exception
+     */
     @PostMapping("/datum")
     public String publish(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
-        JSONObject json = JSON.parseObject(value);
+        JsonNode json = JacksonUtils.toObj(value);
 
-        String key = json.getString("key");
+        String key = json.get("key").asText();
         if (KeyBuilder.matchInstanceListKey(key)) {
-            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), Instances.class));
+            raftConsistencyService.put(key, JacksonUtils.toObj(json.get("value").toString(), Instances.class));
             return "ok";
         }
 
         if (KeyBuilder.matchSwitchKey(key)) {
-            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), SwitchDomain.class));
+            raftConsistencyService.put(key, JacksonUtils.toObj(json.get("value").toString(), SwitchDomain.class));
             return "ok";
         }
 
         if (KeyBuilder.matchServiceMetaKey(key)) {
-            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), Service.class));
+            raftConsistencyService.put(key, JacksonUtils.toObj(json.get("value").toString(), Service.class));
             return "ok";
         }
 
         throw new NacosException(NacosException.INVALID_PARAM, "unknown type publish key: " + key);
     }
 
-    @NeedAuth
+    /**
+     * Remove datum.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return 'ok' if success
+     * @throws Exception exception
+     */
     @DeleteMapping("/datum")
     public String delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
@@ -206,16 +249,18 @@ public class RaftController {
     }
 
     /**
-     * leader接受follower请求    返回对应的Datum集合
-     * @param request
-     * @param response
-     * @return
-     * @throws Exception
+     * Get datum.
+     *leader接受follower请求
+     * @param request  http request
+     * @param response http response
+     * @return datum
+     * @throws Exception exception
      */
-    @NeedAuth
     @GetMapping("/datum")
     public String get(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
@@ -226,7 +271,6 @@ public class RaftController {
         keysString = URLDecoder.decode(keysString, "UTF-8");
         String[] keys = keysString.split(",");
         List<Datum> datums = new ArrayList<Datum>();
-
         /**
          * 轮询keys   获取对应的Datum集合
          */
@@ -235,48 +279,68 @@ public class RaftController {
             datums.add(datum);
         }
 
-        return JSON.toJSONString(datums);
+        return JacksonUtils.toJson(datums);
     }
 
+    /**
+     * Get state of raft peer.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return datum
+     * @throws Exception exception
+     */
     @GetMapping("/state")
-    public JSONObject state(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
+    public JsonNode state(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("services", serviceManager.getServiceCount());
-        result.put("peers", raftCore.getPeers());
+        result.replace("peers", JacksonUtils.transferToJsonNode(raftCore.getPeers()));
 
         return result;
     }
 
-    @NeedAuth
+    /**
+     * Commit publish datum.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return 'ok' if success
+     * @throws Exception exception
+     */
     @PostMapping("/datum/commit")
     public String onPublish(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
-        JSONObject jsonObject = JSON.parseObject(value);
+
+        JsonNode jsonObject = JacksonUtils.toObj(value);
         String key = "key";
 
-        RaftPeer source = JSON.parseObject(jsonObject.getString("source"), RaftPeer.class);
-        JSONObject datumJson = jsonObject.getJSONObject("datum");
+        RaftPeer source = JacksonUtils.toObj(jsonObject.get("source").toString(), RaftPeer.class);
+        JsonNode datumJson = jsonObject.get("datum");
 
         Datum datum = null;
-        if (KeyBuilder.matchInstanceListKey(datumJson.getString(key))) {
-            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<Instances>>() {
+        if (KeyBuilder.matchInstanceListKey(datumJson.get(key).asText())) {
+            datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), new TypeReference<Datum<Instances>>() {
             });
-        } else if (KeyBuilder.matchSwitchKey(datumJson.getString(key))) {
-            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<SwitchDomain>>() {
+        } else if (KeyBuilder.matchSwitchKey(datumJson.get(key).asText())) {
+            datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), new TypeReference<Datum<SwitchDomain>>() {
             });
-        } else if (KeyBuilder.matchServiceMetaKey(datumJson.getString(key))) {
-            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<Service>>() {
+        } else if (KeyBuilder.matchServiceMetaKey(datumJson.get(key).asText())) {
+            datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), new TypeReference<Datum<Service>>() {
             });
         }
 
@@ -284,10 +348,19 @@ public class RaftController {
         return "ok";
     }
 
-    @NeedAuth
+    /**
+     * Commit delete datum.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return 'ok' if success
+     * @throws Exception exception
+     */
     @DeleteMapping("/datum/commit")
     public String onDelete(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
@@ -295,34 +368,53 @@ public class RaftController {
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
-        JSONObject jsonObject = JSON.parseObject(value);
 
-        Datum datum = JSON.parseObject(jsonObject.getString("datum"), Datum.class);
-        RaftPeer source = JSON.parseObject(jsonObject.getString("source"), RaftPeer.class);
+        JsonNode jsonObject = JacksonUtils.toObj(value);
+
+        Datum datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), Datum.class);
+        RaftPeer source = JacksonUtils.toObj(jsonObject.get("source").toString(), RaftPeer.class);
 
         raftConsistencyService.onRemove(datum, source);
         return "ok";
     }
 
+    /**
+     * Elect leader api.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return leader peer information
+     */
     @GetMapping("/leader")
-    public JSONObject getLeader(HttpServletRequest request, HttpServletResponse response) {
-
-        JSONObject result = new JSONObject();
-        result.put("leader", JSONObject.toJSONString(raftCore.getLeader()));
+    public JsonNode getLeader(HttpServletRequest request, HttpServletResponse response) {
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put("leader", JacksonUtils.toJson(raftCore.getLeader()));
         return result;
     }
 
+    /**
+     * Get all listeners.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return all listener information
+     */
     @GetMapping("/listeners")
-    public JSONObject getAllListeners(HttpServletRequest request, HttpServletResponse response) {
+    public JsonNode getAllListeners(HttpServletRequest request, HttpServletResponse response) {
+        if (versionJudgement.allMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        Map<String, ConcurrentHashSet<RecordListener>> listeners = raftCore.getListeners();
 
-        JSONObject result = new JSONObject();
-        Map<String, List<RecordListener>> listeners = raftCore.getListeners();
-
-        JSONArray listenerArray = new JSONArray();
+        ArrayNode listenerArray = JacksonUtils.createEmptyArrayNode();
         for (String key : listeners.keySet()) {
             listenerArray.add(key);
         }
-        result.put("listeners", listenerArray);
+        result.replace("listeners", listenerArray);
 
         return result;
     }

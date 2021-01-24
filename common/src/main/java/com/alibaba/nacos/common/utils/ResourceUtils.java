@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.utils;
 
 import java.io.File;
@@ -26,52 +27,51 @@ import java.net.URL;
 import java.util.Properties;
 
 /**
- * resource util
+ * resource util.
  *
  * @author boyan
- * @date 2010-5-4
  */
 public class ResourceUtils {
-
+    
     private static final String CLASSPATH_PREFIX = "classpath:";
-
+    
     /**
-     * Returns the URL of the resource on the classpath
+     * Returns the URL of the resource on the classpath.
      *
      * @param resource The resource to find
      * @return The resource
      * @throws IOException If the resource cannot be found or read
      */
-    public static URL getResourceURL(String resource) throws IOException {
+    public static URL getResourceUrl(String resource) throws IOException {
         if (resource.startsWith(CLASSPATH_PREFIX)) {
             String path = resource.substring(CLASSPATH_PREFIX.length());
-
+            
             ClassLoader classLoader = ResourceUtils.class.getClassLoader();
-
+            
             URL url = (classLoader != null ? classLoader.getResource(path) : ClassLoader.getSystemResource(path));
             if (url == null) {
                 throw new FileNotFoundException("Resource [" + resource + "] does not exist");
             }
-
+            
             return url;
         }
-
+        
         try {
             return new URL(resource);
         } catch (MalformedURLException ex) {
             return new File(resource).toURI().toURL();
         }
     }
-
+    
     /**
-     * Returns the URL of the resource on the classpath
+     * Returns the URL of the resource on the classpath.
      *
      * @param loader   The classloader used to load the resource
      * @param resource The resource to find
      * @return The resource
      * @throws IOException If the resource cannot be found or read
      */
-    public static URL getResourceURL(ClassLoader loader, String resource) throws IOException {
+    public static URL getResourceUrl(ClassLoader loader, String resource) throws IOException {
         URL url = null;
         if (loader != null) {
             url = loader.getResource(resource);
@@ -84,9 +84,9 @@ public class ResourceUtils {
         }
         return url;
     }
-
+    
     /**
-     * Returns a resource on the classpath as a Stream object
+     * Returns a resource on the classpath as a Stream object.
      *
      * @param resource The resource to find
      * @return The resource
@@ -96,9 +96,9 @@ public class ResourceUtils {
         ClassLoader loader = ResourceUtils.class.getClassLoader();
         return getResourceAsStream(loader, resource);
     }
-
+    
     /**
-     * Returns a resource on the classpath as a Stream object
+     * Returns a resource on the classpath as a Stream object.
      *
      * @param loader   The classloader used to load the resource
      * @param resource The resource to find
@@ -118,9 +118,9 @@ public class ResourceUtils {
         }
         return in;
     }
-
+    
     /**
-     * Returns a resource on the classpath as a Properties object
+     * Returns a resource on the classpath as a Properties object.
      *
      * @param resource The resource to find
      * @return The resource
@@ -130,9 +130,9 @@ public class ResourceUtils {
         ClassLoader loader = ResourceUtils.class.getClassLoader();
         return getResourceAsProperties(loader, resource);
     }
-
+    
     /**
-     * Returns a resource on the classpath as a Properties object
+     * Returns a resource on the classpath as a Properties object.
      *
      * @param loader   The classloader used to load the resource
      * @param resource The resource to find
@@ -143,12 +143,12 @@ public class ResourceUtils {
         Properties props = new Properties();
         InputStream in = getResourceAsStream(loader, resource);
         props.load(in);
-        in.close();
+        IoUtils.closeQuietly(in);
         return props;
     }
-
+    
     /**
-     * Returns a resource on the classpath as a Reader object
+     * Returns a resource on the classpath as a Reader object.
      *
      * @param resource The resource to find
      * @return The resource
@@ -157,9 +157,9 @@ public class ResourceUtils {
     public static InputStreamReader getResourceAsReader(String resource, String charsetName) throws IOException {
         return new InputStreamReader(getResourceAsStream(resource), charsetName);
     }
-
+    
     /**
-     * Returns a resource on the classpath as a Reader object
+     * Returns a resource on the classpath as a Reader object.
      *
      * @param loader   The classloader used to load the resource
      * @param resource The resource to find
@@ -167,23 +167,23 @@ public class ResourceUtils {
      * @throws IOException If the resource cannot be found or read
      */
     public static Reader getResourceAsReader(ClassLoader loader, String resource, String charsetName)
-        throws IOException {
+            throws IOException {
         return new InputStreamReader(getResourceAsStream(loader, resource), charsetName);
     }
-
+    
     /**
-     * Returns a resource on the classpath as a File object
+     * Returns a resource on the classpath as a File object.
      *
      * @param resource The resource to find
      * @return The resource
      * @throws IOException If the resource cannot be found or read
      */
     public static File getResourceAsFile(String resource) throws IOException {
-        return new File(getResourceURL(resource).getFile());
+        return new File(getResourceUrl(resource).getFile());
     }
-
+    
     /**
-     * Returns a resource on the classpath as a File object
+     * Returns a resource on the classpath as a File object.
      *
      * @param url The resource url to find
      * @return The resource
@@ -191,9 +191,9 @@ public class ResourceUtils {
     public static File getResourceAsFile(URL url) {
         return new File(url.getFile());
     }
-
+    
     /**
-     * Returns a resource on the classpath as a File object
+     * Returns a resource on the classpath as a File object.
      *
      * @param loader   The classloader used to load the resource
      * @param resource The resource to find
@@ -201,7 +201,7 @@ public class ResourceUtils {
      * @throws IOException If the resource cannot be found or read
      */
     public static File getResourceAsFile(ClassLoader loader, String resource) throws IOException {
-        return new File(getResourceURL(loader, resource).getFile());
+        return new File(getResourceUrl(loader, resource).getFile());
     }
-
+    
 }

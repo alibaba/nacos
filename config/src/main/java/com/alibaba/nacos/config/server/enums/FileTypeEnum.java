@@ -13,83 +13,110 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.enums;
 
+import com.alibaba.nacos.common.http.param.MediaType;
+import com.alibaba.nacos.common.utils.StringUtils;
+
 /**
+ * Config file type enum.
+ *
  * @author klw
- * @ClassName: FileTypeEnum
- * @Description: config file type enum
  * @date 2019/7/1 10:21
  */
 public enum FileTypeEnum {
-
+    
     /**
-     * @author klw
-     * @Description: yaml file
+     * Yaml file.
      */
-    YML("yaml"),
-
+    YML("yaml", MediaType.TEXT_PLAIN),
+    
     /**
-     * @author klw
-     * @Description: yaml file
+     * Yaml file.
      */
-    YAML("yaml"),
-
+    YAML("yaml", MediaType.TEXT_PLAIN),
+    
     /**
-     * @author klw
-     * @Description: text file
+     * Text file.
      */
-    TXT("text"),
-
+    TXT("text", MediaType.TEXT_PLAIN),
+    
     /**
-     * @author klw
-     * @Description: text file
+     * Text file.
      */
-    TEXT("text"),
-
+    TEXT("text", MediaType.TEXT_PLAIN),
+    
     /**
-     * @author klw
-     * @Description: json file
+     * Json file.
      */
-    JSON("json"),
-
+    JSON("json", MediaType.APPLICATION_JSON),
+    
     /**
-     * @author klw
-     * @Description: xml file
+     * Xml file.
      */
-    XML("xml"),
-
+    XML("xml", MediaType.APPLICATION_XML),
+    
     /**
-     * @author klw
-     * @Description: html file
+     * Html file.
      */
-    HTM("html"),
-
+    HTM("html", MediaType.TEXT_HTML),
+    
     /**
-     * @author klw
-     * @Description: html file
+     * Html file.
      */
-    HTML("html"),
-
+    HTML("html", MediaType.TEXT_HTML),
+    
     /**
-     * @author klw
-     * @Description: properties file
+     * Properties file.
      */
-    PROPERTIES("properties");
-
+    PROPERTIES("properties", MediaType.TEXT_PLAIN);
+    
     /**
-     * @author klw
-     * @Description: file type corresponding to file extension
+     * File type corresponding to file extension.
      */
     private String fileType;
-
+    
+    /**
+     * Http Content type corresponding to file extension.
+     */
+    private String contentType;
+    
     FileTypeEnum(String fileType) {
         this.fileType = fileType;
+        this.contentType = MediaType.TEXT_PLAIN;
     }
-
+    
+    FileTypeEnum(String fileType, String contentType) {
+        this.fileType = fileType;
+        this.contentType = contentType;
+    }
+    
     public String getFileType() {
         return this.fileType;
     }
-
-
+    
+    public String getContentType() {
+        return contentType;
+    }
+    
+    /**
+     * Get the corresponding FileTypeEnum by file extension or fileType. If not found FileTypeEnum.TEXT is returned
+     *
+     * @param extOrFileType file extension or fileType
+     * @return
+     */
+    public static FileTypeEnum getFileTypeEnumByFileExtensionOrFileType(String extOrFileType) {
+        if (StringUtils.isNotBlank(extOrFileType)) {
+            String upperExtName = extOrFileType.trim().toUpperCase();
+            for (FileTypeEnum value : VALUES) {
+                if (value.name().equals(upperExtName)) {
+                    return value;
+                }
+            }
+        }
+        return FileTypeEnum.TEXT;
+    }
+    
+    private static final FileTypeEnum[] VALUES = FileTypeEnum.values();
 }
