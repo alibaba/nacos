@@ -83,7 +83,7 @@ public abstract class ConfigTransportClient {
         } else {
             this.encode = encodeTmp.trim();
         }
-    
+        
         this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
         this.securityProxy = new SecurityProxy(properties,
@@ -98,7 +98,7 @@ public abstract class ConfigTransportClient {
      * @throws Exception exeption may throw.
      */
     protected Map<String, String> getSpasHeaders() throws Exception {
-    
+        
         Map<String, String> spasHeaders = new HashMap<String, String>(2);
         
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
@@ -231,17 +231,17 @@ public abstract class ConfigTransportClient {
      * base start client.
      */
     public void start() throws NacosException {
-    
+        
         if (securityProxy.isEnabled()) {
             securityProxy.login(serverListManager.getServerUrls());
-        
+            
             this.executor.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
                     securityProxy.login(serverListManager.getServerUrls());
                 }
             }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-        
+            
         }
         
         startInternal();
@@ -304,7 +304,7 @@ public abstract class ConfigTransportClient {
      * @param group       group.
      * @param tenat       tenat.
      * @param readTimeous readTimeous.
-     * @param notify query for notify sync.
+     * @param notify      query for notify sync.
      * @return content.
      * @throws NacosException throw where query fail .
      */
@@ -321,11 +321,12 @@ public abstract class ConfigTransportClient {
      * @param tag     tag.
      * @param betaIps betaIps.
      * @param content content.
+     * @param casMd5 casMd5.
      * @return success or not.
      * @throws NacosException throw where publish fail.
      */
     public abstract boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
-            String betaIps, String content) throws NacosException;
+            String betaIps, String content, String casMd5) throws NacosException;
     
     /**
      * remove config.

@@ -258,8 +258,8 @@ public class ClientWorker implements Closeable {
      * @throws NacosException exception throw.
      */
     public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
-            String content) throws NacosException {
-        return agent.publishConfig(dataId, group, tenant, appName, tag, betaIps, content);
+            String content, String casMd5) throws NacosException {
+        return agent.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, casMd5);
     }
     
     /**
@@ -967,12 +967,13 @@ public class ClientWorker implements Closeable {
         
         @Override
         public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
-                String betaIps, String content) throws NacosException {
+                String betaIps, String content, String casMd5) throws NacosException {
             try {
                 ConfigPublishRequest request = new ConfigPublishRequest(dataId, group, tenant, content);
-                request.putAdditonalParam("tag", tag);
-                request.putAdditonalParam("appName", appName);
-                request.putAdditonalParam("betaIps", betaIps);
+                request.setCasMd5(casMd5);
+                request.putAdditionalParam("tag", tag);
+                request.putAdditionalParam("appName", appName);
+                request.putAdditionalParam("betaIps", betaIps);
                 ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
                 if (!response.isSuccess()) {
                     LOGGER.warn("[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
