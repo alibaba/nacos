@@ -63,6 +63,7 @@ public class DiskCache {
                     throw new IllegalStateException("failed to create cache file");
                 }
             }
+
             /**
              * 准备数据
              */
@@ -120,6 +121,7 @@ public class DiskCache {
                 }
 
                 String fileName = URLDecoder.decode(file.getName(), "UTF-8");
+
                 /**
                  * 排除以  不以@@meta  或者  以@@special-url  结尾的文件
                  */
@@ -149,7 +151,7 @@ public class DiskCache {
                                  * 将json内容转换为ServiceInfo
                                  */
                                 newFormat = JacksonUtils.toObj(json, ServiceInfo.class);
-                                **
+                                /**
                                  * 名称为空 则取ip
                                  */
                                 if (StringUtils.isEmpty(newFormat.getName())) {

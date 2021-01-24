@@ -49,6 +49,8 @@ public class RaftPeer {
     public void resetLeaderDue() {
         leaderDueMs = GlobalExecutor.LEADER_TIMEOUT_MS + RandomUtils.nextLong(0, GlobalExecutor.RANDOM_MS);
     }
+
+
     /**
      * 5000
      */

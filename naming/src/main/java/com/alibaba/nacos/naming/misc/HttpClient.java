@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientConfig;
@@ -28,7 +27,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -82,6 +81,7 @@ public class HttpClient {
 
     /**
      * Do http request.
+     * 发送http请求
      *
      * @param url            request url
      * @param headers        request headers
@@ -102,9 +102,8 @@ public class HttpClient {
         header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
-        header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, EnvUtil.getLocalAddress());
+        header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, ApplicationUtils.getLocalAddress());
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
-        AuthHeaderUtil.addIdentityToHeader(header);
 
         HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)
                 .setReadTimeOutMillis(readTimeout).build();
@@ -112,7 +111,7 @@ public class HttpClient {
         query.addParam("encoding", "UTF-8");
         query.addParam("nofix", "1");
         try {
-            return APACHE_SYNC_NACOS_REST_TEMPLATE
+            return SYNC_NACOS_REST_TEMPLATE
                     .exchange(url, httpClientConfig, header, query, body, method, String.class);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
@@ -122,7 +121,7 @@ public class HttpClient {
 
     /**
      * Request http get method by async.
-     *
+     * 异步 get
      * @param url         url
      * @param headers     headers
      * @param paramValues params
@@ -135,7 +134,7 @@ public class HttpClient {
 
     /**
      * Request http post method by async.
-     *
+     * 异步  post
      * @param url         url
      * @param headers     headers
      * @param paramValues params
@@ -148,7 +147,7 @@ public class HttpClient {
 
     /**
      * Request http delete method by async.
-     *
+     * 异步  delete
      * @param url         url
      * @param headers     headers
      * @param paramValues params
@@ -161,7 +160,7 @@ public class HttpClient {
 
     /**
      * Do http request by async.
-     *
+     * 异步
      * @param url         request url
      * @param headers     request headers
      * @param paramValues request params
@@ -180,7 +179,7 @@ public class HttpClient {
             header.addAll(headers);
         }
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
-        AuthHeaderUtil.addIdentityToHeader(header);
+
         switch (method) {
             case HttpMethod.GET:
                 ASYNC_REST_TEMPLATE.get(url, header, query, String.class, callback);
@@ -226,7 +225,6 @@ public class HttpClient {
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
         ASYNC_REST_TEMPLATE.post(url, header, Query.EMPTY, content, String.class, callback);
     }
 
@@ -244,7 +242,6 @@ public class HttpClient {
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
         ASYNC_REST_TEMPLATE.delete(url, header, content, String.class, callback);
     }
 
@@ -269,7 +266,7 @@ public class HttpClient {
                 header.addAll(headers);
             }
             header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
-            AuthHeaderUtil.addIdentityToHeader(header);
+
             HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000).setReadTimeOutMillis(5000)
                     .setConnectionRequestTimeout(5000).setMaxRedirects(5).build();
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postForm(url, httpClientConfig, header, paramValues, String.class);
@@ -292,7 +289,6 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
         ASYNC_REST_TEMPLATE.put(url, header, Query.EMPTY, content, String.class, callback);
     }
 
@@ -309,7 +305,6 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.put(url, header, Query.EMPTY, content, String.class);
         } catch (Exception e) {
@@ -330,7 +325,6 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.getLarge(url, header, Query.EMPTY, content, String.class);
         } catch (Exception e) {
@@ -351,7 +345,6 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        AuthHeaderUtil.addIdentityToHeader(header);
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postJson(url, header, content, String.class);
         } catch (Exception e) {

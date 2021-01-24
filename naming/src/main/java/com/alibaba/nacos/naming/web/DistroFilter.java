@@ -73,6 +73,8 @@ public class DistroFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
 
     }
+
+
     /**
      * 当前节点不可用时   路由到集群中的其他节点处理请求
      * @param servletRequest
@@ -86,6 +88,7 @@ public class DistroFilter implements Filter {
             throws IOException, ServletException {
         ReuseHttpRequest req = new ReuseHttpServletRequest((HttpServletRequest) servletRequest);
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
+
         /**
          * 获取uri /nacos/v1/ns/raft/beat
          */
@@ -120,8 +123,7 @@ public class DistroFilter implements Filter {
                 groupName = Constants.DEFAULT_GROUP;
             }
 
-            // use groupName@@serviceName as new service name.
-            // in naming controller, will use com.alibaba.nacos.api.naming.utils.NamingUtils.checkServiceNameFormat to check it's format.
+            // use groupName@@serviceName as new service name:
             String groupedServiceName = serviceName;
             if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
                 groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
@@ -132,6 +134,7 @@ public class DistroFilter implements Filter {
              * 方法有CanDistro注解   &&  不使用当前节点处理数据
              */
             if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(groupedServiceName)) {
+
                 /**
                  * 使用其他nacos节点处理数据
                  */
@@ -144,11 +147,11 @@ public class DistroFilter implements Filter {
                             "receive invalid redirect request from peer " + req.getRemoteAddr());
                     return;
                 }
-
-                final String targetServer = distroMapper.mapSrv(groupedServiceName);
                 /**
                  * header
                  */
+                final String targetServer = distroMapper.mapSrv(groupedServiceName);
+
                 List<String> headerList = new ArrayList<>(16);
                 Enumeration<String> headers = req.getHeaderNames();
                 while (headers.hasMoreElements()) {

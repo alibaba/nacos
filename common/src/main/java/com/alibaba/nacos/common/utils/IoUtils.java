@@ -47,7 +47,7 @@ public class IoUtils {
 
     /**
      * Try decompress by GZIP from stream.
-     *解析流里面的内容
+     * 解析流里面的内容
      * @param raw compress stream
      * @return byte array after decompress
      * @throws IOException exception
@@ -63,8 +63,12 @@ public class IoUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            closeQuietly(out);
-            closeQuietly(gis);
+            if (out != null) {
+                out.close();
+            }
+            if (gis != null) {
+                gis.close();
+            }
         }
 
         return null;
@@ -90,8 +94,12 @@ public class IoUtils {
             IoUtils.copy(gis, out);
             return out.toByteArray();
         } finally {
-            closeQuietly(out);
-            closeQuietly(gis);
+            if (out != null) {
+                out.close();
+            }
+            if (gis != null) {
+                gis.close();
+            }
         }
     }
 
@@ -114,7 +122,9 @@ public class IoUtils {
             os.write(data.getBytes(encoding));
             os.flush();
         } finally {
-            closeQuietly(os);
+            if (null != os) {
+                os.close();
+            }
         }
     }
 
@@ -301,8 +311,12 @@ public class IoUtils {
             sc = new FileInputStream(sf).getChannel();
             sc.transferTo(0, sc.size(), tc);
         } finally {
-            closeQuietly(sc);
-            closeQuietly(tc);
+            if (null != sc) {
+                sc.close();
+            }
+            if (null != tc) {
+                tc.close();
+            }
         }
     }
 

@@ -24,7 +24,6 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.StsConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
@@ -248,7 +247,9 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private String getUrl(String serverAddr, String relativePath) {
-        return serverAddr + ContextPathUtil.normalizeContextPath(serverListMgr.getContentPath()) + relativePath;
+        String contextPath = serverListMgr.getContentPath().startsWith("/") ? serverListMgr.getContentPath()
+                : "/" + serverListMgr.getContentPath();
+        return serverAddr + contextPath + relativePath;
     }
 
     private boolean isFail(HttpRestResult<String> result) {
@@ -312,6 +313,11 @@ public class ServerHttpAgent implements HttpAgent {
         }
     }
 
+
+    /**
+     *
+     * @param properties
+     */
     private void init(Properties properties) {
         /**
          * utf-8
@@ -469,7 +475,6 @@ public class ServerHttpAgent implements HttpAgent {
         LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, LOGGER);
         ConfigHttpClientManager.getInstance().shutdown();
-        SpasAdapter.freeCredentialInstance();
         LOGGER.info("{} do shutdown stop", className);
     }
 

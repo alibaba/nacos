@@ -61,13 +61,18 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DATA_BASE_DIR;
 public class RaftStore implements Closeable {
 
     private final Properties meta = new Properties();
-
+    /**
+     * C:\Users\Administrator\nacos\data\naming\meta.properties
+     */
     private static final String META_FILE_NAME = DATA_BASE_DIR + File.separator + "meta.properties";
-
+    /**
+     * C:\Users\Administrator\nacos\data\naming\data
+     */
     private static final String CACHE_DIR = DATA_BASE_DIR + File.separator + "data";
 
     /**
      * Load datum from cache file.
+     * 读取cacheDir下的文件   并添加通知任务
      *
      * @param notifier raft notifier
      * @param datums   cached datum map
@@ -94,10 +99,10 @@ public class RaftStore implements Closeable {
                     datum = readDatum(datumFile, cache.getName());
                     if (datum != null) {
                         datums.put(datum.key, datum);
+                        /**
+                         * 新增任务
+                         */
                         if (notifier != null) {
-                            /**
-                             * 新增任务
-                             */
                             NotifyCenter.publishEvent(
                                     ValueChangeEvent.builder().key(datum.key).action(DataOperation.CHANGE).build());
                         }
@@ -120,8 +125,7 @@ public class RaftStore implements Closeable {
 
     /**
      * Load Metadata from cache file.
-     *读取metaFileName中的内容  并转换为Properties
-     *      *
+     * 读取metaFileName中的内容
      * @return metadata
      * @throws Exception any exception during load
      */
@@ -165,7 +169,6 @@ public class RaftStore implements Closeable {
 
         return null;
     }
-
     /**
      * 读取文件中得信息  并转换为Datum对象
      * @param file
@@ -284,8 +287,7 @@ public class RaftStore implements Closeable {
 
     /**
      * Write datum to cache file.
-     *将datum写入对应key下得文件文件
-     *
+     * 将datum写入对应key下得文件文件
      * @param datum datum
      * @throws Exception any exception during writing
      */
@@ -294,30 +296,43 @@ public class RaftStore implements Closeable {
          * 获取key
          */
         String namespaceId = KeyBuilder.getNamespace(datum.key);
-
         /**
          * 获取key对应得文件
          */
         File cacheFile = new File(cacheFileName(namespaceId, datum.key));
-
+        /**
+         * 文件不存在则创建
+         */
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
             MetricsMonitor.getDiskException().increment();
 
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
 
+        FileChannel fc = null;
         ByteBuffer data;
         /**
          * datum转换为json
          */
         data = ByteBuffer.wrap(JacksonUtils.toJson(datum).getBytes(StandardCharsets.UTF_8));
 
-        try (FileChannel fc = new FileOutputStream(cacheFile, false).getChannel()) {
+        try {
+            /**
+             * 文件新写入信息将覆盖之前得信息
+             */
+            fc = new FileOutputStream(cacheFile, false).getChannel();
+            /**
+             * 将datum信息写入文件
+             */
             fc.write(data, data.position());
             fc.force(true);
         } catch (Exception e) {
             MetricsMonitor.getDiskException().increment();
             throw e;
+        } finally {
+            if (fc != null) {
+                fc.close();
+            }
         }
 
         // remove old format file:
@@ -328,7 +343,6 @@ public class RaftStore implements Closeable {
             if (datum.key.contains(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER)) {
                 String oldDatumKey = datum.key
                         .replace(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER, StringUtils.EMPTY);
-
                 /**
                  * 删除文件
                  */
@@ -341,6 +355,8 @@ public class RaftStore implements Closeable {
             }
         }
     }
+
+
     /**
      * 获取cacheDir路径下得文件集合
      * C:\Users\Administrator\nacos\data\naming\data
@@ -358,7 +374,7 @@ public class RaftStore implements Closeable {
 
     /**
      * Delete datum from cache file.
-     *删除Datum对应的文件
+     * 删除Datum对应的文件
      * @param datum datum
      */
     public void delete(Datum datum) {
@@ -378,7 +394,7 @@ public class RaftStore implements Closeable {
 
     /**
      * Update term Metadata.
-     *更新meat数据
+     * 更新元数据
      * @param term term
      * @throws Exception any exception during update
      */

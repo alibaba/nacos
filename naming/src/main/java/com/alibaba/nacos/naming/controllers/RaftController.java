@@ -85,7 +85,7 @@ public class RaftController {
 
     /**
      * Raft vote api.
-     *
+     * 处理其他节点发送得投票
      * @param request  http request
      * @param response http response
      * @return peer information
@@ -106,7 +106,7 @@ public class RaftController {
 
     /**
      * Beat api.
-     *follower接受leader心跳
+     * follower接受leader心跳
      * @param request  http request
      * @param response http response
      * @return peer information
@@ -127,7 +127,6 @@ public class RaftController {
          * 获取beat对应得内容
          */
         JsonNode json = JacksonUtils.toObj(value);
-
         /**
          * 接受leader心跳并处理
          */
@@ -138,7 +137,8 @@ public class RaftController {
 
     /**
      * Get peer information.
-     *查询当前节点信息
+     * 查询当前节点信息
+     *
      * @param request  http request
      * @param response http response
      * @return peer information
@@ -250,7 +250,7 @@ public class RaftController {
 
     /**
      * Get datum.
-     *leader接受follower请求
+     * leader接受follower请求
      * @param request  http request
      * @param response http response
      * @return datum
@@ -271,6 +271,8 @@ public class RaftController {
         keysString = URLDecoder.decode(keysString, "UTF-8");
         String[] keys = keysString.split(",");
         List<Datum> datums = new ArrayList<Datum>();
+
+
         /**
          * 轮询keys   获取对应的Datum集合
          */

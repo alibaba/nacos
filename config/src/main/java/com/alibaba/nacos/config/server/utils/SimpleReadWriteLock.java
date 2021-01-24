@@ -56,6 +56,8 @@ public class SimpleReadWriteLock {
             return true;
         }
     }
+
+
     /**
      * 释放写锁
      */
@@ -66,6 +68,8 @@ public class SimpleReadWriteLock {
     private boolean isWriteLocked() {
         return status < 0;
     }
+
+
     /**
      * 无锁
      * @return
@@ -74,13 +78,11 @@ public class SimpleReadWriteLock {
         return status == 0;
     }
 
-
-    /**
-     * 零表示没有锁；负数表示加写锁；正数表示加读锁，数值表示读锁的个数。
-     */
     /**
      * Zero means no lock; Negative Numbers mean write locks; Positive Numbers mean read locks, and the numeric value
      * represents the number of read locks.
+     * 零表示没有锁；负数表示加写锁；正数表示加读锁，数值表示读锁的个数。
+     *
      */
     private int status = 0;
 }

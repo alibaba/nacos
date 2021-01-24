@@ -302,7 +302,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
     /**
      * Update switch information from new switch domain.
-     *更新SwitchDomain
+     * 更新SwitchDomain
      * @param newSwitchDomain new switch domain
      */
     public void update(SwitchDomain newSwitchDomain) {
@@ -353,6 +353,8 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
     public boolean matchUnlistenKey(String key) {
         return KeyBuilder.matchSwitchKey(key);
     }
+
+
     /**
      * 更新SwitchDomain
      * @param key   target key

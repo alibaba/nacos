@@ -251,6 +251,9 @@ public class Instance implements Serializable {
     }
 
     private long getMetaDataByKeyWithDefault(final String key, final long defaultValue) {
+        /**
+         * 没有元数据  则直接返回默认值
+         */
         if (getMetadata() == null || getMetadata().isEmpty()) {
             return defaultValue;
         }

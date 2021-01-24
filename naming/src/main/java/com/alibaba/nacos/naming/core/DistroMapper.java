@@ -18,13 +18,13 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.MemberUtil;
+import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -66,7 +66,7 @@ public class DistroMapper extends MemberChangeListener {
     @PostConstruct
     public void init() {
         NotifyCenter.registerSubscriber(this);
-        this.healthyList = MemberUtil.simpleMembers(memberManager.allMembers());
+        this.healthyList = MemberUtils.simpleMembers(memberManager.allMembers());
     }
 
     public boolean responsible(Cluster cluster, Instance instance) {
@@ -76,14 +76,14 @@ public class DistroMapper extends MemberChangeListener {
 
     /**
      * Judge whether current server is responsible for input service.
-     *是否由本地节点执行操作
+     * 是否由本地节点执行操作
      * @param serviceName service name
      * @return true if input service is response, otherwise false
      */
     public boolean responsible(String serviceName) {
         final List<String> servers = healthyList;
 
-        if (!switchDomain.isDistroEnabled() || EnvUtil.getStandaloneMode()) {
+        if (!switchDomain.isDistroEnabled() || ApplicationUtils.getStandaloneMode()) {
             return true;
         }
 
@@ -94,11 +94,11 @@ public class DistroMapper extends MemberChangeListener {
         /**
          * 第一次出现的位置
          */
-        int index = servers.indexOf(EnvUtil.getLocalAddress());
+        int index = servers.indexOf(ApplicationUtils.getLocalAddress());
         /**
          * 最后一次出现的位置
          */
-        int lastIndex = servers.lastIndexOf(EnvUtil.getLocalAddress());
+        int lastIndex = servers.lastIndexOf(ApplicationUtils.getLocalAddress());
         if (lastIndex < 0 || index < 0) {
             return true;
         }
@@ -116,7 +116,7 @@ public class DistroMapper extends MemberChangeListener {
 
     /**
      * Calculate which other server response input service.
-     *根据serviceName对应的hash
+     * 根据serviceName对应的hash
      * @param serviceName service name
      * @return server which response input service
      */
@@ -124,7 +124,7 @@ public class DistroMapper extends MemberChangeListener {
         final List<String> servers = healthyList;
 
         if (CollectionUtils.isEmpty(servers) || !switchDomain.isDistroEnabled()) {
-            return EnvUtil.getLocalAddress();
+            return ApplicationUtils.getLocalAddress();
         }
 
         try {
@@ -134,9 +134,9 @@ public class DistroMapper extends MemberChangeListener {
             int index = distroHash(serviceName) % servers.size();
             return servers.get(index);
         } catch (Throwable e) {
-            Loggers.SRV_LOG
-                    .warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + EnvUtil.getLocalAddress(), e);
-            return EnvUtil.getLocalAddress();
+            Loggers.SRV_LOG.warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + ApplicationUtils
+                    .getLocalAddress(), e);
+            return ApplicationUtils.getLocalAddress();
         }
     }
     /**
@@ -152,8 +152,8 @@ public class DistroMapper extends MemberChangeListener {
     public void onEvent(MembersChangeEvent event) {
         // Here, the node list must be sorted to ensure that all nacos-server's
         // node list is in the same order
-        List<String> list = MemberUtil.simpleMembers(MemberUtil.selectTargetMembers(event.getMembers(),
-                member -> NodeState.UP.equals(member.getState()) || NodeState.SUSPICIOUS.equals(member.getState())));
+        List<String> list = MemberUtils.simpleMembers(MemberUtils
+                .selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
         Collections.sort(list);
         Collection<String> old = healthyList;
         healthyList = Collections.unmodifiableList(list);

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -25,13 +24,10 @@ import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
-import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
-import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -70,6 +66,8 @@ public class HostReactor implements Closeable {
 
     private final PushReceiver pushReceiver;
 
+    private final EventDispatcher eventDispatcher;
+
     private final BeatReactor beatReactor;
 
     private final NamingProxy serverProxy;
@@ -78,25 +76,15 @@ public class HostReactor implements Closeable {
 
     private final String cacheDir;
 
-    private final boolean pushEmptyProtection;
-
     private final ScheduledExecutorService executor;
 
-    private final InstancesChangeNotifier notifier;
-
-    public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
-        this(serverProxy, beatReactor, cacheDir, false, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor,
+            String cacheDir) {
+        this(eventDispatcher, serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
-    /**
-     *
-     * @param eventDispatcher
-     * @param serverProxy
-     * @param cacheDir
-     * @param loadCacheAtStart
-     * @param pollingThreadCount
-     */
-    public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir, boolean loadCacheAtStart,
-            boolean pushEmptyProtection, int pollingThreadCount) {
+
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor,
+            String cacheDir, boolean loadCacheAtStart, int pollingThreadCount) {
         // init executorService
         this.executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
             @Override
@@ -107,7 +95,7 @@ public class HostReactor implements Closeable {
                 return thread;
             }
         });
-
+        this.eventDispatcher = eventDispatcher;
         this.beatReactor = beatReactor;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
@@ -119,7 +107,7 @@ public class HostReactor implements Closeable {
         } else {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
         }
-        this.pushEmptyProtection = pushEmptyProtection;
+
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         /**
          * 容错
@@ -130,10 +118,6 @@ public class HostReactor implements Closeable {
          * udp接收数据
          */
         this.pushReceiver = new PushReceiver(this);
-        this.notifier = new InstancesChangeNotifier();
-
-        NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
-        NotifyCenter.registerSubscriber(notifier);
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {
@@ -151,35 +135,8 @@ public class HostReactor implements Closeable {
     }
 
     /**
-     * subscribe instancesChangeEvent.
-     *
-     * @param serviceName   combineServiceName, such as 'xxx@@xxx'
-     * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
-     * @param eventListener custom listener
-     */
-    public void subscribe(String serviceName, String clusters, EventListener eventListener) {
-        notifier.registerListener(serviceName, clusters, eventListener);
-        getServiceInfo(serviceName, clusters);
-    }
-
-    /**
-     * unsubscribe instancesChangeEvent.
-     *
-     * @param serviceName   combineServiceName, such as 'xxx@@xxx'
-     * @param clusters      clusters, concat by ','. such as 'xxx,yyy'
-     * @param eventListener custom listener
-     */
-    public void unSubscribe(String serviceName, String clusters, EventListener eventListener) {
-        notifier.deregisterListener(serviceName, clusters, eventListener);
-    }
-
-    public List<ServiceInfo> getSubscribeServices() {
-        return notifier.getSubscribeServices();
-    }
-
-    /**
      * Process service json.
-     *处理数据
+     * 处理数据
      * @param json service json
      * @return service info
      */
@@ -189,7 +146,7 @@ public class HostReactor implements Closeable {
         /**
          * 校验
          */
-        if (pushEmptyProtection && !serviceInfo.validate()) {
+        if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
             //empty or error push, just ignore
             return oldService;
         }
@@ -204,6 +161,7 @@ public class HostReactor implements Closeable {
             }
 
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
+
             /**
              * 获取oldHostMap中的地址信息
              */
@@ -211,6 +169,8 @@ public class HostReactor implements Closeable {
             for (Instance host : oldService.getHosts()) {
                 oldHostMap.put(host.toInetAddr(), host);
             }
+
+
             /**
              * 获取serviceInfo中的地址信息
              */
@@ -218,6 +178,8 @@ public class HostReactor implements Closeable {
             for (Instance host : serviceInfo.getHosts()) {
                 newHostMap.put(host.toInetAddr(), host);
             }
+
+
             /**
              * 变化的地址
              */
@@ -233,10 +195,6 @@ public class HostReactor implements Closeable {
 
             List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
                     newHostMap.entrySet());
-                newHostMap.entrySet());
-            /**
-             * 比对newHostMap和oldHostMap   获取新增或者修改的地址
-             */
             /**
              * 比对newHostMap和oldHostMap   获取新增或者修改的地址
              */
@@ -251,6 +209,8 @@ public class HostReactor implements Closeable {
                     modHosts.add(host);
                     continue;
                 }
+
+
                 /**
                  * 新增的地址
                  */
@@ -258,6 +218,8 @@ public class HostReactor implements Closeable {
                     newHosts.add(host);
                 }
             }
+
+
             /**
              * 比对newHostMap和oldHostMap   获取删除的地址
              */
@@ -267,6 +229,8 @@ public class HostReactor implements Closeable {
                 if (newHostMap.containsKey(key)) {
                     continue;
                 }
+
+
                 /**
                  * 删除的地址
                  */
@@ -301,8 +265,7 @@ public class HostReactor implements Closeable {
                 /**
                  * 通知监听器   服务有变化
                  */
-                NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
-                        serviceInfo.getClusters(), serviceInfo.getHosts()));
+                eventDispatcher.serviceChanged(serviceInfo);
                 /**
                  * 将数据从内存写入磁盘
                  */
@@ -317,14 +280,16 @@ public class HostReactor implements Closeable {
             /**
              * 通知监听器   服务有变化
              */
-            NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
-                    serviceInfo.getClusters(), serviceInfo.getHosts()));
+            eventDispatcher.serviceChanged(serviceInfo);
+
             serviceInfo.setJsonFromServer(json);
             /**
              * 将数据从内存写入磁盘
              */
             DiskCache.write(serviceInfo, cacheDir);
         }
+
+
         /**
          * prometheus监控
          */
@@ -347,6 +312,7 @@ public class HostReactor implements Closeable {
             }
         }
     }
+
     /**
      * 从本地缓存中获取serviceInfo
      * @param serviceName
@@ -359,6 +325,7 @@ public class HostReactor implements Closeable {
 
         return serviceInfoMap.get(key);
     }
+
     /**
      * 向服务端查询实例
      * @param serviceName
@@ -368,15 +335,14 @@ public class HostReactor implements Closeable {
      */
     public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters)
             throws NacosException {
-        /**
-         * 向服务端查询实例
-         */
         String result = serverProxy.queryList(serviceName, clusters, 0, false);
         if (StringUtils.isNotEmpty(result)) {
             return JacksonUtils.toObj(result, ServiceInfo.class);
         }
         return null;
     }
+
+
     /**
      * 从本地缓存中获取serviceInfo
      * @param serviceName
@@ -398,10 +364,14 @@ public class HostReactor implements Closeable {
         if (failoverReactor.isFailoverSwitch()) {
             return failoverReactor.getService(key);
         }
+
+
         /**
          * 从本地缓存中获取serviceInfo
          */
         ServiceInfo serviceObj = getServiceInfo0(serviceName, clusters);
+
+
         /**
          * 缓存中没有
          */
@@ -409,6 +379,8 @@ public class HostReactor implements Closeable {
             serviceObj = new ServiceInfo(serviceName, clusters);
 
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
+
+
             /**
              * 设置更新标志
              */
@@ -425,9 +397,11 @@ public class HostReactor implements Closeable {
             updatingMap.remove(serviceName);
 
         } else if (updatingMap.containsKey(serviceName)) {
+
             /**
              * 有其他线程在执行更新操作   且没有执行结束
              */
+
             if (UPDATE_HOLD_INTERVAL > 0) {
                 // hold a moment waiting for update finish
                 synchronized (serviceObj) {
@@ -443,6 +417,8 @@ public class HostReactor implements Closeable {
                 }
             }
         }
+
+
         /**
          * 设置定时任务   不断从nacos服务端获取最新服务列表
          */
@@ -461,7 +437,7 @@ public class HostReactor implements Closeable {
 
     /**
      * Schedule update if absent.
-     *调度更新
+     * 调度更新
      * @param serviceName service name
      * @param clusters    clusters
      */
@@ -474,6 +450,8 @@ public class HostReactor implements Closeable {
             if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
                 return;
             }
+
+
             /**
              * 设置更新任务   从nacos集群中获取服务列表
              */
@@ -484,7 +462,8 @@ public class HostReactor implements Closeable {
 
     /**
      * Update service now.
-     *向nacos集群查询
+     * 向nacos集群查询
+     *
      * @param serviceName service name
      * @param clusters    clusters
      */
@@ -535,7 +514,6 @@ public class HostReactor implements Closeable {
         ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
         pushReceiver.shutdown();
         failoverReactor.shutdown();
-        NotifyCenter.deregisterSubscriber(notifier);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 
@@ -586,6 +564,8 @@ public class HostReactor implements Closeable {
                     updateService(serviceName, clusters);
                     return;
                 }
+
+
                 /**
                  * 比较上次应答时间   若serviceObj对应得上次应答时间  小于记录得应答时间   则立即更新
                  */
@@ -606,7 +586,7 @@ public class HostReactor implements Closeable {
 
                 lastRefTime = serviceObj.getLastRefTime();
 
-                if (!notifier.isSubscribed(serviceName, clusters) && !futureMap
+                if (!eventDispatcher.isSubscribed(serviceName, clusters) && !futureMap
                         .containsKey(ServiceInfo.getKey(serviceName, clusters))) {
                     // abort the update task
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
@@ -616,15 +596,15 @@ public class HostReactor implements Closeable {
                     incFailCount();
                     return;
                 }
-                /**
-                 * 下次任务
-                 */
                 delayTime = serviceObj.getCacheMillis();
                 resetFailCount();
             } catch (Throwable e) {
                 incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
+                /**
+                 * 下次任务
+                 */
                 executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
             }
         }

@@ -31,16 +31,12 @@ public class ClientInfo {
     public Version version = Version.unknownVersion();
 
     public ClientType type = ClientType.UNKNOWN;
-
-
     /**
      * 构造
      * @param userAgent
      */
     public ClientInfo(String userAgent) {
         String versionStr = StringUtils.isEmpty(userAgent) ? StringUtils.EMPTY : userAgent;
-
-
         /**
          * java客户端
          */
@@ -116,15 +112,6 @@ public class ClientInfo {
             return;
         }
 
-        if (versionStr.startsWith(ClientTypeDescription.CSHARP_CLIENT)) {
-            type = ClientType.CSHARP;
-
-            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
-            version = VersionUtil.parseVersion(versionStr);
-
-            return;
-        }
-
         //we're not eager to implement other type yet
         this.type = ClientType.UNKNOWN;
         this.version = Version.unknownVersion();
@@ -188,8 +175,6 @@ public class ClientInfo {
         public static final String CPP_CLIENT = "vip-client4cpp";
 
         public static final String GO_CLIENT = "Nacos-Go-Client";
-
-        public static final String CSHARP_CLIENT = "Nacos-CSharp-Client";
 
     }
 

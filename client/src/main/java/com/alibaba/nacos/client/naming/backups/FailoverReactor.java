@@ -112,6 +112,8 @@ public class FailoverReactor implements Closeable {
                     if (!cacheDir.exists() && !cacheDir.mkdirs()) {
                         throw new IllegalStateException("failed to create cache dir: " + failoverDir);
                     }
+
+
                     /**
                      * 检查failoverDir下的文件
                      */
@@ -165,6 +167,8 @@ public class FailoverReactor implements Closeable {
                     NAMING_LOGGER.debug("failover switch is not found, " + switchFile.getName());
                     return;
                 }
+
+
                 /**
                  * 获取文件最后一次更改时间
                  */
@@ -209,6 +213,8 @@ public class FailoverReactor implements Closeable {
     }
 
     class FailoverFileReader implements Runnable {
+
+
         /**
          * 将容灾策略从硬盘中读取到内存中
          */
@@ -218,6 +224,8 @@ public class FailoverReactor implements Closeable {
 
             BufferedReader reader = null;
             try {
+
+
                 /**
                  * 查看文件夹
                  */
@@ -230,6 +238,8 @@ public class FailoverReactor implements Closeable {
                 if (files == null) {
                     return;
                 }
+
+
                 /**
                  * 便利文件
                  */
@@ -286,6 +296,8 @@ public class FailoverReactor implements Closeable {
             } catch (Exception e) {
                 NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
+
+
             /**
              * 更新
              */
@@ -317,6 +329,8 @@ public class FailoverReactor implements Closeable {
             }
         }
     }
+
+
     /**
      * 是否开启了容灾开关
      * @return
@@ -324,6 +338,8 @@ public class FailoverReactor implements Closeable {
     public boolean isFailoverSwitch() {
         return Boolean.parseBoolean(switchParams.get("failover-mode"));
     }
+
+
     /**
      * 从容灾策略中获取ServiceInfo
      * @param key

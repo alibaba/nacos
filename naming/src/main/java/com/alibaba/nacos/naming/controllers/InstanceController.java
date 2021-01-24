@@ -114,7 +114,7 @@ public class InstanceController {
 
     /**
      * Register new instance.
-     *
+     * Instance注册
      * @param request http request
      * @return 'ok' if success
      * @throws Exception any error during register
@@ -139,7 +139,7 @@ public class InstanceController {
 
     /**
      * Deregister instances.
-     *
+     * Instance注销
      * @param request http request
      * @return 'ok' if success
      * @throws Exception any error during deregister
@@ -163,6 +163,8 @@ public class InstanceController {
             Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
             return "ok";
         }
+
+
         /**
          * 注销
          */
@@ -321,7 +323,7 @@ public class InstanceController {
 
     /**
      * Patch instance.
-     *
+     * 查询
      * @param request http request
      * @return 'ok' if success
      * @throws Exception any error during patch
@@ -392,6 +394,9 @@ public class InstanceController {
          * 请求地址
          */
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
+        /**
+         * udp端口
+         */
         int udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
         String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
         boolean isCheck = Boolean.parseBoolean(WebUtils.optional(request, "isCheck", "false"));
@@ -399,6 +404,8 @@ public class InstanceController {
         String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
 
         String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
+
+
         /**
          * 是否只获取健康的服务列表
          */
@@ -528,16 +535,13 @@ public class InstanceController {
             instance.setServiceName(serviceName);
             instance.setInstanceId(instance.getInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
-
             /**
              * 当前nacos节点 没有心跳相关的服务   则依据心跳数据执行注册操作
              * 可能的情况是之前处理的节点宕机   所以心跳被重新路由到了当前节点
              */
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
-        /**
-         * 本地缓存查询服务是否存在
-         */
+
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
@@ -602,6 +606,8 @@ public class InstanceController {
         result.replace("ips", ipArray);
         return result;
     }
+
+
     /**
      * 将请求数据中的内存   构建Instance
      * @param request
@@ -679,6 +685,8 @@ public class InstanceController {
 
         return instance;
     }
+
+
     /**
      * 检查Service是否可用
      * @param service
@@ -757,12 +765,15 @@ public class InstanceController {
          * 查询clusters下的所有Instance  临时与持久化都查询
          * clusters以逗号【，】分割
          */
+
         srvedIPs = service.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));
 
         // filter ips using selector:
         if (service.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
             srvedIPs = service.getSelector().select(clientIP, srvedIPs);
         }
+
+
         /**
          * 针对service和clusters下  没有Instance
          */
@@ -794,6 +805,8 @@ public class InstanceController {
         Map<Boolean, List<Instance>> ipMap = new HashMap<>(2);
         ipMap.put(Boolean.TRUE, new ArrayList<>());
         ipMap.put(Boolean.FALSE, new ArrayList<>());
+
+
         /**
          * 分别获取健康的Instance列表和不健康的Instance列表
          */
@@ -804,10 +817,14 @@ public class InstanceController {
         if (isCheck) {
             result.put("reachProtectThreshold", false);
         }
+
+
         /**
          * 健康保护阈值
          */
         double threshold = service.getProtectThreshold();
+
+
         /**
          * 为了防止因过多实例 (Instance) 不健康导致流量全部流向健康实例 (Instance) ，
          * 继而造成流量压力把健康 健康实例 (Instance) 压垮并形成雪崩效应，
@@ -838,12 +855,16 @@ public class InstanceController {
 
         for (Map.Entry<Boolean, List<Instance>> entry : ipMap.entrySet()) {
             List<Instance> ips = entry.getValue();
+
+
             /**
              * 仅查询健康节点  &&  entry对应的是非健康的Instance集合
              */
             if (healthyOnly && !entry.getKey()) {
                 continue;
             }
+
+
             /**
              * 返回给客户端的Instance列表
              */

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
@@ -25,7 +24,7 @@ import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -81,10 +80,10 @@ public class ServerListManager extends MemberChangeListener {
         /**
          * 配置文件对应的集群列表有变化
          */
-        GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 2000);
         /**
          * 根据心跳判断集群内成员状态
          */
+        GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 2000);
         GlobalExecutor.registerServerInfoUpdater(new ServerInfoUpdater());
     }
 
@@ -114,8 +113,7 @@ public class ServerListManager extends MemberChangeListener {
 
     /**
      * Compatible with older version logic, In version 1.2.1 and before
-     * nacos集群内的节点有变化（节点地址发生变化   节点本身出现故障以及恢复）
-     *
+     * 接受集群内节点状态
      * @param configInfo site:ip:lastReportTime:weight
      */
     public synchronized void onReceiveServerStatus(String configInfo) {
@@ -138,15 +136,16 @@ public class ServerListManager extends MemberChangeListener {
             /**
              * 存储节点数据   ip  端口   状态   上次心跳时间
              */
-            String[] info = IPUtil.splitIPPortStr(params[1]);
             Member server = Optional.ofNullable(memberManager.find(params[1]))
-                    .orElse(Member.builder().ip(info[0]).state(NodeState.UP)
-                            .port(Integer.parseInt(info[1])).build());
+                    .orElse(Member.builder().ip(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0]).state(NodeState.UP)
+                            .port(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1])).build());
 
             server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
             server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
             memberManager.update(server);
-
+            /**
+             * 集群列表不包括当前地址
+             */
             if (!contains(server.getAddress())) {
                 throw new IllegalArgumentException("server: " + server.getAddress() + " is not in serverlist");
             }
@@ -169,7 +168,7 @@ public class ServerListManager extends MemberChangeListener {
 
             this.cursor = (this.cursor + 1) % members.size();
             Member target = members.get(cursor);
-            if (Objects.equals(target.getAddress(), EnvUtil.getLocalAddress())) {
+            if (Objects.equals(target.getAddress(), ApplicationUtils.getLocalAddress())) {
                 return;
             }
 
@@ -207,7 +206,7 @@ public class ServerListManager extends MemberChangeListener {
         public void run() {
             try {
 
-                if (EnvUtil.getPort() <= 0) {
+                if (ApplicationUtils.getPort() <= 0) {
                     return;
                 }
 
@@ -220,26 +219,23 @@ public class ServerListManager extends MemberChangeListener {
                 /**
                  * unknown#192.168.56.1:8848#1566292196551#6
                  */
-                String status = LOCALHOST_SITE + "#" + EnvUtil.getLocalAddress() + "#" + curTime + "#" + weight
+                String status = LOCALHOST_SITE + "#" + ApplicationUtils.getLocalAddress() + "#" + curTime + "#" + weight
                         + "\r\n";
 
-                /**
-                 * 获取集群中的节点列表
-                 */
                 List<Member> allServers = getServers();
 
-                if (!contains(EnvUtil.getLocalAddress())) {
+                if (!contains(ApplicationUtils.getLocalAddress())) {
                     Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}",
-                            EnvUtil.getLocalAddress(), allServers);
+                            ApplicationUtils.getLocalAddress(), allServers);
                     return;
                 }
                 /**
                  * 向集群中的其他节点发送status
                  */
-                if (allServers.size() > 0 && !EnvUtil.getLocalAddress()
-                        .contains(IPUtil.localHostIP())) {
+                if (allServers.size() > 0 && !ApplicationUtils.getLocalAddress()
+                        .contains(UtilsAndCommons.LOCAL_HOST_IP)) {
                     for (Member server : allServers) {
-                        if (Objects.equals(server.getAddress(), EnvUtil.getLocalAddress())) {
+                        if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
                             continue;
                         }
 
@@ -254,7 +250,6 @@ public class ServerListManager extends MemberChangeListener {
 
                         Message msg = new Message();
                         msg.setData(status);
-
                         /**
                          * 向集群中的其他节点发送status
                          */

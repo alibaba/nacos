@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -57,8 +57,6 @@ public class DiskUtil {
 
     /**
      * Save configuration information to disk.
-     */
-    /**
      * 保存配置信息到磁盘
      */
     public static void saveToDisk(String dataId, String group, String tenant, String content) throws IOException {
@@ -87,7 +85,6 @@ public class DiskUtil {
     }
 
     /**
-     * 删除磁盘上的配置文件
      * Deletes configuration files on disk.
      */
     public static void removeConfigInfo(String dataId, String group, String tenant) {
@@ -121,9 +118,9 @@ public class DiskUtil {
     public static File targetFile(String dataId, String group, String tenant) {
         File file = null;
         if (StringUtils.isBlank(tenant)) {
-            file = new File(EnvUtil.getNacosHome(), BASE_DIR);
+            file = new File(ApplicationUtils.getNacosHome(), BASE_DIR);
         } else {
-            file = new File(EnvUtil.getNacosHome(), TENANT_BASE_DIR);
+            file = new File(ApplicationUtils.getNacosHome(), TENANT_BASE_DIR);
             file = new File(file, tenant);
         }
         file = new File(file, group);
@@ -137,9 +134,9 @@ public class DiskUtil {
     public static File targetBetaFile(String dataId, String group, String tenant) {
         File file = null;
         if (StringUtils.isBlank(tenant)) {
-            file = new File(EnvUtil.getNacosHome(), BETA_DIR);
+            file = new File(ApplicationUtils.getNacosHome(), BETA_DIR);
         } else {
-            file = new File(EnvUtil.getNacosHome(), TENANT_BETA_DIR);
+            file = new File(ApplicationUtils.getNacosHome(), TENANT_BETA_DIR);
             file = new File(file, tenant);
         }
         file = new File(file, group);
@@ -153,9 +150,9 @@ public class DiskUtil {
     public static File targetTagFile(String dataId, String group, String tenant, String tag) {
         File file = null;
         if (StringUtils.isBlank(tenant)) {
-            file = new File(EnvUtil.getNacosHome(), TAG_DIR);
+            file = new File(ApplicationUtils.getNacosHome(), TAG_DIR);
         } else {
-            file = new File(EnvUtil.getNacosHome(), TENANT_TAG_DIR);
+            file = new File(ApplicationUtils.getNacosHome(), TENANT_TAG_DIR);
             file = new File(file, tenant);
         }
         file = new File(file, group);
@@ -186,7 +183,7 @@ public class DiskUtil {
      * @return
      */
     public static File heartBeatFile() {
-        return new File(EnvUtil.getNacosHome(), "status" + File.separator + "heartBeat.txt");
+        return new File(ApplicationUtils.getNacosHome(), "status" + File.separator + "heartBeat.txt");
     }
 
     public static String relativePath(String dataId, String group) {
@@ -200,7 +197,7 @@ public class DiskUtil {
         /**
          * 删除C:\Users\Administrator\nacos\data\config-data
          */
-        File file = new File(EnvUtil.getNacosHome(), BASE_DIR);
+        File file = new File(ApplicationUtils.getNacosHome(), BASE_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info success.");
         } else {
@@ -209,7 +206,7 @@ public class DiskUtil {
         /**
          * 删除C:\Users\Administrator\nacos\data\tenant-config-data
          */
-        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_BASE_DIR);
+        File fileTenant = new File(ApplicationUtils.getNacosHome(), TENANT_BASE_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-tenant success.");
         } else {
@@ -224,7 +221,7 @@ public class DiskUtil {
         /**
          * 删除data/beta-data
          */
-        File file = new File(EnvUtil.getNacosHome(), BETA_DIR);
+        File file = new File(ApplicationUtils.getNacosHome(), BETA_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-beta success.");
         } else {
@@ -233,7 +230,7 @@ public class DiskUtil {
         /**
          * 删除data/tenant-beta-data
          */
-        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_BETA_DIR);
+        File fileTenant = new File(ApplicationUtils.getNacosHome(), TENANT_BETA_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-beta-tenant success.");
         } else {
@@ -248,7 +245,7 @@ public class DiskUtil {
         /**
          * 删除data/tag-data
          */
-        File file = new File(EnvUtil.getNacosHome(), TAG_DIR);
+        File file = new File(ApplicationUtils.getNacosHome(), TAG_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-tag success.");
         } else {
@@ -257,7 +254,7 @@ public class DiskUtil {
         /**
          * 删除data/tag-beta-data
          */
-        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_TAG_DIR);
+        File fileTenant = new File(ApplicationUtils.getNacosHome(), TENANT_TAG_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
             LogUtil.DEFAULT_LOG.info("clear all config-info-tag-tenant success.");
         } else {

@@ -53,7 +53,6 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         mapConsistencyService(key).remove(key);
     }
 
-
     /**
      * 获取key对应得Datum
      * @param key key of data
@@ -93,8 +92,6 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     public boolean isAvailable() {
         return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
     }
-
-
     /**
      * key对应的节点是临时的还是持久化的
      * @param key

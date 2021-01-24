@@ -122,7 +122,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     /**
      * Process client beat.
-     *处理心跳
+     * 处理心跳
+     *
      * @param rsInfo metrics info of server
      */
     public void processClientBeat(final RsInfo rsInfo) {
@@ -177,11 +178,17 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return KeyBuilder.matchInstanceListKey(key, namespaceId, getName());
     }
 
+
+    /**
+     *
+     * @param key   target key
+     * @param value data of the key
+     * @throws Exception
+     */
     @Override
     public void onChange(String key, Instances value) throws Exception {
 
         Loggers.SRV_LOG.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
-
 
         /**
          * 遍历service下得所有instance列表
@@ -201,6 +208,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 instance.setWeight(0.01D);
             }
         }
+
 
         /**
          * 更新service下得对应新注册服务得cluster下的instance列表  并触发ServiceChangeEvent
@@ -269,7 +277,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     instance.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
                 }
 
-
                 /**
                  * instance的ClusterName在clusterMap中没有对应  则新增
                  */
@@ -336,6 +343,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      * Init service.
      */
     public void init() {
+
         /**
          * 检查不健康的实例  并发出ServiceChangeEvent
          * 检查待删除的实例
@@ -379,7 +387,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     /**
      * Get all instance.
-     *获取在nacos注册的所有节点
+     * 获取在nacos注册的所有节点
      * @return list of all instance
      */
     public List<Instance> allIPs() {
@@ -396,7 +404,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     /**
      * Get all instance of ephemeral or consistency.
-     *获取当前server注册到nacos的全部节点
+     * 获取当前server注册到nacos的全部节点
      * @param ephemeral whether ephemeral instance
      * @return all instance of ephemeral if @param ephemeral = true, otherwise all instance of consistency
      */
@@ -417,7 +425,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     /**
      * Get all instance from input clusters.
-     *查询clusters下的所有Instance
+     * 查询clusters下的所有Instance
      * @param clusters cluster names
      * @return all instance from input clusters.
      */
@@ -438,7 +446,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     /**
      * Get all instance from input clusters.
-     *查询clusters下的所有Instance
+     * 查询clusters下的所有Instance
      * @param clusters cluster names
      * @return all instance from input clusters, if clusters is empty, return all cluster
      */
@@ -470,6 +478,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         Service service = this;
 
         serviceObject.put("name", service.getName());
+
+
         /**
          * 获取在nacos注册的所有节点
          */
@@ -557,7 +567,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     /**
      * Update from other service.
-     *更新缓存中的Service
+     * 更新缓存中的Service
      * @param vDom other service
      */
     public void update(Service vDom) {
@@ -596,6 +606,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         selector = vDom.getSelector();
 
         setMetadata(vDom.getMetadata());
+
+
         /**
          * 新增或修改Cluster
          */
@@ -606,6 +618,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         remvDeadClusters(this, vDom);
 
         Loggers.SRV_LOG.info("cluster size, new: {}, old: {}", getClusterMap().size(), vDom.getClusterMap().size());
+
+
         /**
          * 重新计算checksum
          */
@@ -623,6 +637,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     /**
      * Re-calculate checksum of service.
+     * 重新计算checksum
      */
     public synchronized void recalculateChecksum() {
         /**
@@ -643,6 +658,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         if (CollectionUtils.isNotEmpty(ips)) {
             Collections.sort(ips);
         }
+
+
         /**
          * Instance转String
          */
@@ -657,6 +674,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
          */
         checksum = MD5Utils.md5Hex(ipsString.toString(), Constants.ENCODE);
     }
+
+
     /**
      * 新增或修改Cluster
      * @param clusters
@@ -703,6 +722,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
              * 缓存中删除
              */
             oldDom.getClusterMap().remove(cluster.getName());
+
+
             /**
              * 设置业务删除标志
              */

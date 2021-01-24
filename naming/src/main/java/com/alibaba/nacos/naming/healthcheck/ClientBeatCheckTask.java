@@ -114,7 +114,6 @@ public class ClientBeatCheckTask implements Runnable {
                              * 发布ServiceChangeEvent  udp通知？
                              */
                             getPushService().serviceChanged(service);
-
                             /**
                              * 发布InstanceHeartbeatTimeoutEvent   留待二次开发
                              */
@@ -137,6 +136,7 @@ public class ClientBeatCheckTask implements Runnable {
                 if (instance.isMarked()) {
                     continue;
                 }
+
                 /**
                  * 超过待删除时间  则删除
                  */
@@ -156,6 +156,7 @@ public class ClientBeatCheckTask implements Runnable {
         }
 
     }
+
     /**
      * 删除实例
      * @param instance
@@ -167,10 +168,11 @@ public class ClientBeatCheckTask implements Runnable {
             request.appendParam("ip", instance.getIp()).appendParam("port", String.valueOf(instance.getPort()))
                     .appendParam("ephemeral", "true").appendParam("clusterName", instance.getClusterName())
                     .appendParam("serviceName", service.getName()).appendParam("namespaceId", service.getNamespaceId());
+
             /**
              * 向本机发起删除交易
              */
-            String url = "http://" + IPUtil.localHostIP() + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort() + EnvUtil.getContextPath()
+            String url = "http://127.0.0.1:" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
 
             // delete instance asynchronously:

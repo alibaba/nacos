@@ -62,6 +62,7 @@ public class CacheData {
     public String getContent() {
         return content;
     }
+
     /**
      * 修改content  并级联修改md5
      * @param newContent
@@ -179,6 +180,7 @@ public class CacheData {
     public String toString() {
         return "CacheData [" + dataId + ", " + group + "]";
     }
+
     /**
      * 最新的md5和listeners中存储的md5不一致   则进行通知
      */
@@ -285,6 +287,7 @@ public class CacheData {
     public static String getMd5String(String config) {
         return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
     }
+
     /**
      * 先获取容错文件中的内容  如果不存在   则获取快照文件中的内容
      * @param name

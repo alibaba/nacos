@@ -63,7 +63,7 @@ public class DistroController {
 
     /**
      * Synchronize datum.
-     *接受其他节点发送的datum
+     * 接受其他节点发送的datum
      * @param dataMap data map
      * @return 'ok' if success
      * @throws Exception if failed
@@ -120,17 +120,17 @@ public class DistroController {
     /**
      * Get datum.
      * 其他nacos节点向本机查询keys对应的Datum
-     *
      * @param body keys of data
      * @return datum
      * @throws Exception if failed
      */
     @GetMapping("/datum")
     public ResponseEntity get(@RequestBody String body) throws Exception {
+
+        JsonNode bodyNode = JacksonUtils.toObj(body);
         /**
          * 请求体为key的集合   key1，key2，key3，key4。。。
          */
-        JsonNode bodyNode = JacksonUtils.toObj(body);
         String keys = bodyNode.get("keys").asText();
         String keySplitter = ",";
         DistroHttpCombinedKey distroKey = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, "");
@@ -147,7 +147,6 @@ public class DistroController {
     /**
      * Get all datums.
      * 返回本地的dataStore中的dataMap
-     *
      * @return all datums
      */
     @GetMapping("/datums")

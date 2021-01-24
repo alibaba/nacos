@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 
@@ -95,6 +95,10 @@ public class UtilsAndCommons {
 
     public static final String CACHE_KEY_SPLITER = "@@@@";
 
+    public static final String LOCAL_HOST_IP = "127.0.0.1";
+
+    public static final String IP_PORT_SPLITER = ":";
+
     public static final int MAX_PUBLISH_WAIT_TIME_MILLIS = 5000;
 
     public static final String VERSION_STRING_SYNTAX = "[0-9]+\\.[0-9]+\\.[0-9]+";
@@ -120,7 +124,7 @@ public class UtilsAndCommons {
     public static final String PERSIST = "persist";
 
     public static final String DATA_BASE_DIR =
-            EnvUtil.getNacosHome() + File.separator + "data" + File.separator + "naming";
+            ApplicationUtils.getNacosHome() + File.separator + "data" + File.separator + "naming";
 
     public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos.naming";
 
@@ -182,6 +186,8 @@ public class UtilsAndCommons {
 
         return metadataMap;
     }
+
+
     /**
      * namespaceId##serviceName
      *

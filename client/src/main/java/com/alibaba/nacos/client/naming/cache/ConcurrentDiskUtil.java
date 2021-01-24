@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
-import com.alibaba.nacos.common.utils.IoUtils;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -54,7 +52,6 @@ public class ConcurrentDiskUtil {
     /**
      * get file content.
      * 获取文件内容
-     *
      * @param file        file
      * @param charsetName charsetName
      * @return content
@@ -98,7 +95,7 @@ public class ConcurrentDiskUtil {
                 rlock = null;
             }
             if (fis != null) {
-                IoUtils.closeQuietly(fis);
+                fis.close();
                 fis = null;
             }
         }
@@ -159,10 +156,10 @@ public class ConcurrentDiskUtil {
                 }
             } while (null == lock);
 
-            byte[] contentBytes = content.getBytes(charsetName);
             /**
              * 写入数据
              */
+            byte[] contentBytes = content.getBytes(charsetName);
             ByteBuffer sendBuffer = ByteBuffer.wrap(contentBytes);
             while (sendBuffer.hasRemaining()) {
                 channel.write(sendBuffer);

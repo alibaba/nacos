@@ -49,7 +49,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
@@ -142,9 +142,7 @@ public abstract class DumpService {
         TimerContext.start(dumpFileContext);
         try {
             LogUtil.DEFAULT_LOG.warn("DumpService start");
-            /**
-             * 添加任务  由dumpAllProcessor来处理   ？？？？？？？？？？？？？
-             */
+
             Runnable dumpAll = () -> dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
 
             Runnable dumpAllBeta = () -> dumpAllTaskMgr.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
@@ -185,16 +183,27 @@ public abstract class DumpService {
             };
 
             try {
+                /**
+                 * 使用dumpAllProcessor方式  dump配置
+                 */
                 dumpConfigInfo(dumpAllProcessor);
 
                 // update Beta cache
+                // 更新beta缓存
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
+                /**
+                 * 删除文件
+                 */
                 DiskUtil.clearAllBeta();
                 if (persistService.isExistTable(BETA_TABLE_NAME)) {
                     dumpAllBetaProcessor.process(new DumpAllBetaTask());
                 }
                 // update Tag cache
+                // 更新Tag缓存
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-tag.");
+                /**
+                 * 删除文件
+                 */
                 DiskUtil.clearAllTag();
                 if (persistService.isExistTable(TAG_TABLE_NAME)) {
                     dumpAllTagProcessor.process(new DumpAllTagTask());
@@ -219,17 +228,25 @@ public abstract class DumpService {
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
                         e);
             }
-            if (!EnvUtil.getStandaloneMode()) {
+            /**
+             * 集群模式
+             */
+            if (!ApplicationUtils.getStandaloneMode()) {
                 Runnable heartbeat = () -> {
                     String heartBeatTime = TimeUtils.getCurrentTime().toString();
                     // write disk
                     try {
+                        /**
+                         * 将当前时间写入心跳文件    status/heartBeat.txt
+                         */
                         DiskUtil.saveHeartBeatToDisk(heartBeatTime);
                     } catch (IOException e) {
                         LogUtil.FATAL_LOG.error("save heartbeat fail" + e.getMessage());
                     }
                 };
-
+                /**
+                 * 将心跳写入文件
+                 */
                 ConfigExecutor.scheduleConfigTask(heartbeat, 0, 10, TimeUnit.SECONDS);
 
                 long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
@@ -333,7 +350,7 @@ public abstract class DumpService {
     private Boolean isQuickStart() {
         try {
             String val = null;
-            val = EnvUtil.getProperty("isQuickStart");
+            val = ApplicationUtils.getProperty("isQuickStart");
             if (val != null && TRUE_STR.equals(val)) {
                 isQuickStart = true;
             }
@@ -345,7 +362,7 @@ public abstract class DumpService {
     }
 
     private int getRetentionDays() {
-        String val = EnvUtil.getProperty("nacos.config.retention.days");
+        String val = ApplicationUtils.getProperty("nacos.config.retention.days");
         if (null == val) {
             return retentionDays;
         }
@@ -362,8 +379,6 @@ public abstract class DumpService {
 
         return retentionDays;
     }
-
-
     /**
      *
      * @param dataId
@@ -385,8 +400,6 @@ public abstract class DumpService {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         dumpTaskMgr.addTask(groupKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
     }
-
-
     /**
      *
      * @param dataId

@@ -50,12 +50,14 @@ public class HealthCheckStatus {
 
     /**
      * Get health check status of instance.
-     *获取当前Instance对应的HealthCheckStatus
+     * 获取当前Instance对应的HealthCheckStatus
      * @param instance instance
      * @return health check status
      */
     public static HealthCheckStatus get(Instance instance) {
         String key = buildKey(instance);
+
+
         /**
          * 没有则新增
          */

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.http.Callback;
@@ -44,7 +43,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -127,8 +126,6 @@ public class RaftCore implements Closeable {
 
     private final EventPublisher publisher;
 
-    private final RaftListener raftListener;
-
     private boolean initialized = false;
 
     private volatile boolean stopWork = false;
@@ -138,7 +135,7 @@ public class RaftCore implements Closeable {
     private ScheduledFuture heartbeatTask = null;
 
     public RaftCore(RaftPeerSet peers, SwitchDomain switchDomain, GlobalConfig globalConfig, RaftProxy raftProxy,
-            RaftStore raftStore, ClusterVersionJudgement versionJudgement, RaftListener raftListener) {
+            RaftStore raftStore, ClusterVersionJudgement versionJudgement) {
         this.peers = peers;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
@@ -147,7 +144,6 @@ public class RaftCore implements Closeable {
         this.versionJudgement = versionJudgement;
         this.notifier = new PersistentNotifier(key -> null == getDatum(key) ? null : getDatum(key).value);
         this.publisher = NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
-        this.raftListener = raftListener;
     }
 
     /**
@@ -182,7 +178,6 @@ public class RaftCore implements Closeable {
             if (stopWork) {
                 try {
                     shutdown();
-                    raftListener.removeOldRaftMetadata();
                 } catch (NacosException e) {
                     throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
                 }
@@ -483,6 +478,8 @@ public class RaftCore implements Closeable {
                 if (!peers.isReady()) {
                     return;
                 }
+
+
                 /**
                  * 获取本地节点
                  */
@@ -491,6 +488,8 @@ public class RaftCore implements Closeable {
                  * 递减   相当于随机时间后发起选举
                  */
                 local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
+
+
                 /**
                  * 只有小于等于0时  才发起选举
                  * leader会不断发送心跳   重置follower得leaderDueMs  从而阻断follower发起选举
@@ -505,6 +504,8 @@ public class RaftCore implements Closeable {
                  */
                 local.resetLeaderDue();
                 local.resetHeartbeatDue();
+
+
                 /**
                  * 投票
                  */
@@ -581,7 +582,8 @@ public class RaftCore implements Closeable {
 
     /**
      * Received vote.
-     *处理其他节点发送得投票
+     * 处理其他节点发送得投票
+     *
      * @param remote remote raft peer of vote information
      * @return self-peer information
      */
@@ -595,6 +597,8 @@ public class RaftCore implements Closeable {
         if (!peers.contains(remote)) {
             throw new IllegalStateException("can not find peer: " + remote.ip);
         }
+
+
         /**
          * 本机节点
          */
@@ -612,11 +616,15 @@ public class RaftCore implements Closeable {
             if (StringUtils.isEmpty(local.voteFor)) {
                 local.voteFor = local.ip;
             }
+
+
             /**
              * 通知远端    本地得选票投给了谁
              */
             return local;
         }
+
+
         /**
          * 本地term小于远端  则认为远端为leader
          */
@@ -624,6 +632,8 @@ public class RaftCore implements Closeable {
          * 重置本地投票时间
          */
         local.resetLeaderDue();
+
+
         /**
          * 修改本地选举配置
          */
@@ -677,6 +687,7 @@ public class RaftCore implements Closeable {
             }
 
         }
+
         /**
          * 发送心跳
          * @throws IOException
@@ -687,21 +698,20 @@ public class RaftCore implements Closeable {
             /**
              * 只有leader  且 模式不为STANDALONE_MODE   才能发送心跳
              */
-            if (EnvUtil.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
+            if (ApplicationUtils.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
                 return;
             }
             if (Loggers.RAFT.isDebugEnabled()) {
                 Loggers.RAFT.debug("[RAFT] send beat with {} keys.", datums.size());
             }
+
+
             /**
              * 重置本机选举得随机数
              */
             local.resetLeaderDue();
 
             // build data
-            /**
-             * 组装数据
-             */
             ObjectNode packet = JacksonUtils.createEmptyJsonNode();
             packet.replace("peer", JacksonUtils.transferToJsonNode(local));
 
@@ -710,6 +720,7 @@ public class RaftCore implements Closeable {
             if (switchDomain.isSendBeatOnly()) {
                 Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", switchDomain.isSendBeatOnly());
             }
+
             /**
              * leader将本地的meta信息和注册的instance也传送给follower
              */
@@ -756,6 +767,8 @@ public class RaftCore implements Closeable {
                 Loggers.RAFT.debug("raw beat data size: {}, size of compressed data: {}", content.length(),
                         compressedContent.length());
             }
+
+
             /**
              * leader向集群中得其他节点发送心跳
              */
@@ -808,9 +821,7 @@ public class RaftCore implements Closeable {
 
     /**
      * Received beat from leader. // TODO split method to multiple smaller method.
-     *follower接受leader心跳
-     *      * @param beat  包含peer和datums  两种数据
-     *      *
+     * follower接受leader心跳
      * @param beat beat information from leader
      * @return self-peer information
      * @throws Exception any exception during handle
@@ -819,9 +830,6 @@ public class RaftCore implements Closeable {
         if (stopWork) {
             throw new IllegalStateException("old raft protocol already stop work");
         }
-        /**
-         * 获取本地节点信息
-         */
         final RaftPeer local = peers.local();
         /**
          * 还原leader数据
@@ -842,6 +850,8 @@ public class RaftCore implements Closeable {
                     JacksonUtils.toJson(remote));
             throw new IllegalArgumentException("invalid state from master, state: " + remote.state);
         }
+
+
         /**
          * 本地term大于leader的term
          */
@@ -852,6 +862,8 @@ public class RaftCore implements Closeable {
             throw new IllegalArgumentException(
                     "out of date beat, beat-from-term: " + remote.term.get() + ", beat-to-term: " + local.term.get());
         }
+
+
         /**
          * 本地节点角色非follower  则转换为follower
          */
@@ -871,12 +883,16 @@ public class RaftCore implements Closeable {
          */
         local.resetLeaderDue();
         local.resetHeartbeatDue();
+
+
         /**
          * 更换leader  并向之前leader节点发送请求   查询最新的节点数据
          */
         peers.makeLeader(remote);
 
         if (!switchDomain.isSendBeatOnly()) {
+
+
             /**
              * 本地的datums数据   value为0的key为本地数据   value为1的key为leader中有的数据
              */
@@ -1027,10 +1043,14 @@ public class RaftCore implements Closeable {
                                         Loggers.RAFT.error("receive null datum: {}", datumJson);
                                         continue;
                                     }
+
+
                                     /**
                                      * 将newDatum写入对应的缓存文件
                                      */
                                     raftStore.write(newDatum);
+
+
                                     /**
                                      * 更新缓存中的对应
                                      */
@@ -1043,6 +1063,8 @@ public class RaftCore implements Closeable {
                                      * 重置
                                      */
                                     local.resetLeaderDue();
+
+
                                     /**
                                      * 本地和leader的term差距在100以内   则同时更新缓存中本地节点和leader节点的term为返回的leader
                                      *
@@ -1054,6 +1076,8 @@ public class RaftCore implements Closeable {
                                     } else {
                                         local.term.addAndGet(100);
                                     }
+
+
                                     /**
                                      * 更新缓存中的元数据
                                      */
@@ -1090,6 +1114,10 @@ public class RaftCore implements Closeable {
 
                     });
 
+
+                    /**
+                     * 重置
+                     */
                     batch.clear();
 
                 } catch (Exception e) {
@@ -1097,6 +1125,8 @@ public class RaftCore implements Closeable {
                 }
 
             }
+
+
             /**
              * 删除receivedKeysMap中  value为0的数据  即leader中没有的数据
              */
@@ -1106,6 +1136,8 @@ public class RaftCore implements Closeable {
                     deadKeys.add(entry.getKey());
                 }
             }
+
+
             /**
              * 删除数据
              */
@@ -1124,7 +1156,7 @@ public class RaftCore implements Closeable {
 
     /**
      * Add listener for target key.
-     *添加监听
+     * 添加监听
      * @param key      key
      * @param listener new listener
      */
@@ -1177,17 +1209,22 @@ public class RaftCore implements Closeable {
 
     /**
      * Build api url.
-     *请求路径
+     *
      * @param ip  ip of api
      * @param api api path
      * @return api url
      */
     public static String buildUrl(String ip, String api) {
-        if (!IPUtil.containsPort(ip)) {
-            ip = ip + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+        /**
+         * ip地址不包含端口时   添加端口
+         */
+        if (!ip.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        return "http://" + ip + EnvUtil.getContextPath() + api;
+        return "http://" + ip + ApplicationUtils.getContextPath() + api;
     }
+
+
     /**
      * 获取key对应的Datum
      * @param key
@@ -1196,6 +1233,8 @@ public class RaftCore implements Closeable {
     public Datum<?> getDatum(String key) {
         return datums.get(key);
     }
+
+
     /**
      * 返回leader
      * @return
@@ -1203,6 +1242,8 @@ public class RaftCore implements Closeable {
     public RaftPeer getLeader() {
         return peers.getLeader();
     }
+
+
     /**
      * 获得集群内所有节点列表
      * @return
@@ -1245,6 +1286,8 @@ public class RaftCore implements Closeable {
         }
 
     }
+
+
     /**
      * 删除key对应的Datum
      * @param key

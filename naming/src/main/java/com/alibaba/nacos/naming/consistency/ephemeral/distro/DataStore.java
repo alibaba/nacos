@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class DataStore {
+
+
     /**
      * {
      * 	"dataMap": {
@@ -151,7 +153,7 @@ public class DataStore {
 
     /**
      * Batch get datum for a list of keys.
-     * 批量获取key对应的Datum 存入map
+     * 批量获取key对应的Datum
      * @param keys of datum
      * @return list of datum
      */

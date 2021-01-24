@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
-import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
@@ -76,6 +75,8 @@ public class InitUtils {
                 }
             });
         }
+
+
         /**
          * 获取系统环境变量的namespace
          */
@@ -87,12 +88,16 @@ public class InitUtils {
                 return namespace;
             }
         });
+
+
         /**
          * 获取properties中的namespace
          */
         if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
+
+
         /**
          * tmpNamespace为空  则取默认值  public
          */
@@ -107,27 +112,7 @@ public class InitUtils {
 
     /**
      * Init web root context.
-     *
-     * @param properties properties
-     * @since 1.4.1
      */
-    public static void initWebRootContext(Properties properties) {
-        final String webContext = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
-        TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
-            @Override
-            public void run() {
-                UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
-                UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
-                UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
-            }
-        });
-        initWebRootContext();
-    }
-
-    /**
-     * Init web root context.
-     */
-    @Deprecated
     public static void initWebRootContext() {
         // support the web context with ali-yun if the app deploy by EDAS
 
@@ -142,7 +127,8 @@ public class InitUtils {
         TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
             @Override
             public void run() {
-                UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
+                UtilAndComs.webContext = webContext.indexOf("/") > -1 ? webContext : "/" + webContext;
+
                 UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
                 UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
             }

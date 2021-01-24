@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.Balancer;
+import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -69,6 +70,8 @@ public class NacosNamingService implements NamingService {
 
     private BeatReactor beatReactor;
 
+    private EventDispatcher eventDispatcher;
+
     private NamingProxy serverProxy;
 
     public NacosNamingService(String serverList) throws NacosException {
@@ -80,10 +83,7 @@ public class NacosNamingService implements NamingService {
     public NacosNamingService(Properties properties) throws NacosException {
         init(properties);
     }
-    /**
-     * 初始化
-     * @param properties
-     */
+
     private void init(Properties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);
         /**
@@ -98,7 +98,7 @@ public class NacosNamingService implements NamingService {
         /**
          * 初始化WebRootContext
          */
-        InitUtils.initWebRootContext(properties);
+        InitUtils.initWebRootContext();
         /**
          * 初始化cache路径
          */
@@ -108,6 +108,10 @@ public class NacosNamingService implements NamingService {
          */
         initLogName(properties);
         /**
+         * 事件监听   当客户端监听的nacos集群上的Instance发生变化   这里负责在客户端层次通知
+         */
+        this.eventDispatcher = new EventDispatcher();
+        /**
          * 初始化NamingProxy   负责发送http请求
          */
         this.serverProxy = new NamingProxy(this.namespace, this.endpoint, this.serverList, properties);
@@ -115,12 +119,11 @@ public class NacosNamingService implements NamingService {
          * 心跳Reactor
          */
         this.beatReactor = new BeatReactor(this.serverProxy, initClientBeatThreadCount(properties));
-        /**
-         *
-         */
-        this.hostReactor = new HostReactor(this.serverProxy, beatReactor, this.cacheDir, isLoadCacheAtStart(properties),
-                isPushEmptyProtect(properties), initPollingThreadCount(properties));
+        this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, beatReactor, this.cacheDir,
+                isLoadCacheAtStart(properties), initPollingThreadCount(properties));
     }
+
+
     /**
      * 客户端心跳线程数
      * @param properties
@@ -136,6 +139,8 @@ public class NacosNamingService implements NamingService {
         return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
                 UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
     }
+
+
     /**
      * 设置Polling的线程数
      * @param properties
@@ -150,6 +155,8 @@ public class NacosNamingService implements NamingService {
         return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
                 UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
+
+
     /**
      * 是否加载缓存
      * @param properties
@@ -169,15 +176,7 @@ public class NacosNamingService implements NamingService {
         return loadCacheAtStart;
     }
 
-    private boolean isPushEmptyProtect(Properties properties) {
-        boolean pushEmptyProtection = false;
-        if (properties != null && StringUtils
-                .isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION))) {
-            pushEmptyProtection = ConvertUtils
-                    .toBoolean(properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION));
-        }
-        return pushEmptyProtection;
-    }
+
     /**
      * 初始化服务器地址
      * @param properties
@@ -200,6 +199,8 @@ public class NacosNamingService implements NamingService {
             serverList = "";
         }
     }
+
+
     /**
      * 初始化LogName
      * @param properties
@@ -216,18 +217,20 @@ public class NacosNamingService implements NamingService {
             }
         }
     }
+
+
     /**
      * 初始化cache路径
      */
     private void initCacheDir() {
         String jmSnapshotPath = System.getProperty("JM.SNAPSHOT.PATH");
         if (!StringUtils.isBlank(jmSnapshotPath)) {
+            cacheDir = jmSnapshotPath + File.separator + "nacos" + File.separator + "naming"
+                    + File.separator + namespace;
+        } else {
             /**
              * C:\Users\Administrator/nacos/naming/public
              */
-            cacheDir =
-                    jmSnapshotPath + File.separator + "nacos" + File.separator + "naming" + File.separator + namespace;
-        } else {
             cacheDir = System.getProperty("user.home") + File.separator + "nacos" + File.separator + "naming"
                     + File.separator + namespace;
         }
@@ -259,6 +262,8 @@ public class NacosNamingService implements NamingService {
          */
         registerInstance(serviceName, Constants.DEFAULT_GROUP, ip, port, clusterName);
     }
+
+
     /**
      * 注册实例
      * @param serviceName name of service
@@ -287,6 +292,8 @@ public class NacosNamingService implements NamingService {
     public void registerInstance(String serviceName, Instance instance) throws NacosException {
         registerInstance(serviceName, Constants.DEFAULT_GROUP, instance);
     }
+
+
     /**
      * 注册实例
      * @param serviceName name of service
@@ -296,16 +303,15 @@ public class NacosNamingService implements NamingService {
      */
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        NamingUtils.checkInstanceIsLegal(instance);
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         /**
          * 默认为临时节点
          */
         if (instance.isEphemeral()) {
-            /**
-             * groupName@@serviceName
-             */
             BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
+            /**
+             * 临时节点   需要不断的向nacos发送心跳
+             */
             beatReactor.addBeatInfo(groupedServiceName, beatInfo);
         }
         /**
@@ -323,6 +329,8 @@ public class NacosNamingService implements NamingService {
     public void deregisterInstance(String serviceName, String groupName, String ip, int port) throws NacosException {
         deregisterInstance(serviceName, groupName, ip, port, Constants.DEFAULT_CLUSTER_NAME);
     }
+
+
     /**
      * 注销
      * @param serviceName name of service
@@ -338,6 +346,8 @@ public class NacosNamingService implements NamingService {
          */
         deregisterInstance(serviceName, Constants.DEFAULT_GROUP, ip, port, clusterName);
     }
+
+
     /**
      * 注销
      * @param serviceName name of service
@@ -354,6 +364,8 @@ public class NacosNamingService implements NamingService {
         instance.setIp(ip);
         instance.setPort(port);
         instance.setClusterName(clusterName);
+
+
         /**
          * 注销
          */
@@ -391,6 +403,8 @@ public class NacosNamingService implements NamingService {
          */
         serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
     }
+
+
     /**
      * 获取serviceName对应的实例
      * @param serviceName name of service
@@ -662,8 +676,9 @@ public class NacosNamingService implements NamingService {
         /**
          * 监听
          */
-        hostReactor.subscribe(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","),
-                listener);
+        eventDispatcher.addListener(hostReactor
+                        .getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")),
+                StringUtils.join(clusters, ","), listener);
     }
 
     @Override
@@ -684,8 +699,9 @@ public class NacosNamingService implements NamingService {
     @Override
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        hostReactor.unSubscribe(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","),
-                listener);
+        eventDispatcher
+                .removeListener(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","),
+                        listener);
     }
 
     @Override
@@ -712,7 +728,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public List<ServiceInfo> getSubscribeServices() {
-        return hostReactor.getSubscribeServices();
+        return eventDispatcher.getSubscribeServices();
     }
 
     @Override
@@ -727,6 +743,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public void shutDown() throws NacosException {
         beatReactor.shutdown();
+        eventDispatcher.shutdown();
         hostReactor.shutdown();
         serverProxy.shutdown();
     }

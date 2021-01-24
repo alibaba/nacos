@@ -231,7 +231,7 @@ public class LongPollingService {
 
     /**
      * Add LongPollingClient.
-     *客户端长轮询监听
+     * 客户端长轮询监听
      * @param req              HttpServletRequest.
      * @param rsp              HttpServletResponse.
      * @param clientMd5Map     clientMd5Map.
@@ -317,14 +317,8 @@ public class LongPollingService {
                 if (isFixedPolling()) {
                     // Ignore.
                 } else {
-                    /**
-                     * 监听LocalDataChangeEvent
-                     */
                     if (event instanceof LocalDataChangeEvent) {
                         LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-                        /**
-                         * 发布DataChangeTask
-                         */
                         ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
                     }
                 }
@@ -371,7 +365,6 @@ public class LongPollingService {
                         if (StringUtils.isNotBlank(tag) && !tag.equals(clientSub.tag)) {
                             continue;
                         }
-
                         /**
                          * 记录应答时间
                          */
@@ -441,10 +434,11 @@ public class LongPollingService {
 
                         // Delete subsciber's relations.
                         allSubs.remove(ClientLongPolling.this);
-                        /**
-                         * 固定
-                         */
+
                         if (isFixedPolling()) {
+                            /**
+                             * 固定
+                             */
                             LogUtil.CLIENT_LOG
                                     .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
                                             RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
@@ -465,9 +459,6 @@ public class LongPollingService {
                                     .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
                                             RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
                                             "polling", clientMd5Map.size(), probeRequestSize);
-                            /**
-                             * 到达失效时间   对客户端进行应答
-                             */
                             sendResponse(null);
                         }
                     } catch (Throwable t) {
@@ -582,7 +573,7 @@ public class LongPollingService {
              * list转String
              */
             final String respString = MD5Util.compareMd5ResultString(changedGroups);
-            // Disable cache.禁用缓存
+            // Disable cache.
             response.setHeader("Pragma", "no-cache");
             response.setDateHeader("Expires", 0);
             response.setHeader("Cache-Control", "no-cache,no-store");

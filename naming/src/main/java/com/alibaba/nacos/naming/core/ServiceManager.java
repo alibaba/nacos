@@ -19,9 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
@@ -61,7 +59,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -217,6 +214,8 @@ public class ServiceManager implements RecordListener<Service> {
             }
 
             Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, service);
+
+
             /**
              * 缓存中是否有service
              */
@@ -534,6 +533,8 @@ public class ServiceManager implements RecordListener<Service> {
              * 校验
              */
             service.validate();
+
+
             /**
              * 临时节点
              */
@@ -558,10 +559,12 @@ public class ServiceManager implements RecordListener<Service> {
      * @throws Exception any error occurred in the process
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+
         /**
          * service不存在则新建  如果是临时节点 激活clientBeatCheckTask  以校验心跳
          */
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
+
         /**
          * 再次查询缓存
          */
@@ -572,6 +575,10 @@ public class ServiceManager implements RecordListener<Service> {
                     "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
 
+
+        /**
+         *
+         */
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
 
@@ -601,7 +608,7 @@ public class ServiceManager implements RecordListener<Service> {
 
     /**
      * Update instance's metadata.
-     *向nacos注册实例
+     *
      * @param namespaceId namespace
      * @param serviceName service name
      * @param action      update or remove
@@ -643,7 +650,7 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     /**
-     * Locate consistency's datum by all or instances provided.
+     * locate consistency's datum by all or instances provided.
      *
      * @param namespaceId        namespace
      * @param serviceName        serviceName
@@ -681,15 +688,16 @@ public class ServiceManager implements RecordListener<Service> {
         return locatedInstance;
     }
 
-    private Instance locateInstance(List<Instance> sources, Instance target) {
-        if (CollectionUtils.isEmpty(sources)) {
-            return null;
-        }
-
-        for (Instance element : sources) {
-            //also need clusterName equals, the same instance maybe exist in two cluster.
-            if (Objects.equals(element, target) && Objects.equals(element.getClusterName(), target.getClusterName())) {
-                return element;
+    private Instance locateInstance(List<Instance> instances, Instance instance) {
+        int target = 0;
+        while (target >= 0) {
+            target = instances.indexOf(instance);
+            if (target >= 0) {
+                Instance result = instances.get(target);
+                if (result.getClusterName().equals(instance.getClusterName())) {
+                    return result;
+                }
+                instances.remove(target);
             }
         }
         return null;
@@ -697,7 +705,7 @@ public class ServiceManager implements RecordListener<Service> {
 
     /**
      * Add instance to service.
-     *
+     * 向nacos注册实例
      * @param namespaceId namespace
      * @param serviceName service name
      * @param ephemeral   whether instance is ephemeral
@@ -719,6 +727,8 @@ public class ServiceManager implements RecordListener<Service> {
 
             Instances instances = new Instances();
             instances.setInstanceList(instanceList);
+
+
             /**
              * 新增
              */
@@ -746,7 +756,15 @@ public class ServiceManager implements RecordListener<Service> {
             removeInstance(namespaceId, serviceName, ephemeral, service, ips);
         }
     }
-
+    /**
+     * 注销
+     * @param namespaceId
+     * @param serviceName
+     * @param ephemeral
+     * @param service
+     * @param ips
+     * @throws NacosException
+     */
     private void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Service service,
             Instance... ips) throws NacosException {
 
@@ -763,6 +781,16 @@ public class ServiceManager implements RecordListener<Service> {
         consistencyService.put(key, instances);
     }
 
+
+    /**
+     * 获取Instance
+     * @param namespaceId
+     * @param serviceName
+     * @param cluster
+     * @param ip
+     * @param port
+     * @return
+     */
     public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port) {
         /**
          * 本地缓存查询服务是否存在
@@ -858,13 +886,7 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public List<Instance> updateIpAddresses(Service service, String action, boolean ephemeral, Instance... ips)
             throws NacosException {
-        /**
-         * 获取service对应得Datum
-         *
-         * 区分临时节点和持久化节点
-         *
-         * DelegateConsistencyServiceImpl
-         */
+
         Datum datum = consistencyService
                 .get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
@@ -913,18 +935,15 @@ public class ServiceManager implements RecordListener<Service> {
                         .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                                 instance.getClusterName(), instance.toJson());
             }
+
+
             /**
              * 在instanceMap中新增/删除操作
              */
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
                 instanceMap.remove(instance.getDatumKey());
             } else {
-                Instance oldInstance = instanceMap.get(instance.getDatumKey());
-                if (oldInstance != null) {
-                    instance.setInstanceId(oldInstance.getInstanceId());
-                } else {
-                    instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
-                }
+                instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
                 instanceMap.put(instance.getDatumKey(), instance);
             }
 
@@ -935,6 +954,8 @@ public class ServiceManager implements RecordListener<Service> {
                     "ip list can not be empty, service: " + service.getName() + ", ip list: " + JacksonUtils
                             .toJson(instanceMap.values()));
         }
+
+
         /**
          * 返回service下有效的节点  未必健康
          */
@@ -950,15 +971,37 @@ public class ServiceManager implements RecordListener<Service> {
      */
     private List<Instance> substractIpAddresses(Service service, boolean ephemeral, Instance... ips)
             throws NacosException {
+
+    /**
+     * 注销    移除ips后  剩余的Instance列表
+     * @param service
+     * @param ephemeral
+     * @param ips
+     * @return
+     * @throws NacosException
+     */
+    public List<Instance> substractIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
+        /**
+         * remove操作  移除ips后  剩余的Instance列表
+         */
         return updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE, ephemeral, ips);
     }
-
-    private List<Instance> addIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
         /**
-         * 新增  UPDATE_INSTANCE_ACTION_ADD
+         * 获取service下有效的Instance列表  包含当前新增的Instance
+         * @param service
+         * @param ephemeral
+         * @param ips
+         * @return
+         * @throws NacosException
          */
+    private List<Instance> addIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
+            /**
+             * 新增  UPDATE_INSTANCE_ACTION_ADD
+             */
         return updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ephemeral, ips);
     }
+
+
     /**
      * 以map中的数据为准    更新oldInstances中Instance对应的healthy和lastBeat
      * @param oldInstances
@@ -981,6 +1024,8 @@ public class ServiceManager implements RecordListener<Service> {
         }
         return instanceMap;
     }
+
+
     /**
      * 本地缓存查询服务是否存在
      * @param namespaceId
@@ -1003,19 +1048,21 @@ public class ServiceManager implements RecordListener<Service> {
 
     /**
      * Put service into manager.
-     *将service存入缓存
+     * 将service存入缓存
      * @param service service
      */
     public void putService(Service service) {
         if (!serviceMap.containsKey(service.getNamespaceId())) {
             synchronized (putServiceLock) {
                 if (!serviceMap.containsKey(service.getNamespaceId())) {
-                    serviceMap.put(service.getNamespaceId(), new ConcurrentSkipListMap<>());
+                    serviceMap.put(service.getNamespaceId(), new ConcurrentHashMap<>(16));
                 }
             }
         }
-        serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
+        serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }
+
+
     /**
      * 临时节点
      * @param service
@@ -1026,14 +1073,13 @@ public class ServiceManager implements RecordListener<Service> {
          * service存入缓存
          */
         putService(service);
-        service = getService(service.getNamespaceId(), service.getName());
         /**
          * 初始化  clientBeatCheckTask以及Cluster的init
          */
         service.init();
-        /**
-         * 添加监听
-         */
+            /**
+             * 添加监听
+             */
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
         consistencyService
@@ -1112,9 +1158,8 @@ public class ServiceManager implements RecordListener<Service> {
                 contained = false;
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
-                    if (IPUtil.containsPort(containedInstance)) {
-                        if (StringUtils.equals(instance.getIp() + IPUtil.IP_PORT_SPLITER + instance.getPort(),
-                                containedInstance)) {
+                    if (containedInstance.contains(":")) {
+                        if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), containedInstance)) {
                             contained = true;
                             break;
                         }

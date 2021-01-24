@@ -115,6 +115,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
+
+
     /**
      * 处理ServiceChangeEvent   向客户端发送udp通讯
      * @param event
@@ -195,7 +197,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
     /**
      * Add push target client.
-     *新增PushClient
+     * 新增PushClient
      * @param namespaceId namespace id
      * @param serviceName service name
      * @param clusters    cluster
@@ -215,7 +217,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
     /**
      * Add push target client.
-     *新增PushClient
+     * 新增PushClient
      * @param client push target client
      */
     public void addClient(PushClient client) {
@@ -229,6 +231,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             clientMap.putIfAbsent(serviceKey, new ConcurrentHashMap<>(1024));
             clients = clientMap.get(serviceKey);
         }
+
+
         /**
          * clients中是否有PushClient的对应  没有则新增   有则刷新lastRefTime
          */
@@ -375,7 +379,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
     /**
      * Service changed.
-     *发布ServiceChangeEvent
+     * 发布ServiceChangeEvent
      * @param service service
      */
     public void serviceChanged(Service service) {
@@ -390,7 +394,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
     /**
      * Judge whether this agent is supported to push.
-     *是否支持udp推送
+     * 是否支持udp推送
      * @param agent agent information
      * @return true if agent can be pushed, otherwise false
      */
@@ -399,6 +403,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         if (!switchDomain.isPushEnabled()) {
             return false;
         }
+
+
         /**
          * 判断客户端语言 并初始化version
          */
@@ -415,9 +421,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             return true;
         } else if (ClientInfo.ClientType.GO == clientInfo.type
                 && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushGoVersion())) >= 0) {
-            return true;
-        } else if (ClientInfo.ClientType.CSHARP == clientInfo.type
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushCSharpVersion())) >= 0) {
             return true;
         }
 

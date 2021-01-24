@@ -30,6 +30,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class Config {
 
     public static void main(String[] args) {
+        System.setProperty("nacos.server.ip", "192.168.50.39");
+
         SpringApplication.run(Config.class, args);
     }
 }

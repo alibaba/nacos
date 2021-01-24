@@ -118,28 +118,22 @@ public class GlobalExecutor {
     public static ScheduledFuture registerMasterElection(Runnable runnable) {
         return NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
-    /**
-     * 选举
-     * @param runnable
-     */
+
     public static void registerServerInfoUpdater(Runnable runnable) {
         NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, 2, TimeUnit.SECONDS);
     }
-    /**
-     * 集群列表变化
-     * @param runnable
-     */
+
     public static void registerServerStatusReporter(Runnable runnable, long delay) {
         SERVER_STATUS_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public static void registerServerStatusUpdater(Runnable runnable) {
+        NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, SERVER_STATUS_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
     }
     /**
      * 心跳
      * @param runnable
      */
-    public static void registerServerStatusUpdater(Runnable runnable) {
-        NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, SERVER_STATUS_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
-    }
-
     public static ScheduledFuture registerHeartbeat(Runnable runnable) {
         return NAMING_TIMER_EXECUTOR.scheduleWithFixedDelay(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
@@ -148,8 +142,8 @@ public class GlobalExecutor {
         NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
     }
 
-    public static ScheduledFuture submitClusterVersionJudge(Runnable runnable, long delay) {
-        return NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    public static void submitClusterVersionJudge(Runnable runnable, long delay) {
+        NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
     public static void submitDistroNotifyTask(Runnable runnable) {

@@ -60,7 +60,6 @@ public class AsyncNotifyService {
     @Autowired
     public AsyncNotifyService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
-        // 触发配置变更同步通知
 
         // Register ConfigDataChangeEvent to NotifyCenter.
         NotifyCenter.registerToPublisher(ConfigDataChangeEvent.class, NotifyCenter.ringBufferSize);
@@ -84,8 +83,6 @@ public class AsyncNotifyService {
                      */
                     Collection<Member> ipList = memberManager.allMembers();
 
-
-                    // 其实这里任何类型队列都可以
                     // In fact, any type of queue here can be
                     Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
                     for (Member member : ipList) {
@@ -138,12 +135,16 @@ public class AsyncNotifyService {
                 if (memberManager.hasMember(targetIp)) {
                     // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
                     // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
+                    /**
+                     * 集群健康  但是targetIp对应得节点不健康
+                     */
                     boolean unHealthNeedDelay = memberManager.isUnHealth(targetIp);
                     /**
                      * 集群健康  但是targetIp对应得节点不健康
                      */
                     if (unHealthNeedDelay) {
                         // target ip is unhealthy, then put it in the notification list
+                        // target ip 不健康，则放入通知列表中
                         /**
                          * 监控数据  并输出日志
                          */
@@ -169,7 +170,6 @@ public class AsyncNotifyService {
                         /**
                          * AsyncNotifyCallBack  异步处理
                          */
-                        AuthHeaderUtil.addIdentityToHeader(header);
                         restTemplate.get(task.url, header, Query.EMPTY, String.class, new AsyncNotifyCallBack(task));
                     }
                 }
@@ -214,6 +214,9 @@ public class AsyncNotifyService {
 
             long delayed = System.currentTimeMillis() - task.getLastModified();
 
+            /**
+             * 响应码为200
+             */
             if (result.ok()) {
                 /**
                  * 记录日志和监控
@@ -273,6 +276,7 @@ public class AsyncNotifyService {
 
             LogUtil.NOTIFY_LOG.error("[notify-exception] target:{} dataId:{} group:{} ts:{} method:{}", task.target,
                     task.getDataId(), task.getGroup(), task.getLastModified(), "CANCELED");
+
             /**
              * 重试
              */

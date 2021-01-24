@@ -84,6 +84,7 @@ public class BeatReactor implements Closeable {
     /**
      * Add beat information.
      * 心跳调度
+     *
      * @param serviceName service name
      * @param beatInfo    beat information
      */
@@ -199,6 +200,7 @@ public class BeatReactor implements Closeable {
                  */
                 return;
             }
+
             /**
              * 发送心跳
              * 发送心跳

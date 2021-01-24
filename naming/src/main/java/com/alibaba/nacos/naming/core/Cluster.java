@@ -145,7 +145,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     /**
      * Init cluster.
-     * 初始化
      */
     public void init() {
         if (inited) {
@@ -155,8 +154,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
          * 默认tcp
          */
         checkTask = new HealthCheckTask(this);
-
-
         /**
          * 执行HealthCheckTask
          */
@@ -246,14 +243,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     /**
      * Update instance list.
      * 更新cluster对应的Instance集合
-     *
      * @param ips       instance list
      * @param ephemeral whether these instances are ephemeral
      */
     public void updateIps(List<Instance> ips, boolean ephemeral) {
-        /**
-         * 获取当前cluster对应的Instance集合
-         */
+
         Set<Instance> toUpdateInstances = ephemeral ? ephemeralInstances : persistentInstances;
 
         HashMap<String, Instance> oldIpMap = new HashMap<>(toUpdateInstances.size());
@@ -313,6 +307,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 HealthCheckStatus.reset(ip);
             }
         }
+
         /**
          * ip:port   仅在oldIPMap存在   在ips中不存在的Instance集合
          * 即已经失效（移除）的Instance集合
@@ -342,6 +337,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             persistentInstances = toUpdateInstances;
         }
     }
+
     /**
      * 仅在a中的元素   且对应的ip:port在a和b中都有的Instance
      *
@@ -375,19 +371,14 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
          * 集合a中的元素
          */
         Map<String, Instance> newInstancesMap = new ConcurrentHashMap<>(newInstance.size());
-        /**
-         * 集合b中的元素   且ip:port在交集map中存在
-         */
+
         for (Instance instance : oldInstance) {
             if (stringIpAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
-                /**
-                 * 在b中存在
-                 */
                 intersectMap.put(instance.toString(), 1);
             }
         }
         /**
-         * 集合a中的元素  且在交集map中存在
+         * 集合b中的元素   且ip:port在交集map中存在
          */
         for (Instance instance : newInstance) {
             if (stringIpAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
@@ -409,6 +400,8 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             newInstancesMap.put(instance.toString(), instance);
 
         }
+
+
         /**
          * 记录a中的元素
          */
@@ -428,6 +421,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
         return new ArrayList<>(updatedInstancesMap.values());
     }
+
     /**
      * ip:port  仅在a中有   在b中没有的Instance集合
      * @param a

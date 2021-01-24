@@ -31,7 +31,6 @@ import java.util.List;
  * ServiceInfo.
  *
  * @author nkorange
- * @author shizhengxing
  */
 @JsonInclude(Include.NON_NULL)
 public class ServiceInfo {
@@ -68,31 +67,28 @@ public class ServiceInfo {
         this.allIPs = allIPs;
     }
 
+
     /**
-     * There is only one form of the key:groupName@@name@clusters. This constuctor used by DiskCache.read(String) and
      * 根据key  填充name和clusters
-     * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
+     * @param key
      */
     public ServiceInfo(String key) {
+
         int maxIndex = 2;
-        int clusterIndex = 2;
-        int serviceNameIndex = 1;
-        int groupIndex = 0;
+        int clusterIndex = 1;
+        int serviceNameIndex = 0;
+
+
         /**
          * 按@@分割
          */
         String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (keys.length >= maxIndex + 1) {
-            this.groupName = keys[groupIndex];
+        if (keys.length >= maxIndex) {
             this.name = keys[serviceNameIndex];
             this.clusters = keys[clusterIndex];
-        } else if (keys.length == maxIndex) {
-            this.groupName = keys[groupIndex];
-            this.name = keys[serviceNameIndex];
-        } else {
-            //defensive programming
-            throw new IllegalArgumentException("Cann't parse out 'groupName',but it must not be null!");
         }
+
+        this.name = keys[0];
     }
 
     public ServiceInfo(String name, String clusters) {
@@ -170,10 +166,6 @@ public class ServiceInfo {
             return true;
         }
 
-        if (hosts == null) {
-            return false;
-        }
-
         List<Instance> validHosts = new ArrayList<Instance>();
         /**
          * 循环地址
@@ -187,8 +179,8 @@ public class ServiceInfo {
                 validHosts.add(host);
             }
         }
-        //No valid hosts, return false.
-        return !validHosts.isEmpty();
+
+        return true;
     }
 
     @JsonIgnore
@@ -206,8 +198,7 @@ public class ServiceInfo {
      */
     @JsonIgnore
     public String getKey() {
-        String serviceName = getGroupedServiceName();
-        return getKey(serviceName, clusters);
+        return getKey(name, clusters);
     }
 
     @JsonIgnore
@@ -225,21 +216,11 @@ public class ServiceInfo {
      */
     @JsonIgnore
     public String getKeyEncoded() {
-        String serviceName = getGroupedServiceName();
         try {
-            serviceName = URLEncoder.encode(serviceName, "UTF-8");
+            return getKey(URLEncoder.encode(name, "UTF-8"), clusters);
         } catch (UnsupportedEncodingException e) {
-            //do nothing
+            return getKey();
         }
-        return getKey(serviceName, clusters);
-    }
-
-    private String getGroupedServiceName() {
-        String serviceName = this.name;
-        if (!isEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
-            serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
-        }
-        return serviceName;
     }
 
     /**

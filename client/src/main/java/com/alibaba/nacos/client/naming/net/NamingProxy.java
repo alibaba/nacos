@@ -43,10 +43,8 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
-import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -108,9 +106,6 @@ public class NamingProxy implements Closeable {
     private Properties properties;
 
     private ScheduledExecutorService executorService;
-
-    private int maxRetry;
-
     /**
      * 初始化
      * @param namespaceId
@@ -124,9 +119,6 @@ public class NamingProxy implements Closeable {
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
         this.endpoint = endpoint;
-        this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
-                String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
-
         if (StringUtils.isNotEmpty(serverList)) {
             /**
              * 填充集群地址
@@ -181,6 +173,8 @@ public class NamingProxy implements Closeable {
         refreshSrvIfNeed();
         this.securityProxy.login(getServerList());
     }
+
+
     /**
      * 从Endpoint获取集群地址
      * @return
@@ -220,6 +214,8 @@ public class NamingProxy implements Closeable {
 
         return null;
     }
+
+
     /**
      * 刷新集群地址
      */
@@ -230,12 +226,16 @@ public class NamingProxy implements Closeable {
                 NAMING_LOGGER.debug("server list provided by user: " + serverList);
                 return;
             }
+
+
             /**
              * 上次刷新时间与当前时间的间隔   小于vipSrvRefInterMillis
              */
             if (System.currentTimeMillis() - lastSrvRefTime < vipSrvRefInterMillis) {
                 return;
             }
+
+
             /**
              * 从Endpoint获取集群地址   动态获取   类似于rmq的nameserver动态集群地址
              */
@@ -244,12 +244,16 @@ public class NamingProxy implements Closeable {
             if (CollectionUtils.isEmpty(list)) {
                 throw new Exception("Can not acquire Nacos list");
             }
+
+
             /**
              * 比较两个集合元素是否一致
              */
             if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
                 NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
             }
+
+
             /**
              * 更新serversFromEndpoint   为新获取的地址
              */
@@ -262,7 +266,7 @@ public class NamingProxy implements Closeable {
 
     /**
      * register a instance to service with specified instance properties.
-     *
+     * 注册服务
      * @param serviceName name of service
      * @param groupName   group of service
      * @param instance    instance to register
@@ -436,7 +440,7 @@ public class NamingProxy implements Closeable {
 
     /**
      * Query instance list.
-     *向服务端查询实例
+     * 向服务端查询实例
      * @param serviceName service name
      * @param clusters    clusters
      * @param udpPort     udp port
@@ -462,7 +466,8 @@ public class NamingProxy implements Closeable {
 
     /**
      * Send beat.
-     *发送心跳
+     * 发送心跳
+     *
      * @param beatInfo         beat info
      * @param lightBeatEnabled light beat
      * @return beat result
@@ -483,11 +488,6 @@ public class NamingProxy implements Closeable {
         params.put(CommonParams.CLUSTER_NAME, beatInfo.getCluster());
         params.put("ip", beatInfo.getIp());
         params.put("port", String.valueOf(beatInfo.getPort()));
-        /**
-         * 发送心跳
-         * 服务名为 UtilAndComs.NACOS_URL_BASE + "/instance/beat"
-         * put方式
-         */
         String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/beat", params, bodyMap, HttpMethod.PUT);
         return JacksonUtils.toObj(result);
     }
@@ -558,7 +558,8 @@ public class NamingProxy implements Closeable {
 
     /**
      * Request api.
-     *发送http请求
+     * 发送http请求
+     *
      * @param api     api
      * @param params  parameters
      * @param body    body
@@ -572,24 +573,14 @@ public class NamingProxy implements Closeable {
 
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
 
-        if (CollectionUtils.isEmpty(servers) && StringUtils.isBlank(nacosDomain)) {
+        if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
 
         NacosException exception = new NacosException();
 
-        if (StringUtils.isNotBlank(nacosDomain)) {
-            for (int i = 0; i < maxRetry; i++) {
-                try {
-                    return callServer(api, params, body, nacosDomain, method);
-                } catch (NacosException e) {
-                    exception = e;
-                    if (NAMING_LOGGER.isDebugEnabled()) {
-                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
-                    }
-                }
-            }
-        } else {
+        if (servers != null && !servers.isEmpty()) {
+
             Random random = new Random(System.currentTimeMillis());
             int index = random.nextInt(servers.size());
 
@@ -607,6 +598,19 @@ public class NamingProxy implements Closeable {
             }
         }
 
+        if (StringUtils.isNotBlank(nacosDomain)) {
+            for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
+                try {
+                    return callServer(api, params, body, nacosDomain, method);
+                } catch (NacosException e) {
+                    exception = e;
+                    if (NAMING_LOGGER.isDebugEnabled()) {
+                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
+                    }
+                }
+            }
+        }
+
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),
                 exception.getErrMsg());
 
@@ -616,9 +620,6 @@ public class NamingProxy implements Closeable {
     }
 
     private List<String> getServerList() {
-        /**
-         * nacos集群地址
-         */
         List<String> snapshot = serversFromEndpoint;
         if (!CollectionUtils.isEmpty(serverList)) {
             snapshot = serverList;
@@ -646,9 +647,17 @@ public class NamingProxy implements Closeable {
             String method) throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
+        /**
+         * 验签
+         */
         injectSecurityInfo(params);
+        /**
+         * 默认header部分
+         */
         Header header = builderHeader();
-
+        /**
+         * 请求路径
+         */
         String url;
         if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
             /**
@@ -659,17 +668,22 @@ public class NamingProxy implements Closeable {
             /**
              * 不包含http或https
              */
-            if (!IPUtil.containsPort(curServer)) {
-                curServer = curServer + IPUtil.IP_PORT_SPLITER + serverPort;
+            if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
+                curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
             }
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
 
         try {
+            /**
+             * 发送http请求
+             */
             HttpRestResult<String> restResult = nacosRestTemplate
                     .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
-
+            /**
+             * prometheus监控
+             */
             MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
                     .observe(end - start);
 
@@ -703,6 +717,9 @@ public class NamingProxy implements Closeable {
         if (StringUtils.isNotBlank(ak) && StringUtils.isNotBlank(sk)) {
             try {
                 String signData = getSignData(params.get("serviceName"));
+                /**
+                 * 签名算法
+                 */
                 String signature = SignUtil.sign(signData, sk);
                 params.put("signature", signature);
                 params.put("data", signData);
@@ -781,8 +798,6 @@ public class NamingProxy implements Closeable {
     public String getNamespaceId() {
         return namespaceId;
     }
-
-
     /**
      * 设置服务器端口
      * @param serverPort
@@ -806,7 +821,6 @@ public class NamingProxy implements Closeable {
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NamingHttpClientManager.getInstance().shutdown();
-        SpasAdapter.freeCredentialInstance();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }

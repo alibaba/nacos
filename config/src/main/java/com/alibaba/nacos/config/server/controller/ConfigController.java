@@ -146,6 +146,9 @@ public class ConfigController {
          * 校验
          */
         // check tenant
+        /**
+         * 校验
+         */
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);

@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.utils.IPUtil;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import org.springframework.util.StringUtils;
@@ -32,6 +31,7 @@ import java.util.Map;
  * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 public class ServerStatusSynchronizer implements Synchronizer {
+
     /**
      * 向其他节点上报本地服务状态
      * @param serverIP target server address
@@ -42,6 +42,8 @@ public class ServerStatusSynchronizer implements Synchronizer {
         if (StringUtils.isEmpty(serverIP)) {
             return;
         }
+
+
         /**
          * 上送参数
          */
@@ -49,11 +51,11 @@ public class ServerStatusSynchronizer implements Synchronizer {
 
         params.put("serverStatus", msg.getData());
 
-        String url = "http://" + serverIP + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
+        String url = "http://" + serverIP + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
 
-        if (IPUtil.containsPort(serverIP)) {
-            url = "http://" + serverIP + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+        if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/operator/server/status";
         }
 

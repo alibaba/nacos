@@ -30,8 +30,8 @@ public class TemplateUtils {
 
     /**
      * Execute if string not empty.
-     *source不为空  则执行Runnable
-     *      *
+     * source不为空  则执行Runnable
+     *
      * @param source   source
      * @param runnable execute runnable
      */

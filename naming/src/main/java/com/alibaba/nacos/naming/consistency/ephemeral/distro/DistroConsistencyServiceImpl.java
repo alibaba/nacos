@@ -168,7 +168,6 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     /**
      * Remove a record.
      * 移除当前key
-     *
      * @param key key of record
      */
     public void onRemove(String key) {
@@ -223,9 +222,6 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                  */
                 if (!dataStore.contains(entry.getKey()) || dataStore.get(entry.getKey()).value == null || !dataStore
                         .get(entry.getKey()).value.getChecksum().equals(entry.getValue())) {
-                    /**
-                     * key对应的数据待更新
-                     */
                     toUpdateKeys.add(entry.getKey());
                 }
             }
@@ -268,10 +264,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                         server);
                 distroKey.getActualResourceTypes().addAll(toUpdateKeys);
                 DistroData remoteData = distroProtocol.queryFromRemote(distroKey);
+                /**
+                 * 处理server节点返回的Datum
+                 */
                 if (null != remoteData) {
-                    /**
-                     * 处理server节点返回的Datum
-                     */
                     processData(remoteData.getContent());
                 }
             } catch (Exception e) {
@@ -286,9 +282,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         }
     }
     /**
-     * 同步Server的数据
-     * @param server
-     * @return
+     * 处理其他节点传送的Datum数据
+     * @param data
+     * @throws Exception
      */
     private boolean processData(byte[] data) throws Exception {
         if (data.length > 0) {
@@ -324,13 +320,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                         service.recalculateChecksum();
 
                         // The Listener corresponding to the key value must not be empty
+                        /**
+                         * 监听  metadata  调用ServiceManager   并向listeners添加新的监听
+                         */
                         RecordListener listener = listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX).peek();
                         if (Objects.isNull(listener)) {
                             return false;
                         }
-                        /**
-                         * 监听  metadata  调用ServiceManager   并向listeners添加新的监听
-                         */
                         listener.onChange(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName), service);
                     }
                 }
@@ -449,9 +445,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
          * @param action   action for data
          */
         public void addTask(String datumKey, DataOperation action) {
-            /**
-             * CHANGE任务   有一个就可以
-             */
+
             if (services.containsKey(datumKey) && action == DataOperation.CHANGE) {
                 return;
             }
@@ -499,9 +493,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 if (!listeners.containsKey(datumKey)) {
                     return;
                 }
-                /**
-                 * 遍历datumKey对应的监听器
-                 */
+
                 for (RecordListener listener : listeners.get(datumKey)) {
 
                     count++;

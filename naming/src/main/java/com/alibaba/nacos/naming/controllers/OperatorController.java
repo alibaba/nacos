@@ -35,7 +35,7 @@ import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -191,9 +191,9 @@ public class OperatorController {
         result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIpCount);
-        result.put("cpu", EnvUtil.getCPU());
-        result.put("load", EnvUtil.getLoad());
-        result.put("mem", EnvUtil.getMem());
+        result.put("cpu", ApplicationUtils.getCPU());
+        result.put("load", ApplicationUtils.getLoad());
+        result.put("mem", ApplicationUtils.getMem());
 
         return result;
     }
@@ -253,7 +253,7 @@ public class OperatorController {
 
     /**
      * This interface will be removed in a future release.
-     *接受集群内节点状态
+     * 接受集群内节点状态
      * @param serverStatus server status
      * @return "ok"
      * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0

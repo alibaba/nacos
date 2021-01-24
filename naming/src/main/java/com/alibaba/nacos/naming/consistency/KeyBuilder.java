@@ -48,8 +48,6 @@ public class KeyBuilder {
     private static String buildPersistentInstanceListKey(String namespaceId, String serviceName) {
         return INSTANCE_LIST_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName;
     }
-
-
     /**
      * 创建节点
      * @param namespaceId
@@ -110,8 +108,6 @@ public class KeyBuilder {
     public static boolean matchServiceMetaKey(String key, String namespaceId, String serviceName) {
         return matchServiceMetaKey(key) && matchServiceName(key, namespaceId, serviceName);
     }
-
-
     /**
      * 00-00---000-NACOS_SWITCH_DOMAIN-000---00-00结尾
      * @param key
@@ -141,8 +137,6 @@ public class KeyBuilder {
     public static String briefServiceMetaKey(String key) {
         return BRIEF_SERVICE_META_KEY_PREFIX + key.split(SERVICE_META_KEY_PREFIX)[1];
     }
-
-
     /**
      * INSTANCE_LIST_KEY_PREFIX = "com.alibaba.nacos.naming.iplist."
      * BRIEF_INSTANCE_LIST_KEY_PREFIX = "iplist."
@@ -154,8 +148,6 @@ public class KeyBuilder {
         return INSTANCE_LIST_KEY_PREFIX.substring(0, INSTANCE_LIST_KEY_PREFIX.indexOf(BRIEF_INSTANCE_LIST_KEY_PREFIX))
                 + key;
     }
-
-
     /**
      * SERVICE_META_KEY_PREFIX = "com.alibaba.nacos.naming.domains.meta."
      * BRIEF_SERVICE_META_KEY_PREFIX = "meta."
@@ -169,32 +161,25 @@ public class KeyBuilder {
     }
 
     public static String getNamespace(String key) {
-
-
         /**
          * switch
          */
         if (matchSwitchKey(key)) {
             return StringUtils.EMPTY;
         }
-
-
         /**
          * 元数据
          */
         if (matchServiceMetaKey(key)) {
             return key.split(NAMESPACE_KEY_CONNECTOR)[0].substring(SERVICE_META_KEY_PREFIX.length());
         }
-
-
-        /**
-         * 临时节点
-         */
+/**
+ * 临时节点
+ */
         if (matchEphemeralInstanceListKey(key)) {
             return key.split(NAMESPACE_KEY_CONNECTOR)[0]
                     .substring(INSTANCE_LIST_KEY_PREFIX.length() + EPHEMERAL_KEY_PREFIX.length());
         }
-
 
         /**
          * 持久化节点

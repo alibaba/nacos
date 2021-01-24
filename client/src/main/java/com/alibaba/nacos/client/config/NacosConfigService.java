@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.config;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -72,7 +71,6 @@ public class NacosConfigService implements ConfigService {
     private final String encode;
 
     private final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
-
     /**
      * config启动
      * @param properties
@@ -94,19 +92,16 @@ public class NacosConfigService implements ConfigService {
          * 初始化namespace
          */
         initNamespace(properties);
-
-        this.agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         /**
          * 配置服务   每30秒  动态获取nacos集群地址
          */
+        this.agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         this.agent.start();
         /**
          * 初始化ClientWorker   执行LongPollingRunnable
          */
         this.worker = new ClientWorker(this.agent, this.configFilterChainManager, properties);
     }
-
-
     /**
      * 从系统环境变量中获取namespace
      * @param properties
@@ -153,12 +148,7 @@ public class NacosConfigService implements ConfigService {
      */
     @Override
     public boolean publishConfig(String dataId, String group, String content) throws NacosException {
-        return publishConfig(dataId, group, content, ConfigType.getDefaultType().getType());
-    }
-
-    @Override
-    public boolean publishConfig(String dataId, String group, String content, String type) throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content, type);
+        return publishConfigInner(namespace, dataId, group, null, null, null, content);
     }
 
     @Override
@@ -276,7 +266,7 @@ public class NacosConfigService implements ConfigService {
      * @throws NacosException
      */
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
-            String betaIps, String content, String type) throws NacosException {
+            String betaIps, String content) throws NacosException {
         group = null2defaultGroup(group);
         ParamUtils.checkParam(dataId, group, content);
 
@@ -293,7 +283,6 @@ public class NacosConfigService implements ConfigService {
         params.put("dataId", dataId);
         params.put("group", group);
         params.put("content", content);
-        params.put("type", type);
         if (StringUtils.isNotEmpty(tenant)) {
             params.put("tenant", tenant);
         }

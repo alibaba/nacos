@@ -45,7 +45,8 @@ public class WebUtils {
 
     /**
      * get target value from parameterMap, if not found will throw {@link IllegalArgumentException}.
-     *从req中获取key对应的值  并进行编码
+     * 从req中获取key对应的值  并进行编码
+     *
      * @param req {@link HttpServletRequest}
      * @param key key
      * @return value
@@ -61,17 +62,14 @@ public class WebUtils {
 
     /**
      * get target value from parameterMap, if not found will return default value.
-     *获得req中key对应的value  若为空则返回defaultValue
-     *      *
+     * 得req中key对应的value  若为空则返回defaultValue
+     *
      * @param req          {@link HttpServletRequest}
      * @param key          key
      * @param defaultValue default value
      * @return value
      */
     public static String optional(final HttpServletRequest req, final String key, final String defaultValue) {
-        /**
-         * 请求参数中没有key  或者  对应key的数组第一个元素为null
-         */
         if (!req.getParameterMap().containsKey(key) || req.getParameterMap().get(key)[0] == null) {
             return defaultValue;
         }
