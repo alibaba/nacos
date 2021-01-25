@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 public class HealthCheckRequestHandler extends RequestHandler<HealthCheckRequest, HealthCheckResponse> {
     
     @Override
-    @TpsControl(pointName = "ServerCheck")
+    @TpsControl(pointName = "HealthCheck")
     public HealthCheckResponse handle(HealthCheckRequest request, RequestMeta meta) {
         return new HealthCheckResponse();
     }
