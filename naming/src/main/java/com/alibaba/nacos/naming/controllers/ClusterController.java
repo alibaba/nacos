@@ -23,9 +23,11 @@ import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.core.ClusterOperator;
 import com.alibaba.nacos.naming.core.ClusterOperatorV1Impl;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.apache.commons.lang3.BooleanUtils;
@@ -46,11 +48,15 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
 public class ClusterController {
     
+    private final UpgradeJudgement upgradeJudgement;
+    
     private final ClusterOperatorV1Impl clusterOperatorV1;
     
     private final ClusterOperatorV2Impl clusterOperatorV2;
     
-    public ClusterController(ClusterOperatorV1Impl clusterOperatorV1, ClusterOperatorV2Impl clusterOperatorV2) {
+    public ClusterController(UpgradeJudgement upgradeJudgement, ClusterOperatorV1Impl clusterOperatorV1,
+            ClusterOperatorV2Impl clusterOperatorV2) {
+        this.upgradeJudgement = upgradeJudgement;
         this.clusterOperatorV1 = clusterOperatorV1;
         this.clusterOperatorV2 = clusterOperatorV2;
     }
@@ -79,8 +85,11 @@ public class ClusterController {
         clusterMetadata.setHealthyCheckType(healthChecker.getType());
         clusterMetadata.setExtendData(
                 UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
-        clusterOperatorV2.updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+        judgeClusterOperator().updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
         return "ok";
     }
-    
+ 
+    private ClusterOperator judgeClusterOperator() {
+        return upgradeJudgement.isUseGrpcFeatures() ? clusterOperatorV2 : clusterOperatorV1;
+    }
 }

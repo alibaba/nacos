@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.naming.remote.udp.AckEntry;
 import com.alibaba.nacos.naming.remote.udp.AckPacket;
 import com.alibaba.nacos.naming.remote.udp.UdpConnector;
 import com.alibaba.nacos.naming.utils.Constants;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.MapUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.BeansException;
@@ -114,6 +116,10 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
     
     @Override
     public void onApplicationEvent(ServiceChangeEvent event) {
+        // If upgrade to 2.0.X, do not push for v1.
+        if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
+            return;
+        }
         Service service = event.getService();
         String serviceName = service.getName();
         String namespaceId = service.getNamespaceId();

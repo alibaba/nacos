@@ -311,7 +311,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     public long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster) {
         com.alibaba.nacos.naming.core.Instance instance = serviceManager
                 .getInstance(namespaceId, serviceName, cluster, ip, port);
-        if (instance.containsMetadata(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
+        if (null != instance && instance.containsMetadata(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
             return instance.getInstanceHeartBeatInterval();
         }
         return switchDomain.getClientBeatInterval();

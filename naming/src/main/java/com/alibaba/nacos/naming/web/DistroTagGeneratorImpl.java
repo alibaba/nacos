@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.naming.web;
 
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import org.springframework.stereotype.Component;
 
 /**
@@ -30,14 +28,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class DistroTagGeneratorImpl implements DistroTagGenerator {
     
-    private final ServerMemberManager serverMemberManager;
-    
     private final DistroTagGenerator serviceNameTag = new DistroServiceNameTagGenerator();
     
     private final DistroTagGenerator ipPortTag = new DistroIpPortTagGenerator();
     
-    public DistroTagGeneratorImpl(ServerMemberManager serverMemberManager) {
-        this.serverMemberManager = serverMemberManager;
+    private final UpgradeJudgement upgradeJudgement;
+    
+    public DistroTagGeneratorImpl(UpgradeJudgement upgradeJudgement) {
+        this.upgradeJudgement = upgradeJudgement;
     }
     
     @Override
@@ -56,11 +54,6 @@ public class DistroTagGeneratorImpl implements DistroTagGenerator {
      * @return actual tag generator
      */
     private DistroTagGenerator getTagGenerator() {
-        for (Member each : serverMemberManager.allMembers()) {
-            if (null == each.getExtendVal(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE)) {
-                return serviceNameTag;
-            }
-        }
-        return ipPortTag;
+        return upgradeJudgement.isUseGrpcFeatures() ? ipPortTag : serviceNameTag;
     }
 }
