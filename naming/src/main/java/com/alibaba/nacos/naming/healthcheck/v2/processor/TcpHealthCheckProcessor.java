@@ -279,7 +279,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                     healthCheckCommon.checkFail(task, service, msg);
                 }
                 
-                keyMap.remove(task.toString());
+                keyMap.remove(toString());
             }
             
             healthCheckCommon.reEvaluateCheckRT(rt, task, switchDomain.getTcpHealthParams());

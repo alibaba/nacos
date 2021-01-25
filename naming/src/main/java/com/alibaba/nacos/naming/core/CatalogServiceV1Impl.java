@@ -74,7 +74,7 @@ public class CatalogServiceV1Impl implements CatalogService {
     @Override
     public List<? extends Instance> listInstances(String namespaceId, String groupName, String serviceName,
             String clusterName) throws NacosException {
-        Service service = serviceManager.getService(namespaceId, serviceName);
+        Service service = serviceManager.getService(namespaceId, NamingUtils.getGroupedName(serviceName, groupName));
         if (service == null) {
             throw new NacosException(NacosException.NOT_FOUND,
                     String.format("service %s@@%s is not found!", groupName, serviceName));

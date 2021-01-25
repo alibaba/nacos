@@ -92,46 +92,49 @@ public class DistroFilter implements Filter {
                 throw new NoSuchMethodException(req.getMethod() + " " + path);
             }
             
+            if (!method.isAnnotationPresent(CanDistro.class)) {
+                filterChain.doFilter(req, resp);
+                return;
+            }
             String distroTag = distroTagGenerator.getResponsibleTag(req);
             
-            // proxy request to other server if necessary:
-            if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(distroTag)) {
-                
-                String userAgent = req.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
-                
-                if (StringUtils.isNotBlank(userAgent) && userAgent.contains(UtilsAndCommons.NACOS_SERVER_HEADER)) {
-                    // This request is sent from peer server, should not be redirected again:
-                    Loggers.SRV_LOG.error("receive invalid redirect request from peer {}", req.getRemoteAddr());
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                            "receive invalid redirect request from peer " + req.getRemoteAddr());
-                    return;
-                }
-                
-                final String targetServer = distroMapper.mapSrv(distroTag);
-                
-                List<String> headerList = new ArrayList<>(16);
-                Enumeration<String> headers = req.getHeaderNames();
-                while (headers.hasMoreElements()) {
-                    String headerName = headers.nextElement();
-                    headerList.add(headerName);
-                    headerList.add(req.getHeader(headerName));
-                }
-                
-                final String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
-                final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
-                
-                RestResult<String> result = HttpClient
-                        .request("http://" + targetServer + req.getRequestURI(), headerList, paramsValue, body,
-                                PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
-                String data = result.ok() ? result.getData() : result.getMessage();
-                try {
-                    WebUtils.response(resp, data, result.getCode());
-                } catch (Exception ignore) {
-                    Loggers.SRV_LOG
-                            .warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(distroTag) + urlString);
-                }
-            } else {
+            if (distroMapper.responsible(distroTag)) {
                 filterChain.doFilter(req, resp);
+                return;
+            }
+            
+            // proxy request to other server if necessary:
+            String userAgent = req.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
+            
+            if (StringUtils.isNotBlank(userAgent) && userAgent.contains(UtilsAndCommons.NACOS_SERVER_HEADER)) {
+                // This request is sent from peer server, should not be redirected again:
+                Loggers.SRV_LOG.error("receive invalid redirect request from peer {}", req.getRemoteAddr());
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                        "receive invalid redirect request from peer " + req.getRemoteAddr());
+                return;
+            }
+            
+            final String targetServer = distroMapper.mapSrv(distroTag);
+            
+            List<String> headerList = new ArrayList<>(16);
+            Enumeration<String> headers = req.getHeaderNames();
+            while (headers.hasMoreElements()) {
+                String headerName = headers.nextElement();
+                headerList.add(headerName);
+                headerList.add(req.getHeader(headerName));
+            }
+            
+            final String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
+            final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
+            
+            RestResult<String> result = HttpClient
+                    .request("http://" + targetServer + req.getRequestURI(), headerList, paramsValue, body,
+                            PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
+            String data = result.ok() ? result.getData() : result.getMessage();
+            try {
+                WebUtils.response(resp, data, result.getCode());
+            } catch (Exception ignore) {
+                Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(distroTag) + urlString);
             }
         } catch (AccessControlException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
@@ -147,6 +150,6 @@ public class DistroFilter implements Filter {
     
     @Override
     public void destroy() {
-        
+    
     }
 }

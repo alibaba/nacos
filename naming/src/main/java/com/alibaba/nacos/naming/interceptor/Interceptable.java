@@ -26,5 +26,10 @@ public interface Interceptable {
     /**
      * If no {@link NacosNamingInterceptor} intercept this object, this method will be called to execute.
      */
+    void passIntercept();
+    
+    /**
+     * If one {@link NacosNamingInterceptor} intercept this object, this method will be called.
+     */
     void afterIntercept();
 }

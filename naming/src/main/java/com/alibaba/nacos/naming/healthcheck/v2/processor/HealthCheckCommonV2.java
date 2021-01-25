@@ -96,7 +96,7 @@ public class HealthCheckCommonV2 {
                 String clusterName = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
                 if (instance.getOkCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
                     if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
-                            .responsible(serviceName)) {
+                            .responsible(task.getClient().getResponsibleId())) {
                         healthStatusSynchronizer.instanceHealthStatusChange(true, task.getClient(), service, instance);
                         Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
                                 serviceName, instance.getIp(), instance.getPort(), clusterName,
@@ -130,7 +130,7 @@ public class HealthCheckCommonV2 {
                 String clusterName = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
                 if (instance.getFailCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
                     if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
-                            .responsible(serviceName)) {
+                            .responsible(task.getClient().getResponsibleId())) {
                         healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
                         Loggers.EVT_LOG
                                 .info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
@@ -165,7 +165,7 @@ public class HealthCheckCommonV2 {
                 String serviceName = service.getGroupedServiceName();
                 String clusterName = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
                 if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
-                        .responsible(serviceName)) {
+                        .responsible(task.getClient().getResponsibleId())) {
                     healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
                     Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
                             serviceName, instance.getIp(), instance.getPort(), clusterName,
