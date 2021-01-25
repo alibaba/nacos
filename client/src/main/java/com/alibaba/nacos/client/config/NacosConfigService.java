@@ -58,9 +58,9 @@ public class NacosConfigService implements ConfigService {
     
     public NacosConfigService(Properties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);
-    
+        
         initNamespace(properties);
-    
+        
         this.worker = new ClientWorker(this.configFilterChainManager, properties);
     }
     
@@ -94,7 +94,19 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public boolean publishConfig(String dataId, String group, String content, String type) throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content, type);
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, type, null);
+    }
+    
+    @Override
+    public boolean publishConfigCas(String dataId, String group, String content, String casMd5) throws NacosException {
+        return publishConfigInner(namespace, dataId, group, null, null, null, content,
+                ConfigType.getDefaultType().getType(), casMd5);
+    }
+    
+    @Override
+    public boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type)
+            throws NacosException {
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, type, casMd5);
     }
     
     @Override
@@ -142,7 +154,7 @@ public class NacosConfigService implements ConfigService {
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
                     worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
-    
+        
         LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
                 worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
@@ -163,7 +175,7 @@ public class NacosConfigService implements ConfigService {
     }
     
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
-            String betaIps, String content, String type) throws NacosException {
+            String betaIps, String content, String type, String casMd5) throws NacosException {
         group = null2defaultGroup(group);
         ParamUtils.checkParam(dataId, group, content);
         
@@ -175,8 +187,8 @@ public class NacosConfigService implements ConfigService {
         cr.setType(type);
         configFilterChainManager.doFilter(cr, null);
         content = cr.getContent();
-    
-        return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content);
+        
+        return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, casMd5);
         
     }
     

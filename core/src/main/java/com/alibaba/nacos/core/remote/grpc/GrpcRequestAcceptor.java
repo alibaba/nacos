@@ -59,7 +59,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     private void traceIfNecessary(Payload grpcRequest, boolean receive) {
         String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
         String connectionId = CONTEXT_KEY_CONN_ID.get();
-    
+        
         try {
             if (connectionManager.traced(clientIp)) {
                 Loggers.REMOTE_DIGEST.info("[{}]Payload {},meta={},body={}", connectionId, receive ? "receive" : "send",
@@ -91,7 +91,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         }
         
         // server check.
-        if (ServerCheckRequest.class.getName().equals(type)) {
+        if (ServerCheckRequest.class.getSimpleName().equals(type)) {
             Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(CONTEXT_KEY_CONN_ID.get()));
             traceIfNecessary(serverCheckResponseP, false);
             responseObserver.onNext(serverCheckResponseP);

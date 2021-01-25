@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -43,14 +44,24 @@ public class Member implements Comparable<Member>, Cloneable {
     
     private transient int failAccessCnt = 0;
     
+    private ServerAbilities abilities = new ServerAbilities();
+    
     public Member() {
         String prefix = "nacos.core.member.meta.";
         extendInfo.put(MemberMetaDataConstants.SITE_KEY,
                 EnvUtil.getProperty(prefix + MemberMetaDataConstants.SITE_KEY, "unknow"));
         extendInfo.put(MemberMetaDataConstants.AD_WEIGHT,
                 EnvUtil.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
-        extendInfo.put(MemberMetaDataConstants.WEIGHT,
-                EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
+        extendInfo
+                .put(MemberMetaDataConstants.WEIGHT, EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
+    }
+    
+    public ServerAbilities getAbilities() {
+        return abilities;
+    }
+    
+    public void setAbilities(ServerAbilities abilities) {
+        this.abilities = abilities;
     }
     
     public static MemberBuilder builder() {

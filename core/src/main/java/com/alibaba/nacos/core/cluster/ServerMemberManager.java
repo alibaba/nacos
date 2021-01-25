@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.Callback;
@@ -28,7 +29,6 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -135,8 +135,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
-        this.self.setExtendVal(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE,
-                EnvUtil.getProperty(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE, ConnectionType.GRPC.getType()));
+        
+        // init abilities.
+        this.self.setAbilities(initMemberAbilities());
+        
         serverList.put(self.getAddress(), self);
         
         // register NodeChangeEvent publisher to NotifyManager
@@ -150,6 +152,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         }
         
         Loggers.CORE.info("The cluster resource is initialized");
+    }
+    
+    private ServerAbilities initMemberAbilities() {
+        ServerAbilities serverAbilities = new ServerAbilities();
+        serverAbilities.getRemoteAbility().setSupportRemoteConnection(true);
+        return serverAbilities;
     }
     
     private void initAndStartLookup() throws NacosException {
@@ -308,12 +316,15 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         for (Member member : members) {
             final String address = member.getAddress();
             
-            if (!serverList.containsKey(address)) {
+            Member existMember = serverList.get(address);
+            if (existMember == null) {
                 hasChange = true;
+                tmpMap.put(address, member);
+            } else {
+                //to keep extendInfo and abilities that report dynamically.
+                tmpMap.put(address, existMember);
             }
             
-            // Ensure that the node is created only once
-            tmpMap.put(address, member);
             if (NodeState.UP.equals(member.getState())) {
                 tmpAddressInfo.add(address);
             }

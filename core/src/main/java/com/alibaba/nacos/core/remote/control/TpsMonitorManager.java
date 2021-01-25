@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -55,20 +54,17 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     
     public final Map<String, TpsMonitorPoint> points = new ConcurrentHashMap<String, TpsMonitorPoint>(16);
     
-    private static ScheduledExecutorService executorService = ExecutorFactory
-            .newSingleScheduledExecutorService(new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r, "nacos.core.remote.tps.control.reporter");
-                    thread.setDaemon(true);
-                    return thread;
-                }
-            });
+    private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
+        Thread thread = new Thread(r, "nacos.core.remote.tps.control.reporter");
+        thread.setDaemon(true);
+        return thread;
+    });
     
     public TpsMonitorManager() {
         NotifyCenter.registerToPublisher(TpsControlRuleChangeEvent.class, NotifyCenter.ringBufferSize);
         NotifyCenter.registerSubscriber(this);
         executorService.scheduleWithFixedDelay(new TpsMonitorReporter(), 0, 900, TimeUnit.MILLISECONDS);
+        registerFileWatch();
     }
     
     /**
@@ -85,26 +81,27 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
             Loggers.TPS_CONTROL
                     .error("Fail to init rule from local,pointName={},error={}", tpsMonitorPoint.getPointName(), e);
         }
-        if (points.putIfAbsent(tpsMonitorPoint.getPointName(), tpsMonitorPoint) == null) {
-            registerFileWatch(tpsMonitorPoint);
-        }
+        points.putIfAbsent(tpsMonitorPoint.getPointName(), tpsMonitorPoint);
+        
     }
     
-    private void registerFileWatch(TpsMonitorPoint tpsMonitorPoint) {
+    private void registerFileWatch() {
         try {
             String tpsPath = Paths.get(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator)
                     .toString();
+            checkBaseDir();
             WatchFileCenter.registerWatcher(tpsPath, new FileWatcher() {
                 @Override
                 public void onChange(FileChangeEvent event) {
+                    String fileName = event.getContext().toString();
                     try {
-                        String fileName = event.getContext().toString();
+                        
                         if (points.get(fileName) != null) {
                             loadRuleFromLocal(points.get(fileName));
                         }
                     } catch (Throwable throwable) {
-                        Loggers.TPS_CONTROL.warn("Fail to load rule from local,pointName={},error={}",
-                                tpsMonitorPoint.getPointName(), throwable);
+                        Loggers.TPS_CONTROL
+                                .warn("Fail to load rule from local,pointName={},error={}", fileName, throwable);
                     }
                 }
                 
@@ -119,8 +116,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                 }
             });
         } catch (NacosException e) {
-            Loggers.TPS_CONTROL
-                    .warn("Register tps point rule fail ,pointName={},error={}", tpsMonitorPoint.getPointName(), e);
+            Loggers.TPS_CONTROL.warn("Register fire watch fail.", e);
         }
     }
     
@@ -273,11 +269,16 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     }
     
     private File getRuleFile(String pointName) {
+        File baseDir = checkBaseDir();
+        File pointFile = new File(baseDir, pointName);
+        return pointFile;
+    }
+    
+    private File checkBaseDir() {
         File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdir();
         }
-        File pointFile = new File(baseDir, pointName);
-        return pointFile;
+        return baseDir;
     }
 }

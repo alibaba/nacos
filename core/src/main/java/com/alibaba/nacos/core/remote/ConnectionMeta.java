@@ -76,6 +76,11 @@ public class ConnectionMeta {
      */
     String appName;
     
+    /**
+     * tenant.
+     */
+    String tenant;
+    
     protected Map<String, String> labels = new HashMap<String, String>();
     
     public String getLabel(String labelKey) {
@@ -284,6 +289,14 @@ public class ConnectionMeta {
     
     public void setAppName(String appName) {
         this.appName = appName;
+    }
+    
+    public String getTenant() {
+        return tenant;
+    }
+    
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
     }
     
     @Override

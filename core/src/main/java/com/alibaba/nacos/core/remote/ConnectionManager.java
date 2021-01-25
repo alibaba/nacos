@@ -717,7 +717,6 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         if (!limitFile.exists()) {
             limitFile.createNewFile();
         }
-        
         DiskUtils.writeFile(limitFile, JacksonUtils.toJson(limitRule).getBytes(Constants.ENCODE), false);
     }
     
