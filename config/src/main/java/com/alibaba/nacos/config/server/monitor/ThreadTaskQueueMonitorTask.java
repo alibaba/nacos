@@ -41,9 +41,6 @@ public class ThreadTaskQueueMonitorTask implements Runnable {
         int notifierClientSize = ConfigExecutor.asyncCofigChangeClientNotifyQueueSize();
         MEMORY_LOG.info("toNotifyTaskSize = {}", size);
         MEMORY_LOG.info("toClientNotifyTaskSize = {}", notifierClientSize);
-        MEMORY_LOG.info("sdkRpcTaskSize = {}", GlobalExecutor.sdkRpcExecutor.getQueue().size());
-        MEMORY_LOG.info("clusterRpcTaskSize = {}", GlobalExecutor.clusterRpcExecutor.getQueue().size());
-    
         MetricsMonitor.getNotifyTaskMonitor().set(size);
         MetricsMonitor.getNotifyClientTaskMonitor().set(notifierClientSize);
     }

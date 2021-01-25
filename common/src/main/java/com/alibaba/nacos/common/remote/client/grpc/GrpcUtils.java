@@ -96,7 +96,7 @@ public class GrpcUtils {
         Payload.Builder payloadBuilder = Payload.newBuilder();
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         if (meta != null) {
-            metaBuilder.putAllHeaders(request.getHeaders()).setType(request.getClass().getName());
+            metaBuilder.putAllHeaders(request.getHeaders()).setType(request.getClass().getSimpleName());
         }
         payloadBuilder.setMetadata(metaBuilder.build());
         
@@ -118,7 +118,7 @@ public class GrpcUtils {
      */
     public static Payload convert(Request request) {
         
-        Metadata newMeta = Metadata.newBuilder().setType(request.getClass().getName())
+        Metadata newMeta = Metadata.newBuilder().setType(request.getClass().getSimpleName())
                 .putAllHeaders(request.getHeaders()).build();
         request.clearHeaders();
         String jsonString = toJson(request);
@@ -141,7 +141,7 @@ public class GrpcUtils {
     public static Payload convert(Response response) {
         String jsonString = toJson(response);
         
-        Metadata.Builder metaBuilder = Metadata.newBuilder().setType(response.getClass().getName());
+        Metadata.Builder metaBuilder = Metadata.newBuilder().setType(response.getClass().getSimpleName());
         Payload payload = Payload.newBuilder()
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .setMetadata(metaBuilder.build()).build();

@@ -40,7 +40,7 @@ public class RpcClientFactory {
      *
      * @return client collection.
      */
-    public static Set<Map.Entry<String, RpcClient>> getAllClientEntrys() {
+    public static Set<Map.Entry<String, RpcClient>> getAllClientEntries() {
         Set<Map.Entry<String, RpcClient>> entries = clientMap.entrySet();
         return entries;
     }
@@ -81,7 +81,7 @@ public class RpcClientFactory {
                 if (moduleClient == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
                 }
-                moduleClient.initLabels(labels);
+                moduleClient.labels(labels);
                 clientMap.put(clientNameInner, moduleClient);
                 return moduleClient;
             }
@@ -109,7 +109,7 @@ public class RpcClientFactory {
                 if (moduleClient == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
                 }
-                moduleClient.initLabels(labels);
+                moduleClient.labels(labels);
                 clientMap.put(clientNameInner, moduleClient);
                 return moduleClient;
             }

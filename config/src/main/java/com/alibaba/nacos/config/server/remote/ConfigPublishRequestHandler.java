@@ -98,20 +98,50 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             final Timestamp time = TimeUtils.getCurrentTime();
             String betaIps = request.getAdditionParam("betaIps");
             ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
+            configInfo.setMd5(request.getCasMd5());
             configInfo.setType(type);
             if (StringUtils.isBlank(betaIps)) {
                 if (StringUtils.isBlank(tag)) {
-                    persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
+                    if (StringUtils.isNotBlank(request.getCasMd5())) {
+                        boolean casSuccess = persistService
+                                .insertOrUpdateCas(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
+                        if (!casSuccess) {
+                            return ConfigPublishResponse
+                                    .buildFailResponse("Cas publish fail,server md5 may have changed.");
+                        }
+                    } else {
+                        persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
+                    }
                     ConfigChangePublisher.notifyConfigChange(
                             new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
                 } else {
-                    persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, true);
+                    if (StringUtils.isNotBlank(request.getCasMd5())) {
+                        boolean casSuccess = persistService
+                                .insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser, time, true);
+                        if (!casSuccess) {
+                            return ConfigPublishResponse
+                                    .buildFailResponse("Cas publish tag config fail,server md5 may have changed.");
+                        }
+                    } else {
+                        persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, true);
+                        
+                    }
                     ConfigChangePublisher.notifyConfigChange(
                             new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
                 }
             } else {
                 // beta publish
-                persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, true);
+                if (StringUtils.isNotBlank(request.getCasMd5())) {
+                    boolean casSuccess = persistService
+                            .insertOrUpdateBetaCas(configInfo, betaIps, srcIp, srcUser, time, true);
+                    if (!casSuccess) {
+                        return ConfigPublishResponse
+                                .buildFailResponse("Cas publish beta config fail,server md5 may have changed.");
+                    }
+                } else {
+                    persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, true);
+                    
+                }
                 ConfigChangePublisher
                         .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
             }

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -257,8 +258,8 @@ public class ClientWorker implements Closeable {
      * @throws NacosException exception throw.
      */
     public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
-            String content) throws NacosException {
-        return agent.publishConfig(dataId, group, tenant, appName, tag, betaIps, content);
+            String content, String casMd5) throws NacosException {
+        return agent.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, casMd5);
     }
     
     /**
@@ -645,7 +646,7 @@ public class ClientWorker implements Closeable {
                 
             });
             
-            rpcClientInner.init(new ServerListFactory() {
+            rpcClientInner.serverListFactory(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
                     return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
@@ -843,17 +844,26 @@ public class ClientWorker implements Closeable {
         
         private synchronized RpcClient ensureRpcClient(String taskId) throws NacosException {
             Map<String, String> labels = getLabels();
-            Map<String, String> newlabels = new HashMap<String, String>(labels);
-            newlabels.put("taskId", taskId);
+            Map<String, String> newLabels = new HashMap<String, String>(labels);
+            newLabels.put("taskId", taskId);
             
             RpcClient rpcClient = RpcClientFactory
-                    .createClient("config-" + taskId + "-" + uuid, getConnectionType(), newlabels);
+                    .createClient("config-" + taskId + "-" + uuid, getConnectionType(), newLabels);
             if (rpcClient.isWaitInitiated()) {
                 initRpcClientHandler(rpcClient);
+                rpcClient.setTenant(getTenant());
+                rpcClient.clientAbilities(initAbilities());
                 rpcClient.start();
             }
             
             return rpcClient;
+        }
+        
+        private ClientAbilities initAbilities() {
+            ClientAbilities clientAbilities = new ClientAbilities();
+            clientAbilities.getRemoteAbility().setSupportRemoteConnection(true);
+            clientAbilities.getConfigAbility().setSupportRemoteMetrics(true);
+            return clientAbilities;
         }
         
         /**
@@ -958,12 +968,13 @@ public class ClientWorker implements Closeable {
         
         @Override
         public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
-                String betaIps, String content) throws NacosException {
+                String betaIps, String content, String casMd5) throws NacosException {
             try {
                 ConfigPublishRequest request = new ConfigPublishRequest(dataId, group, tenant, content);
-                request.putAdditonalParam("tag", tag);
-                request.putAdditonalParam("appName", appName);
-                request.putAdditonalParam("betaIps", betaIps);
+                request.setCasMd5(casMd5);
+                request.putAdditionalParam("tag", tag);
+                request.putAdditionalParam("appName", appName);
+                request.putAdditionalParam("betaIps", betaIps);
                 ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
                 if (!response.isSuccess()) {
                     LOGGER.warn("[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
