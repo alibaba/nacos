@@ -646,7 +646,7 @@ public class ClientWorker implements Closeable {
                 
             });
             
-            rpcClientInner.init(new ServerListFactory() {
+            rpcClientInner.serverListFactory(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
                     return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
@@ -851,7 +851,8 @@ public class ClientWorker implements Closeable {
                     .createClient("config-" + taskId + "-" + uuid, getConnectionType(), newLabels);
             if (rpcClient.isWaitInitiated()) {
                 initRpcClientHandler(rpcClient);
-                rpcClient.initClientAbilities(initAbilities());
+                rpcClient.setTenant(getTenant());
+                rpcClient.clientAbilities(initAbilities());
                 rpcClient.start();
             }
             

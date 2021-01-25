@@ -33,6 +33,8 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     private ClientAbilities abilities;
     
+    private String tenant;
+    
     private Map<String, String> labels = new HashMap<String, String>();
     
     public ConnectionSetupRequest() {
@@ -52,6 +54,14 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
+    }
+    
+    public String getTenant() {
+        return tenant;
+    }
+    
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
     }
     
     public ClientAbilities getAbilities() {

@@ -126,7 +126,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             Loggers.CLUSTER.info("start a new rpc client to member - > : {}", member);
             
             //one fixed server
-            client.init(new ServerListFactory() {
+            client.serverListFactory(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
                     return member.getAddress();

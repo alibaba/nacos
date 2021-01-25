@@ -81,6 +81,8 @@ public abstract class RpcClient implements Closeable {
     
     private String name;
     
+    private String tenant;
+    
     private static final int RETRY_TIMES = 3;
     
     private static final long DEFAULT_TIMEOUT_MILLS = 3000L;
@@ -127,8 +129,56 @@ public abstract class RpcClient implements Closeable {
                 serverListFactory.getClass().getName());
     }
     
-    public void initClientAbilities(ClientAbilities clientAbilities) {
+    /**
+     * init client abilities.
+     *
+     * @param clientAbilities clientAbilities.
+     */
+    public RpcClient clientAbilities(ClientAbilities clientAbilities) {
         this.clientAbilities = clientAbilities;
+        return this;
+    }
+    
+    /**
+     * init server list factory.only can init once.
+     *
+     * @param serverListFactory serverListFactory
+     */
+    public RpcClient serverListFactory(ServerListFactory serverListFactory) {
+        if (!isWaitInitiated()) {
+            return this;
+        }
+        this.serverListFactory = serverListFactory;
+        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
+        
+        LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]RpcClient init, ServerListFactory ={}", name,
+                serverListFactory.getClass().getName());
+        return this;
+    }
+    
+    /**
+     * init labels.
+     *
+     * @param labels labels
+     */
+    public RpcClient labels(Map<String, String> labels) {
+        this.labels.putAll(labels);
+        LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]RpcClient init label, labels={}", name, this.labels);
+        return this;
+    }
+    
+    /**
+     * init keepalive time.
+     *
+     * @param keepAliveTime keepAliveTime
+     * @param timeUnit      timeUnit
+     */
+    public RpcClient keepAlive(long keepAliveTime, TimeUnit timeUnit) {
+        this.keepAliveTime = keepAliveTime * timeUnit.toMillis(keepAliveTime);
+        LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]RpcClient init keepalive time, keepAliveTimeMillis={}", name,
+                keepAliveTime);
+        
+        return this;
     }
     
     /**
@@ -192,45 +242,6 @@ public abstract class RpcClient implements Closeable {
      */
     public boolean isShutdown() {
         return this.rpcClientStatus.get() == RpcClientStatus.SHUTDOWN;
-    }
-    
-    /**
-     * init server list factory.only can init once.
-     *
-     * @param serverListFactory serverListFactory
-     */
-    public RpcClient init(ServerListFactory serverListFactory) {
-        if (!isWaitInitiated()) {
-            return this;
-        }
-        this.serverListFactory = serverListFactory;
-        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
-        
-        LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]RpcClient init, ServerListFactory ={}", name,
-                serverListFactory.getClass().getName());
-        return this;
-    }
-    
-    /**
-     * init labels.
-     *
-     * @param labels labels
-     */
-    public RpcClient initLabels(Map<String, String> labels) {
-        this.labels.putAll(labels);
-        LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]RpcClient init label, labels={}", name, this.labels);
-        return this;
-    }
-    
-    /**
-     * init keepalive time.
-     *
-     * @param keepAliveTime keepAliveTime
-     * @param timeUnit      timeUnit
-     */
-    public RpcClient initKeepAlive(long keepAliveTime, TimeUnit timeUnit) {
-        this.keepAliveTime = keepAliveTime * timeUnit.toMillis(keepAliveTime);
-        return this;
     }
     
     /**
@@ -993,5 +1004,13 @@ public abstract class RpcClient implements Closeable {
         boolean onRequestFail;
         
         ServerInfo serverInfo;
+    }
+    
+    public String getTenant() {
+        return tenant;
+    }
+    
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
     }
 }
