@@ -142,6 +142,9 @@ public class NamingProxy implements Closeable {
             }
         });
         
+        refreshSrvIfNeed();
+        this.securityProxy.login(getServerList());
+        
         this.executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -155,9 +158,6 @@ public class NamingProxy implements Closeable {
                 securityProxy.login(getServerList());
             }
         }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-        
-        refreshSrvIfNeed();
-        this.securityProxy.login(getServerList());
     }
     
     public List<String> getServerListFromEndpoint() {
