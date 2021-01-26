@@ -32,6 +32,7 @@ public class DoubleWriteDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     public DoubleWriteDelayTaskEngine() {
         super(DoubleWriteDelayTaskEngine.class.getSimpleName(), Loggers.SRV_LOG);
         addProcessor("v1", new ServiceChangeV1Task.ServiceChangeV1TaskProcessor());
+        addProcessor("v2", new ServiceChangeV2Task.ServiceChangeV2TaskProcessor());
     }
     
     @Override

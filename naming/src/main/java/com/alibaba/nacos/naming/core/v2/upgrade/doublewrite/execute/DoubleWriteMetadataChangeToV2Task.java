@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.ServiceChangeV1Task;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
@@ -62,6 +63,9 @@ public class DoubleWriteMetadataChangeToV2Task extends AbstractExecuteTask {
                 }
             }
         } catch (Exception e) {
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("Double write task for {} metadata from 2 to 1 failed", service, e);
+            }
             ServiceChangeV1Task retryTask = new ServiceChangeV1Task(service.getNamespace(),
                     service.getGroupedServiceName(), service.isEphemeral());
             retryTask.setTaskInterval(3000L);
