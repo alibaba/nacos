@@ -21,8 +21,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
-import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.ServiceChangeV1Task;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
@@ -277,9 +276,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         
         setLastModifiedMillis(System.currentTimeMillis());
         getPushService().serviceChanged(this);
-        ApplicationUtils.getBean(DoubleWriteDelayTaskEngine.class)
-                .addTask(ServiceChangeV1Task.getKey(namespaceId, getName(), ephemeral),
-                        new ServiceChangeV1Task(namespaceId, getName(), ephemeral));
+        ApplicationUtils.getBean(DoubleWriteEventListener.class).doubleWriteToV2(this, ephemeral);
         StringBuilder stringBuilder = new StringBuilder();
         
         for (Instance instance : allIPs()) {

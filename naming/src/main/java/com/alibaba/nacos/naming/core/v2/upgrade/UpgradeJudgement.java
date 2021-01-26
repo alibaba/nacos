@@ -33,6 +33,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.codehaus.jackson.Version;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.stereotype.Component;
@@ -71,7 +72,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     private final DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine;
     
-    private final ScheduledExecutorService upgradeChecker;
+    private ScheduledExecutorService upgradeChecker;
     
     public UpgradeJudgement(RaftPeerSet raftPeerSet, RaftCore raftCore, ClusterVersionJudgement versionJudgement,
             ServerMemberManager memberManager, ServiceManager serviceManager,
@@ -82,6 +83,15 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         this.memberManager = memberManager;
         this.serviceManager = serviceManager;
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
+        if (!EnvUtil.getStandaloneMode()) {
+            initUpgradeChecker();
+        } else {
+            useGrpcFeatures.set(true);
+        }
+        NotifyCenter.registerSubscriber(this);
+    }
+    
+    private void initUpgradeChecker() {
         upgradeChecker = ExecutorFactory.newSingleScheduledExecutorService(new NameThreadFactory("upgrading.checker"));
         upgradeChecker.scheduleAtFixedRate(() -> {
             if (isUseGrpcFeatures()) {
@@ -93,7 +103,6 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
                 doUpgrade();
             }
         }, 100L, 5000L, TimeUnit.MILLISECONDS);
-        NotifyCenter.registerSubscriber(this);
     }
     
     @JustForTest
@@ -183,7 +192,12 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         return MembersChangeEvent.class;
     }
     
+    /**
+     * Shut down.
+     */
     public void shutdown() {
-        upgradeChecker.shutdownNow();
+        if (null != upgradeChecker) {
+            upgradeChecker.shutdownNow();
+        }
     }
 }

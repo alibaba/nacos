@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Double write delay task during upgrading.
+ * Double write delay task for service from v1 to v2 during upgrading.
  *
  * @author xiweng.yy
  */
@@ -105,7 +105,6 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
                         IpPortBasedClient.getClientId(each.toIpAddr(), serviceTask.isEphemeral()), instanceTask);
             }
             List<com.alibaba.nacos.api.naming.pojo.Instance> oldInstance = serviceInfo.getHosts();
-            Loggers.SRV_LOG.info("[TMP_DEBUG] oldInstances {} \n new Instances {}", oldInstance, newInstance);
             for (com.alibaba.nacos.api.naming.pojo.Instance each : oldInstance) {
                 if (!instances.contains(each.toInetAddr())) {
                     DoubleWriteInstanceChangeToV2Task instanceTask = new DoubleWriteInstanceChangeToV2Task(
