@@ -37,18 +37,18 @@ import java.util.concurrent.locks.Condition;
  * @author huali
  */
 public final class TaskManager extends NacosDelayTaskExecuteEngine implements TaskManagerMBean {
-    
+
     private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
-    
+
     private String name;
-    
+
     Condition notEmpty = this.lock.newCondition();
-    
+
     public TaskManager(String name) {
         super(name, LOGGER, 100L);
         this.name = name;
     }
-    
+
     /**
      * Close task manager.
      */
@@ -58,7 +58,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
         } catch (NacosException ignored) {
         }
     }
-    
+
     /**
      * Await for lock.
      *
@@ -74,7 +74,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
             this.lock.unlock();
         }
     }
-    
+
     /**
      * Await for lock by timeout.
      *
@@ -95,20 +95,20 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
             this.lock.unlock();
         }
     }
-    
+
     @Override
     public void addTask(Object key, AbstractDelayTask newTask) {
         super.addTask(key, newTask);
         MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
     }
-    
+
     @Override
     public AbstractDelayTask removeTask(Object key) {
         AbstractDelayTask result = super.removeTask(key);
         MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
         return result;
     }
-    
+
     @Override
     protected void processTasks() {
         super.processTasks();
@@ -122,7 +122,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
             }
         }
     }
-    
+
     @Override
     public String getTaskInfos() {
         StringBuilder sb = new StringBuilder();
@@ -136,10 +136,10 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
             }
             sb.append(Constants.NACOS_LINE_SEPARATOR);
         }
-        
+
         return sb.toString();
     }
-    
+
     /**
      * Init and register the mbean object.
      */
