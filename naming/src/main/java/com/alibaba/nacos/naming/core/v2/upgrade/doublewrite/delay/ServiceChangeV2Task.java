@@ -34,16 +34,32 @@ public class ServiceChangeV2Task extends AbstractDelayTask {
     
     private final Service changedService;
     
-    public ServiceChangeV2Task(Service service) {
+    private DoubleWriteContent content;
+    
+    public ServiceChangeV2Task(Service service, DoubleWriteContent content) {
         changedService = service;
+        this.content = content;
+        setTaskInterval(1000L);
+        setLastProcessTime(System.currentTimeMillis());
     }
     
     public Service getChangedService() {
         return changedService;
     }
     
+    public DoubleWriteContent getContent() {
+        return content;
+    }
+    
     @Override
     public void merge(AbstractDelayTask task) {
+        if (!(task instanceof ServiceChangeV2Task)) {
+            return;
+        }
+        ServiceChangeV2Task oldTask = (ServiceChangeV2Task) task;
+        if (!content.equals(oldTask.getContent())) {
+            content = DoubleWriteContent.BOTH;
+        }
     }
     
     public static String getKey(Service service) {
@@ -55,15 +71,36 @@ public class ServiceChangeV2Task extends AbstractDelayTask {
         @Override
         public boolean process(NacosTask task) {
             ServiceChangeV2Task serviceTask = (ServiceChangeV2Task) task;
-            Loggers.SRV_LOG.info("double write for service {}", serviceTask.getChangedService());
             Service changedService = serviceTask.getChangedService();
-            DoubleWriteMetadataChangeToV1Task metadataTask = new DoubleWriteMetadataChangeToV1Task(changedService);
-            NamingExecuteTaskDispatcher.getInstance()
-                    .dispatchAndExecuteTask(changedService.getGroupedServiceName(), metadataTask);
+            Loggers.SRV_LOG.info("double write for service {}, content {}", changedService, serviceTask.getContent());
+            switch (serviceTask.getContent()) {
+                case INSTANCE:
+                    dispatchInstanceChangeTask(changedService);
+                    break;
+                case METADATA:
+                    dispatchMetadataChangeTask(changedService);
+                    break;
+                default:
+                    dispatchAllTask(changedService);
+            }
+            return true;
+        }
+        
+        private void dispatchInstanceChangeTask(Service changedService) {
             DoubleWriteInstanceChangeToV1Task instanceTask = new DoubleWriteInstanceChangeToV1Task(changedService);
             NamingExecuteTaskDispatcher.getInstance()
                     .dispatchAndExecuteTask(changedService.getGroupedServiceName(), instanceTask);
-            return true;
+        }
+        
+        private void dispatchMetadataChangeTask(Service changedService) {
+            DoubleWriteMetadataChangeToV1Task metadataTask = new DoubleWriteMetadataChangeToV1Task(changedService);
+            NamingExecuteTaskDispatcher.getInstance()
+                    .dispatchAndExecuteTask(changedService.getGroupedServiceName(), metadataTask);
+        }
+        
+        private void dispatchAllTask(Service changedService) {
+            dispatchMetadataChangeTask(changedService);
+            dispatchInstanceChangeTask(changedService);
         }
     }
 }

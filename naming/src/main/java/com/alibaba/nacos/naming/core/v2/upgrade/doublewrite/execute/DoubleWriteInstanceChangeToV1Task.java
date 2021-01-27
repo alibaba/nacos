@@ -24,6 +24,9 @@ import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteContent;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.ServiceChangeV2Task;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
@@ -60,6 +63,10 @@ public class DoubleWriteInstanceChangeToV1Task extends AbstractExecuteTask {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
                 Loggers.SRV_LOG.debug("Double write task for {} instance from 2 to 1 failed", service, e);
             }
+            ServiceChangeV2Task retryTask = new ServiceChangeV2Task(service, DoubleWriteContent.INSTANCE);
+            retryTask.setTaskInterval(3000L);
+            String taskKey = ServiceChangeV2Task.getKey(service);
+            ApplicationUtils.getBean(DoubleWriteDelayTaskEngine.class).addTask(taskKey, retryTask);
         }
     }
     

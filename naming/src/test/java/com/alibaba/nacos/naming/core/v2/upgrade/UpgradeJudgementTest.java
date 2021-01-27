@@ -76,7 +76,7 @@ public class UpgradeJudgementTest {
     public void setUp() throws Exception {
         EnvUtil.setEnvironment(environment);
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
-                doubleWriteDelayTaskEngine);
+                doubleWriteDelayTaskEngine, serviceStorage);
     }
     
     @After

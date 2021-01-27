@@ -53,16 +53,26 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
     
     private final boolean ephemeral;
     
-    public ServiceChangeV1Task(String namespace, String serviceName, boolean ephemeral) {
+    private DoubleWriteContent content;
+    
+    public ServiceChangeV1Task(String namespace, String serviceName, boolean ephemeral, DoubleWriteContent content) {
         this.namespace = namespace;
         this.serviceName = serviceName;
         this.ephemeral = ephemeral;
+        this.content = content;
         setLastProcessTime(System.currentTimeMillis());
         setTaskInterval(1000L);
     }
     
     @Override
     public void merge(AbstractDelayTask task) {
+        if (!(task instanceof ServiceChangeV1Task)) {
+            return;
+        }
+        ServiceChangeV1Task oldTask = (ServiceChangeV1Task) task;
+        if (!content.equals(oldTask.getContent())) {
+            content = DoubleWriteContent.BOTH;
+        }
     }
     
     public String getNamespace() {
@@ -77,6 +87,10 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
         return ephemeral;
     }
     
+    public DoubleWriteContent getContent() {
+        return content;
+    }
+    
     public static String getKey(String namespace, String serviceName, boolean ephemeral) {
         return "v1:" + namespace + "_" + serviceName + "_" + ephemeral;
     }
@@ -86,40 +100,64 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
         @Override
         public boolean process(NacosTask task) {
             ServiceChangeV1Task serviceTask = (ServiceChangeV1Task) task;
-            Loggers.SRV_LOG.info("double write for service {}", serviceTask.getServiceName());
+            Loggers.SRV_LOG.info("double write for service {}, content {}", serviceTask.getServiceName(),
+                    serviceTask.getContent());
             ServiceManager serviceManager = ApplicationUtils.getBean(ServiceManager.class);
             Service service = serviceManager.getService(serviceTask.getNamespace(), serviceTask.getServiceName());
-            ServiceMetadata serviceMetadata = parseServiceMetadata(service, serviceTask.isEphemeral());
-            DoubleWriteMetadataChangeToV2Task metadataTask = new DoubleWriteMetadataChangeToV2Task(
-                    service.getNamespaceId(), service.getName(), serviceTask.isEphemeral(), serviceMetadata);
-            NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(service.getName(), metadataTask);
+            switch (serviceTask.getContent()) {
+                case METADATA:
+                    dispatchMetadataTask(service, serviceTask.isEphemeral());
+                    break;
+                case INSTANCE:
+                    dispatchInstanceTask(service, serviceTask.isEphemeral());
+                    break;
+                default:
+                    dispatchAllTask(service, serviceTask.isEphemeral());
+            }
+            return true;
+        }
+        
+        private void dispatchAllTask(Service service, boolean ephemeral) {
+            dispatchMetadataTask(service, ephemeral);
+            dispatchInstanceTask(service, ephemeral);
+        }
+        
+        private void dispatchInstanceTask(Service service, boolean ephemeral) {
             ServiceStorage serviceStorage = ApplicationUtils.getBean(ServiceStorage.class);
-            ServiceInfo serviceInfo = serviceStorage.getPushData(transfer(service, serviceTask.isEphemeral()));
-            List<Instance> newInstance = service.allIPs(serviceTask.isEphemeral());
+            ServiceInfo serviceInfo = serviceStorage.getPushData(transfer(service, ephemeral));
+            List<Instance> newInstance = service.allIPs(ephemeral);
             Set<String> instances = new HashSet<>();
             for (Instance each : newInstance) {
                 instances.add(each.toIpAddr());
                 DoubleWriteInstanceChangeToV2Task instanceTask = new DoubleWriteInstanceChangeToV2Task(
                         service.getNamespaceId(), service.getName(), each, true);
-                NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(
-                        IpPortBasedClient.getClientId(each.toIpAddr(), serviceTask.isEphemeral()), instanceTask);
+                NamingExecuteTaskDispatcher.getInstance()
+                        .dispatchAndExecuteTask(IpPortBasedClient.getClientId(each.toIpAddr(), ephemeral),
+                                instanceTask);
             }
             List<com.alibaba.nacos.api.naming.pojo.Instance> oldInstance = serviceInfo.getHosts();
             for (com.alibaba.nacos.api.naming.pojo.Instance each : oldInstance) {
                 if (!instances.contains(each.toInetAddr())) {
                     DoubleWriteInstanceChangeToV2Task instanceTask = new DoubleWriteInstanceChangeToV2Task(
                             service.getNamespaceId(), service.getName(), each, false);
-                    NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(
-                            IpPortBasedClient.getClientId(each.toInetAddr(), serviceTask.isEphemeral()), instanceTask);
+                    NamingExecuteTaskDispatcher.getInstance()
+                            .dispatchAndExecuteTask(IpPortBasedClient.getClientId(each.toInetAddr(), ephemeral),
+                                    instanceTask);
                 }
             }
-            return true;
         }
         
         private com.alibaba.nacos.naming.core.v2.pojo.Service transfer(Service service, boolean ephemeral) {
             return com.alibaba.nacos.naming.core.v2.pojo.Service
                     .newService(service.getNamespaceId(), service.getGroupName(),
                             NamingUtils.getServiceName(service.getName()), ephemeral);
+        }
+        
+        private void dispatchMetadataTask(Service service, boolean ephemeral) {
+            ServiceMetadata serviceMetadata = parseServiceMetadata(service, ephemeral);
+            DoubleWriteMetadataChangeToV2Task metadataTask = new DoubleWriteMetadataChangeToV2Task(
+                    service.getNamespaceId(), service.getName(), ephemeral, serviceMetadata);
+            NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(service.getName(), metadataTask);
         }
         
         private ServiceMetadata parseServiceMetadata(Service service, boolean ephemeral) {
