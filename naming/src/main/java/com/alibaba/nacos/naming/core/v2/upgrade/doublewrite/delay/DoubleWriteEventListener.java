@@ -78,7 +78,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      * @param ephemeral ephemeral of service
      */
     public void doubleWriteToV2(Service service, boolean ephemeral) {
-        if (upgradeJudgement.isUseGrpcFeatures()) {
+        if (upgradeJudgement.isUseGrpcFeatures() || upgradeJudgement.isAll20XVersion()) {
             return;
         }
         String namespace = service.getNamespaceId();
@@ -94,7 +94,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      * @param ephemeral ephemeral of service
      */
     public void doubleWriteMetadataToV2(Service service, boolean ephemeral) {
-        if (upgradeJudgement.isUseGrpcFeatures()) {
+        if (upgradeJudgement.isUseGrpcFeatures() || upgradeJudgement.isAll20XVersion()) {
             return;
         }
         String namespace = service.getNamespaceId();

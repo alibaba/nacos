@@ -63,6 +63,8 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
      */
     private final AtomicBoolean useJraftFeatures = new AtomicBoolean(false);
     
+    private final AtomicBoolean all20XVersion = new AtomicBoolean(false);
+    
     private final RaftPeerSet raftPeerSet;
     
     private final RaftCore raftCore;
@@ -126,6 +128,10 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         return useJraftFeatures.get();
     }
     
+    public boolean isAll20XVersion() {
+        return all20XVersion.get();
+    }
+    
     @Override
     public void onEvent(MembersChangeEvent event) {
         Loggers.SRV_LOG.info("member change, new members {}", event.getMembers());
@@ -134,14 +140,17 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
             // come from below 1.3.0
             if (null == versionStr) {
                 checkAndDowngrade(false);
+                all20XVersion.set(false);
                 return;
             }
             Version version = VersionUtil.parseVersion(versionStr.toString());
             if (version.getMajorVersion() < 2) {
                 checkAndDowngrade(version.getMinorVersion() >= 4);
+                all20XVersion.set(false);
                 return;
             }
         }
+        all20XVersion.set(true);
     }
     
     private void checkAndDowngrade(boolean jraftFeature) {
@@ -194,10 +203,8 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     private void refreshPersistentServices() {
         for (String each : com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().getAllNamespaces()) {
             for (Service service : com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().getSingletons(each)) {
-                if (!service.isEphemeral()) {
-                    NamingExecuteTaskDispatcher.getInstance()
-                            .dispatchAndExecuteTask(service, new RefreshStorageDataTask(service));
-                }
+                NamingExecuteTaskDispatcher.getInstance()
+                        .dispatchAndExecuteTask(service, new RefreshStorageDataTask(service));
             }
         }
     }
