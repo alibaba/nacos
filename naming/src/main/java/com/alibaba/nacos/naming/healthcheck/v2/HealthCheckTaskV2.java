@@ -127,8 +127,15 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     }
     
     @Override
-    public void afterIntercept() {
+    public void passIntercept() {
         doHealthCheck();
+    }
+    
+    @Override
+    public void afterIntercept() {
+        if (!cancelled) {
+            HealthCheckReactor.scheduleCheck(this);
+        }
     }
     
     @Override

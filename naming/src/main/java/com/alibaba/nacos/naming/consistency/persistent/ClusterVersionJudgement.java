@@ -100,11 +100,17 @@ public class ClusterVersionJudgement {
         for (ConsumerWithPriority consumer : observers) {
             consumer.consumer.accept(true);
         }
-        observers.clear();
     }
     
     public boolean allMemberIsNewVersion() {
         return allMemberIsNewVersion;
+    }
+    
+    /**
+     * Only used for upgrade to 2.0.0
+     */
+    public void reset() {
+        allMemberIsNewVersion = false;
     }
     
     private static class ConsumerWithPriority implements Comparable<ConsumerWithPriority> {
