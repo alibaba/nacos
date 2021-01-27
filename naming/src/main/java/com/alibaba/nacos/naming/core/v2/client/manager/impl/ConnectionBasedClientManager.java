@@ -61,7 +61,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     public boolean clientConnected(Client client) {
         Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
         if (!clients.containsKey(client.getClientId())) {
-            clients.put(client.getClientId(), (ConnectionBasedClient) client);
+            clients.putIfAbsent(client.getClientId(), (ConnectionBasedClient) client);
         }
         return true;
     }

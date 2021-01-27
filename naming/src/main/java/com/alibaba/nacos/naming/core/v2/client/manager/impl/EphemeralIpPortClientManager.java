@@ -57,7 +57,7 @@ public class EphemeralIpPortClientManager implements ClientManager {
     public boolean clientConnected(Client client) {
         Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
         if (!clients.containsKey(client.getClientId())) {
-            clients.put(client.getClientId(), (IpPortBasedClient) client);
+            clients.putIfAbsent(client.getClientId(), (IpPortBasedClient) client);
         }
         return true;
     }

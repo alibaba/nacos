@@ -53,10 +53,14 @@ public class InstanceBeatCheckTask implements Interceptable {
     }
     
     @Override
-    public void afterIntercept() {
+    public void passIntercept() {
         for (InstanceBeatChecker each : CHECKERS) {
             each.doCheck(client, service, instancePublishInfo);
         }
+    }
+    
+    @Override
+    public void afterIntercept() {
     }
     
     public Client getClient() {

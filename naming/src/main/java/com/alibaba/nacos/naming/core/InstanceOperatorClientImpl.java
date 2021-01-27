@@ -160,7 +160,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     public ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
             boolean healthOnly) {
         Service service = getService(namespaceId, serviceName, true);
-        if (null != subscriber) {
+        if (subscriber.getPort() > 0) {
             String clientId = IpPortBasedClient.getClientId(subscriber.getAddrStr(), true);
             createIpPortClientIfAbsent(clientId, true);
             clientOperationService.subscribeService(service, subscriber, clientId);

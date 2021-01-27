@@ -32,10 +32,12 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.ServiceOperator;
 import com.alibaba.nacos.naming.core.ServiceOperatorV1Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -93,6 +95,9 @@ public class ServiceController {
     @Autowired
     private ServiceOperatorV2Impl serviceOperatorV2;
     
+    @Autowired
+    private UpgradeJudgement upgradeJudgement;
+    
     /**
      * Create a new service. This API will create a persistence service.
      *
@@ -115,7 +120,7 @@ public class ServiceController {
         serviceMetadata.setSelector(parseSelector(selector));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
         serviceMetadata.setEphemeral(false);
-        serviceOperatorV2.create(namespaceId, serviceName, serviceMetadata);
+        getServiceOperator().create(namespaceId, serviceName, serviceMetadata);
         return "ok";
     }
     
@@ -131,8 +136,8 @@ public class ServiceController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws Exception {
-        
-        serviceOperatorV2.delete(namespaceId, serviceName);
+    
+        getServiceOperator().delete(namespaceId, serviceName);
         return "ok";
     }
     
@@ -193,7 +198,7 @@ public class ServiceController {
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        List<String> serviceNameList = serviceOperatorV2
+        List<String> serviceNameList = getServiceOperator()
                 .listService(namespaceId, groupName, selectorString, pageSize, pageNo);
         result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
         result.put("count", serviceNameList.size());
@@ -221,7 +226,7 @@ public class ServiceController {
         com.alibaba.nacos.naming.core.v2.pojo.Service service = com.alibaba.nacos.naming.core.v2.pojo.Service
                 .newService(namespaceId, NamingUtils.getGroupName(serviceName),
                         NamingUtils.getServiceName(serviceName));
-        serviceOperatorV2.update(service, serviceMetadata);
+        getServiceOperator().update(service, serviceMetadata);
         return "ok";
     }
     
@@ -456,5 +461,9 @@ public class ServiceController {
             default:
                 throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }
+    }
+    
+    private ServiceOperator getServiceOperator() {
+        return upgradeJudgement.isUseGrpcFeatures() ? serviceOperatorV2 : serviceOperatorV1;
     }
 }

@@ -47,7 +47,7 @@ public class PersistentIpPortClientManager implements ClientManager {
     public boolean clientConnected(Client client) {
         Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
         if (!clients.containsKey(client.getClientId())) {
-            clients.put(client.getClientId(), (IpPortBasedClient) client);
+            clients.putIfAbsent(client.getClientId(), (IpPortBasedClient) client);
         }
         return true;
     }
@@ -79,8 +79,16 @@ public class PersistentIpPortClientManager implements ClientManager {
         return clients.containsKey(clientId);
     }
     
+    /**
+     * Compute and do operation new client when client not exist.
+     *
+     * @param clientId clientId
+     * @param supplier operation
+     * @return Client saved in manager
+     */
     public Client computeIfAbsent(final String clientId, final Supplier<IpPortBasedClient> supplier) {
         clients.computeIfAbsent(clientId, s -> supplier.get());
+        Loggers.SRV_LOG.info("Client connection {} connect", clientId);
         return getClient(clientId);
     }
     
