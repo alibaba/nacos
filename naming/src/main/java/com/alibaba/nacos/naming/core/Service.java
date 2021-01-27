@@ -521,6 +521,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         Loggers.SRV_LOG.info("cluster size, new: {}, old: {}", getClusterMap().size(), vDom.getClusterMap().size());
         
         recalculateChecksum();
+        ApplicationUtils.getBean(DoubleWriteEventListener.class)
+                .doubleWriteMetadataToV2(this, vDom.allIPs(false).isEmpty());
     }
     
     @Override

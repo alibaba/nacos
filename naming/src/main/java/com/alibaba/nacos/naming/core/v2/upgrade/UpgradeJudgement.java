@@ -30,8 +30,11 @@ import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.RefreshStorageDataTask;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.codehaus.jackson.Version;
@@ -185,6 +188,18 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         Loggers.SRV_LOG.info("Upgrade to 2.0.X");
         useGrpcFeatures.compareAndSet(false, true);
         useJraftFeatures.set(true);
+        refreshPersistentServices();
+    }
+    
+    private void refreshPersistentServices() {
+        for (String each : com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().getAllNamespaces()) {
+            for (Service service : com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().getSingletons(each)) {
+                if (!service.isEphemeral()) {
+                    NamingExecuteTaskDispatcher.getInstance()
+                            .dispatchAndExecuteTask(service, new RefreshStorageDataTask(service));
+                }
+            }
+        }
     }
     
     @Override

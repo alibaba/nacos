@@ -49,13 +49,26 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
             return;
         }
         String taskKey = ServiceChangeV2Task.getKey(event.getService());
-        ServiceChangeV2Task task = new ServiceChangeV2Task(event.getService());
+        ServiceChangeV2Task task = new ServiceChangeV2Task(event.getService(), DoubleWriteContent.INSTANCE);
         doubleWriteDelayTaskEngine.addTask(taskKey, task);
     }
     
     @Override
     public Class<? extends Event> subscribeType() {
         return ServiceEvent.ServiceChangedEvent.class;
+    }
+    
+    /**
+     * Double write service metadata from v2 to v1.
+     *
+     * @param service service for v2
+     */
+    public void doubleWriteMetadataToV1(com.alibaba.nacos.naming.core.v2.pojo.Service service) {
+        if (!upgradeJudgement.isUseGrpcFeatures()) {
+            return;
+        }
+        doubleWriteDelayTaskEngine.addTask(ServiceChangeV2Task.getKey(service),
+                new ServiceChangeV2Task(service, DoubleWriteContent.METADATA));
     }
     
     /**
@@ -71,6 +84,22 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
         String namespace = service.getNamespaceId();
         String serviceName = service.getName();
         doubleWriteDelayTaskEngine.addTask(ServiceChangeV1Task.getKey(namespace, serviceName, ephemeral),
-                new ServiceChangeV1Task(namespace, serviceName, ephemeral));
+                new ServiceChangeV1Task(namespace, serviceName, ephemeral, DoubleWriteContent.INSTANCE));
+    }
+    
+    /**
+     * Double write service metadata from v1 to v2.
+     *
+     * @param service   service for v1
+     * @param ephemeral ephemeral of service
+     */
+    public void doubleWriteMetadataToV2(Service service, boolean ephemeral) {
+        if (upgradeJudgement.isUseGrpcFeatures()) {
+            return;
+        }
+        String namespace = service.getNamespaceId();
+        String serviceName = service.getName();
+        doubleWriteDelayTaskEngine.addTask(ServiceChangeV1Task.getKey(namespace, serviceName, ephemeral),
+                new ServiceChangeV1Task(namespace, serviceName, ephemeral, DoubleWriteContent.METADATA));
     }
 }
