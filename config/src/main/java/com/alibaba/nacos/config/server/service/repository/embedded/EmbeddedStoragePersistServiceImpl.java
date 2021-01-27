@@ -1125,8 +1125,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         Page<Map<String, Object>> pageList = helper
                 .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
-        return pageList.getPageItems().stream()
-                .map(map -> String.valueOf(map.get("TENANT_ID")))
+        return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("TENANT_ID")))
                 .collect(Collectors.toList());
     }
     
@@ -1139,8 +1138,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         Page<Map<String, Object>> pageList = helper
                 .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
-        return pageList.getPageItems().stream()
-                .map(map -> String.valueOf(map.get("GROUP_ID")))
+        return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("GROUP_ID")))
                 .collect(Collectors.toList());
     }
     
@@ -2344,19 +2342,16 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             if (StringUtils.isBlank(type)) {
                 // simple judgment of file type based on suffix
                 if (configInfo.getDataId().contains(SPOT)) {
-                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1)
-                            .toUpperCase();
-                    try {
-                        type = FileTypeEnum.valueOf(extName.toUpperCase()).getFileType();
-                    } catch (Throwable ex) {
-                        type = FileTypeEnum.TEXT.getFileType();
-                    }
+                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1);
+                    FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(extName);
+                    type = fileTypeEnum.getFileType();
                 }
             }
             if (configAdvanceInfo == null) {
                 configAdvanceInfo = new HashMap<>(16);
             }
             configAdvanceInfo.put("type", type);
+            configAdvanceInfo.put("desc", configInfo.getDesc());
             try {
                 addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify, callFinally);
                 succCount++;

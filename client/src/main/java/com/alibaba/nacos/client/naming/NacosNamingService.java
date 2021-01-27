@@ -86,14 +86,14 @@ public class NacosNamingService implements NamingService {
         this.namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
         initServerAddr(properties);
-        InitUtils.initWebRootContext();
+        InitUtils.initWebRootContext(properties);
         initCacheDir();
         initLogName(properties);
         
         this.serverProxy = new NamingProxy(this.namespace, this.endpoint, this.serverList, properties);
         this.beatReactor = new BeatReactor(this.serverProxy, initClientBeatThreadCount(properties));
         this.hostReactor = new HostReactor(this.serverProxy, beatReactor, this.cacheDir, isLoadCacheAtStart(properties),
-                initPollingThreadCount(properties));
+                isPushEmptyProtect(properties), initPollingThreadCount(properties));
     }
     
     private int initClientBeatThreadCount(Properties properties) {
@@ -124,6 +124,16 @@ public class NacosNamingService implements NamingService {
         }
         
         return loadCacheAtStart;
+    }
+    
+    private boolean isPushEmptyProtect(Properties properties) {
+        boolean pushEmptyProtection = false;
+        if (properties != null && StringUtils
+                .isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION))) {
+            pushEmptyProtection = ConvertUtils
+                    .toBoolean(properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION));
+        }
+        return pushEmptyProtection;
     }
     
     private void initServerAddr(Properties properties) {
@@ -193,6 +203,7 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+        NamingUtils.checkInstanceIsLegal(instance);
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         if (instance.isEphemeral()) {
             BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);

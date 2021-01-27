@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -48,7 +49,7 @@ public class SecurityProxy {
     
     private final NacosRestTemplate nacosRestTemplate;
     
-    private String contextPath;
+    private final String contextPath;
     
     /**
      * User's name.
@@ -63,7 +64,7 @@ public class SecurityProxy {
     /**
      * A token to take with when sending request to Nacos server.
      */
-    private String accessToken;
+    private volatile String accessToken;
     
     /**
      * TTL of token in seconds.
@@ -88,8 +89,8 @@ public class SecurityProxy {
     public SecurityProxy(Properties properties, NacosRestTemplate nacosRestTemplate) {
         username = properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY);
         password = properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY);
-        contextPath = properties.getProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
-        contextPath = contextPath.startsWith("/") ? contextPath : "/" + contextPath;
+        contextPath = ContextPathUtil
+                .normalizeContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos"));
         this.nacosRestTemplate = nacosRestTemplate;
     }
     

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
@@ -127,30 +128,23 @@ public class ConfigServletInner {
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
         if (lockResult > 0) {
+            // LockResult > 0 means cacheItem is not null and other thread can`t delete this cacheItem
             FileInputStream fis = null;
             try {
                 String md5 = Constants.NULL;
                 long lastModified = 0L;
                 CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
-                if (cacheItem != null) {
-                    if (cacheItem.isBeta()) {
-                        if (cacheItem.getIps4Beta().contains(clientIp)) {
-                            isBeta = true;
-                        }
-                    }
-                    
-                    final String configType =
-                            (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
-                    response.setHeader("Config-Type", configType);
-                    
-                    String contentTypeHeader;
-                    try {
-                        contentTypeHeader = FileTypeEnum.valueOf(configType.toUpperCase()).getContentType();
-                    } catch (IllegalArgumentException ex) {
-                        contentTypeHeader = FileTypeEnum.TEXT.getContentType();
-                    }
-                    response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
+                if (cacheItem.isBeta() && cacheItem.getIps4Beta().contains(clientIp)) {
+                    isBeta = true;
                 }
+
+                final String configType =
+                        (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
+                response.setHeader("Config-Type", configType);
+                FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
+                String contentTypeHeader = fileTypeEnum.getContentType();
+                response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
+
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
                 PrintWriter out = null;
@@ -166,13 +160,11 @@ public class ConfigServletInner {
                 } else {
                     if (StringUtils.isBlank(tag)) {
                         if (isUseTag(cacheItem, autoTag)) {
-                            if (cacheItem != null) {
-                                if (cacheItem.tagMd5 != null) {
-                                    md5 = cacheItem.tagMd5.get(autoTag);
-                                }
-                                if (cacheItem.tagLastModifiedTs != null) {
-                                    lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
-                                }
+                            if (cacheItem.tagMd5 != null) {
+                                md5 = cacheItem.tagMd5.get(autoTag);
+                            }
+                            if (cacheItem.tagLastModifiedTs != null) {
+                                lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
                             }
                             if (PropertyUtil.isDirectRead()) {
                                 configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
@@ -206,15 +198,13 @@ public class ConfigServletInner {
                             }
                         }
                     } else {
-                        if (cacheItem != null) {
-                            if (cacheItem.tagMd5 != null) {
-                                md5 = cacheItem.tagMd5.get(tag);
-                            }
-                            if (cacheItem.tagLastModifiedTs != null) {
-                                Long lm = cacheItem.tagLastModifiedTs.get(tag);
-                                if (lm != null) {
-                                    lastModified = lm;
-                                }
+                        if (cacheItem.tagMd5 != null) {
+                            md5 = cacheItem.tagMd5.get(tag);
+                        }
+                        if (cacheItem.tagLastModifiedTs != null) {
+                            Long lm = cacheItem.tagLastModifiedTs.get(tag);
+                            if (lm != null) {
+                                lastModified = lm;
                             }
                         }
                         if (PropertyUtil.isDirectRead()) {
@@ -276,9 +266,7 @@ public class ConfigServletInner {
                 
             } finally {
                 releaseConfigReadLock(groupKey);
-                if (null != fis) {
-                    fis.close();
-                }
+                IoUtils.closeQuietly(fis);
             }
         } else if (lockResult == 0) {
             
@@ -307,7 +295,12 @@ public class ConfigServletInner {
     private static void releaseConfigReadLock(String groupKey) {
         ConfigCacheService.releaseReadLock(groupKey);
     }
-    
+
+    /**
+     * Try to add read lock.
+     * @param groupKey groupKey string value.
+     * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed。
+     */
     private static int tryConfigReadLock(String groupKey) {
         
         // Lock failed by default.

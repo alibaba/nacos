@@ -23,9 +23,12 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.file.FileChangeEvent;
+import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.env.OriginTrackedMapPropertySource;
@@ -36,6 +39,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -55,6 +60,10 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private static final String LOCAL_IP_PROPERTY_KEY = "nacos.local.ip";
     
+    private static final String NACOS_APPLICATION_CONF = "nacos_application_conf";
+    
+    private static final Map<String, Object> SOURCES = new ConcurrentHashMap<>();
+    
     private ScheduledExecutorService scheduledExecutorService;
     
     private volatile boolean starting;
@@ -66,6 +75,8 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
+        makeWorkDir();
+        
         injectEnvironment(environment);
         
         loadPreProperties(environment);
@@ -91,21 +102,18 @@ public class StartingApplicationListener implements NacosApplicationListener {
         
         closeExecutor();
         
-        logFilePath();
-        
         judgeStorageMode(context.getEnvironment());
     }
     
     @Override
     public void running(ConfigurableApplicationContext context) {
-        removePreProperties(context.getEnvironment());
     }
     
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
         starting = false;
         
-        logFilePath();
+        makeWorkDir();
         
         LOGGER.error("Startup errors : {}", exception);
         ThreadPoolManager.shutdown();
@@ -126,11 +134,34 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private void loadPreProperties(ConfigurableEnvironment environment) {
         try {
-            environment.getPropertySources().addLast(new OriginTrackedMapPropertySource("first_pre",
-                    EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource())));
-        } catch (IOException e) {
+            SOURCES.putAll(EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource()));
+            environment.getPropertySources()
+                    .addLast(new OriginTrackedMapPropertySource(NACOS_APPLICATION_CONF, SOURCES));
+            registerWatcher();
+        } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
+    }
+    
+    private void registerWatcher() throws NacosException {
+        
+        WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
+            @Override
+            public void onChange(FileChangeEvent event) {
+                try {
+                    Map<String, ?> tmp = EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource());
+                    SOURCES.putAll(tmp);
+                } catch (IOException ignore) {
+                    LOGGER.warn("Failed to monitor file {}", ignore);
+                }
+            }
+            
+            @Override
+            public boolean interest(String context) {
+                return StringUtils.contains(context, "application.properties");
+            }
+        });
+        
     }
     
     private void initSystemProperty() {
@@ -150,10 +181,6 @@ public class StartingApplicationListener implements NacosApplicationListener {
         System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIP());
     }
     
-    private void removePreProperties(ConfigurableEnvironment environment) {
-        environment.getPropertySources().remove("first_pre");
-    }
-    
     private void logClusterConf() {
         if (!EnvUtil.getStandaloneMode()) {
             try {
@@ -171,7 +198,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
         }
     }
     
-    private void logFilePath() {
+    private void makeWorkDir() {
         String[] dirNames = new String[] {"logs", "conf", "data"};
         for (String dirName : dirNames) {
             LOGGER.info("Nacos Log files: {}", Paths.get(EnvUtil.getNacosHome(), dirName).toString());
