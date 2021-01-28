@@ -67,15 +67,15 @@ public class MetadataEvent extends Event {
         
         private static final long serialVersionUID = 5781016126117637520L;
         
-        private final String instanceId;
+        private final String metadataId;
         
-        public InstanceMetadataEvent(Service service, String instanceId, boolean expired) {
+        public InstanceMetadataEvent(Service service, String metadataId, boolean expired) {
             super(service, expired);
-            this.instanceId = instanceId;
+            this.metadataId = metadataId;
         }
         
-        public String getInstanceId() {
-            return instanceId;
+        public String getMetadataId() {
+            return metadataId;
         }
     }
 }

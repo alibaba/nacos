@@ -79,12 +79,12 @@ public class NamingMetadataOperateService {
      * Update instance metadata.
      *
      * @param service          service of metadata
-     * @param instanceId       instance Id
+     * @param metadataId       instance metadataId Id
      * @param instanceMetadata metadata
      */
-    public void updateInstanceMetadata(Service service, String instanceId, InstanceMetadata instanceMetadata) {
+    public void updateInstanceMetadata(Service service, String metadataId, InstanceMetadata instanceMetadata) {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
-        operation.setTag(instanceId);
+        operation.setTag(metadataId);
         operation.setMetadata(instanceMetadata);
         WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
                 .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
@@ -96,11 +96,11 @@ public class NamingMetadataOperateService {
      * Delete instance metadata.
      *
      * @param service    service of metadata
-     * @param instanceId instance Id
+     * @param metadataId instance metadata Id
      */
-    public void deleteInstanceMetadata(Service service, String instanceId) {
+    public void deleteInstanceMetadata(Service service, String metadataId) {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
-        operation.setTag(instanceId);
+        operation.setTag(metadataId);
         WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
                 .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
                 .build();

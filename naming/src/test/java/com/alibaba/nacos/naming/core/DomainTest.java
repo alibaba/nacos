@@ -17,22 +17,30 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.Mockito.when;
+
 public class DomainTest extends BaseTest {
     
     private Service service;
     
+    @Mock
+    private DoubleWriteEventListener doubleWriteEventListener;
+    
     @Before
     public void before() {
         super.before();
+        when(context.getBean(DoubleWriteEventListener.class)).thenReturn(doubleWriteEventListener);
         service = new Service();
         service.setName("nacos.service.1");
         Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);

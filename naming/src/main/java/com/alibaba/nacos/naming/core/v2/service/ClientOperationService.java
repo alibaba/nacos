@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.naming.core.v2.service;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.utils.Constants;
 
 /**
  * Client operation service.
@@ -82,10 +82,19 @@ public interface ClientOperationService {
         if (null != instance.getMetadata() && !instance.getMetadata().isEmpty()) {
             result.getExtendDatum().putAll(instance.getMetadata());
         }
+        if (StringUtils.isNotEmpty(instance.getInstanceId())) {
+            result.getExtendDatum().put(Constants.CUSTOM_INSTANCE_ID, instance.getInstanceId());
+        }
+        if (Constants.DEFAULT_INSTANCE_WEIGHT != instance.getWeight()) {
+            result.getExtendDatum().put(Constants.PUBLISH_INSTANCE_WEIGHT, instance.getWeight());
+        }
+        if (!instance.isEnabled()) {
+            result.getExtendDatum().put(Constants.PUBLISH_INSTANCE_ENABLE, instance.isEnabled());
+        }
         String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
                 : instance.getClusterName();
         result.setHealthy(instance.isHealthy());
-        result.getExtendDatum().put(CommonParams.CLUSTER_NAME, clusterName);
+        result.setCluster(clusterName);
         return result;
     }
 }

@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -139,8 +140,9 @@ public class ClientBeatCheckTaskV2Test {
         injectInstance(true, System.currentTimeMillis());
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
-        metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000L);
-        String address = IP + IPUtil.IP_PORT_SPLITER + PORT;
+        metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 500L);
+        String address =
+                IP + IPUtil.IP_PORT_SPLITER + PORT + IPUtil.IP_PORT_SPLITER + UtilsAndCommons.DEFAULT_CLUSTER_NAME;
         when(namingMetadataManager.getInstanceMetadata(service, address)).thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
@@ -150,10 +152,11 @@ public class ClientBeatCheckTaskV2Test {
     }
     
     private HealthCheckInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {
-        Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         HealthCheckInstancePublishInfo instance = new HealthCheckInstancePublishInfo(IP, PORT);
         instance.setHealthy(healthy);
         instance.setLastHeartBeatTime(heartbeatTime);
+        instance.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         client.addServiceInstance(service, instance);
         return instance;
     }
