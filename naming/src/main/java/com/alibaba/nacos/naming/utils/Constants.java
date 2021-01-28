@@ -102,4 +102,9 @@ public final class Constants {
      * The Milliseconds for push timeout.
      */
     public static final long DEFAULT_PUSH_TIMEOUT_MILLS = TimeUnit.SECONDS.toNanos(3L);
+    
+    /**
+     * The custom instance id key.
+     */
+    public static final String CUSTOM_INSTANCE_ID = "customInstanceId";
 }

@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.utils.Constants;
 
 /**
  * Client operation service.
@@ -80,6 +81,9 @@ public interface ClientOperationService {
         InstancePublishInfo result = new InstancePublishInfo(instance.getIp(), instance.getPort());
         if (null != instance.getMetadata() && !instance.getMetadata().isEmpty()) {
             result.getExtendDatum().putAll(instance.getMetadata());
+        }
+        if (StringUtils.isNotEmpty(instance.getInstanceId())) {
+            result.getExtendDatum().put(Constants.CUSTOM_INSTANCE_ID, instance.getInstanceId());
         }
         String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
                 : instance.getClusterName();

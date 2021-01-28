@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,15 +37,21 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
     
     private final DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine;
     
+    private volatile boolean startDoubleWrite = true;
+    
     public DoubleWriteEventListener(UpgradeJudgement upgradeJudgement,
             DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine) {
         this.upgradeJudgement = upgradeJudgement;
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
         NotifyCenter.registerSubscriber(this);
+        startDoubleWrite = EnvUtil.getStandaloneMode();
     }
     
     @Override
     public void onEvent(ServiceEvent.ServiceChangedEvent event) {
+        if (!startDoubleWrite) {
+            return;
+        }
         if (!upgradeJudgement.isUseGrpcFeatures()) {
             return;
         }
@@ -64,6 +71,9 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      * @param service service for v2
      */
     public void doubleWriteMetadataToV1(com.alibaba.nacos.naming.core.v2.pojo.Service service) {
+        if (!startDoubleWrite) {
+            return;
+        }
         if (!upgradeJudgement.isUseGrpcFeatures()) {
             return;
         }
@@ -78,6 +88,9 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      * @param ephemeral ephemeral of service
      */
     public void doubleWriteToV2(Service service, boolean ephemeral) {
+        if (!startDoubleWrite) {
+            return;
+        }
         if (upgradeJudgement.isUseGrpcFeatures() || upgradeJudgement.isAll20XVersion()) {
             return;
         }
@@ -94,6 +107,9 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      * @param ephemeral ephemeral of service
      */
     public void doubleWriteMetadataToV2(Service service, boolean ephemeral) {
+        if (!startDoubleWrite) {
+            return;
+        }
         if (upgradeJudgement.isUseGrpcFeatures() || upgradeJudgement.isAll20XVersion()) {
             return;
         }

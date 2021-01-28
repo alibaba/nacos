@@ -17,15 +17,12 @@
 package com.alibaba.nacos.naming.healthcheck.v2;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl;
+import com.alibaba.nacos.naming.utils.InstanceUtil;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Health status synchronizer for persistent service, implementation by CP.
@@ -44,23 +41,8 @@ public class PersistentHealthStatusSynchronizer implements HealthStatusSynchroni
     @Override
     public void instanceHealthStatusChange(boolean isHealthy, Client client, Service service,
             InstancePublishInfo instance) {
-        Instance updateInstance = parseInstance(service, instance);
+        Instance updateInstance = InstanceUtil.parseToApiInstance(service, instance);
         updateInstance.setHealthy(isHealthy);
         persistentClientOperationService.registerInstance(service, updateInstance, client.getClientId());
-    }
-    
-    private Instance parseInstance(Service service, InstancePublishInfo instanceInfo) {
-        Instance result = new Instance();
-        result.setIp(instanceInfo.getIp());
-        result.setPort(instanceInfo.getPort());
-        result.setServiceName(NamingUtils.getGroupedName(service.getName(), service.getGroup()));
-        result.setClusterName(instanceInfo.getCluster());
-        Map<String, String> instanceMetadata = new HashMap<>(instanceInfo.getExtendDatum().size());
-        for (Map.Entry<String, Object> entry : instanceInfo.getExtendDatum().entrySet()) {
-            instanceMetadata.put(entry.getKey(), entry.getValue().toString());
-        }
-        result.setMetadata(instanceMetadata);
-        result.setEphemeral(service.isEphemeral());
-        return result;
     }
 }

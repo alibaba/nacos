@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.core.v2.index;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
@@ -28,13 +27,12 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.utils.InstanceUtil;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -127,27 +125,10 @@ public class ServiceStorage {
     }
     
     private Instance parseInstance(Service service, InstancePublishInfo instanceInfo) {
-        Instance result = new Instance();
-        result.setIp(instanceInfo.getIp());
-        result.setPort(instanceInfo.getPort());
-        result.setServiceName(NamingUtils.getGroupedName(service.getName(), service.getGroup()));
-        result.setClusterName(instanceInfo.getCluster());
-        Map<String, String> instanceMetadata = new HashMap<>(instanceInfo.getExtendDatum().size());
-        for (Map.Entry<String, Object> entry : instanceInfo.getExtendDatum().entrySet()) {
-            instanceMetadata.put(entry.getKey(), entry.getValue().toString());
-        }
+        Instance result = InstanceUtil.parseToApiInstance(service, instanceInfo);
         Optional<InstanceMetadata> metadata = metadataManager
                 .getInstanceMetadata(service, instanceInfo.getMetadataId());
-        if (metadata.isPresent()) {
-            result.setEnabled(metadata.get().isEnabled());
-            result.setWeight(metadata.get().getWeight());
-            for (Map.Entry<String, Object> entry : metadata.get().getExtendData().entrySet()) {
-                instanceMetadata.put(entry.getKey(), entry.getValue().toString());
-            }
-        }
-        result.setMetadata(instanceMetadata);
-        result.setEphemeral(service.isEphemeral());
-        result.setHealthy(instanceInfo.isHealthy());
+        metadata.ifPresent(instanceMetadata -> InstanceUtil.updateInstanceMetadata(result, instanceMetadata));
         return result;
     }
 }
