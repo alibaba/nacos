@@ -107,4 +107,19 @@ public final class Constants {
      * The custom instance id key.
      */
     public static final String CUSTOM_INSTANCE_ID = "customInstanceId";
+    
+    /**
+     * The weight of instance according to instance self publish.
+     */
+    public static final String PUBLISH_INSTANCE_WEIGHT = "publishInstanceWeight";
+    
+    /**
+     * The weight of instance according to instance self publish.
+     */
+    public static final double DEFAULT_INSTANCE_WEIGHT = 1.0D;
+    
+    /**
+     * Whether enabled for instance according to instance self publish.
+     */
+    public static final String PUBLISH_INSTANCE_ENABLE = "publishInstanceEnable";
 }

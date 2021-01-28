@@ -121,6 +121,7 @@ public class IpPortBasedClient extends AbstractClient {
         result.setIp(instancePublishInfo.getIp());
         result.setPort(instancePublishInfo.getPort());
         result.setHealthy(instancePublishInfo.isHealthy());
+        result.setCluster(instancePublishInfo.getCluster());
         result.setExtendDatum(instancePublishInfo.getExtendDatum());
         if (!ephemeral) {
             result.initHealthCheck();

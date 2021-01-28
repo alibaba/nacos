@@ -49,6 +49,10 @@ public class InstanceUtil {
         for (Map.Entry<String, Object> entry : instanceInfo.getExtendDatum().entrySet()) {
             if (Constants.CUSTOM_INSTANCE_ID.equals(entry.getKey())) {
                 result.setInstanceId(entry.getValue().toString());
+            } else if (Constants.PUBLISH_INSTANCE_ENABLE.equals(entry.getKey())) {
+                result.setEnabled((boolean) entry.getValue());
+            } else if (Constants.PUBLISH_INSTANCE_WEIGHT.equals(entry.getKey())) {
+                result.setWeight((Double) entry.getValue());
             } else {
                 instanceMetadata.put(entry.getKey(), entry.getValue().toString());
             }

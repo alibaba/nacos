@@ -85,6 +85,12 @@ public interface ClientOperationService {
         if (StringUtils.isNotEmpty(instance.getInstanceId())) {
             result.getExtendDatum().put(Constants.CUSTOM_INSTANCE_ID, instance.getInstanceId());
         }
+        if (Constants.DEFAULT_INSTANCE_WEIGHT != instance.getWeight()) {
+            result.getExtendDatum().put(Constants.PUBLISH_INSTANCE_WEIGHT, instance.getWeight());
+        }
+        if (!instance.isEnabled()) {
+            result.getExtendDatum().put(Constants.PUBLISH_INSTANCE_ENABLE, instance.isEnabled());
+        }
         String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
                 : instance.getClusterName();
         result.setHealthy(instance.isHealthy());
