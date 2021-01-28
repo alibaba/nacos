@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.healthcheck.v2;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.v2.client.Client;

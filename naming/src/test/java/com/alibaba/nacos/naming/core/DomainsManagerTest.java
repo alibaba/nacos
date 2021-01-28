@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import org.junit.Assert;
@@ -46,7 +47,7 @@ public class DomainsManagerTest extends BaseTest {
     
     @Test
     public void easyRemoveDomNotExist() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expect(NacosException.class);
         expectedException.expectMessage("specified service not exist, serviceName : " + TEST_SERVICE_NAME);
         manager.easyRemoveService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME);
     }

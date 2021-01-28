@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -76,6 +77,9 @@ public class HealthCheckTaskInterceptWrapperTest {
     @Mock
     private ConfigurableApplicationContext applicationContext;
     
+    @Mock
+    private UpgradeJudgement upgradeJudgement;
+    
     private IpPortBasedClient client;
     
     @Before
@@ -84,10 +88,12 @@ public class HealthCheckTaskInterceptWrapperTest {
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
         when(applicationContext.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(applicationContext.getBean(DistroMapper.class)).thenReturn(distroMapper);
+        when(applicationContext.getBean(UpgradeJudgement.class)).thenReturn(upgradeJudgement);
         ApplicationUtils.injectContext(applicationContext);
         client = new IpPortBasedClient(CLIENT_ID, true);
         when(switchDomain.isHealthCheckEnabled()).thenReturn(true);
         when(distroMapper.responsible(client.getResponsibleId())).thenReturn(true);
+        when(upgradeJudgement.isUseGrpcFeatures()).thenReturn(true);
         ClientBeatCheckTaskV2 beatCheckTask = new ClientBeatCheckTaskV2(client);
         taskWrapper = new HealthCheckTaskInterceptWrapper(beatCheckTask);
     }
