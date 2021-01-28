@@ -92,12 +92,12 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
-        getExecuteClientProxy().registerService(serviceName, groupName, instance);
+        getExecuteClientProxy(instance).registerService(serviceName, groupName, instance);
     }
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        getExecuteClientProxy().deregisterService(serviceName, groupName, instance);
+        getExecuteClientProxy(instance).deregisterService(serviceName, groupName, instance);
     }
     
     @Override
@@ -108,7 +108,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
             boolean healthyOnly) throws NacosException {
-        return getExecuteClientProxy().queryInstancesOfService(serviceName, groupName, clusters, udpPort, healthyOnly);
+        return grpcClientProxy.queryInstancesOfService(serviceName, groupName, clusters, udpPort, healthyOnly);
     }
     
     @Override
@@ -134,7 +134,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
             throws NacosException {
-        return getExecuteClientProxy().getServiceList(pageNo, pageSize, groupName, selector);
+        return grpcClientProxy.getServiceList(pageNo, pageSize, groupName, selector);
     }
     
     @Override
@@ -143,7 +143,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         String serviceKey = ServiceInfo.getKey(serviceNameWithGroup, clusters);
         ServiceInfo result = serviceInfoHolder.getServiceInfoMap().get(serviceKey);
         if (null == result) {
-            result = getExecuteClientProxy().subscribe(serviceName, groupName, clusters);
+            result = grpcClientProxy.subscribe(serviceName, groupName, clusters);
         }
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, groupName, clusters);
         serviceInfoHolder.processServiceInfo(result);
@@ -153,7 +153,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         serviceInfoUpdateService.stopUpdateIfContain(serviceName, groupName, clusters);
-        getExecuteClientProxy().unsubscribe(serviceName, groupName, clusters);
+        grpcClientProxy.unsubscribe(serviceName, groupName, clusters);
     }
     
     @Override
@@ -166,8 +166,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         return grpcClientProxy.serverHealthy() || httpClientProxy.serverHealthy();
     }
     
-    private NamingClientProxy getExecuteClientProxy() {
-        return grpcClientProxy;
+    private NamingClientProxy getExecuteClientProxy(Instance instance) {
+        return instance.isEphemeral() ? grpcClientProxy : httpClientProxy;
     }
     
     @Override

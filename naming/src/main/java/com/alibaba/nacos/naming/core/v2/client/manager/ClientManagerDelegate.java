@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager;
 
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.EphemeralIpPortClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
@@ -101,6 +101,6 @@ public class ClientManagerDelegate implements ClientManager {
     }
     
     private boolean isConnectionBasedClient(String clientId) {
-        return !clientId.contains(IPUtil.IP_PORT_SPLITER);
+        return !clientId.contains(IpPortBasedClient.ID_DELIMITER);
     }
 }
