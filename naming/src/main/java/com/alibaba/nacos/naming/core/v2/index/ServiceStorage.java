@@ -137,7 +137,7 @@ public class ServiceStorage {
             instanceMetadata.put(entry.getKey(), entry.getValue().toString());
         }
         Optional<InstanceMetadata> metadata = metadataManager
-                .getInstanceMetadata(service, instanceInfo.getInstanceId());
+                .getInstanceMetadata(service, instanceInfo.getMetadataId());
         if (metadata.isPresent()) {
             result.setEnabled(metadata.get().isEnabled());
             result.setWeight(metadata.get().getWeight());

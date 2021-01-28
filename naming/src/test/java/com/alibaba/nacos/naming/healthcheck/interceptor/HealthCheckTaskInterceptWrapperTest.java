@@ -169,7 +169,7 @@ public class HealthCheckTaskInterceptWrapperTest {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
         metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000L);
-        when(namingMetadataManager.getInstanceMetadata(service, instance.getInstanceId())).thenReturn(Optional.of(metadata));
+        when(namingMetadataManager.getInstanceMetadata(service, instance.getMetadataId())).thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         taskWrapper.run();

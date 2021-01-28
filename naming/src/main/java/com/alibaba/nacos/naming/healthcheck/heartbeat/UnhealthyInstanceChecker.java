@@ -65,7 +65,7 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     
     private Optional<Object> getTimeoutFromMetadata(Service service, InstancePublishInfo instance) {
         Optional<InstanceMetadata> instanceMetadata = ApplicationUtils.getBean(NamingMetadataManager.class)
-                .getInstanceMetadata(service, instance.getInstanceId());
+                .getInstanceMetadata(service, instance.getMetadataId());
         return instanceMetadata.map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.HEART_BEAT_TIMEOUT));
     }
     
