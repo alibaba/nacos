@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceOperatorV1Impl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Before;
@@ -36,8 +37,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -47,10 +48,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ServiceControllerTest extends BaseTest {
     
     @InjectMocks
-    private ServiceOperatorV1Impl serviceOperatorV1;
+    private ServiceController serviceController;
     
     @InjectMocks
-    private ServiceController serviceController;
+    private ServiceOperatorV1Impl serviceOperatorV1;
     
     private MockMvc mockmvc;
     
@@ -63,17 +64,17 @@ public class ServiceControllerTest extends BaseTest {
     
     @Test
     public void testList() throws Exception {
-        List<String> serviceNameList = new ArrayList<>();
+        Map<String, Service> serviceNameList = new HashMap<>();
         for (int i = 0; i < 3; i++) {
-            serviceNameList.add("DEFAULT_GROUP@@providers:com.alibaba.nacos.controller.test:" + i);
+            serviceNameList.put("DEFAULT_GROUP@@providers:com.alibaba.nacos.controller.test:" + i, new Service());
         }
         
-        Mockito.when(serviceManager.getAllServiceNameList(Constants.DEFAULT_NAMESPACE_ID)).thenReturn(serviceNameList);
+        Mockito.when(serviceManager.chooseServiceMap(Constants.DEFAULT_NAMESPACE_ID)).thenReturn(serviceNameList);
         
         mockmvc.perform(MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service" + "/list")
                 .param("pageNo", "2").param("pageSize", "10").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.doms").isArray())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.doms").isEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.doms").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.count").value(serviceNameList.size()));
     }
 }
