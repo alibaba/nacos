@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.controller.parameters.GroupAndDataId;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
@@ -486,6 +487,44 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
+    public List<ConfigInfo> removeConfigInfoByGroupAndDataId(
+            final String tenant, final List<GroupAndDataId> items,
+            final String srcIp, final String srcUser
+    ) {
+        if (CollectionUtils.isEmpty(items)) {
+            return null;
+        }
+        items.removeAll(Collections.singleton(null));
+        final Timestamp time = new Timestamp(System.currentTimeMillis());
+        try {
+            List<ConfigInfo> configInfoList = new ArrayList<>();
+            for (GroupAndDataId groupAndDataId : items) {
+                ConfigInfo configInfo = findConfigInfo(groupAndDataId.getDataId(), groupAndDataId.getGroup(), tenant);
+                configInfoList.add(configInfo);
+            }
+            if (CollectionUtils.isNotEmpty(configInfoList)) {
+                for (ConfigInfo configInfo : configInfoList) {
+                    removeConfigInfoAtomic(configInfo.getDataId(), configInfo.getGroup(), tenant,
+                            srcIp, srcUser
+                    );
+                    removeTagByIdAtomic(configInfo.getId());
+                    insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D");
+                }
+            }
+
+            EmbeddedStorageContextUtils.onBatchDeleteConfigInfo(configInfoList);
+            boolean result = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            if (!result) {
+                throw new NacosConfigException("Failed to config batch deletion");
+            }
+
+            return configInfoList;
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+
     @Override
     public void removeConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -2277,7 +2316,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
-            final String appName, final List<Long> ids) {
+                   final String appName, final List<Long> ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         StringBuilder where = new StringBuilder(" where ");
         List<Object> paramList = new ArrayList<>();
@@ -2311,6 +2350,32 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 .queryMany(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
     }
     
+    @Override
+    public List<ConfigAllInfo> findAllConfigInfo4Export(final String tenant, List<GroupAndDataId> items) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        StringBuilder where = new StringBuilder(" where ");
+        List<Object> paramList = new ArrayList<>();
+
+        where.append(" tenant_id=? and (");
+        paramList.add(tenantTmp);
+
+        if (CollectionUtils.isEmpty(items)) {
+            return new ArrayList<>();
+        }
+        for (int i = 0; i < items.size(); i++) {
+            if (i != 0) {
+                where.append(" or");
+            }
+            where.append(" (group_id=? and data_id =?)");
+            paramList.add(items.get(i).getGroup());
+            paramList.add(items.get(i).getDataId());
+        }
+        where.append(" )");
+
+        return databaseOperate
+            .queryMany(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
+    }
+
     @Override
     public Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
             Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)

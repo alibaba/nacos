@@ -691,23 +691,34 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
+  download(url, params) {
+    window.location = [
+      url,
+      Object.keys(params)
+        .map(key => key + '=' + encodeURI(params[key]))
+        .join('&'),
+    ].join('?');
+  }
+
   exportData() {
-    const { group, appName, dataId, openUri } = this;
+    const { group, appName, dataId, openUri, tenant } = this;
+    const configItems = this.props.configurations.pageItems;
+    const items = [];
+    configItems.map(configItem => {
+      const item = [configItem.group, configItem.dataId];
+      items.push(item);
+    });
     const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
-    openUri('v1/cs/configs', {
-      export: 'true',
-      tenant: getParams('namespace'),
-      group,
-      appName,
-      dataId,
-      ids: '',
+    this.download('v1/cs/configs/export', {
+      tenant: tenant,
+      items: JSON.stringify(items),
       accessToken,
     });
   }
 
-  exportSelectedData() {
-    const ids = [];
-    const { locale = {} } = this.props;
+  exportSelectedData(currentNamespace) {
+    const items = [];
+    const { locale = {}, tenant } = this.props;
     const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
     if (!configsTableSelected.size) {
       Dialog.alert({
@@ -716,13 +727,13 @@ class ConfigurationManagement extends React.Component {
       });
       return;
     }
-    configsTableSelected.forEach((value, key, map) => ids.push(key));
-    this.openUri('v1/cs/configs', {
-      export: 'true',
-      tenant: '',
-      group: '',
-      appName: '',
-      ids: ids.join(','),
+    configsTableSelected.forEach((value, key, map) => {
+      const item = [value.group, value.dataId];
+      items.push(item);
+    });
+    this.download('v1/cs/configs/export', {
+      tenant: currentNamespace,
+      items: JSON.stringify(items),
       accessToken,
     });
   }
@@ -736,11 +747,15 @@ class ConfigurationManagement extends React.Component {
         content: locale.delSelectedAlertContent,
       });
     } else {
+      const { nownamespace_id } = this.state;
       let toShowDatas = [];
+      let items = [];
       configsTableSelected.forEach((value, key, map) => {
-        let item = {};
-        item.dataId = value.dataId;
-        item.group = value.group;
+        let item = {
+          dataId: value.dataId,
+          group: value.group,
+        };
+        items.push(item);
         toShowDatas.push(item);
       });
       Dialog.confirm({
@@ -755,12 +770,12 @@ class ConfigurationManagement extends React.Component {
           </div>
         ),
         onOk: () => {
-          const url = `v1/cs/configs?delType=ids&ids=${Array.from(configsTableSelected.keys()).join(
-            ','
-          )}`;
+          const url = `v1/cs/configs/delete?tenant=${nownamespace_id}&namespaceId=${nownamespace_id}`;
           request({
             url,
             type: 'delete',
+            contentType: 'application/json',
+            data: JSON.stringify(items),
             success(res) {
               Message.success(locale.delSuccessMsg);
               self.getData();
@@ -773,6 +788,7 @@ class ConfigurationManagement extends React.Component {
 
   cloneSelectedDataConfirm() {
     const { locale = {} } = this.props;
+    const { nownamespace_id } = this.state;
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
     self.field.setValue('cloneTargetSpace', undefined);
@@ -928,11 +944,9 @@ class ConfigurationManagement extends React.Component {
                     } else {
                       document.getElementById('cloneTargetSpaceSelectErr').style.display = 'none';
                     }
-                    let idsStr = '';
                     let clonePostData = [];
                     configsTableSelectedDeepCopyed.forEach((value, key, map) => {
                       let postDataItem = {};
-                      postDataItem.cfgId = key;
                       postDataItem.dataId = value.dataId;
                       postDataItem.group = value.group;
                       clonePostData.push(postDataItem);
@@ -940,7 +954,7 @@ class ConfigurationManagement extends React.Component {
                     let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
                     let sameConfigPolicy = self.field.getValue('sameConfigPolicy');
                     request({
-                      url: `v1/cs/configs?clone=true&tenant=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=`,
+                      url: `v1/cs/configs?clone=true&tenant=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=${nownamespace_id}`,
                       method: 'post',
                       data: JSON.stringify(clonePostData),
                       contentType: 'application/json',
@@ -1213,6 +1227,7 @@ class ConfigurationManagement extends React.Component {
 
   render() {
     const { locale = {}, configurations = {} } = this.props;
+    const { nownamespace_id } = this.state;
     return (
       <>
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
@@ -1433,7 +1448,7 @@ class ConfigurationManagement extends React.Component {
                     {
                       text: locale.exportSelected,
                       locaid: 'configsExport',
-                      onClick: () => this.exportSelectedData(),
+                      onClick: () => this.exportSelectedData(nownamespace_id),
                     },
                     {
                       text: locale.clone,

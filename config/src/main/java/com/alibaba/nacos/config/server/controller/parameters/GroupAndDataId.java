@@ -17,15 +17,23 @@
 package com.alibaba.nacos.config.server.controller.parameters;
 
 /**
- * SameNamespaceCloneConfigBean.
+ * group and dataId pair.
  *
- * @author klw(213539 @ qq.com)
- * @date 2019/12/13 16:10
+ * @author robert
  */
-public class SameNamespaceCloneConfigBean {
-    private String dataId;
+public class GroupAndDataId {
 
     private String group;
+
+    private String dataId;
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
 
     public String getDataId() {
         return dataId;
@@ -35,11 +43,11 @@ public class SameNamespaceCloneConfigBean {
         this.dataId = dataId;
     }
 
-    public String getGroup() {
-        return group;
-    }
-
-    public void setGroup(String group) {
-        this.group = group;
+    @Override
+    public String toString() {
+        return "GroupAndDataId{"
+            + "group='" + group + '\''
+            + ", dataId='" + dataId + '\''
+            + '}';
     }
 }

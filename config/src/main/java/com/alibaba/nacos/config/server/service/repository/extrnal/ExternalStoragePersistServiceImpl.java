@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.controller.parameters.GroupAndDataId;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
@@ -410,6 +411,43 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         return result;
     }
     
+    @Override
+    public List<ConfigInfo> removeConfigInfoByGroupAndDataId(String tenant, List<GroupAndDataId> items, String srcIp, String srcUser) {
+        if (CollectionUtils.isEmpty(items)) {
+            return null;
+        }
+        items.removeAll(Collections.singleton(null));
+        List<ConfigInfo> result = tjt.execute(new TransactionCallback<List<ConfigInfo>>() {
+            final Timestamp time = new Timestamp(System.currentTimeMillis());
+
+            @Override
+            public List<ConfigInfo> doInTransaction(TransactionStatus status) {
+                try {
+                    List<ConfigInfo> configInfoList = new ArrayList<>();
+                    for (GroupAndDataId groupAndDataId : items) {
+                        ConfigInfo configInfo = findConfigInfo(groupAndDataId.getDataId(), groupAndDataId.getGroup(), tenant);
+                        configInfoList.add(configInfo);
+                    }
+                    if (CollectionUtils.isNotEmpty(configInfoList)) {
+                        for (ConfigInfo configInfo : configInfoList) {
+                            removeConfigInfoAtomic(configInfo.getDataId(), configInfo.getGroup(), tenant,
+                                    srcIp, srcUser
+                            );
+                            removeTagByIdAtomic(configInfo.getId());
+                            insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D");
+                        }
+                    }
+
+                    return configInfoList;
+                } catch (CannotGetJdbcConnectionException e) {
+                    LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+                    throw e;
+                }
+            }
+        });
+        return result;
+    }
+
     @Override
     public void removeConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -2527,7 +2565,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
-            final String appName, final List<Long> ids) {
+                   final String appName, final List<Long> ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         StringBuilder where = new StringBuilder(" where ");
         List<Object> paramList = new ArrayList<>();
@@ -2565,6 +2603,36 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
     }
     
+    @Override
+    public List<ConfigAllInfo> findAllConfigInfo4Export(final String tenant, List<GroupAndDataId> items) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        StringBuilder where = new StringBuilder(" where ");
+        List<Object> paramList = new ArrayList<>();
+
+        where.append(" tenant_id=? and (");
+        paramList.add(tenantTmp);
+
+        if (CollectionUtils.isEmpty(items)) {
+            return new ArrayList<>();
+        }
+        for (int i = 0; i < items.size(); i++) {
+            if (i != 0) {
+                where.append(" or");
+            }
+            where.append(" (group_id=? and data_id =?)");
+            paramList.add(items.get(i).getGroup());
+            paramList.add(items.get(i).getDataId());
+        }
+        where.append(" )");
+
+        try {
+            return this.jt.query(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
     @Override
     public Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
             Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)
