@@ -49,6 +49,8 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class UpgradeJudgementTest {
     
+    private final long sleepForCheck = 800L;
+    
     @Mock
     private ConfigurableEnvironment environment;
     
@@ -75,6 +77,7 @@ public class UpgradeJudgementTest {
     @Before
     public void setUp() throws Exception {
         EnvUtil.setEnvironment(environment);
+        EnvUtil.setIsStandalone(false);
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
                 doubleWriteDelayTaskEngine);
     }
@@ -91,7 +94,7 @@ public class UpgradeJudgementTest {
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertFalse(upgradeJudgement.isUseJraftFeatures());
     }
@@ -103,7 +106,7 @@ public class UpgradeJudgementTest {
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertTrue(upgradeJudgement.isUseJraftFeatures());
     }
@@ -115,7 +118,7 @@ public class UpgradeJudgementTest {
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertFalse(upgradeJudgement.isUseJraftFeatures());
     }
@@ -133,7 +136,7 @@ public class UpgradeJudgementTest {
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertTrue(upgradeJudgement.isUseGrpcFeatures());
         assertTrue(upgradeJudgement.isUseJraftFeatures());
     }
@@ -151,7 +154,7 @@ public class UpgradeJudgementTest {
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertFalse(upgradeJudgement.isUseJraftFeatures());
     }
@@ -164,7 +167,7 @@ public class UpgradeJudgementTest {
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertFalse(upgradeJudgement.isUseJraftFeatures());
     }
@@ -178,7 +181,7 @@ public class UpgradeJudgementTest {
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertTrue(upgradeJudgement.isUseJraftFeatures());
     }
@@ -192,7 +195,7 @@ public class UpgradeJudgementTest {
         verify(raftPeerSet).init();
         verify(raftCore).init();
         verify(versionJudgement).reset();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertFalse(upgradeJudgement.isUseJraftFeatures());
     }
@@ -206,7 +209,7 @@ public class UpgradeJudgementTest {
         verify(raftPeerSet).init();
         verify(raftCore).init();
         verify(versionJudgement).reset();
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertFalse(upgradeJudgement.isUseJraftFeatures());
     }

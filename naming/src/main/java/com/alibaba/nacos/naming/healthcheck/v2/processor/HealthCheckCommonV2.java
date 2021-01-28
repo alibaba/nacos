@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -93,7 +92,7 @@ public class HealthCheckCommonV2 {
                     .getInstancePublishInfo(service);
             if (null != instance && !instance.isHealthy()) {
                 String serviceName = service.getGroupedServiceName();
-                String clusterName = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
+                String clusterName = instance.getCluster();
                 if (instance.getOkCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
                     if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
                             .responsible(task.getClient().getResponsibleId())) {
@@ -127,7 +126,7 @@ public class HealthCheckCommonV2 {
                     .getInstancePublishInfo(service);
             if (null != instance && instance.isHealthy()) {
                 String serviceName = service.getGroupedServiceName();
-                String clusterName = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
+                String clusterName = instance.getCluster();
                 if (instance.getFailCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
                     if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
                             .responsible(task.getClient().getResponsibleId())) {
@@ -163,7 +162,7 @@ public class HealthCheckCommonV2 {
                     .getInstancePublishInfo(service);
             if (null != instance && instance.isHealthy()) {
                 String serviceName = service.getGroupedServiceName();
-                String clusterName = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
+                String clusterName = instance.getCluster();
                 if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
                         .responsible(task.getClient().getResponsibleId())) {
                     healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);

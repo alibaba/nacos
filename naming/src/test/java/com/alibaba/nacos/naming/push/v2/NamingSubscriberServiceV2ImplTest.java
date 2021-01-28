@@ -85,6 +85,7 @@ public class NamingSubscriberServiceV2ImplTest {
                 new Subscriber("1.1.1.1:1111", "Test", "unknown", "1.1.1.1", "N", service.getGroupedServiceName(), 0));
         when(client.getSubscriber(service1)).thenReturn(
                 new Subscriber("1.1.1.1:1111", "Test", "unknown", "1.1.1.1", "N", service1.getGroupedServiceName(), 0));
+        when(upgradeJudgement.isUseGrpcFeatures()).thenReturn(true);
     }
     
     @Test

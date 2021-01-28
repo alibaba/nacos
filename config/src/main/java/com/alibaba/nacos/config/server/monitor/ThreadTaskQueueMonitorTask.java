@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 

@@ -54,7 +54,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
         NotifyCenter
-                .publishEvent(new MetadataEvent.InstanceMetadataEvent(singleton, instanceInfo.getInstanceId(), false));
+                .publishEvent(new MetadataEvent.InstanceMetadataEvent(singleton, instanceInfo.getMetadataId(), false));
     }
     
     @Override
@@ -70,7 +70,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         if (null != removedInstance) {
             NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
             NotifyCenter.publishEvent(
-                    new MetadataEvent.InstanceMetadataEvent(singleton, removedInstance.getInstanceId(), true));
+                    new MetadataEvent.InstanceMetadataEvent(singleton, removedInstance.getMetadataId(), true));
         }
     }
     
