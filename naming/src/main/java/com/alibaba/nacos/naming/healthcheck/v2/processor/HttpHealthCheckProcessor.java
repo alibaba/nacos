@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.common.http.Callback;
@@ -53,7 +52,8 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
     
     public static final String TYPE = HealthCheckType.HTTP.name();
     
-    private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE = HttpClientManager.getProcessorNacosAsyncRestTemplate();
+    private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE = HttpClientManager
+            .getProcessorNacosAsyncRestTemplate();
     
     private final HealthCheckCommonV2 healthCheckCommon;
     
@@ -75,8 +75,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
             // TODO handle marked(white list) logic like v1.x.
             if (instance.tryStartCheck()) {
                 SRV_LOG.warn("http check started before last one finished, service: {} : {} : {}:{}",
-                        service.getGroupedServiceName(), instance.getExtendDatum().get(CommonParams.CLUSTER_NAME),
-                        instance.getIp(), instance.getPort());
+                        service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
                 healthCheckCommon
                         .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getHttpHealthParams());
                 return;

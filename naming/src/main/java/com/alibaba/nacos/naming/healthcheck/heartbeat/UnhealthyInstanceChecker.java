@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -72,10 +71,9 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     
     private void changeHealthyStatus(Client client, Service service, HealthCheckInstancePublishInfo instance) {
         instance.setHealthy(false);
-        Object cluster = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME);
         Loggers.EVT_LOG
                 .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client last beat: {}", instance.getIp(),
-                        instance.getPort(), cluster, service.getName(), UtilsAndCommons.LOCALHOST_SITE,
+                        instance.getPort(), instance.getCluster(), service.getName(), UtilsAndCommons.LOCALHOST_SITE,
                         instance.getLastHeartBeatTime());
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));

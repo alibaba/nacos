@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
@@ -89,8 +88,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessorV2 {
             // TODO handle marked(white list) logic like v1.x.
             if (instance.tryStartCheck()) {
                 SRV_LOG.warn("mysql check started before last one finished, service: {} : {} : {}:{}",
-                        service.getGroupedServiceName(), instance.getExtendDatum().get(CommonParams.CLUSTER_NAME),
-                        instance.getIp(), instance.getPort());
+                        service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
                 healthCheckCommon
                         .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getMysqlHealthParams());
                 return;
@@ -132,7 +130,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessorV2 {
             ResultSet resultSet = null;
             
             try {
-                String clusterName = instance.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
+                String clusterName = instance.getCluster();
                 String key =
                         service.getGroupedServiceName() + ":" + clusterName + ":" + instance.getIp() + ":" + instance
                                 .getPort();

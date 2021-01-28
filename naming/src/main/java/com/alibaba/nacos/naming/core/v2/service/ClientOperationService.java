@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.core.v2.service;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -85,7 +84,7 @@ public interface ClientOperationService {
         String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
                 : instance.getClusterName();
         result.setHealthy(instance.isHealthy());
-        result.getExtendDatum().put(CommonParams.CLUSTER_NAME, clusterName);
+        result.setCluster(clusterName);
         return result;
     }
 }

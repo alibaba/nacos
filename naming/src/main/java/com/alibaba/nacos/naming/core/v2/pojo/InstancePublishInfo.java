@@ -38,6 +38,8 @@ public class InstancePublishInfo implements Serializable {
     
     private boolean healthy;
     
+    private String cluster;
+    
     private Map<String, Object> extendDatum;
     
     public InstancePublishInfo() {
@@ -63,6 +65,14 @@ public class InstancePublishInfo implements Serializable {
     
     public int getPort() {
         return port;
+    }
+    
+    public void setCluster(String cluster) {
+        this.cluster = cluster;
+    }
+    
+    public String getCluster() {
+        return cluster;
     }
     
     public Map<String, Object> getExtendDatum() {
