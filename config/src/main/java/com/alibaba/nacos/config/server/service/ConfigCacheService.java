@@ -607,11 +607,11 @@ public class ConfigCacheService {
     }
     
     /**
-     * Try to add read lock. If it successed, then it can call {@link #releaseWriteLock(String)}.And it won't call if
+     * Try to add read lock. If it succeeded, then it can call {@link #releaseWriteLock(String)}.And it won't call if
      * failed.
      *
      * @param groupKey groupKey string value.
-     * @return 0 - No data and failed. Positive number 0 - Success. Negative number - lock failed。
+     * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed。
      */
     public static int tryReadLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
@@ -635,7 +635,7 @@ public class ConfigCacheService {
     }
     
     /**
-     * Try to add write lock. If it successed, then it can call {@link #releaseWriteLock(String)}.And it won't call if
+     * Try to add write lock. If it succeeded, then it can call {@link #releaseWriteLock(String)}.And it won't call if
      * failed.
      *
      * @param groupKey groupKey string value.

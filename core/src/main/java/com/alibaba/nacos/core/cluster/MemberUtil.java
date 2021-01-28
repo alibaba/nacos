@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +30,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
@@ -40,16 +40,10 @@ import java.util.stream.Collectors;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MemberUtils {
+public class MemberUtil {
     
-    private static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
-    
-    private static ServerMemberManager manager;
-    
-    public static void setManager(ServerMemberManager manager) {
-        MemberUtils.manager = manager;
-    }
-    
+    protected static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
+
     /**
      * Information copy.
      *
@@ -117,17 +111,19 @@ public class MemberUtils {
      *
      * @param member {@link Member}
      */
-    public static void onSuccess(Member member) {
-        Member cloneMember = new Member();
-        copy(member, cloneMember);
+    public static void onSuccess(final ServerMemberManager manager, final Member member) {
+        final NodeState old = member.getState();
         manager.getMemberAddressInfos().add(member.getAddress());
-        cloneMember.setState(NodeState.UP);
-        cloneMember.setFailAccessCnt(0);
-        manager.update(cloneMember);
+        member.setState(NodeState.UP);
+        member.setFailAccessCnt(0);
+        if (!Objects.equals(old, member.getState())) {
+            manager.notifyMemberChange();
+        }
     }
     
-    public static void onFail(Member member) {
-        onFail(member, null);
+    public static void onFail(final ServerMemberManager manager, final Member member) {
+        // To avoid null pointer judgments, pass in one NONE_EXCEPTION
+        onFail(manager, member, ExceptionUtil.NONE_EXCEPTION);
     }
     
     /**
@@ -136,21 +132,22 @@ public class MemberUtils {
      * @param member {@link Member}
      * @param ex     {@link Throwable}
      */
-    public static void onFail(Member member, Throwable ex) {
-        Member cloneMember = new Member();
-        copy(member, cloneMember);
+    public static void onFail(final ServerMemberManager manager, final Member member, Throwable ex) {
         manager.getMemberAddressInfos().remove(member.getAddress());
-        cloneMember.setState(NodeState.SUSPICIOUS);
-        cloneMember.setFailAccessCnt(member.getFailAccessCnt() + 1);
+        final NodeState old = member.getState();
+        member.setState(NodeState.SUSPICIOUS);
+        member.setFailAccessCnt(member.getFailAccessCnt() + 1);
         int maxFailAccessCnt = EnvUtil.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
         
         // If the number of consecutive failures to access the target node reaches
         // a maximum, or the link request is rejected, the state is directly down
-        if (cloneMember.getFailAccessCnt() > maxFailAccessCnt || StringUtils
+        if (member.getFailAccessCnt() > maxFailAccessCnt || StringUtils
                 .containsIgnoreCase(ex.getMessage(), TARGET_MEMBER_CONNECT_REFUSE_ERRMSG)) {
-            cloneMember.setState(NodeState.DOWN);
+            member.setState(NodeState.DOWN);
         }
-        manager.update(cloneMember);
+        if (!Objects.equals(old, member.getState())) {
+            manager.notifyMemberChange();
+        }
     }
     
     /**

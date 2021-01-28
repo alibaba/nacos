@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.cluster.lookup;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
@@ -74,7 +74,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
         Collection<Member> tmpMembers = new ArrayList<>();
         try {
             List<String> tmp = EnvUtil.readClusterConf();
-            tmpMembers = MemberUtils.readServerConf(tmp);
+            tmpMembers = MemberUtil.readServerConf(tmp);
         } catch (Throwable e) {
             Loggers.CLUSTER
                     .error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e.getMessage());

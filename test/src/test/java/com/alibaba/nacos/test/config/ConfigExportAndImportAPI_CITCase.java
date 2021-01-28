@@ -27,14 +27,25 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClient;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClientBuilder;
 import com.github.keran213539.commonOkHttp.UploadByteFile;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.HttpURLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author klw
@@ -111,7 +122,7 @@ public class ConfigExportAndImportAPI_CITCase {
             params.put("beta", "false");
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
-    
+            
             params.put("dataId", "testHasAppname1.properties");
             params.put("group", "EXPORT_IMPORT_TEST_GROUP");
             params.put("beta", "false");
@@ -255,7 +266,9 @@ public class ConfigExportAndImportAPI_CITCase {
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT/test1.yml", "test: test1"));
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT/test2.txt", "test: test1"));
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT/test3.properties", "test.test1.value=test"));
-        String metaDataStr = "TEST_IMPORT.test2~txt.app=testApp1\r\nTEST_IMPORT.test3~properties.app=testApp2";
+        zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT_2/test4.properties", "test.test4.value=test"));
+        zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT/SUB_GROUP/test5.properties", "test.test5.value=test"));
+        String metaDataStr = "TEST_IMPORT.test1~yml.app=testApp1\rTEST_IMPORT.test2~txt.app=testApp2\r\nTEST_IMPORT.test3~properties.app=testApp3\nTEST_IMPORT_2.test4~properties.app=testApp4";
         zipItemList.add(new ZipUtils.ZipItem(".meta.yml", metaDataStr));
         String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
@@ -265,7 +278,15 @@ public class ConfigExportAndImportAPI_CITCase {
         uploadByteFile.setFileBytes(ZipUtils.zip(zipItemList));
         uploadByteFile.setMediaType("application/zip");
         uploadByteFile.setPrarmName("file");
-        httpClient.post(SERVER_ADDR + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, Collections.singletonList(uploadByteFile), null);
+        String importResult = httpClient.post(SERVER_ADDR + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, Collections.singletonList(uploadByteFile), null);
+
+        // test unrecognizedData
+        JsonNode importResObj = JacksonUtils.toObj(importResult);
+        int unrecognizedCount = importResObj.get("data").get("unrecognizedCount").intValue();
+        Assert.assertEquals(1, unrecognizedCount);
+        JsonNode unrecognizedData = importResObj.get("data").get("unrecognizedData").get(0);
+        Assert.assertEquals("TEST_IMPORT/SUB_GROUP/test5.properties", unrecognizedData.get("itemName").textValue());
+
         String getDataUrl = "?search=accurate&dataId=&group=TEST_IMPORT&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
         JsonNode resultObj = JacksonUtils.toObj(queryResult);
@@ -278,13 +299,26 @@ public class ConfigExportAndImportAPI_CITCase {
             }
             switch (config.get("dataId").textValue()){
                 case "test1.yml":
+                    Assert.assertEquals(config.get("appName").textValue(), "testApp1");
+                    break;
                 case "test2.txt":
+                    Assert.assertEquals(config.get("appName").textValue(), "testApp2");
+                    break;
                 case "test3.properties":
+                    Assert.assertEquals(config.get("appName").textValue(), "testApp3");
                     break;
                 default:
                     Assert.fail();
             }
         }
+
+        getDataUrl = "?search=accurate&dataId=&group=TEST_IMPORT_2&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
+        queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
+        resultObj = JacksonUtils.toObj(queryResult);
+        resultConfigs = resultObj.get("pageItems");
+        Assert.assertEquals(1, resultConfigs.size());
+        JsonNode jsonNode = resultConfigs.get(0);
+        Assert.assertEquals(jsonNode.get("appName").textValue(), "testApp4");
     }
 
     private Map<String, String> processMetaData(ZipUtils.ZipItem metaDataZipItem){

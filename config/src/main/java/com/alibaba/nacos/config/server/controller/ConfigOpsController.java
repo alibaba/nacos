@@ -97,6 +97,7 @@ public class ConfigOpsController {
      * @return {@link RestResult}
      */
     @GetMapping(value = "/derby")
+    @Secured(action = ActionTypes.READ, resource = "nacos/admin")
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "select";
         String limitSign = "ROWS FETCH NEXT";

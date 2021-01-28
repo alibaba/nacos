@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -172,31 +173,46 @@ public class NamingBase extends HttpClient4Test {
     }
 
     public static void prepareServer(int localPort) throws Exception{
-        prepareServer(localPort, "UP");
+        prepareServer(localPort, "UP", "/nacos");
+    }
+    
+    public static void prepareServer(int localPort,String contextPath) throws Exception{
+        prepareServer(localPort, "UP", contextPath);
     }
 
-    public static void prepareServer(int localPort, String status) throws Exception {
-        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
+    public static void prepareServer(int localPort, String status,String contextPath) throws Exception {
+        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
         HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
         System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
 
-        url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
+        url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
 
         result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
         System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }
-
+    
     public static void destoryServer(int localPort) throws Exception{
-        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
+        destoryServer(localPort, "/nacos");
+    }
+    
+    public static void destoryServer(int localPort, String contextPath) throws Exception{
+        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
 
         HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
         System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
+    }
+    
+    public static String normalizeContextPath(String contextPath) {
+        if (StringUtils.isBlank(contextPath) || "/".equals(contextPath)) {
+            return StringUtils.EMPTY;
+        }
+        return contextPath.startsWith("/") ? contextPath : "/" + contextPath;
     }
 }

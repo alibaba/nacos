@@ -264,7 +264,7 @@ public final class DiskUtils {
      * @return delete success
      */
     public static boolean deleteFile(String path, String fileName) {
-        File file = openFile(path, fileName);
+        File file = Paths.get(path, fileName).toFile();
         if (file.exists()) {
             return file.delete();
         }

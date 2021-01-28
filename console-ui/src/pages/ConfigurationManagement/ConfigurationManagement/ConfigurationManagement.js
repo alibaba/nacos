@@ -177,9 +177,25 @@ class ConfigurationManagement extends React.Component {
               hasdash: false,
             });
           } else {
+            // 前端默认排序
+            let sortList = [];
+            for (let j = 0, len = res.data.length; j < len; j++) {
+              let item = res.data[j];
+              sortList.push({
+                k: item.appName || '' + item.group || '' + item.dataId || '',
+                v: item,
+              });
+            }
+            sortList.sort(function(a, b) {
+              return a.k.localeCompare(b.k);
+            });
+            let showList = [];
+            for (let j = 0, len = sortList.length; j < len; j++) {
+              showList.push(sortList[j].v);
+            }
             this.setState({
               hasdash: true,
-              contentList: res.data,
+              contentList: showList,
             });
           }
         }
@@ -423,6 +439,15 @@ class ConfigurationManagement extends React.Component {
       },
       () => this.getData(value, false)
     );
+  }
+
+  onChangeSort(dataIndex, order) {
+    this.dataSource.sort(function(a, b) {
+      if (order === 'asc') {
+        return (a[dataIndex] + '').localeCompare(b[dataIndex] + '');
+      }
+      return (b[dataIndex] + '').localeCompare(a[dataIndex] + '');
+    });
   }
 
   handlePageSizeChange(pageSize) {
@@ -979,7 +1004,10 @@ class ConfigurationManagement extends React.Component {
     const resultCode = ret.code;
     if (resultCode === 200) {
       confirm.hide();
-      if (ret.data.failData && ret.data.failData.length > 0) {
+      let failCount = ret.data.failData ? ret.data.failData.length : 0;
+      let skipCount = ret.data.skipData ? ret.data.skipData.length : 0;
+      let unrecognizedCount = ret.data.unrecognizedCount ? ret.data.unrecognizedCount : 0;
+      if (failCount > 0) {
         Dialog.alert({
           title: isImport ? locale.importAbort : locale.cloneAbort,
           content: (
@@ -989,7 +1017,7 @@ class ConfigurationManagement extends React.Component {
               </h4>
               <div style={{ marginTop: 20 }}>
                 <h5>
-                  {locale.failureEntries}: {ret.data.failData.length}
+                  {locale.failureEntries}: {failCount}
                 </h5>
                 <Table dataSource={ret.data.failData}>
                   <Table.Column title="Data Id" dataIndex="dataId" />
@@ -998,28 +1026,48 @@ class ConfigurationManagement extends React.Component {
               </div>
               <div>
                 <h5>
-                  {locale.unprocessedEntries}: {ret.data.skipData ? ret.data.skipData.length : 0}
+                  {locale.unprocessedEntries}: {skipCount}
                 </h5>
                 <Table dataSource={ret.data.skipData}>
                   <Table.Column title="Data Id" dataIndex="dataId" />
                   <Table.Column title="Group" dataIndex="group" />
                 </Table>
               </div>
+              <div>
+                <h5>
+                  {locale.unrecognizedEntries}: {unrecognizedCount}
+                </h5>
+                <Table dataSource={ret.data.unrecognizedData}>
+                  <Table.Column title="Item Name" dataIndex="itemName" />
+                </Table>
+              </div>
             </div>
           ),
         });
-      } else if (ret.data.skipCount && ret.data.skipCount > 0) {
+      } else if (skipCount > 0 || unrecognizedCount > 0) {
+        let message = `${isImport ? locale.importSuccEntries : locale.cloneSuccEntries}${
+          ret.data.succCount
+        }`;
         Dialog.alert({
           title: isImport ? locale.importSucc : locale.cloneSucc,
           content: (
             <div style={{ width: '500px' }}>
+              <h5>{message}</h5>
               <div>
                 <h5>
-                  {locale.skippedEntries}: {ret.data.skipData.length}
+                  {locale.skippedEntries}: {skipCount}
                 </h5>
                 <Table dataSource={ret.data.skipData}>
                   <Table.Column title="Data Id" dataIndex="dataId" />
                   <Table.Column title="Group" dataIndex="group" />
+                </Table>
+              </div>
+              <div>
+                <h5>
+                  {locale.unrecognizedEntries}: {unrecognizedCount}
+                </h5>
+                <Table dataSource={ret.data.unrecognizedData}>
+                  <Table.Column title="Item Name" dataIndex="itemName" />
                 </Table>
               </div>
             </div>
@@ -1363,10 +1411,13 @@ class ConfigurationManagement extends React.Component {
               ref="dataTable"
               loading={this.state.loading}
               rowSelection={this.state.rowSelection}
+              onSort={this.onChangeSort}
             >
-              <Table.Column title={'Data Id'} dataIndex={'dataId'} />
-              <Table.Column title={'Group'} dataIndex={'group'} />
-              {!this.inApp && <Table.Column title={locale.application} dataIndex="appName" />}
+              <Table.Column sortable={true} title={'Data Id'} dataIndex={'dataId'} />
+              <Table.Column sortable={true} title={'Group'} dataIndex={'group'} />
+              {!this.inApp && (
+                <Table.Column sortable={true} title={locale.application} dataIndex="appName" />
+              )}
               <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
             </Table>
             {configurations.totalCount > 0 && (
