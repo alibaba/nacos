@@ -60,7 +60,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      * @param username username string value.
      */
     public void deleteUser(String username) {
-        usersRepository.findOne(QUsersEntity.usersEntity.password.eq(username))
+        usersRepository.findOne(QUsersEntity.usersEntity.username.eq(username))
                 .ifPresent(u -> usersRepository.delete(u));
     }
     
@@ -85,15 +85,15 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      */
     public User findUserByUsername(String username) {
         UsersEntity usersEntity = usersRepository.findOne(QUsersEntity.usersEntity.username.eq(username))
-                .orElseThrow(() -> new RuntimeException(username + " not exist"));
+                .orElse(null);
         return UserMapStruct.INSTANCE.convertUser(usersEntity);
     }
     
     public Page<User> getUsers(int pageNo, int pageSize) {
         org.springframework.data.domain.Page<UsersEntity> sPage = usersRepository
-                .findAll(PageRequest.of(pageNo, pageSize));
+                .findAll(PageRequest.of(pageNo - 1, pageSize));
         Page<User> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(UserMapStruct.INSTANCE.convertUserList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -104,6 +104,6 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     public List<String> findUserLikeUsername(String username) {
         List<UsersEntity> usersEntities = (List<UsersEntity>) usersRepository
                 .findAll(QUsersEntity.usersEntity.username.like(username));
-        return usersEntities.stream().map(s -> s.getUsername()).collect(Collectors.toList());
+        return usersEntities.stream().map(UsersEntity::getUsername).collect(Collectors.toList());
     }
 }
