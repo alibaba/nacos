@@ -34,12 +34,12 @@ import java.util.List;
 public interface ConfigHistoryInfoMapStruct {
     
     ConfigHistoryInfoMapStruct INSTANCE = Mappers.getMapper(ConfigHistoryInfoMapStruct.class);
-
+    
     @Mappings({@Mapping(source = "nid", target = "id"), @Mapping(source = "groupId", target = "group"),
             @Mapping(source = "gmtCreate", target = "createdTime"),
             @Mapping(source = "gmtModified", target = "lastModifiedTime")})
     ConfigHistoryInfo convertConfigHistoryInfo(HisConfigInfoEntity hisConfigInfoEntity);
-
+    
     List<ConfigHistoryInfo> convertConfigHistoryInfoList(List<HisConfigInfoEntity> list);
     
 }
