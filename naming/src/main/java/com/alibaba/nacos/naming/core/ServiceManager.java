@@ -145,8 +145,9 @@ public class ServiceManager implements RecordListener<Service> {
             // the possibility that the service cache information may just be deleted
             // and then created due to the heartbeat mechanism
             
-            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoCleaner(this, distroMapper), cleanEmptyServiceDelay,
-                    cleanEmptyServicePeriod);
+            GlobalExecutor
+                    .scheduleServiceAutoClean(new EmptyServiceAutoCleaner(this, distroMapper), cleanEmptyServiceDelay,
+                            cleanEmptyServicePeriod);
         }
         
         try {
@@ -438,7 +439,8 @@ public class ServiceManager implements RecordListener<Service> {
         
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "specified service not exist, serviceName : " + serviceName);
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "specified service not exist, serviceName : " + serviceName);
         }
         
         consistencyService.remove(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName));
@@ -999,6 +1001,35 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         return matchList.size();
+    }
+    
+    /**
+     * Shut down service manager v1.x.
+     *
+     * @throws NacosException nacos exception during shutdown
+     */
+    public void shutdown() throws NacosException {
+        try {
+            for (Map.Entry<String, Map<String, Service>> entry : serviceMap.entrySet()) {
+                destroyAllService(entry.getKey(), entry.getValue());
+            }
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR, "shutdown serviceManager failed", e);
+        }
+    }
+    
+    private void destroyAllService(String namespace, Map<String, Service> serviceMap) throws Exception {
+        for (Map.Entry<String, Service> entry : serviceMap.entrySet()) {
+            Service service = entry.getValue();
+            String name = service.getName();
+            service.destroy();
+            String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
+            String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
+            consistencyService.unListen(ephemeralInstanceListKey, service);
+            consistencyService.unListen(persistInstanceListKey, service);
+            consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
+            Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
+        }
     }
     
     public static class ServiceChecksum {

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.upgrade;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -108,6 +109,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
                 doUpgrade();
             }
         }, 100L, 5000L, TimeUnit.MILLISECONDS);
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
     
     @JustForTest
@@ -220,6 +222,26 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     public void shutdown() {
         if (null != upgradeChecker) {
             upgradeChecker.shutdownNow();
+        }
+    }
+    
+    /**
+     * Stop judgement and clear all cache.
+     */
+    public void stopAll() {
+        try {
+            Loggers.SRV_LOG.info("Disable Double write, stop and clean v1.x cache and features");
+            NotifyCenter.deregisterSubscriber(this);
+            doubleWriteDelayTaskEngine.shutdown();
+            if (null != upgradeChecker) {
+                upgradeChecker.shutdownNow();
+            }
+            serviceManager.shutdown();
+            raftCore.shutdown();
+            useGrpcFeatures.set(true);
+            useJraftFeatures.set(true);
+        } catch (NacosException e) {
+            Loggers.SRV_LOG.info("Close double write with exception", e);
         }
     }
 }
