@@ -40,7 +40,6 @@ public interface ConfigHistoryInfoMapStruct {
             @Mapping(source = "gmtModified", target = "lastModifiedTime")})
     ConfigHistoryInfo convertConfigHistoryInfo(HisConfigInfoEntity hisConfigInfoEntity);
 
-
     List<ConfigHistoryInfo> convertConfigHistoryInfoList(List<HisConfigInfoEntity> list);
     
 }
