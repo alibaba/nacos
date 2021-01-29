@@ -16,14 +16,20 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -42,10 +48,14 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     
     private final NamingMetadataOperateService metadataOperateService;
     
+    private final NamingMetadataManager metadataManager;
+    
     private final ServiceStorage serviceStorage;
     
-    public ServiceOperatorV2Impl(NamingMetadataOperateService metadataOperateService, ServiceStorage serviceStorage) {
+    public ServiceOperatorV2Impl(NamingMetadataOperateService metadataOperateService,
+            NamingMetadataManager metadataManager, ServiceStorage serviceStorage) {
         this.metadataOperateService = metadataOperateService;
+        this.metadataManager = metadataManager;
         this.serviceStorage = serviceStorage;
     }
     
@@ -79,6 +89,40 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     @Override
+    public ObjectNode queryService(String namespaceId, String serviceName) throws NacosException {
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, true);
+        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(new ServiceMetadata());
+        setServiceMetadata(result, serviceMetadata, service);
+        ArrayNode clusters = JacksonUtils.createEmptyArrayNode();
+        for (String each : serviceStorage.getClusters(service)) {
+            ClusterMetadata clusterMetadata =
+                    serviceMetadata.getClusters().containsKey(each) ? serviceMetadata.getClusters().get(each)
+                            : new ClusterMetadata();
+            clusters.add(newClusterNode(each, clusterMetadata));
+        }
+        result.set("clusters", clusters);
+        return result;
+    }
+    
+    private void setServiceMetadata(ObjectNode serviceDetail, ServiceMetadata serviceMetadata, Service service) {
+        serviceDetail.put("namespaceId", service.getNamespace());
+        serviceDetail.put("groupName", service.getGroup());
+        serviceDetail.put("name", service.getName());
+        serviceDetail.put("protectThreshold", serviceMetadata.getProtectThreshold());
+        serviceDetail.replace("metadata", JacksonUtils.transferToJsonNode(serviceMetadata.getExtendData()));
+        serviceDetail.replace("selector", JacksonUtils.transferToJsonNode(serviceMetadata.getSelector()));
+    }
+    
+    private ObjectNode newClusterNode(String clusterName, ClusterMetadata clusterMetadata) {
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put("name", clusterName);
+        result.replace("healthChecker", JacksonUtils.transferToJsonNode(clusterMetadata.getHealthChecker()));
+        result.replace("metadata", JacksonUtils.transferToJsonNode(clusterMetadata.getExtendData()));
+        return result;
+    }
+    
+    @Override
     @SuppressWarnings("unchecked")
     public List<String> listService(String namespaceId, String groupName, String selector, int pageSize, int pageNo)
             throws NacosException {
@@ -105,5 +149,24 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         String groupName = NamingUtils.getGroupName(groupedServiceName);
         String serviceName = NamingUtils.getServiceName(groupedServiceName);
         return Service.newService(namespaceId, groupName, serviceName, ephemeral);
+    }
+    
+    @Override
+    public Collection<String> listAllNamespace() {
+        return ServiceManager.getInstance().getAllNamespaces();
+    }
+    
+    @Override
+    public Collection<String> searchServiceName(String namespaceId, String expr, boolean responsibleOnly)
+            throws NacosException {
+        String regex = Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN;
+        Collection<String> result = new HashSet<>();
+        for (Service each : ServiceManager.getInstance().getSingletons(namespaceId)) {
+            String groupedServiceName = each.getGroupedServiceName();
+            if (groupedServiceName.matches(regex)) {
+                result.add(groupedServiceName);
+            }
+        }
+        return result;
     }
 }
