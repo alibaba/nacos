@@ -27,7 +27,7 @@ import java.util.Properties;
  * @author nkorange
  */
 public class NamingFactory {
-    
+
     /**
      * Create a new naming service.
      *
@@ -45,7 +45,7 @@ public class NamingFactory {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
         }
     }
-    
+
     /**
      * Create a new naming service.
      *
@@ -56,6 +56,44 @@ public class NamingFactory {
     public static NamingService createNamingService(Properties properties) throws NacosException {
         try {
             Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService");
+            Constructor constructor = driverImplClass.getConstructor(Properties.class);
+            NamingService vendorImpl = (NamingService) constructor.newInstance(properties);
+            return vendorImpl;
+        } catch (Throwable e) {
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
+        }
+    }
+
+    /**
+     * Create a new naming service.
+     *
+     * @param serverList server list
+     * @param classLoader the classloader to load NacosNamingService
+     * @return new naming service
+     * @throws NacosException nacos exception
+     */
+    public static NamingService createNamingService(String serverList, ClassLoader classLoader) throws NacosException {
+        try {
+            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService", true, classLoader);
+            Constructor constructor = driverImplClass.getConstructor(String.class);
+            NamingService vendorImpl = (NamingService) constructor.newInstance(serverList);
+            return vendorImpl;
+        } catch (Throwable e) {
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
+        }
+    }
+
+    /**
+     * Create a new naming service.
+     *
+     * @param properties  naming service properties
+     * @param classLoader the classloader to load NacosNamingService
+     * @return new naming service
+     * @throws NacosException nacos exception
+     */
+    public static NamingService createNamingService(Properties properties, ClassLoader classLoader) throws NacosException {
+        try {
+            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService", true, classLoader);
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             NamingService vendorImpl = (NamingService) constructor.newInstance(properties);
             return vendorImpl;
