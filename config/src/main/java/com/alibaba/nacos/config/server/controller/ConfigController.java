@@ -23,6 +23,7 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
@@ -44,7 +45,6 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -492,7 +492,7 @@ public class ConfigController {
                         // Fixed use of "\r\n" here
                         .append(ci.getAppName()).append("\r\n");
             }
-            String itemName = ci.getGroup() + "/" + ci.getDataId();
+            String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
             zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
         }
         if (metaData != null) {
@@ -538,13 +538,15 @@ public class ConfigController {
         }
         
         List<ConfigAllInfo> configInfoList = null;
+        List<Map<String, String>> unrecognizedList = null;
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
             ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
             Map<String, String> metaDataMap = new HashMap<>(16);
             if (metaDataZipItem != null) {
-                String metaDataStr = metaDataZipItem.getItemData();
-                String[] metaDataArr = metaDataStr.split("\r\n");
+                // compatible all file separator
+                String metaDataStr = metaDataZipItem.getItemData().replaceAll("[\r\n]+", "|");
+                String[] metaDataArr = metaDataStr.split("\\|");
                 for (String metaDataItem : metaDataArr) {
                     String[] metaDataItemArr = metaDataItem.split("=");
                     if (metaDataItemArr.length != 2) {
@@ -557,11 +559,14 @@ public class ConfigController {
             List<ZipUtils.ZipItem> itemList = unziped.getZipItemList();
             if (itemList != null && !itemList.isEmpty()) {
                 configInfoList = new ArrayList<>(itemList.size());
+                unrecognizedList = new ArrayList<>();
                 for (ZipUtils.ZipItem item : itemList) {
-                    String[] groupAdnDataId = item.getItemName().split("/");
-                    if (!item.getItemName().contains("/") || groupAdnDataId.length != 2) {
-                        failedData.put("succCount", 0);
-                        return RestResultUtils.buildResult(ResultCodeEnum.DATA_VALIDATION_FAILED, failedData);
+                    String[] groupAdnDataId = item.getItemName().split(Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR);
+                    if (groupAdnDataId.length != 2) {
+                        Map<String, String> unrecognizedItem = new HashMap<>(1);
+                        unrecognizedItem.put("itemName", item.getItemName());
+                        unrecognizedList.add(unrecognizedItem);
+                        continue;
                     }
                     String group = groupAdnDataId[0];
                     String dataId = groupAdnDataId[1];
@@ -605,6 +610,11 @@ public class ConfigController {
                             requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
+        // unrecognizedCount
+        if (!unrecognizedList.isEmpty()) {
+            saveResult.put("unrecognizedCount", unrecognizedList.size());
+            saveResult.put("unrecognizedData", unrecognizedList);
+        }
         return RestResultUtils.success("导入成功", saveResult);
     }
     
@@ -632,7 +642,7 @@ public class ConfigController {
             return RestResultUtils.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
         }
         configBeansList.removeAll(Collections.singleton(null));
-    
+        
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
         if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
@@ -669,6 +679,7 @@ public class ConfigController {
             if (StringUtils.isNotBlank(ci.getAppName())) {
                 ci4save.setAppName(ci.getAppName());
             }
+            ci4save.setDesc(ci.getDesc());
             configInfoList4Clone.add(ci4save);
         }
         
