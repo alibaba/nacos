@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.auth;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.modules.entity.QRolesEntity;
@@ -44,11 +45,10 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     private RolesRepository rolesRepository;
     
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-        
         org.springframework.data.domain.Page<RolesEntity> sPage = rolesRepository
-                .findAll(PageRequest.of(pageNo, pageSize));
+                .findAll(PageRequest.of(pageNo - 1, pageSize));
         Page<RoleInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(RoleInfoMapStruct.INSTANCE.convertRoleInfoList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -56,11 +56,15 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     }
     
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
-        
-        org.springframework.data.domain.Page<RolesEntity> sPage = rolesRepository
-                .findAll(QRolesEntity.rolesEntity.username.eq(username), PageRequest.of(pageNo, pageSize));
+        org.springframework.data.domain.Page<RolesEntity> sPage;
+        if (StringUtils.isNotBlank(username)) {
+            sPage = rolesRepository
+                    .findAll(QRolesEntity.rolesEntity.username.eq(username), PageRequest.of(pageNo - 1, pageSize));
+        } else {
+            sPage = rolesRepository.findAll(PageRequest.of(pageNo - 1, pageSize));
+        }
         Page<RoleInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(RoleInfoMapStruct.INSTANCE.convertRoleInfoList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());

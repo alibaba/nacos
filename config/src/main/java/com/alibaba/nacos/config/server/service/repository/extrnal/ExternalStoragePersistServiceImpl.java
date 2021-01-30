@@ -784,9 +784,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
                 .findAll(qConfigInfo.dataId.eq(dataId).and(qConfigInfo.tenantId.eq(tenantTmp)),
-                        PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                        PageRequest.of(pageNo - 1, pageSize));
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -800,9 +800,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository.findAll(
                 qConfigInfo.dataId.eq(dataId).and(qConfigInfo.tenantId.eq(tenantTmp))
-                        .and(qConfigInfo.appName.eq(appName)), PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                        .and(qConfigInfo.appName.eq(appName)), PageRequest.of(pageNo - 1, pageSize));
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -832,9 +832,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             booleanBuilder.and(qConfigInfo.appName.eq(appName));
         }
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(booleanBuilder, PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                .findAll(booleanBuilder, PageRequest.of(pageNo - 1, pageSize));
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -852,11 +852,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(tenant)) {
             booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
         }
-        final int startRow = (pageNo - 1) * pageSize;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(booleanBuilder, PageRequest.of(startRow, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
+                .findAll(booleanBuilder, PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -881,10 +880,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
                 .findAll(qConfigInfo.dataId.eq(dataId).and(qConfigInfo.tenantId.eq(StringUtils.EMPTY)),
-                        PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                        PageRequest.of(pageNo - 1, pageSize));
         
         Page<ConfigInfoBase> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoEntityMapStruct.INSTANCE.convertConfigInfoBaseList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -898,10 +897,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
                 .findAll(qConfigInfo.groupId.eq(group).and(qConfigInfo.tenantId.eq(tenantTmp)),
-                        PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                        PageRequest.of(pageNo - 1, pageSize));
         
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -915,10 +914,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository.findAll(
                 qConfigInfo.groupId.eq(group).and(qConfigInfo.tenantId.eq(tenantTmp))
-                        .and(qConfigInfo.appName.eq(appName)), PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                        .and(qConfigInfo.appName.eq(appName)), PageRequest.of(pageNo - 1, pageSize));
         
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -938,10 +937,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository.findAll(
                 qConfigInfo.tenantId.like(generateLikeArgument(tenantTmp)).and(qConfigInfo.appName.eq(appName)),
-                PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                PageRequest.of(pageNo - 1, pageSize));
         
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -969,9 +968,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             booleanBuilder.and(qConfigInfo.appName.eq(appName));
         }
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(booleanBuilder, PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                .findAll(booleanBuilder, PageRequest.of(pageNo - 1, pageSize));
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -984,10 +983,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
                 .findAll(qConfigInfo.groupId.eq(group).and(qConfigInfo.tenantId.eq(StringUtils.EMPTY)),
-                        PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                        PageRequest.of(pageNo - 1, pageSize));
         
         Page<ConfigInfoBase> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoEntityMapStruct.INSTANCE.convertConfigInfoBaseList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1041,8 +1040,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             }
         };
         org.springframework.data.domain.Page<ConfigInfoEntity> page = configInfoRepository
-                .findAll(specification, PageRequest.of(pageNo, pageSize));
-        return page.getContent().stream().map(config -> config.getGroupId()).collect(Collectors.toList());
+                .findAll(specification, PageRequest.of(pageNo - 1, pageSize));
+        return page.getContent().stream().map(ConfigInfoEntity::getGroupId).collect(Collectors.toList());
     }
     
     @Override
@@ -1055,8 +1054,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             }
         };
         org.springframework.data.domain.Page<ConfigInfoEntity> page = configInfoRepository
-                .findAll(specification, PageRequest.of(pageNo, pageSize));
-        return page.getContent().stream().map(config -> config.getGroupId()).collect(Collectors.toList());
+                .findAll(specification, PageRequest.of(pageNo - 1, pageSize));
+        return page.getContent().stream().map(ConfigInfoEntity::getGroupId).collect(Collectors.toList());
     }
     
     @Override
@@ -1104,10 +1103,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
                 .findAll(qConfigInfo.tenantId.like(generateLikeArgument(tenantTmp)),
-                        PageRequest.of((pageNo - 1) * pageSize, pageSize, Sort.by(Sort.Order.by("id"))));
+                        PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.by("id"))));
         
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1120,10 +1119,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
                 .findAll(qConfigInfo.tenantId.like(generateLikeArgument(tenantTmp)),
-                        PageRequest.of((pageNo - 1) * pageSize, pageSize, Sort.by(Sort.Order.by("id"))));
+                        PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.by("id"))));
         
         Page<ConfigKey> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigKeyMapStruct.INSTANCE.convertConfigKeyList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1134,9 +1133,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Deprecated
     public Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo, final int pageSize) {
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(PageRequest.of((pageNo - 1) * pageSize, pageSize, Sort.by(Sort.Order.by("id"))));
+                .findAll(PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.by("id"))));
         Page<ConfigInfoBase> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoEntityMapStruct.INSTANCE.convertConfigInfoBaseList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1146,9 +1145,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(final int pageNo, final int pageSize) {
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(PageRequest.of((pageNo - 1) * pageSize, pageSize, Sort.by(Sort.Order.by("id"))));
+                .findAll(PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.by("id"))));
         Page<ConfigInfoWrapper> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoWrapperMapStruct.INSTANCE.convertConfigInfoWrapperList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1172,9 +1171,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize) {
         org.springframework.data.domain.Page<ConfigInfoBetaEntity> sPage = configInfoBetaRepository
-                .findAll(null, PageRequest.of(pageNo, pageSize));
+                .findAll(null, PageRequest.of(pageNo - 1, pageSize));
         Page<ConfigInfoBetaWrapper> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoBetaWrapperMapStruct.INSTANCE.convertConfigInfoBetaWrapperList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1184,9 +1183,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize) {
         org.springframework.data.domain.Page<ConfigInfoTagEntity> sPage = configInfoTagRepository
-                .findAll(null, PageRequest.of(pageNo, pageSize));
+                .findAll(null, PageRequest.of(pageNo - 1, pageSize));
         Page<ConfigInfoTagWrapper> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoTagWrapperMapStruct.INSTANCE.convertConfigInfoTagWrapperList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1257,9 +1256,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             booleanBuilder.and(qConfigInfoEntity.content.like(generateLikeArgument(content)));
         }
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(booleanBuilder, PageRequest.of((pageNo - 1) * pageSize, pageSize));
+                .findAll(booleanBuilder, PageRequest.of(pageNo - 1, pageSize));
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1289,9 +1288,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             booleanBuilder.and(qConfigInfo.content.like(generateLikeArgument(content)));
         }
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(booleanBuilder, PageRequest.of((pageNo - 1) * pageSize, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
+                .findAll(booleanBuilder, PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
         Page<ConfigInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1319,9 +1318,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
         
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository.findAll(booleanBuilder,
-                PageRequest.of((pageNo - 1) * pageSize, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
+                PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
         Page<ConfigInfoBase> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoEntityMapStruct.INSTANCE.convertConfigInfoBaseList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1363,9 +1362,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         org.springframework.data.domain.Page<ConfigInfoAggrEntity> sPage = configInfoAggrRepository.findAll(
                 qConfigInfoAggr.dataId.eq(dataId).and(qConfigInfoAggr.groupId.eq(group))
                         .and(qConfigInfoAggr.tenantId.eq(tenantTmp)),
-                PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.by("datumId"))));
+                PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.by("datumId"))));
         Page<ConfigInfoAggr> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigInfoAggrMapStruct.INSTANCE.convertConfigInfoAggrList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1693,10 +1692,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         org.springframework.data.domain.Page<HisConfigInfoEntity> sPage = hisConfigInfoRepository.findAll(
                 qHisConfigInfo.dataId.eq(dataId).and(qHisConfigInfo.groupId.eq(group))
                         .and(qHisConfigInfo.tenantId.eq(tenant)),
-                PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.desc("nid"))));
+                PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.desc("nid"))));
         
         Page<ConfigHistoryInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(ConfigHistoryInfoMapStruct.INSTANCE.convertConfigHistoryInfoList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
@@ -1816,7 +1815,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         int totalCount = configInfoCount();
         int pageCount = (int) Math.ceil(totalCount * 1.0 / pageSize);
         List<ConfigInfoWrapper> allConfigInfo = new ArrayList<ConfigInfoWrapper>();
-        for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
+        for (int pageNo = 0; pageNo < pageCount; pageNo++) {
             List<ConfigInfoWrapper> configInfoList = listGroupKeyMd5ByPage(pageNo, pageSize);
             allConfigInfo.addAll(configInfoList);
         }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.auth;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
@@ -40,10 +41,15 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
     private PermissionsRepository permissionsRepository;
     
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
-        org.springframework.data.domain.Page<PermissionsEntity> sPage = permissionsRepository
-                .findAll(QPermissionsEntity.permissionsEntity.role.eq(role), PageRequest.of(pageNo, pageSize));
+        org.springframework.data.domain.Page<PermissionsEntity> sPage;
+        if (StringUtils.isNotBlank(role)) {
+            sPage = permissionsRepository
+                    .findAll(QPermissionsEntity.permissionsEntity.role.eq(role), PageRequest.of(pageNo - 1, pageSize));
+        } else {
+            sPage = permissionsRepository.findAll(PageRequest.of(pageNo - 1, pageSize));
+        }
         Page<PermissionInfo> page = new Page<>();
-        page.setPageNumber(sPage.getNumber());
+        page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
         page.setPageItems(PermissionsMapStruct.INSTANCE.convertPermissionInfoList(sPage.getContent()));
         page.setTotalCount((int) sPage.getTotalElements());
