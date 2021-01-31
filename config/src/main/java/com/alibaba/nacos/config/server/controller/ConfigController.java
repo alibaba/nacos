@@ -48,8 +48,11 @@ import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
+import org.apache.catalina.connector.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.http.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,12 +73,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -204,9 +209,10 @@ public class ConfigController {
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParam(tag);
-        
+    
         final String clientIp = RequestUtil.getRemoteIp(request);
-        inner.doGetConfig(request, response, dataId, group, tenant, tag, clientIp);
+        String isNotify = request.getHeader("notify");
+        inner.doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp);
     }
     
     /**
@@ -299,6 +305,46 @@ public class ConfigController {
         return rr;
     }
     
+    private void removeRequestContext(HttpServletRequest request) {
+        try {
+            
+            request.removeAttribute("body");
+            
+            Map<String, String[]> parameterMap = request.getParameterMap();
+            Field locked = parameterMap.getClass().getDeclaredField("locked");
+            locked.setAccessible(true);
+            locked.set(parameterMap, false);
+            parameterMap.remove(Constants.PROBE_MODIFY_REQUEST);
+            
+            Field inneRequestFiled = request.getClass().getDeclaredField("request");
+            inneRequestFiled.setAccessible(true);
+            Request innerRequest = (Request) inneRequestFiled.get(request);
+            
+            Field coyoteRequest = innerRequest.getClass().getDeclaredField("coyoteRequest");
+            coyoteRequest.setAccessible(true);
+            org.apache.coyote.Request coyotoRequest = (org.apache.coyote.Request) coyoteRequest.get(innerRequest);
+            Parameters parameters = coyotoRequest.getParameters();
+            Field hashMapField = parameters.getClass().getDeclaredField("paramHashValues");
+            hashMapField.setAccessible(true);
+            LinkedHashMap hashMaps = (LinkedHashMap) hashMapField.get(parameters);
+            hashMaps.remove(Constants.PROBE_MODIFY_REQUEST);
+            
+            Field tmpNameField = parameters.getClass().getDeclaredField("tmpName");
+            tmpNameField.setAccessible(true);
+            ByteChunk tmpName = (ByteChunk) tmpNameField.get(parameters);
+            byte[] bytemp = new byte[0];
+            tmpName.setBytes(bytemp, 0, 0);
+            
+            Field tmpValueField = parameters.getClass().getDeclaredField("tmpValue");
+            tmpValueField.setAccessible(true);
+            ByteChunk tmpValue = (ByteChunk) tmpValueField.get(parameters);
+            tmpValue.setBytes(bytemp, 0, 0);
+            
+        } catch (Exception e) {
+            LOGGER.warn("remove listen request param error", e);
+        }
+    }
+    
     /**
      * The client listens for configuration changes.
      */
@@ -306,13 +352,16 @@ public class ConfigController {
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public void listener(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        
         request.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true);
+        //remove large listen context , reduce request content to optimize cms gc.
+        removeRequestContext(request);
         String probeModify = request.getParameter("Listening-Configs");
         if (StringUtils.isBlank(probeModify)) {
+            LOGGER.warn("invalid probeModify is blank");
             throw new IllegalArgumentException("invalid probeModify");
         }
-        request.removeAttribute("body");
-        
+       
         probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
         
         Map<String, String> clientMd5Map;
@@ -413,7 +462,7 @@ public class ConfigController {
         RestResult<Boolean> rr = new RestResult<Boolean>();
         try {
             persistService.removeConfigInfo4Beta(dataId, group, tenant);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             rr.setCode(500);
             rr.setData(false);
@@ -448,7 +497,7 @@ public class ConfigController {
             rr.setData(ci);
             rr.setMessage("stop beta ok");
             return rr;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
             rr.setCode(500);
             rr.setMessage("remove beta data error");
