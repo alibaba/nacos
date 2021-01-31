@@ -1824,7 +1824,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
-        return null;
+        org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
+                .findAll(PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.by("id"))));
+        return ConfigInfoWrapperMapStruct.INSTANCE.convertConfigInfoWrapperList(sPage.getContent());
     }
     
     @Override
