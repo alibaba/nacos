@@ -45,6 +45,7 @@ import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
@@ -581,7 +582,10 @@ public class ClientWorker implements Closeable {
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
             labels.put(Constants.APPNAME, AppNameUtils.getAppName());
-            
+            labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipserverTag());
+            labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmorayTag());
+            labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
+    
             return labels;
         }
         
@@ -947,6 +951,7 @@ public class ClientWorker implements Closeable {
             try {
                 request.putAllHeader(super.getSecurityHeaders());
                 request.putAllHeader(super.getSpasHeaders());
+                request.putAllHeader(super.getCommonHeader());
             } catch (Exception e) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
             }

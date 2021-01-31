@@ -32,6 +32,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -82,6 +83,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder
             .getNacosAsyncRestTemplate(Loggers.CORE);
     
+    private static boolean isUseAddressServer = false;
+    
     /**
      * Cluster node list.
      */
@@ -90,7 +93,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     /**
      * Is this node in the cluster list.
      */
-    private volatile boolean isInIpList = true;
+    private static volatile boolean isInIpList = true;
     
     /**
      * port.
@@ -162,11 +165,19 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private void initAndStartLookup() throws NacosException {
         this.lookup = LookupFactory.createLookUp(this);
+        isUseAddressServer = (this.lookup instanceof AddressServerMemberLookup);
         this.lookup.start();
     }
     
+    /**
+     * switch look up.
+     *
+     * @param name look up name.
+     * @throws NacosException exception.
+     */
     public void switchLookup(String name) throws NacosException {
         this.lookup = LookupFactory.switchLookup(name, this);
+        isUseAddressServer = (this.lookup instanceof AddressServerMemberLookup);
         this.lookup.start();
     }
     
@@ -200,6 +211,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 return InetUtils.IPChangeEvent.class;
             }
         });
+    }
+    
+    public static boolean isUseAddressServer() {
+        return isUseAddressServer;
     }
     
     /**
@@ -255,6 +270,22 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             }
         }
         return result;
+    }
+    
+    public List<String> getServerListUnhealth() {
+        List<String> unhealthyMembers = new ArrayList<>();
+        for (Member member : this.allMembers()) {
+            NodeState state = member.getState();
+            if (state.equals(NodeState.DOWN)) {
+                unhealthyMembers.add(member.getAddress());
+            }
+            
+        }
+        return unhealthyMembers;
+    }
+    
+    public MemberLookup getLookup() {
+        return lookup;
     }
     
     public Member getSelf() {
@@ -438,7 +469,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return Collections.unmodifiableMap(serverList);
     }
     
-    public boolean isInIpList() {
+    public static boolean isInIpList() {
         return isInIpList;
     }
     

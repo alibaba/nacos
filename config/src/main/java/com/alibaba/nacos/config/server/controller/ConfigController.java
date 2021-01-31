@@ -169,17 +169,17 @@ public class ConfigController {
         configInfo.setType(type);
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
-                persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
+                persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
                 ConfigChangePublisher
                         .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
             } else {
-                persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, true);
+                persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
             }
         } else {
             // beta publish
-            persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, true);
+            persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
             ConfigChangePublisher
                     .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
         }
