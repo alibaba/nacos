@@ -84,7 +84,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
@@ -746,12 +745,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public ConfigInfoBase findConfigInfoBase(final String dataId, final String group) {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
-        return configInfoRepository.findOne(qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group))).map(s -> {
-            ConfigInfoBase configInfoBase = new ConfigInfoBase();
-            BeanUtils.copyProperties(s, configInfoBase);
-            configInfoBase.setGroup(s.getGroupId());
-            return configInfoBase;
-        }).orElse(null);
+        return configInfoRepository.findOne(qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group)))
+                .map(ConfigInfoEntityMapStruct.INSTANCE::convertConfigInfoBase)
+                .orElse(null);
     }
     
     @Override
@@ -1920,9 +1916,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         Iterable<ConfigInfoEntity> configInfos = configInfoRepository.findAll(booleanBuilder);
         List<ConfigAllInfo> resultList = new ArrayList<>();
         configInfos.forEach(s -> {
-            ConfigAllInfo configAllInfo = new ConfigAllInfo();
-            BeanUtils.copyProperties(s, configAllInfo);
-            configAllInfo.setGroup(s.getGroupId());
+            ConfigAllInfo configAllInfo = ConfigAllInfoMapStruct.INSTANCE.convertConfigAllInfo(s);
             resultList.add(configAllInfo);
         });
         return resultList;
