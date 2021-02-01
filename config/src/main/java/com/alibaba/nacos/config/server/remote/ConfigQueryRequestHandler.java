@@ -49,7 +49,6 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_BREAK;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
@@ -75,11 +74,11 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     @Override
     @TpsControl(pointName = "ConfigQuery", parsers = {ConfigQueryGroupKeyParser.class, ConfigQueryGroupParser.class})
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public ConfigQueryResponse handle(ConfigQueryRequest configQueryRequest, RequestMeta requestMeta)
+    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta)
             throws NacosException {
         
         try {
-            ConfigQueryResponse context = getContext(configQueryRequest, requestMeta, configQueryRequest.isNotify());
+            ConfigQueryResponse context = getContext(request, meta, request.isNotify());
             return context;
         } catch (Exception e) {
             ConfigQueryResponse contextFail = ConfigQueryResponse
@@ -100,14 +99,15 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         
         final String groupKey = GroupKey2
                 .getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(), configQueryRequest.getTenant());
-        
-        String autoTag = configQueryRequest.getHeader("Vipserver-Tag");
+    
+        String autoTag = configQueryRequest.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
         
         String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
         
         int lockResult = tryConfigReadLock(groupKey);
         
         boolean isBeta = false;
+        boolean isSli = false;
         if (lockResult > 0) {
             //FileInputStream fis = null;
             try {
@@ -134,7 +134,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
-                    response.addLabel("isBeta", "Y");
+                    response.setBeta(true);
                 } else {
                     if (StringUtils.isBlank(tag)) {
                         if (isUseTag(cacheItem, autoTag)) {
@@ -151,9 +151,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
+                            response.setTag(URLEncoder.encode(autoTag, Constants.ENCODE));
                             
-                            response.addLabel("Vipserver-Tag",
-                                    URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
                         } else {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
@@ -209,11 +208,11 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                         }
                     }
                 }
-                
-                response.addLabel(Constants.CONTENT_MD5, md5);
+    
+                response.setMd5(md5);
                 
                 if (PropertyUtil.isDirectRead()) {
-                    response.addLabel("Last-Modified", String.valueOf(lastModified));
+                    response.setLastModified(lastModified);
                     response.setContent(configInfoBase.getContent());
                     response.setResultCode(ResponseCode.SUCCESS.getCode());
                     
@@ -221,7 +220,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     //read from file
                     String content = readFileContent(file);
                     response.setContent(content);
-                    response.addLabel("Last-Modified", String.valueOf(lastModified));
+                    response.setLastModified(lastModified);
                     response.setResultCode(ResponseCode.SUCCESS.getCode());
                     
                 }

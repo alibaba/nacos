@@ -37,4 +37,9 @@ public class StandaloneMemberLookup extends AbstractMemberLookup {
             afterLookup(MemberUtil.readServerConf(Collections.singletonList(url)));
         }
     }
+    
+    @Override
+    public boolean useAddressServer() {
+        return false;
+    }
 }

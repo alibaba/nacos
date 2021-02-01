@@ -119,10 +119,15 @@ public class ConfigServletInner {
      * Execute to get config API.
      */
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
-            String tenant, String tag, String clientIp) throws IOException, ServletException {
+            String tenant, String tag, String isNotify, String clientIp) throws IOException, ServletException {
+        
+        boolean notify = false;
+        if (StringUtils.isNotBlank(isNotify)) {
+            notify = Boolean.valueOf(isNotify);
+        }
+        
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String autoTag = request.getHeader("Vipserver-Tag");
-        boolean notify = Boolean.valueOf(request.getHeader("notify"));
         
         String requestIpApp = RequestUtil.getAppName(request);
         int lockResult = tryConfigReadLock(groupKey);
@@ -139,14 +144,14 @@ public class ConfigServletInner {
                 if (cacheItem.isBeta() && cacheItem.getIps4Beta().contains(clientIp)) {
                     isBeta = true;
                 }
-
+                
                 final String configType =
                         (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
                 response.setHeader("Config-Type", configType);
                 FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
                 String contentTypeHeader = fileTypeEnum.getContentType();
                 response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
-
+                
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
                 PrintWriter out = null;
@@ -194,9 +199,7 @@ public class ConfigServletInner {
                                 // no data",
                                 // new Object[]{clientIp, groupKey});
                                 
-                                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                                response.getWriter().println("config data not exist");
-                                return HttpServletResponse.SC_NOT_FOUND + "";
+                                return get404Result(response);
                             }
                         }
                     } else {
@@ -277,9 +280,7 @@ public class ConfigServletInner {
                     .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
                             requestIp, notify);
             
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            response.getWriter().println("config data not exist");
-            return HttpServletResponse.SC_NOT_FOUND + "";
+            return get404Result(response);
             
         } else {
             
@@ -297,9 +298,16 @@ public class ConfigServletInner {
     private static void releaseConfigReadLock(String groupKey) {
         ConfigCacheService.releaseReadLock(groupKey);
     }
-
+    
+    private String get404Result(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        response.getWriter().println("config data not exist");
+        return HttpServletResponse.SC_NOT_FOUND + "";
+    }
+    
     /**
      * Try to add read lock.
+     *
      * @param groupKey groupKey string value.
      * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed。
      */

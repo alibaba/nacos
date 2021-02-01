@@ -95,7 +95,7 @@ public class AsyncNotifyService {
                     Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<NotifySingleRpcTask>();
                     
                     for (Member member : ipList) {
-                        if (MemberUtil.isSupportedLongCon(member)) {
+                        if (!MemberUtil.isSupportedLongCon(member)) {
                             httpQueue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(),
                                     evt.isBeta));
                         } else {

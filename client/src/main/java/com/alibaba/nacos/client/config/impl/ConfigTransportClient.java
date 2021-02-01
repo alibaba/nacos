@@ -23,7 +23,6 @@ import com.alibaba.nacos.client.identify.StsConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -31,8 +30,6 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.UuidUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
@@ -142,10 +139,8 @@ public abstract class ConfigTransportClient {
         headers.put(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
         headers.put(Constants.CLIENT_REQUEST_TS_HEADER, ts);
         headers.put(Constants.CLIENT_REQUEST_TOKEN_HEADER, token);
-        headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         headers.put("exConfigInfo", "true");
-        headers.put(HttpHeaderConsts.REQUEST_ID, UuidUtils.generateUuid());
-        headers.put(HttpHeaderConsts.ACCEPT_CHARSET, encode);
+        headers.put(Constants.CHARSET_KEY, encode);
         return headers;
     }
     
