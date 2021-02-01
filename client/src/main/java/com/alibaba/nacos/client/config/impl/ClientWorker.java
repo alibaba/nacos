@@ -26,14 +26,12 @@ import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigReSyncRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
-import com.alibaba.nacos.api.config.remote.response.ConfigReSyncResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
@@ -45,6 +43,7 @@ import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
@@ -581,6 +580,9 @@ public class ClientWorker implements Closeable {
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
             labels.put(Constants.APPNAME, AppNameUtils.getAppName());
+            labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipserverTag());
+            labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmorayTag());
+            labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
             
             return labels;
         }
@@ -590,22 +592,21 @@ public class ClientWorker implements Closeable {
              * Register Config Change /Config ReSync Handler
              */
             rpcClientInner.registerServerRequestHandler((request) -> {
-                if (request instanceof ConfigChangeNotifyRequest || request instanceof ConfigReSyncRequest) {
-                    ConfigReSyncRequest configReSyncRequest = (ConfigReSyncRequest) request;
-                    LOGGER.info("[{}] [server-push] config {}. dataId={}, group={}", rpcClientInner.getName(),
-                            (request instanceof ConfigChangeNotifyRequest) ? "changed" : "re sync",
-                            configReSyncRequest.getDataId(), configReSyncRequest.getGroup());
+                if (request instanceof ConfigChangeNotifyRequest) {
+                    ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
+                    LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
+                            rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
+                            configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
                     String groupKey = GroupKey
-                            .getKeyTenant(configReSyncRequest.getDataId(), configReSyncRequest.getGroup(),
-                                    configReSyncRequest.getTenant());
+                            .getKeyTenant(configChangeNotifyRequest.getDataId(), configChangeNotifyRequest.getGroup(),
+                                    configChangeNotifyRequest.getTenant());
                     
                     CacheData cacheData = cacheMap.get().get(groupKey);
                     if (cacheData != null) {
                         cacheData.setSyncWithServer(false);
                         notifyListenConfig();
                     }
-                    return (request instanceof ConfigChangeNotifyRequest) ? new ConfigChangeNotifyResponse()
-                            : new ConfigReSyncResponse();
+                    return new ConfigChangeNotifyResponse();
                 }
                 return null;
             });
@@ -947,6 +948,7 @@ public class ClientWorker implements Closeable {
             try {
                 request.putAllHeader(super.getSecurityHeaders());
                 request.putAllHeader(super.getSpasHeaders());
+                request.putAllHeader(super.getCommonHeader());
             } catch (Exception e) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
             }

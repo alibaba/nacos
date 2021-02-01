@@ -23,6 +23,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
+
 /**
  * ConnectionMetaInfo.
  *
@@ -85,6 +87,10 @@ public class ConnectionMeta {
     
     public String getLabel(String labelKey) {
         return labels.get(labelKey);
+    }
+    
+    public String getTag() {
+        return labels.get(VIPSERVER_TAG);
     }
     
     public ConnectionMeta(String connectionId, String clientIp, int clientPort, int localPort, String connectType,

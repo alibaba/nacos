@@ -66,6 +66,11 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
     }
     
     @Override
+    public boolean useAddressServer() {
+        return false;
+    }
+    
+    @Override
     public void destroy() throws NacosException {
         WatchFileCenter.deregisterWatcher(EnvUtil.getConfPath(), watcher);
     }

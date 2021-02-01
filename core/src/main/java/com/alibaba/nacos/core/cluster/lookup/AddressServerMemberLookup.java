@@ -75,6 +75,11 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
         }
     }
     
+    @Override
+    public boolean useAddressServer() {
+        return true;
+    }
+    
     private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {

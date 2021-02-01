@@ -37,6 +37,13 @@ public interface MemberLookup {
     void start() throws NacosException;
     
     /**
+     * is using address server.
+     *
+     * @return using address server or not.
+     */
+    boolean useAddressServer();
+    
+    /**
      * Inject the ServerMemberManager property.
      *
      * @param memberManager {@link ServerMemberManager}
