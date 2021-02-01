@@ -953,6 +953,10 @@ public class ClientWorker implements Closeable {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
             }
             
+            Map<String, String> signHeaders = SpasAdapter.getSignHeaders(resourceBuild(request), secretKey);
+            if (signHeaders != null && !signHeaders.isEmpty()) {
+                request.putAllHeader(signHeaders);
+            }
             JsonObject asJsonObjectTemp = new Gson().toJsonTree(request).getAsJsonObject();
             asJsonObjectTemp.remove("headers");
             asJsonObjectTemp.remove("requestId");
@@ -963,6 +967,40 @@ public class ClientWorker implements Closeable {
             }
             return rpcClientInner.request(request, timeoutMills);
         }
+        
+        private String resourceBuild(Request request) {
+            if (request instanceof ConfigQueryRequest) {
+                String tenant = ((ConfigQueryRequest) request).getTenant();
+                String group = ((ConfigQueryRequest) request).getGroup();
+                return getResource(tenant, group);
+            }
+            if (request instanceof ConfigPublishRequest) {
+                String tenant = ((ConfigPublishRequest) request).getTenant();
+                String group = ((ConfigPublishRequest) request).getGroup();
+                return getResource(tenant, group);
+            }
+            
+            if (request instanceof ConfigRemoveRequest) {
+                String tenant = ((ConfigRemoveRequest) request).getTenant();
+                String group = ((ConfigRemoveRequest) request).getGroup();
+                return getResource(tenant, group);
+            }
+            return "";
+        }
+        
+        private String getResource(String tenant, String group) {
+            if (StringUtils.isNotBlank(tenant) && StringUtils.isNotBlank(group)) {
+                return tenant + "+" + group;
+            }
+            if (StringUtils.isNotBlank(group)) {
+                return group;
+            }
+            if (StringUtils.isNotBlank(tenant)) {
+                return tenant;
+            }
+            return "";
+        }
+        
         
         RpcClient getOneRunningClient() throws NacosException {
             return ensureRpcClient("0");
