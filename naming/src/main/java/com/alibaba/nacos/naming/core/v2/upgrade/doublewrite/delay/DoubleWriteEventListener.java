@@ -22,8 +22,13 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Event listener for double write.
@@ -37,19 +42,23 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
     
     private final DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine;
     
-    private volatile boolean startDoubleWrite = true;
+    private volatile boolean stopDoubleWrite;
     
     public DoubleWriteEventListener(UpgradeJudgement upgradeJudgement,
             DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine) {
         this.upgradeJudgement = upgradeJudgement;
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
         NotifyCenter.registerSubscriber(this);
-        startDoubleWrite = EnvUtil.getStandaloneMode();
+        stopDoubleWrite = EnvUtil.getStandaloneMode();
+        if (!stopDoubleWrite) {
+            Thread doubleWriteEnabledChecker = new DoubleWriteEnabledChecker();
+            doubleWriteEnabledChecker.start();
+        }
     }
     
     @Override
     public void onEvent(ServiceEvent.ServiceChangedEvent event) {
-        if (!startDoubleWrite) {
+        if (stopDoubleWrite) {
             return;
         }
         if (!upgradeJudgement.isUseGrpcFeatures()) {
@@ -71,7 +80,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      * @param service service for v2
      */
     public void doubleWriteMetadataToV1(com.alibaba.nacos.naming.core.v2.pojo.Service service) {
-        if (!startDoubleWrite) {
+        if (stopDoubleWrite) {
             return;
         }
         if (!upgradeJudgement.isUseGrpcFeatures()) {
@@ -88,7 +97,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      * @param ephemeral ephemeral of service
      */
     public void doubleWriteToV2(Service service, boolean ephemeral) {
-        if (!startDoubleWrite) {
+        if (stopDoubleWrite) {
             return;
         }
         if (upgradeJudgement.isUseGrpcFeatures() || upgradeJudgement.isAll20XVersion()) {
@@ -107,7 +116,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      * @param ephemeral ephemeral of service
      */
     public void doubleWriteMetadataToV2(Service service, boolean ephemeral) {
-        if (!startDoubleWrite) {
+        if (stopDoubleWrite) {
             return;
         }
         if (upgradeJudgement.isUseGrpcFeatures() || upgradeJudgement.isAll20XVersion()) {
@@ -117,5 +126,28 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
         String serviceName = service.getName();
         doubleWriteDelayTaskEngine.addTask(ServiceChangeV1Task.getKey(namespace, serviceName, ephemeral),
                 new ServiceChangeV1Task(namespace, serviceName, ephemeral, DoubleWriteContent.METADATA));
+    }
+    
+    private class DoubleWriteEnabledChecker extends Thread {
+        
+        private volatile boolean stillCheck = true;
+        
+        @Override
+        public void run() {
+            Loggers.SRV_LOG.info("Check whether close double write");
+            while (stillCheck) {
+                try {
+                    TimeUnit.SECONDS.sleep(5);
+                    stopDoubleWrite = !ApplicationUtils.getBean(SwitchDomain.class).isDoubleWriteEnabled();
+                    if (stopDoubleWrite) {
+                        upgradeJudgement.stopAll();
+                        stillCheck = false;
+                    }
+                } catch (Exception e) {
+                    Loggers.SRV_LOG.error("Close double write failed ", e);
+                }
+            }
+            Loggers.SRV_LOG.info("Check double write closed");
+        }
     }
 }

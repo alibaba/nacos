@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.upgrade;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -33,6 +34,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.RefreshStorageDataTask;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.AsyncServicesCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -108,6 +110,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
                 doUpgrade();
             }
         }, 100L, 5000L, TimeUnit.MILLISECONDS);
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
     
     @JustForTest
@@ -174,6 +177,10 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
             Member self = memberManager.getSelf();
             self.setExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE, selfCheckResult);
             memberManager.updateMember(self);
+            if (!selfCheckResult) {
+                NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(AsyncServicesCheckTask.class,
+                        new AsyncServicesCheckTask(doubleWriteDelayTaskEngine, this));
+            }
         }
         boolean result = true;
         for (Member each : memberManager.allMembers()) {
@@ -220,6 +227,26 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     public void shutdown() {
         if (null != upgradeChecker) {
             upgradeChecker.shutdownNow();
+        }
+    }
+    
+    /**
+     * Stop judgement and clear all cache.
+     */
+    public void stopAll() {
+        try {
+            Loggers.SRV_LOG.info("Disable Double write, stop and clean v1.x cache and features");
+            useGrpcFeatures.set(true);
+            useJraftFeatures.set(true);
+            NotifyCenter.deregisterSubscriber(this);
+            doubleWriteDelayTaskEngine.shutdown();
+            if (null != upgradeChecker) {
+                upgradeChecker.shutdownNow();
+            }
+            serviceManager.shutdown();
+            raftCore.shutdown();
+        } catch (NacosException e) {
+            Loggers.SRV_LOG.info("Close double write with exception", e);
         }
     }
 }
