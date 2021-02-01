@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.config.server.controller;
 
-import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
-import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
@@ -42,9 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.CACHE_DATA;
-import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA;
 
 /**
  * Controller for other node notification.
@@ -142,35 +136,5 @@ public class CommunicationController {
         return result;
         
     }
-    
-    /**
-     * Get client config listener lists of subscriber in local machine.
-     */
-    @GetMapping("/clientMetrics")
-    public Map<String, Object> getClientMetrics(@RequestParam("ip") String ip,
-            @RequestParam(value = "dataId", required = false) String dataId,
-            @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "tenant", required = false) String tenant) {
-        Map<String, Object> metrics = new HashMap<>(16);
-        List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
-        for (Connection connectionByIp : connectionsByIp) {
-            try {
-                ClientConfigMetricRequest clientMetrics = new ClientConfigMetricRequest();
-                if (StringUtils.isNotBlank(dataId)) {
-                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
-                            .build(CACHE_DATA, GroupKey2.getKey(dataId, group, tenant)));
-                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
-                            .build(SNAPSHOT_DATA, GroupKey2.getKey(dataId, group, tenant)));
-                }
-                
-                ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp
-                        .request(clientMetrics, 3000L);
-                metrics.putAll(request1.getMetrics());
-            } catch (NacosException e) {
-                e.printStackTrace();
-            }
-        }
-        return metrics;
-        
-    }
+
 }
