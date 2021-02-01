@@ -32,7 +32,6 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -165,7 +164,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private void initAndStartLookup() throws NacosException {
         this.lookup = LookupFactory.createLookUp(this);
-        isUseAddressServer = (this.lookup instanceof AddressServerMemberLookup);
+        isUseAddressServer = this.lookup.userAddressServer();
         this.lookup.start();
     }
     
@@ -177,7 +176,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      */
     public void switchLookup(String name) throws NacosException {
         this.lookup = LookupFactory.switchLookup(name, this);
-        isUseAddressServer = (this.lookup instanceof AddressServerMemberLookup);
+        isUseAddressServer = this.lookup.userAddressServer();
         this.lookup.start();
     }
     
