@@ -39,7 +39,7 @@ public class StandaloneMemberLookup extends AbstractMemberLookup {
     }
     
     @Override
-    public boolean userAddressServer() {
+    public boolean useAddressServer() {
         return false;
     }
 }

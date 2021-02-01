@@ -41,7 +41,7 @@ public interface MemberLookup {
      *
      * @return using address server or not.
      */
-    boolean userAddressServer();
+    boolean useAddressServer();
     
     /**
      * Inject the ServerMemberManager property.

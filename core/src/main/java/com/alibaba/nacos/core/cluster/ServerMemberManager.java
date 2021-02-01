@@ -164,7 +164,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private void initAndStartLookup() throws NacosException {
         this.lookup = LookupFactory.createLookUp(this);
-        isUseAddressServer = this.lookup.userAddressServer();
+        isUseAddressServer = this.lookup.useAddressServer();
         this.lookup.start();
     }
     
@@ -176,7 +176,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      */
     public void switchLookup(String name) throws NacosException {
         this.lookup = LookupFactory.switchLookup(name, this);
-        isUseAddressServer = this.lookup.userAddressServer();
+        isUseAddressServer = this.lookup.useAddressServer();
         this.lookup.start();
     }
     
