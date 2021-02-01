@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.RefreshStorageDataTask;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.AsyncServicesCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -176,6 +177,10 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
             Member self = memberManager.getSelf();
             self.setExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE, selfCheckResult);
             memberManager.updateMember(self);
+            if (!selfCheckResult) {
+                NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(AsyncServicesCheckTask.class,
+                        new AsyncServicesCheckTask(doubleWriteDelayTaskEngine, this));
+            }
         }
         boolean result = true;
         for (Member each : memberManager.allMembers()) {
@@ -231,6 +236,8 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     public void stopAll() {
         try {
             Loggers.SRV_LOG.info("Disable Double write, stop and clean v1.x cache and features");
+            useGrpcFeatures.set(true);
+            useJraftFeatures.set(true);
             NotifyCenter.deregisterSubscriber(this);
             doubleWriteDelayTaskEngine.shutdown();
             if (null != upgradeChecker) {
@@ -238,8 +245,6 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
             }
             serviceManager.shutdown();
             raftCore.shutdown();
-            useGrpcFeatures.set(true);
-            useJraftFeatures.set(true);
         } catch (NacosException e) {
             Loggers.SRV_LOG.info("Close double write with exception", e);
         }
