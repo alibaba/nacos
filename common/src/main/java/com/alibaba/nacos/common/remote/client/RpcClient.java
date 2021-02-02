@@ -33,7 +33,6 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.common.utils.NumberUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -420,12 +419,10 @@ public abstract class RpcClient implements Closeable {
                     synchronized (RpcClient.this) {
                         if (isRunning()) {
                             ConnectResetRequest connectResetRequest = (ConnectResetRequest) request;
-                            if (StringUtils.isNotBlank(connectResetRequest.getServerIp()) && NumberUtil
-                                    .isDigits(connectResetRequest.getServerPort())) {
-                                
-                                ServerInfo serverInfo = new ServerInfo();
-                                serverInfo.setServerIp(connectResetRequest.getServerIp());
-                                serverInfo.setServerPort(Integer.valueOf(connectResetRequest.getServerPort()));
+                            if (StringUtils.isNotBlank(connectResetRequest.getServerIp())) {
+                                ServerInfo serverInfo = resolveServerInfo(
+                                        connectResetRequest.getServerIp() + Constants.COLON + connectResetRequest
+                                                .getServerPort());
                                 switchServerAsync(serverInfo, false);
                             } else {
                                 switchServerAsync();
@@ -884,15 +881,30 @@ public abstract class RpcClient implements Closeable {
         return resolveServerInfo(serverAddress);
     }
     
+    /**
+     * resolve server info.
+     *
+     * @param serverAddress address.
+     * @return
+     */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private ServerInfo resolveServerInfo(String serverAddress) {
+        String property = System.getProperty("nacos.default.server.port", "8848");
+        int serverPort = Integer.valueOf(property);
         ServerInfo serverInfo = null;
         if (serverAddress.contains(Constants.HTTP_PREFIX)) {
-            String serverIp = serverAddress.split(Constants.COLON)[1].replaceAll("//", "");
-            int serverPort = Integer.valueOf(serverAddress.split(Constants.COLON)[2].replaceAll("//", ""));
+            String[] split = serverAddress.split(Constants.COLON);
+            String serverIp = split[1].replaceAll("//", "");
+            if (split.length > 2 && StringUtils.isNotBlank(split[2])) {
+                serverPort = Integer.valueOf(split[2]);
+            }
             serverInfo = new ServerInfo(serverIp, serverPort);
         } else {
-            String serverIp = serverAddress.split(Constants.COLON)[0];
-            int serverPort = Integer.valueOf(serverAddress.split(Constants.COLON)[1]);
+            String[] split = serverAddress.split(Constants.COLON);
+            String serverIp = split[0];
+            if (split.length > 1 && StringUtils.isNotBlank(split[1])) {
+                serverPort = Integer.valueOf(split[1]);
+            }
             serverInfo = new ServerInfo(serverIp, serverPort);
         }
         return serverInfo;

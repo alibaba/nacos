@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.model;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.SimpleReadWriteLock;
-import com.alibaba.nacos.config.server.utils.SingletonRepository.DataIdGroupIdCache;
+import com.alibaba.nacos.core.utils.StringPool;
 
 import java.util.List;
 import java.util.Map;
@@ -31,7 +31,7 @@ import java.util.Map;
 public class CacheItem {
     
     public CacheItem(String groupKey) {
-        this.groupKey = DataIdGroupIdCache.getSingleton(groupKey);
+        this.groupKey = StringPool.get(groupKey);
     }
     
     public String getMd5() {

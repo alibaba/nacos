@@ -103,19 +103,14 @@ public class ConfigController {
     
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
     
-    private final ConfigServletInner inner;
-    
-    private final PersistService persistService;
-    
-    private final ConfigSubService configSubService;
+    @Autowired
+    private ConfigServletInner inner;
     
     @Autowired
-    public ConfigController(ConfigServletInner configServletInner, PersistService persistService,
-            ConfigSubService configSubService) {
-        this.inner = configServletInner;
-        this.persistService = persistService;
-        this.configSubService = configSubService;
-    }
+    private PersistService persistService;
+    
+    @Autowired
+    private ConfigSubService configSubService;
     
     /**
      * Adds or updates non-aggregated data.
@@ -209,7 +204,7 @@ public class ConfigController {
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParam(tag);
-    
+        
         final String clientIp = RequestUtil.getRemoteIp(request);
         String isNotify = request.getHeader("notify");
         inner.doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp);
@@ -361,7 +356,7 @@ public class ConfigController {
             LOGGER.warn("invalid probeModify is blank");
             throw new IllegalArgumentException("invalid probeModify");
         }
-       
+        
         probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
         
         Map<String, String> clientMd5Map;
