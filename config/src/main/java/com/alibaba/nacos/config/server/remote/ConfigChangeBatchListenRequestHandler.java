@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -47,14 +48,14 @@ public class ConfigChangeBatchListenRequestHandler
     @Override
     @TpsControl(pointName = "ConfigListen")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public ConfigChangeBatchListenResponse handle(ConfigBatchListenRequest request, RequestMeta meta)
+    public ConfigChangeBatchListenResponse handle(ConfigBatchListenRequest configChangeListenRequest, RequestMeta meta)
             throws NacosException {
-        ConfigBatchListenRequest configChangeListenRequest = (ConfigBatchListenRequest) request;
         String connectionId = StringPool.get(meta.getConnectionId());
-        String tag = request.getHeader("Vipserver-Tag");
+        String tag = configChangeListenRequest.getHeader(Constants.VIPSERVER_TAG);
         
         ConfigChangeBatchListenResponse configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
-        for (ConfigBatchListenRequest.ConfigListenContext listenContext : request.getConfigListenContexts()) {
+        for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest
+                .getConfigListenContexts()) {
             String groupKey = GroupKey2
                     .getKey(listenContext.getDataId(), listenContext.getGroup(), listenContext.getTenant());
             groupKey = StringPool.get(groupKey);

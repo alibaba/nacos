@@ -34,7 +34,6 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -105,8 +104,6 @@ public class ConfigServletInner {
             request.setAttribute("content", newResult);
         }
         
-        Loggers.AUTH.info("new content:" + newResult);
-        
         // Disable cache.
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
@@ -134,6 +131,7 @@ public class ConfigServletInner {
         
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
+        boolean isSli = false;
         if (lockResult > 0) {
             // LockResult > 0 means cacheItem is not null and other thread can`t delete this cacheItem
             FileInputStream fis = null;
@@ -179,7 +177,7 @@ public class ConfigServletInner {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
                             
-                            response.setHeader("Vipserver-Tag",
+                            response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
                                     URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
                         } else {
                             md5 = cacheItem.getMd5();
@@ -201,6 +199,7 @@ public class ConfigServletInner {
                                 
                                 return get404Result(response);
                             }
+                            isSli = true;
                         }
                     } else {
                         if (cacheItem.tagMd5 != null) {
@@ -221,7 +220,7 @@ public class ConfigServletInner {
                             // FIXME CacheItem
                             // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify);
+                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify && isSli);
                             
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
@@ -267,7 +266,7 @@ public class ConfigServletInner {
                  because the delayed value of active get requests is very large.
                  */
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                        ConfigTraceService.PULL_EVENT_OK, delayed, requestIp, notify);
+                        ConfigTraceService.PULL_EVENT_OK, delayed, requestIp, notify && isSli);
                 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -278,7 +277,7 @@ public class ConfigServletInner {
             // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
             ConfigTraceService
                     .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
-                            requestIp, notify);
+                            requestIp, notify && isSli);
             
             return get404Result(response);
             

@@ -462,7 +462,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return {@link ConfigInfo4Beta}
      */
-    ConfigInfo4Beta findConfigInfo4Beta(final String dataId, final String group, final String tenant);
+    ConfigInfoBetaWrapper findConfigInfo4Beta(final String dataId, final String group, final String tenant);
     
     /**
      * Query tag configuration information based on dataId and group.
@@ -473,7 +473,7 @@ public interface PersistService {
      * @param tag    tag
      * @return {@link ConfigInfo4Tag}
      */
-    ConfigInfo4Tag findConfigInfo4Tag(final String dataId, final String group, final String tenant, final String tag);
+    ConfigInfoTagWrapper findConfigInfo4Tag(final String dataId, final String group, final String tenant, final String tag);
     
     /**
      * Query common configuration information based on dataId and group.
@@ -523,7 +523,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return config info
      */
-    ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant);
+    ConfigInfoWrapper findConfigInfo(final String dataId, final String group, final String tenant);
     
     /**
      * Query configuration information based on dataId.

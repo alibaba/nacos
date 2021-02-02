@@ -144,7 +144,7 @@ public abstract class ConfigTransportClient {
         return headers;
     }
     
-    public String getAcessToken() {
+    public String getAccessToken() {
         return securityProxy.getAccessToken();
     }
     
