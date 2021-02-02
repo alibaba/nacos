@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -54,6 +55,11 @@ public class PushExecuteTask extends AbstractExecuteTask {
             ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
             serviceInfo = ServiceUtil.selectInstances(serviceInfo, false, true);
             for (String each : getTargetClientIds()) {
+                Client client = delayTaskEngine.getClientManager().getClient(each);
+                if (null == client) {
+                    // means this client has disconnect
+                    continue;
+                }
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
                 delayTaskEngine.getPushExecutor()
                         .doPushWithCallback(each, subscriber, handleClusterData(serviceInfo, subscriber),
