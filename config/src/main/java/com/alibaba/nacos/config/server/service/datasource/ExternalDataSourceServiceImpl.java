@@ -54,6 +54,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private static final int TRANSACTION_QUERY_TIMEOUT = 5;
     
+    private static final int DB_MASTER_SELECT_THRESHOLD = 1;
+
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
     
     private List<HikariDataSource> dataSourceList = new ArrayList<>();
@@ -106,8 +108,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 e.printStackTrace();
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
-            
-            ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+
+            if (this.dataSourceList.size() > DB_MASTER_SELECT_THRESHOLD) {
+                ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+            }
             ConfigExecutor.scheduleConfigTask(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
         }
     }
