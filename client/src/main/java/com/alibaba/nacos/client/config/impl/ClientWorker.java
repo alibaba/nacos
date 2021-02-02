@@ -1001,7 +1001,6 @@ public class ClientWorker implements Closeable {
             return "";
         }
         
-        
         RpcClient getOneRunningClient() throws NacosException {
             return ensureRpcClient("0");
         }

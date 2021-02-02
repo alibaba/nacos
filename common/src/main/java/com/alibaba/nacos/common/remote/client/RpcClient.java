@@ -887,6 +887,7 @@ public abstract class RpcClient implements Closeable {
      * @param serverAddress address.
      * @return
      */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private ServerInfo resolveServerInfo(String serverAddress) {
         String property = System.getProperty("nacos.default.server.port", "8848");
         int serverPort = Integer.valueOf(property);
