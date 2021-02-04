@@ -74,6 +74,7 @@ class ConfigEditor extends React.Component {
       isNewConfig: true,
       betaPublishSuccess: false,
       betaIps: '',
+      subscribeIpDataSource: [],
       tabActiveKey: '',
       form: {
         dataId: '', // 配置 ID
@@ -113,6 +114,7 @@ class ConfigEditor extends React.Component {
                 betaPublishSuccess: true,
               });
             });
+            this.getSubscribeIpsByNamespace();
           }
         );
       } else {
@@ -359,10 +361,34 @@ class ConfigEditor extends React.Component {
       const form = beta ? res.data : res;
       if (!form) return false;
       const { type, content, configTags, betaIps } = form;
-      this.setState({ betaIps });
+      const splitBetaIps = betaIps ? betaIps.split(',') : [];
+      this.setState({ betaIps: betaIps ? betaIps.split(',') : [] });
+      const { subscribeIpDataSource } = this.state;
+      this.setState({ subscribeIpDataSource: subscribeIpDataSource.concat(splitBetaIps) });
       this.changeForm({ ...form, config_tags: configTags ? configTags.split(',') : [] });
       this.initMoacoEditor(type, content);
       this.codeVal = content;
+      return res;
+    });
+  }
+
+  getSubscribeIpsByNamespace() {
+    const namespace = getParams('namespace');
+    const { dataId, group } = this.state.form;
+    const params = {
+      dataId,
+      group,
+      namespaceId: namespace,
+      tenant: namespace,
+    };
+    // 获取该namespace下的 subscribes
+    return request.get('v1/cs/configs/listener', { params }).then(res => {
+      const { subscribeIpDataSource } = this.state;
+      const lisentersGroupkeyIpMap = res.lisentersGroupkeyStatus;
+      if (lisentersGroupkeyIpMap) {
+        this.setState({ subscribeIpDataSource: subscribeIpDataSource.concat(Object.keys(lisentersGroupkeyIpMap)) });
+      }
+
       return res;
     });
   }
@@ -398,6 +424,7 @@ class ConfigEditor extends React.Component {
       betaIps,
       openAdvancedSettings,
       isBeta,
+      subscribeIpDataSource,
       isNewConfig,
       betaPublishSuccess,
       form,
@@ -491,11 +518,16 @@ class ConfigEditor extends React.Component {
                   </Checkbox>
                 )}
                 {isBeta && (
-                  <Input.TextArea
-                    aria-label="TextArea"
-                    placeholder="127.0.0.1,127.0.0.2"
-                    value={betaIps}
+                  <Select
+                    size="medium"
+                    hasArrow
+                    autoWidth
+                    mode="tag"
+                    filterLocal
+                    defaultValue={betaIps}
+                    dataSource={subscribeIpDataSource}
                     onChange={betaIps => this.setState({ betaIps })}
+                    hasClear
                   />
                 )}
               </Form.Item>
