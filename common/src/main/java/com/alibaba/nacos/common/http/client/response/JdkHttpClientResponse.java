@@ -19,7 +19,6 @@ package com.alibaba.nacos.common.http.client.response;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
