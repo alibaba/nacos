@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.controller;
+package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
@@ -26,8 +26,6 @@ import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -36,6 +34,7 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
 import com.alibaba.nacos.core.remote.core.ServerReloaderRequestHandler;
+import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.RemoteUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +64,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @version $Id: ServerLoaderController.java, v 0.1 2020年07月22日 4:28 PM liuzunfei Exp $
  */
 @RestController
-@RequestMapping("/v1/console/loader")
+@RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/loader")
 public class ServerLoaderController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerLoaderController.class);
@@ -90,7 +89,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.READ)
+    @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.READ)
     @GetMapping("/current")
     public ResponseEntity currentClients() {
         Map<String, Connection> stringConnectionMap = connectionManager.currentClients();
@@ -102,7 +101,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.WRITE)
+    @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadCurrent")
     public ResponseEntity reloadCount(@RequestParam Integer count,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
@@ -116,13 +115,13 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.WRITE)
+    @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/smartReloadCluster")
     public ResponseEntity smartReload(HttpServletRequest request,
             @RequestParam(value = "loaderFactor", required = false) String loaderFactorStr,
             @RequestParam(value = "force", required = false) String force) {
         
-        LOGGER.info("Smart reload request receive,requestIp={}", RequestUtil.getRemoteIp(request));
+        LOGGER.info("Smart reload request receive,requestIp={}", getRemoteIp(request));
         
         Map<String, Object> serverLoadMetrics = getServerLoadMetrics();
         Object avgString = (Object) serverLoadMetrics.get("avg");
@@ -226,7 +225,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.WRITE)
+    @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadClient")
     public ResponseEntity reloadSingle(@RequestParam String connectionId,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
@@ -240,7 +239,7 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "loader", action = ActionTypes.READ)
+    @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.READ)
     @GetMapping("/cluster")
     public ResponseEntity loaderMetrics() {
         
@@ -389,5 +388,20 @@ public class ServerLoaderController {
             this.metric = metric;
         }
     }
+    
+    private static String getRemoteIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
+        if (!org.apache.commons.lang3.StringUtils.isBlank(xForwardedFor)) {
+            return xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
+        }
+        String nginxHeader = request.getHeader(X_REAL_IP);
+        return org.apache.commons.lang3.StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
+    }
+    
+    private static final String X_REAL_IP = "X-Real-IP";
+    
+    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    
+    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
     
 }
