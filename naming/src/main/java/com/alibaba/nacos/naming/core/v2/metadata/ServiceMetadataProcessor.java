@@ -29,7 +29,9 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.utils.Constants;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.stereotype.Component;
 
@@ -88,6 +90,8 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
         try {
             switch (DataOperation.valueOf(request.getOperation())) {
                 case ADD:
+                    addClusterMetadataToService(op);
+                    break;
                 case CHANGE:
                     updateServiceMetadata(op);
                     break;
@@ -107,6 +111,19 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
         }
     }
     
+    private void addClusterMetadataToService(MetadataOperation<ServiceMetadata> op) {
+        Service service = Service
+                .newService(op.getNamespace(), op.getGroup(), op.getServiceName(), op.getMetadata().isEphemeral());
+        Optional<ServiceMetadata> currentMetadata = namingMetadataManager.getServiceMetadata(service);
+        if (currentMetadata.isPresent()) {
+            currentMetadata.get().getClusters().putAll(op.getMetadata().getClusters());
+        } else {
+            Service singleton = ServiceManager.getInstance().getSingleton(service);
+            namingMetadataManager.updateServiceMetadata(singleton, op.getMetadata());
+        }
+        doubleWriteMetadata(service);
+    }
+    
     private void updateServiceMetadata(MetadataOperation<ServiceMetadata> op) {
         Service service = Service
                 .newService(op.getNamespace(), op.getGroup(), op.getServiceName(), op.getMetadata().isEphemeral());
@@ -119,6 +136,17 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             namingMetadataManager.updateServiceMetadata(singleton, op.getMetadata());
         }
+        doubleWriteMetadata(service);
+    }
+    
+    /**
+     * Only for downgrade to v1.x.
+     *
+     * @param service double write service
+     * @deprecated will remove in v2.1.x
+     */
+    private void doubleWriteMetadata(Service service) {
+        ApplicationUtils.getBean(DoubleWriteEventListener.class).doubleWriteMetadataToV1(service);
     }
     
     /**

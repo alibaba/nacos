@@ -19,7 +19,9 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -59,6 +61,16 @@ public interface ServiceOperator {
     void delete(String namespaceId, String serviceName) throws NacosException;
     
     /**
+     * Query service detail.
+     *
+     * @param namespaceId namespace id of service
+     * @param serviceName grouped service name format like 'groupName@@serviceName'
+     * @return service detail with cluster info
+     * @throws NacosException nacos exception during query
+     */
+    ObjectNode queryService(String namespaceId, String serviceName) throws NacosException;
+    
+    /**
      * Page list service name.
      *
      * @param namespaceId namespace id of services
@@ -71,4 +83,22 @@ public interface ServiceOperator {
      */
     List<String> listService(String namespaceId, String groupName, String selector, int pageSize, int pageNo)
             throws NacosException;
+    
+    /**
+     * list All service namespace.
+     *
+     * @return all namespace
+     */
+    Collection<String> listAllNamespace();
+    
+    /**
+     * Search service name in namespace according to expr.
+     *
+     * @param namespaceId     namespace id
+     * @param expr            search expr
+     * @param responsibleOnly only search responsible service, will deprecated after v2.0.
+     * @return service name collection of match expr
+     * @throws NacosException nacos exception during query
+     */
+    Collection<String> searchServiceName(String namespaceId, String expr, @Deprecated boolean responsibleOnly) throws NacosException;
 }

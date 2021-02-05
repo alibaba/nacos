@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.BeatCheckTask;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
@@ -77,6 +78,10 @@ public class ClientBeatCheckTask implements BeatCheckTask {
     @Override
     public void run() {
         try {
+            // If upgrade to 2.0.X stop health check with v1
+            if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
+                return;
+            }
             if (!getDistroMapper().responsible(service.getName())) {
                 return;
             }

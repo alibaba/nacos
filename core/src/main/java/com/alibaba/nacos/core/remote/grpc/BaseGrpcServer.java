@@ -24,8 +24,10 @@ import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.Attributes;
+import io.grpc.CompressorRegistry;
 import io.grpc.Context;
 import io.grpc.Contexts;
+import io.grpc.DecompressorRegistry;
 import io.grpc.Grpc;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -103,7 +105,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         
         addServices(handlerRegistry, serverInterceptor);
         
-        server = ServerBuilder.forPort(getServicePort()).executor(getRpcExecutor()).fallbackHandlerRegistry(handlerRegistry)
+        server = ServerBuilder.forPort(getServicePort()).executor(getRpcExecutor())
+                .maxInboundMessageSize(getInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
+                .compressorRegistry(CompressorRegistry.getDefaultInstance())
+                .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
@@ -142,6 +147,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         server.start();
     }
     
+    private int getInboundMessageSize() {
+        String messageSize = System
+                .getProperty("nacos.remote.server.grpc.maxinbound.message.size", String.valueOf(10 * 1024 * 1024));
+        return Integer.valueOf(messageSize);
+    }
+    
     private Channel getInternalChannel(ServerCall serverCall) {
         ServerStream serverStream = (ServerStream) ReflectUtils.getFieldValue(serverCall, "stream");
         return (Channel) ReflectUtils.getFieldValue(serverStream, "channel");
@@ -158,12 +169,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
                 .asyncUnaryCall((request, responseObserver) -> {
-                    com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
-                            .setConnectionId(CONTEXT_KEY_CONN_ID.get())
-                            .setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get())
-                            .setClientIp(CONTEXT_KEY_CONN_CLIENT_IP.get()).build();
-                    Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
-                    grpcCommonRequestAcceptor.request(requestNew, responseObserver);
+                    grpcCommonRequestAcceptor.request(request, responseObserver);
                 });
         
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)

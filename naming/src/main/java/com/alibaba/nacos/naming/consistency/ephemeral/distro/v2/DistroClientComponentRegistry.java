@@ -24,6 +24,7 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import org.springframework.stereotype.Component;
 
@@ -51,9 +52,12 @@ public class DistroClientComponentRegistry {
     
     private final ClusterRpcClientProxy clusterRpcClientProxy;
     
+    private final UpgradeJudgement upgradeJudgement;
+    
     public DistroClientComponentRegistry(ServerMemberManager serverMemberManager, DistroProtocol distroProtocol,
             DistroComponentHolder componentHolder, DistroTaskEngineHolder taskEngineHolder, GlobalConfig globalConfig,
-            ClientManagerDelegate clientManager, ClusterRpcClientProxy clusterRpcClientProxy) {
+            ClientManagerDelegate clientManager, ClusterRpcClientProxy clusterRpcClientProxy,
+            UpgradeJudgement upgradeJudgement) {
         this.serverMemberManager = serverMemberManager;
         this.distroProtocol = distroProtocol;
         this.componentHolder = componentHolder;
@@ -61,6 +65,7 @@ public class DistroClientComponentRegistry {
         this.globalConfig = globalConfig;
         this.clientManager = clientManager;
         this.clusterRpcClientProxy = clusterRpcClientProxy;
+        this.upgradeJudgement = upgradeJudgement;
     }
     
     /**
@@ -69,7 +74,8 @@ public class DistroClientComponentRegistry {
      */
     @PostConstruct
     public void doRegister() {
-        DistroClientDataProcessor dataProcessor = new DistroClientDataProcessor(clientManager, distroProtocol);
+        DistroClientDataProcessor dataProcessor = new DistroClientDataProcessor(clientManager, distroProtocol,
+                upgradeJudgement);
         DistroTransportAgent transportAgent = new DistroClientTransportAgent(clusterRpcClientProxy,
                 serverMemberManager);
         DistroClientTaskFailedHandler taskFailedHandler = new DistroClientTaskFailedHandler(globalConfig,

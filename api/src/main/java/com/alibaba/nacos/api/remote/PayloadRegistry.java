@@ -56,7 +56,7 @@ public class PayloadRegistry {
             Reflections reflections = new Reflections(pkg);
             Set<Class<? extends Request>> subTypesRequest = reflections.getSubTypesOf(Request.class);
             for (Class clazz : subTypesRequest) {
-                register(clazz.getName(), clazz);
+                register(clazz.getSimpleName(), clazz);
             }
         }
         
@@ -67,7 +67,7 @@ public class PayloadRegistry {
             Reflections reflections = new Reflections(pkg);
             Set<Class<? extends Response>> subTypesOfResponse = reflections.getSubTypesOf(Response.class);
             for (Class clazz : subTypesOfResponse) {
-                register(clazz.getName(), clazz);
+                register(clazz.getSimpleName(), clazz);
             }
         }
         

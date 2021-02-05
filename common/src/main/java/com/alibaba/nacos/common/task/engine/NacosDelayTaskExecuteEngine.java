@@ -116,6 +116,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
     
     @Override
     public void shutdown() throws NacosException {
+        tasks.clear();
         processingExecutor.shutdown();
     }
     

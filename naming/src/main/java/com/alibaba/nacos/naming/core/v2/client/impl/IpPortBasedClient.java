@@ -40,7 +40,7 @@ import java.util.List;
  */
 public class IpPortBasedClient extends AbstractClient {
     
-    private static final String ID_DELIMITER = "#";
+    public static final String ID_DELIMITER = "#";
     
     private final String clientId;
     
@@ -121,6 +121,7 @@ public class IpPortBasedClient extends AbstractClient {
         result.setIp(instancePublishInfo.getIp());
         result.setPort(instancePublishInfo.getPort());
         result.setHealthy(instancePublishInfo.isHealthy());
+        result.setCluster(instancePublishInfo.getCluster());
         result.setExtendDatum(instancePublishInfo.getExtendDatum());
         if (!ephemeral) {
             result.initHealthCheck();

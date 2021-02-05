@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.NamingSubscriberService;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutorDelegate;
@@ -54,11 +55,14 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     
     private final PushDelayTaskExecuteEngine delayTaskEngine;
     
+    private final UpgradeJudgement upgradeJudgement;
+    
     public NamingSubscriberServiceV2Impl(ClientManagerDelegate clientManager,
             ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
-            PushExecutorDelegate pushExecutor) {
+            PushExecutorDelegate pushExecutor, UpgradeJudgement upgradeJudgement) {
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
+        this.upgradeJudgement = upgradeJudgement;
         this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
                 pushExecutor);
         NotifyCenter.registerSubscriber(this);
@@ -106,6 +110,9 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     
     @Override
     public void onEvent(Event event) {
+        if (!upgradeJudgement.isUseGrpcFeatures()) {
+            return;
+        }
         ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
         Service service = serviceChangedEvent.getService();
         delayTaskEngine.addTask(service, new PushDelayTask(service, 500L));

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.healthcheck.interceptor;
 
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -29,7 +30,12 @@ public class HealthCheckEnableInterceptor extends AbstractHealthCheckInterceptor
     
     @Override
     public boolean intercept(NacosHealthCheckTask object) {
-        return !ApplicationUtils.getBean(SwitchDomain.class).isHealthCheckEnabled();
+        try {
+            return !ApplicationUtils.getBean(SwitchDomain.class).isHealthCheckEnabled() || !ApplicationUtils
+                    .getBean(UpgradeJudgement.class).isUseGrpcFeatures();
+        } catch (Exception e) {
+            return true;
+        }
     }
     
     @Override

@@ -18,7 +18,6 @@ package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -37,14 +36,11 @@ import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.PushReceiver;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
-import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
+import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
-import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.AppNameUtils;
-import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -54,7 +50,6 @@ import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpStatus;
@@ -66,11 +61,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -79,7 +69,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  *
  * @author nkorange
  */
-public class NamingHttpClientProxy implements NamingClientProxy {
+public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
     
@@ -87,15 +77,9 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     
     private final String namespaceId;
     
-    private final SecurityProxy securityProxy;
-    
-    private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
-    
     private final ServerListManager serverListManager;
     
     private final BeatReactor beatReactor;
-    
-    private final ServiceInfoHolder serviceInfoHolder;
     
     private final PushReceiver pushReceiver;
     
@@ -103,45 +87,16 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     
     private int serverPort = DEFAULT_SERVER_PORT;
     
-    private ScheduledExecutorService executorService;
-    
-    private Properties properties;
-    
-    public NamingHttpClientProxy(String namespaceId, ServerListManager serverListManager, Properties properties,
-            ServiceInfoHolder serviceInfoHolder) {
+    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
+            Properties properties, ServiceInfoHolder serviceInfoHolder) {
+        super(securityProxy, properties);
         this.serverListManager = serverListManager;
-        this.securityProxy = new SecurityProxy(properties, nacosRestTemplate);
-        this.properties = properties;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
         this.beatReactor = new BeatReactor(this, properties);
-        this.initRefreshTask();
         this.pushReceiver = new PushReceiver(serviceInfoHolder);
-        this.serviceInfoHolder = serviceInfoHolder;
         this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
                 String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
-    }
-    
-    private void initRefreshTask() {
-        
-        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.naming.updater");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-        
-        this.executorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                securityProxy.login(serverListManager.getServerList());
-            }
-        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-        
-        this.securityProxy.login(serverListManager.getServerList());
     }
     
     @Override
@@ -451,11 +406,6 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         
     }
     
-    public String callServer(String api, Map<String, String> params, Map<String, String> body, String curServer)
-            throws NacosException {
-        return callServer(api, params, body, curServer, HttpMethod.GET);
-    }
-    
     /**
      * Call server.
      *
@@ -471,7 +421,8 @@ public class NamingHttpClientProxy implements NamingClientProxy {
             String method) throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
-        injectSecurityInfo(params);
+        params.putAll(getSecurityHeaders());
+        params.putAll(getSpasHeaders(params.get("serviceName")));
         Header header = NamingHttpUtil.builderHeader();
         
         String url;
@@ -505,71 +456,6 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         }
     }
     
-    private void injectSecurityInfo(Map<String, String> params) {
-        
-        // Inject token if exist:
-        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
-            params.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
-        }
-        
-        // Inject ak/sk if exist:
-        String ak = getAccessKey();
-        String sk = getSecretKey();
-        params.put("app", AppNameUtils.getAppName());
-        if (StringUtils.isNotBlank(ak) && StringUtils.isNotBlank(sk)) {
-            try {
-                String signData = getSignData(params.get("serviceName"));
-                String signature = SignUtil.sign(signData, sk);
-                params.put("signature", signature);
-                params.put("data", signData);
-                params.put("ak", ak);
-            } catch (Exception e) {
-                NAMING_LOGGER.error("inject ak/sk failed.", e);
-            }
-        }
-    }
-    
-    private static String getSignData(String serviceName) {
-        return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + "@@" + serviceName
-                : String.valueOf(System.currentTimeMillis());
-    }
-    
-    public String getAccessKey() {
-        if (properties == null) {
-            
-            return SpasAdapter.getAk();
-        }
-        
-        return TemplateUtils
-                .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ACCESS_KEY), new Callable<String>() {
-                    
-                    @Override
-                    public String call() {
-                        return SpasAdapter.getAk();
-                    }
-                });
-    }
-    
-    public String getSecretKey() {
-        if (properties == null) {
-            
-            return SpasAdapter.getSk();
-        }
-        
-        return TemplateUtils
-                .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.SECRET_KEY), new Callable<String>() {
-                    @Override
-                    public String call() throws Exception {
-                        return SpasAdapter.getSk();
-                    }
-                });
-    }
-    
-    public void setProperties(Properties properties) {
-        this.properties = properties;
-        setServerPort(DEFAULT_SERVER_PORT);
-    }
-    
     public String getNamespaceId() {
         return namespaceId;
     }
@@ -591,7 +477,6 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         beatReactor.shutdown();
         NamingHttpClientManager.getInstance().shutdown();
         SpasAdapter.freeCredentialInstance();

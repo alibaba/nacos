@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.Objects;
@@ -44,7 +43,7 @@ import java.util.stream.Collectors;
 public class MemberUtil {
     
     protected static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
-
+    
     /**
      * Information copy.
      *
@@ -57,6 +56,7 @@ public class MemberUtil {
         oldMember.setState(newMember.getState());
         oldMember.setExtendInfo(newMember.getExtendInfo());
         oldMember.setAddress(newMember.getAddress());
+        oldMember.setAbilities(newMember.getAbilities());
     }
     
     /**
@@ -68,7 +68,7 @@ public class MemberUtil {
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static Member singleParse(String member) {
         // Nacos default port is 8848
-        int defaultPort = 8848;
+        int defaultPort = Integer.valueOf(System.getProperty("nacos.default.server.port", "8848"));
         // Set the default Raft port information for securit
         
         String address = member;
@@ -89,29 +89,16 @@ public class MemberUtil {
     }
     
     /**
-     * get support member connection type.
-     *
-     * @param member member instance of server
-     * @return supported connection tyoe of the member.
-     */
-    public static ConnectionType getSupportedConnectionType(Member member) {
-        Map<String, Object> extendInfo = member.getExtendInfo();
-        if (extendInfo == null || !extendInfo.containsKey(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE)) {
-            return null;
-        } else {
-            String type = (String) extendInfo.get(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE);
-            return ConnectionType.getByType(type);
-        }
-    }
-    
-    /**
      * check whether the member support long connection or not.
      *
      * @param member member instance of server.
      * @return support long connection or not.
      */
     public static boolean isSupportedLongCon(Member member) {
-        return getSupportedConnectionType(member) != null;
+        if (member.getAbilities() == null || member.getAbilities().getRemoteAbility() == null) {
+            return false;
+        }
+        return member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
     }
     
     public static int calculateRaftPort(Member member) {

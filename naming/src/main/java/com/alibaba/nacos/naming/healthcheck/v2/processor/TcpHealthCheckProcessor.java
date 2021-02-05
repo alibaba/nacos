@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
@@ -103,8 +102,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
         // TODO handle marked(white list) logic like v1.x.
         if (instance.tryStartCheck()) {
             SRV_LOG.warn("tcp check started before last one finished, service: {} : {} : {}:{}",
-                    service.getGroupedServiceName(), instance.getExtendDatum().get(CommonParams.CLUSTER_NAME),
-                    instance.getIp(), instance.getPort());
+                    service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
             healthCheckCommon
                     .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getTcpHealthParams());
             return;
@@ -279,7 +277,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                     healthCheckCommon.checkFail(task, service, msg);
                 }
                 
-                keyMap.remove(task.toString());
+                keyMap.remove(toString());
             }
             
             healthCheckCommon.reEvaluateCheckRT(rt, task, switchDomain.getTcpHealthParams());
@@ -287,8 +285,8 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
         
         @Override
         public String toString() {
-            return service.getGroupedServiceName() + ":" + instance.getExtendDatum().get(CommonParams.CLUSTER_NAME)
-                    + ":" + instance.getIp() + ":" + instance.getPort();
+            return service.getGroupedServiceName() + ":" + instance.getCluster() + ":" + instance.getIp() + ":"
+                    + instance.getPort();
         }
         
         @Override

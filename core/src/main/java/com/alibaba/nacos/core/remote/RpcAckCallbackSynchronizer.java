@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
 import com.alipay.hessian.clhm.EvictionListener;
 
@@ -58,11 +59,19 @@ public class RpcAckCallbackSynchronizer {
         
         Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
         if (stringDefaultPushFutureMap == null) {
+            
+            Loggers.REMOTE_DIGEST
+                    .warn("Ack receive on a outdated connection ,connection id={},requestId={} ", connectionId,
+                            response.getRequestId());
             return;
         }
         
         DefaultRequestFuture currentCallback = stringDefaultPushFutureMap.remove(response.getRequestId());
         if (currentCallback == null) {
+            
+            Loggers.REMOTE_DIGEST
+                    .warn("Ack receive on a outdated request ,connection id={},requestId={} ", connectionId,
+                            response.getRequestId());
             return;
         }
         
@@ -71,23 +80,6 @@ public class RpcAckCallbackSynchronizer {
         } else {
             currentCallback.setFailResult(new NacosException(response.getErrorCode(), response.getMessage()));
         }
-    }
-    
-    /**
-     * notify  ackid.
-     */
-    public static void exceptionNotify(String connectionId, String requestId, Exception e) {
-        
-        Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
-        if (stringDefaultPushFutureMap == null) {
-            return;
-        }
-        
-        DefaultRequestFuture currentCallback = stringDefaultPushFutureMap.remove(requestId);
-        if (currentCallback == null) {
-            return;
-        }
-        currentCallback.setFailResult(e);
     }
     
     /**

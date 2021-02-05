@@ -23,7 +23,6 @@ import com.alibaba.nacos.client.identify.StsConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -31,8 +30,6 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.UuidUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
@@ -83,7 +80,7 @@ public abstract class ConfigTransportClient {
         } else {
             this.encode = encodeTmp.trim();
         }
-    
+        
         this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
         this.securityProxy = new SecurityProxy(properties,
@@ -98,7 +95,7 @@ public abstract class ConfigTransportClient {
      * @throws Exception exeption may throw.
      */
     protected Map<String, String> getSpasHeaders() throws Exception {
-    
+        
         Map<String, String> spasHeaders = new HashMap<String, String>(2);
         
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
@@ -142,14 +139,12 @@ public abstract class ConfigTransportClient {
         headers.put(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
         headers.put(Constants.CLIENT_REQUEST_TS_HEADER, ts);
         headers.put(Constants.CLIENT_REQUEST_TOKEN_HEADER, token);
-        headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         headers.put("exConfigInfo", "true");
-        headers.put(HttpHeaderConsts.REQUEST_ID, UuidUtils.generateUuid());
-        headers.put(HttpHeaderConsts.ACCEPT_CHARSET, encode);
+        headers.put(Constants.CHARSET_KEY, encode);
         return headers;
     }
     
-    public String getAcessToken() {
+    public String getAccessToken() {
         return securityProxy.getAccessToken();
     }
     
@@ -231,17 +226,17 @@ public abstract class ConfigTransportClient {
      * base start client.
      */
     public void start() throws NacosException {
-    
+        
         if (securityProxy.isEnabled()) {
             securityProxy.login(serverListManager.getServerUrls());
-        
+            
             this.executor.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
                     securityProxy.login(serverListManager.getServerUrls());
                 }
             }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-        
+            
         }
         
         startInternal();
@@ -304,7 +299,7 @@ public abstract class ConfigTransportClient {
      * @param group       group.
      * @param tenat       tenat.
      * @param readTimeous readTimeous.
-     * @param notify query for notify sync.
+     * @param notify      query for notify sync.
      * @return content.
      * @throws NacosException throw where query fail .
      */
@@ -321,11 +316,12 @@ public abstract class ConfigTransportClient {
      * @param tag     tag.
      * @param betaIps betaIps.
      * @param content content.
+     * @param casMd5 casMd5.
      * @return success or not.
      * @throws NacosException throw where publish fail.
      */
     public abstract boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
-            String betaIps, String content) throws NacosException;
+            String betaIps, String content, String casMd5) throws NacosException;
     
     /**
      * remove config.

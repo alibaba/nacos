@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
@@ -144,8 +145,9 @@ public class ServiceManager implements RecordListener<Service> {
             // the possibility that the service cache information may just be deleted
             // and then created due to the heartbeat mechanism
             
-            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoCleaner(this, distroMapper), cleanEmptyServiceDelay,
-                    cleanEmptyServicePeriod);
+            GlobalExecutor
+                    .scheduleServiceAutoClean(new EmptyServiceAutoCleaner(this, distroMapper), cleanEmptyServiceDelay,
+                            cleanEmptyServicePeriod);
         }
         
         try {
@@ -437,7 +439,8 @@ public class ServiceManager implements RecordListener<Service> {
         
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "specified service not exist, serviceName : " + serviceName);
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "specified service not exist, serviceName : " + serviceName);
         }
         
         consistencyService.remove(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName));
@@ -578,7 +581,7 @@ public class ServiceManager implements RecordListener<Service> {
     }
     
     /**
-     * locate consistency's datum by all or instances provided.
+     * Locate consistency's datum by all or instances provided.
      *
      * @param namespaceId        namespace
      * @param serviceName        serviceName
@@ -616,16 +619,15 @@ public class ServiceManager implements RecordListener<Service> {
         return locatedInstance;
     }
     
-    private Instance locateInstance(List<Instance> instances, Instance instance) {
-        int target = 0;
-        while (target >= 0) {
-            target = instances.indexOf(instance);
-            if (target >= 0) {
-                Instance result = instances.get(target);
-                if (result.getClusterName().equals(instance.getClusterName())) {
-                    return result;
-                }
-                instances.remove(target);
+    private Instance locateInstance(List<Instance> sources, Instance target) {
+        if (CollectionUtils.isEmpty(sources)) {
+            return null;
+        }
+        
+        for (Instance element : sources) {
+            //also need clusterName equals, the same instance maybe exist in two cluster.
+            if (Objects.equals(element, target) && Objects.equals(element.getClusterName(), target.getClusterName())) {
+                return element;
             }
         }
         return null;
@@ -876,11 +878,12 @@ public class ServiceManager implements RecordListener<Service> {
                 }
             }
         }
-        serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
+        serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
     }
     
     private void putServiceAndInit(Service service) throws NacosException {
         putService(service);
+        service = getService(service.getNamespaceId(), service.getName());
         service.init();
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
@@ -961,7 +964,8 @@ public class ServiceManager implements RecordListener<Service> {
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
                     if (IPUtil.containsPort(containedInstance)) {
-                        if (StringUtils.equals(instance.getIp() + IPUtil.IP_PORT_SPLITER + instance.getPort(), containedInstance)) {
+                        if (StringUtils.equals(instance.getIp() + IPUtil.IP_PORT_SPLITER + instance.getPort(),
+                                containedInstance)) {
                             contained = true;
                             break;
                         }
@@ -997,6 +1001,35 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         return matchList.size();
+    }
+    
+    /**
+     * Shut down service manager v1.x.
+     *
+     * @throws NacosException nacos exception during shutdown
+     */
+    public void shutdown() throws NacosException {
+        try {
+            for (Map.Entry<String, Map<String, Service>> entry : serviceMap.entrySet()) {
+                destroyAllService(entry.getKey(), entry.getValue());
+            }
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR, "shutdown serviceManager failed", e);
+        }
+    }
+    
+    private void destroyAllService(String namespace, Map<String, Service> serviceMap) throws Exception {
+        for (Map.Entry<String, Service> entry : serviceMap.entrySet()) {
+            Service service = entry.getValue();
+            String name = service.getName();
+            service.destroy();
+            String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
+            String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
+            consistencyService.unListen(ephemeralInstanceListKey, service);
+            consistencyService.unListen(persistInstanceListKey, service);
+            consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
+            Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
+        }
     }
     
     public static class ServiceChecksum {

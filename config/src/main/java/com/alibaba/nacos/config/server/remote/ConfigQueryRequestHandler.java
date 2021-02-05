@@ -36,21 +36,18 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.control.TpsControl;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
-import static com.alibaba.nacos.api.common.Constants.LINE_BREAK;
+import static com.alibaba.nacos.api.common.Constants.ENCODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
 
@@ -72,17 +69,12 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     }
     
     @Override
+    @TpsControl(pointName = "ConfigQuery", parsers = {ConfigQueryGroupKeyParser.class, ConfigQueryGroupParser.class})
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta requestMeta) throws NacosException {
-        ConfigQueryRequest configQueryRequest = (ConfigQueryRequest) request;
+    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
         
-        String group = configQueryRequest.getGroup();
-        String dataId = configQueryRequest.getDataId();
-        String tenant = configQueryRequest.getTenant();
-        String clientIp = requestMeta.getClientIp();
         try {
-            ConfigQueryResponse context = getContext(dataId, group, tenant, configQueryRequest.getTag(),
-                    requestMeta.getClientIp(), requestMeta, request.isNotify());
+            ConfigQueryResponse context = getContext(request, meta, request.isNotify());
             return context;
         } catch (Exception e) {
             ConfigQueryResponse contextFail = ConfigQueryResponse
@@ -92,20 +84,26 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         
     }
     
-    private ConfigQueryResponse getContext(String dataId, String group, String tenant, String tag, String clientIp,
-            RequestMeta meta, boolean notify) throws UnsupportedEncodingException {
-        
+    private ConfigQueryResponse getContext(ConfigQueryRequest configQueryRequest, RequestMeta meta, boolean notify)
+            throws UnsupportedEncodingException {
+        String dataId = configQueryRequest.getDataId();
+        String group = configQueryRequest.getGroup();
+        String tenant = configQueryRequest.getTenant();
+        String clientIp = meta.getClientIp();
+        String tag = configQueryRequest.getTag();
         ConfigQueryResponse response = new ConfigQueryResponse();
         
-        final String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        final String groupKey = GroupKey2
+                .getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(), configQueryRequest.getTenant());
         
-        String autoTag = meta.getLabels().get("Vipserver-Tag");
+        String autoTag = configQueryRequest.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
         
         String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
         
         int lockResult = tryConfigReadLock(groupKey);
         
         boolean isBeta = false;
+        boolean isSli = false;
         if (lockResult > 0) {
             //FileInputStream fis = null;
             try {
@@ -132,7 +130,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
-                    response.addLabel("isBeta", "Y");
+                    response.setBeta(true);
                 } else {
                     if (StringUtils.isBlank(tag)) {
                         if (isUseTag(cacheItem, autoTag)) {
@@ -149,9 +147,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
+                            response.setTag(URLEncoder.encode(autoTag, Constants.ENCODE));
                             
-                            response.addLabel("Vipserver-Tag",
-                                    URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
                         } else {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
@@ -208,19 +205,25 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     }
                 }
                 
-                response.addLabel(Constants.CONTENT_MD5, md5);
+                response.setMd5(md5);
                 
                 if (PropertyUtil.isDirectRead()) {
-                    response.addLabel("Last-Modified", String.valueOf(lastModified));
+                    response.setLastModified(lastModified);
                     response.setContent(configInfoBase.getContent());
                     response.setResultCode(ResponseCode.SUCCESS.getCode());
                     
                 } else {
                     //read from file
-                    String content = readFileContent(file);
-                    response.setContent(content);
-                    response.addLabel("Last-Modified", String.valueOf(lastModified));
-                    response.setResultCode(ResponseCode.SUCCESS.getCode());
+                    String content = null;
+                    try {
+                        content = readFileContent(file);
+                        response.setContent(content);
+                        response.setLastModified(lastModified);
+                        response.setResultCode(ResponseCode.SUCCESS.getCode());
+                    } catch (IOException e) {
+                        response.setErrorInfo(ResponseCode.FAIL.getCode(), e.getMessage());
+                        return response;
+                    }
                     
                 }
                 
@@ -261,34 +264,9 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
      * @param file file to read.
      * @return content.
      */
-    public static String readFileContent(File file) {
-        BufferedReader reader = null;
-        StringBuffer sbf = new StringBuffer();
-        try {
-            InputStreamReader isr = new InputStreamReader(new FileInputStream(file), Charset.forName(Constants.ENCODE));
-            
-            reader = new BufferedReader(isr);
-            String tempStr;
-            while ((tempStr = reader.readLine()) != null) {
-                sbf.append(tempStr).append(LINE_BREAK);
-            }
-            if (sbf.indexOf(LINE_BREAK) > 0) {
-                sbf.setLength(sbf.length() - 1);
-            }
-            reader.close();
-            return sbf.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-        return sbf.toString();
+    public static String readFileContent(File file) throws IOException {
+        return FileUtils.readFileToString(file, ENCODE);
+        
     }
     
     private static void releaseConfigReadLock(String groupKey) {

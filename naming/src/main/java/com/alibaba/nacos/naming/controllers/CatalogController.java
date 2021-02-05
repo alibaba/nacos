@@ -25,10 +25,12 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.core.CatalogService;
 import com.alibaba.nacos.naming.core.CatalogServiceV1Impl;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
@@ -63,6 +65,9 @@ public class CatalogController {
     @Autowired
     private CatalogServiceV2Impl catalogServiceV2;
     
+    @Autowired
+    private UpgradeJudgement upgradeJudgement;
+    
     /**
      * Get service detail.
      *
@@ -77,7 +82,7 @@ public class CatalogController {
             String serviceName) throws NacosException {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
-        return catalogServiceV2.getServiceDetail(namespaceId, groupName, serviceNameWithoutGroup);
+        return judgeCatalogService().getServiceDetail(namespaceId, groupName, serviceNameWithoutGroup);
     }
     
     /**
@@ -98,7 +103,7 @@ public class CatalogController {
             @RequestParam int pageSize) throws NacosException {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
-        List<? extends Instance> instances = catalogServiceV2
+        List<? extends Instance> instances = judgeCatalogService()
                 .listInstances(namespaceId, groupName, serviceNameWithoutGroup, clusterName);
         int start = (page - 1) * pageSize;
         int end = page * pageSize;
@@ -146,9 +151,9 @@ public class CatalogController {
             @RequestParam(required = false) boolean hasIpCount) throws NacosException {
         
         if (withInstances) {
-            return catalogServiceV2.pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
+            return judgeCatalogService().pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
         }
-        return catalogServiceV2
+        return judgeCatalogService()
                 .pageListService(namespaceId, groupName, serviceName, pageNo, pageSize, containedInstance, hasIpCount);
     }
     
@@ -186,5 +191,9 @@ public class CatalogController {
         }
         result.replace("clusters", clusters);
         return result;
+    }
+    
+    private CatalogService judgeCatalogService() {
+        return upgradeJudgement.isUseGrpcFeatures() ? catalogServiceV2 : catalogServiceV1;
     }
 }

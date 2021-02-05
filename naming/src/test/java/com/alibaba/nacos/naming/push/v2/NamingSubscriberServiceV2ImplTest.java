@@ -21,6 +21,7 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTask;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTaskExecuteEngine;
@@ -62,11 +63,15 @@ public class NamingSubscriberServiceV2ImplTest {
     @Mock
     private Client client;
     
+    @Mock
+    private UpgradeJudgement upgradeJudgement;
+    
     private NamingSubscriberServiceV2Impl subscriberService;
     
     @Before
     public void setUp() throws Exception {
-        subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager, null, null);
+        subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager, null, null,
+                upgradeJudgement);
         ReflectionTestUtils.setField(subscriberService, "delayTaskEngine", delayTaskEngine);
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(testClientId));
         when(indexesManager.getAllClientsSubscribeService(service1))
@@ -80,6 +85,7 @@ public class NamingSubscriberServiceV2ImplTest {
                 new Subscriber("1.1.1.1:1111", "Test", "unknown", "1.1.1.1", "N", service.getGroupedServiceName(), 0));
         when(client.getSubscriber(service1)).thenReturn(
                 new Subscriber("1.1.1.1:1111", "Test", "unknown", "1.1.1.1", "N", service1.getGroupedServiceName(), 0));
+        when(upgradeJudgement.isUseGrpcFeatures()).thenReturn(true);
     }
     
     @Test

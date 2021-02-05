@@ -68,11 +68,12 @@ public class NamingMetadataManager extends SmartSubscriber {
     /**
      * Whether instance metadata metadata for instance of {@link Service}.
      *
-     * @param service service
+     * @param service    service
+     * @param metadataId instance metadata id
      * @return true if contain instance metadata, otherwise false
      */
-    public boolean containInstanceMetadata(Service service, String instanceId) {
-        return instanceMetadataMap.containsKey(service) && instanceMetadataMap.get(service).containsKey(instanceId);
+    public boolean containInstanceMetadata(Service service, String metadataId) {
+        return instanceMetadataMap.containsKey(service) && instanceMetadataMap.get(service).containsKey(metadataId);
     }
     
     /**
@@ -93,15 +94,15 @@ public class NamingMetadataManager extends SmartSubscriber {
      * <p>This method should use only query, can't modified metadata.
      *
      * @param service    service
-     * @param instanceId instance id
+     * @param metadataId instance metadata id
      * @return instance metadata
      */
-    public Optional<InstanceMetadata> getInstanceMetadata(Service service, String instanceId) {
+    public Optional<InstanceMetadata> getInstanceMetadata(Service service, String metadataId) {
         ConcurrentMap<String, InstanceMetadata> instanceMetadataMapForService = instanceMetadataMap.get(service);
         if (null == instanceMetadataMapForService) {
             return Optional.empty();
         }
-        return Optional.ofNullable(instanceMetadataMapForService.get(instanceId));
+        return Optional.ofNullable(instanceMetadataMapForService.get(metadataId));
     }
     
     /**
@@ -119,14 +120,14 @@ public class NamingMetadataManager extends SmartSubscriber {
      * Update instance metadata.
      *
      * @param service          service
-     * @param instanceId       instance id
+     * @param metadataId       instance metadata id
      * @param instanceMetadata new instance metadata
      */
-    public void updateInstanceMetadata(Service service, String instanceId, InstanceMetadata instanceMetadata) {
+    public void updateInstanceMetadata(Service service, String metadataId, InstanceMetadata instanceMetadata) {
         if (!instanceMetadataMap.containsKey(service)) {
             instanceMetadataMap.putIfAbsent(service, new ConcurrentHashMap<>(1));
         }
-        instanceMetadataMap.get(service).put(instanceId, instanceMetadata);
+        instanceMetadataMap.get(service).put(metadataId, instanceMetadata);
     }
     
     /**
@@ -143,15 +144,15 @@ public class NamingMetadataManager extends SmartSubscriber {
      * Remove instance metadata.
      *
      * @param service    service
-     * @param instanceId instance id
+     * @param metadataId instance metadata id
      */
-    public void removeInstanceMetadata(Service service, String instanceId) {
+    public void removeInstanceMetadata(Service service, String metadataId) {
         ConcurrentMap<String, InstanceMetadata> instanceMetadataMapForService = instanceMetadataMap.get(service);
-        instanceMetadataMapForService.remove(instanceId);
+        instanceMetadataMapForService.remove(metadataId);
         if (instanceMetadataMapForService.isEmpty()) {
             serviceMetadataMap.remove(service);
         }
-        expiredMetadataInfos.remove(ExpiredMetadataInfo.newExpiredInstanceMetadata(service, instanceId));
+        expiredMetadataInfos.remove(ExpiredMetadataInfo.newExpiredInstanceMetadata(service, metadataId));
     }
     
     /**
@@ -230,9 +231,9 @@ public class NamingMetadataManager extends SmartSubscriber {
     
     private void handleClientDisconnectEvent(ClientEvent.ClientDisconnectEvent event) {
         for (Service each : event.getClient().getAllPublishedService()) {
-            String instanceId = event.getClient().getInstancePublishInfo(each).getInstanceId();
-            if (containInstanceMetadata(each, instanceId)) {
-                updateExpiredInfo(true, ExpiredMetadataInfo.newExpiredInstanceMetadata(each, instanceId));
+            String metadataId = event.getClient().getInstancePublishInfo(each).getMetadataId();
+            if (containInstanceMetadata(each, metadataId)) {
+                updateExpiredInfo(true, ExpiredMetadataInfo.newExpiredInstanceMetadata(each, metadataId));
             }
         }
     }
@@ -246,10 +247,10 @@ public class NamingMetadataManager extends SmartSubscriber {
     
     private void handleInstanceMetadataEvent(MetadataEvent.InstanceMetadataEvent event) {
         Service service = event.getService();
-        String instanceId = event.getInstanceId();
-        if (containInstanceMetadata(service, instanceId)) {
+        String metadataId = event.getMetadataId();
+        if (containInstanceMetadata(service, metadataId)) {
             updateExpiredInfo(event.isExpired(),
-                    ExpiredMetadataInfo.newExpiredInstanceMetadata(event.getService(), event.getInstanceId()));
+                    ExpiredMetadataInfo.newExpiredInstanceMetadata(event.getService(), event.getMetadataId()));
         }
     }
     

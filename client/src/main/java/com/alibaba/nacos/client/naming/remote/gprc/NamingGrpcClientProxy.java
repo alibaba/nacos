@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
+import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
@@ -32,13 +33,13 @@ import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.RemoteConstants;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
+import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
+import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
@@ -58,7 +59,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  *
  * @author xiweng.yy
  */
-public class NamingGrpcClientProxy implements NamingClientProxy {
+public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private final String namespaceId;
     
@@ -70,8 +71,9 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     
     private final NamingGrpcConnectionEventListener namingGrpcConnectionEventListener;
     
-    public NamingGrpcClientProxy(String namespaceId, ServerListFactory serverListFactory, Properties properties,
-            ServiceInfoHolder serviceInfoHolder) throws NacosException {
+    public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
+            Properties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
+        super(securityProxy, properties);
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
         this.requestTimeout = Long.parseLong(properties.getProperty(CommonParams.NAMING_REQUEST_TIMEOUT, "-1"));
@@ -84,7 +86,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     }
     
     private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
-        rpcClient.init(serverListFactory);
+        rpcClient.serverListFactory(serverListFactory);
         rpcClient.start();
         rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
         rpcClient.registerConnectionListener(namingGrpcConnectionEventListener);
@@ -191,8 +193,12 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
         return rpcClient.isRunning();
     }
     
-    private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
+    private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
+            throws NacosException {
         try {
+            request.putAllHeader(getSecurityHeaders());
+            request.putAllHeader(getSpasHeaders(
+                    NamingUtils.getGroupedNameOptional(request.getServiceName(), request.getGroupName())));
             Response response =
                     requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {

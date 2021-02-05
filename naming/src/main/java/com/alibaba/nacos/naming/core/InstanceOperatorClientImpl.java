@@ -112,7 +112,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "service not found, namespace: " + namespaceId + ", service: " + service);
         }
-        metadataOperateService.updateInstanceMetadata(service, instance.toInetAddr(), buildMetadata(instance));
+        String metadataId = InstancePublishInfo.genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
+        metadataOperateService.updateInstanceMetadata(service, metadataId, buildMetadata(instance));
     }
     
     private InstanceMetadata buildMetadata(Instance instance) {
@@ -129,11 +130,12 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         Service service = getService(namespaceId, serviceName, true);
         Instance instance = getInstance(namespaceId, serviceName, patchObject.getCluster(), patchObject.getIp(),
                 patchObject.getPort());
-        String instanceId = instance.toInetAddr();
-        Optional<InstanceMetadata> instanceMetadata = metadataManager.getInstanceMetadata(service, instanceId);
+        String metadataId = InstancePublishInfo
+                .genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
+        Optional<InstanceMetadata> instanceMetadata = metadataManager.getInstanceMetadata(service, metadataId);
         InstanceMetadata newMetadata = instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
         mergeMetadata(newMetadata, patchObject);
-        metadataOperateService.updateInstanceMetadata(service, instanceId, newMetadata);
+        metadataOperateService.updateInstanceMetadata(service, metadataId, newMetadata);
     }
     
     private InstanceMetadata cloneMetadata(InstanceMetadata instanceMetadata) {
@@ -160,7 +162,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     public ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
             boolean healthOnly) {
         Service service = getService(namespaceId, serviceName, true);
-        if (null != subscriber) {
+        if (subscriber.getPort() > 0) {
             String clientId = IpPortBasedClient.getClientId(subscriber.getAddrStr(), true);
             createIpPortClientIfAbsent(clientId, true);
             clientOperationService.subscribeService(service, subscriber, clientId);
@@ -231,7 +233,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     @Override
     public long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster) {
         Service service = getService(namespaceId, serviceName, true);
-        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, ip);
+        String metadataId = InstancePublishInfo.genMetadataId(ip, port, cluster);
+        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, metadataId);
         if (metadata.isPresent() && metadata.get().getExtendData()
                 .containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
             return ConvertUtils.toLong(metadata.get().getExtendData().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));

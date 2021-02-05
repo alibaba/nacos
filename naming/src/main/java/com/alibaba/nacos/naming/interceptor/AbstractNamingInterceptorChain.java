@@ -60,9 +60,10 @@ public abstract class AbstractNamingInterceptorChain<T extends Interceptable>
                 continue;
             }
             if (each.intercept(object)) {
+                object.afterIntercept();
                 return;
             }
         }
-        object.afterIntercept();
+        object.passIntercept();
     }
 }
