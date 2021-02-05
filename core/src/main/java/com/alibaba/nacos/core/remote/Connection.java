@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.remote.Requester;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import java.util.Map;
 
 /**
  * Connection.
@@ -28,10 +31,44 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
     
-    private final ConnectionMetaInfo metaInfo;
+    private boolean traced = false;
     
-    public Connection(ConnectionMetaInfo metaInfo) {
+    private ClientAbilities abilities;
+    
+    private final ConnectionMeta metaInfo;
+    
+    public Connection(ConnectionMeta metaInfo) {
         this.metaInfo = metaInfo;
+    }
+    
+    public Map<String, String> getLabels() {
+        return metaInfo.getLabels();
+    }
+    
+    public boolean isTraced() {
+        return traced;
+    }
+    
+    public void setTraced(boolean traced) {
+        this.traced = traced;
+    }
+    
+    /**
+     * get abilities.
+     *
+     * @return
+     */
+    public ClientAbilities getAbilities() {
+        return abilities;
+    }
+    
+    /**
+     * set abilities.
+     *
+     * @param abilities abilities.
+     */
+    public void setAbilities(ClientAbilities abilities) {
+        this.abilities = abilities;
     }
     
     /**
@@ -53,13 +90,8 @@ public abstract class Connection implements Requester {
      *
      * @return property value of metaInfo
      */
-    public ConnectionMetaInfo getMetaInfo() {
+    public ConnectionMeta getMetaInfo() {
         return metaInfo;
-    }
-    
-    @Override
-    public boolean isBusy() {
-        return false;
     }
     
     @Override

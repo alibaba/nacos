@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.core.remote.control;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -29,43 +28,62 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TpsRecorder {
     
+    private long startTime;
+    
+    private int slotSize;
+    
+    private List<TpsSlot> slotList;
+    
+    public TpsRecorder(long startTime, int recordSize) {
+        this.startTime = startTime;
+        this.slotSize = recordSize + 1;
+        slotList = new ArrayList<>(slotSize);
+        for (int i = 0; i < slotSize; i++) {
+            slotList.add(new TpsSlot());
+        }
+    }
+    
+    /**
+     * get slot of the timestamp second,create if not exist.
+     *
+     * @param timeStamp the timestamp second.
+     * @return
+     */
+    public TpsSlot createPointIfAbsent(long timeStamp) {
+        long distance = timeStamp - startTime;
+        long secondDiff = distance / 1000;
+        long currentWindowTime = startTime + secondDiff * 1000;
+        int index = (int) secondDiff % slotSize;
+        if (slotList.get(index).second != currentWindowTime) {
+            slotList.get(index).reset(currentWindowTime);
+        }
+        return slotList.get(index);
+    }
+    
+    /**
+     * get slot of the timestamp second,read only ,return nul if not exist.
+     *
+     * @param timeStamp the timestamp second.
+     * @return
+     */
+    public TpsSlot getPoint(long timeStamp) {
+        long distance = timeStamp - startTime;
+        long secondDiff = distance / 1000;
+        long currentWindowTime = startTime + secondDiff * 1000;
+        int index = (int) secondDiff % slotSize;
+        TpsSlot tpsSlot = slotList.get(index);
+        if (tpsSlot.second != currentWindowTime) {
+            return null;
+        }
+        return tpsSlot;
+    }
+    
     private long maxTps = -1;
     
     /**
      * monitor/intercept.
      */
-    private String monitorType = "";
-    
-    /**
-     * second count.
-     */
-    private Cache<String, AtomicLong> tps = CacheBuilder.newBuilder().maximumSize(10).build();
-    
-    public AtomicLong getTps(String second) {
-        AtomicLong atomicLong = tps.getIfPresent(second);
-        if (atomicLong != null) {
-            return atomicLong;
-        }
-        synchronized (tps) {
-            if (tps.getIfPresent(second) == null) {
-                tps.put(second, new AtomicLong());
-            }
-            return tps.getIfPresent(second);
-        }
-    }
-    
-    private String second(long timeStamp) {
-        String timeStampStr = String.valueOf(timeStamp);
-        return timeStampStr.substring(0, timeStampStr.length() - 3);
-    }
-    
-    protected void checkSecond(long timeStamp) {
-        getTps(second(timeStamp));
-    }
-    
-    public AtomicLong getCurrentTps() {
-        return getTps(second(System.currentTimeMillis()));
-    }
+    private String monitorType = MonitorType.MONITOR.type;
     
     public long getMaxTps() {
         return maxTps;
@@ -76,6 +94,53 @@ public class TpsRecorder {
     }
     
     public boolean isInterceptMode() {
-        return "intercept".equals(this.monitorType);
+        return MonitorType.INTERCEPT.type.equals(this.monitorType);
+    }
+    
+    /**
+     * clearLimitRule.
+     */
+    public void clearLimitRule() {
+        this.setMonitorType(MonitorType.MONITOR.type);
+        this.setMaxTps(-1);
+    }
+    
+    public String getMonitorType() {
+        return monitorType;
+    }
+    
+    public void setMonitorType(String monitorType) {
+        this.monitorType = monitorType;
+    }
+    
+    static class TpsSlot {
+        
+        long second = 0L;
+        
+        AtomicLong tps = new AtomicLong();
+        
+        AtomicLong interceptedTps = new AtomicLong();
+        
+        public AtomicLong reset(long second) {
+            synchronized (this) {
+                if (this.second != second) {
+                    this.second = second;
+                    tps.set(0L);
+                    interceptedTps.set(0);
+                }
+            }
+            return tps;
+            
+        }
+        
+        @Override
+        public String toString() {
+            return "TpsSlot{" + "second=" + second + ", tps=" + tps + '}';
+        }
+        
+    }
+    
+    public List<TpsSlot> getSlotList() {
+        return slotList;
     }
 }

@@ -16,13 +16,45 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
+import com.alibaba.nacos.api.remote.request.ServerRequest;
+
 /**
  * ConfigChangeNotifyRequest.
  *
  * @author liuzunfei
  * @version $Id: ConfigChangeNotifyRequest.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
  */
-public class ConfigChangeNotifyRequest extends ConfigReSyncRequest {
+public class ConfigChangeNotifyRequest extends ServerRequest {
+    
+    String dataId;
+    
+    String group;
+    
+    String tenant;
+    
+    public String getDataId() {
+        return dataId;
+    }
+    
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
+    }
+    
+    public String getGroup() {
+        return group;
+    }
+    
+    public void setGroup(String group) {
+        this.group = group;
+    }
+    
+    public String getTenant() {
+        return tenant;
+    }
+    
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
     
     /**
      * build success response.
@@ -33,10 +65,15 @@ public class ConfigChangeNotifyRequest extends ConfigReSyncRequest {
      * @return ConfigChangeNotifyResponse
      */
     public static ConfigChangeNotifyRequest build(String dataId, String group, String tenant) {
-        ConfigChangeNotifyRequest response = new ConfigChangeNotifyRequest();
-        response.setDataId(dataId);
-        response.setGroup(group);
-        response.setTenant(tenant);
-        return response;
+        ConfigChangeNotifyRequest request = new ConfigChangeNotifyRequest();
+        request.setDataId(dataId);
+        request.setGroup(group);
+        request.setTenant(tenant);
+        return request;
+    }
+    
+    @Override
+    public String getModule() {
+        return "config";
     }
 }

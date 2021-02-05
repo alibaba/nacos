@@ -55,8 +55,7 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
         LogUtil.DEFAULT_LOG.warn("updateMd5 count:{}", updateMd5List.size());
         for (ConfigInfoWrapper config : updateMd5List) {
             final String groupKey = GroupKey2.getKey(config.getDataId(), config.getGroup());
-            ConfigCacheService.updateMd5(groupKey, config.getMd5(), config.getLastModified(), config.getContent(),
-                    config.getType());
+            ConfigCacheService.updateMd5(groupKey, config.getMd5(), config.getLastModified());
         }
         long endUpdateMd5 = System.currentTimeMillis();
         LogUtil.DEFAULT_LOG.warn("updateMd5 done,cost:{}", endUpdateMd5 - startUpdateMd5);

@@ -66,7 +66,7 @@ public class ExpiredInstanceChecker implements InstanceBeatChecker {
     
     private Optional<Object> getTimeoutFromMetadata(Service service, InstancePublishInfo instance) {
         Optional<InstanceMetadata> instanceMetadata = ApplicationUtils.getBean(NamingMetadataManager.class)
-                .getInstanceMetadata(service, instance.getInstanceId());
+                .getInstanceMetadata(service, instance.getMetadataId());
         return instanceMetadata.map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
     }
     

@@ -35,6 +35,7 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -57,9 +58,13 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     private final DistroProtocol distroProtocol;
     
-    public DistroClientDataProcessor(ClientManager clientManager, DistroProtocol distroProtocol) {
+    private final UpgradeJudgement upgradeJudgement;
+    
+    public DistroClientDataProcessor(ClientManager clientManager, DistroProtocol distroProtocol,
+            UpgradeJudgement upgradeJudgement) {
         this.clientManager = clientManager;
         this.distroProtocol = distroProtocol;
+        this.upgradeJudgement = upgradeJudgement;
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -74,6 +79,9 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     @Override
     public void onEvent(Event event) {
         if (EnvUtil.getStandaloneMode()) {
+            return;
+        }
+        if (!upgradeJudgement.isUseGrpcFeatures()) {
             return;
         }
         ClientEvent clientEvent = (ClientEvent) event;

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.healthcheck.v2;
 
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
@@ -127,8 +126,15 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     }
     
     @Override
-    public void afterIntercept() {
+    public void passIntercept() {
         doHealthCheck();
+    }
+    
+    @Override
+    public void afterIntercept() {
+        if (!cancelled) {
+            HealthCheckReactor.scheduleCheck(this);
+        }
     }
     
     @Override
@@ -141,7 +147,7 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
         if (!serviceMetadata.isPresent()) {
             return new ClusterMetadata();
         }
-        String cluster = instancePublishInfo.getExtendDatum().get(CommonParams.CLUSTER_NAME).toString();
+        String cluster = instancePublishInfo.getCluster();
         ClusterMetadata result = serviceMetadata.get().getClusters().get(cluster);
         return null == result ? new ClusterMetadata() : result;
     }

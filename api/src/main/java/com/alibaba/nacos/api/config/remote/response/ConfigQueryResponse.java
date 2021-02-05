@@ -18,9 +18,6 @@ package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * ConfigQueryResponse.
  *
@@ -37,23 +34,19 @@ public class ConfigQueryResponse extends Response {
     
     String contentType;
     
-    Map<String, String> labels = new HashMap<String, String>();
+    String md5;
+    
+    long lastModified;
+    
+    boolean isBeta;
+    
+    String tag;
     
     public ConfigQueryResponse() {
     }
     
     /**
-     * add label to this response.
-     *
-     * @param key   key.
-     * @param value value.
-     */
-    public void addLabel(String key, String value) {
-        this.labels.put(key, value);
-    }
-    
-    /**
-     * Buid fail response.
+     * Build fail response.
      *
      * @param errorCode errorCode.
      * @param message   message.
@@ -77,22 +70,36 @@ public class ConfigQueryResponse extends Response {
         return response;
     }
     
-    /**
-     * Getter method for property <tt>labels</tt>.
-     *
-     * @return property value of labels
-     */
-    public Map<String, String> getLabels() {
-        return labels;
+    public String getTag() {
+        return tag;
     }
     
-    /**
-     * Setter method for property <tt>labels</tt>.
-     *
-     * @param labels value to be assigned to property labels
-     */
-    public void setLabels(Map<String, String> labels) {
-        this.labels = labels;
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
+    
+    public String getMd5() {
+        return md5;
+    }
+    
+    public void setMd5(String md5) {
+        this.md5 = md5;
+    }
+    
+    public long getLastModified() {
+        return lastModified;
+    }
+    
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
+    
+    public boolean isBeta() {
+        return isBeta;
+    }
+    
+    public void setBeta(boolean beta) {
+        isBeta = beta;
     }
     
     /**

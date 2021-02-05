@@ -43,4 +43,11 @@ public class Loggers {
     
     public static final Logger REMOTE_DIGEST = LoggerFactory.getLogger("com.alibaba.nacos.core.remote.digest");
     
+    public static final Logger TPS_CONTROL_DIGEST = LoggerFactory
+            .getLogger("com.alibaba.nacos.core.remote.control.digest");
+    
+    public static final Logger TPS_CONTROL = LoggerFactory.getLogger("com.alibaba.nacos.core.remote.control");
+    
+    public static final Logger TPS_CONTROL_DETAIL = LoggerFactory.getLogger("com.alibaba.nacos.core.remote.control.detail");
+    
 }

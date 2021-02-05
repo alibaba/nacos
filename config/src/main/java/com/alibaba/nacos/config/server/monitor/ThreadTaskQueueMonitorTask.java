@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
@@ -41,9 +40,6 @@ public class ThreadTaskQueueMonitorTask implements Runnable {
         int notifierClientSize = ConfigExecutor.asyncCofigChangeClientNotifyQueueSize();
         MEMORY_LOG.info("toNotifyTaskSize = {}", size);
         MEMORY_LOG.info("toClientNotifyTaskSize = {}", notifierClientSize);
-        MEMORY_LOG.info("sdkRpcTaskSize = {}", GlobalExecutor.sdkRpcExecutor.getQueue().size());
-        MEMORY_LOG.info("clusterRpcTaskSize = {}", GlobalExecutor.clusterRpcExecutor.getQueue().size());
-    
         MetricsMonitor.getNotifyTaskMonitor().set(size);
         MetricsMonitor.getNotifyClientTaskMonitor().set(notifierClientSize);
     }

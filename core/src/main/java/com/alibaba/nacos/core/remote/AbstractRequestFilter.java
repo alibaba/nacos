@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
@@ -56,6 +57,26 @@ public abstract class AbstractRequestFilter {
         }
     }
     
+    protected Method getHandleMethod(Class handlerClazz) throws NacosException {
+        try {
+            Method method = handlerClazz.getMethod("handle", Request.class, RequestMeta.class);
+            return method;
+        } catch (NoSuchMethodException e) {
+            throw new NacosException(NacosException.SERVER_ERROR, e);
+        }
+    }
+    
+    protected <T> Response getDefaultResponseInstance(Class handlerClazz) throws NacosException {
+        ParameterizedType parameterizedType = (ParameterizedType) handlerClazz.getGenericSuperclass();
+        try {
+            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+            return (Response) Class.forName(actualTypeArguments[1].getTypeName()).newInstance();
+            
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR, e);
+        }
+    }
+    
     /**
      * filter request.
      *
@@ -63,6 +84,7 @@ public abstract class AbstractRequestFilter {
      * @param meta         request meta.
      * @param handlerClazz request handler clazz.
      * @return response
+     * @throws NacosException NacosException.
      */
-    protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz);
+    protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException;
 }

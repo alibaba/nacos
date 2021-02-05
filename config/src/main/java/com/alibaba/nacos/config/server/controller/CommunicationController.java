@@ -16,11 +16,6 @@
 
 package com.alibaba.nacos.config.server.controller;
 
-import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
-import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
@@ -32,7 +27,6 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,7 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,71 +136,5 @@ public class CommunicationController {
         return result;
         
     }
-    
-    /**
-     * Notify client to check config from server.
-     */
-    @GetMapping("/watcherSyncConfig")
-    public ResponseEntity watcherSyncConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false) String tenant,
-            @RequestParam(value = "clientIp", required = false) String clientIp, ModelMap modelMap) {
-        String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        Set<String> listenersClients = configChangeListenContext.getListeners(groupKey);
-        List<Connection> listeners = new ArrayList<>();
-        for (String connectionId : listenersClients) {
-            Connection connection = connectionManager.getConnection(connectionId);
-            if (connection != null) {
-                if (StringUtils.isNotBlank(clientIp) && !connection.getMetaInfo().getClientIp().equals(clientIp)) {
-                    continue;
-                }
-                listeners.add(connection);
-            }
-            
-        }
-        if (!listeners.isEmpty()) {
-            ConfigChangeNotifyRequest notifyRequest = new ConfigChangeNotifyRequest();
-            notifyRequest.setDataId(dataId);
-            notifyRequest.setGroup(group);
-            notifyRequest.setTenant(tenant);
-            for (Connection connectionByIp : listeners) {
-                try {
-                    connectionByIp.request(notifyRequest, new RequestMeta());
-                } catch (NacosException e) {
-                    e.printStackTrace();
-                }
-                
-            }
-        }
-        return ResponseEntity.ok().body(trueStr);
-        
-    }
-    
-    /**
-     * Get client config listener lists of subscriber in local machine.
-     */
-    @GetMapping("/clientMetrics")
-    public Map<String, Object> getClientMetrics(@RequestParam("ip") String ip,
-            @RequestParam(value = "dataId", required = false) String dataId,
-            @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "tenant", required = false) String tenant) {
-        Map<String, Object> metrics = new HashMap<>(16);
-        List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
-        for (Connection connectionByIp : connectionsByIp) {
-            try {
-                ClientConfigMetricRequest clientMetrics = new ClientConfigMetricRequest();
-                if (StringUtils.isNotBlank(dataId)) {
-                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
-                            .build("cacheData", GroupKey2.getKey(dataId, group, tenant)));
-                }
-                
-                ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp
-                        .request(clientMetrics, new RequestMeta());
-                metrics.putAll(request1.getMetrics());
-            } catch (NacosException e) {
-                e.printStackTrace();
-            }
-        }
-        return metrics;
-        
-    }
+
 }

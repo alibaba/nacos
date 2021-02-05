@@ -81,7 +81,11 @@ public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCh
     }
     
     @Override
-    public void afterIntercept() {
+    public void passIntercept() {
         doHealthCheck();
+    }
+    
+    @Override
+    public void afterIntercept() {
     }
 }

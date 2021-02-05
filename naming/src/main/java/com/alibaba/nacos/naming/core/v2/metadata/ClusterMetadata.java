@@ -36,12 +36,12 @@ public class ClusterMetadata implements Serializable {
     
     private String healthyCheckType = Tcp.TYPE;
     
-    private AbstractHealthChecker healthChecker;
+    private AbstractHealthChecker healthChecker = new Tcp();
     
     /**
      * Whether or not use instance port to do health check.
      */
-    private boolean useInstancePortForCheck = false;
+    private boolean useInstancePortForCheck = true;
     
     private Map<String, String> extendData = new ConcurrentHashMap<>(1);
     

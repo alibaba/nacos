@@ -45,7 +45,7 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  *
  * @author xuanyin.zy
  */
-@Component
+@Component("httpHealthCheckProcessorV1")
 public class HttpHealthCheckProcessor implements HealthCheckProcessor {
     
     public static final String TYPE = "HTTP";

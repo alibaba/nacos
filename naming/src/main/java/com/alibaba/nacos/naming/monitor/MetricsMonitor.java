@@ -166,14 +166,21 @@ public class MetricsMonitor {
      * Reset all metrics.
      */
     public static void resetAll() {
+        resetPush();
+        getHttpHealthCheckMonitor().set(0);
+        getMysqlHealthCheckMonitor().set(0);
+        getTcpHealthCheckMonitor().set(0);
+    }
+    
+    /**
+     * Reset push metrics.
+     */
+    public static void resetPush() {
         getTotalPushMonitor().set(0);
         getFailedPushMonitor().set(0);
         getTotalPushCostForAvg().set(0);
         getTotalPushCountForAvg().set(0);
         getMaxPushCostMonitor().set(-1);
         getAvgPushCostMonitor().set(-1);
-        getHttpHealthCheckMonitor().set(0);
-        getMysqlHealthCheckMonitor().set(0);
-        getTcpHealthCheckMonitor().set(0);
     }
 }

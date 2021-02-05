@@ -33,13 +33,13 @@ public class ExpiredMetadataInfo {
     
     private final Service service;
     
-    private final String instanceId;
+    private final String metadataId;
     
     private final long createTime;
     
-    private ExpiredMetadataInfo(Service service, String instanceId) {
+    private ExpiredMetadataInfo(Service service, String metadataId) {
         this.service = service;
-        this.instanceId = instanceId;
+        this.metadataId = metadataId;
         this.createTime = System.currentTimeMillis();
     }
     
@@ -47,16 +47,16 @@ public class ExpiredMetadataInfo {
         return new ExpiredMetadataInfo(service, null);
     }
     
-    public static ExpiredMetadataInfo newExpiredInstanceMetadata(Service service, String instanceId) {
-        return new ExpiredMetadataInfo(service, instanceId);
+    public static ExpiredMetadataInfo newExpiredInstanceMetadata(Service service, String metadataId) {
+        return new ExpiredMetadataInfo(service, metadataId);
     }
     
     public Service getService() {
         return service;
     }
     
-    public String getInstanceId() {
-        return instanceId;
+    public String getMetadataId() {
+        return metadataId;
     }
     
     public long getCreateTime() {
@@ -72,17 +72,17 @@ public class ExpiredMetadataInfo {
             return false;
         }
         ExpiredMetadataInfo that = (ExpiredMetadataInfo) o;
-        return Objects.equals(service, that.service) && Objects.equals(instanceId, that.instanceId);
+        return Objects.equals(service, that.service) && Objects.equals(metadataId, that.metadataId);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(service, instanceId);
+        return Objects.hash(service, metadataId);
     }
     
     @Override
     public String toString() {
-        return "ExpiredMetadataInfo{" + "service=" + service + ", instanceId='" + instanceId + '\'' + ", createTime="
+        return "ExpiredMetadataInfo{" + "service=" + service + ", metadataId='" + metadataId + '\'' + ", createTime="
                 + new Date(createTime) + '}';
     }
 }

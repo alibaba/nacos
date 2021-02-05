@@ -35,7 +35,9 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     
     String content;
     
-    private Map<String, String> additonMap;
+    String casMd5;
+    
+    private Map<String, String> additionMap;
     
     public ConfigPublishRequest() {
     
@@ -48,7 +50,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
      * @return value of param ,return null if not exist.
      */
     public String getAdditionParam(String key) {
-        return additonMap == null ? null : additonMap.get(key);
+        return additionMap == null ? null : additionMap.get(key);
     }
     
     /**
@@ -57,11 +59,11 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
      * @param key   key of param.
      * @param value value of param.
      */
-    public void putAdditonalParam(String key, String value) {
-        if (additonMap == null) {
-            additonMap = new HashMap<String, String>(2);
+    public void putAdditionalParam(String key, String value) {
+        if (additionMap == null) {
+            additionMap = new HashMap<String, String>(2);
         }
-        additonMap.put(key, value);
+        additionMap.put(key, value);
     }
     
     public ConfigPublishRequest(String dataId, String group, String tenant, String content) {
@@ -123,6 +125,42 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
      */
     public void setContent(String content) {
         this.content = content;
+    }
+    
+    /**
+     * Getter method for property <tt>casMd5</tt>.
+     *
+     * @return property value of casMd5
+     */
+    public String getCasMd5() {
+        return casMd5;
+    }
+    
+    /**
+     * Setter method for property <tt>casMd5</tt>.
+     *
+     * @param casMd5 value to be assigned to property content
+     */
+    public void setCasMd5(String casMd5) {
+        this.casMd5 = casMd5;
+    }
+    
+    /**
+     * Getter method for property <tt>casMd5</tt>.
+     *
+     * @return property value of casMd5
+     */
+    public Map<String, String> getAdditionMap() {
+        return additionMap;
+    }
+    
+    /**
+     * Setter method for property <tt>additionMap</tt>.
+     *
+     * @param additionMap value to be assigned to property additionMap
+     */
+    public void setAdditionMap(Map<String, String> additionMap) {
+        this.additionMap = additionMap;
     }
     
     /**

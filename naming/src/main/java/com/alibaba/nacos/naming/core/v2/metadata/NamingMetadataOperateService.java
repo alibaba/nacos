@@ -22,8 +22,8 @@ import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.Constants;
@@ -79,12 +79,12 @@ public class NamingMetadataOperateService {
      * Update instance metadata.
      *
      * @param service          service of metadata
-     * @param instanceId       instance Id
+     * @param metadataId       instance metadataId Id
      * @param instanceMetadata metadata
      */
-    public void updateInstanceMetadata(Service service, String instanceId, InstanceMetadata instanceMetadata) {
+    public void updateInstanceMetadata(Service service, String metadataId, InstanceMetadata instanceMetadata) {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
-        operation.setTag(instanceId);
+        operation.setTag(metadataId);
         operation.setMetadata(instanceMetadata);
         WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
                 .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
@@ -96,13 +96,32 @@ public class NamingMetadataOperateService {
      * Delete instance metadata.
      *
      * @param service    service of metadata
-     * @param instanceId instance Id
+     * @param metadataId instance metadata Id
      */
-    public void deleteInstanceMetadata(Service service, String instanceId) {
+    public void deleteInstanceMetadata(Service service, String metadataId) {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
-        operation.setTag(instanceId);
+        operation.setTag(metadataId);
         WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
                 .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
+                .build();
+        submitMetadataOperation(operationLog);
+    }
+    
+    /**
+     * Add cluster metadata to service metadata.
+     *
+     * @param service         service
+     * @param clusterName     cluster name
+     * @param clusterMetadata cluster metadata
+     */
+    public void addClusterMetadata(Service service, String clusterName, ClusterMetadata clusterMetadata) {
+        MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.setEphemeral(service.isEphemeral());
+        serviceMetadata.getClusters().put(clusterName, clusterMetadata);
+        operation.setMetadata(serviceMetadata);
+        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.SERVICE_METADATA)
+                .setOperation(DataOperation.ADD.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
                 .build();
         submitMetadataOperation(operationLog);
     }

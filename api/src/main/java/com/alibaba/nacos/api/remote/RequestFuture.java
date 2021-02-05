@@ -18,9 +18,6 @@ package com.alibaba.nacos.api.remote;
 
 import com.alibaba.nacos.api.remote.response.Response;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
 /**
  * future for request.
  *
@@ -31,26 +28,26 @@ public interface RequestFuture {
     
     /**
      * check that it is done or not..
+     *
      * @return is done .
      */
     boolean isDone();
     
     /**
      * get response without timeouts.
+     *
      * @return return response if done.
-     * @throws InterruptedException  throws if interruted.
-     * @throws ExecutionException throw if execute fail.
+     * @throws Exception exception throws .
      */
-    Response get() throws InterruptedException, ExecutionException;
+    Response get() throws Exception;
     
     /**
      * get response with a given timeouts.
-     * @param timeout timeout millseconds.
+     *
+     * @param timeout timeout milliseconds.
      * @return return response if done.
-     * @throws TimeoutException throws if timeout.
-     * @throws ExecutionException throw if execute fail.
-     * @throws InterruptedException  throws if interruted.
+     * @throws Exception exception throws .
      */
-    Response get(long timeout) throws TimeoutException, InterruptedException, ExecutionException;
+    Response get(long timeout) throws Exception;
     
 }

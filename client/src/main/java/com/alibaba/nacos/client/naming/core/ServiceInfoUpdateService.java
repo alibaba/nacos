@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
+import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -47,6 +48,8 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 public class ServiceInfoUpdateService implements Closeable {
     
     private static final long DEFAULT_DELAY = 1000L;
+    
+    private static final int DEFAULT_UPDATE_CACHE_TIME_MULTIPLE = 6;
     
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
     
@@ -142,6 +145,11 @@ public class ServiceInfoUpdateService implements Closeable {
         private final String groupedServiceName;
         
         private final String serviceKey;
+    
+        /**
+         * the fail situation. 1:can't connect to server 2:serviceInfo's hosts is empty
+         */
+        private int failCount = 0;
         
         public UpdateTask(String serviceName, String groupName, String clusters) {
             this.serviceName = serviceName;
@@ -176,16 +184,33 @@ public class ServiceInfoUpdateService implements Closeable {
                     serviceInfoHolder.processServiceInfo(serviceObj);
                 }
                 lastRefTime = serviceObj.getLastRefTime();
-                delayTime = serviceObj.getCacheMillis();
-                
+                if (CollectionUtils.isEmpty(serviceObj.getHosts())) {
+                    incFailCount();
+                    return;
+                }
+                // TODO multiple time can be configured.
+                delayTime = serviceObj.getCacheMillis() * DEFAULT_UPDATE_CACHE_TIME_MULTIPLE;
+                resetFailCount();
             } catch (Throwable e) {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + groupedServiceName, e);
             } finally {
+                incFailCount();
                 if (delayTime > 0) {
-                    executor.schedule(this, delayTime, TimeUnit.MILLISECONDS);
+                    executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
                 }
             }
-            
+        }
+    
+        private void incFailCount() {
+            int limit = 6;
+            if (failCount == limit) {
+                return;
+            }
+            failCount++;
+        }
+    
+        private void resetFailCount() {
+            failCount = 0;
         }
     }
 }

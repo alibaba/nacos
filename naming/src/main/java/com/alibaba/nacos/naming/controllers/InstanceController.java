@@ -25,9 +25,12 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
+import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
 import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -82,7 +85,13 @@ public class InstanceController {
     private ServiceManager serviceManager;
     
     @Autowired
-    private InstanceOperatorClientImpl instanceService;
+    private InstanceOperatorClientImpl instanceServiceV2;
+    
+    @Autowired
+    private InstanceOperatorServiceImpl instanceServiceV1;
+    
+    @Autowired
+    private UpgradeJudgement upgradeJudgement;
     
     /**
      * Register new instance.
@@ -102,8 +111,8 @@ public class InstanceController {
         NamingUtils.checkServiceNameFormat(serviceName);
         
         final Instance instance = parseInstance(request);
-        
-        instanceService.registerInstance(namespaceId, serviceName, instance);
+    
+        getInstanceOperator().registerInstance(namespaceId, serviceName, instance);
         return "ok";
     }
     
@@ -122,8 +131,8 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-        
-        instanceService.removeInstance(namespaceId, serviceName, instance);
+    
+        getInstanceOperator().removeInstance(namespaceId, serviceName, instance);
         return "ok";
     }
     
@@ -141,7 +150,7 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-        instanceService.updateInstance(namespaceId, serviceName, parseInstance(request));
+        getInstanceOperator().updateInstance(namespaceId, serviceName, parseInstance(request));
         return "ok";
     }
     
@@ -305,7 +314,7 @@ public class InstanceController {
             patchObject.setEnabled(BooleanUtils.toBoolean(enabledString));
         }
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        instanceService.patchInstance(namespaceId, serviceName, patchObject);
+        getInstanceOperator().patchInstance(namespaceId, serviceName, patchObject);
         return "ok";
     }
     
@@ -336,10 +345,9 @@ public class InstanceController {
         String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
         String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
         
-        Subscriber subscriber =
-                udpPort > 0 ? new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName,
-                        udpPort, clusters) : null;
-        return instanceService.listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
+        Subscriber subscriber = new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName,
+                        udpPort, clusters);
+        return getInstanceOperator().listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
     }
     
     /**
@@ -360,7 +368,7 @@ public class InstanceController {
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
         
-        com.alibaba.nacos.api.naming.pojo.Instance instance = instanceService
+        com.alibaba.nacos.api.naming.pojo.Instance instance = getInstanceOperator()
                 .getInstance(namespaceId, serviceName, cluster, ip, port);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("service", serviceName);
@@ -413,10 +421,10 @@ public class InstanceController {
         NamingUtils.checkServiceNameFormat(serviceName);
         Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         
-        int resultCode = instanceService.handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat);
+        int resultCode = getInstanceOperator().handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat);
         result.put(CommonParams.CODE, resultCode);
         result.put(SwitchEntry.CLIENT_BEAT_INTERVAL,
-                instanceService.getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));
+                getInstanceOperator().getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));
         result.put(SwitchEntry.LIGHT_BEAT_ENABLED, switchDomain.isLightBeatEnabled());
         return result;
     }
@@ -443,7 +451,7 @@ public class InstanceController {
         }
         NamingUtils.checkServiceNameFormat(serviceName);
         
-        List<? extends com.alibaba.nacos.api.naming.pojo.Instance> ips = instanceService
+        List<? extends com.alibaba.nacos.api.naming.pojo.Instance> ips = getInstanceOperator()
                 .listAllInstances(namespaceId, serviceName);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
@@ -515,5 +523,9 @@ public class InstanceController {
         instance.setClusterName(cluster);
         
         return instance;
+    }
+    
+    private InstanceOperator getInstanceOperator() {
+        return upgradeJudgement.isUseGrpcFeatures() ? instanceServiceV2 : instanceServiceV1;
     }
 }

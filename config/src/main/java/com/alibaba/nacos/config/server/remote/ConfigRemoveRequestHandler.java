@@ -30,6 +30,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.remote.control.TpsControl;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -52,14 +53,15 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
     }
     
     @Override
+    @TpsControl(pointName = "ConfigRemove")
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
-    public ConfigRemoveResponse handle(ConfigRemoveRequest request, RequestMeta meta) throws NacosException {
-        ConfigRemoveRequest myrequest = (ConfigRemoveRequest) request;
+    public ConfigRemoveResponse handle(ConfigRemoveRequest configRemoveRequest, RequestMeta meta)
+            throws NacosException {
         // check tenant
-        String tenant = myrequest.getTenant();
-        String dataId = myrequest.getDataId();
-        String group = myrequest.getGroup();
-        String tag = myrequest.getTag();
+        String tenant = configRemoveRequest.getTenant();
+        String dataId = configRemoveRequest.getDataId();
+        String group = configRemoveRequest.getGroup();
+        String tag = configRemoveRequest.getTag();
         
         try {
             ParamUtils.checkTenant(tenant);

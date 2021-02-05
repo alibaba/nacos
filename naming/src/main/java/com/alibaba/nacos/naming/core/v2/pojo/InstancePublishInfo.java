@@ -38,6 +38,8 @@ public class InstancePublishInfo implements Serializable {
     
     private boolean healthy;
     
+    private String cluster;
+    
     private Map<String, Object> extendDatum;
     
     public InstancePublishInfo() {
@@ -65,6 +67,14 @@ public class InstancePublishInfo implements Serializable {
         return port;
     }
     
+    public void setCluster(String cluster) {
+        this.cluster = cluster;
+    }
+    
+    public String getCluster() {
+        return cluster;
+    }
+    
     public Map<String, Object> getExtendDatum() {
         return extendDatum;
     }
@@ -81,8 +91,8 @@ public class InstancePublishInfo implements Serializable {
         this.healthy = healthy;
     }
     
-    public String getInstanceId() {
-        return ip + IPUtil.IP_PORT_SPLITER + port;
+    public String getMetadataId() {
+        return genMetadataId(ip, port, cluster);
     }
     
     @Override
@@ -101,5 +111,14 @@ public class InstancePublishInfo implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(ip, port, extendDatum, healthy);
+    }
+    
+    @Override
+    public String toString() {
+        return "InstancePublishInfo{" + "ip='" + ip + '\'' + ", port=" + port + ", healthy=" + healthy + '}';
+    }
+    
+    public static String genMetadataId(String ip, int port, String cluster) {
+        return ip + IPUtil.IP_PORT_SPLITER + port + IPUtil.IP_PORT_SPLITER + cluster;
     }
 }

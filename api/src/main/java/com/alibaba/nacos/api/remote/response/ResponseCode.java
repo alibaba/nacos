@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.remote.response;
 
 /**
  * ResponseCode.
+ *
  * @author liuzunfei
  * @version $Id: ResponseCode.java, v 0.1 2020年07月14日 2:04 PM liuzunfei Exp $
  */
@@ -26,12 +27,12 @@ public enum ResponseCode {
     /**
      * Request success.
      */
-    SUCCESS(200, "response ok"),
+    SUCCESS(200, "Response ok"),
     
     /**
      * Request failed.
      */
-    FAIL(500, "response fail");
+    FAIL(500, "Response fail");
     
     int code;
     

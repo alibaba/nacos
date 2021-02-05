@@ -31,8 +31,7 @@ public class RemoteUtils {
     private static final int REMOTE_EXECUTOR_TIMES_OF_PROCESSORS = 64;
     
     /**
-     * get remote executors thread times of processors,default is 64.
-     * see the usage of this method for detail.
+     * get remote executors thread times of processors,default is 64. see the usage of this method for detail.
      *
      * @return times of processors.
      */
