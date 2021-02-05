@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.auth;
 
+import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
@@ -24,6 +25,7 @@ import com.alibaba.nacos.common.utils.NamespaceUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * Config resource parser.
@@ -37,7 +39,7 @@ public class ConfigResourceParser implements ResourceParser {
     
     @Override
     public String parseName(Object requestObj) {
-    
+        
         String namespaceId = null;
         String groupName = null;
         String dataId = null;
@@ -48,7 +50,16 @@ public class ConfigResourceParser implements ResourceParser {
             dataId = req.getParameter("dataId");
         } else if (requestObj instanceof Request) {
             Request request = (Request) requestObj;
-            namespaceId = (String) ReflectUtils.getFieldValue(request, "tenant", "");
+            if (request instanceof ConfigBatchListenRequest) {
+                List<ConfigBatchListenRequest.ConfigListenContext> configListenContexts = ((ConfigBatchListenRequest) request)
+                        .getConfigListenContexts();
+                if (!configListenContexts.isEmpty()) {
+                    namespaceId = ((ConfigBatchListenRequest) request).getConfigListenContexts().get(0).getTenant();
+                }
+            } else {
+                namespaceId = (String) ReflectUtils.getFieldValue(request, "tenant", "");
+                
+            }
             groupName = (String) ReflectUtils.getFieldValue(request, "group", "");
             dataId = (String) ReflectUtils.getFieldValue(request, "dataId", "");
         }
