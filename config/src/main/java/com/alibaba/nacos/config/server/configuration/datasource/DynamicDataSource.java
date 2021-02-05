@@ -22,7 +22,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
-
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -31,11 +30,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -65,19 +60,6 @@ public class DynamicDataSource implements DataSource, InitializingBean {
     private volatile int masterIndex;
     
     private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
-    
-    private static ScheduledExecutorService scheduledExecutorService = Executors
-            .newScheduledThreadPool(10, new ThreadFactory() {
-                AtomicInteger count = new AtomicInteger(0);
-                
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r);
-                    t.setDaemon(true);
-                    t.setName("com.alibaba.nacos.server.Timer-" + count.getAndIncrement());
-                    return t;
-                }
-            });
     
     public DynamicDataSource(NacosMultipleDataSourceProperties multipleDataSourceProperties,
             DataSourceProperties properties) {
@@ -146,7 +128,7 @@ public class DynamicDataSource implements DataSource, InitializingBean {
     
     @Override
     public void afterPropertiesSet() throws Exception {
-        scheduledExecutorService.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+    
     }
     
     class SelectMasterTask implements Runnable {
@@ -182,7 +164,7 @@ public class DynamicDataSource implements DataSource, InitializingBean {
                 try {
                     executeSql(dataSource, CHECK_DB_HEALTH_SQL);
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    log.error("{} was down, Error Code:{}", dataSource.getPoolName(), e.getMessage());
                 }
             }
         }
