@@ -20,9 +20,11 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.naming.monitor.NamingTpsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
@@ -54,6 +56,11 @@ public class PushExecuteTask extends AbstractExecuteTask {
             ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
             serviceInfo = ServiceUtil.selectInstances(serviceInfo, false, true);
             for (String each : getTargetClientIds()) {
+                Client client = delayTaskEngine.getClientManager().getClient(each);
+                if (null == client) {
+                    // means this client has disconnect
+                    continue;
+                }
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
                 delayTaskEngine.getPushExecutor()
                         .doPushWithCallback(each, subscriber, handleClusterData(serviceInfo, subscriber),
@@ -119,9 +126,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
             Loggers.PUSH.info("[PUSH-SUCC] {}ms, all delay time {}ms, SLA {}ms, {}, DataSize={}, target={}",
                     pushCostTimeForNetWork, pushCostTimeForAll, serviceLevelAgreementTime, service,
                     serviceInfo.getHosts().size(), subscriber.getIp());
-            MetricsMonitor.incrementPush();
-            MetricsMonitor.incrementPushCost(pushCostTimeForNetWork);
-            MetricsMonitor.compareAndSetMaxPushCost(pushCostTimeForNetWork);
+            monitorSuccess(pushCostTimeForNetWork, clientId, subscriber.getIp(), subscriber.getPort() == 0);
         }
         
         @Override
@@ -129,10 +134,30 @@ public class PushExecuteTask extends AbstractExecuteTask {
             long pushCostTime = System.currentTimeMillis() - executeStartTime;
             Loggers.PUSH.error("[PUSH-FAIL] {}ms, {}, reason={}, target={}", pushCostTime, service, e.getMessage(),
                     subscriber.getIp());
-            MetricsMonitor.incrementFailPush();
+            monitorFail(clientId, subscriber.getIp(), subscriber.getPort() == 0);
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Reason detail: ", e);
                 delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L, clientId));
+            }
+        }
+        
+        private void monitorSuccess(long costTime, String clientId, String ip, boolean isRpc) {
+            MetricsMonitor.incrementPush();
+            MetricsMonitor.incrementPushCost(costTime);
+            MetricsMonitor.compareAndSetMaxPushCost(costTime);
+            if (isRpc) {
+                NamingTpsMonitor.rpcPushSuccess(clientId, ip);
+            } else {
+                NamingTpsMonitor.udpPushSuccess(clientId, ip);
+            }
+        }
+    
+        private void monitorFail(String clientId, String ip, boolean isRpc) {
+            MetricsMonitor.incrementFailPush();
+            if (isRpc) {
+                NamingTpsMonitor.rpcPushFail(clientId, ip);
+            } else {
+                NamingTpsMonitor.udpPushFail(clientId, ip);
             }
         }
     }

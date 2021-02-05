@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-public class TpsMonitorManagerTest {
+public class NamingTpsMonitorManagerTest {
     
     static TpsMonitorManager tpsMonitorManager = null;
     
