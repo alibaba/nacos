@@ -104,15 +104,17 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
                     serviceTask.getContent());
             ServiceManager serviceManager = ApplicationUtils.getBean(ServiceManager.class);
             Service service = serviceManager.getService(serviceTask.getNamespace(), serviceTask.getServiceName());
-            switch (serviceTask.getContent()) {
-                case METADATA:
-                    dispatchMetadataTask(service, serviceTask.isEphemeral());
-                    break;
-                case INSTANCE:
-                    dispatchInstanceTask(service, serviceTask.isEphemeral());
-                    break;
-                default:
-                    dispatchAllTask(service, serviceTask.isEphemeral());
+            if (null != service) {
+                switch (serviceTask.getContent()) {
+                    case METADATA:
+                        dispatchMetadataTask(service, serviceTask.isEphemeral());
+                        break;
+                    case INSTANCE:
+                        dispatchInstanceTask(service, serviceTask.isEphemeral());
+                        break;
+                    default:
+                        dispatchAllTask(service, serviceTask.isEphemeral());
+                }
             }
             return true;
         }
