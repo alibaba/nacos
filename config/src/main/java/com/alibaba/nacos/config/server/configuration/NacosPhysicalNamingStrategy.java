@@ -28,9 +28,11 @@ import org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy;
  */
 public class NacosPhysicalNamingStrategy extends SpringPhysicalNamingStrategy {
     
+    private static final String RESERVED_WORD_RESOURCE = "resource";
+    
     @Override
     public Identifier toPhysicalColumnName(Identifier name, JdbcEnvironment jdbcEnvironment) {
-        if ("resource".equals(name.getText())) {
+        if (RESERVED_WORD_RESOURCE.equals(name.getText())) {
             return DatabaseIdentifier.toIdentifier("[`RESOURCE`]");
         }
         return super.toPhysicalColumnName(name, jdbcEnvironment);
