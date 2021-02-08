@@ -28,6 +28,8 @@ const I18N_CONF = {
   },
   Login: {
     login: 'Login',
+    internalSysTip1: 'Internal system.',
+    internalSysTip2: 'Not exposed to the public network',
     submit: 'Submit',
     pleaseInputUsername: 'Please input username',
     pleaseInputPassword: 'Please input password',
