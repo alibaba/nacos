@@ -26,6 +26,7 @@ const I18N_CONF = {
   },
   Login: {
     login: '登录',
+    internalSysTip1: '内部系统，不可暴露到公网',
     submit: '提交',
     pleaseInputUsername: '请输入用户名',
     pleaseInputPassword: '请输入密码',
