@@ -27,7 +27,7 @@ import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyServ
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.naming.utils.Constants;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
