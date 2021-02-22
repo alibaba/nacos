@@ -18,8 +18,11 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
+import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactoryHolder;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
@@ -47,10 +50,13 @@ public class EphemeralIpPortClientManager implements ClientManager {
     
     private final DistroMapper distroMapper;
     
+    private final ClientFactory<IpPortBasedClient> clientFactory;
+    
     public EphemeralIpPortClientManager(DistroMapper distroMapper, SwitchDomain switchDomain) {
         this.distroMapper = distroMapper;
         GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this, switchDomain), 0,
                 Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
+        clientFactory = ClientFactoryHolder.getInstance().findClientFactory(ClientConstants.EPHEMERAL_IP_PORT);
     }
     
     @Override
@@ -64,7 +70,7 @@ public class EphemeralIpPortClientManager implements ClientManager {
     
     @Override
     public boolean syncClientConnected(String clientId) {
-        return clientConnected(new IpPortBasedClient(clientId, true));
+        return clientConnected(clientFactory.newSyncedClient(clientId));
     }
     
     @Override
