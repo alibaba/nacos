@@ -22,16 +22,16 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
-import static com.alibaba.nacos.naming.utils.Constants.DATA_WARMUP;
-import static com.alibaba.nacos.naming.utils.Constants.DISTRO_BATCH_SYNC_KEY_COUNT;
-import static com.alibaba.nacos.naming.utils.Constants.DISTRO_SYNC_RETRY_DELAY;
-import static com.alibaba.nacos.naming.utils.Constants.DISTRO_TASK_DISPATCH_PERIOD;
-import static com.alibaba.nacos.naming.utils.Constants.EMPTY_SERVICE_CLEAN_INTERVAL;
-import static com.alibaba.nacos.naming.utils.Constants.EMPTY_SERVICE_EXPIRED_TIME;
-import static com.alibaba.nacos.naming.utils.Constants.EXPIRED_METADATA_CLEAN_INTERVAL;
-import static com.alibaba.nacos.naming.utils.Constants.EXPIRED_METADATA_EXPIRED_TIME;
-import static com.alibaba.nacos.naming.utils.Constants.EXPIRE_INSTANCE;
-import static com.alibaba.nacos.naming.utils.Constants.LOAD_DATA_RETRY_DELAY_MILLIS;
+import static com.alibaba.nacos.naming.constants.Constants.DATA_WARMUP;
+import static com.alibaba.nacos.naming.constants.Constants.DISTRO_BATCH_SYNC_KEY_COUNT;
+import static com.alibaba.nacos.naming.constants.Constants.DISTRO_SYNC_RETRY_DELAY;
+import static com.alibaba.nacos.naming.constants.Constants.DISTRO_TASK_DISPATCH_PERIOD;
+import static com.alibaba.nacos.naming.constants.Constants.EMPTY_SERVICE_CLEAN_INTERVAL;
+import static com.alibaba.nacos.naming.constants.Constants.EMPTY_SERVICE_EXPIRED_TIME;
+import static com.alibaba.nacos.naming.constants.Constants.EXPIRED_METADATA_CLEAN_INTERVAL;
+import static com.alibaba.nacos.naming.constants.Constants.EXPIRED_METADATA_EXPIRED_TIME;
+import static com.alibaba.nacos.naming.constants.Constants.EXPIRE_INSTANCE;
+import static com.alibaba.nacos.naming.constants.Constants.LOAD_DATA_RETRY_DELAY_MILLIS;
 
 /**
  * Stores some configurations for Distro protocol.
