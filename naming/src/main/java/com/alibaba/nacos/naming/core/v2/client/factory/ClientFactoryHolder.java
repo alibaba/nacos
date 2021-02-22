@@ -32,15 +32,16 @@ public class ClientFactoryHolder {
     
     private static final ClientFactoryHolder INSTANCE = new ClientFactoryHolder();
     
-    private static final HashMap<String, ClientFactory> CLIENT_FACTORIES = new HashMap<>(4);
+    private final HashMap<String, ClientFactory> clientFactories;
     
     private ClientFactoryHolder() {
+        clientFactories = new HashMap<>(4);
         Collection<ClientFactory> clientFactories = NacosServiceLoader.load(ClientFactory.class);
         for (ClientFactory each : clientFactories) {
-            if (CLIENT_FACTORIES.containsKey(each.getType())) {
+            if (this.clientFactories.containsKey(each.getType())) {
                 Loggers.SRV_LOG.warn("Client type {} found multiple factory, use {} default", each.getType(), each.getClass().getCanonicalName());
             }
-            CLIENT_FACTORIES.put(each.getType(), each);
+            this.clientFactories.put(each.getType(), each);
         }
     }
     
@@ -55,9 +56,9 @@ public class ClientFactoryHolder {
      * @return target type {@link ClientFactory}, if not fount, return 'default' client factory.
      */
     public ClientFactory findClientFactory(String type) {
-        if (!CLIENT_FACTORIES.containsKey(type)) {
-            return CLIENT_FACTORIES.get(ClientConstants.DEFAULT_FACTORY);
+        if (!clientFactories.containsKey(type)) {
+            return clientFactories.get(ClientConstants.DEFAULT_FACTORY);
         }
-        return CLIENT_FACTORIES.get(type);
+        return clientFactories.get(type);
     }
 }
