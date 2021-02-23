@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
 
@@ -51,6 +52,6 @@ public class PushExecutorDelegate implements PushExecutor {
     }
     
     private PushExecutor getPushExecuteService(String clientId) {
-        return clientId.contains(":") ? udpPushExecuteService : rpcPushExecuteService;
+        return clientId.contains(IpPortBasedClient.ID_DELIMITER) ? udpPushExecuteService : rpcPushExecuteService;
     }
 }
