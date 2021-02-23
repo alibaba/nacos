@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.controller;
 
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
@@ -56,6 +58,7 @@ public class CoreOpsController {
     // }
     
     @PostMapping(value = "/raft")
+    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
     public RestResult<String> raftOps(@RequestBody Map<String, String> commands) {
         return protocolManager.getCpProtocol().execute(commands);
     }
