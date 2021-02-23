@@ -224,7 +224,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             configInfoTag.setDataId(configInfo.getDataId());
             configInfoTag.setGroupId(configInfo.getGroup());
             configInfoTag.setTenantId(tenantTmp);
-            configInfoTag.setTagId(tag);
+            configInfoTag.setTagId(tagTmp);
             configInfoTag.setAppName(appNameTmp);
             configInfoTag.setContent(configInfo.getContent());
             configInfoTag.setMd5(md5);
@@ -276,7 +276,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
             Timestamp time, boolean notify) {
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoBetaEntity qConfigInfoBeta = QConfigInfoBetaEntity.configInfoBetaEntity;
         if (StringUtils.isNotBlank(configInfo.getDataId())) {
@@ -285,7 +284,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(configInfo.getGroup())) {
             booleanBuilder.and(qConfigInfoBeta.groupId.eq(configInfo.getGroup()));
         }
-        booleanBuilder.and(qConfigInfoBeta.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(configInfo.getTenant())) {
+            booleanBuilder.and(qConfigInfoBeta.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoBeta.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoBeta.tenantId.eq(configInfo.getTenant()));
+        }
         ConfigInfoBetaEntity configInfoBeta = configInfoBetaRepository.findOne(booleanBuilder).orElse(null);
         try {
             String appNameTmp =
@@ -306,15 +309,22 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
+        BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoTagEntity qConfigInfoTag = QConfigInfoTagEntity.configInfoTagEntity;
-        ConfigInfoTagEntity configInfoTag = configInfoTagRepository.findOne(
-                qConfigInfoTag.dataId.eq(configInfo.getDataId()).and(qConfigInfoTag.groupId.eq(configInfo.getGroup()))
-                        .and(qConfigInfoTag.tenantId.eq(tenantTmp)).and(qConfigInfoTag.tagId.eq(tagTmp)))
+        if (StringUtils.isBlank(configInfo.getTenant())) {
+            booleanBuilder.and(qConfigInfoTag.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoTag.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoTag.tenantId.eq(configInfo.getTenant()));
+        }
+        booleanBuilder.and(qConfigInfoTag.dataId.eq(configInfo.getDataId())
+                        .and(qConfigInfoTag.groupId.eq(configInfo.getGroup()))
+                .and(qConfigInfoTag.tagId.eq(tagTmp)));
+        ConfigInfoTagEntity configInfoTag = configInfoTagRepository.findOne(booleanBuilder)
                 .orElse(new ConfigInfoTagEntity());
         try {
+            String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
+            String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
             configInfoTag.setDataId(configInfo.getDataId());
             configInfoTag.setGroupId(configInfo.getGroup());
             configInfoTag.setTenantId(tenantTmp);
@@ -356,7 +366,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public void updateMd5(String dataId, String group, String tenant, String md5, Timestamp lastTime) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         if (StringUtils.isNotBlank(dataId)) {
@@ -365,7 +374,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(group)) {
             booleanBuilder.and(qConfigInfo.groupId.eq(group));
         }
-        booleanBuilder.and(qConfigInfo.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
+        }
         if (lastTime != null) {
             booleanBuilder.and(qConfigInfo.gmtModified.eq(lastTime));
         }
@@ -480,8 +493,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public boolean addAggrConfigInfo(final String dataId, final String group, String tenant, final String datumId,
             String appName, final String content) {
-        String appNameTmp = StringUtils.isBlank(appName) ? StringUtils.EMPTY : appName;
-        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final Timestamp now = new Timestamp(System.currentTimeMillis());
         QConfigInfoAggrEntity qConfigInfoAggr = QConfigInfoAggrEntity.configInfoAggrEntity;
         BooleanBuilder booleanBuilder = new BooleanBuilder();
@@ -494,7 +505,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(datumId)) {
             booleanBuilder.and(qConfigInfoAggr.datumId.eq(datumId));
         }
-        booleanBuilder.and(qConfigInfoAggr.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfoAggr.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoAggr.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoAggr.tenantId.eq(tenant));
+        }
         try {
             try {
                 ConfigInfoAggrEntity result = configInfoAggrRepository.findOne(booleanBuilder).orElse(null);
@@ -508,6 +523,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     return true;
                 }
             } catch (EmptyResultDataAccessException ex) { // no data, insert
+                String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+                String appNameTmp = StringUtils.isBlank(appName) ? StringUtils.EMPTY : appName;
                 ConfigInfoAggrEntity configInfoAggrEntity = new ConfigInfoAggrEntity();
                 configInfoAggrEntity.setDataId(dataId);
                 configInfoAggrEntity.setGroupId(group);
@@ -530,10 +547,15 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public void removeSingleAggrConfigInfo(final String dataId, final String group, final String tenant,
             final String datumId) {
         QConfigInfoAggrEntity qConfigInfoAggr = QConfigInfoAggrEntity.configInfoAggrEntity;
-        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        configInfoAggrRepository.findOne(qConfigInfoAggr.dataId.eq(dataId).and(qConfigInfoAggr.groupId.eq(group))
-                .and(qConfigInfoAggr.tenantId.eq(tenantTmp)).and(qConfigInfoAggr.datumId.eq(datumId)))
-                .ifPresent(aggr -> configInfoAggrRepository.delete(aggr));
+        BooleanBuilder booleanBuilder = new BooleanBuilder();
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfoAggr.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoAggr.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoAggr.tenantId.eq(tenant));
+        }
+        booleanBuilder.and(qConfigInfoAggr.dataId.eq(dataId)).and(qConfigInfoAggr.groupId.eq(group))
+                .and(qConfigInfoAggr.datumId.eq(datumId));
+        configInfoAggrRepository.findOne(booleanBuilder).ifPresent(aggr -> configInfoAggrRepository.delete(aggr));
     }
     
     @Override
@@ -546,8 +568,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(group)) {
             booleanBuilder.and(qConfigInfoAggr.groupId.eq(group));
         }
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        booleanBuilder.and(qConfigInfoAggr.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfoAggr.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoAggr.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoAggr.tenantId.eq(tenant));
+        }
         configInfoAggrRepository.findOne(booleanBuilder).ifPresent(aggr -> configInfoAggrRepository.delete(aggr));
     }
     
@@ -555,10 +580,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public boolean batchRemoveAggr(final String dataId, final String group, final String tenant,
             final List<String> datumList) {
         QConfigInfoAggrEntity qConfigInfoAggr = QConfigInfoAggrEntity.configInfoAggrEntity;
-        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        configInfoAggrRepository.findOne(qConfigInfoAggr.dataId.eq(dataId).and(qConfigInfoAggr.groupId.eq(group))
-                .and(qConfigInfoAggr.tenantId.eq(tenantTmp)).and(qConfigInfoAggr.datumId.in(datumList)))
-                .ifPresent(aggr -> configInfoAggrRepository.delete(aggr));
+        BooleanBuilder booleanBuilder = new BooleanBuilder();
+        if (StringUtils.isNotBlank(dataId)) {
+            booleanBuilder.and(qConfigInfoAggr.dataId.eq(dataId));
+        }
+        if (StringUtils.isNotBlank(group)) {
+            booleanBuilder.and(qConfigInfoAggr.groupId.eq(group));
+        }
+        booleanBuilder.and(qConfigInfoAggr.dataId.eq(dataId)).and(qConfigInfoAggr.groupId.eq(group))
+                .and(qConfigInfoAggr.datumId.in(datumList));
+        configInfoAggrRepository.findAll(booleanBuilder).forEach(aggr -> configInfoAggrRepository.delete(aggr));
         return true;
     }
     
@@ -661,8 +692,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(group)) {
             booleanBuilder.and(qConfigInfoBeta.groupId.eq(group));
         }
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        booleanBuilder.and(qConfigInfoBeta.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfoBeta.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoBeta.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoBeta.tenantId.eq(tenant));
+        }
         ConfigInfoBetaEntity configInfoBetaEntity = configInfoBetaRepository.findOne(booleanBuilder).orElse(null);
         return ConfigInfo4BetaMapStruct.INSTANCE.convertConfigInfo4Beta(configInfoBetaEntity);
     }
@@ -670,8 +704,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public ConfigInfo4Tag findConfigInfo4Tag(final String dataId, final String group, final String tenant,
             final String tag) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoTagEntity qConfigInfoTag = QConfigInfoTagEntity.configInfoTagEntity;
         if (StringUtils.isNotBlank(dataId)) {
@@ -680,8 +712,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(group)) {
             booleanBuilder.and(qConfigInfoTag.groupId.eq(group));
         }
-        booleanBuilder.and(qConfigInfoTag.tenantId.eq(tenantTmp));
-        booleanBuilder.and(qConfigInfoTag.tagId.eq(tagTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfoTag.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoTag.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoTag.tenantId.eq(tenant));
+        }
+        if (StringUtils.isBlank(tag)) {
+            booleanBuilder.and(qConfigInfoTag.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoTag.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoTag.tenantId.eq(tag.trim()));
+        }
         ConfigInfoTagEntity result = configInfoTagRepository.findOne(booleanBuilder).orElse(null);
         return ConfigInfo4TagMapStruct.INSTANCE.convertConfigInfo4Tag(result);
     }
@@ -689,10 +729,14 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant,
             final String appName) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         BooleanExpression expression = qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group))
-                .and(qConfigInfo.tenantId.eq(tenantTmp).and(qConfigInfo.appName.eq(appName)));
+                .and(qConfigInfo.appName.eq(appName));
+        if (StringUtils.isBlank(tenant)) {
+            expression = expression.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            expression = expression.and(qConfigInfo.tenantId.eq(tenant));
+        }
         ConfigInfoEntity configInfo = configInfoRepository.findOne(expression).orElse(null);
         return ConfigInfoMapStruct.INSTANCE.convertConfigInfo(configInfo);
     }
@@ -701,7 +745,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public ConfigInfo findConfigInfoAdvanceInfo(final String dataId, final String group, final String tenant,
             final Map<String, Object> configAdvanceInfo) {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         BooleanBuilder booleanBuilder = new BooleanBuilder();
@@ -711,7 +754,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(group)) {
             booleanBuilder.and(qConfigInfo.groupId.eq(group));
         }
-        booleanBuilder.and(qConfigInfo.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
+        }
         if (StringUtils.isNotBlank(configTags)) {
             List<Long> configTagsRelationIds = new ArrayList<>();
             QConfigTagsRelationEntity qConfigTagsRelationEntity = QConfigTagsRelationEntity.configTagsRelationEntity;
@@ -752,8 +799,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(group)) {
             booleanBuilder.and(qConfigInfo.groupId.eq(group));
         }
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        booleanBuilder.and(qConfigInfo.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
+        }
         ConfigInfoEntity result = configInfoRepository.findOne(booleanBuilder).orElse(null);
         return ConfigInfoMapStruct.INSTANCE.convertConfigInfo(result);
     }
@@ -761,11 +811,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
             final String tenant) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
+        BooleanExpression booleanExpression = qConfigInfo.dataId.eq(dataId);
+        if (StringUtils.isBlank(tenant)) {
+            booleanExpression = booleanExpression
+                    .and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanExpression = booleanExpression.and(qConfigInfo.tenantId.eq(tenant));
+        }
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(qConfigInfo.dataId.eq(dataId).and(qConfigInfo.tenantId.eq(tenantTmp)),
-                        PageRequest.of(pageNo - 1, pageSize));
+                .findAll(booleanExpression, PageRequest.of(pageNo - 1, pageSize));
         Page<ConfigInfo> page = new Page<>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
@@ -777,11 +832,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
             final String tenant, final String appName) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
-        org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository.findAll(
-                qConfigInfo.dataId.eq(dataId).and(qConfigInfo.tenantId.eq(tenantTmp))
-                        .and(qConfigInfo.appName.eq(appName)), PageRequest.of(pageNo - 1, pageSize));
+        BooleanExpression booleanExpression = qConfigInfo.dataId.eq(dataId).and(qConfigInfo.appName.eq(appName));
+        if (StringUtils.isBlank(tenant)) {
+            booleanExpression = booleanExpression
+                    .and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanExpression = booleanExpression.and(qConfigInfo.tenantId.eq(tenant));
+        }
+        org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
+                .findAll(booleanExpression, PageRequest.of(pageNo - 1, pageSize));
         Page<ConfigInfo> page = new Page<>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
@@ -794,14 +854,17 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
             final String tenant, final Map<String, Object> configAdvanceInfo) {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         if (StringUtils.isNotBlank(dataId)) {
             booleanBuilder.and(qConfigInfo.dataId.eq(dataId));
         }
-        booleanBuilder.and(qConfigInfo.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
+        }
         if (StringUtils.isNotBlank(configTags)) {
             List<Long> configTagsRelationIds = new ArrayList<>();
             QConfigTagsRelationEntity qConfigTagsRelationEntity = QConfigTagsRelationEntity.configTagsRelationEntity;
@@ -830,8 +893,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         buildConfigInfoCommonCondition(booleanBuilder, qConfigInfo, dataId, group, appName);
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        booleanBuilder.and(qConfigInfo.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
+        }
         if (StringUtils.isNotBlank(configTags)) {
             List<Long> configTagsRelationIds = new ArrayList<>();
             QConfigTagsRelationEntity qConfigTagsRelationEntity = QConfigTagsRelationEntity.configTagsRelationEntity;
@@ -880,11 +946,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
             final String tenant) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
+        BooleanExpression booleanExpression = qConfigInfo.groupId.eq(group);
+        if (StringUtils.isBlank(tenant)) {
+            booleanExpression = booleanExpression
+                    .and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanExpression = booleanExpression.and(qConfigInfo.tenantId.eq(tenant));
+        }
         org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
-                .findAll(qConfigInfo.groupId.eq(group).and(qConfigInfo.tenantId.eq(tenantTmp)),
-                        PageRequest.of(pageNo - 1, pageSize));
+                .findAll(booleanExpression, PageRequest.of(pageNo - 1, pageSize));
         
         Page<ConfigInfo> page = new Page<>();
         page.setPageNumber(pageNo);
@@ -897,11 +968,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo, final int pageSize, final String group,
             final String tenant, final String appName) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
-        org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository.findAll(
-                qConfigInfo.groupId.eq(group).and(qConfigInfo.tenantId.eq(tenantTmp))
-                        .and(qConfigInfo.appName.eq(appName)), PageRequest.of(pageNo - 1, pageSize));
+        BooleanExpression booleanExpression = qConfigInfo.groupId.eq(group).and(qConfigInfo.appName.eq(appName));
+        if (StringUtils.isBlank(tenant)) {
+            booleanExpression = booleanExpression
+                    .and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanExpression = booleanExpression.and(qConfigInfo.tenantId.eq(tenant));
+        }
+        org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
+                .findAll(booleanExpression, PageRequest.of(pageNo - 1, pageSize));
         
         Page<ConfigInfo> page = new Page<>();
         page.setPageNumber(pageNo);
@@ -938,12 +1014,14 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo, final int pageSize, final String tenant,
             final Map<String, Object> configAdvanceInfo) {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         BooleanBuilder booleanBuilder = new BooleanBuilder();
-        
-        booleanBuilder.and(qConfigInfo.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
+        }
         if (StringUtils.isNotBlank(configTags)) {
             List<Long> configTagsRelationIds = new ArrayList<>();
             QConfigTagsRelationEntity qConfigTagsRelationEntity = QConfigTagsRelationEntity.configTagsRelationEntity;
@@ -1047,10 +1125,15 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int aggrConfigInfoCount(String dataId, String group, String tenant) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
-        Long result = configInfoRepository.count(qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group))
-                .and(qConfigInfo.tenantId.eq(tenantTmp)));
+        BooleanExpression booleanExpression = qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group));
+        if (StringUtils.isBlank(tenant)) {
+            booleanExpression = booleanExpression
+                    .and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanExpression = booleanExpression.and(qConfigInfo.tenantId.eq(tenant));
+        }
+        Long result = configInfoRepository.count(booleanExpression);
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
@@ -1063,13 +1146,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return 0;
         }
         QConfigInfoAggrEntity qConfigInfo = QConfigInfoAggrEntity.configInfoAggrEntity;
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        BooleanExpression predicate = qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group))
-                .and(qConfigInfo.tenantId.eq(tenantTmp));
-        if (isIn) {
-            predicate.and(qConfigInfo.datumId.in(datumIds));
+        BooleanExpression predicate = qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group));
+        if (StringUtils.isBlank(tenant)) {
+            predicate = predicate.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
         } else {
-            predicate.and(qConfigInfo.datumId.notIn(datumIds));
+            predicate = predicate.and(qConfigInfo.tenantId.eq(tenant));
+        }
+        if (isIn) {
+            predicate = predicate.and(qConfigInfo.datumId.in(datumIds));
+        } else {
+            predicate = predicate.and(qConfigInfo.datumId.notIn(datumIds));
         }
         return (int) configInfoAggrRepository.count(predicate);
     }
@@ -1182,8 +1268,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds, final String group, final String tenant,
             int subQueryLimit) {
-        // assert dataids group not null
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         // if dataids empty return empty list
         if (CollectionUtils.isEmpty(dataIds)) {
             return Collections.emptyList();
@@ -1201,9 +1285,14 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             // dataids
             List<String> params = new ArrayList<String>(
                     dataIds.subList(i, Math.min(i + subQueryLimit, dataIds.size())));
-            
-            final BooleanExpression expression = qConfigInfoEntity.groupId.eq(group)
-                    .and(qConfigInfoEntity.tenantId.eq(tenantTmp)).and(qConfigInfoEntity.dataId.in(params));
+            BooleanExpression expression = qConfigInfoEntity.groupId.eq(group)
+                    .and(qConfigInfoEntity.dataId.in(params));
+            if (StringUtils.isBlank(tenant)) {
+                expression = expression
+                        .and(qConfigInfoEntity.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoEntity.tenantId.isNull()));
+            } else {
+                expression = expression.and(qConfigInfoEntity.tenantId.eq(tenant));
+            }
             Iterable<ConfigInfoEntity> iterable = configInfoRepository.findAll(expression);
             List<ConfigInfo> r = ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2((List<ConfigInfoEntity>) iterable);
             
@@ -1330,7 +1419,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(group)) {
             booleanBuilder.and(qConfigInfoAggr.groupId.eq(group));
         }
-        booleanBuilder.and(qConfigInfoAggr.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfoAggr.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoAggr.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoAggr.tenantId.eq(tenant));
+        }
         if (StringUtils.isNotBlank(datumId)) {
             booleanBuilder.and(qConfigInfoAggr.datumId.eq(datumId));
         }
@@ -1347,12 +1440,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
             final int pageSize) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoAggrEntity qConfigInfoAggr = QConfigInfoAggrEntity.configInfoAggrEntity;
-        org.springframework.data.domain.Page<ConfigInfoAggrEntity> sPage = configInfoAggrRepository.findAll(
-                qConfigInfoAggr.dataId.eq(dataId).and(qConfigInfoAggr.groupId.eq(group))
-                        .and(qConfigInfoAggr.tenantId.eq(tenantTmp)),
-                PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.by("datumId"))));
+        BooleanExpression booleanExpression = qConfigInfoAggr.dataId.eq(dataId).and(qConfigInfoAggr.groupId.eq(group));
+        if (StringUtils.isBlank(tenant)) {
+            booleanExpression = booleanExpression
+                    .and(qConfigInfoAggr.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoAggr.tenantId.isNull()));
+        } else {
+            booleanExpression = booleanExpression.and(qConfigInfoAggr.tenantId.eq(tenant));
+        }
+        org.springframework.data.domain.Page<ConfigInfoAggrEntity> sPage = configInfoAggrRepository
+                .findAll(booleanExpression, PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.by("datumId"))));
         Page<ConfigInfoAggr> page = new Page<>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(sPage.getTotalPages());
@@ -1486,8 +1583,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         booleanBuilder.and(qConfigInfo.dataId.eq(dataId));
         booleanBuilder.and(qConfigInfo.groupId.eq(group));
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        booleanBuilder.and(qConfigInfo.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
+        }
         Iterable<ConfigInfoEntity> configInfos = configInfoRepository.findAll(booleanBuilder);
         configInfos.forEach(s -> configInfoRepository.delete(s));
     }
@@ -1524,7 +1624,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
             final String srcIp, final String srcUser) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag;
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoTagEntity qConfigInfoTag = QConfigInfoTagEntity.configInfoTagEntity;
@@ -1534,7 +1633,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(group)) {
             booleanBuilder.and(qConfigInfoTag.groupId.eq(group));
         }
-        booleanBuilder.and(qConfigInfoTag.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfoTag.tenantId.eq(StringUtils.EMPTY).or(qConfigInfoTag.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfoTag.tenantId.eq(tenant));
+        }
         booleanBuilder.and(qConfigInfoTag.tagId.eq(tagTmp));
         tjt.execute(new TransactionCallback<Object>() {
             @Override
@@ -1627,8 +1730,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(group)) {
             booleanBuilder.and(qConfigInfo.groupId.eq(group));
         }
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        booleanBuilder.and(qConfigInfo.tenantId.eq(tenantTmp));
+        if (StringUtils.isBlank(tenant)) {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
+        }
         ConfigInfoEntity configInfo = configInfoRepository.findOne(booleanBuilder).orElse(null);
         ConfigAllInfo configAdvance = ConfigAllInfoMapStruct.INSTANCE.convertConfigAllInfo(configInfo);
         List<String> configTagList = selectTagByConfig(dataId, group, tenant);
@@ -1671,10 +1777,15 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
             int pageSize) {
         QHisConfigInfoEntity qHisConfigInfo = QHisConfigInfoEntity.hisConfigInfoEntity;
-        org.springframework.data.domain.Page<HisConfigInfoEntity> sPage = hisConfigInfoRepository.findAll(
-                qHisConfigInfo.dataId.eq(dataId).and(qHisConfigInfo.groupId.eq(group))
-                        .and(qHisConfigInfo.tenantId.eq(tenant)),
-                PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.desc("nid"))));
+        BooleanExpression booleanExpression = qHisConfigInfo.dataId.eq(dataId).and(qHisConfigInfo.groupId.eq(group));
+        if (StringUtils.isBlank(tenant)) {
+            booleanExpression = booleanExpression
+                    .and(qHisConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qHisConfigInfo.tenantId.isNull()));
+        } else {
+            booleanExpression = booleanExpression.and(qHisConfigInfo.tenantId.eq(tenant));
+        }
+        org.springframework.data.domain.Page<HisConfigInfoEntity> sPage = hisConfigInfoRepository
+                .findAll(booleanExpression, PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Order.desc("nid"))));
         
         Page<ConfigHistoryInfo> page = new Page<>();
         page.setPageNumber(pageNo);
@@ -1823,11 +1934,15 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public ConfigInfoWrapper queryConfigInfo(final String dataId, final String group, final String tenant) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
-        ConfigInfoEntity result = configInfoRepository.findOne(
-                qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group))
-                        .and(qConfigInfo.tenantId.eq(tenantTmp))).orElse(null);
+        BooleanExpression booleanExpression = qConfigInfo.dataId.eq(dataId).and(qConfigInfo.groupId.eq(group));
+        if (StringUtils.isBlank(tenant)) {
+            booleanExpression = booleanExpression
+                    .and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+        } else {
+            booleanExpression = booleanExpression.and(qConfigInfo.tenantId.eq(tenant));
+        }
+        ConfigInfoEntity result = configInfoRepository.findOne(booleanExpression).orElse(null);
         return ConfigInfoWrapperMapStruct.INSTANCE.convertConfigInfoWrapper(result);
     }
     
@@ -1887,8 +2002,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (!org.springframework.util.CollectionUtils.isEmpty(ids)) {
             booleanBuilder.and(qConfigInfo.id.in(ids));
         } else {
-            String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-            booleanBuilder.and(qConfigInfo.tenantId.eq(tenantTmp));
+            if (StringUtils.isBlank(tenant)) {
+                booleanBuilder.and(qConfigInfo.tenantId.eq(StringUtils.EMPTY).or(qConfigInfo.tenantId.isNull()));
+            } else {
+                booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
+            }
             if (StringUtils.isNotBlank(dataId)) {
                 booleanBuilder.and(qConfigInfo.dataId.like(dataId));
             }
@@ -1994,8 +2112,13 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public int tenantInfoCountByTenantId(String tenantId) {
         Assert.hasText(tenantId, "tenantId can not be null");
         QTenantInfoEntity qTenantInfo = QTenantInfoEntity.tenantInfoEntity;
-        Long result = tenantInfoRepository.count(qTenantInfo.tenantId.eq(tenantId));
-        return result.intValue();
+        BooleanBuilder booleanBuilder = new BooleanBuilder();
+        if (StringUtils.isBlank(tenantId)) {
+            booleanBuilder.and(qTenantInfo.tenantId.eq(StringUtils.EMPTY).or(qTenantInfo.tenantId.isNull()));
+        } else {
+            booleanBuilder.and(qTenantInfo.tenantId.eq(tenantId));
+        }
+        return (int) tenantInfoRepository.count(booleanBuilder);
     }
     
 }
