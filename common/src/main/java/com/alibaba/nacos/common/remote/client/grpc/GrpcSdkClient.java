@@ -24,6 +24,8 @@ package com.alibaba.nacos.common.remote.client.grpc;
  */
 public class GrpcSdkClient extends GrpcClient {
     
+    private static final String DEFAULT_GRPC_SDK_PORT = "9848";
+    
     /**
      * Empty constructor.
      *
@@ -34,8 +36,9 @@ public class GrpcSdkClient extends GrpcClient {
     }
     
     @Override
-    public int rpcPortOffset() {
-        return 1000;
+    public int getServerPort() {
+        String portSpecified = System.getProperty("nacos.remote.client.grpc.sdk.port", DEFAULT_GRPC_SDK_PORT);
+        return Integer.valueOf(portSpecified);
     }
     
 }

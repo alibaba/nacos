@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
 
 import javax.annotation.PostConstruct;
 
@@ -76,20 +75,11 @@ public abstract class BaseRpcServer {
     public abstract void startServer() throws Exception;
     
     /**
-     * the increase offset of nacos server port for rpc server port.
-     *
-     * @return delta port offset of main port.
-     */
-    public abstract int rpcPortOffset();
-    
-    /**
      * get service port.
      *
      * @return service port.
      */
-    public int getServicePort() {
-        return EnvUtil.getPort() + rpcPortOffset();
-    }
+    public abstract int getServicePort();
     
     /**
      * Stop Server.

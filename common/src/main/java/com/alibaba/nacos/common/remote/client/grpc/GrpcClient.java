@@ -251,7 +251,7 @@ public abstract class GrpcClient extends RpcClient {
                                 .build());
             }
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(),
-                    serverInfo.getServerPort() + rpcPortOffset());
+                    getServerPort());
             if (newChannelStubTemp != null) {
                 
                 Response response = serverCheck(newChannelStubTemp);
@@ -289,6 +289,3 @@ public abstract class GrpcClient extends RpcClient {
     }
     
 }
-
-
-

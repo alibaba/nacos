@@ -24,6 +24,8 @@ package com.alibaba.nacos.common.remote.client.grpc;
  */
 public class GrpcClusterClient extends GrpcClient {
     
+    private static final String DEFAULT_GRPC_CLUSTER_PORT = "9849";
+    
     /**
      * Empty constructor.
      *
@@ -34,8 +36,9 @@ public class GrpcClusterClient extends GrpcClient {
     }
     
     @Override
-    public int rpcPortOffset() {
-        return 1001;
+    public int getServerPort() {
+        String portSpecified = System.getProperty("nacos.remote.grpc.cluster.port", DEFAULT_GRPC_CLUSTER_PORT);
+        return Integer.valueOf(portSpecified);
     }
     
 }
