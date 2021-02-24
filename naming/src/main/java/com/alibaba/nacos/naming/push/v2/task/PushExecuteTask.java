@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.push.v2.task;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -27,6 +26,7 @@ import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.monitor.NamingTpsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
+import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 
 import java.util.Collection;
@@ -53,8 +53,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
     @Override
     public void run() {
         try {
-            ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
-            serviceInfo = ServiceUtil.selectInstances(serviceInfo, false, true);
+            PushDataWrapper wrapper = generatePushData();
             for (String each : getTargetClientIds()) {
                 Client client = delayTaskEngine.getClientManager().getClient(each);
                 if (null == client) {
@@ -62,9 +61,8 @@ public class PushExecuteTask extends AbstractExecuteTask {
                     continue;
                 }
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
-                delayTaskEngine.getPushExecutor()
-                        .doPushWithCallback(each, subscriber, handleClusterData(serviceInfo, subscriber),
-                                new NamingPushCallback(each, subscriber, serviceInfo));
+                delayTaskEngine.getPushExecutor().doPushWithCallback(each, subscriber, wrapper,
+                        new NamingPushCallback(each, subscriber, wrapper.getOriginalData()));
             }
         } catch (Exception e) {
             Loggers.PUSH.error("Push task for service" + service.getGroupedServiceName() + " execute failed ", e);
@@ -72,23 +70,15 @@ public class PushExecuteTask extends AbstractExecuteTask {
         }
     }
     
+    private PushDataWrapper generatePushData() {
+        ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
+        serviceInfo = ServiceUtil.selectInstances(serviceInfo, false, true);
+        return new PushDataWrapper(serviceInfo);
+    }
+    
     private Collection<String> getTargetClientIds() {
         return delayTask.isPushToAll() ? delayTaskEngine.getIndexesManager().getAllClientsSubscribeService(service)
                 : delayTask.getTargetClients();
-    }
-    
-    /**
-     * For adapt push cluster feature for v1.x.
-     *
-     * @param data       original data
-     * @param subscriber subscriber information
-     * @return cluster filtered data
-     * @deprecated Will be removed after client can filter cluster
-     */
-    @Deprecated
-    private ServiceInfo handleClusterData(ServiceInfo data, Subscriber subscriber) {
-        return StringUtils.isBlank(subscriber.getCluster()) ? data
-                : ServiceUtil.selectInstances(data, subscriber.getCluster());
     }
     
     private class NamingPushCallback implements PushCallBack {
@@ -151,7 +141,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
                 NamingTpsMonitor.udpPushSuccess(clientId, ip);
             }
         }
-    
+        
         private void monitorFail(String clientId, String ip, boolean isRpc) {
             MetricsMonitor.incrementFailPush();
             if (isRpc) {
