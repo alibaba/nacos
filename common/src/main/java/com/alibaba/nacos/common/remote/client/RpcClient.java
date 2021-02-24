@@ -321,13 +321,12 @@ public abstract class RpcClient implements Closeable {
                         
                         if (reconnectContext.serverInfo != null) {
                             //clear recommend server if server is not in server list.
-                            String address = reconnectContext.serverInfo.serverIp + Constants.COLON
-                                    + (reconnectContext.serverInfo.serverPort);
                             boolean serverExist = false;
                             for (String server : getServerListFactory().getServerList()) {
-                                if (resolveServerInfo(server).getAddress()
-                                        .equals(reconnectContext.serverInfo.getAddress())) {
+                                ServerInfo serverInfo = resolveServerInfo(server);
+                                if (serverInfo.getServerIp().equals(reconnectContext.serverInfo.getServerIp())) {
                                     serverExist = true;
+                                    reconnectContext.serverInfo.serverPort = serverInfo.serverPort;
                                     break;
                                 }
                             }
