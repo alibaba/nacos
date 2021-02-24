@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,13 +53,13 @@ public class PushExecutorRpcImplTest {
     @Mock
     private PushCallBack pushCallBack;
     
-    private ServiceInfo serviceInfo;
+    private PushDataWrapper pushData;
     
     private PushExecutorRpcImpl pushExecutor;
     
     @Before
     public void setUp() throws Exception {
-        serviceInfo = new ServiceInfo("G@@S");
+        pushData = new PushDataWrapper(new ServiceInfo("G@@S"));
         pushExecutor = new PushExecutorRpcImpl(pushService);
         doAnswer(new CallbackAnswer()).when(pushService)
                 .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
@@ -67,13 +68,13 @@ public class PushExecutorRpcImplTest {
     
     @Test
     public void testDoPush() {
-        pushExecutor.doPush(rpcClientId, subscriber, serviceInfo);
+        pushExecutor.doPush(rpcClientId, subscriber, pushData);
         verify(pushService).pushWithoutAck(eq(rpcClientId), any(NotifySubscriberRequest.class));
     }
     
     @Test
     public void testDoPushWithCallback() {
-        pushExecutor.doPushWithCallback(rpcClientId, subscriber, serviceInfo, pushCallBack);
+        pushExecutor.doPushWithCallback(rpcClientId, subscriber, pushData, pushCallBack);
         verify(pushCallBack).onSuccess();
     }
     
@@ -82,7 +83,7 @@ public class PushExecutorRpcImplTest {
         @Override
         public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
             NotifySubscriberRequest pushRequest = invocationOnMock.getArgument(1);
-            assertEquals(serviceInfo, pushRequest.getServiceInfo());
+            assertEquals(pushData.getOriginalData(), pushRequest.getServiceInfo());
             PushCallBack callBack = invocationOnMock.getArgument(2);
             callBack.onSuccess();
             return null;

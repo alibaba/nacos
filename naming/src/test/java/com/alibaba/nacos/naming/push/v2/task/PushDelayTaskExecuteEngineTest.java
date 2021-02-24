@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
 import org.junit.After;
 import org.junit.Before;
@@ -86,7 +87,7 @@ public class PushDelayTaskExecuteEngineTest {
         PushDelayTask pushDelayTask = new PushDelayTask(service, 0L);
         executeEngine.addTask(service, pushDelayTask);
         TimeUnit.MILLISECONDS.sleep(200L);
-        verify(pushExecutor).doPushWithCallback(anyString(), any(Subscriber.class), any(ServiceInfo.class),
+        verify(pushExecutor).doPushWithCallback(anyString(), any(Subscriber.class), any(PushDataWrapper.class),
                 any(PushCallBack.class));
     }
 }

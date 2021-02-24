@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.push.v2.task;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
 
 public class FixturePushExecutor implements PushExecutor {
@@ -28,11 +29,11 @@ public class FixturePushExecutor implements PushExecutor {
     private Throwable failedException;
     
     @Override
-    public void doPush(String clientId, Subscriber subscriber, ServiceInfo data) {
+    public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, ServiceInfo data, PushCallBack callBack) {
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
         if (shouldSuccess) {
             callBack.onSuccess();
         } else {

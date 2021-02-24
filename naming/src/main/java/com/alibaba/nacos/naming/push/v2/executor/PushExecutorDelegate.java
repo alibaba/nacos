@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.pojo.Subscriber;
