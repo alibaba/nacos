@@ -30,16 +30,15 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Service
 public class GrpcSdkServer extends BaseGrpcServer {
     
-    private static final String DEFAULT_GRPC_SDK_PORT = "9848";
+    private static final int PORT_OFFSET = 1000;
+    
+    @Override
+    public int rpcPortOffset() {
+        return PORT_OFFSET;
+    }
     
     @Override
     public ThreadPoolExecutor getRpcExecutor() {
         return GlobalExecutor.sdkRpcExecutor;
-    }
-    
-    @Override
-    public int getServicePort() {
-        String portSpecified = System.getProperty("nacos.remote.server.grpc.sdk.port", DEFAULT_GRPC_SDK_PORT);
-        return Integer.valueOf(portSpecified);
     }
 }

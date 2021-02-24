@@ -30,12 +30,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Service
 public class GrpcClusterServer extends BaseGrpcServer {
     
-    private static final String DEFAULT_GRPC_CLUSTER_PORT = "9849";
+    private static final int PORT_OFFSET = 1001;
     
     @Override
-    public int getServicePort() {
-        String portSpecified = System.getProperty("nacos.remote.server.grpc.cluster.port", DEFAULT_GRPC_CLUSTER_PORT);
-        return Integer.valueOf(portSpecified);
+    public int rpcPortOffset() {
+        return PORT_OFFSET;
     }
     
     @Override
