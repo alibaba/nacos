@@ -191,7 +191,7 @@ public class AsyncNotifyService {
                 ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
                 syncRequest.setDataId(task.getDataId());
                 syncRequest.setGroup(task.getGroup());
-                syncRequest.setIsBeta(task.isBeta ? "Y" : "N");
+                syncRequest.setBeta(task.isBeta);
                 syncRequest.setLastModified(task.getLastModified());
                 syncRequest.setTag(task.tag);
                 syncRequest.setTenant(task.getTenant());
@@ -202,7 +202,7 @@ public class AsyncNotifyService {
                                 syncRequest.getLastModified(), NetUtils.localIP(), true);
                     } else {
                         dumpService.dump(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getLastModified(), NetUtils.localIP());
+                                syncRequest.getTag(), syncRequest.getLastModified(), NetUtils.localIP());
                     }
                     continue;
                 }

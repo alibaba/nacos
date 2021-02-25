@@ -36,15 +36,14 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     
     long lastModified;
     
-    String isBeta;
+    boolean isBeta;
     
-    /**
-     * is beta.
-     *
-     * @return is beta or not.
-     */
     public boolean isBeta() {
-        return "Y".equalsIgnoreCase(isBeta);
+        return isBeta;
+    }
+    
+    public void setBeta(boolean beta) {
+        isBeta = beta;
     }
     
     /**
@@ -137,21 +136,4 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
         this.lastModified = lastModified;
     }
     
-    /**
-     * Getter method for property <tt>isBeta</tt>.
-     *
-     * @return property value of isBeta
-     */
-    public String getIsBeta() {
-        return isBeta;
-    }
-    
-    /**
-     * Setter method for property <tt>isBeta</tt>.
-     *
-     * @param isBeta value to be assigned to property isBeta
-     */
-    public void setIsBeta(String isBeta) {
-        this.isBeta = isBeta;
-    }
 }
