@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client.factory;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.misc.Loggers;
 
@@ -56,7 +57,7 @@ public class ClientFactoryHolder {
      * @return target type {@link ClientFactory}, if not fount, return 'default' client factory.
      */
     public ClientFactory findClientFactory(String type) {
-        if (!clientFactories.containsKey(type)) {
+        if (StringUtils.isEmpty(type) || !clientFactories.containsKey(type)) {
             return clientFactories.get(ClientConstants.DEFAULT_FACTORY);
         }
         return clientFactories.get(type);

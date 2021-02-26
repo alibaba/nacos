@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
@@ -53,7 +54,7 @@ public class PersistentIpPortClientManager implements ClientManager {
     }
     
     @Override
-    public boolean syncClientConnected(String clientId) {
+    public boolean syncClientConnected(String clientId, ClientSyncAttributes attributes) {
         throw new UnsupportedOperationException("");
     }
     

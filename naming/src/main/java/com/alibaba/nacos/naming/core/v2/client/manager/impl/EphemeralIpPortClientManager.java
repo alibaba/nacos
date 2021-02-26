@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactoryHolder;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
@@ -69,8 +70,8 @@ public class EphemeralIpPortClientManager implements ClientManager {
     }
     
     @Override
-    public boolean syncClientConnected(String clientId) {
-        return clientConnected(clientFactory.newSyncedClient(clientId));
+    public boolean syncClientConnected(String clientId, ClientSyncAttributes attributes) {
+        return clientConnected(clientFactory.newSyncedClient(clientId, attributes));
     }
     
     @Override
