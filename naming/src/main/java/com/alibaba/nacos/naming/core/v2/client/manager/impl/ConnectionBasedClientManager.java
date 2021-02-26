@@ -21,7 +21,9 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactoryHolder;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
@@ -71,8 +73,10 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     }
     
     @Override
-    public boolean syncClientConnected(String clientId) {
-        return clientConnected(new ConnectionBasedClient(clientId, false));
+    public boolean syncClientConnected(String clientId, ClientSyncAttributes attributes) {
+        String type = attributes.getClientAttribute(ClientConstants.CONNECTION_TYPE);
+        ClientFactory clientFactory = ClientFactoryHolder.getInstance().findClientFactory(type);
+        return clientConnected(clientFactory.newSyncedClient(clientId, attributes));
     }
     
     @Override
