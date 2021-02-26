@@ -29,10 +29,18 @@ public class ClientSyncAttributes implements Serializable {
     
     private static final long serialVersionUID = -5794675800507288793L;
     
-    private final Map<String, Object> clientAttributes;
+    private Map<String, Object> clientAttributes;
     
     public ClientSyncAttributes() {
         this.clientAttributes = new HashMap<>(1);
+    }
+    
+    public Map<String, Object> getClientAttributes() {
+        return clientAttributes;
+    }
+    
+    public void setClientAttributes(Map<String, Object> clientAttributes) {
+        this.clientAttributes = clientAttributes;
     }
     
     public void addClientAttribute(String key, Object value) {
