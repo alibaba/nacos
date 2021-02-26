@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client.factory.impl;
 
 import com.alibaba.nacos.naming.constants.ClientConstants;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 
@@ -38,7 +39,7 @@ public class PersistentIpPortClientFactory implements ClientFactory<IpPortBasedC
     }
     
     @Override
-    public IpPortBasedClient newSyncedClient(String clientId) {
+    public IpPortBasedClient newSyncedClient(String clientId, ClientSyncAttributes attributes) {
         return new IpPortBasedClient(clientId, false);
     }
 }

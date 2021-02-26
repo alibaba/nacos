@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client.manager;
 
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
 
 import java.util.Collection;
 
@@ -38,10 +39,11 @@ public interface ClientManager {
     /**
      * New sync client connected.
      *
-     * @param clientId synced client id
+     * @param clientId   synced client id
+     * @param attributes client sync attributes, which can help create sync client
      * @return true if add successfully, otherwise false
      */
-    boolean syncClientConnected(String clientId);
+    boolean syncClientConnected(String clientId, ClientSyncAttributes attributes);
     
     /**
      * Client disconnected.

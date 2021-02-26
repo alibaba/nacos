@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client.factory.impl;
 
 import com.alibaba.nacos.naming.constants.ClientConstants;
+import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 
@@ -38,7 +39,7 @@ public class ConnectionBasedClientFactory implements ClientFactory<ConnectionBas
     }
     
     @Override
-    public ConnectionBasedClient newSyncedClient(String clientId) {
+    public ConnectionBasedClient newSyncedClient(String clientId, ClientSyncAttributes attributes) {
         return new ConnectionBasedClient(clientId, false);
     }
 }
