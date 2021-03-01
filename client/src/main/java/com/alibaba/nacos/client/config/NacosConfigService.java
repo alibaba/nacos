@@ -25,8 +25,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
+import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -48,6 +50,12 @@ public class NacosConfigService implements ConfigService {
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
     
     /**
+     * will be deleted in 2.0 later versions
+     */
+    @Deprecated
+    ServerHttpAgent agent = null;
+    
+    /**
      * long polling.
      */
     private final ClientWorker worker;
@@ -60,8 +68,13 @@ public class NacosConfigService implements ConfigService {
         ValidatorUtils.checkInitParam(properties);
         
         initNamespace(properties);
+        ServerListManager serverListManager = new ServerListManager(properties);
+        serverListManager.start();
         
-        this.worker = new ClientWorker(this.configFilterChainManager, properties);
+        this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, properties);
+        // will be deleted in 2.0 later versions
+        agent = new ServerHttpAgent(serverListManager);
+        
     }
     
     private void initNamespace(Properties properties) {
