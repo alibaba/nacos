@@ -307,6 +307,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             
             if (!serverList.containsKey(address)) {
                 hasChange = true;
+                // If the cluster information in cluster.conf or address-server has been changed,
+                // while the corresponding nacos-server has not been started yet, the member's state
+                // should be set to DOWN. If the corresponding nacos-server has been started, the
+                // member's state will be set to UP after detection in a few seconds.
+                member.setState(NodeState.DOWN);
+            } else {
+                //fix issue # 4925
+                member.setState(serverList.get(address).getState());
             }
             
             // Ensure that the node is created only once
