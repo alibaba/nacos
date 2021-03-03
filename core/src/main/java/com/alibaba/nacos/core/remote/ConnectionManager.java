@@ -217,9 +217,12 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         Connection remove = this.connections.remove(connectionId);
         if (remove != null) {
             String clientIp = remove.getMetaInfo().clientIp;
-            int count = connectionForClientIp.get(clientIp).decrementAndGet();
-            if (count == 0) {
-                connectionForClientIp.remove(clientIp);
+            AtomicInteger atomicInteger = connectionForClientIp.get(clientIp);
+            if (atomicInteger != null) {
+                int count = atomicInteger.decrementAndGet();
+                if (count <= 0) {
+                    connectionForClientIp.remove(clientIp);
+                }
             }
             remove.close();
             Loggers.REMOTE_DIGEST.info("[{}]Connection unregistered successfully. ", connectionId);
