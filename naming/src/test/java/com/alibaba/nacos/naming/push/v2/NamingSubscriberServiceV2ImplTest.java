@@ -71,7 +71,7 @@ public class NamingSubscriberServiceV2ImplTest {
     @Before
     public void setUp() throws Exception {
         subscriberService = new NamingSubscriberServiceV2Impl(clientManager, indexesManager, null, null,
-                upgradeJudgement);
+                upgradeJudgement, switchDomain);
         ReflectionTestUtils.setField(subscriberService, "delayTaskEngine", delayTaskEngine);
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(testClientId));
         when(indexesManager.getAllClientsSubscribeService(service1))
