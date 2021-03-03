@@ -74,7 +74,8 @@ public class PushDelayTaskExecuteEngineTest {
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(clientId));
         when(clientManager.getClient(clientId)).thenReturn(client);
         when(client.getSubscriber(service)).thenReturn(subscriber);
-        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, pushExecutor);
+        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, pushExecutor,
+                switchDomain);
     }
     
     @After

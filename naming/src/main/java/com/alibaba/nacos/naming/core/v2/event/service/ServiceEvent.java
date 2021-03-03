@@ -58,4 +58,23 @@ public class ServiceEvent extends Event {
         }
     }
     
+    /**
+     * Service is subscribed by one client event.
+     */
+    public static class ServiceSubscribedEvent extends ServiceEvent {
+        
+        private static final long serialVersionUID = -2645441445867337345L;
+    
+        private final String clientId;
+        
+        public ServiceSubscribedEvent(Service service, String clientId) {
+            super(service);
+            this.clientId = clientId;
+        }
+    
+        public String getClientId() {
+            return clientId;
+        }
+    }
+    
 }
