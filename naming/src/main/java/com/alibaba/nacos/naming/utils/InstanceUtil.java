@@ -55,7 +55,7 @@ public class InstanceUtil {
             } else if (Constants.PUBLISH_INSTANCE_WEIGHT.equals(entry.getKey())) {
                 result.setWeight((Double) entry.getValue());
             } else {
-                instanceMetadata.put(entry.getKey(), entry.getValue().toString());
+                instanceMetadata.put(entry.getKey(), null != entry.getValue() ? entry.getValue().toString() : null);
             }
         }
         result.setMetadata(instanceMetadata);
