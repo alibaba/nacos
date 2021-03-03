@@ -35,9 +35,19 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     private String tenant;
     
+    private String clientIp;
+    
     private Map<String, String> labels = new HashMap<String, String>();
     
     public ConnectionSetupRequest() {
+    }
+    
+    public String getClientIp() {
+        return clientIp;
+    }
+    
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
     }
     
     public String getClientVersion() {
