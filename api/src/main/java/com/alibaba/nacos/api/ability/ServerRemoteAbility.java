@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.ability;
 
+import java.util.Objects;
+
 /**
  * remote abilities of nacos server.
  *
@@ -35,5 +37,22 @@ public class ServerRemoteAbility {
     
     public void setSupportRemoteConnection(boolean supportRemoteConnection) {
         this.supportRemoteConnection = supportRemoteConnection;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ServerRemoteAbility that = (ServerRemoteAbility) o;
+        return supportRemoteConnection == that.supportRemoteConnection;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(supportRemoteConnection);
     }
 }

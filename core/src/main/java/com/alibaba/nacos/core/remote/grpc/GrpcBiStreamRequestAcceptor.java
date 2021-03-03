@@ -112,7 +112,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
-                    if (StringUtils.isNotBlank(setUpRequest.getClientIp())){
+                    if (StringUtils.isNotBlank(setUpRequest.getClientIp())) {
                         clientIp = setUpRequest.getClientIp();
                     }
                     ConnectionMeta metaInfo = new ConnectionMeta(connectionId, clientIp, clientPort, localPort,

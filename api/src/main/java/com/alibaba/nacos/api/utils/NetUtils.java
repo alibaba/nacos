@@ -49,7 +49,7 @@ public class NetUtils {
         
     }
     
-    public static String findFirstNonLoopbackAddress() {
+    private static String findFirstNonLoopbackAddress() {
         InetAddress result = null;
         
         try {
@@ -77,6 +77,7 @@ public class NetUtils {
                 }
             }
         } catch (IOException ex) {
+            //ignore
         }
         
         if (result != null) {
@@ -86,6 +87,7 @@ public class NetUtils {
         try {
             return InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
+            //ignore
         }
         
         return "resolve_failed";

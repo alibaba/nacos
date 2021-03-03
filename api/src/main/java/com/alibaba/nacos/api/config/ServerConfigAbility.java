@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.config;
 
+import java.util.Objects;
+
 /**
  * config abilities of nacos server.
  *
@@ -35,5 +37,22 @@ public class ServerConfigAbility {
     
     public void setSupportRemoteMetrics(boolean supportRemoteMetrics) {
         this.supportRemoteMetrics = supportRemoteMetrics;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ServerConfigAbility that = (ServerConfigAbility) o;
+        return supportRemoteMetrics == that.supportRemoteMetrics;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(supportRemoteMetrics);
     }
 }

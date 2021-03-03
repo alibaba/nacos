@@ -269,6 +269,11 @@ public class MemberUtil {
         if (!expected.getState().equals(actual.getState())) {
             return true;
         }
+    
+        if (!expected.getAbilities().equals(actual.getAbilities())) {
+            return true;
+        }
+    
         return isBasicInfoChangedInExtendInfo(expected, actual);
     }
     

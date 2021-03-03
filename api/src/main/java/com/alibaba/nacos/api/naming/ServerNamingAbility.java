@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.naming;
 
+import java.util.Objects;
+
 /**
  * naming abilities of nacos server.
  *
@@ -32,5 +34,22 @@ public class ServerNamingAbility {
     
     public void setExampleAbility(boolean exampleAbility) {
         this.exampleAbility = exampleAbility;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ServerNamingAbility that = (ServerNamingAbility) o;
+        return exampleAbility == that.exampleAbility;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(exampleAbility);
     }
 }
