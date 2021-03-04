@@ -27,6 +27,20 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 public interface DistroDataStorage {
     
     /**
+     * Set this distro data storage has finished initial step.
+     */
+    void finishInitial();
+    
+    /**
+     * Whether this distro data is finished initial.
+     *
+     * <p> If not finished, this data storage should not send verify data to other node.
+     *
+     * @return {@code true} if finished, otherwise false
+     */
+    boolean isFinishInitial();
+    
+    /**
      * Get distro datum.
      *
      * @param distroKey key of distro datum

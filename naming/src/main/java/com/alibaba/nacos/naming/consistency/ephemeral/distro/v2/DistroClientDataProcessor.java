@@ -60,12 +60,24 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     private final UpgradeJudgement upgradeJudgement;
     
+    private volatile boolean isFinishInitial;
+    
     public DistroClientDataProcessor(ClientManager clientManager, DistroProtocol distroProtocol,
             UpgradeJudgement upgradeJudgement) {
         this.clientManager = clientManager;
         this.distroProtocol = distroProtocol;
         this.upgradeJudgement = upgradeJudgement;
         NotifyCenter.registerSubscriber(this);
+    }
+    
+    @Override
+    public void finishInitial() {
+        isFinishInitial = true;
+    }
+    
+    @Override
+    public boolean isFinishInitial() {
+        return isFinishInitial;
     }
     
     @Override

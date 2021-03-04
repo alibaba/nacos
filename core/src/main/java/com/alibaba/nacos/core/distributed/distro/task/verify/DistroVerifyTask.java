@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.core.distributed.distro.task.verify;
 
+import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.utils.Loggers;
 
@@ -57,14 +58,20 @@ public class DistroVerifyTask implements Runnable {
     }
     
     private void verifyForDataStorage(String type, List<Member> targetServer) {
-        DistroData distroData = distroComponentHolder.findDataStorage(type).getVerifyData();
-        if (null == distroData) {
+        DistroDataStorage dataStorage = distroComponentHolder.findDataStorage(type);
+        if (!dataStorage.isFinishInitial()) {
+            Loggers.DISTRO.warn("data storage {} has not finished initial step, do not send verify data",
+                    dataStorage.getClass().getSimpleName());
             return;
         }
-        distroData.setType(DataOperation.VERIFY);
+        DistroData verifyData = dataStorage.getVerifyData();
+        if (null == verifyData) {
+            return;
+        }
+        verifyData.setType(DataOperation.VERIFY);
         for (Member member : targetServer) {
             try {
-                distroComponentHolder.findTransportAgent(type).syncVerifyData(distroData, member.getAddress());
+                distroComponentHolder.findTransportAgent(type).syncVerifyData(verifyData, member.getAddress());
             } catch (Exception e) {
                 Loggers.DISTRO.error(String
                         .format("[DISTRO-FAILED] verify data for type %s to %s failed.", type, member.getAddress()), e);

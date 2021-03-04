@@ -41,9 +41,21 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     
     private final DistroMapper distroMapper;
     
+    private volatile boolean isFinishInitial;
+    
     public DistroDataStorageImpl(DataStore dataStore, DistroMapper distroMapper) {
         this.dataStore = dataStore;
         this.distroMapper = distroMapper;
+    }
+    
+    @Override
+    public void finishInitial() {
+        isFinishInitial = true;
+    }
+    
+    @Override
+    public boolean isFinishInitial() {
+        return isFinishInitial;
     }
     
     @Override
