@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.ability;
 import com.alibaba.nacos.api.config.ServerConfigAbility;
 import com.alibaba.nacos.api.naming.ServerNamingAbility;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -27,7 +28,7 @@ import java.util.Objects;
  * @author liuzunfei
  * @version $Id: ServerAbilities.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ServerAbilities {
+public class ServerAbilities implements Serializable {
     
     private ServerRemoteAbility remoteAbility = new ServerRemoteAbility();
     

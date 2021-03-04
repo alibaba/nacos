@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.naming;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -24,7 +25,7 @@ import java.util.Objects;
  * @author liuzunfei
  * @version $Id: ServerNamingAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ServerNamingAbility {
+public class ServerNamingAbility implements Serializable {
     
     private boolean exampleAbility;
     

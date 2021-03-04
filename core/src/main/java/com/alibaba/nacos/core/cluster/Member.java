@@ -20,6 +20,12 @@ import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +36,7 @@ import java.util.TreeMap;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class Member implements Comparable<Member>, Cloneable {
+public class Member implements Comparable<Member>, Cloneable, Serializable {
     
     private String ip;
     
@@ -166,6 +172,29 @@ public class Member implements Comparable<Member>, Cloneable {
     @Override
     public int compareTo(Member o) {
         return getAddress().compareTo(o.getAddress());
+    }
+    
+    /**
+     * get a copy.
+     *
+     * @return
+     */
+    public Member copy() {
+        Member copy = null;
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(this);
+            //将流序列化成对象
+            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+            ObjectInputStream ois = new ObjectInputStream(bais);
+            copy = (Member) ois.readObject();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return copy;
     }
     
     public static final class MemberBuilder {
