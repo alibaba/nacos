@@ -27,6 +27,7 @@ import com.alibaba.nacos.naming.push.NamingSubscriberService;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,7 +82,7 @@ public class NamingSubscriberServiceV1Impl implements NamingSubscriberService {
         String serviceKey = UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName);
         ConcurrentMap<String, PushClient> clientConcurrentMap = clientMap.get(serviceKey);
         if (Objects.isNull(clientConcurrentMap)) {
-            return null;
+            return Collections.emptyList();
         }
         Collection<Subscriber> result = new ArrayList<>();
         clientConcurrentMap.forEach((key, client) -> {
