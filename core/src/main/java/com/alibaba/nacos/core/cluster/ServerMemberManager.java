@@ -497,7 +497,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             
             final String url = HttpUtils
                     .buildUrl(false, target.getAddress(), EnvUtil.getContextPath(), Commons.NACOS_CORE_CONTEXT,
-                            "/cluster/report2");
+                            "/cluster/report");
             
             try {
                 asyncRestTemplate
