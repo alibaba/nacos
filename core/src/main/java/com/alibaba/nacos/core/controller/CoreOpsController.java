@@ -23,12 +23,16 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -73,6 +77,12 @@ public class CoreOpsController {
         Map<String, Map<Object, Object>> info = new HashMap<>(10);
         idGeneratorManager.getGeneratorMap().forEach((resource, idGenerator) -> info.put(resource, idGenerator.info()));
         return RestResultUtils.success(info);
+    }
+    
+    @PutMapping(value = "/log")
+    public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
+        Loggers.setLogLevel(logName, logLevel);
+        return HttpServletResponse.SC_OK + "";
     }
     
 }
