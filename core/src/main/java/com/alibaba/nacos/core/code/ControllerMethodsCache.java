@@ -154,15 +154,20 @@ public class ControllerMethodsCache {
                     parseSubAnnotations(method, classPath);
                     continue;
                 }
-                requestMapping = method.getAnnotation(RequestMapping.class);
-                RequestMethod[] requestMethods = requestMapping.method();
+                RequestMapping methodRequestMapping = method.getAnnotation(RequestMapping.class);
+                if (methodRequestMapping == null) {
+                    methodRequestMapping = requestMapping;
+                }
+                RequestMethod[] requestMethods = methodRequestMapping.method();
                 if (requestMethods.length == 0) {
                     requestMethods = new RequestMethod[1];
                     requestMethods[0] = RequestMethod.GET;
                 }
-                for (String methodPath : requestMapping.value()) {
-                    String urlKey = requestMethods[0].name() + REQUEST_PATH_SEPARATOR + classPath + methodPath;
-                    addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
+                for (RequestMethod requestMethod : requestMethods) {
+                    for (String methodPath : methodRequestMapping.value()) {
+                        String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR + classPath + methodPath;
+                        addUrlAndMethodRelation(urlKey, methodRequestMapping.params(), method);
+                    }
                 }
             }
         }
