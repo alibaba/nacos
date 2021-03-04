@@ -884,6 +884,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 paramList.add(group);
             }
             if (StringUtils.isNotBlank(content)) {
+                //ClOB do not support operation "=", so we use like
                 where.append(" and a.content like ? ");
                 paramList.add(content);
             }
@@ -913,6 +914,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 paramList.add(group);
             }
             if (StringUtils.isNotBlank(content)) {
+                //ClOB do not support operation "=", so we use like
                 where.append(" and content like ? ");
                 paramList.add(content);
             }
