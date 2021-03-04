@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTask;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTaskExecuteEngine;
@@ -65,6 +66,9 @@ public class NamingSubscriberServiceV2ImplTest {
     
     @Mock
     private UpgradeJudgement upgradeJudgement;
+    
+    @Mock
+    private SwitchDomain switchDomain;
     
     private NamingSubscriberServiceV2Impl subscriberService;
     

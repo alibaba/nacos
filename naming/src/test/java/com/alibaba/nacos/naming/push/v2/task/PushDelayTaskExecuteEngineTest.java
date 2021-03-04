@@ -23,6 +23,7 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
@@ -62,6 +63,9 @@ public class PushDelayTaskExecuteEngineTest {
     @Mock
     private Subscriber subscriber;
     
+    @Mock
+    private SwitchDomain switchDomain;
+    
     private final Service service = Service.newService("N", "G", "S");
     
     private final String clientId = "testClient";
@@ -74,6 +78,7 @@ public class PushDelayTaskExecuteEngineTest {
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(clientId));
         when(clientManager.getClient(clientId)).thenReturn(client);
         when(client.getSubscriber(service)).thenReturn(subscriber);
+        when(switchDomain.isPushEnabled()).thenReturn(true);
         executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, pushExecutor,
                 switchDomain);
     }
