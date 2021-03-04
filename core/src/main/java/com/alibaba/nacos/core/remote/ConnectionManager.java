@@ -166,15 +166,18 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     }
     
     private boolean checkLimit(Connection connection) {
+        String clientIp = connection.getMetaInfo().clientIp;
         
         if (connection.getMetaInfo().isClusterSource()) {
+            if (!connectionForClientIp.containsKey(clientIp)) {
+                connectionForClientIp.putIfAbsent(clientIp, new AtomicInteger(0));
+            }
             return true;
         }
         if (isOverLimit()) {
             return false;
         }
         
-        String clientIp = connection.getMetaInfo().clientIp;
         if (!connectionForClientIp.containsKey(clientIp)) {
             connectionForClientIp.putIfAbsent(clientIp, new AtomicInteger(0));
         }
