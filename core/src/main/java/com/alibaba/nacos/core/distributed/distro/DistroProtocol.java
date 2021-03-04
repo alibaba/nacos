@@ -29,7 +29,7 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
 import com.alibaba.nacos.core.distributed.distro.task.load.DistroLoadDataTask;
-import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTask;
+import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTimedTask;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -88,7 +88,8 @@ public class DistroProtocol {
     }
     
     private void startVerifyTask() {
-        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder),
+        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTimedTask(memberManager, distroComponentHolder,
+                        distroTaskEngineHolder.getExecuteWorkersManager()),
                 distroConfig.getVerifyIntervalMillis());
     }
     

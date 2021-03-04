@@ -19,6 +19,8 @@ package com.alibaba.nacos.core.distributed.distro.component;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 
+import java.util.List;
+
 /**
  * Distro data storage.
  *
@@ -60,5 +62,5 @@ public interface DistroDataStorage {
      *
      * @return verify datum
      */
-    DistroData getVerifyData();
+    List<DistroData> getVerifyData();
 }

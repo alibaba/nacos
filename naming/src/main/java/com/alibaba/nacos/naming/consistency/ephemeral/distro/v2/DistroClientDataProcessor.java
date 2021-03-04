@@ -224,18 +224,23 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     @Override
-    public DistroData getVerifyData() {
-        List<String> verifyData = new LinkedList<>();
+    public List<DistroData> getVerifyData() {
+        List<DistroData> result = new LinkedList<>();
+        DistroKey distroKey = new DistroKey(DataOperation.VERIFY.name(), TYPE);
         for (String each : clientManager.allClientId()) {
             Client client = clientManager.getClient(each);
             if (null == client || !client.isEphemeral()) {
                 continue;
             }
             if (clientManager.isResponsibleClient(client)) {
-                verifyData.add(each);
+                // TODO add revision for client.
+                DistroClientVerifyInfo verifyData = new DistroClientVerifyInfo(client.getClientId(), 0);
+                DistroData data = new DistroData(distroKey,
+                        ApplicationUtils.getBean(Serializer.class).serialize(verifyData));
+                data.setType(DataOperation.VERIFY);
+                result.add(data);
             }
         }
-        byte[] data = ApplicationUtils.getBean(Serializer.class).serialize(verifyData);
-        return new DistroData(new DistroKey(DataOperation.VERIFY.name(), TYPE), data);
+        return result;
     }
 }

@@ -16,30 +16,35 @@
 
 package com.alibaba.nacos.core.distributed.distro.task.verify;
 
-import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder;
 import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
+import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.task.execute.DistroExecuteTaskExecuteEngine;
 import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.List;
 
 /**
- * Distro verify task.
+ * Timed to start distro verify task.
  *
  * @author xiweng.yy
  */
-public class DistroVerifyTask implements Runnable {
+public class DistroVerifyTimedTask implements Runnable {
     
     private final ServerMemberManager serverMemberManager;
     
     private final DistroComponentHolder distroComponentHolder;
     
-    public DistroVerifyTask(ServerMemberManager serverMemberManager, DistroComponentHolder distroComponentHolder) {
+    private final DistroExecuteTaskExecuteEngine executeTaskExecuteEngine;
+    
+    public DistroVerifyTimedTask(ServerMemberManager serverMemberManager, DistroComponentHolder distroComponentHolder,
+            DistroExecuteTaskExecuteEngine executeTaskExecuteEngine) {
         this.serverMemberManager = serverMemberManager;
         this.distroComponentHolder = distroComponentHolder;
+        this.executeTaskExecuteEngine = executeTaskExecuteEngine;
     }
     
     @Override
@@ -64,18 +69,17 @@ public class DistroVerifyTask implements Runnable {
                     dataStorage.getClass().getSimpleName());
             return;
         }
-        DistroData verifyData = dataStorage.getVerifyData();
-        if (null == verifyData) {
+        List<DistroData> verifyData = dataStorage.getVerifyData();
+        if (null == verifyData || verifyData.isEmpty()) {
             return;
         }
-        verifyData.setType(DataOperation.VERIFY);
         for (Member member : targetServer) {
-            try {
-                distroComponentHolder.findTransportAgent(type).syncVerifyData(verifyData, member.getAddress());
-            } catch (Exception e) {
-                Loggers.DISTRO.error(String
-                        .format("[DISTRO-FAILED] verify data for type %s to %s failed.", type, member.getAddress()), e);
+            DistroTransportAgent agent = distroComponentHolder.findTransportAgent(type);
+            if (null == agent) {
+                continue;
             }
+            executeTaskExecuteEngine.addTask(member.getAddress(),
+                    new DistroVerifyExecuteTask(agent, verifyData, member.getAddress(), type));
         }
     }
 }
