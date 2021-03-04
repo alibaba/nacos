@@ -871,14 +871,15 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+        final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         String sqlCount = "select count(*) from config_info";
-        String sql = "select ID,data_id,group_id,tenant_id,app_name,content,type from config_info";
+        String sql = "select ID,data_id,group_id,content,tenant_id,app_name,content,type from config_info";
         StringBuilder where = new StringBuilder(" where ");
         List<String> paramList = new ArrayList<String>();
         paramList.add(tenantTmp);
         if (StringUtils.isNotBlank(configTags)) {
             sqlCount = "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id";
-            sql = "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
+            sql = "select a.ID,a.data_id,a.group_id,a.content,a.tenant_id,a.app_name,a.content from config_info  a left join "
                     + "config_tags_relation b on a.id=b.id";
             
             where.append(" a.tenant_id=? ");
@@ -890,6 +891,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             if (StringUtils.isNotBlank(group)) {
                 where.append(" and a.group_id=? ");
                 paramList.add(group);
+            }
+            if (StringUtils.isNotBlank(content)) {
+                where.append(" and a.content=? ");
+                paramList.add(content);
             }
             if (StringUtils.isNotBlank(appName)) {
                 where.append(" and a.app_name=? ");
@@ -915,6 +920,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             if (StringUtils.isNotBlank(group)) {
                 where.append(" and group_id=? ");
                 paramList.add(group);
+            }
+            if (StringUtils.isNotBlank(content)) {
+                where.append(" and content=? ");
+                paramList.add(content);
             }
             if (StringUtils.isNotBlank(appName)) {
                 where.append(" and app_name=? ");

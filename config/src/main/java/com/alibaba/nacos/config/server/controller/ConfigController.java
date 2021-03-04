@@ -349,6 +349,7 @@ public class ConfigController {
     @GetMapping(params = "search=accurate")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public Page<ConfigInfo> searchConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                                         @RequestParam(value = "content", required = false) String content,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
@@ -359,6 +360,9 @@ public class ConfigController {
         }
         if (StringUtils.isNotBlank(configTags)) {
             configAdvanceInfo.put("config_tags", configTags);
+        }
+        if (StringUtils.isNotBlank(content)) {
+            configAdvanceInfo.put("content", content);
         }
         try {
             return persistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
@@ -376,7 +380,8 @@ public class ConfigController {
     @GetMapping(params = "search=blur")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public Page<ConfigInfo> fuzzySearchConfig(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
+            @RequestParam("group") String group, @RequestParam(value = "content", required = false) String content,
+            @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
@@ -386,6 +391,9 @@ public class ConfigController {
         }
         if (StringUtils.isNotBlank(configTags)) {
             configAdvanceInfo.put("config_tags", configTags);
+        }
+        if (StringUtils.isNotBlank(content)) {
+            configAdvanceInfo.put("content", content);
         }
         try {
             return persistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);

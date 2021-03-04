@@ -73,6 +73,7 @@ class ConfigurationManagement extends React.Component {
     this.appName = getParams('appName') || getParams('edasAppId') || '';
     this.preAppName = this.appName;
     this.group = getParams('group') || '';
+    this.content = getParams('content') || '';
     this.preGroup = this.group;
     this.dataId = getParams('dataId') || '';
     this.preDataId = this.dataId;
@@ -93,6 +94,7 @@ class ConfigurationManagement extends React.Component {
       dataId: this.dataId,
       group: this.group,
       appName: this.appName,
+      content: this.content,
       config_tags: [],
       tagLst: [],
       selectValue: [],
@@ -276,6 +278,7 @@ class ConfigurationManagement extends React.Component {
     const params = {
       dataId: this.dataId,
       group: this.group,
+      content: this.content,
       appName: this.appName,
       config_tags: this.state.config_tags.join(','),
       pageNo: prePageNo ? prePageNo : pageNo,
@@ -284,7 +287,11 @@ class ConfigurationManagement extends React.Component {
     };
     setParams('pageSize', null);
     setParams('pageNo', null);
-    if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
+    if (
+      this.dataId.indexOf('*') !== -1 ||
+      this.group.indexOf('*') !== -1 ||
+      this.content.indexOf('*') !== -1
+    ) {
       params.search = 'blur';
     } else {
       params.search = 'accurate';
@@ -513,6 +520,13 @@ class ConfigurationManagement extends React.Component {
     this.group = value || '';
     this.setState({
       group: value || '',
+    });
+  }
+
+  setContent(value) {
+    this.content = value || '';
+    this.setState({
+      content: value || '',
     });
   }
 
@@ -1340,6 +1354,16 @@ class ConfigurationManagement extends React.Component {
                     style={{ width: 200 }}
                     value={this.state.appName}
                     onChange={this.setAppName.bind(this)}
+                    onPressEnter={() => this.getData()}
+                  />
+                </Form.Item>
+                <Form.Item style={this.inApp ? { display: 'none' } : {}} label={locale.content1}>
+                  <Input
+                    htmlType={'text'}
+                    placeholder={locale.fuzzyg}
+                    style={{ width: 200 }}
+                    value={this.state.content}
+                    onChange={this.setContent.bind(this)}
                     onPressEnter={() => this.getData()}
                   />
                 </Form.Item>
