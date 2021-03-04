@@ -34,7 +34,7 @@ public interface DistroDataStorage {
     /**
      * Whether this distro data is finished initial.
      *
-     * <p> If not finished, this data storage should not send verify data to other node.
+     * <p>If not finished, this data storage should not send verify data to other node.
      *
      * @return {@code true} if finished, otherwise false
      */

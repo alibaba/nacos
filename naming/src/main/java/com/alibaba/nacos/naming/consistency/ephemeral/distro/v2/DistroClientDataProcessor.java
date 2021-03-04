@@ -169,7 +169,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     @Override
-    public boolean processVerifyData(DistroData distroData) {
+    public boolean processVerifyData(DistroData distroData, String sourceAddress) {
         List<String> verifyData = ApplicationUtils.getBean(Serializer.class)
                 .deserialize(distroData.getContent(), List.class);
         List<String> invalidData = new LinkedList<>();
@@ -178,10 +178,9 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 invalidData.add(each);
             }
         }
-        String sourceServer = distroData.getDistroKey().getTargetServer();
         for (String each : invalidData) {
-            Loggers.DISTRO.info("client {} is invalid, get new client from {}", each, sourceServer);
-            DistroData data = distroProtocol.queryFromRemote(new DistroKey(each, TYPE, sourceServer));
+            Loggers.DISTRO.info("client {} is invalid, get new client from {}", each, sourceAddress);
+            DistroData data = distroProtocol.queryFromRemote(new DistroKey(each, TYPE, sourceAddress));
             data.setType(DataOperation.ADD);
             processData(data);
         }

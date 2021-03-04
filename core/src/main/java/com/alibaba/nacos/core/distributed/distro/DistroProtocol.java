@@ -147,7 +147,7 @@ public class DistroProtocol {
     /**
      * Receive synced distro data, find processor to process.
      *
-     * @param distroData Received data
+     * @param distroData    Received data
      * @return true if handle receive data successfully, otherwise false
      */
     public boolean onReceive(DistroData distroData) {
@@ -163,17 +163,18 @@ public class DistroProtocol {
     /**
      * Receive verify data, find processor to process.
      *
-     * @param distroData verify data
+     * @param distroData    verify data
+     * @param sourceAddress source server address, might be get data from source server
      * @return true if verify data successfully, otherwise false
      */
-    public boolean onVerify(DistroData distroData) {
+    public boolean onVerify(DistroData distroData, String sourceAddress) {
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
             Loggers.DISTRO.warn("[DISTRO] Can't find verify data process for received data {}", resourceType);
             return false;
         }
-        return dataProcessor.processVerifyData(distroData);
+        return dataProcessor.processVerifyData(distroData, sourceAddress);
     }
     
     /**
