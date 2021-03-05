@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
@@ -58,7 +59,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
     private void traceDetailIfNecessary(Payload grpcRequest) {
         String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
         String connectionId = CONTEXT_KEY_CONN_ID.get();
-        
         try {
             if (connectionManager.traced(clientIp)) {
                 Loggers.REMOTE_DIGEST.info("[{}]Bi stream request receive, meta={},body={}", connectionId,
@@ -83,7 +83,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             final int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
             
-            final String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+            String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
             
             @Override
             public void onNext(Payload payload) {
@@ -112,19 +112,22 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
+                    if (StringUtils.isNotBlank(setUpRequest.getClientIp())) {
+                        clientIp = setUpRequest.getClientIp();
+                    }
                     ConnectionMeta metaInfo = new ConnectionMeta(connectionId, clientIp, clientPort, localPort,
                             ConnectionType.GRPC.getType(), setUpRequest.getClientVersion(), appName,
                             setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
-                    
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     connection.setAbilities(setUpRequest.getAbilities());
-                    boolean started = ApplicationUtils.isStarted();
-                    if (!started || !connectionManager.register(connectionId, connection)) {
+                    boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
+                    
+                    if (rejectSdkOnStarting || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {
                             Loggers.REMOTE_DIGEST.warn("[{}]Connection register fail,reason:{}", connectionId,
-                                    started ? " server is not started" : " server is over limited.");
+                                    rejectSdkOnStarting ? " server is not started" : " server is over limited.");
                             connection.request(new ConnectResetRequest(), 3000L);
                             connection.close();
                         } catch (Exception e) {
