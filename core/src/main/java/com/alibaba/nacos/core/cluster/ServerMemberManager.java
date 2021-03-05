@@ -510,6 +510,18 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                             Loggers.CLUSTER
                                                     .warn("{} version is too low, it is recommended to upgrade the version : {}",
                                                             target, VersionUtils.version);
+                                            Member memberNew = target.copy();
+                                            if (memberNew.getAbilities() != null
+                                                    && memberNew.getAbilities().getRemoteAbility() != null && memberNew
+                                                    .getAbilities().getRemoteAbility().isSupportRemoteConnection()) {
+                                                memberNew.getAbilities().getRemoteAbility()
+                                                        .setSupportRemoteConnection(false);
+                                                Loggers.CLUSTER
+                                                        .warn("{} : Clear support remote connection flag,target may rollback version ",
+                                                                memberNew);
+                                                
+                                                update(memberNew);
+                                            }
                                             return;
                                         }
                                         if (result.ok()) {

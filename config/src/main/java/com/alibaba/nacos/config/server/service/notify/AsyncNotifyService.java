@@ -218,14 +218,21 @@ public class AsyncNotifyService {
                         // get delay time and set fail count to the task
                         asyncTaskExecute(task);
                     } else {
-                        
-                        try {
-                            configClusterRpcClientProxy
-                                    .syncConfigChange(member, syncRequest, new AsyncRpcNotifyCallBack(task));
-                        } catch (Exception e) {
-                            MetricsMonitor.getConfigNotifyException().increment();
-                            asyncTaskExecute(task);
+    
+                        if (!MemberUtil.isSupportedLongCon(member)) {
+                            asyncTaskExecute(
+                                    new NotifySingleTask(task.getDataId(), task.getGroup(), task.getTenant(), task.tag,
+                                            task.getLastModified(), member.getAddress(), task.isBeta));
+                        } else {
+                            try {
+                                configClusterRpcClientProxy
+                                        .syncConfigChange(member, syncRequest, new AsyncRpcNotifyCallBack(task));
+                            } catch (Exception e) {
+                                MetricsMonitor.getConfigNotifyException().increment();
+                                asyncTaskExecute(task);
+                            }
                         }
+                      
                     }
                 } else {
                     //No nothig if  member has offline.
