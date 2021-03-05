@@ -89,8 +89,7 @@ public class DistroProtocol {
     
     private void startVerifyTask() {
         GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTimedTask(memberManager, distroComponentHolder,
-                        distroTaskEngineHolder.getExecuteWorkersManager()),
-                distroConfig.getVerifyIntervalMillis());
+                distroTaskEngineHolder.getExecuteWorkersManager()), distroConfig.getVerifyIntervalMillis());
     }
     
     public boolean isInitialized() {
@@ -112,16 +111,29 @@ public class DistroProtocol {
      *
      * @param distroKey distro key of sync data
      * @param action    the action of data operation
+     * @param delay     delay time for sync
      */
     public void sync(DistroKey distroKey, DataOperation action, long delay) {
         for (Member each : memberManager.allMembersWithoutSelf()) {
-            DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
-                    each.getAddress());
-            DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
-            distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
-            if (Loggers.DISTRO.isDebugEnabled()) {
-                Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, each.getAddress());
-            }
+            syncToTarget(distroKey, action, each.getAddress(), delay);
+        }
+    }
+    
+    /**
+     * Start to sync to target server.
+     *
+     * @param distroKey    distro key of sync data
+     * @param action       the action of data operation
+     * @param targetServer target server
+     * @param delay        delay time for sync
+     */
+    public void syncToTarget(DistroKey distroKey, DataOperation action, String targetServer, long delay) {
+        DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
+                targetServer);
+        DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
+        distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
+        if (Loggers.DISTRO.isDebugEnabled()) {
+            Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, targetServer);
         }
     }
     
@@ -148,7 +160,7 @@ public class DistroProtocol {
     /**
      * Receive synced distro data, find processor to process.
      *
-     * @param distroData    Received data
+     * @param distroData Received data
      * @return true if handle receive data successfully, otherwise false
      */
     public boolean onReceive(DistroData distroData) {

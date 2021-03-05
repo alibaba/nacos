@@ -71,7 +71,9 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
         transportAgent.syncVerifyData(data, targetServer);
     }
     
-    // TODO add verify monitor.
+    /**
+     * TODO add verify monitor.
+     */
     private class DistroVerifyCallback implements DistroCallback {
         
         @Override
