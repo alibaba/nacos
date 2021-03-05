@@ -38,6 +38,12 @@ public class GroupKey {
     }
     
     private static String doGetKey(String dataId, String group, String datumStr) {
+        if (StringUtils.isBlank(dataId)) {
+            throw new IllegalArgumentException("invalid dataId");
+        }
+        if (StringUtils.isBlank(group)) {
+            throw new IllegalArgumentException("invalid group");
+        }
         StringBuilder sb = new StringBuilder();
         urlEncode(dataId, sb);
         sb.append('+');
@@ -89,18 +95,17 @@ public class GroupKey {
             }
         }
         
-        if (StringUtils.isBlank(group)) {
+        if (group == null) {
             group = sb.toString();
-            if (group.length() == 0) {
-                throw new IllegalArgumentException("invalid groupkey:" + groupKey);
-            }
         } else {
             tenant = sb.toString();
-            if (group.length() == 0) {
-                throw new IllegalArgumentException("invalid groupkey:" + groupKey);
-            }
         }
-        
+        if (StringUtils.isBlank(dataId)) {
+            throw new IllegalArgumentException("invalid dataIdkey:" + groupKey);
+        }
+        if (StringUtils.isBlank(group)) {
+            throw new IllegalArgumentException("invalid groupkey:" + groupKey);
+        }
         return new String[] {dataId, group, tenant};
     }
     

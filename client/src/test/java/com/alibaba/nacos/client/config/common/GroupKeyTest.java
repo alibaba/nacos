@@ -40,8 +40,9 @@ public class GroupKeyTest {
     
     @Test
     public void testParseKey() {
-        Assert.assertArrayEquals(new String[] {null, "f+oo", null}, GroupKey.parseKey("f%2Boo"));
-        Assert.assertArrayEquals(new String[] {null, "f%oo", null}, GroupKey.parseKey("f%25oo"));
+        Assert.assertArrayEquals(new String[] {"f+oo", "f", null}, GroupKey.parseKey("f%2Boo+f"));
+        Assert.assertArrayEquals(new String[] {"f", "f%oo", null}, GroupKey.parseKey("f+f%25oo"));
+        Assert.assertArrayEquals(new String[] {"a", "b", "c"}, GroupKey.parseKey("a+b+c"));
     }
     
     @Test
@@ -60,5 +61,23 @@ public class GroupKeyTest {
     public void testParseKeyIllegalArgumentException3() {
         thrown.expect(IllegalArgumentException.class);
         GroupKey.parseKey("f+o+o+bar");
+    }
+    
+    @Test
+    public void testParseKeyIllegalArgumentException4() {
+        thrown.expect(IllegalArgumentException.class);
+        GroupKey.parseKey("f++bar");
+    }
+    
+    @Test
+    public void testGetKeyDatIdParam() {
+        thrown.expect(IllegalArgumentException.class);
+        GroupKey.getKey("", "a");
+    }
+    
+    @Test
+    public void testGetKeyGroupParam() {
+        thrown.expect(IllegalArgumentException.class);
+        GroupKey.getKey("a", "");
     }
 }
