@@ -48,7 +48,7 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
         try {
             switch (request.getDataOperation()) {
                 case VERIFY:
-                    return handleVerify(request.getDistroData());
+                    return handleVerify(request.getDistroData(), meta);
                 case SNAPSHOT:
                     return handleSnapshot();
                 case ADD:
@@ -69,9 +69,9 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
         }
     }
     
-    private DistroDataResponse handleVerify(DistroData distroData) {
+    private DistroDataResponse handleVerify(DistroData distroData, RequestMeta meta) {
         DistroDataResponse result = new DistroDataResponse();
-        if (!distroProtocol.onVerify(distroData)) {
+        if (!distroProtocol.onVerify(distroData, meta.getClientIp())) {
             result.setErrorCode(ResponseCode.FAIL.getCode());
             result.setMessage("[DISTRO-FAILED] distro data verify failed");
         }
