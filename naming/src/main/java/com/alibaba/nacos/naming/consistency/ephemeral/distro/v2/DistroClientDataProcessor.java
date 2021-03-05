@@ -60,6 +60,8 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     private final UpgradeJudgement upgradeJudgement;
     
+    private volatile boolean isFinishInitial;
+    
     public DistroClientDataProcessor(ClientManager clientManager, DistroProtocol distroProtocol,
             UpgradeJudgement upgradeJudgement) {
         this.clientManager = clientManager;
@@ -69,10 +71,21 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     @Override
+    public void finishInitial() {
+        isFinishInitial = true;
+    }
+    
+    @Override
+    public boolean isFinishInitial() {
+        return isFinishInitial;
+    }
+    
+    @Override
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> result = new LinkedList<>();
         result.add(ClientEvent.ClientChangedEvent.class);
         result.add(ClientEvent.ClientDisconnectEvent.class);
+        result.add(ClientEvent.ClientVerifyFailedEvent.class);
         return result;
     }
     
@@ -84,13 +97,27 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         if (!upgradeJudgement.isUseGrpcFeatures()) {
             return;
         }
-        ClientEvent clientEvent = (ClientEvent) event;
-        Client client = clientEvent.getClient();
-        // Only ephemeral data sync by Distro, persist client should sync by raft.
-        if (!client.isEphemeral()) {
+        if (event instanceof ClientEvent.ClientVerifyFailedEvent) {
+            syncToVerifyFailedServer((ClientEvent.ClientVerifyFailedEvent) event);
+        } else {
+            syncToAllServer((ClientEvent) event);
+        }
+    }
+    
+    private void syncToVerifyFailedServer(ClientEvent.ClientVerifyFailedEvent event) {
+        Client client = clientManager.getClient(event.getClientId());
+        if (null == client || !client.isEphemeral() || !clientManager.isResponsibleClient(client)) {
             return;
         }
-        if (!clientManager.isResponsibleClient(client)) {
+        DistroKey distroKey = new DistroKey(client.getClientId(), TYPE);
+        // Verify failed data should be sync directly.
+        distroProtocol.syncToTarget(distroKey, DataOperation.ADD, event.getTargetServer(), 0L);
+    }
+    
+    private void syncToAllServer(ClientEvent event) {
+        Client client = event.getClient();
+        // Only ephemeral data sync by Distro, persist client should sync by raft.
+        if (null == client || !client.isEphemeral() || !clientManager.isResponsibleClient(client)) {
             return;
         }
         if (event instanceof ClientEvent.ClientDisconnectEvent) {
@@ -117,7 +144,9 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 handlerClientSyncData(clientSyncData);
                 return true;
             case DELETE:
-                clientManager.clientDisconnected(distroData.getDistroKey().getResourceKey());
+                String deleteClientId = distroData.getDistroKey().getResourceKey();
+                Loggers.DISTRO.info("[Client-Delete] Received distro client sync data {}", deleteClientId);
+                clientManager.clientDisconnected(deleteClientId);
                 return true;
             default:
                 return false;
@@ -125,6 +154,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     private void handlerClientSyncData(ClientSyncData clientSyncData) {
+        Loggers.DISTRO.info("[Client-Add] Received distro client sync data {}", clientSyncData.getClientId());
         clientManager.syncClientConnected(clientSyncData.getClientId(), clientSyncData.getAttributes());
         Client client = clientManager.getClient(clientSyncData.getClientId());
         upgradeClient(client, clientSyncData);
@@ -157,23 +187,14 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     @Override
-    public boolean processVerifyData(DistroData distroData) {
-        List<String> verifyData = ApplicationUtils.getBean(Serializer.class)
-                .deserialize(distroData.getContent(), List.class);
-        List<String> invalidData = new LinkedList<>();
-        for (String each : verifyData) {
-            if (!clientManager.verifyClient(each)) {
-                invalidData.add(each);
-            }
+    public boolean processVerifyData(DistroData distroData, String sourceAddress) {
+        DistroClientVerifyInfo verifyData = ApplicationUtils.getBean(Serializer.class)
+                .deserialize(distroData.getContent(), DistroClientVerifyInfo.class);
+        if (clientManager.verifyClient(verifyData.getClientId())) {
+            return true;
         }
-        String sourceServer = distroData.getDistroKey().getTargetServer();
-        for (String each : invalidData) {
-            Loggers.DISTRO.info("client {} is invalid, get new client from {}", each, sourceServer);
-            DistroData data = distroProtocol.queryFromRemote(new DistroKey(each, TYPE, sourceServer));
-            data.setType(DataOperation.ADD);
-            processData(data);
-        }
-        return true;
+        Loggers.DISTRO.info("client {} is invalid, get new client from {}", verifyData.getClientId(), sourceAddress);
+        return false;
     }
     
     @Override
@@ -213,18 +234,23 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     @Override
-    public DistroData getVerifyData() {
-        List<String> verifyData = new LinkedList<>();
+    public List<DistroData> getVerifyData() {
+        List<DistroData> result = new LinkedList<>();
         for (String each : clientManager.allClientId()) {
             Client client = clientManager.getClient(each);
             if (null == client || !client.isEphemeral()) {
                 continue;
             }
             if (clientManager.isResponsibleClient(client)) {
-                verifyData.add(each);
+                // TODO add revision for client.
+                DistroClientVerifyInfo verifyData = new DistroClientVerifyInfo(client.getClientId(), 0);
+                DistroKey distroKey = new DistroKey(client.getClientId(), TYPE);
+                DistroData data = new DistroData(distroKey,
+                        ApplicationUtils.getBean(Serializer.class).serialize(verifyData));
+                data.setType(DataOperation.VERIFY);
+                result.add(data);
             }
         }
-        byte[] data = ApplicationUtils.getBean(Serializer.class).serialize(verifyData);
-        return new DistroData(new DistroKey(DataOperation.VERIFY.name(), TYPE), data);
+        return result;
     }
 }
