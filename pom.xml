@@ -121,7 +121,7 @@
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <maven-failsafe-plugin.version>2.19.1</maven-failsafe-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
-        <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
+        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
         <maven-flatten-version>1.1.0</maven-flatten-version>
         <!-- dependency version related to plugin -->
         <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
@@ -619,6 +619,7 @@
         <module>test</module>
         <module>api</module>
         <module>client</module>
+        <module>client-aliyun</module>
         <module>example</module>
         <module>common</module>
         <module>distribution</module>

@@ -64,6 +64,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-client</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-client-aliyun</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-config</artifactId>
