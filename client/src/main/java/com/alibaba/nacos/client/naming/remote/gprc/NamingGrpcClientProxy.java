@@ -169,10 +169,13 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
         SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, groupName, serviceName, clusters,
                 true);
-        SubscribeServiceResponse response = requestToServer(request, SubscribeServiceResponse.class);
-        namingGrpcConnectionEventListener
-                .cacheSubscriberForRedo(NamingUtils.getGroupedName(serviceName, groupName), clusters);
-        return response.getServiceInfo();
+        try {
+            SubscribeServiceResponse response = requestToServer(request, SubscribeServiceResponse.class);
+            return response.getServiceInfo();
+        } finally {
+            namingGrpcConnectionEventListener
+                    .cacheSubscriberForRedo(NamingUtils.getGroupedName(serviceName, groupName), clusters);
+        }
     }
     
     @Override

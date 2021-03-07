@@ -142,10 +142,10 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
         String serviceKey = ServiceInfo.getKey(serviceNameWithGroup, clusters);
         ServiceInfo result = serviceInfoHolder.getServiceInfoMap().get(serviceKey);
+        serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, groupName, clusters);
         if (null == result) {
             result = grpcClientProxy.subscribe(serviceName, groupName, clusters);
         }
-        serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, groupName, clusters);
         serviceInfoHolder.processServiceInfo(result);
         return result;
     }
