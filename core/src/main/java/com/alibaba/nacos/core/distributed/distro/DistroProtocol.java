@@ -164,8 +164,8 @@ public class DistroProtocol {
      * @return true if handle receive data successfully, otherwise false
      */
     public boolean onReceive(DistroData distroData) {
+        Loggers.DISTRO.info("[DISTRO] Receive distro data type: {}, key: {}", distroData.getType(), distroData.getDistroKey());
         String resourceType = distroData.getDistroKey().getResourceType();
-        Loggers.DISTRO.info("[DISTRO] Receive distro data type: {}, key: {}", resourceType, distroData.getDistroKey());
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
             Loggers.DISTRO.warn("[DISTRO] Can't find data process for received data {}", resourceType);
@@ -182,10 +182,10 @@ public class DistroProtocol {
      * @return true if verify data successfully, otherwise false
      */
     public boolean onVerify(DistroData distroData, String sourceAddress) {
-        String resourceType = distroData.getDistroKey().getResourceType();
         if (Loggers.DISTRO.isDebugEnabled()) {
-            Loggers.DISTRO.debug("[DISTRO] Receive verify data type: {}, key: {}", resourceType, distroData.getDistroKey());
+            Loggers.DISTRO.debug("[DISTRO] Receive verify data type: {}, key: {}", distroData.getType(), distroData.getDistroKey());
         }
+        String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
             Loggers.DISTRO.warn("[DISTRO] Can't find verify data process for received data {}", resourceType);
