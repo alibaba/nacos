@@ -161,7 +161,7 @@ public class ServiceInfoUpdateService implements Closeable {
         
         @Override
         public void run() {
-            long delayTime = -1;
+            long delayTime = DEFAULT_DELAY;
             
             try {
                 if (!changeNotifier.isSubscribed(groupName, serviceName, clusters) && !futureMap.containsKey(serviceKey)) {
@@ -174,7 +174,6 @@ public class ServiceInfoUpdateService implements Closeable {
                 if (serviceObj == null) {
                     serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName, clusters, 0, false);
                     serviceInfoHolder.processServiceInfo(serviceObj);
-                    delayTime = DEFAULT_DELAY;
                     lastRefTime = serviceObj.getLastRefTime();
                     return;
                 }
@@ -192,12 +191,10 @@ public class ServiceInfoUpdateService implements Closeable {
                 delayTime = serviceObj.getCacheMillis() * DEFAULT_UPDATE_CACHE_TIME_MULTIPLE;
                 resetFailCount();
             } catch (Throwable e) {
+                incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + groupedServiceName, e);
             } finally {
-                incFailCount();
-                if (delayTime > 0) {
-                    executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
-                }
+                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
             }
         }
     
