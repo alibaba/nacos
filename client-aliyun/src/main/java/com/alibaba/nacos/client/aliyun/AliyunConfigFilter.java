@@ -54,21 +54,20 @@ public class AliyunConfigFilter implements IConfigFilter {
 
     private String keyId;
 
-    private String regionId;
-
-    private String ramRoleName;
-
-    private String accessKey;
-
-    private String secretKey;
-
     public AliyunConfigFilter(Properties properties) {
         keyId = properties.getProperty(KEY_ID);
-        regionId = properties.getProperty(REGION_ID);
-        ramRoleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME);
-        accessKey = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
-        secretKey = properties.getProperty(PropertyKeyConst.SECRET_KEY);
+        String regionId = properties.getProperty(REGION_ID);
+        String ramRoleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME);
+        String accessKey = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
+        String secretKey = properties.getProperty(PropertyKeyConst.SECRET_KEY);
+        String kmsEndpoint = properties.getProperty(PropertyKeyConst.KMS_ENDPOINT);
 
+        if (System.getProperties().containsKey(PropertyKeyConst.KMS_ENDPOINT)) {
+            kmsEndpoint = System.getProperty(PropertyKeyConst.KMS_ENDPOINT);
+        }
+        if (!StringUtils.isBlank(kmsEndpoint)) {
+            DefaultProfile.addEndpoint(regionId, "kms", kmsEndpoint);
+        }
         IClientProfile profile = null;
         if (!StringUtils.isBlank(ramRoleName)) {
             profile = DefaultProfile.getProfile(regionId);
@@ -80,7 +79,8 @@ public class AliyunConfigFilter implements IConfigFilter {
     }
 
     @Override
-    public void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain) throws NacosException {
+    public void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
+            throws NacosException {
         String dataId = null;
         String group = null;
         try {
