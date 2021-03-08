@@ -72,8 +72,7 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
     private DistroDataResponse handleVerify(DistroData distroData, RequestMeta meta) {
         DistroDataResponse result = new DistroDataResponse();
         if (!distroProtocol.onVerify(distroData, meta.getClientIp())) {
-            result.setErrorCode(ResponseCode.FAIL.getCode());
-            result.setMessage("[DISTRO-FAILED] distro data verify failed");
+            result.setErrorInfo(ResponseCode.FAIL.getCode(), "[DISTRO-FAILED] distro data verify failed");
         }
         return result;
     }
