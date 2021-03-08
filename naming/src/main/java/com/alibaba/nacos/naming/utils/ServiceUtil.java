@@ -22,18 +22,12 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Service util.
@@ -238,6 +232,20 @@ public class ServiceUtil {
      */
     public static ServiceInfo selectInstances(ServiceInfo serviceInfo, String cluster, boolean healthyOnly,
             boolean enableOnly) {
+        return selectInstances(serviceInfo, null, cluster, healthyOnly, enableOnly);
+    }
+    
+    /**
+     * Select instance of service info.
+     *
+     * @param serviceInfo original service info
+     * @param cluster     cluster of instances
+     * @param healthyOnly whether only select instance which healthy
+     * @param enableOnly  whether only select instance which enabled
+     * @return new service info
+     */
+    public static ServiceInfo selectInstances(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, String cluster,
+                                              boolean healthyOnly, boolean enableOnly) {
         ServiceInfo result = new ServiceInfo();
         result.setName(serviceInfo.getName());
         result.setGroupName(serviceInfo.getGroupName());
@@ -246,11 +254,33 @@ public class ServiceUtil {
         result.setClusters(cluster);
         Set<String> clusterSets = com.alibaba.nacos.common.utils.StringUtils.isNotBlank(cluster) ? new HashSet<>(
                 Arrays.asList(cluster.split(","))) : new HashSet<>();
-        List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstance = new LinkedList<>();
-        for (com.alibaba.nacos.api.naming.pojo.Instance each : serviceInfo.getHosts()) {
-            if (checkCluster(clusterSets, each) && checkHealthy(healthyOnly, each) && checkEnabled(enableOnly, each)) {
-                filteredInstance.add(each);
+        float threshold = 0F;
+        // TODO: filter ips using selector
+        if (serviceMetadata != null) {
+            threshold = serviceMetadata.getProtectThreshold();
+        }
+        if (threshold < 0) {
+            threshold = 0F;
+        }
+        long total = 0L;
+        Map<Boolean, List<com.alibaba.nacos.api.naming.pojo.Instance>> ipMap = new HashMap<>(2);
+        ipMap.put(Boolean.TRUE, new LinkedList<>());
+        ipMap.put(Boolean.FALSE, new LinkedList<>());
+        for (com.alibaba.nacos.api.naming.pojo.Instance ip : serviceInfo.getHosts()) {
+            if (checkCluster(clusterSets, ip) && checkEnabled(enableOnly, ip)) {
+                ipMap.get(ip.isHealthy()).add(ip);
+                total += 1;
             }
+        }
+        if ((float) ipMap.get(Boolean.TRUE).size() / total <= threshold) {
+            Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceInfo.getName());
+            serviceInfo.setReachProtectionThreshold(true);
+            ipMap.get(Boolean.TRUE).addAll(ipMap.get(Boolean.FALSE));
+            ipMap.get(Boolean.FALSE).clear();
+        }
+        List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstance = ipMap.get(Boolean.TRUE);
+        if (!healthyOnly) {
+            filteredInstance.addAll(ipMap.get(Boolean.FALSE));
         }
         result.setHosts(filteredInstance);
         return result;
@@ -261,10 +291,6 @@ public class ServiceUtil {
             return true;
         }
         return clusterSets.contains(instance.getClusterName());
-    }
-    
-    private static boolean checkHealthy(boolean healthyOnly, com.alibaba.nacos.api.naming.pojo.Instance instance) {
-        return !healthyOnly || instance.isHealthy();
     }
     
     private static boolean checkEnabled(boolean enableOnly, com.alibaba.nacos.api.naming.pojo.Instance instance) {

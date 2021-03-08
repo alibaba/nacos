@@ -25,6 +25,8 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
@@ -39,9 +41,12 @@ import org.springframework.stereotype.Component;
 public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
     
     private final ServiceStorage serviceStorage;
+    private final NamingMetadataManager metadataManager;
     
-    public ServiceQueryRequestHandler(ServiceStorage serviceStorage) {
+    public ServiceQueryRequestHandler(ServiceStorage serviceStorage,
+                                      NamingMetadataManager metadataManager) {
         this.serviceStorage = serviceStorage;
+        this.metadataManager = metadataManager;
     }
     
     @Override
@@ -54,7 +59,8 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
         String cluster = null == request.getCluster() ? "" : request.getCluster();
         boolean healthyOnly = request.isHealthyOnly();
         ServiceInfo result = serviceStorage.getData(service);
-        result = ServiceUtil.selectInstances(result, cluster, healthyOnly, true);
+        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
+        result = ServiceUtil.selectInstances(result, serviceMetadata, cluster, healthyOnly, true);
         return QueryServiceResponse.buildSuccessResponse(result);
     }
 }

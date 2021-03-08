@@ -33,6 +33,7 @@ import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
@@ -168,7 +169,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             clientOperationService.subscribeService(service, subscriber, clientId);
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
-        ServiceInfo result = ServiceUtil.selectInstances(serviceInfo, cluster, healthOnly, true);
+        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
+        ServiceInfo result = ServiceUtil.selectInstances(serviceInfo, serviceMetadata, cluster, healthOnly, true);
         // adapt for v1.x sdk
         result.setName(NamingUtils.getGroupedName(result.getName(), result.getGroupName()));
         return result;
