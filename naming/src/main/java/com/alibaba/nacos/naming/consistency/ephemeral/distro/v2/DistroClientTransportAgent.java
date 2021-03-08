@@ -125,8 +125,8 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         DistroDataRequest request = new DistroDataRequest(verifyData, DataOperation.VERIFY);
         Member member = memberManager.find(targetServer);
         try {
-            DistroVerifyCallbackWrapper wrapper = new DistroVerifyCallbackWrapper(verifyData.getDistroKey().getResourceKey(),
-                    targetServer, callback);
+            DistroVerifyCallbackWrapper wrapper = new DistroVerifyCallbackWrapper(targetServer,
+                    verifyData.getDistroKey().getResourceKey(), callback);
             clusterRpcClientProxy.asyncRequest(member, request, wrapper);
         } catch (NacosException nacosException) {
             callback.onFailed(nacosException);
