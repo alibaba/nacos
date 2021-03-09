@@ -193,16 +193,22 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             return result;
         }
         
+        long total = 0;
         Map<Boolean, List<com.alibaba.nacos.naming.core.Instance>> ipMap = new HashMap<>(2);
         ipMap.put(Boolean.TRUE, new ArrayList<>());
         ipMap.put(Boolean.FALSE, new ArrayList<>());
         
         for (com.alibaba.nacos.naming.core.Instance ip : srvedIPs) {
+            // remove disabled instance:
+            if (!ip.isEnabled()) {
+                continue;
+            }
             ipMap.get(ip.isHealthy()).add(ip);
+            total += 1;
         }
         
         double threshold = service.getProtectThreshold();
-        if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
+        if ((float) ipMap.get(Boolean.TRUE).size() / total <= threshold) {
             
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceName);
             
@@ -210,23 +216,9 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             ipMap.get(Boolean.FALSE).clear();
         }
         
-        List<Instance> hosts = new LinkedList<>();
-        
-        for (Map.Entry<Boolean, List<com.alibaba.nacos.naming.core.Instance>> entry : ipMap.entrySet()) {
-            List<com.alibaba.nacos.naming.core.Instance> ips = entry.getValue();
-            
-            if (healthOnly && !entry.getKey()) {
-                continue;
-            }
-            
-            for (com.alibaba.nacos.naming.core.Instance instance : ips) {
-                
-                // remove disabled instance:
-                if (!instance.isEnabled()) {
-                    continue;
-                }
-                hosts.add(instance);
-            }
+        List<Instance> hosts = new LinkedList<>(ipMap.get(Boolean.TRUE));
+        if (!healthOnly) {
+            hosts.addAll(ipMap.get(Boolean.FALSE));
         }
         
         result.setHosts(hosts);
