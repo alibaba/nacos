@@ -278,7 +278,6 @@ public abstract class GrpcClient extends RpcClient {
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
                 conSetupRequest.setAbilities(super.clientAbilities);
-                conSetupRequest.setClientIp(NetUtils.localIP());
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
                 return grpcConn;

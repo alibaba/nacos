@@ -83,7 +83,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             final int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
             
-            String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+            final String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
             
             @Override
             public void onNext(Payload payload) {
@@ -112,9 +112,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
-                    if (StringUtils.isNotBlank(setUpRequest.getClientIp())) {
-                        clientIp = setUpRequest.getClientIp();
-                    }
+                    
                     ConnectionMeta metaInfo = new ConnectionMeta(connectionId, clientIp, clientPort, localPort,
                             ConnectionType.GRPC.getType(), setUpRequest.getClientVersion(), appName,
                             setUpRequest.getLabels());
