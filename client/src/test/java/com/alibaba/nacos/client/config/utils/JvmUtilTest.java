@@ -18,7 +18,6 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import junit.framework.TestCase;
 import org.junit.Assert;
 import org.junit.Test;
 

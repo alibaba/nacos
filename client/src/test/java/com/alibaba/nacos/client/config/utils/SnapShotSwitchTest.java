@@ -18,7 +18,6 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,5 +34,5 @@ public class SnapShotSwitchTest {
         SnapShotSwitch.setIsSnapShot(true);
         Assert.assertTrue(SnapShotSwitch.getIsSnapShot());
     }
-
+    
 }
