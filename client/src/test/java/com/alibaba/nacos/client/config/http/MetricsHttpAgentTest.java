@@ -25,12 +25,6 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * MetricsHttpAgentTest.
- *
- * @author shalk
- * @since 2021
- */
 public class MetricsHttpAgentTest {
     
     private static class MockHttpAgent implements HttpAgent {

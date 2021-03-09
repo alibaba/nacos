@@ -27,12 +27,6 @@ import org.mockito.Mockito;
 import java.util.HashMap;
 import java.util.Properties;
 
-/**
- * ServerHttpAgentTest.
- *
- * @author shalk
- * @since 2021
- */
 public class ServerHttpAgentTest {
     
     @Test
