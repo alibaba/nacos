@@ -41,6 +41,7 @@ import org.springframework.stereotype.Component;
 public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
     
     private final ServiceStorage serviceStorage;
+    
     private final NamingMetadataManager metadataManager;
     
     public ServiceQueryRequestHandler(ServiceStorage serviceStorage,
