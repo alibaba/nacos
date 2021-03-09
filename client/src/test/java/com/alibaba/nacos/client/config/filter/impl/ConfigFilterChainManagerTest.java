@@ -30,12 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * ConfigFilterChainManagerTest.
- *
- * @author shalk
- * @since 2021
- */
 public class ConfigFilterChainManagerTest {
     
     private static class MyIConfigFilter implements IConfigFilter {

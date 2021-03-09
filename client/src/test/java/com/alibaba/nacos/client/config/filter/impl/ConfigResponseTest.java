@@ -20,12 +20,6 @@ import com.alibaba.nacos.api.config.filter.IConfigContext;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * ConfigResponseTest.
- *
- * @author shalk
- * @since 2021
- */
 public class ConfigResponseTest {
     
     @Test

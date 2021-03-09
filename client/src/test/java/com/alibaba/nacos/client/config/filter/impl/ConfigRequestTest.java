@@ -20,12 +20,6 @@ import com.alibaba.nacos.api.config.filter.IConfigContext;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * doc.
- *
- * @author shalk
- * @since 2021
- */
 public class ConfigRequestTest {
     
     @Test
@@ -53,7 +47,7 @@ public class ConfigRequestTest {
     }
     
     @Test
-    public void getParameter() {
+    public void testGetParameter() {
         ConfigRequest configRequest = new ConfigRequest();
         String dataId = "id";
         String group = "group";
@@ -72,7 +66,7 @@ public class ConfigRequestTest {
     }
     
     @Test
-    public void getConfigContext() {
+    public void testGetConfigContext() {
         ConfigRequest configRequest = new ConfigRequest();
         IConfigContext configContext = configRequest.getConfigContext();
         Assert.assertNotNull(configContext);

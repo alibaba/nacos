@@ -19,12 +19,6 @@ package com.alibaba.nacos.client.config.filter.impl;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * ConfigContextTest.
- *
- * @author shalk
- * @since 2021
- */
 public class ConfigContextTest {
     
     @Test
