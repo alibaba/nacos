@@ -36,6 +36,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Service util.
@@ -280,15 +282,23 @@ public class ServiceUtil {
                 total += 1;
             }
         }
+        List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstance;
         if ((float) ipMap.get(Boolean.TRUE).size() / total <= threshold) {
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceInfo.getName());
             serviceInfo.setReachProtectionThreshold(true);
-            ipMap.get(Boolean.TRUE).addAll(ipMap.get(Boolean.FALSE));
-            ipMap.get(Boolean.FALSE).clear();
-        }
-        List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstance = ipMap.get(Boolean.TRUE);
-        if (!healthyOnly) {
-            filteredInstance.addAll(ipMap.get(Boolean.FALSE));
+            filteredInstance = Stream.of(Boolean.TRUE, Boolean.FALSE)
+                .map(ipMap::get)
+                .flatMap(Collection::stream)
+                .map(InstanceUtil::deepCopy)
+                // set all to `healthy` state to protect
+                .peek(instance -> instance.setHealthy(true))
+                .collect(Collectors.toList());
+        } else {
+            serviceInfo.setReachProtectionThreshold(false);
+            filteredInstance = ipMap.get(Boolean.TRUE);
+            if (!healthyOnly) {
+                filteredInstance.addAll(ipMap.get(Boolean.FALSE));
+            }
         }
         result.setHosts(filteredInstance);
         return result;

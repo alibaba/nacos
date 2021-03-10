@@ -26,11 +26,12 @@ import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.push.v1.ClientInfo;
 import com.alibaba.nacos.naming.push.v1.DataSource;
 import com.alibaba.nacos.naming.push.v1.NamingSubscriberServiceV1Impl;
 import com.alibaba.nacos.naming.push.v1.PushClient;
-import com.alibaba.nacos.naming.push.UdpPushService;
+import com.alibaba.nacos.naming.utils.InstanceUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -38,10 +39,13 @@ import org.springframework.stereotype.Component;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Implementation of {@link InstanceOperator} by service for v1.x.
@@ -208,17 +212,24 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         }
         
         double threshold = service.getProtectThreshold();
+        List<Instance> hosts;
         if ((float) ipMap.get(Boolean.TRUE).size() / total <= threshold) {
             
-            Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceName);
-            
-            ipMap.get(Boolean.TRUE).addAll(ipMap.get(Boolean.FALSE));
-            ipMap.get(Boolean.FALSE).clear();
-        }
-        
-        List<Instance> hosts = new LinkedList<>(ipMap.get(Boolean.TRUE));
-        if (!healthOnly) {
-            hosts.addAll(ipMap.get(Boolean.FALSE));
+            Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", result.getName());
+            result.setReachProtectionThreshold(true);
+            hosts = Stream.of(Boolean.TRUE, Boolean.FALSE)
+                .map(ipMap::get)
+                .flatMap(Collection::stream)
+                .map(InstanceUtil::deepCopy)
+                // set all to `healthy` state to protect
+                .peek(instance -> instance.setHealthy(true))
+                .collect(Collectors.toCollection(LinkedList::new));
+        } else {
+            result.setReachProtectionThreshold(false);
+            hosts = new LinkedList<>(ipMap.get(Boolean.TRUE));
+            if (!healthOnly) {
+                hosts.addAll(ipMap.get(Boolean.FALSE));
+            }
         }
         
         result.setHosts(hosts);
