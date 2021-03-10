@@ -77,4 +77,24 @@ public class InstanceUtil {
             instance.getMetadata().put(entry.getKey(), entry.getValue().toString());
         }
     }
+
+    /**
+     * Deepcopy one instance.
+     * 
+     * @param source instance to be deepcopy
+     */
+    public static Instance deepCopy(Instance source) {
+        Instance target = new Instance();
+        target.setInstanceId(source.getInstanceId());
+        target.setIp(source.getIp());
+        target.setPort(source.getPort());
+        target.setWeight(source.getWeight());
+        target.setHealthy(source.isHealthy());
+        target.setEnabled(source.isEnabled());
+        target.setEphemeral(source.isEphemeral());
+        target.setClusterName(source.getClusterName());
+        target.setServiceName(source.getServiceName());
+        target.setMetadata(new HashMap<>(source.getMetadata()));
+        return target;
+    }
 }
