@@ -23,12 +23,6 @@ import org.junit.Test;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-/**
- * AbstractConfigChangeListenerTest.
- *
- * @author shalk
- * @since 2021
- */
 public class AbstractConfigChangeListenerTest {
     
     @Test

@@ -23,12 +23,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Properties;
 
-/**
- * PropertiesListenerTest.
- *
- * @author shalk
- * @since 2021
- */
 public class PropertiesListenerTest {
     
     @Test
