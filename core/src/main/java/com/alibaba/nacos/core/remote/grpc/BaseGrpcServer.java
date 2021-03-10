@@ -81,6 +81,21 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         return ConnectionType.GRPC;
     }
     
+    final static Metadata.Key<String> X_REAL_IP = Metadata.Key.of("X-Real-IP", Metadata.ASCII_STRING_MARSHALLER);
+    
+    final static Metadata.Key<String> X_FORWARDED_FOR = Metadata.Key
+            .of("X-Forwarded-For", Metadata.ASCII_STRING_MARSHALLER);
+    
+    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
+    
+    public static String getRemoteIp(Metadata headers) {
+        String xForwardedFor = headers.get(X_FORWARDED_FOR);
+        if (!org.apache.commons.lang3.StringUtils.isBlank(xForwardedFor)) {
+            return xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
+        }
+        return headers.get(X_REAL_IP);
+    }
+    
     @Override
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
@@ -90,9 +105,11 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
             @Override
             public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
                     ServerCallHandler<T, S> next) {
+                String remoteIp = getRemoteIp(headers);
                 Context ctx = Context.current()
                         .withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID))
-                        .withValue(CONTEXT_KEY_CONN_CLIENT_IP, call.getAttributes().get(TRANS_KEY_CLIENT_IP))
+                        .withValue(CONTEXT_KEY_CONN_CLIENT_IP, StringUtils.isNotBlank(remoteIp) ? remoteIp
+                                : call.getAttributes().get(TRANS_KEY_CLIENT_IP))
                         .withValue(CONTEXT_KEY_CONN_CLIENT_PORT, call.getAttributes().get(TRANS_KEY_CLIENT_PORT))
                         .withValue(CONTEXT_KEY_CONN_LOCAL_PORT, call.getAttributes().get(TRANS_KEY_LOCAL_PORT));
                 if (REQUEST_BI_STREAM_SERVICE_NAME.equals(call.getMethodDescriptor().getServiceName())) {
