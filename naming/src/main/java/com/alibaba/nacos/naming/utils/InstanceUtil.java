@@ -79,7 +79,7 @@ public class InstanceUtil {
     }
 
     /**
-     * Deepcopy one instance
+     * Deepcopy one instance.
      * 
      * @param source instance to be deepcopy
      */
