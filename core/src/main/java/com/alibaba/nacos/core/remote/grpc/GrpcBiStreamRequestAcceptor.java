@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
@@ -83,7 +82,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             final int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
             
-            String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+            final String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
             
             @Override
             public void onNext(Payload payload) {
@@ -112,9 +111,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
-                    if (StringUtils.isNotBlank(setUpRequest.getClientIp())) {
-                        clientIp = setUpRequest.getClientIp();
-                    }
+                    
                     ConnectionMeta metaInfo = new ConnectionMeta(connectionId, clientIp, clientPort, localPort,
                             ConnectionType.GRPC.getType(), setUpRequest.getClientVersion(), appName,
                             setUpRequest.getLabels());

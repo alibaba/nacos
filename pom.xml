@@ -139,8 +139,7 @@
         <slf4j-api.version>1.7.7</slf4j-api.version>
         <logback.version>1.2.3</logback.version>
         <log4j.version>2.13.3</log4j.version>
-        <httpcore.version>4.4.1</httpcore.version>
-        <httpclient.version>4.5</httpclient.version>
+        
         <httpasyncclient.version>4.1.3</httpasyncclient.version>
         <mysql-connector-java.version>8.0.16</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
@@ -165,7 +164,7 @@
         <mockito-all.version>1.10.19</mockito-all.version>
         <hamcrest-all.version>1.3</hamcrest-all.version>
         <prometheus-simpleclient.version>0.5.0</prometheus-simpleclient.version>
-        <tomcat-embed-jasper.version>9.0.37</tomcat-embed-jasper.version>
+        <tomcat-embed-jasper.version>9.0.38</tomcat-embed-jasper.version>
         <truth.version>0.30</truth.version>
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.3.5</jraft-core.version>
@@ -841,24 +840,6 @@
             <!-- HTTP client libs -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>${httpcore.version}</version>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${httpclient.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>commons-logging</artifactId>
-                        <groupId>commons-logging</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpasyncclient</artifactId>
                 <version>${httpasyncclient.version}</version>
             </dependency>
@@ -1069,17 +1050,17 @@
         </dependencies>
     </dependencyManagement>
     
-        <distributionManagement>
-            <snapshotRepository>
-                <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->
-                <id>sona</id>
-                <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-            </snapshotRepository>
-            <repository>
-                <id>sona</id>
-                <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-            </repository>
-        </distributionManagement>
+    <distributionManagement>
+        <snapshotRepository>
+            <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->
+            <id>sona</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>sona</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
     
 </project>
 

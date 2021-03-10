@@ -124,7 +124,7 @@
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
         </dependency>
-
+ 
         <!-- JRaft dependency start -->
         <dependency>
             <groupId>com.alipay.sofa</groupId>
