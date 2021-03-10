@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.control;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Objects;
 
@@ -26,10 +27,24 @@ import java.util.Objects;
  * @author liuzunfei
  * @version $Id: MatchMode.java, v 0.1 2021年01月22日 12:38 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class MonitorKeyMatcher {
+@SuppressWarnings({"PMD.AbstractClassShouldStartWithAbstractNamingRule", "PMD.UndefineMagicConstantRule"})
+public class MonitorKeyMatcher {
     
-    protected String pattern;
+    /**
+     * if provided monitor key match this monitor ,with monitor type.
+     *
+     * @param monitorKey monitorKey.
+     * @return
+     */
+    public static boolean matchWithType(String pattern, String monitorKey) {
+        String[] typeInPattern = pattern.split(Constants.COLON);
+        String[] typeInMonitorKey = monitorKey.split(Constants.COLON);
+        if (!Objects.equals(typeInPattern[0], typeInMonitorKey[0])) {
+            return false;
+        }
+        return match(pattern.substring(pattern.indexOf(Constants.COLON)),
+                monitorKey.substring(monitorKey.indexOf(Constants.COLON)));
+    }
     
     /**
      * if provided monitor key match this monitor.
@@ -37,34 +52,31 @@ public abstract class MonitorKeyMatcher {
      * @param monitorKey monitorKey.
      * @return
      */
-    abstract boolean match(String monitorKey);
-    
-    /**
-     * get mode.
-     *
-     * @return
-     */
-    abstract String getMatchModel();
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public static boolean match(String pattern, String monitorKey) {
+        pattern = pattern.trim();
+        monitorKey = monitorKey.trim();
+        //"AB",equals.
+        if (!pattern.contains(Constants.ALL_PATTERN)) {
+            return pattern.equals(monitorKey.trim());
+        }
+        //"*",match all.
+        if (pattern.equals(Constants.ALL_PATTERN)) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
+        String[] split = pattern.split("\\" + Constants.ALL_PATTERN);
+        
+        if (split.length == 1) {
+            //"A*",prefix match.
+            return monitorKey.startsWith(split[0]);
+        } else if (split.length == 2) {
+            //"*A",postfix match.
+            if (StringUtils.isBlank(split[0])) {
+                return monitorKey.endsWith(split[1]);
+            }
+            return monitorKey.startsWith(split[0]) && monitorKey.endsWith(split[1]);
         }
-        MonitorKeyMatcher that = (MonitorKeyMatcher) o;
-        return Objects.equals(getMatchModel(), that.getMatchModel()) && Objects.equals(pattern, that.pattern);
+        
+        return false;
     }
     
-    @Override
-    public int hashCode() {
-        return Objects.hash(getMatchModel(), pattern);
-    }
-    
-    @Override
-    public String toString() {
-        return getMatchModel() + Constants.POUND + pattern;
-    }
 }

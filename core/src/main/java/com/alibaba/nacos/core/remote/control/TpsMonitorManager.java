@@ -187,6 +187,8 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
         
         long lastReportSecond = 0L;
         
+        long lastReportMinutes = 0L;
+        
         @Override
         public void run() {
             try {
@@ -194,8 +196,10 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                 StringBuilder stringBuilder = new StringBuilder();
                 Set<Map.Entry<String, TpsMonitorPoint>> entries = points.entrySet();
                 
-                long tempSecond = TpsMonitorPoint.getTrimMillsOfSecond(now - 1000L);
-                String formatString = TpsMonitorPoint.getTimeFormatOfSecond(tempSecond);
+                long tempSecond = 0L;
+                long tempMinutes = 0L;
+                
+                String formatString = TpsMonitorPoint.getTimeFormatOfSecond(now - 1000L);
                 for (Map.Entry<String, TpsMonitorPoint> entry : entries) {
                     TpsMonitorPoint value = entry.getValue();
                     //get last second
@@ -203,35 +207,63 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                     if (pointSlot == null) {
                         continue;
                     }
+                    
                     //already reported.
-                    if (lastReportSecond != 0L && lastReportSecond == pointSlot.second) {
+                    if (lastReportSecond != 0L && lastReportSecond == pointSlot.time) {
                         continue;
                     }
                     String point = entry.getKey();
-                    tempSecond = pointSlot.second;
-                    stringBuilder.append(point).append("|").append("point|").append(formatString).append("|")
-                            .append(pointSlot.tps.get()).append("|").append(pointSlot.interceptedTps.get())
-                            .append("\n");
-                    for (Map.Entry<MonitorKeyMatcher, TpsRecorder> monitorKeyEntry : value.monitorKeysRecorder
-                            .entrySet()) {
-                        MonitorKeyMatcher monitorKey = monitorKeyEntry.getKey();
+                    tempSecond = pointSlot.time;
+                    stringBuilder.append(point).append("|").append("point|").append(value.getTpsRecorder().period)
+                            .append("|").append(formatString).append("|")
+                            .append(pointSlot.getCountHolder(point).count.get()).append("|")
+                            .append(pointSlot.getCountHolder(point).interceptedCount.get()).append("\n");
+                    for (Map.Entry<String, TpsRecorder> monitorKeyEntry : value.monitorKeysRecorder.entrySet()) {
+                        String monitorPattern = monitorKeyEntry.getKey();
                         TpsRecorder ipRecord = monitorKeyEntry.getValue();
-                        TpsRecorder.TpsSlot keySlot = ipRecord.getPoint(now - 1000L);
+                        TpsRecorder.TpsSlot keySlot = ipRecord.getPoint(now - ipRecord.period.toMillis(1));
                         if (keySlot == null) {
                             continue;
                         }
                         //already reported.
-                        if (lastReportSecond != 0L && lastReportSecond == keySlot.second) {
-                            continue;
+                        if (ipRecord.period == TimeUnit.SECONDS) {
+                            if (lastReportSecond != 0L && lastReportSecond == keySlot.time) {
+                                continue;
+                            }
                         }
-                        stringBuilder.append(point).append("|").append(monitorKey).append("|").append(formatString)
-                                .append("|").append(keySlot.tps.get()).append("|").append(keySlot.interceptedTps.get())
-                                .append("\n");
+                        if (ipRecord.period == TimeUnit.MINUTES) {
+                            if (lastReportMinutes != 0L && lastReportMinutes == keySlot.time) {
+                                continue;
+                            }
+                        }
+                        String timeFormatOfSecond = TpsMonitorPoint.getTimeFormatOfSecond(keySlot.time);
+                        tempMinutes = keySlot.time;
+                        if (ipRecord.isProtoModel()) {
+                            Map<String, TpsRecorder.SlotCountHolder> keySlots = ((TpsRecorder.MultiKeyTpsSlot) keySlot).keySlots;
+                            for (Map.Entry<String, TpsRecorder.SlotCountHolder> slotCountHolder : keySlots.entrySet()) {
+                                stringBuilder.append(point).append("|").append(monitorPattern).append("|")
+                                        .append(ipRecord.period).append("|").append(timeFormatOfSecond).append("|")
+                                        .append(slotCountHolder.getKey()).append("|")
+                                        .append(slotCountHolder.getValue().count).append("|")
+                                        .append(slotCountHolder.getValue().interceptedCount).append("\n");
+                            }
+                            
+                        } else {
+                            stringBuilder.append(point).append("|").append(monitorPattern).append("|")
+                                    .append(ipRecord.period).append("|").append(timeFormatOfSecond).append("|")
+                                    .append(keySlot.getCountHolder(point).count.get()).append("|")
+                                    .append(keySlot.getCountHolder(point).interceptedCount.get()).append("\n");
+                        }
                     }
                 }
                 
-                if (stringBuilder.length() > 0) {
+                if (tempSecond > 0) {
                     lastReportSecond = tempSecond;
+                }
+                if (tempMinutes > 0) {
+                    lastReportMinutes = tempMinutes;
+                }
+                if (stringBuilder.length() > 0) {
                     Loggers.TPS_CONTROL_DIGEST.info("Tps reporting...\n" + stringBuilder.toString());
                 }
             } catch (Throwable throwable) {
