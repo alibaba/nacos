@@ -179,15 +179,22 @@ public class NacosAuthManager implements AuthManager {
     }
     
     private String resolveTokenFromUser(String userName, String rawPassword) throws AccessException {
-        
+        String finalName;
+        Authentication authenticate;
         try {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userName,
                     rawPassword);
-            authenticationManager.authenticate(authenticationToken);
+            authenticate = authenticationManager.authenticate(authenticationToken);
         } catch (AuthenticationException e) {
             throw new AccessException("unknown user!");
         }
         
-        return tokenManager.createToken(userName);
+        if (null == authenticate || StringUtils.isBlank(authenticate.getName())) {
+            finalName = userName;
+        } else {
+            finalName = authenticate.getName();
+        }
+        
+        return tokenManager.createToken(finalName);
     }
 }
