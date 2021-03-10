@@ -310,7 +310,6 @@ public abstract class RpcClient implements Closeable {
                                     
                                 } else {
                                     lastActiveTimeStamp = System.currentTimeMillis();
-                                    ;
                                     continue;
                                 }
                             } else {
