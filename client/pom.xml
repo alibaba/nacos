@@ -54,7 +54,7 @@
             <artifactId>log4j-api</artifactId>
             <optional>true</optional>
         </dependency>
-
+        
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
@@ -64,13 +64,14 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-common</artifactId>
+            <optional>true</optional>
         </dependency>
         
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-api</artifactId>
+            <optional>true</optional>
         </dependency>
-        
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -97,7 +98,7 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-    
+        
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpasyncclient</artifactId>

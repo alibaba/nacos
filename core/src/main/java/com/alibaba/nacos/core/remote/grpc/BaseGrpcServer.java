@@ -81,9 +81,9 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         return ConnectionType.GRPC;
     }
     
-    final static Metadata.Key<String> X_REAL_IP = Metadata.Key.of("X-Real-IP", Metadata.ASCII_STRING_MARSHALLER);
+    static final Metadata.Key<String> X_REAL_IP = Metadata.Key.of("X-Real-IP", Metadata.ASCII_STRING_MARSHALLER);
     
-    final static Metadata.Key<String> X_FORWARDED_FOR = Metadata.Key
+    static final Metadata.Key<String> X_FORWARDED_FOR = Metadata.Key
             .of("X-Forwarded-For", Metadata.ASCII_STRING_MARSHALLER);
     
     private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
