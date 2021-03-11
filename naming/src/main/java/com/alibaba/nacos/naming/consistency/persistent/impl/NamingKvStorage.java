@@ -97,7 +97,7 @@ public class NamingKvStorage extends MemoryKvStorage {
             storage.put(key, value);
         } catch (Exception e) {
             throw new KvStorageException(ErrorCode.KVStorageWriteError.getCode(),
-                    "Put data failed, key: " + new String(key), e);
+                    "Put data failed, key: " + new String(key) + ",detail: " + e.getMessage(), e);
         }
         // after actual storage put success, put it in memory, memory put should success all the time
         super.put(key, value);
