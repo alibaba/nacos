@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Service util.
@@ -242,9 +241,52 @@ public class ServiceUtil {
      */
     public static ServiceInfo selectInstances(ServiceInfo serviceInfo, String cluster, boolean healthyOnly,
             boolean enableOnly) {
-        return selectInstances(serviceInfo, null, cluster, healthyOnly, enableOnly);
+        return doSelectInstances(serviceInfo, cluster, healthyOnly, enableOnly, null);
     }
     
+    /**
+     * Select instance of service info with healthy protection.
+     *
+     * @param serviceInfo     original service info
+     * @param serviceMetadata service meta info
+     * @param cluster         cluster of instances
+     * @param healthyOnly     whether only select instance which healthy
+     * @param enableOnly      whether only select instance which enabled
+     * @return new service info
+     */
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
+                                                                   ServiceMetadata serviceMetadata,
+                                                                   String cluster,
+                                                                   boolean healthyOnly,
+                                                                   boolean enableOnly) {
+        InstancesFilter filter = (filteredResult, allInstances, healthyCount) -> {
+            if (serviceMetadata == null) {
+                return;
+            }
+            // TODO: filter ips using selector
+            float threshold = serviceMetadata.getProtectThreshold();
+            if (threshold < 0) {
+                threshold = 0F;
+            }
+            if ((float) healthyCount / allInstances.size() <= threshold) {
+                Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", filteredResult.getName());
+                filteredResult.setReachProtectionThreshold(true);
+                List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstances = allInstances.stream()
+                        .map(i -> {
+                            if (!i.isHealthy()) {
+                                i = InstanceUtil.deepCopy(i);
+                                // set all to `healthy` state to protect
+                                i.setHealthy(true);
+                            } // else deepcopy is unnecessary
+                            return i;
+                        })
+                        .collect(Collectors.toCollection(LinkedList::new));
+                filteredResult.setHosts(filteredInstances);
+            }
+        };
+        return doSelectInstances(serviceInfo, cluster, healthyOnly, enableOnly, filter);
+    }
+
     /**
      * Select instance of service info.
      *
@@ -252,55 +294,41 @@ public class ServiceUtil {
      * @param cluster     cluster of instances
      * @param healthyOnly whether only select instance which healthy
      * @param enableOnly  whether only select instance which enabled
+     * @param filter      do some other filter operation
      * @return new service info
      */
-    public static ServiceInfo selectInstances(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, String cluster,
-                                              boolean healthyOnly, boolean enableOnly) {
+    private static ServiceInfo doSelectInstances(ServiceInfo serviceInfo, String cluster,
+                                                 boolean healthyOnly, boolean enableOnly,
+                                                 InstancesFilter filter) {
         ServiceInfo result = new ServiceInfo();
         result.setName(serviceInfo.getName());
         result.setGroupName(serviceInfo.getGroupName());
         result.setCacheMillis(serviceInfo.getCacheMillis());
         result.setLastRefTime(System.currentTimeMillis());
         result.setClusters(cluster);
+        result.setReachProtectionThreshold(false);
         Set<String> clusterSets = com.alibaba.nacos.common.utils.StringUtils.isNotBlank(cluster) ? new HashSet<>(
                 Arrays.asList(cluster.split(","))) : new HashSet<>();
-        float threshold = 0F;
-        // TODO: filter ips using selector
-        if (serviceMetadata != null) {
-            threshold = serviceMetadata.getProtectThreshold();
-        }
-        if (threshold < 0) {
-            threshold = 0F;
-        }
-        long total = 0L;
-        Map<Boolean, List<com.alibaba.nacos.api.naming.pojo.Instance>> ipMap = new HashMap<>(2);
-        ipMap.put(Boolean.TRUE, new LinkedList<>());
-        ipMap.put(Boolean.FALSE, new LinkedList<>());
+        long healthyCount = 0L;
+        // The instance list won't be modified almost time.
+        List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstances = new LinkedList<>();
+        // The instance list of all filtered by cluster/enabled condition.
+        List<com.alibaba.nacos.api.naming.pojo.Instance> allInstances = new LinkedList<>();
         for (com.alibaba.nacos.api.naming.pojo.Instance ip : serviceInfo.getHosts()) {
             if (checkCluster(clusterSets, ip) && checkEnabled(enableOnly, ip)) {
-                ipMap.get(ip.isHealthy()).add(ip);
-                total += 1;
+                if (!healthyOnly || ip.isHealthy()) {
+                    filteredInstances.add(ip);
+                }
+                if (ip.isHealthy()) {
+                    healthyCount += 1;
+                }
+                allInstances.add(ip);
             }
         }
-        List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstance;
-        if ((float) ipMap.get(Boolean.TRUE).size() / total <= threshold) {
-            Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceInfo.getName());
-            serviceInfo.setReachProtectionThreshold(true);
-            filteredInstance = Stream.of(Boolean.TRUE, Boolean.FALSE)
-                .map(ipMap::get)
-                .flatMap(Collection::stream)
-                .map(InstanceUtil::deepCopy)
-                // set all to `healthy` state to protect
-                .peek(instance -> instance.setHealthy(true))
-                .collect(Collectors.toList());
-        } else {
-            serviceInfo.setReachProtectionThreshold(false);
-            filteredInstance = ipMap.get(Boolean.TRUE);
-            if (!healthyOnly) {
-                filteredInstance.addAll(ipMap.get(Boolean.FALSE));
-            }
+        result.setHosts(filteredInstances);
+        if (filter != null) {
+            filter.doFilter(result, allInstances, healthyCount);
         }
-        result.setHosts(filteredInstance);
         return result;
     }
     
@@ -314,4 +342,20 @@ public class ServiceUtil {
     private static boolean checkEnabled(boolean enableOnly, com.alibaba.nacos.api.naming.pojo.Instance instance) {
         return !enableOnly || instance.isEnabled();
     }
+
+    private interface InstancesFilter {
+
+        /**
+         * Do customized filtering.
+         *
+         * @param filteredResult result with instances already been filtered cluster/enabled/healthy
+         * @param allInstances   all instances filtered by cluster/enabled
+         * @param healthyCount   healthy instances count filtered by cluster/enabled
+         */
+        void doFilter(ServiceInfo filteredResult,
+                      List<com.alibaba.nacos.api.naming.pojo.Instance> allInstances,
+                      long healthyCount);
+
+    }
+
 }
