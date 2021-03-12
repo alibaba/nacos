@@ -19,12 +19,10 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
-import com.alibaba.nacos.common.http.HttpRestResult;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.HashMap;
 import java.util.Properties;
 
 public class ServerHttpAgentTest {
@@ -66,43 +64,7 @@ public class ServerHttpAgentTest {
     }
     
     @Test
-    public void testHttpGet() throws Exception {
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "https://httpbin.org");
-        properties.put(PropertyKeyConst.CONTEXT_PATH, "/");
-        final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(properties);
-        final HttpRestResult<String> result = serverHttpAgent
-                .httpGet("/get", new HashMap<String, String>(), new HashMap<String, String>(), "UTF-8", 5000);
-        
-        Assert.assertEquals(200, result.getCode());
-    }
-    
-    @Test
-    public void testHttpPost() throws Exception {
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "https://httpbin.org");
-        properties.put(PropertyKeyConst.CONTEXT_PATH, "/");
-        final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(properties);
-        final HttpRestResult<String> result = serverHttpAgent
-                .httpPost("/post", new HashMap<String, String>(), new HashMap<String, String>(), "UTF-8", 5000);
-        
-        Assert.assertEquals(200, result.getCode());
-    }
-    
-    @Test
-    public void testHttpDelete() throws Exception {
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "https://httpbin.org");
-        properties.put(PropertyKeyConst.CONTEXT_PATH, "/");
-        final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(properties);
-        final HttpRestResult<String> result = serverHttpAgent
-                .httpDelete("/delete", new HashMap<String, String>(), new HashMap<String, String>(), "UTF-8", 5000);
-        
-        Assert.assertEquals(200, result.getCode());
-    }
-    
-    @Test
-    public void testLifCycle() throws NacosException, NoSuchFieldException, IllegalAccessException {
+    public void testLifCycle() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "aaa");
         ServerListManager server = Mockito.mock(ServerListManager.class);
