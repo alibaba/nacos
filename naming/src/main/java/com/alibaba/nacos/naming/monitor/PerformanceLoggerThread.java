@@ -104,17 +104,18 @@ public class PerformanceLoggerThread {
                 logCount %= 10;
                 if (logCount == 0) {
                     Loggers.PERFORMANCE_LOG
-                            .info("PERFORMANCE:|serviceCount|ipCount|maxPushCost|avgPushCost|totalPushCount|failPushCount");
+                            .info("PERFORMANCE:|serviceCount|ipCount|subscribeCount|maxPushCost|avgPushCost|totalPushCount|failPushCount");
                 }
                 int serviceCount = com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size();
                 int ipCount = MetricsMonitor.getIpCountMonitor().get();
+                int subscribeCount = MetricsMonitor.getSubscriberCount().get();
                 long maxPushCost = MetricsMonitor.getMaxPushCostMonitor().get();
                 long avgPushCost = getAvgPushCost();
                 long totalPushCount = MetricsMonitor.getTotalPushMonitor().longValue();
                 long failPushCount = MetricsMonitor.getFailedPushMonitor().longValue();
                 Loggers.PERFORMANCE_LOG
-                        .info("PERFORMANCE:|{}|{}|{}|{}|{}|{}", serviceCount, ipCount, maxPushCost, avgPushCost,
-                                totalPushCount, failPushCount);
+                        .info("PERFORMANCE:|{}|{}|{}|{}|{}|{}|{}", serviceCount, ipCount, subscribeCount, maxPushCost,
+                                avgPushCost, totalPushCount, failPushCount);
                 Loggers.PERFORMANCE_LOG
                         .info("Task worker status: \n" + NamingExecuteTaskDispatcher.getInstance().workersStatus());
                 logCount++;
