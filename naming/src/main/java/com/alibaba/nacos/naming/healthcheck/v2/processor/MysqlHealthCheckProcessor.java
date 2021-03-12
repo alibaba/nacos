@@ -86,7 +86,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessorV2 {
         SRV_LOG.debug("mysql check, ip:" + instance);
         try {
             // TODO handle marked(white list) logic like v1.x.
-            if (instance.tryStartCheck()) {
+            if (!instance.tryStartCheck()) {
                 SRV_LOG.warn("mysql check started before last one finished, service: {} : {} : {}:{}",
                         service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
                 healthCheckCommon

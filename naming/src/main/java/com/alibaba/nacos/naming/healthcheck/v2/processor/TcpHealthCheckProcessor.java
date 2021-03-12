@@ -100,7 +100,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
             return;
         }
         // TODO handle marked(white list) logic like v1.x.
-        if (instance.tryStartCheck()) {
+        if (!instance.tryStartCheck()) {
             SRV_LOG.warn("tcp check started before last one finished, service: {} : {} : {}:{}",
                     service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
             healthCheckCommon
