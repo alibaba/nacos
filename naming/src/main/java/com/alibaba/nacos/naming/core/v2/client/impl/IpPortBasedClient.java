@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 
 import java.util.Collection;
 import java.util.List;
@@ -145,6 +146,7 @@ public class IpPortBasedClient extends AbstractClient {
             HealthCheckInstancePublishInfo instance = parseToHealthCheckInstance(instances.get(i));
             instance.initHealthCheck();
             publishers.put(singleton, instance);
+            MetricsMonitor.incrementInstanceCount();
         }
     }
 }
