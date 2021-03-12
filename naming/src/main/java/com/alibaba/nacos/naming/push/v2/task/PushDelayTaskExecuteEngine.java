@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
@@ -41,16 +42,20 @@ public class PushDelayTaskExecuteEngine extends NacosDelayTaskExecuteEngine {
     
     private final ServiceStorage serviceStorage;
     
+    private final NamingMetadataManager metadataManager;
+
     private final PushExecutor pushExecutor;
     
     private final SwitchDomain switchDomain;
     
     public PushDelayTaskExecuteEngine(ClientManager clientManager, ClientServiceIndexesManager indexesManager,
-            ServiceStorage serviceStorage, PushExecutor pushExecutor, SwitchDomain switchDomain) {
+                                      ServiceStorage serviceStorage, NamingMetadataManager metadataManager,
+                                      PushExecutor pushExecutor, SwitchDomain switchDomain) {
         super(PushDelayTaskExecuteEngine.class.getSimpleName(), Loggers.PUSH);
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
         this.serviceStorage = serviceStorage;
+        this.metadataManager = metadataManager;
         this.pushExecutor = pushExecutor;
         this.switchDomain = switchDomain;
         setDefaultTaskProcessor(new PushDelayTaskProcessor(this));
@@ -68,6 +73,10 @@ public class PushDelayTaskExecuteEngine extends NacosDelayTaskExecuteEngine {
         return serviceStorage;
     }
     
+    public NamingMetadataManager getMetadataManager() {
+        return metadataManager;
+    }
+
     public PushExecutor getPushExecutor() {
         return pushExecutor;
     }

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -72,7 +73,8 @@ public class PushExecuteTask extends AbstractExecuteTask {
     
     private PushDataWrapper generatePushData() {
         ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
-        serviceInfo = ServiceUtil.selectInstances(serviceInfo, false, true);
+        ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
+        serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true);
         return new PushDataWrapper(serviceInfo);
     }
     

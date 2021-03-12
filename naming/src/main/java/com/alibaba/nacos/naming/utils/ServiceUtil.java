@@ -250,6 +250,36 @@ public class ServiceUtil {
      * @param serviceInfo     original service info
      * @param serviceMetadata service meta info
      * @param cluster         cluster of instances
+     * @return new service info
+     */
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
+                                                                   ServiceMetadata serviceMetadata,
+                                                                   String cluster) {
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, false, false);
+    }
+
+    /**
+     * Select instance of service info with healthy protection.
+     *
+     * @param serviceInfo     original service info
+     * @param serviceMetadata service meta info
+     * @param healthyOnly     whether only select instance which healthy
+     * @param enableOnly      whether only select instance which enabled
+     * @return new service info
+     */
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
+                                                                   ServiceMetadata serviceMetadata,
+                                                                   boolean healthyOnly,
+                                                                   boolean enableOnly) {
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, StringUtils.EMPTY, healthyOnly, enableOnly);
+    }
+
+    /**
+     * Select instance of service info with healthy protection.
+     *
+     * @param serviceInfo     original service info
+     * @param serviceMetadata service meta info
+     * @param cluster         cluster of instances
      * @param healthyOnly     whether only select instance which healthy
      * @param enableOnly      whether only select instance which enabled
      * @return new service info
