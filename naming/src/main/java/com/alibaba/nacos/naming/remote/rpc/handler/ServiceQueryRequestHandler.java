@@ -61,7 +61,7 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
         boolean healthyOnly = request.isHealthyOnly();
         ServiceInfo result = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
-        result = ServiceUtil.selectInstances(result, serviceMetadata, cluster, healthyOnly, true);
+        result = ServiceUtil.selectInstancesWithHealthyProtection(result, serviceMetadata, cluster, healthyOnly, true);
         return QueryServiceResponse.buildSuccessResponse(result);
     }
 }
