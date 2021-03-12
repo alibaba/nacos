@@ -170,6 +170,7 @@ public class OperatorController {
         int responsibleIpCount = serviceManager.getResponsibleInstanceCount();
         result.put("serviceCount", MetricsMonitor.getDomCountMonitor().get());
         result.put("instanceCount", MetricsMonitor.getIpCountMonitor().get());
+        result.put("subscribeCount", MetricsMonitor.getSubscriberCount().get());
         result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIpCount);

@@ -47,6 +47,8 @@ public class MetricsMonitor {
     
     private final AtomicInteger ipCount = new AtomicInteger();
     
+    private final AtomicInteger subscriberCount = new AtomicInteger();
+    
     private final AtomicLong maxPushCost = new AtomicLong(-1);
     
     private final AtomicLong avgPushCost = new AtomicLong(-1);
@@ -101,6 +103,10 @@ public class MetricsMonitor {
         return INSTANCE.ipCount;
     }
     
+    public static AtomicInteger getSubscriberCount() {
+        return INSTANCE.subscriberCount;
+    }
+    
     public static AtomicLong getMaxPushCostMonitor() {
         return INSTANCE.maxPushCost;
     }
@@ -152,6 +158,14 @@ public class MetricsMonitor {
     
     public static void decrementInstanceCount() {
         INSTANCE.ipCount.decrementAndGet();
+    }
+    
+    public static void incrementSubscribeCount() {
+        INSTANCE.subscriberCount.incrementAndGet();
+    }
+    
+    public static void decrementSubscribeCount() {
+        INSTANCE.subscriberCount.decrementAndGet();
     }
     
     public static Counter getDiskException() {

@@ -60,7 +60,7 @@ public abstract class AbstractClient implements Client {
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         if (null == publishers.put(service, instancePublishInfo)) {
-            MetricsMonitor.getIpCountMonitor().incrementAndGet();
+            MetricsMonitor.incrementInstanceCount();
         }
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         Loggers.SRV_LOG.info("Client change for service {}, {}", service, getClientId());
@@ -71,7 +71,7 @@ public abstract class AbstractClient implements Client {
     public InstancePublishInfo removeServiceInstance(Service service) {
         InstancePublishInfo result = publishers.remove(service);
         if (null != result) {
-            MetricsMonitor.getIpCountMonitor().decrementAndGet();
+            MetricsMonitor.decrementInstanceCount();
             NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         }
         Loggers.SRV_LOG.info("Client remove for service {}, {}", service, getClientId());
@@ -90,13 +90,17 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public boolean addServiceSubscriber(Service service, Subscriber subscriber) {
-        subscribers.put(service, subscriber);
+        if (null == subscribers.put(service, subscriber)) {
+            MetricsMonitor.incrementSubscribeCount();
+        }
         return true;
     }
     
     @Override
     public boolean removeServiceSubscriber(Service service) {
-        subscribers.remove(service);
+        if (null != subscribers.remove(service)) {
+            MetricsMonitor.decrementSubscribeCount();
+        }
         return true;
     }
     
@@ -128,5 +132,6 @@ public abstract class AbstractClient implements Client {
     @Override
     public void release() {
         MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
+        MetricsMonitor.getSubscriberCount().addAndGet(-1 * subscribers.size());
     }
 }
