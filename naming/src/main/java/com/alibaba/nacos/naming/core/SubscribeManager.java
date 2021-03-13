@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -73,10 +74,12 @@ public class SubscribeManager {
      * @param serviceName service name
      * @param namespaceId namespace id
      * @param aggregation aggregation
+     * @param pageNo page no
+     * @param pageSize page size
      * @return list of subscriber
      * @throws InterruptedException interrupted exception
      */
-    public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation)
+    public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation, int pageNo, int pageSize)
             throws InterruptedException {
         if (aggregation) {
             // size = 1 means only myself in the list, we need at least one another server alive:
@@ -91,6 +94,8 @@ public class SubscribeManager {
                 Map<String, String> paramValues = new HashMap<>(128);
                 paramValues.put(CommonParams.SERVICE_NAME, serviceName);
                 paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
+                paramValues.put("pageNo", String.valueOf(pageNo));
+                paramValues.put("pageSize", String.valueOf(pageSize));
                 paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
                 if (NetUtils.localServer().equals(server.getAddress())) {
                     subscriberList.addAll(getSubscribersFuzzy(serviceName, namespaceId));
@@ -105,6 +110,9 @@ public class SubscribeManager {
                 if (result.ok()) {
                     Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
+                } else {
+                    Loggers.SRV_LOG.warn("get subscriber from other member error, server:{}, resultCode:{}, resultMsg:{}",
+                            server.getAddress(), result.getCode(), result.getMessage());
                 }
             }
             return CollectionUtils.isNotEmpty(subscriberList) ? subscriberList.stream()
