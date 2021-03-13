@@ -33,19 +33,19 @@ import java.net.SocketAddress;
  * @since 1.1.4
  */
 @Service
-public class McpServerIntercepter implements ServerInterceptor {
-    
-    private static final String INTERCEPTE_METHOD_NAME = "EstablishResourceStream";
-    
+public class McpServerInterceptor implements ServerInterceptor {
+
+    private static final String INTERCEPT_METHOD_NAME = "EstablishResourceStream";
+
     @Override
     public <R, T> ServerCall.Listener<R> interceptCall(ServerCall<R, T> call, Metadata headers,
             ServerCallHandler<R, T> next) {
-        
+
         SocketAddress address = call.getAttributes().get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
         String methodName = call.getMethodDescriptor().getFullMethodName();
-        
+
         Loggers.MAIN.info("remote address: {}, method: {}", address, methodName);
-        
+
         return next.startCall(call, headers);
     }
 }

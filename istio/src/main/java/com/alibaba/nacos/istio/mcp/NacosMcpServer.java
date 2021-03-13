@@ -38,20 +38,20 @@ import java.io.IOException;
  */
 @Service
 public class NacosMcpServer {
-    
+
     private final int port = 18848;
-    
+
     private Server server;
-    
+
     @Autowired
     private IstioConfig istioConfig;
-    
+
     @Autowired
-    private McpServerIntercepter intercepter;
-    
+    private McpServerInterceptor intercepter;
+
     @Autowired
     private NacosMcpService nacosMcpService;
-    
+
     /**
      * Start.
      *
@@ -59,28 +59,28 @@ public class NacosMcpServer {
      */
     @PostConstruct
     public void start() throws IOException {
-        
+
         if (!istioConfig.isMcpServerEnabled()) {
             return;
         }
-        
+
         Loggers.MAIN.info("MCP server, starting Nacos MCP server...");
-        
+
         server = ServerBuilder.forPort(port).addService(ServerInterceptors.intercept(nacosMcpService, intercepter))
                 .build();
         server.start();
-        
+
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                
+
                 System.out.println("Stopping Nacos MCP server...");
                 NacosMcpServer.this.stop();
                 System.out.println("Nacos MCP server stopped...");
             }
         });
     }
-    
+
     /**
      * Stop.
      */
