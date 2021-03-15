@@ -54,5 +54,22 @@ public class YmlChangeParserTest {
         Assert.assertEquals("rocketMQ", map.get("app.name").getOldValue());
         Assert.assertEquals("nacos", map.get("app.name").getNewValue());
     }
+    
+    @Test
+    public void testComplexYaml() throws IOException {
+        /*
+         * map:
+         *   key1: "string"
+         *   key2:
+         *     - item1
+         *     - item2
+         *     - item3
+         *   key3: 123
+         */
+        String s = "map:\n" + "  key1: \"string\"\n" + "  key2:\n" + "    - item1\n" + "    - item2\n" + "    - item3\n"
+                + "  key3: 123    \n";
+        Map<String, ConfigChangeItem> map = parser.doParse(s, s, type);
+        Assert.assertEquals(0, map.size());
+    }
 }
 
