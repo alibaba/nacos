@@ -44,9 +44,14 @@ public class ConnectionMeta {
     String clientIp;
     
     /**
-     * Client IP Port.
+     * Remote IP Address.
      */
-    int clientPort;
+    String remoteIp;
+    
+    /**
+     * Remote IP Port.
+     */
+    int remotePort;
     
     /**
      * Local Ip Port.
@@ -93,14 +98,15 @@ public class ConnectionMeta {
         return labels.get(VIPSERVER_TAG);
     }
     
-    public ConnectionMeta(String connectionId, String clientIp, int clientPort, int localPort, String connectType,
-            String version, String appName, Map<String, String> labels) {
+    public ConnectionMeta(String connectionId, String clientIp, String remoteIp, int remotePort, int localPort,
+            String connectType, String version, String appName, Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.connectType = connectType;
         this.version = version;
         this.appName = appName;
-        this.clientPort = clientPort;
+        this.remoteIp = remoteIp;
+        this.remotePort = remotePort;
         this.localPort = localPort;
         this.createTime = new Date();
         this.lastActiveTime = System.currentTimeMillis();
@@ -136,23 +142,6 @@ public class ConnectionMeta {
         return labels;
     }
     
-    /**
-     * Getter method for property <tt>clientPort</tt>.
-     *
-     * @return property value of clientPort
-     */
-    public int getClientPort() {
-        return clientPort;
-    }
-    
-    /**
-     * Setter method for property <tt>clientPort</tt>.
-     *
-     * @param clientPort value to be assigned to property clientPort
-     */
-    public void setClientPort(int clientPort) {
-        this.clientPort = clientPort;
-    }
     
     /**
      * Setter method for property <tt>labels</tt>.

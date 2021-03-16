@@ -31,30 +31,10 @@ public class RequestMeta {
     
     private String clientIp = "";
     
-    private int clientPort;
-    
     private String clientVersion = "";
     
     private Map<String, String> labels = new HashMap<String, String>();
-    
-    /**
-     * Getter method for property <tt>clientPort</tt>.
-     *
-     * @return property value of clientPort
-     */
-    public int getClientPort() {
-        return clientPort;
-    }
-    
-    /**
-     * Setter method for property <tt>clientPort</tt>.
-     *
-     * @param clientPort value to be assigned to property clientPort
-     */
-    public void setClientPort(int clientPort) {
-        this.clientPort = clientPort;
-    }
-    
+
     /**
      * Getter method for property <tt>clientVersion</tt>.
      *

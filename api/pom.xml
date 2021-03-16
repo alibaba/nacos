@@ -49,7 +49,7 @@
                          </goals>
                      </execution>
                  </executions>
-             </plugin>-->
+             </plugin>
             
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
