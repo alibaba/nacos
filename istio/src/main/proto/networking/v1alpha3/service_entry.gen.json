@@ -1,0 +1,172 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Configuration affecting service registry.",
+    "version": "v1alpha3"
+  },
+  "components": {
+    "schemas": {
+      "istio.networking.v1alpha3.WorkloadSelector": {
+        "description": "`WorkloadSelector` specifies the criteria used to determine if the `Gateway`, `Sidecar`, or `EnvoyFilter` or `ServiceEntry` configuration can be applied to a proxy. The matching criteria includes the metadata associated with a proxy, workload instance info such as labels attached to the pod/VM, or any other info that the proxy provides to Istio during the initial handshake. If multiple conditions are specified, all conditions need to match in order for the workload instance to be selected. Currently, only label based selection mechanism is supported.",
+        "type": "object",
+        "properties": {
+          "labels": {
+            "description": "One or more labels that indicate a specific set of pods/VMs on which the configuration should be applied. The scope of label search is restricted to the configuration namespace in which the the resource is present.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "format": "string"
+            }
+          }
+        }
+      },
+      "istio.networking.v1alpha3.Port": {
+        "description": "Port describes the properties of a specific port of a service.",
+        "type": "object",
+        "properties": {
+          "number": {
+            "description": "A valid non-negative integer port number.",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Label assigned to the port.",
+            "type": "string",
+            "format": "string"
+          },
+          "protocol": {
+            "description": "The protocol exposed on the port. MUST BE one of HTTP|HTTPS|GRPC|HTTP2|MONGO|TCP|TLS. TLS implies the connection will be routed based on the SNI header to the destination without terminating the TLS connection.",
+            "type": "string",
+            "format": "string"
+          },
+          "targetPort": {
+            "description": "The port number on the endpoint where the traffic will be received. Applicable only when used with ServiceEntries.",
+            "type": "integer"
+          }
+        }
+      },
+      "istio.networking.v1alpha3.ServiceEntry": {
+        "description": "ServiceEntry enables adding additional entries into Istio's internal service registry.",
+        "type": "object",
+        "properties": {
+          "exportTo": {
+            "description": "A list of namespaces to which this service is exported. Exporting a service allows it to be used by sidecars, gateways and virtual services defined in other namespaces. This feature provides a mechanism for service owners and mesh administrators to control the visibility of services across namespace boundaries.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "subjectAltNames": {
+            "description": "If specified, the proxy will verify that the server certificate's subject alternate name matches one of the specified values.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "workloadSelector": {
+            "$ref": "#/components/schemas/istio.networking.v1alpha3.WorkloadSelector"
+          },
+          "hosts": {
+            "description": "The hosts associated with the ServiceEntry. Could be a DNS name with wildcard prefix.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "addresses": {
+            "description": "The virtual IP addresses associated with the service. Could be CIDR prefix. For HTTP traffic, generated route configurations will include http route domains for both the `addresses` and `hosts` field values and the destination will be identified based on the HTTP Host/Authority header. If one or more IP addresses are specified, the incoming traffic will be identified as belonging to this service if the destination IP matches the IP/CIDRs specified in the addresses field. If the Addresses field is empty, traffic will be identified solely based on the destination port. In such scenarios, the port on which the service is being accessed must not be shared by any other service in the mesh. In other words, the sidecar will behave as a simple TCP proxy, forwarding incoming traffic on a specified port to the specified destination endpoint IP/host. Unix domain socket addresses are not supported in this field.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "ports": {
+            "description": "The ports associated with the external service. If the Endpoints are Unix domain socket addresses, there must be exactly one port.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/istio.networking.v1alpha3.Port"
+            }
+          },
+          "location": {
+            "$ref": "#/components/schemas/istio.networking.v1alpha3.ServiceEntry.Location"
+          },
+          "resolution": {
+            "$ref": "#/components/schemas/istio.networking.v1alpha3.ServiceEntry.Resolution"
+          },
+          "endpoints": {
+            "description": "One or more endpoints associated with the service. Only one of `endpoints` or `workloadSelector` can be specified.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/istio.networking.v1alpha3.WorkloadEntry"
+            }
+          }
+        }
+      },
+      "istio.networking.v1alpha3.ServiceEntry.Location": {
+        "description": "Location specifies whether the service is part of Istio mesh or outside the mesh. Location determines the behavior of several features, such as service-to-service mTLS authentication, policy enforcement, etc. When communicating with services outside the mesh, Istio's mTLS authentication is disabled, and policy enforcement is performed on the client-side as opposed to server-side.",
+        "type": "string",
+        "enum": [
+          "MESH_EXTERNAL",
+          "MESH_INTERNAL"
+        ]
+      },
+      "istio.networking.v1alpha3.ServiceEntry.Resolution": {
+        "description": "Resolution determines how the proxy will resolve the IP addresses of the network endpoints associated with the service, so that it can route to one of them. The resolution mode specified here has no impact on how the application resolves the IP address associated with the service. The application may still have to use DNS to resolve the service to an IP so that the outbound traffic can be captured by the Proxy. Alternatively, for HTTP services, the application could directly communicate with the proxy (e.g., by setting HTTP_PROXY) to talk to these services.",
+        "type": "string",
+        "enum": [
+          "NONE",
+          "STATIC",
+          "DNS"
+        ]
+      },
+      "istio.networking.v1alpha3.WorkloadEntry": {
+        "description": "WorkloadEntry enables specifying the properties of a single non-Kubernetes workload such a VM or a bare metal services that can be referred to by service entries.",
+        "type": "object",
+        "properties": {
+          "labels": {
+            "description": "One or more labels associated with the endpoint.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "ports": {
+            "description": "Set of ports associated with the endpoint. If the port map is specified, it must be a map of servicePortName to this endpoint's port, such that traffic to the service port will be forwarded to the endpoint port that maps to the service's portName. If omitted, and the targetPort is specified as part of the service's port specification, traffic to the service port will be forwarded to one of the endpoints on the specified `targetPort`. If both the targetPort and endpoint's port map are not specified, traffic to a service port will be forwarded to one of the endpoints on the same port.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "weight": {
+            "description": "The load balancing weight associated with the endpoint. Endpoints with higher weights will receive proportionally higher traffic.",
+            "type": "integer"
+          },
+          "address": {
+            "description": "Address associated with the network endpoint without the port. Domain names can be used if and only if the resolution is set to DNS, and must be fully-qualified without wildcards. Use the form unix:///absolute/path/to/socket for Unix domain socket endpoints.",
+            "type": "string",
+            "format": "string"
+          },
+          "network": {
+            "description": "Network enables Istio to group endpoints resident in the same L3 domain/network. All endpoints in the same network are assumed to be directly reachable from one another. When endpoints in different networks cannot reach each other directly, an Istio Gateway can be used to establish connectivity (usually using the `AUTO_PASSTHROUGH` mode in a Gateway Server). This is an advanced configuration used typically for spanning an Istio mesh over multiple clusters.",
+            "type": "string",
+            "format": "string"
+          },
+          "locality": {
+            "description": "The locality associated with the endpoint. A locality corresponds to a failure domain (e.g., country/region/zone). Arbitrary failure domain hierarchies can be represented by separating each encapsulating failure domain by /. For example, the locality of an an endpoint in US, in US-East-1 region, within availability zone az-1, in data center rack r11 can be represented as us/us-east-1/az-1/r11. Istio will configure the sidecar to route to endpoints within the same locality as the sidecar. If none of the endpoints in the locality are available, endpoints parent locality (but within the same network ID) will be chosen. For example, if there are two endpoints in same network (networkID \"n1\"), say e1 with locality us/us-east-1/az-1/r11 and e2 with locality us/us-east-1/az-2/r12, a sidecar from us/us-east-1/az-1/r11 locality will prefer e1 from the same locality over e2 from a different locality. Endpoint e2 could be the IP associated with a gateway (that bridges networks n1 and n2), or the IP associated with a standard service endpoint.",
+            "type": "string",
+            "format": "string"
+          },
+          "serviceAccount": {
+            "description": "The service account associated with the workload if a sidecar is present in the workload. The service account must be present in the same namespace as the configuration ( WorkloadEntry or a ServiceEntry)",
+            "type": "string",
+            "format": "string"
+          }
+        }
+      }
+    }
+  }
+}

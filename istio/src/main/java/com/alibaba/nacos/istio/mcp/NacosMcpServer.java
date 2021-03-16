@@ -54,6 +54,9 @@ public class NacosMcpServer {
     @Autowired
     private NacosMcpOverXdsService nacosMcpOverXdsService;
     
+    @Autowired
+    private NacosToMcpResources nacosToMcpResources;
+    
     /**
      * Start.
      *
@@ -71,7 +74,7 @@ public class NacosMcpServer {
         server = ServerBuilder.forPort(port).addService(ServerInterceptors.intercept(nacosMcpService, intercepter))
                 .addService(ServerInterceptors.intercept(nacosMcpOverXdsService, intercepter)).build();
         server.start();
-        
+        nacosToMcpResources.start();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
