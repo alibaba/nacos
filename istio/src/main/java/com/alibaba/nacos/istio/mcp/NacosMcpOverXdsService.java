@@ -6,13 +6,22 @@ import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.stub.StreamObserver;
-import istio.mcp.v1alpha1.Mcp;
-import org.apache.commons.lang3.StringUtils;
+import istio.mcp.v1alpha1.ResourceOuterClass;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Nacos MCP server.
+ *
+ * <p>This MCP serves as a ResourceSource defined by Istio.
+ *
+ * @author huaicheng.lzp
+ * @since 1.2.1
+ */
 @org.springframework.stereotype.Service
 public class NacosMcpOverXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase {
     
@@ -20,17 +29,46 @@ public class NacosMcpOverXdsService extends AggregatedDiscoveryServiceGrpc.Aggre
     
     private final Map<Integer, StreamObserver<DiscoveryResponse>> connnections = new ConcurrentHashMap<>(16);
     
+    private final ConcurrentHashMap<Integer, Boolean> connectionInited = new ConcurrentHashMap<>();
+    
     private static final String MCP_RESOURCES_URL = "type.googleapis.com/istio.mcp.v1alpha1.Resource";
     
+    private static final String SERVICEENTY_TYPE = "networking.istio.io/v1alpha3/ServiceEntry";
+    
+    private Map<String, ResourceOuterClass.Resource> resourceMapCache;
+    
     /**
-     * whkh.
+     * Send resources to connections.
      *
-     * @param discoveryResponse discoveryResponse
+     * @param resourceMap all mcp resource
      */
-    public void sendResponse(DiscoveryResponse discoveryResponse) {
+    public void sendResources(Map<String, ResourceOuterClass.Resource> resourceMap) {
+        resourceMapCache = resourceMap;
+        Loggers.MAIN.info("send resources for mcpOverXds,count : {}", resourceMap.size());
+        DiscoveryResponse discoveryResponse = generateResponse(resourceMap);
+        if (Loggers.MAIN.isDebugEnabled()) {
+            Loggers.MAIN.debug("discoveryResponse:{}", discoveryResponse.toString());
+        }
         for (StreamObserver<DiscoveryResponse> observer : connnections.values()) {
+            Loggers.MAIN.info("mcpOverXds send to:{}", observer.toString());
             observer.onNext(discoveryResponse);
         }
+    }
+    
+    /**
+     * generate response by resource.
+     *
+     * @param resourceMap all mcp resource
+     * @return
+     */
+    private DiscoveryResponse generateResponse(Map<String, ResourceOuterClass.Resource> resourceMap) {
+        List<Any> anies = new ArrayList<>();
+        for (ResourceOuterClass.Resource resource : resourceMap.values()) {
+            Any any = Any.newBuilder().setValue(resource.toByteString()).setTypeUrl(MCP_RESOURCES_URL).build();
+            anies.add(any);
+        }
+        return DiscoveryResponse.newBuilder().addAllResources(anies)
+                .setNonce(String.valueOf(System.currentTimeMillis())).setTypeUrl(SERVICEENTY_TYPE).build();
     }
     
     @Override
@@ -53,15 +91,17 @@ public class NacosMcpOverXdsService extends AggregatedDiscoveryServiceGrpc.Aggre
                             discoveryRequest.getErrorDetail().getMessage());
                     return;
                 }
-                
-                if (StringUtils.isNotBlank(discoveryRequest.getResponseNonce())) {
-                    // This is a response:
-                    Loggers.MAIN.info("ACK nonce: {}", discoveryRequest.getResponseNonce());
-                    return;
+                if (SERVICEENTY_TYPE.equals(discoveryRequest.getTypeUrl())) {
+                    Boolean inited = connectionInited.get(id);
+                    if (inited == null || !inited) {
+                        connectionInited.put(id, true);
+                        if (resourceMapCache != null) {
+                            DiscoveryResponse discoveryResponse = generateResponse(resourceMapCache);
+                            Loggers.MAIN.info("ACK for serviceEntry discoveryRequest {}", discoveryRequest.toString());
+                            responseObserver.onNext(discoveryResponse);
+                        }
+                    }
                 }
-                DiscoveryResponse discoveryResponse = DiscoveryResponse.newBuilder()
-                        .setNonce(String.valueOf(System.currentTimeMillis())).build();
-                responseObserver.onNext(discoveryResponse);
             }
             
             @Override

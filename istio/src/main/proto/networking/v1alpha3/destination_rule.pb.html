@@ -1,0 +1,1853 @@
+---
+title: Destination Rule
+description: Configuration affecting load balancing, outlier detection, etc.
+location: https://istio.io/docs/reference/config/networking/destination-rule.html
+layout: protoc-gen-docs
+generator: protoc-gen-docs
+schema: istio.networking.v1alpha3.DestinationRule
+aliases: [/docs/reference/config/networking/v1alpha3/destination-rule]
+number_of_entries: 20
+---
+<p><code>DestinationRule</code> defines policies that apply to traffic intended for a
+service after routing has occurred. These rules specify configuration
+for load balancing, connection pool size from the sidecar, and outlier
+detection settings to detect and evict unhealthy hosts from the load
+balancing pool. For example, a simple load balancing policy for the
+ratings service would look as follows:</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<p>Version specific policies can be specified by defining a named
+<code>subset</code> and overriding the settings specified at the service level. The
+following rule uses a round robin load balancing policy for all traffic
+going to a subset named testversion that is composed of endpoints (e.g.,
+pods) with labels (version:v3).</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+  subsets:
+  - name: testversion
+    labels:
+      version: v3
+    trafficPolicy:
+      loadBalancer:
+        simple: ROUND_ROBIN
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+  subsets:
+  - name: testversion
+    labels:
+      version: v3
+    trafficPolicy:
+      loadBalancer:
+        simple: ROUND_ROBIN
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<p><strong>Note:</strong> Policies specified for subsets will not take effect until
+a route rule explicitly sends traffic to this subset.</p>
+
+<p>Traffic policies can be customized to specific ports as well. The
+following rule uses the least connection load balancing policy for all
+traffic to port 80, while uses a round robin load balancing setting for
+traffic to the port 9080.</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings-port
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy: # Apply to all ports
+    portLevelSettings:
+    - port:
+        number: 80
+      loadBalancer:
+        simple: LEAST_CONN
+    - port:
+        number: 9080
+      loadBalancer:
+        simple: ROUND_ROBIN
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings-port
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy: # Apply to all ports
+    portLevelSettings:
+    - port:
+        number: 80
+      loadBalancer:
+        simple: LEAST_CONN
+    - port:
+        number: 9080
+      loadBalancer:
+        simple: ROUND_ROBIN
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<h2 id="DestinationRule">DestinationRule</h2>
+<section>
+<p>DestinationRule defines policies that apply to traffic intended for a service
+after routing has occurred.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="DestinationRule-host">
+<td><code>host</code></td>
+<td><code>string</code></td>
+<td>
+<p>The name of a service from the service registry. Service
+names are looked up from the platform&rsquo;s service registry (e.g.,
+Kubernetes services, Consul services, etc.) and from the hosts
+declared by <a href="https://istio.io/docs/reference/config/networking/service-entry/#ServiceEntry">ServiceEntries</a>. Rules defined for
+services that do not exist in the service registry will be ignored.</p>
+
+<p><em>Note for Kubernetes users</em>: When short names are used (e.g. &ldquo;reviews&rdquo;
+instead of &ldquo;reviews.default.svc.cluster.local&rdquo;), Istio will interpret
+the short name based on the namespace of the rule, not the service. A
+rule in the &ldquo;default&rdquo; namespace containing a host &ldquo;reviews&rdquo; will be
+interpreted as &ldquo;reviews.default.svc.cluster.local&rdquo;, irrespective of
+the actual namespace associated with the reviews service. <em>To avoid
+potential misconfigurations, it is recommended to always use fully
+qualified domain names over short names.</em></p>
+
+<p>Note that the host field applies to both HTTP and TCP services.</p>
+
+</td>
+<td>
+Yes
+</td>
+</tr>
+<tr id="DestinationRule-traffic_policy">
+<td><code>trafficPolicy</code></td>
+<td><code><a href="#TrafficPolicy">TrafficPolicy</a></code></td>
+<td>
+<p>Traffic policies to apply (load balancing policy, connection pool
+sizes, outlier detection).</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="DestinationRule-subsets">
+<td><code>subsets</code></td>
+<td><code><a href="#Subset">Subset[]</a></code></td>
+<td>
+<p>One or more named sets that represent individual versions of a
+service. Traffic policies can be overridden at subset level.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="DestinationRule-export_to">
+<td><code>exportTo</code></td>
+<td><code>string[]</code></td>
+<td>
+<p>A list of namespaces to which this destination rule is exported.
+The resolution of a destination rule to apply to a service occurs in the
+context of a hierarchy of namespaces. Exporting a destination rule allows
+it to be included in the resolution hierarchy for services in
+other namespaces. This feature provides a mechanism for service owners
+and mesh administrators to control the visibility of destination rules
+across namespace boundaries.</p>
+
+<p>If no namespaces are specified then the destination rule is exported to all
+namespaces by default.</p>
+
+<p>The value &ldquo;.&rdquo; is reserved and defines an export to the same namespace that
+the destination rule is declared in. Similarly, the value &ldquo;*&rdquo; is reserved and
+defines an export to all namespaces.</p>
+
+<p>NOTE: in the current release, the <code>exportTo</code> value is restricted to
+&ldquo;.&rdquo; or &ldquo;*&rdquo; (i.e., the current namespace or all namespaces).</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="TrafficPolicy">TrafficPolicy</h2>
+<section>
+<p>Traffic policies to apply for a specific destination, across all
+destination ports. See DestinationRule for examples.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="TrafficPolicy-load_balancer">
+<td><code>loadBalancer</code></td>
+<td><code><a href="#LoadBalancerSettings">LoadBalancerSettings</a></code></td>
+<td>
+<p>Settings controlling the load balancer algorithms.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="TrafficPolicy-connection_pool">
+<td><code>connectionPool</code></td>
+<td><code><a href="#ConnectionPoolSettings">ConnectionPoolSettings</a></code></td>
+<td>
+<p>Settings controlling the volume of connections to an upstream service</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="TrafficPolicy-outlier_detection">
+<td><code>outlierDetection</code></td>
+<td><code><a href="#OutlierDetection">OutlierDetection</a></code></td>
+<td>
+<p>Settings controlling eviction of unhealthy hosts from the load balancing pool</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="TrafficPolicy-tls">
+<td><code>tls</code></td>
+<td><code><a href="#ClientTLSSettings">ClientTLSSettings</a></code></td>
+<td>
+<p>TLS related settings for connections to the upstream service.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="TrafficPolicy-port_level_settings">
+<td><code>portLevelSettings</code></td>
+<td><code><a href="#TrafficPolicy-PortTrafficPolicy">PortTrafficPolicy[]</a></code></td>
+<td>
+<p>Traffic policies specific to individual ports. Note that port level
+settings will override the destination-level settings. Traffic
+settings specified at the destination-level will not be inherited when
+overridden by port-level settings, i.e. default values will be applied
+to fields omitted in port-level traffic policies.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="Subset">Subset</h2>
+<section>
+<p>A subset of endpoints of a service. Subsets can be used for scenarios
+like A/B testing, or routing to a specific version of a service. Refer
+to <a href="https://istio.io/docs/reference/config/networking/virtual-service/#VirtualService">VirtualService</a> documentation for examples of using
+subsets in these scenarios. In addition, traffic policies defined at the
+service-level can be overridden at a subset-level. The following rule
+uses a round robin load balancing policy for all traffic going to a
+subset named testversion that is composed of endpoints (e.g., pods) with
+labels (version:v3).</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+  subsets:
+  - name: testversion
+    labels:
+      version: v3
+    trafficPolicy:
+      loadBalancer:
+        simple: ROUND_ROBIN
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+  subsets:
+  - name: testversion
+    labels:
+      version: v3
+    trafficPolicy:
+      loadBalancer:
+        simple: ROUND_ROBIN
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<p><strong>Note:</strong> Policies specified for subsets will not take effect until
+a route rule explicitly sends traffic to this subset.</p>
+
+<p>One or more labels are typically required to identify the subset destination,
+however, when the corresponding DestinationRule represents a host that
+supports multiple SNI hosts (e.g., an egress gateway), a subset without labels
+may be meaningful. In this case a traffic policy with <a href="#ClientTLSSettings">ClientTLSSettings</a>
+can be used to identify a specific SNI host corresponding to the named subset.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="Subset-name">
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>
+<p>Name of the subset. The service name and the subset name can
+be used for traffic splitting in a route rule.</p>
+
+</td>
+<td>
+Yes
+</td>
+</tr>
+<tr id="Subset-labels">
+<td><code>labels</code></td>
+<td><code>map&lt;string,&nbsp;string&gt;</code></td>
+<td>
+<p>Labels apply a filter over the endpoints of a service in the
+service registry. See route rules for examples of usage.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="Subset-traffic_policy">
+<td><code>trafficPolicy</code></td>
+<td><code><a href="#TrafficPolicy">TrafficPolicy</a></code></td>
+<td>
+<p>Traffic policies that apply to this subset. Subsets inherit the
+traffic policies specified at the DestinationRule level. Settings
+specified at the subset level will override the corresponding settings
+specified at the DestinationRule level.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="LoadBalancerSettings">LoadBalancerSettings</h2>
+<section>
+<p>Load balancing policies to apply for a specific destination. See Envoy&rsquo;s
+load balancing
+<a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancing">documentation</a>
+for more details.</p>
+
+<p>For example, the following rule uses a round robin load balancing policy
+for all traffic going to the ratings service.</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: bookinfo-ratings
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<p>The following example sets up sticky sessions for the ratings service
+hashing-based load balancer for the same ratings service using the
+the User cookie as the hash key.</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml"> apiVersion: networking.istio.io/v1alpha3
+ kind: DestinationRule
+ metadata:
+   name: bookinfo-ratings
+ spec:
+   host: ratings.prod.svc.cluster.local
+   trafficPolicy:
+     loadBalancer:
+       consistentHash:
+         httpCookie:
+           name: user
+           ttl: 0s
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml"> apiVersion: networking.istio.io/v1beta1
+ kind: DestinationRule
+ metadata:
+   name: bookinfo-ratings
+ spec:
+   host: ratings.prod.svc.cluster.local
+   trafficPolicy:
+     loadBalancer:
+       consistentHash:
+         httpCookie:
+           name: user
+           ttl: 0s
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="LoadBalancerSettings-simple" class="oneof oneof-start">
+<td><code>simple</code></td>
+<td><code><a href="#LoadBalancerSettings-SimpleLB">SimpleLB (oneof)</a></code></td>
+<td>
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LoadBalancerSettings-consistent_hash" class="oneof">
+<td><code>consistentHash</code></td>
+<td><code><a href="#LoadBalancerSettings-ConsistentHashLB">ConsistentHashLB (oneof)</a></code></td>
+<td>
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LoadBalancerSettings-locality_lb_setting">
+<td><code>localityLbSetting</code></td>
+<td><code><a href="#LocalityLoadBalancerSetting">LocalityLoadBalancerSetting</a></code></td>
+<td>
+<p>Locality load balancer settings, this will override mesh wide settings in entirety, meaning no merging would be performed
+between this object and the object one in MeshConfig</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="ConnectionPoolSettings">ConnectionPoolSettings</h2>
+<section>
+<p>Connection pool settings for an upstream host. The settings apply to
+each individual host in the upstream service.  See Envoy&rsquo;s <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/circuit_breaking">circuit
+breaker</a>
+for more details. Connection pool settings can be applied at the TCP
+level as well as at HTTP level.</p>
+
+<p>For example, the following rule sets a limit of 100 connections to redis
+service called myredissrv with a connect timeout of 30ms</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: bookinfo-redis
+spec:
+  host: myredissrv.prod.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 30ms
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: bookinfo-redis
+spec:
+  host: myredissrv.prod.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 30ms
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="ConnectionPoolSettings-tcp">
+<td><code>tcp</code></td>
+<td><code><a href="#ConnectionPoolSettings-TCPSettings">TCPSettings</a></code></td>
+<td>
+<p>Settings common to both HTTP and TCP upstream connections.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-http">
+<td><code>http</code></td>
+<td><code><a href="#ConnectionPoolSettings-HTTPSettings">HTTPSettings</a></code></td>
+<td>
+<p>HTTP connection pool settings.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="OutlierDetection">OutlierDetection</h2>
+<section>
+<p>A Circuit breaker implementation that tracks the status of each
+individual host in the upstream service.  Applicable to both HTTP and
+TCP services.  For HTTP services, hosts that continually return 5xx
+errors for API calls are ejected from the pool for a pre-defined period
+of time. For TCP services, connection timeouts or connection
+failures to a given host counts as an error when measuring the
+consecutive errors metric. See Envoy&rsquo;s <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/outlier">outlier
+detection</a>
+for more details.</p>
+
+<p>The following rule sets a connection pool size of 100 HTTP1 connections
+with no more than 10 req/connection to the &ldquo;reviews&rdquo; service. In addition,
+it sets a limit of 1000 concurrent HTTP2 requests and configures upstream
+hosts to be scanned every 5 mins so that any host that fails 7 consecutive
+times with a 502, 503, or 504 error code will be ejected for 15 minutes.</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews-cb-policy
+spec:
+  host: reviews.prod.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutiveErrors: 7
+      interval: 5m
+      baseEjectionTime: 15m
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: reviews-cb-policy
+spec:
+  host: reviews.prod.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutiveErrors: 7
+      interval: 5m
+      baseEjectionTime: 15m
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="OutlierDetection-consecutive_gateway_errors">
+<td><code>consecutiveGatewayErrors</code></td>
+<td><code><a href="#google-protobuf-UInt32Value">UInt32Value</a></code></td>
+<td>
+<p>Number of gateway errors before a host is ejected from the connection pool.
+When the upstream host is accessed over HTTP, a 502, 503, or 504 return
+code qualifies as a gateway error. When the upstream host is accessed over
+an opaque TCP connection, connect timeouts and connection error/failure
+events qualify as a gateway error.
+This feature is disabled by default or when set to the value 0.</p>
+
+<p>Note that consecutive<em>gateway</em>errors and consecutive<em>5xx</em>errors can be
+used separately or together. Because the errors counted by
+consecutive<em>gateway</em>errors are also included in consecutive<em>5xx</em>errors,
+if the value of consecutive<em>gateway</em>errors is greater than or equal to
+the value of consecutive<em>5xx</em>errors, consecutive<em>gateway</em>errors will have
+no effect.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="OutlierDetection-consecutive_5xx_errors">
+<td><code>consecutive5xxErrors</code></td>
+<td><code><a href="#google-protobuf-UInt32Value">UInt32Value</a></code></td>
+<td>
+<p>Number of 5xx errors before a host is ejected from the connection pool.
+When the upstream host is accessed over an opaque TCP connection, connect
+timeouts, connection error/failure and request failure events qualify as a
+5xx error.
+This feature defaults to 5 but can be disabled by setting the value to 0.</p>
+
+<p>Note that consecutive<em>gateway</em>errors and consecutive<em>5xx</em>errors can be
+used separately or together. Because the errors counted by
+consecutive<em>gateway</em>errors are also included in consecutive<em>5xx</em>errors,
+if the value of consecutive<em>gateway</em>errors is greater than or equal to
+the value of consecutive<em>5xx</em>errors, consecutive<em>gateway</em>errors will have
+no effect.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="OutlierDetection-interval">
+<td><code>interval</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>Time interval between ejection sweep analysis. format:
+1h/1m/1s/1ms. MUST BE &gt;=1ms. Default is 10s.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="OutlierDetection-base_ejection_time">
+<td><code>baseEjectionTime</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>Minimum ejection duration. A host will remain ejected for a period
+equal to the product of minimum ejection duration and the number of
+times the host has been ejected. This technique allows the system to
+automatically increase the ejection period for unhealthy upstream
+servers. format: 1h/1m/1s/1ms. MUST BE &gt;=1ms. Default is 30s.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="OutlierDetection-max_ejection_percent">
+<td><code>maxEjectionPercent</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Maximum % of hosts in the load balancing pool for the upstream
+service that can be ejected. Defaults to 10%.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="OutlierDetection-min_health_percent">
+<td><code>minHealthPercent</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Outlier detection will be enabled as long as the associated load balancing
+pool has at least min<em>health</em>percent hosts in healthy mode. When the
+percentage of healthy hosts in the load balancing pool drops below this
+threshold, outlier detection will be disabled and the proxy will load balance
+across all hosts in the pool (healthy and unhealthy). The threshold can be
+disabled by setting it to 0%. The default is 0% as it&rsquo;s not typically
+applicable in k8s environments with few pods per service.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="ClientTLSSettings">ClientTLSSettings</h2>
+<section>
+<p>SSL/TLS related settings for upstream connections. See Envoy&rsquo;s <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/auth/cert.proto.html">TLS
+context</a>
+for more details. These settings are common to both HTTP and TCP upstreams.</p>
+
+<p>For example, the following rule configures a client to use mutual TLS
+for connections to upstream database cluster.</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: db-mtls
+spec:
+  host: mydbserver.prod.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: MUTUAL
+      clientCertificate: /etc/certs/myclientcert.pem
+      privateKey: /etc/certs/client_private_key.pem
+      caCertificates: /etc/certs/rootcacerts.pem
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: db-mtls
+spec:
+  host: mydbserver.prod.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: MUTUAL
+      clientCertificate: /etc/certs/myclientcert.pem
+      privateKey: /etc/certs/client_private_key.pem
+      caCertificates: /etc/certs/rootcacerts.pem
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<p>The following rule configures a client to use TLS when talking to a
+foreign service whose domain matches *.foo.com.</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: tls-foo
+spec:
+  host: &quot;*.foo.com&quot;
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: tls-foo
+spec:
+  host: &quot;*.foo.com&quot;
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<p>The following rule configures a client to use Istio mutual TLS when talking
+to rating services.</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: ratings-istio-mtls
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+</code></pre>
+
+<p>{{</tab>}}</p>
+
+<p>{{<tab name="v1beta1" category-value="v1beta1">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ratings-istio-mtls
+spec:
+  host: ratings.prod.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="ClientTLSSettings-mode">
+<td><code>mode</code></td>
+<td><code><a href="#ClientTLSSettings-TLSmode">TLSmode</a></code></td>
+<td>
+<p>Indicates whether connections to this port should be secured
+using TLS. The value of this field determines how TLS is enforced.</p>
+
+</td>
+<td>
+Yes
+</td>
+</tr>
+<tr id="ClientTLSSettings-client_certificate">
+<td><code>clientCertificate</code></td>
+<td><code>string</code></td>
+<td>
+<p>REQUIRED if mode is <code>MUTUAL</code>. The path to the file holding the
+client-side TLS certificate to use.
+Should be empty if mode is <code>ISTIO_MUTUAL</code>.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ClientTLSSettings-private_key">
+<td><code>privateKey</code></td>
+<td><code>string</code></td>
+<td>
+<p>REQUIRED if mode is <code>MUTUAL</code>. The path to the file holding the
+client&rsquo;s private key.
+Should be empty if mode is <code>ISTIO_MUTUAL</code>.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ClientTLSSettings-ca_certificates">
+<td><code>caCertificates</code></td>
+<td><code>string</code></td>
+<td>
+<p>OPTIONAL: The path to the file containing certificate authority
+certificates to use in verifying a presented server certificate. If
+omitted, the proxy will not verify the server&rsquo;s certificate.
+Should be empty if mode is <code>ISTIO_MUTUAL</code>.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ClientTLSSettings-credential_name">
+<td><code>credentialName</code></td>
+<td><code>string</code></td>
+<td>
+<p>The name of the secret that holds the TLS certs for the
+client including the CA certificates. Secret must exist in the
+same namespace with the proxy using the certificates.
+The secret (of type <code>generic</code>)should contain the
+following keys and values: <code>key: &lt;privateKey&gt;</code>,
+<code>cert: &lt;serverCert&gt;</code>, <code>cacert: &lt;CACertificate&gt;</code>.
+Secret of type tls for client certificates along with
+ca.crt key for CA certificates is also supported.
+Only one of client certificates and CA certificate
+or credentialName can be specified.</p>
+
+<p><strong>NOTE:</strong> This field is currently applicable only at gateways.
+Sidecars will continue to use the certificate paths.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ClientTLSSettings-subject_alt_names">
+<td><code>subjectAltNames</code></td>
+<td><code>string[]</code></td>
+<td>
+<p>A list of alternate names to verify the subject identity in the
+certificate. If specified, the proxy will verify that the server
+certificate&rsquo;s subject alt name matches one of the specified values.
+If specified, this list overrides the value of subject<em>alt</em>names
+from the ServiceEntry.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ClientTLSSettings-sni">
+<td><code>sni</code></td>
+<td><code>string</code></td>
+<td>
+<p>SNI string to present to the server during TLS handshake.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="LocalityLoadBalancerSetting">LocalityLoadBalancerSetting</h2>
+<section>
+<p>Locality-weighted load balancing allows administrators to control the
+distribution of traffic to endpoints based on the localities of where the
+traffic originates and where it will terminate. These localities are
+specified using arbitrary labels that designate a hierarchy of localities in
+{region}/{zone}/{sub-zone} form. For additional detail refer to
+<a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/locality_weight">Locality Weight</a>
+The following example shows how to setup locality weights mesh-wide.</p>
+
+<p>Given a mesh with workloads and their service deployed to &ldquo;us-west/zone1/<em>&rdquo;
+and &ldquo;us-west/zone2/</em>&rdquo;. This example specifies that when traffic accessing a
+service originates from workloads in &ldquo;us-west/zone1/<em>&rdquo;, 80% of the traffic
+will be sent to endpoints in &ldquo;us-west/zone1/</em>&rdquo;, i.e the same zone, and the
+remaining 20% will go to endpoints in &ldquo;us-west/zone2/<em>&rdquo;. This setup is
+intended to favor routing traffic to endpoints in the same locality.
+A similar setting is specified for traffic originating in &ldquo;us-west/zone2/</em>&rdquo;.</p>
+
+<pre><code class="language-yaml">  distribute:
+    - from: us-west/zone1/*
+      to:
+        &quot;us-west/zone1/*&quot;: 80
+        &quot;us-west/zone2/*&quot;: 20
+    - from: us-west/zone2/*
+      to:
+        &quot;us-west/zone1/*&quot;: 20
+        &quot;us-west/zone2/*&quot;: 80
+</code></pre>
+
+<p>If the goal of the operator is not to distribute load across zones and
+regions but rather to restrict the regionality of failover to meet other
+operational requirements an operator can set a &lsquo;failover&rsquo; policy instead of
+a &lsquo;distribute&rsquo; policy.</p>
+
+<p>The following example sets up a locality failover policy for regions.
+Assume a service resides in zones within us-east, us-west &amp; eu-west
+this example specifies that when endpoints within us-east become unhealthy
+traffic should failover to endpoints in any zone or sub-zone within eu-west
+and similarly us-west should failover to us-east.</p>
+
+<pre><code class="language-yaml"> failover:
+   - from: us-east
+     to: eu-west
+   - from: us-west
+     to: us-east
+</code></pre>
+
+<p>Locality load balancing settings.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="LocalityLoadBalancerSetting-distribute">
+<td><code>distribute</code></td>
+<td><code><a href="#LocalityLoadBalancerSetting-Distribute">Distribute[]</a></code></td>
+<td>
+<p>Optional: only one of distribute or failover can be set.
+Explicitly specify loadbalancing weight across different zones and geographical locations.
+Refer to <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/locality_weight">Locality weighted load balancing</a>
+If empty, the locality weight is set according to the endpoints number within it.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LocalityLoadBalancerSetting-failover">
+<td><code>failover</code></td>
+<td><code><a href="#LocalityLoadBalancerSetting-Failover">Failover[]</a></code></td>
+<td>
+<p>Optional: only failover or distribute can be set.
+Explicitly specify the region traffic will land on when endpoints in local region becomes unhealthy.
+Should be used together with OutlierDetection to detect unhealthy endpoints.
+Note: if no OutlierDetection specified, this will not take effect.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LocalityLoadBalancerSetting-enabled">
+<td><code>enabled</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#boolvalue">BoolValue</a></code></td>
+<td>
+<p>enable locality load balancing, this is DestinationRule-level and will override mesh wide settings in entirety.
+e.g. true means that turn on locality load balancing for this DestinationRule no matter what mesh wide settings is.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="TrafficPolicy-PortTrafficPolicy">TrafficPolicy.PortTrafficPolicy</h2>
+<section>
+<p>Traffic policies that apply to specific ports of the service</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="TrafficPolicy-PortTrafficPolicy-port">
+<td><code>port</code></td>
+<td><code><a href="https://istio.io/docs/reference/config/networking/virtual-service.html#PortSelector">PortSelector</a></code></td>
+<td>
+<p>Specifies the number of a port on the destination service
+on which this policy is being applied.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="TrafficPolicy-PortTrafficPolicy-load_balancer">
+<td><code>loadBalancer</code></td>
+<td><code><a href="#LoadBalancerSettings">LoadBalancerSettings</a></code></td>
+<td>
+<p>Settings controlling the load balancer algorithms.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="TrafficPolicy-PortTrafficPolicy-connection_pool">
+<td><code>connectionPool</code></td>
+<td><code><a href="#ConnectionPoolSettings">ConnectionPoolSettings</a></code></td>
+<td>
+<p>Settings controlling the volume of connections to an upstream service</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="TrafficPolicy-PortTrafficPolicy-outlier_detection">
+<td><code>outlierDetection</code></td>
+<td><code><a href="#OutlierDetection">OutlierDetection</a></code></td>
+<td>
+<p>Settings controlling eviction of unhealthy hosts from the load balancing pool</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="TrafficPolicy-PortTrafficPolicy-tls">
+<td><code>tls</code></td>
+<td><code><a href="#ClientTLSSettings">ClientTLSSettings</a></code></td>
+<td>
+<p>TLS related settings for connections to the upstream service.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="LoadBalancerSettings-ConsistentHashLB">LoadBalancerSettings.ConsistentHashLB</h2>
+<section>
+<p>Consistent Hash-based load balancing can be used to provide soft
+session affinity based on HTTP headers, cookies or other
+properties. This load balancing policy is applicable only for HTTP
+connections. The affinity to a particular destination host will be
+lost when one or more hosts are added/removed from the destination
+service.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="LoadBalancerSettings-ConsistentHashLB-http_header_name" class="oneof oneof-start">
+<td><code>httpHeaderName</code></td>
+<td><code>string (oneof)</code></td>
+<td>
+<p>Hash based on a specific HTTP header.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LoadBalancerSettings-ConsistentHashLB-http_cookie" class="oneof">
+<td><code>httpCookie</code></td>
+<td><code><a href="#LoadBalancerSettings-ConsistentHashLB-HTTPCookie">HTTPCookie (oneof)</a></code></td>
+<td>
+<p>Hash based on HTTP cookie.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LoadBalancerSettings-ConsistentHashLB-use_source_ip" class="oneof">
+<td><code>useSourceIp</code></td>
+<td><code>bool (oneof)</code></td>
+<td>
+<p>Hash based on the source IP address.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LoadBalancerSettings-ConsistentHashLB-http_query_parameter_name" class="oneof">
+<td><code>httpQueryParameterName</code></td>
+<td><code>string (oneof)</code></td>
+<td>
+<p>Hash based on a specific HTTP query parameter.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LoadBalancerSettings-ConsistentHashLB-minimum_ring_size">
+<td><code>minimumRingSize</code></td>
+<td><code>uint64</code></td>
+<td>
+<p>The minimum number of virtual nodes to use for the hash
+ring. Defaults to 1024. Larger ring sizes result in more granular
+load distributions. If the number of hosts in the load balancing
+pool is larger than the ring size, each host will be assigned a
+single virtual node.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="LoadBalancerSettings-ConsistentHashLB-HTTPCookie">LoadBalancerSettings.ConsistentHashLB.HTTPCookie</h2>
+<section>
+<p>Describes a HTTP cookie that will be used as the hash key for the
+Consistent Hash load balancer. If the cookie is not present, it will
+be generated.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="LoadBalancerSettings-ConsistentHashLB-HTTPCookie-name">
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>
+<p>Name of the cookie.</p>
+
+</td>
+<td>
+Yes
+</td>
+</tr>
+<tr id="LoadBalancerSettings-ConsistentHashLB-HTTPCookie-path">
+<td><code>path</code></td>
+<td><code>string</code></td>
+<td>
+<p>Path to set for the cookie.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LoadBalancerSettings-ConsistentHashLB-HTTPCookie-ttl">
+<td><code>ttl</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>Lifetime of the cookie.</p>
+
+</td>
+<td>
+Yes
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="ConnectionPoolSettings-TCPSettings">ConnectionPoolSettings.TCPSettings</h2>
+<section>
+<p>Settings common to both HTTP and TCP upstream connections.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="ConnectionPoolSettings-TCPSettings-max_connections">
+<td><code>maxConnections</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Maximum number of HTTP1 /TCP connections to a destination host. Default 2^32-1.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-TCPSettings-connect_timeout">
+<td><code>connectTimeout</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>TCP connection timeout. format:
+1h/1m/1s/1ms. MUST BE &gt;=1ms. Default is 10s.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-TCPSettings-tcp_keepalive">
+<td><code>tcpKeepalive</code></td>
+<td><code><a href="#ConnectionPoolSettings-TCPSettings-TcpKeepalive">TcpKeepalive</a></code></td>
+<td>
+<p>If set then set SO_KEEPALIVE on the socket to enable TCP Keepalives.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="ConnectionPoolSettings-HTTPSettings">ConnectionPoolSettings.HTTPSettings</h2>
+<section>
+<p>Settings applicable to HTTP1.1/HTTP2/GRPC connections.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="ConnectionPoolSettings-HTTPSettings-http1_max_pending_requests">
+<td><code>http1MaxPendingRequests</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Maximum number of pending HTTP requests to a destination. Default 2^32-1.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-HTTPSettings-http2_max_requests">
+<td><code>http2MaxRequests</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Maximum number of requests to a backend. Default 2^32-1.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-HTTPSettings-max_requests_per_connection">
+<td><code>maxRequestsPerConnection</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Maximum number of requests per connection to a backend. Setting this
+parameter to 1 disables keep alive. Default 0, meaning &ldquo;unlimited&rdquo;,
+up to 2^29.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-HTTPSettings-max_retries">
+<td><code>maxRetries</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Maximum number of retries that can be outstanding to all hosts in a
+cluster at a given time. Defaults to 2^32-1.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-HTTPSettings-idle_timeout">
+<td><code>idleTimeout</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>The idle timeout for upstream connection pool connections. The idle timeout
+is defined as the period in which there are no active requests.
+If not set, the default is 1 hour. When the idle timeout is reached,
+the connection will be closed. If the connection is an HTTP/2
+connection a drain sequence will occur prior to closing the connection.
+Note that request based timeouts mean that HTTP/2 PINGs will not
+keep the connection alive. Applies to both HTTP1.1 and HTTP2 connections.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-HTTPSettings-h2_upgrade_policy">
+<td><code>h2UpgradePolicy</code></td>
+<td><code><a href="#ConnectionPoolSettings-HTTPSettings-H2UpgradePolicy">H2UpgradePolicy</a></code></td>
+<td>
+<p>Specify if http1.1 connection should be upgraded to http2 for the associated destination.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-HTTPSettings-use_client_protocol">
+<td><code>useClientProtocol</code></td>
+<td><code>bool</code></td>
+<td>
+<p>If set to true, client protocol will be preserved while initiating connection to backend.
+Note that when this is set to true, h2<em>upgrade</em>policy will be ineffective i.e. the client
+connections will not be upgraded to http2.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="ConnectionPoolSettings-TCPSettings-TcpKeepalive">ConnectionPoolSettings.TCPSettings.TcpKeepalive</h2>
+<section>
+<p>TCP keepalive.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="ConnectionPoolSettings-TCPSettings-TcpKeepalive-probes">
+<td><code>probes</code></td>
+<td><code>uint32</code></td>
+<td>
+<p>Maximum number of keepalive probes to send without response before
+deciding the connection is dead. Default is to use the OS level configuration
+(unless overridden, Linux defaults to 9.)</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-TCPSettings-TcpKeepalive-time">
+<td><code>time</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>The time duration a connection needs to be idle before keep-alive
+probes start being sent. Default is to use the OS level configuration
+(unless overridden, Linux defaults to 7200s (ie 2 hours.)</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-TCPSettings-TcpKeepalive-interval">
+<td><code>interval</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>The time duration between keep-alive probes.
+Default is to use the OS level configuration
+(unless overridden, Linux defaults to 75s.)</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="LocalityLoadBalancerSetting-Distribute">LocalityLoadBalancerSetting.Distribute</h2>
+<section>
+<p>Describes how traffic originating in the &lsquo;from&rsquo; zone or sub-zone is
+distributed over a set of &lsquo;to&rsquo; zones. Syntax for specifying a zone is
+{region}/{zone}/{sub-zone} and terminal wildcards are allowed on any
+segment of the specification. Examples:</p>
+
+<p><code>*</code> - matches all localities</p>
+
+<p><code>us-west/*</code> - all zones and sub-zones within the us-west region</p>
+
+<p><code>us-west/zone-1/*</code> - all sub-zones within us-west/zone-1</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="LocalityLoadBalancerSetting-Distribute-from">
+<td><code>from</code></td>
+<td><code>string</code></td>
+<td>
+<p>Originating locality, &lsquo;/&rsquo; separated, e.g. &lsquo;region/zone/sub_zone&rsquo;.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LocalityLoadBalancerSetting-Distribute-to">
+<td><code>to</code></td>
+<td><code>map&lt;string,&nbsp;uint32&gt;</code></td>
+<td>
+<p>Map of upstream localities to traffic distribution weights. The sum of
+all weights should be 100. Any locality not present will
+receive no traffic.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="LocalityLoadBalancerSetting-Failover">LocalityLoadBalancerSetting.Failover</h2>
+<section>
+<p>Specify the traffic failover policy across regions. Since zone and sub-zone
+failover is supported by default this only needs to be specified for
+regions when the operator needs to constrain traffic failover so that
+the default behavior of failing over to any endpoint globally does not
+apply. This is useful when failing over traffic across regions would not
+improve service health or may need to be restricted for other reasons
+like regulatory controls.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="LocalityLoadBalancerSetting-Failover-from">
+<td><code>from</code></td>
+<td><code>string</code></td>
+<td>
+<p>Originating region.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="LocalityLoadBalancerSetting-Failover-to">
+<td><code>to</code></td>
+<td><code>string</code></td>
+<td>
+<p>Destination region the traffic will fail over to when endpoints in
+the &lsquo;from&rsquo; region becomes unhealthy.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="google-protobuf-UInt32Value">google.protobuf.UInt32Value</h2>
+<section>
+<p>Wrapper message for <code>uint32</code>.</p>
+
+<p>The JSON representation for <code>UInt32Value</code> is JSON number.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="google-protobuf-UInt32Value-value">
+<td><code>value</code></td>
+<td><code>uint32</code></td>
+<td>
+<p>The uint32 value.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="LoadBalancerSettings-SimpleLB">LoadBalancerSettings.SimpleLB</h2>
+<section>
+<p>Standard load balancing algorithms that require no tuning.</p>
+
+<table class="enum-values">
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="LoadBalancerSettings-SimpleLB-ROUND_ROBIN">
+<td><code>ROUND_ROBIN</code></td>
+<td>
+<p>Round Robin policy. Default</p>
+
+</td>
+</tr>
+<tr id="LoadBalancerSettings-SimpleLB-LEAST_CONN">
+<td><code>LEAST_CONN</code></td>
+<td>
+<p>The least request load balancer uses an O(1) algorithm which selects
+two random healthy hosts and picks the host which has fewer active
+requests.</p>
+
+</td>
+</tr>
+<tr id="LoadBalancerSettings-SimpleLB-RANDOM">
+<td><code>RANDOM</code></td>
+<td>
+<p>The random load balancer selects a random healthy host. The random
+load balancer generally performs better than round robin if no health
+checking policy is configured.</p>
+
+</td>
+</tr>
+<tr id="LoadBalancerSettings-SimpleLB-PASSTHROUGH">
+<td><code>PASSTHROUGH</code></td>
+<td>
+<p>This option will forward the connection to the original IP address
+requested by the caller without doing any form of load
+balancing. This option must be used with care. It is meant for
+advanced use cases. Refer to Original Destination load balancer in
+Envoy for further details.</p>
+
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="ConnectionPoolSettings-HTTPSettings-H2UpgradePolicy">ConnectionPoolSettings.HTTPSettings.H2UpgradePolicy</h2>
+<section>
+<p>Policy for upgrading http1.1 connections to http2.</p>
+
+<table class="enum-values">
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="ConnectionPoolSettings-HTTPSettings-H2UpgradePolicy-DEFAULT">
+<td><code>DEFAULT</code></td>
+<td>
+<p>Use the global default.</p>
+
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-HTTPSettings-H2UpgradePolicy-DO_NOT_UPGRADE">
+<td><code>DO_NOT_UPGRADE</code></td>
+<td>
+<p>Do not upgrade the connection to http2.
+This opt-out option overrides the default.</p>
+
+</td>
+</tr>
+<tr id="ConnectionPoolSettings-HTTPSettings-H2UpgradePolicy-UPGRADE">
+<td><code>UPGRADE</code></td>
+<td>
+<p>Upgrade the connection to http2.
+This opt-in option overrides the default.</p>
+
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="ClientTLSSettings-TLSmode">ClientTLSSettings.TLSmode</h2>
+<section>
+<p>TLS connection mode</p>
+
+<table class="enum-values">
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="ClientTLSSettings-TLSmode-DISABLE">
+<td><code>DISABLE</code></td>
+<td>
+<p>Do not setup a TLS connection to the upstream endpoint.</p>
+
+</td>
+</tr>
+<tr id="ClientTLSSettings-TLSmode-SIMPLE">
+<td><code>SIMPLE</code></td>
+<td>
+<p>Originate a TLS connection to the upstream endpoint.</p>
+
+</td>
+</tr>
+<tr id="ClientTLSSettings-TLSmode-MUTUAL">
+<td><code>MUTUAL</code></td>
+<td>
+<p>Secure connections to the upstream using mutual TLS by presenting
+client certificates for authentication.</p>
+
+</td>
+</tr>
+<tr id="ClientTLSSettings-TLSmode-ISTIO_MUTUAL">
+<td><code>ISTIO_MUTUAL</code></td>
+<td>
+<p>Secure connections to the upstream using mutual TLS by presenting
+client certificates for authentication.
+Compared to Mutual mode, this mode uses certificates generated
+automatically by Istio for mTLS authentication. When this mode is
+used, all other fields in <code>ClientTLSSettings</code> should be empty.</p>
+
+</td>
+</tr>
+</tbody>
+</table>
+</section>
