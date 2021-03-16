@@ -90,21 +90,27 @@ public class HealthCheckCommonV2 {
         try {
             HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) task.getClient()
                     .getInstancePublishInfo(service);
-            if (null != instance && !instance.isHealthy()) {
-                String serviceName = service.getGroupedServiceName();
-                String clusterName = instance.getCluster();
-                if (instance.getOkCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
-                    if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
-                            .responsible(task.getClient().getResponsibleId())) {
-                        healthStatusSynchronizer.instanceHealthStatusChange(true, task.getClient(), service, instance);
-                        Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
-                                serviceName, instance.getIp(), instance.getPort(), clusterName,
-                                UtilsAndCommons.LOCALHOST_SITE, msg);
+            if (instance == null) {
+                return;
+            }
+            try {
+                if (!instance.isHealthy()) {
+                    String serviceName = service.getGroupedServiceName();
+                    String clusterName = instance.getCluster();
+                    if (instance.getOkCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
+                        if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
+                                .responsible(task.getClient().getResponsibleId())) {
+                            healthStatusSynchronizer.instanceHealthStatusChange(true, task.getClient(), service, instance);
+                            Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
+                                    serviceName, instance.getIp(), instance.getPort(), clusterName,
+                                    UtilsAndCommons.LOCALHOST_SITE, msg);
+                        }
+                    } else {
+                        Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-ENABLED} pre-valid: {}:{}@{} in {}, msg: {}",
+                                serviceName, instance.getIp(), instance.getPort(), clusterName, instance.getOkCount(), msg);
                     }
-                } else {
-                    Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-ENABLED} pre-valid: {}:{}@{} in {}, msg: {}",
-                            serviceName, instance.getIp(), instance.getPort(), clusterName, instance.getOkCount(), msg);
                 }
+            } finally {
                 instance.resetFailCount();
                 instance.finishCheck();
             }
@@ -124,23 +130,29 @@ public class HealthCheckCommonV2 {
         try {
             HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) task.getClient()
                     .getInstancePublishInfo(service);
-            if (null != instance && instance.isHealthy()) {
-                String serviceName = service.getGroupedServiceName();
-                String clusterName = instance.getCluster();
-                if (instance.getFailCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
-                    if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
-                            .responsible(task.getClient().getResponsibleId())) {
-                        healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
-                        Loggers.EVT_LOG
-                                .info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
+            if (instance == null) {
+                return;
+            }
+            try {
+                if (instance.isHealthy()) {
+                    String serviceName = service.getGroupedServiceName();
+                    String clusterName = instance.getCluster();
+                    if (instance.getFailCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
+                        if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
+                                .responsible(task.getClient().getResponsibleId())) {
+                            healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
+                            Loggers.EVT_LOG
+                                    .info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
                                         serviceName, instance.getIp(), instance.getPort(), clusterName,
                                         UtilsAndCommons.LOCALHOST_SITE, msg);
+                        }
+                    } else {
+                        Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-DISABLED} pre-invalid: {}:{}@{} in {}, msg: {}",
+                                serviceName, instance.getIp(), instance.getPort(), clusterName, instance.getFailCount(),
+                                msg);
                     }
-                } else {
-                    Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-DISABLED} pre-invalid: {}:{}@{} in {}, msg: {}",
-                            serviceName, instance.getIp(), instance.getPort(), clusterName, instance.getFailCount(),
-                            msg);
                 }
+            } finally {
                 instance.resetOkCount();
                 instance.finishCheck();
             }
@@ -160,16 +172,22 @@ public class HealthCheckCommonV2 {
         try {
             HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) task.getClient()
                     .getInstancePublishInfo(service);
-            if (null != instance && instance.isHealthy()) {
-                String serviceName = service.getGroupedServiceName();
-                String clusterName = instance.getCluster();
-                if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
-                        .responsible(task.getClient().getResponsibleId())) {
-                    healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
-                    Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
-                            serviceName, instance.getIp(), instance.getPort(), clusterName,
-                            UtilsAndCommons.LOCALHOST_SITE, msg);
+            if (null == instance) {
+                return;
+            }
+            try {
+                if (instance.isHealthy()) {
+                    String serviceName = service.getGroupedServiceName();
+                    String clusterName = instance.getCluster();
+                    if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
+                            .responsible(task.getClient().getResponsibleId())) {
+                        healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
+                        Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
+                                serviceName, instance.getIp(), instance.getPort(), clusterName,
+                                UtilsAndCommons.LOCALHOST_SITE, msg);
+                    }
                 }
+            } finally {
                 instance.resetOkCount();
                 instance.finishCheck();
             }
