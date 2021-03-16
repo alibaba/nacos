@@ -1,0 +1,441 @@
+---
+title: Workload Group
+description: Describes a collection of workload instances.
+location: https://istio.io/docs/reference/config/networking/workload-group.html
+layout: protoc-gen-docs
+generator: protoc-gen-docs
+schema: istio.networking.v1alpha3.WorkloadGroup
+aliases: [/docs/reference/config/networking/v1alpha3/workload-group]
+number_of_entries: 7
+---
+<p><code>WorkloadGroup</code> describes a collection of workload instances.
+It provides a specification that the workload instances can use to bootstrap
+their proxies, including the metadata and identity. It is only intended to
+be used with non-k8s workloads like Virtual Machines, and is meant to mimic
+the existing sidecar injection and deployment specification model used for
+Kubernetes workloads to bootstrap Istio proxies.</p>
+
+<p>The following example declares a workload group representing a collection
+of workloads that will be registered under <code>reviews</code> in namespace
+<code>bookinfo</code>. The set of labels will be associated with each workload
+instance during the bootstrap process, and the ports 3550 and 8080
+will be associated with the workload group and use service account <code>default</code>.
+<code>app.kubernetes.io/version</code> is just an arbitrary example of a label.</p>
+
+<p>{{<tabset category-name="example">}}
+{{<tab name="v1alpha3" category-value="v1alpha3">}}</p>
+
+<pre><code class="language-yaml">apiVersion: networking.istio.io/v1alpha3
+kind: WorkloadGroup
+metadata:
+  name: reviews
+  namespace: bookinfo
+spec:
+  metadata:
+    labels:
+      app.kubernetes.io/name: reviews
+      app.kubernetes.io/version: &quot;1.3.4&quot;
+  template:
+    ports:
+      grpc: 3550
+      http: 8080
+    serviceAccount: default
+  probe:
+    initialDelaySeconds: 5
+    timeoutSeconds: 3
+    periodSeconds: 4
+    successThreshold: 3
+    failureThreshold: 3
+    httpGet:
+     path: /foo/bar
+     host: 127.0.0.1
+     port: 3100
+     scheme: https
+     httpHeaders:
+     - name: Lit-Header
+       value: Im-The-Best
+</code></pre>
+
+<p>{{</tab>}}
+{{</tabset>}}</p>
+
+<h2 id="WorkloadGroup">WorkloadGroup</h2>
+<section>
+<p><code>WorkloadGroup</code> enables specifying the properties of a single workload for bootstrap and
+provides a template for <code>WorkloadEntry</code>, similar to how <code>Deployment</code> specifies properties
+of workloads via <code>Pod</code> templates. A <code>WorkloadGroup</code> can have more than one <code>WorkloadEntry</code>.
+<code>WorkloadGroup</code> has no relationship to resources which control service registry like <code>ServiceEntry</code>
+and as such doesn&rsquo;t configure host name for these workloads.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="WorkloadGroup-metadata">
+<td><code>metadata</code></td>
+<td><code><a href="#WorkloadGroup-ObjectMeta">ObjectMeta</a></code></td>
+<td>
+<p>Metadata that will be used for all corresponding <code>WorkloadEntries</code>.
+User labels for a workload group should be set here in <code>metadata</code> rather than in <code>template</code>.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="WorkloadGroup-template">
+<td><code>template</code></td>
+<td><code><a href="https://istio.io/docs/reference/config/networking/workload-entry.html#WorkloadEntry">WorkloadEntry</a></code></td>
+<td>
+<p>Template to be used for the generation of <code>WorkloadEntry</code> resources that belong to this <code>WorkloadGroup</code>.
+Please note that <code>address</code> and <code>labels</code> fields should not be set in the template, and an empty <code>serviceAccount</code>
+should default to <code>default</code>. The workload identities (mTLS certificates) will be bootstrapped using the
+specified service account&rsquo;s token. Workload entries in this group will be in the same namespace as the
+workload group, and inherit the labels and annotations from the above <code>metadata</code> field.</p>
+
+</td>
+<td>
+Yes
+</td>
+</tr>
+<tr id="WorkloadGroup-probe">
+<td><code>probe</code></td>
+<td><code><a href="#ReadinessProbe">ReadinessProbe</a></code></td>
+<td>
+<p><code>ReadinessProbe</code> describes the configuration the user must provide for healthchecking on their workload.
+This configuration mirrors K8S in both syntax and logic for the most part.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="ReadinessProbe">ReadinessProbe</h2>
+<section>
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="ReadinessProbe-initial_delay_seconds">
+<td><code>initialDelaySeconds</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Number of seconds after the container has started before readiness probes are initiated.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ReadinessProbe-timeout_seconds">
+<td><code>timeoutSeconds</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Number of seconds after which the probe times out.
+Defaults to 1 second. Minimum value is 1 second.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ReadinessProbe-period_seconds">
+<td><code>periodSeconds</code></td>
+<td><code>int32</code></td>
+<td>
+<p>How often (in seconds) to perform the probe.
+Default to 10 seconds. Minimum value is 1 second.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ReadinessProbe-success_threshold">
+<td><code>successThreshold</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Minimum consecutive successes for the probe to be considered successful after having failed.
+Defaults to 1 second.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ReadinessProbe-failure_threshold">
+<td><code>failureThreshold</code></td>
+<td><code>int32</code></td>
+<td>
+<p>Minimum consecutive failures for the probe to be considered failed after having succeeded.
+Defaults to 3 seconds.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ReadinessProbe-http_get" class="oneof oneof-start">
+<td><code>httpGet</code></td>
+<td><code><a href="#HTTPHealthCheckConfig">HTTPHealthCheckConfig (oneof)</a></code></td>
+<td>
+<p><code>httpGet</code> is performed to a given endpoint
+and the status/able to connect determines health.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ReadinessProbe-tcp_socket" class="oneof">
+<td><code>tcpSocket</code></td>
+<td><code><a href="#TCPHealthCheckConfig">TCPHealthCheckConfig (oneof)</a></code></td>
+<td>
+<p>Health is determined by if the proxy is able to connect.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="ReadinessProbe-exec" class="oneof">
+<td><code>exec</code></td>
+<td><code><a href="#ExecHealthCheckConfig">ExecHealthCheckConfig (oneof)</a></code></td>
+<td>
+<p>Health is determined by how the command that is executed exited.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="HTTPHealthCheckConfig">HTTPHealthCheckConfig</h2>
+<section>
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="HTTPHealthCheckConfig-path">
+<td><code>path</code></td>
+<td><code>string</code></td>
+<td>
+<p>Path to access on the HTTP server.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="HTTPHealthCheckConfig-port">
+<td><code>port</code></td>
+<td><code>uint32</code></td>
+<td>
+<p>Port on which the endpoint lives.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="HTTPHealthCheckConfig-host">
+<td><code>host</code></td>
+<td><code>string</code></td>
+<td>
+<p>Host name to connect to, defaults to the pod IP. You probably want to set
+&ldquo;Host&rdquo; in httpHeaders instead.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="HTTPHealthCheckConfig-scheme">
+<td><code>scheme</code></td>
+<td><code>string</code></td>
+<td>
+<p>HTTP or HTTPS, defaults to HTTP</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="HTTPHealthCheckConfig-http_headers">
+<td><code>httpHeaders</code></td>
+<td><code><a href="#HTTPHeader">HTTPHeader[]</a></code></td>
+<td>
+<p>Headers the proxy will pass on to make the request.
+Allows repeated headers.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="HTTPHeader">HTTPHeader</h2>
+<section>
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="HTTPHeader-name">
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>
+<p>The header field name</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="HTTPHeader-value">
+<td><code>value</code></td>
+<td><code>string</code></td>
+<td>
+<p>The header field value</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="TCPHealthCheckConfig">TCPHealthCheckConfig</h2>
+<section>
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="TCPHealthCheckConfig-host">
+<td><code>host</code></td>
+<td><code>string</code></td>
+<td>
+<p>Host to connect to, defaults to localhost</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="TCPHealthCheckConfig-port">
+<td><code>port</code></td>
+<td><code>uint32</code></td>
+<td>
+<p>Port of host</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="ExecHealthCheckConfig">ExecHealthCheckConfig</h2>
+<section>
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="ExecHealthCheckConfig-command">
+<td><code>command</code></td>
+<td><code>string[]</code></td>
+<td>
+<p>Command to run. Exit status of 0 is treated as live/healthy and non-zero is unhealthy.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="WorkloadGroup-ObjectMeta">WorkloadGroup.ObjectMeta</h2>
+<section>
+<p><code>ObjectMeta</code> describes metadata that will be attached to a <code>WorkloadEntry</code>.
+It is a subset of the supported Kubernetes metadata.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="WorkloadGroup-ObjectMeta-labels">
+<td><code>labels</code></td>
+<td><code>map&lt;string,&nbsp;string&gt;</code></td>
+<td>
+<p>Labels to attach</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="WorkloadGroup-ObjectMeta-annotations">
+<td><code>annotations</code></td>
+<td><code>map&lt;string,&nbsp;string&gt;</code></td>
+<td>
+<p>Annotations to attach</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>

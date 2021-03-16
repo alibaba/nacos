@@ -1,0 +1,265 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Describes a collection of workload instances.",
+    "version": "v1alpha3"
+  },
+  "components": {
+    "schemas": {
+      "istio.networking.v1alpha3.WorkloadEntry": {
+        "description": "WorkloadEntry enables specifying the properties of a single non-Kubernetes workload such a VM or a bare metal services that can be referred to by service entries.",
+        "type": "object",
+        "properties": {
+          "labels": {
+            "description": "One or more labels associated with the endpoint.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "ports": {
+            "description": "Set of ports associated with the endpoint. If the port map is specified, it must be a map of servicePortName to this endpoint's port, such that traffic to the service port will be forwarded to the endpoint port that maps to the service's portName. If omitted, and the targetPort is specified as part of the service's port specification, traffic to the service port will be forwarded to one of the endpoints on the specified `targetPort`. If both the targetPort and endpoint's port map are not specified, traffic to a service port will be forwarded to one of the endpoints on the same port.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "weight": {
+            "description": "The load balancing weight associated with the endpoint. Endpoints with higher weights will receive proportionally higher traffic.",
+            "type": "integer"
+          },
+          "address": {
+            "description": "Address associated with the network endpoint without the port. Domain names can be used if and only if the resolution is set to DNS, and must be fully-qualified without wildcards. Use the form unix:///absolute/path/to/socket for Unix domain socket endpoints.",
+            "type": "string",
+            "format": "string"
+          },
+          "network": {
+            "description": "Network enables Istio to group endpoints resident in the same L3 domain/network. All endpoints in the same network are assumed to be directly reachable from one another. When endpoints in different networks cannot reach each other directly, an Istio Gateway can be used to establish connectivity (usually using the `AUTO_PASSTHROUGH` mode in a Gateway Server). This is an advanced configuration used typically for spanning an Istio mesh over multiple clusters.",
+            "type": "string",
+            "format": "string"
+          },
+          "locality": {
+            "description": "The locality associated with the endpoint. A locality corresponds to a failure domain (e.g., country/region/zone). Arbitrary failure domain hierarchies can be represented by separating each encapsulating failure domain by /. For example, the locality of an an endpoint in US, in US-East-1 region, within availability zone az-1, in data center rack r11 can be represented as us/us-east-1/az-1/r11. Istio will configure the sidecar to route to endpoints within the same locality as the sidecar. If none of the endpoints in the locality are available, endpoints parent locality (but within the same network ID) will be chosen. For example, if there are two endpoints in same network (networkID \"n1\"), say e1 with locality us/us-east-1/az-1/r11 and e2 with locality us/us-east-1/az-2/r12, a sidecar from us/us-east-1/az-1/r11 locality will prefer e1 from the same locality over e2 from a different locality. Endpoint e2 could be the IP associated with a gateway (that bridges networks n1 and n2), or the IP associated with a standard service endpoint.",
+            "type": "string",
+            "format": "string"
+          },
+          "serviceAccount": {
+            "description": "The service account associated with the workload if a sidecar is present in the workload. The service account must be present in the same namespace as the configuration ( WorkloadEntry or a ServiceEntry)",
+            "type": "string",
+            "format": "string"
+          }
+        }
+      },
+      "istio.networking.v1alpha3.WorkloadGroup": {
+        "description": "`WorkloadGroup` enables specifying the properties of a single workload for bootstrap and provides a template for `WorkloadEntry`, similar to how `Deployment` specifies properties of workloads via `Pod` templates. A `WorkloadGroup` can have more than one `WorkloadEntry`. `WorkloadGroup` has no relationship to resources which control service registry like `ServiceEntry` and as such doesn't configure host name for these workloads.",
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/istio.networking.v1alpha3.WorkloadGroup.ObjectMeta"
+          },
+          "template": {
+            "$ref": "#/components/schemas/istio.networking.v1alpha3.WorkloadEntry"
+          },
+          "probe": {
+            "$ref": "#/components/schemas/istio.networking.v1alpha3.ReadinessProbe"
+          }
+        }
+      },
+      "istio.networking.v1alpha3.WorkloadGroup.ObjectMeta": {
+        "description": "`ObjectMeta` describes metadata that will be attached to a `WorkloadEntry`. It is a subset of the supported Kubernetes metadata.",
+        "type": "object",
+        "properties": {
+          "labels": {
+            "description": "Labels to attach",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "format": "string"
+            }
+          },
+          "annotations": {
+            "description": "Annotations to attach",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "format": "string"
+            }
+          }
+        }
+      },
+      "istio.networking.v1alpha3.ReadinessProbe": {
+        "description": "Users can only provide one configuration for healthchecks (tcp, http, exec), and this is expressed as a oneof. All of the other configuration values hold true for any of the healthcheck methods.",
+        "type": "object",
+        "properties": {
+          "initialDelaySeconds": {
+            "description": "Number of seconds after the container has started before readiness probes are initiated.",
+            "type": "integer",
+            "format": "int32"
+          },
+          "timeoutSeconds": {
+            "description": "Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1 second.",
+            "type": "integer",
+            "format": "int32"
+          },
+          "periodSeconds": {
+            "description": "How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1 second.",
+            "type": "integer",
+            "format": "int32"
+          },
+          "successThreshold": {
+            "description": "Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1 second.",
+            "type": "integer",
+            "format": "int32"
+          },
+          "failureThreshold": {
+            "description": "Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3 seconds.",
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "oneOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "httpGet"
+                  ],
+                  "properties": {
+                    "httpGet": {
+                      "$ref": "#/components/schemas/istio.networking.v1alpha3.HTTPHealthCheckConfig"
+                    }
+                  }
+                },
+                {
+                  "required": [
+                    "tcpSocket"
+                  ],
+                  "properties": {
+                    "tcpSocket": {
+                      "$ref": "#/components/schemas/istio.networking.v1alpha3.TCPHealthCheckConfig"
+                    }
+                  }
+                },
+                {
+                  "required": [
+                    "exec"
+                  ],
+                  "properties": {
+                    "exec": {
+                      "$ref": "#/components/schemas/istio.networking.v1alpha3.ExecHealthCheckConfig"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "required": [
+              "httpGet"
+            ],
+            "properties": {
+              "httpGet": {
+                "$ref": "#/components/schemas/istio.networking.v1alpha3.HTTPHealthCheckConfig"
+              }
+            }
+          },
+          {
+            "required": [
+              "tcpSocket"
+            ],
+            "properties": {
+              "tcpSocket": {
+                "$ref": "#/components/schemas/istio.networking.v1alpha3.TCPHealthCheckConfig"
+              }
+            }
+          },
+          {
+            "required": [
+              "exec"
+            ],
+            "properties": {
+              "exec": {
+                "$ref": "#/components/schemas/istio.networking.v1alpha3.ExecHealthCheckConfig"
+              }
+            }
+          }
+        ]
+      },
+      "istio.networking.v1alpha3.HTTPHealthCheckConfig": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "description": "Path to access on the HTTP server.",
+            "type": "string",
+            "format": "string"
+          },
+          "host": {
+            "description": "Host name to connect to, defaults to the pod IP. You probably want to set \"Host\" in httpHeaders instead.",
+            "type": "string",
+            "format": "string"
+          },
+          "port": {
+            "description": "Port on which the endpoint lives.",
+            "type": "integer"
+          },
+          "scheme": {
+            "description": "HTTP or HTTPS, defaults to HTTP",
+            "type": "string",
+            "format": "string"
+          },
+          "httpHeaders": {
+            "description": "Headers the proxy will pass on to make the request. Allows repeated headers.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/istio.networking.v1alpha3.HTTPHeader"
+            }
+          }
+        }
+      },
+      "istio.networking.v1alpha3.TCPHealthCheckConfig": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "description": "Host to connect to, defaults to localhost",
+            "type": "string",
+            "format": "string"
+          },
+          "port": {
+            "description": "Port of host",
+            "type": "integer"
+          }
+        }
+      },
+      "istio.networking.v1alpha3.ExecHealthCheckConfig": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "description": "Command to run. Exit status of 0 is treated as live/healthy and non-zero is unhealthy.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "string"
+            }
+          }
+        }
+      },
+      "istio.networking.v1alpha3.HTTPHeader": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The header field name",
+            "type": "string",
+            "format": "string"
+          },
+          "value": {
+            "description": "The header field value",
+            "type": "string",
+            "format": "string"
+          }
+        }
+      }
+    }
+  }
+}
