@@ -193,6 +193,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                         key.channel().close();
                     } else {
                         // not terminate request, ignore
+                        SRV_LOG.warn("Tcp check ok, but the connected server responses some msg. Connection won't be closed.");
                     }
                 }
             } catch (ConnectException e) {
