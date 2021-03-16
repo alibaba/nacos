@@ -131,8 +131,8 @@ public class NamingKvStorage extends MemoryKvStorage {
     }
     
     @Override
-    public void batchDelete(List<byte[]> key) throws KvStorageException {
-        for (byte[] each : key) {
+    public void batchDelete(List<byte[]> keys) throws KvStorageException {
+        for (byte[] each : keys) {
             delete(each);
         }
     }
