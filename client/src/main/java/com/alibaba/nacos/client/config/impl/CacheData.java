@@ -25,7 +25,6 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import org.slf4j.Logger;
 
@@ -257,21 +256,6 @@ public class CacheData {
         String content = LocalConfigInfoProcessor.getFailover(name, dataId, group, tenant);
         content = (null != content) ? content : LocalConfigInfoProcessor.getSnapshot(name, dataId, group, tenant);
         return content;
-    }
-    
-    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {
-        if (null == dataId || null == group) {
-            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
-        }
-        this.name = name;
-        this.configFilterChainManager = configFilterChainManager;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = TenantUtil.getUserTenantForAcm();
-        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
-        this.isInitializing = true;
-        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-        this.md5 = getMd5String(content);
     }
     
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group,
