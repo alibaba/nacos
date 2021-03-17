@@ -211,8 +211,8 @@ public class JRaftServer {
                 rpcServer = JRaftUtils.initRpcServer(this, localPeerId);
                 
                 if (!this.rpcServer.init(null)) {
-                    Loggers.RAFT.error("Fail to init [RpcServer].");
-                    throw new RuntimeException("Fail to init [RpcServer].");
+                    Loggers.RAFT.error("Fail to init [BaseRpcServer].");
+                    throw new RuntimeException("Fail to init [BaseRpcServer].");
                 }
                 
                 // Initialize multi raft group service framework
@@ -263,8 +263,8 @@ public class JRaftServer {
             copy.setSnapshotIntervalSecs(doSnapshotInterval);
             Loggers.RAFT.info("create raft group : {}", groupName);
             RaftGroupService raftGroupService = new RaftGroupService(groupName, localPeerId, copy, rpcServer, true);
-            
-            // Because RpcServer has been started before, it is not allowed to start again here
+    
+            // Because BaseRpcServer has been started before, it is not allowed to start again here
             Node node = raftGroupService.start(false);
             machine.setNode(node);
             RouteTable.getInstance().updateConfiguration(groupName, configuration);

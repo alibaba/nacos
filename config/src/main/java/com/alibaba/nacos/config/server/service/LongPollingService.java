@@ -29,7 +29,6 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -353,6 +352,7 @@ public class LongPollingService {
                         clientSub.sendResponse(Arrays.asList(groupKey));
                     }
                 }
+                
             } catch (Throwable t) {
                 LogUtil.DEFAULT_LOG.error("data change error: {}", ExceptionUtil.getStackTrace(t));
             }
@@ -399,7 +399,7 @@ public class LongPollingService {
                     try {
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
                         
-                        // Delete subsciber's relations.
+                        // Delete subscriber's relations.
                         allSubs.remove(ClientLongPolling.this);
                         
                         if (isFixedPolling()) {

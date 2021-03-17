@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
+import com.alibaba.nacos.naming.core.v2.cleaner.EmptyServiceAutoCleaner;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Message;
@@ -39,7 +41,7 @@ import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Sets;
@@ -67,7 +69,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
@@ -100,11 +101,9 @@ public class ServiceManager implements RecordListener<Service> {
     
     private final ServerMemberManager memberManager;
     
-    private final PushService pushService;
+    private final UdpPushService pushService;
     
     private final RaftPeerSet raftPeerSet;
-    
-    private int maxFinalizeCount = 3;
     
     private final Object putServiceLock = new Object();
     
@@ -118,7 +117,7 @@ public class ServiceManager implements RecordListener<Service> {
     private int cleanEmptyServicePeriod;
     
     public ServiceManager(SwitchDomain switchDomain, DistroMapper distroMapper, ServerMemberManager memberManager,
-            PushService pushService, RaftPeerSet raftPeerSet) {
+            UdpPushService pushService, RaftPeerSet raftPeerSet) {
         this.switchDomain = switchDomain;
         this.distroMapper = distroMapper;
         this.memberManager = memberManager;
@@ -146,8 +145,9 @@ public class ServiceManager implements RecordListener<Service> {
             // the possibility that the service cache information may just be deleted
             // and then created due to the heartbeat mechanism
             
-            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoClean(), cleanEmptyServiceDelay,
-                    cleanEmptyServicePeriod);
+            GlobalExecutor
+                    .scheduleServiceAutoClean(new EmptyServiceAutoCleaner(this, distroMapper), cleanEmptyServiceDelay,
+                            cleanEmptyServicePeriod);
         }
         
         try {
@@ -433,13 +433,14 @@ public class ServiceManager implements RecordListener<Service> {
      *
      * @param namespaceId namespace
      * @param serviceName service name
-     * @throws Exception exception
+     * @throws NacosException exception
      */
-    public void easyRemoveService(String namespaceId, String serviceName) throws Exception {
+    public void easyRemoveService(String namespaceId, String serviceName) throws NacosException {
         
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
-            throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "specified service not exist, serviceName : " + serviceName);
         }
         
         consistencyService.remove(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName));
@@ -580,7 +581,7 @@ public class ServiceManager implements RecordListener<Service> {
     }
     
     /**
-     * locate consistency's datum by all or instances provided.
+     * Locate consistency's datum by all or instances provided.
      *
      * @param namespaceId        namespace
      * @param serviceName        serviceName
@@ -618,16 +619,15 @@ public class ServiceManager implements RecordListener<Service> {
         return locatedInstance;
     }
     
-    private Instance locateInstance(List<Instance> instances, Instance instance) {
-        int target = 0;
-        while (target >= 0) {
-            target = instances.indexOf(instance);
-            if (target >= 0) {
-                Instance result = instances.get(target);
-                if (result.getClusterName().equals(instance.getClusterName())) {
-                    return result;
-                }
-                instances.remove(target);
+    private Instance locateInstance(List<Instance> sources, Instance target) {
+        if (CollectionUtils.isEmpty(sources)) {
+            return null;
+        }
+        
+        for (Instance element : sources) {
+            //also need clusterName equals, the same instance maybe exist in two cluster.
+            if (Objects.equals(element, target) && Objects.equals(element.getClusterName(), target.getClusterName())) {
+                return element;
             }
         }
         return null;
@@ -811,7 +811,12 @@ public class ServiceManager implements RecordListener<Service> {
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
                 instanceMap.remove(instance.getDatumKey());
             } else {
-                instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
+                Instance oldInstance = instanceMap.get(instance.getDatumKey());
+                if (oldInstance != null) {
+                    instance.setInstanceId(oldInstance.getInstanceId());
+                } else {
+                    instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
+                }
                 instanceMap.put(instance.getDatumKey(), instance);
             }
             
@@ -873,11 +878,12 @@ public class ServiceManager implements RecordListener<Service> {
                 }
             }
         }
-        serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
+        serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
     }
     
     private void putServiceAndInit(Service service) throws NacosException {
         putService(service);
+        service = getService(service.getNamespaceId(), service.getName());
         service.init();
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
@@ -958,7 +964,8 @@ public class ServiceManager implements RecordListener<Service> {
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
                     if (IPUtil.containsPort(containedInstance)) {
-                        if (StringUtils.equals(instance.getIp() +  IPUtil.IP_PORT_SPLITER + instance.getPort(), containedInstance)) {
+                        if (StringUtils.equals(instance.getIp() + IPUtil.IP_PORT_SPLITER + instance.getPort(),
+                                containedInstance)) {
                             contained = true;
                             break;
                         }
@@ -996,6 +1003,35 @@ public class ServiceManager implements RecordListener<Service> {
         return matchList.size();
     }
     
+    /**
+     * Shut down service manager v1.x.
+     *
+     * @throws NacosException nacos exception during shutdown
+     */
+    public void shutdown() throws NacosException {
+        try {
+            for (Map.Entry<String, Map<String, Service>> entry : serviceMap.entrySet()) {
+                destroyAllService(entry.getKey(), entry.getValue());
+            }
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR, "shutdown serviceManager failed", e);
+        }
+    }
+    
+    private void destroyAllService(String namespace, Map<String, Service> serviceMap) throws Exception {
+        for (Map.Entry<String, Service> entry : serviceMap.entrySet()) {
+            Service service = entry.getValue();
+            String name = service.getName();
+            service.destroy();
+            String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
+            String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
+            consistencyService.unListen(ephemeralInstanceListKey, service);
+            consistencyService.unListen(persistInstanceListKey, service);
+            consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
+            Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
+        }
+    }
+    
     public static class ServiceChecksum {
         
         public String namespaceId;
@@ -1023,58 +1059,6 @@ public class ServiceManager implements RecordListener<Service> {
                 return;
             }
             serviceName2Checksum.put(serviceName, checksum);
-        }
-    }
-    
-    private class EmptyServiceAutoClean implements Runnable {
-        
-        @Override
-        public void run() {
-            
-            // Parallel flow opening threshold
-            
-            int parallelSize = 100;
-            
-            serviceMap.forEach((namespace, stringServiceMap) -> {
-                Stream<Map.Entry<String, Service>> stream = null;
-                if (stringServiceMap.size() > parallelSize) {
-                    stream = stringServiceMap.entrySet().parallelStream();
-                } else {
-                    stream = stringServiceMap.entrySet().stream();
-                }
-                stream.filter(entry -> {
-                    final String serviceName = entry.getKey();
-                    return distroMapper.responsible(serviceName);
-                }).forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceName, service) -> {
-                    if (service.isEmpty()) {
-                        
-                        // To avoid violent Service removal, the number of times the Service
-                        // experiences Empty is determined by finalizeCnt, and if the specified
-                        // value is reached, it is removed
-                        
-                        if (service.getFinalizeCount() > maxFinalizeCount) {
-                            Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned", namespace,
-                                    serviceName);
-                            try {
-                                easyRemoveService(namespace, serviceName);
-                            } catch (Exception e) {
-                                Loggers.SRV_LOG.error("namespace : {}, [{}] services are automatically clean has "
-                                        + "error : {}", namespace, serviceName, e);
-                            }
-                        }
-                        
-                        service.setFinalizeCount(service.getFinalizeCount() + 1);
-                        
-                        Loggers.SRV_LOG
-                                .debug("namespace : {}, [{}] The number of times the current service experiences "
-                                                + "an empty instance is : {}", namespace, serviceName,
-                                        service.getFinalizeCount());
-                    } else {
-                        service.setFinalizeCount(0);
-                    }
-                    return service;
-                }));
-            });
         }
     }
     

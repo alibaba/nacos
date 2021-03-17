@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.model.core.IResultCode;
  * @Description: result code enum
  * @date 2019/6/28 14:43
  */
+@Deprecated
 public enum ResultCodeEnum implements IResultCode {
     
     /**

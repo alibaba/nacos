@@ -36,7 +36,7 @@ public class MetricsHttpAgent implements HttpAgent {
     public MetricsHttpAgent(HttpAgent httpAgent) {
         this.httpAgent = httpAgent;
     }
-    
+
     @Override
     public void start() throws NacosException {
         httpAgent.start();

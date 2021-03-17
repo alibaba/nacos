@@ -126,6 +126,10 @@ public class UtilsAndCommons {
     
     public static final String NUMBER_PATTERN = "^\\d+$";
     
+    public static final String ENABLE_HEALTH_CHECK = "enableHealthCheck";
+    
+    public static final String ENABLE_CLIENT_BEAT = "enableClientBeat";
+    
     static {
 
         /*

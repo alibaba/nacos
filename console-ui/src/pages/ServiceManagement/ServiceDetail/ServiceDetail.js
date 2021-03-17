@@ -17,13 +17,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { request } from '@/globalLib';
-import { Input, Button, Card, ConfigProvider, Form, Loading, Message } from '@alifd/next';
+import { Input, Button, Card, ConfigProvider, Form, Loading, Message, Tag } from '@alifd/next';
 import EditServiceDialog from './EditServiceDialog';
 import EditClusterDialog from './EditClusterDialog';
 import InstanceTable from './InstanceTable';
 import { getParameter } from 'utils/nacosutil';
 import MonacoEditor from 'components/MonacoEditor';
 import { MONACO_READONLY_OPTIONS, METADATA_ENTER } from './constant';
+import InstanceFilter from './InstanceFilter';
 import './ServiceDetail.scss';
 
 const FormItem = Form.Item;
@@ -56,6 +57,7 @@ class ServiceDetail extends React.Component {
       service: {},
       pageSize: 10,
       pageNum: {},
+      instanceFilters: new Map(),
     };
   }
 
@@ -94,9 +96,19 @@ class ServiceDetail extends React.Component {
     this.editClusterDialog.current.getInstance().show(cluster);
   }
 
+  setFilters = clusterName => filters => {
+    const { instanceFilters } = this.state;
+    const newFilters = new Map(Array.from(instanceFilters));
+    newFilters.set(clusterName, filters);
+
+    this.setState({
+      instanceFilters: newFilters,
+    });
+  };
+
   render() {
     const { locale = {} } = this.props;
-    const { serviceName, groupName, loading, service = {}, clusters } = this.state;
+    const { serviceName, groupName, loading, service = {}, clusters, instanceFilters } = this.state;
     const { metadata = {}, selector = {} } = service;
     let metadataText = '';
     if (Object.keys(metadata).length) {
@@ -175,10 +187,12 @@ class ServiceDetail extends React.Component {
                 </Button>
               }
             >
+              <InstanceFilter setFilters={this.setFilters(cluster.name)} />
               <InstanceTable
                 clusterName={cluster.name}
                 serviceName={serviceName}
                 groupName={groupName}
+                filters={instanceFilters.get(cluster.name)}
               />
             </Card>
           ))}

@@ -16,24 +16,25 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.healthcheck.heartbeat.BeatProcessor;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Thread to update ephemeral instance triggered by client beat.
+ * Thread to update ephemeral instance triggered by client beat for v1.x.
  *
  * @author nkorange
  */
-public class ClientBeatProcessor implements Runnable {
+public class ClientBeatProcessor implements BeatProcessor {
     
     public static final long CLIENT_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
     
@@ -42,8 +43,8 @@ public class ClientBeatProcessor implements Runnable {
     private Service service;
     
     @JsonIgnore
-    public PushService getPushService() {
-        return ApplicationUtils.getBean(PushService.class);
+    public UdpPushService getPushService() {
+        return ApplicationUtils.getBean(UdpPushService.class);
     }
     
     public RsInfo getRsInfo() {

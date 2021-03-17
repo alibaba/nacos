@@ -85,6 +85,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         }
     }
     
+    @Override
     public long currentEventSize() {
         return queue.size();
     }
@@ -192,13 +193,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         
         LOGGER.debug("[NotifyCenter] the {} will received by {}", event, subscriber);
         
-        final Runnable job = new Runnable() {
-            @Override
-            public void run() {
-                subscriber.onEvent(event);
-            }
-        };
-        
+        final Runnable job = () -> subscriber.onEvent(event);
         final Executor executor = subscriber.executor();
         
         if (executor != null) {
@@ -207,7 +202,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             try {
                 job.run();
             } catch (Throwable e) {
-                LOGGER.error("Event callback exception : {}", e);
+                LOGGER.error("Event callback exception: ", e);
             }
         }
     }

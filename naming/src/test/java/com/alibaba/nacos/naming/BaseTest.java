@@ -21,10 +21,11 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
@@ -41,7 +42,7 @@ import org.springframework.mock.env.MockEnvironment;
 import static org.mockito.Mockito.doReturn;
 
 @RunWith(MockitoJUnitRunner.class)
-public class BaseTest {
+public abstract class BaseTest {
     
     protected static final String TEST_CLUSTER_NAME = "test-cluster";
     
@@ -76,7 +77,10 @@ public class BaseTest {
     protected HealthCheckProcessorDelegate delegate;
     
     @Mock
-    protected PushService pushService;
+    protected UdpPushService pushService;
+    
+    @Mock
+    protected UpgradeJudgement upgradeJudgement;
     
     @Spy
     private MockEnvironment environment;
@@ -97,7 +101,7 @@ public class BaseTest {
     }
     
     protected void mockInjectPushServer() {
-        doReturn(pushService).when(context).getBean(PushService.class);
+        doReturn(pushService).when(context).getBean(UdpPushService.class);
     }
     
     protected void mockInjectHealthCheckProcessor() {
@@ -110,5 +114,9 @@ public class BaseTest {
     
     protected void mockInjectDistroMapper() {
         doReturn(distroMapper).when(context).getBean(DistroMapper.class);
+    }
+    
+    protected void mockInjectUpgradeJudgement() {
+        doReturn(upgradeJudgement).when(context).getBean(UpgradeJudgement.class);
     }
 }

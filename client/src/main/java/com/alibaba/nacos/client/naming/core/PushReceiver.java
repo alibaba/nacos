@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -47,13 +48,13 @@ public class PushReceiver implements Runnable, Closeable {
     
     private DatagramSocket udpSocket;
     
-    private HostReactor hostReactor;
+    private ServiceInfoHolder serviceInfoHolder;
     
     private volatile boolean closed = false;
     
-    public PushReceiver(HostReactor hostReactor) {
+    public PushReceiver(ServiceInfoHolder serviceInfoHolder) {
         try {
-            this.hostReactor = hostReactor;
+            this.serviceInfoHolder = serviceInfoHolder;
             this.udpSocket = new DatagramSocket();
             this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override
@@ -88,7 +89,7 @@ public class PushReceiver implements Runnable, Closeable {
                 PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
                 String ack;
                 if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
-                    hostReactor.processServiceJson(pushPacket.data);
+                    serviceInfoHolder.processServiceInfo(pushPacket.data);
                     
                     // send ack to server
                     ack = "{\"type\": \"push-ack\"" + ", \"lastRefTime\":\"" + pushPacket.lastRefTime + "\", \"data\":"
@@ -96,7 +97,7 @@ public class PushReceiver implements Runnable, Closeable {
                 } else if ("dump".equals(pushPacket.type)) {
                     // dump data to server
                     ack = "{\"type\": \"dump-ack\"" + ", \"lastRefTime\": \"" + pushPacket.lastRefTime + "\", \"data\":"
-                            + "\"" + StringUtils.escapeJavaScript(JacksonUtils.toJson(hostReactor.getServiceInfoMap()))
+                            + "\"" + StringUtils.escapeJavaScript(JacksonUtils.toJson(serviceInfoHolder.getServiceInfoMap()))
                             + "\"}";
                 } else {
                     // do nothing send ack only
