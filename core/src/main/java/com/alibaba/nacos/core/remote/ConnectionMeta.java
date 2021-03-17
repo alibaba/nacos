@@ -142,7 +142,6 @@ public class ConnectionMeta {
         return labels;
     }
     
-    
     /**
      * Setter method for property <tt>labels</tt>.
      *
