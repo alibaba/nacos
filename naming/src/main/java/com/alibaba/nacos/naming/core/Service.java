@@ -200,11 +200,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     
     @Override
     public void onDelete(String key) throws Exception {
-        synchronized (this) {
-            boolean isEphemeral = KeyBuilder.matchEphemeralInstanceListKey(key);
-            for (Cluster each : clusterMap.values()) {
-                each.updateIps(Collections.emptyList(), isEphemeral);
-            }
+        boolean isEphemeral = KeyBuilder.matchEphemeralInstanceListKey(key);
+        for (Cluster each : clusterMap.values()) {
+            each.updateIps(Collections.emptyList(), isEphemeral);
         }
     }
     
