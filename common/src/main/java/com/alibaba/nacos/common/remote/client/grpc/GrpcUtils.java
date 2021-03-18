@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.exception.RemoteException;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -98,6 +99,7 @@ public class GrpcUtils {
         if (meta != null) {
             metaBuilder.putAllHeaders(request.getHeaders()).setType(request.getClass().getSimpleName());
         }
+        metaBuilder.setClientIp(NetUtils.localIP());
         payloadBuilder.setMetadata(metaBuilder.build());
         
         // request body .
@@ -119,7 +121,7 @@ public class GrpcUtils {
     public static Payload convert(Request request) {
         
         Metadata newMeta = Metadata.newBuilder().setType(request.getClass().getSimpleName())
-                .putAllHeaders(request.getHeaders()).build();
+                .setClientIp(NetUtils.localIP()).putAllHeaders(request.getHeaders()).build();
         request.clearHeaders();
         String jsonString = toJson(request);
         
