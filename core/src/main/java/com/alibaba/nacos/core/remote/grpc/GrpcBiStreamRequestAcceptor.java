@@ -38,10 +38,10 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CHANNEL;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_IP;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_PORT;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_LOCAL_PORT;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_IP;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_PORT;
 
 /**
  * grpc bi stream request .
@@ -56,7 +56,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
     ConnectionManager connectionManager;
     
     private void traceDetailIfNecessary(Payload grpcRequest) {
-        String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+        String clientIp = grpcRequest.getMetadata().getClientIp();
         String connectionId = CONTEXT_KEY_CONN_ID.get();
         try {
             if (connectionManager.traced(clientIp)) {
@@ -80,13 +80,16 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             final Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
             
-            final int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
+            final int remotePort = CONTEXT_KEY_CONN_REMOTE_PORT.get();
             
-            final String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+            String remoteIp = CONTEXT_KEY_CONN_REMOTE_IP.get();
+            
+            String clientIp = "";
             
             @Override
             public void onNext(Payload payload) {
                 
+                clientIp = payload.getMetadata().getClientIp();
                 traceDetailIfNecessary(payload);
                 
                 Object parseObj = null;
@@ -112,9 +115,9 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         appName = labels.get(Constants.APPNAME);
                     }
                     
-                    ConnectionMeta metaInfo = new ConnectionMeta(connectionId, clientIp, clientPort, localPort,
-                            ConnectionType.GRPC.getType(), setUpRequest.getClientVersion(), appName,
-                            setUpRequest.getLabels());
+                    ConnectionMeta metaInfo = new ConnectionMeta(connectionId, payload.getMetadata().getClientIp(),
+                            remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
+                            setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     connection.setAbilities(setUpRequest.getAbilities());
