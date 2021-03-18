@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
@@ -32,10 +31,10 @@ import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -52,8 +51,7 @@ import java.util.Map;
  * Service of Nacos server side
  *
  * <p>We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters, which
- * contain
- * a list of instances.
+ * contain a list of instances.
  *
  * <p>his class inherits from Service in API module and stores some fields that do not have to expose to client.
  *
@@ -202,7 +200,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     
     @Override
     public void onDelete(String key) throws Exception {
-        // ignore
+        boolean isEphemeral = KeyBuilder.matchEphemeralInstanceListKey(key);
+        for (Cluster each : clusterMap.values()) {
+            each.updateIps(Collections.emptyList(), isEphemeral);
+        }
     }
     
     /**
