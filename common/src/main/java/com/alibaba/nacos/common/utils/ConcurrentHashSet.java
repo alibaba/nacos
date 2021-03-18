@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.utils;
 
 import java.util.AbstractSet;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,14 +44,9 @@ public class ConcurrentHashSet<E> extends AbstractSet<E> {
         return map.containsKey(o);
     }
     
-    /**
-     * The original implement <p>map.keySet().iterator()</p> need jdk8, so it can work.
-     *
-     * @return iterator
-     */
     @Override
     public Iterator<E> iterator() {
-        return new HashSet<E>(map.keySet()).iterator();
+        return map.keySet().iterator();
     }
     
     @Override
