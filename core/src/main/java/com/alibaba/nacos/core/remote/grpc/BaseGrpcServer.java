@@ -81,21 +81,6 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         return ConnectionType.GRPC;
     }
     
-    static final Metadata.Key<String> X_REAL_IP = Metadata.Key.of("X-Real-IP", Metadata.ASCII_STRING_MARSHALLER);
-    
-    static final Metadata.Key<String> X_FORWARDED_FOR = Metadata.Key
-            .of("X-Forwarded-For", Metadata.ASCII_STRING_MARSHALLER);
-    
-    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
-    
-    public static String getRemoteIp(Metadata headers) {
-        String xForwardedFor = headers.get(X_FORWARDED_FOR);
-        if (!org.apache.commons.lang3.StringUtils.isBlank(xForwardedFor)) {
-            return xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
-        }
-        return headers.get(X_REAL_IP);
-    }
-    
     @Override
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
@@ -105,12 +90,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
             @Override
             public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
                     ServerCallHandler<T, S> next) {
-                String remoteIp = getRemoteIp(headers);
                 Context ctx = Context.current()
                         .withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID))
-                        .withValue(CONTEXT_KEY_CONN_CLIENT_IP, StringUtils.isNotBlank(remoteIp) ? remoteIp
-                                : call.getAttributes().get(TRANS_KEY_CLIENT_IP))
-                        .withValue(CONTEXT_KEY_CONN_CLIENT_PORT, call.getAttributes().get(TRANS_KEY_CLIENT_PORT))
+                        .withValue(CONTEXT_KEY_CONN_REMOTE_IP, call.getAttributes().get(TRANS_KEY_REMOTE_IP))
+                        .withValue(CONTEXT_KEY_CONN_REMOTE_PORT, call.getAttributes().get(TRANS_KEY_REMOTE_PORT))
                         .withValue(CONTEXT_KEY_CONN_LOCAL_PORT, call.getAttributes().get(TRANS_KEY_LOCAL_PORT));
                 if (REQUEST_BI_STREAM_SERVICE_NAME.equals(call.getMethodDescriptor().getServiceName())) {
                     Channel internalChannel = getInternalChannel(call);
@@ -138,7 +121,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                         String remoteIp = remoteAddress.getAddress().getHostAddress();
                         Attributes attrWrapper = transportAttrs.toBuilder()
                                 .set(TRANS_KEY_CONN_ID, System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort)
-                                .set(TRANS_KEY_CLIENT_IP, remoteIp).set(TRANS_KEY_CLIENT_PORT, remotePort)
+                                .set(TRANS_KEY_REMOTE_IP, remoteIp).set(TRANS_KEY_REMOTE_PORT, remotePort)
                                 .set(TRANS_KEY_LOCAL_PORT, localPort).build();
                         String connectionId = attrWrapper.get(TRANS_KEY_CONN_ID);
                         Loggers.REMOTE_DIGEST.info("Connection transportReady,connectionId = {} ", connectionId);
@@ -161,6 +144,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                         }
                     }
                 }).build();
+        
         server.start();
     }
     
@@ -225,17 +209,17 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     
     static final Attributes.Key<String> TRANS_KEY_CONN_ID = Attributes.Key.create("conn_id");
     
-    static final Attributes.Key<String> TRANS_KEY_CLIENT_IP = Attributes.Key.create("client_ip");
+    static final Attributes.Key<String> TRANS_KEY_REMOTE_IP = Attributes.Key.create("remote_ip");
     
-    static final Attributes.Key<Integer> TRANS_KEY_CLIENT_PORT = Attributes.Key.create("client_port");
+    static final Attributes.Key<Integer> TRANS_KEY_REMOTE_PORT = Attributes.Key.create("remote_port");
     
     static final Attributes.Key<Integer> TRANS_KEY_LOCAL_PORT = Attributes.Key.create("local_port");
     
     static final Context.Key<String> CONTEXT_KEY_CONN_ID = Context.key("conn_id");
     
-    static final Context.Key<String> CONTEXT_KEY_CONN_CLIENT_IP = Context.key("client_ip");
+    static final Context.Key<String> CONTEXT_KEY_CONN_REMOTE_IP = Context.key("remote_ip");
     
-    static final Context.Key<Integer> CONTEXT_KEY_CONN_CLIENT_PORT = Context.key("client_port");
+    static final Context.Key<Integer> CONTEXT_KEY_CONN_REMOTE_PORT = Context.key("remote_port");
     
     static final Context.Key<Integer> CONTEXT_KEY_CONN_LOCAL_PORT = Context.key("local_port");
     
