@@ -806,9 +806,10 @@ public abstract class RpcClient implements Closeable {
         for (ServerRequestHandler serverRequestHandler : serverRequestHandlers) {
             try {
                 Response response = serverRequestHandler.requestReply(request);
-                LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]ack server push request,request={},requestId={}", name,
-                        request.getClass().getSimpleName(), request.getRequestId());
+                
                 if (response != null) {
+                    LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]ack server push request,request={},requestId={}", name,
+                            request.getClass().getSimpleName(), request.getRequestId());
                     return response;
                 }
             } catch (Exception e) {
