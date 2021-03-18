@@ -148,9 +148,6 @@ public class IPUtil {
                 throw new IllegalArgumentException("The IP address(\"" + str
                         + "\") is incorrect. If it is an IPv6 address, please use [] to enclose the IP part!");
             }
-            if (!isIPv4(serverAddrArr[0])) {
-                throw new IllegalArgumentException("The IPv4 address(\"" + serverAddrArr[0] + "\") is incorrect.");
-            }
         }
         return serverAddrArr;
     }
@@ -174,9 +171,6 @@ public class IPUtil {
             Matcher m = ipv4Pattern.matcher(str);
             if (m.find()) {
                 result = m.group();
-                if (!isIPv4(result)) {
-                    result = "";
-                }
             }
         }
         return result;
