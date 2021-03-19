@@ -746,7 +746,7 @@ public class ServiceManager implements RecordListener<Service> {
                         break;
                 }
             } else {
-                List<Instance> instances = operationInfo.getInstances();
+                List<Instance> instances = (List<Instance>) operationInfo.getInstances();
                 if (!CollectionUtils.isEmpty(instances)) {
                     //ephemeral:instances or persist:instances
                     Map<Boolean, List<Instance>> instanceMap = instances.stream()
