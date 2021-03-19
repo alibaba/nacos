@@ -20,9 +20,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
+import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Instance operator.
@@ -141,4 +143,28 @@ public interface InstanceOperator {
      * @throws NacosException nacos exception during query
      */
     List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException;
+    
+    /**
+     * Batch update metadata of instances.
+     *
+     * @param namespaceId namespace Id of instances
+     * @param instanceOperationInfo instance operation info
+     * @param metadata updated metadata
+     * @return updated instance
+     * @throws NacosException nacos exception during update
+     */
+    List<String> batchUpdateMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
+            Map<String, String> metadata) throws NacosException;
+    
+    /**
+     * Batch delete metadata of instances.
+     *
+     * @param namespaceId namespace Id of instances
+     * @param instanceOperationInfo instance operation info
+     * @param metadata delete metadata
+     * @return updated instance
+     * @throws NacosException nacos exception during update
+     */
+    List<String> batchDeleteMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
+            Map<String, String> metadata) throws NacosException;
 }
