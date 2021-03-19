@@ -73,7 +73,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
         }
         try {
             // TODO handle marked(white list) logic like v1.x.
-            if (instance.tryStartCheck()) {
+            if (!instance.tryStartCheck()) {
                 SRV_LOG.warn("http check started before last one finished, service: {} : {} : {}:{}",
                         service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
                 healthCheckCommon

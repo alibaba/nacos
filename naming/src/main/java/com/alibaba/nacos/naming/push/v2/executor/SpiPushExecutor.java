@@ -14,29 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.control;
+package com.alibaba.nacos.naming.push.v2.executor;
+
+import com.alibaba.nacos.naming.pojo.Subscriber;
 
 /**
- * MonitorKeyPostfixMatcher.
+ * Nacos naming push executor for SPI.
  *
- * @author liuzunfei
- * @version $Id: MonitorKeyPostfixMatcher.java, v 0.1 2021年01月22日 12:38 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public class MonitorKeyPostfixMatcher extends MonitorKeyMatcher {
+public interface SpiPushExecutor extends PushExecutor {
     
-    public MonitorKeyPostfixMatcher(String pattern) {
-        super.pattern = pattern;
-        
-    }
-    
-    @Override
-    public boolean match(String monitorKey) {
-        return monitorKey.endsWith(pattern);
-    }
-    
-    @Override
-    public String getMatchModel() {
-        return MatchMode.POSTFIX.model;
-    }
-    
+    /**
+     * Whether SPI push executor is interest this push.
+     *
+     * @param clientId   client id of push
+     * @param subscriber subscribe info
+     * @return {@code true} if this SPI push executor should execute, otherwise false.
+     */
+    boolean isInterest(String clientId, Subscriber subscriber);
 }

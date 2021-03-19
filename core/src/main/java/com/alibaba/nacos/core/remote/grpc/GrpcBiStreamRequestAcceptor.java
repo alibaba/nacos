@@ -38,10 +38,10 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CHANNEL;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_IP;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_PORT;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_LOCAL_PORT;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_IP;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_PORT;
 
 /**
  * grpc bi stream request .
@@ -56,9 +56,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
     ConnectionManager connectionManager;
     
     private void traceDetailIfNecessary(Payload grpcRequest) {
-        String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+        String clientIp = grpcRequest.getMetadata().getClientIp();
         String connectionId = CONTEXT_KEY_CONN_ID.get();
-        
         try {
             if (connectionManager.traced(clientIp)) {
                 Loggers.REMOTE_DIGEST.info("[{}]Bi stream request receive, meta={},body={}", connectionId,
@@ -81,13 +80,16 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             
             final Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
             
-            final int clientPort = CONTEXT_KEY_CONN_CLIENT_PORT.get();
+            final int remotePort = CONTEXT_KEY_CONN_REMOTE_PORT.get();
             
-            final String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+            String remoteIp = CONTEXT_KEY_CONN_REMOTE_IP.get();
+            
+            String clientIp = "";
             
             @Override
             public void onNext(Payload payload) {
                 
+                clientIp = payload.getMetadata().getClientIp();
                 traceDetailIfNecessary(payload);
                 
                 Object parseObj = null;
@@ -112,19 +114,20 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
-                    ConnectionMeta metaInfo = new ConnectionMeta(connectionId, clientIp, clientPort, localPort,
-                            ConnectionType.GRPC.getType(), setUpRequest.getClientVersion(), appName,
-                            setUpRequest.getLabels());
-                    metaInfo.setTenant(setUpRequest.getTenant());
                     
+                    ConnectionMeta metaInfo = new ConnectionMeta(connectionId, payload.getMetadata().getClientIp(),
+                            remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
+                            setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
+                    metaInfo.setTenant(setUpRequest.getTenant());
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     connection.setAbilities(setUpRequest.getAbilities());
-                    boolean started = ApplicationUtils.isStarted();
-                    if (!started || !connectionManager.register(connectionId, connection)) {
+                    boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
+                    
+                    if (rejectSdkOnStarting || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {
                             Loggers.REMOTE_DIGEST.warn("[{}]Connection register fail,reason:{}", connectionId,
-                                    started ? " server is not started" : " server is over limited.");
+                                    rejectSdkOnStarting ? " server is not started" : " server is over limited.");
                             connection.request(new ConnectResetRequest(), 3000L);
                             connection.close();
                         } catch (Exception e) {

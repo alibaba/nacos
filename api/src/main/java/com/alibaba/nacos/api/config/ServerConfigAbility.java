@@ -16,13 +16,16 @@
 
 package com.alibaba.nacos.api.config;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 /**
  * config abilities of nacos server.
  *
  * @author liuzunfei
  * @version $Id: ServerConfigAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ServerConfigAbility {
+public class ServerConfigAbility implements Serializable {
     
     /**
      * support remote metrics get.
@@ -35,5 +38,22 @@ public class ServerConfigAbility {
     
     public void setSupportRemoteMetrics(boolean supportRemoteMetrics) {
         this.supportRemoteMetrics = supportRemoteMetrics;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ServerConfigAbility that = (ServerConfigAbility) o;
+        return supportRemoteMetrics == that.supportRemoteMetrics;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(supportRemoteMetrics);
     }
 }

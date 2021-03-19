@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 /**
  * Delegate for push execute service.
@@ -34,23 +37,28 @@ public class PushExecutorDelegate implements PushExecutor {
     
     private final PushExecutorUdpImpl udpPushExecuteService;
     
-    public PushExecutorDelegate(PushExecutorRpcImpl rpcPushExecuteService,
-            PushExecutorUdpImpl udpPushExecuteService) {
+    public PushExecutorDelegate(PushExecutorRpcImpl rpcPushExecuteService, PushExecutorUdpImpl udpPushExecuteService) {
         this.rpcPushExecuteService = rpcPushExecuteService;
         this.udpPushExecuteService = udpPushExecuteService;
     }
     
     @Override
-    public void doPush(String clientId, Subscriber subscriber, ServiceInfo data) {
-        getPushExecuteService(clientId).doPush(clientId, subscriber, data);
+    public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
+        getPushExecuteService(clientId, subscriber).doPush(clientId, subscriber, data);
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, ServiceInfo data, PushCallBack callBack) {
-        getPushExecuteService(clientId).doPushWithCallback(clientId, subscriber, data, callBack);
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
+        getPushExecuteService(clientId, subscriber).doPushWithCallback(clientId, subscriber, data, callBack);
     }
     
-    private PushExecutor getPushExecuteService(String clientId) {
-        return clientId.contains(":") ? udpPushExecuteService : rpcPushExecuteService;
+    private PushExecutor getPushExecuteService(String clientId, Subscriber subscriber) {
+        Optional<SpiPushExecutor> result = SpiImplPushExecutorHolder.getInstance()
+                .findPushExecutorSpiImpl(clientId, subscriber);
+        if (result.isPresent()) {
+            return result.get();
+        }
+        // use nacos default push executor
+        return clientId.contains(IpPortBasedClient.ID_DELIMITER) ? udpPushExecuteService : rpcPushExecuteService;
     }
 }

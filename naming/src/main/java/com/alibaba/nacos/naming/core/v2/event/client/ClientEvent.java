@@ -48,6 +48,7 @@ public class ClientEvent extends Event {
         public ClientChangedEvent(Client client) {
             super(client);
         }
+        
     }
     
     /**
@@ -59,6 +60,33 @@ public class ClientEvent extends Event {
         
         public ClientDisconnectEvent(Client client) {
             super(client);
+        }
+        
+    }
+    
+    /**
+     * Client add event. Happened when verify failed.
+     */
+    public static class ClientVerifyFailedEvent extends ClientEvent {
+    
+        private static final long serialVersionUID = 2023951686223780851L;
+    
+        private final String clientId;
+        
+        private final String targetServer;
+        
+        public ClientVerifyFailedEvent(String clientId, String targetServer) {
+            super(null);
+            this.clientId = clientId;
+            this.targetServer = targetServer;
+        }
+        
+        public String getClientId() {
+            return clientId;
+        }
+        
+        public String getTargetServer() {
+            return targetServer;
         }
     }
 }

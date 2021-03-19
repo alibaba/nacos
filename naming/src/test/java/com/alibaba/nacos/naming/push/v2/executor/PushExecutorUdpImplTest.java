@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
+import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,13 +49,13 @@ public class PushExecutorUdpImplTest {
     @Mock
     private PushCallBack pushCallBack;
     
-    private ServiceInfo serviceInfo;
+    private PushDataWrapper pushData;
     
     private PushExecutorUdpImpl pushExecutor;
     
     @Before
     public void setUp() throws Exception {
-        serviceInfo = new ServiceInfo("G@@S");
+        pushData = new PushDataWrapper(new ServiceInfo("G@@S"));
         pushExecutor = new PushExecutorUdpImpl(pushService);
         doAnswer(new CallbackAnswer()).when(pushService)
                 .pushDataWithCallback(eq(subscriber), any(ServiceInfo.class), eq(pushCallBack));
@@ -62,13 +63,13 @@ public class PushExecutorUdpImplTest {
     
     @Test
     public void testDoPush() {
-        pushExecutor.doPush(rpcClientId, subscriber, serviceInfo);
+        pushExecutor.doPush(rpcClientId, subscriber, pushData);
         verify(pushService).pushDataWithoutCallback(eq(subscriber), any(ServiceInfo.class));
     }
     
     @Test
     public void testDoPushWithCallback() {
-        pushExecutor.doPushWithCallback(rpcClientId, subscriber, serviceInfo, pushCallBack);
+        pushExecutor.doPushWithCallback(rpcClientId, subscriber, pushData, pushCallBack);
         verify(pushCallBack).onSuccess();
     }
     

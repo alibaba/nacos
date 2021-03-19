@@ -308,11 +308,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
     
     @Override
-    public boolean processVerifyData(DistroData distroData) {
+    public boolean processVerifyData(DistroData distroData, String sourceAddress) {
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
-        String sourceServer = distroData.getDistroKey().getResourceKey();
         Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
-        onReceiveChecksums(verifyData, sourceServer);
+        onReceiveChecksums(verifyData, sourceAddress);
         return true;
     }
     

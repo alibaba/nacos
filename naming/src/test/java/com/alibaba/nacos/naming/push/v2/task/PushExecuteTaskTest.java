@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
@@ -25,11 +26,13 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Collections;
 
@@ -62,6 +65,12 @@ public class PushExecuteTaskTest {
     private ServiceStorage serviceStorage;
     
     @Mock
+    private TpsMonitorManager tpsMonitorManager;
+    
+    @Mock
+    private ConfigurableApplicationContext context;
+    
+    @Mock
     private Client client;
     
     @Mock
@@ -78,6 +87,8 @@ public class PushExecuteTaskTest {
         when(delayTaskExecuteEngine.getIndexesManager()).thenReturn(indexesManager);
         when(delayTaskExecuteEngine.getPushExecutor()).thenReturn(pushExecutor);
         when(delayTaskExecuteEngine.getServiceStorage()).thenReturn(serviceStorage);
+        ApplicationUtils.injectContext(context);
+        when(context.getBean(TpsMonitorManager.class)).thenReturn(tpsMonitorManager);
     }
     
     @Test

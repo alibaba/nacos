@@ -139,19 +139,18 @@
         <slf4j-api.version>1.7.7</slf4j-api.version>
         <logback.version>1.2.3</logback.version>
         <log4j.version>2.13.3</log4j.version>
-        <httpcore.version>4.4.1</httpcore.version>
-        <httpclient.version>4.5</httpclient.version>
+        
         <httpasyncclient.version>4.1.3</httpasyncclient.version>
-        <mysql-connector-java.version>8.0.16</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.21</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <cglib-nodep.version>2.1</cglib-nodep.version>
         <jcip-annotations.version>1.0</jcip-annotations.version>
-        <jackson-core.version>2.10.4</jackson-core.version>
-        <jackson-databind.version>2.10.4</jackson-databind.version>
+        <jackson-core.version>2.12.2</jackson-core.version>
+        <jackson-databind.version>2.12.2</jackson-databind.version>
+        <jackson.annotations.version>2.12.2</jackson.annotations.version>
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
-        <netty-all.version>4.1.51.Final</netty-all.version>
-        <!--<netty-common.version>4.1.31.Final</netty-common.version>-->
+        <netty-all.version>4.1.59.Final</netty-all.version>
         <mina-core.version>2.0.0-RC1</mina-core.version>
         <guava.version>24.1.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
@@ -165,7 +164,7 @@
         <mockito-all.version>1.10.19</mockito-all.version>
         <hamcrest-all.version>1.3</hamcrest-all.version>
         <prometheus-simpleclient.version>0.5.0</prometheus-simpleclient.version>
-        <tomcat-embed-jasper.version>9.0.37</tomcat-embed-jasper.version>
+        <tomcat-embed-jasper.version>9.0.40</tomcat-embed-jasper.version>
         <truth.version>0.30</truth.version>
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.3.5</jraft-core.version>
@@ -841,24 +840,6 @@
             <!-- HTTP client libs -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>${httpcore.version}</version>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${httpclient.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>commons-logging</artifactId>
-                        <groupId>commons-logging</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpasyncclient</artifactId>
                 <version>${httpasyncclient.version}</version>
             </dependency>
@@ -934,6 +915,11 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson-databind.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.annotations.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -1069,17 +1055,17 @@
         </dependencies>
     </dependencyManagement>
     
-        <distributionManagement>
-            <snapshotRepository>
-                <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->
-                <id>sona</id>
-                <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-            </snapshotRepository>
-            <repository>
-                <id>sona</id>
-                <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-            </repository>
-        </distributionManagement>
+    <distributionManagement>
+        <snapshotRepository>
+            <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->
+            <id>sona</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>sona</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
     
 </project>
 

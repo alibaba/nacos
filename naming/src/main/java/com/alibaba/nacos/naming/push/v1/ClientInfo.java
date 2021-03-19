@@ -34,18 +34,22 @@ public class ClientInfo {
     
     public ClientInfo(String userAgent) {
         String versionStr = StringUtils.isEmpty(userAgent) ? StringUtils.EMPTY : userAgent;
-        this.type = ClientType.getType(userAgent);
+        this.type = ClientType.getType(versionStr);
         if (versionStr.startsWith(ClientTypeDescription.CPP_CLIENT)) {
             this.type = ClientType.C;
         }
-        this.version = parseVersion(versionStr.substring(versionStr.indexOf(":v") + 2));
+        this.version = parseVersion(versionStr);
     }
     
     private Version parseVersion(String versionStr) {
         if (StringUtils.isBlank(versionStr) || ClientType.UNKNOWN.equals(this.type)) {
             return Version.unknownVersion();
         }
-        return VersionUtil.parseVersion(versionStr);
+        int versionStartIndex = versionStr.indexOf(":v");
+        if (versionStartIndex < 0) {
+            return Version.unknownVersion();
+        }
+        return VersionUtil.parseVersion(versionStr.substring(versionStartIndex + 2));
     }
     
     public enum ClientType {
@@ -91,15 +95,15 @@ public class ClientInfo {
         UNKNOWN(UtilsAndCommons.UNKNOWN_SITE);
         
         private final String clientTypeDescription;
-    
+        
         ClientType(String clientTypeDescription) {
             this.clientTypeDescription = clientTypeDescription;
         }
-    
+        
         public String getClientTypeDescription() {
             return clientTypeDescription;
         }
-    
+        
         public static ClientType getType(String userAgent) {
             for (ClientType each : ClientType.values()) {
                 if (userAgent.startsWith(each.getClientTypeDescription())) {
@@ -127,7 +131,7 @@ public class ClientInfo {
         public static final String GO_CLIENT = "Nacos-Go-Client";
         
         public static final String PHP_CLIENT = "Nacos-Php-Client";
-    
+        
         public static final String CSHARP_CLIENT = "Nacos-CSharp-Client";
     }
     

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
@@ -32,6 +33,7 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.exception.DistroException;
 import com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest;
 import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 
@@ -120,11 +122,12 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         if (isNoExistTarget(targetServer)) {
             callback.onSuccess();
         }
-        verifyData.getDistroKey().setTargetServer(memberManager.getSelf().getAddress());
         DistroDataRequest request = new DistroDataRequest(verifyData, DataOperation.VERIFY);
         Member member = memberManager.find(targetServer);
         try {
-            clusterRpcClientProxy.asyncRequest(member, request, new DistroRpcCallbackWrapper(callback));
+            DistroVerifyCallbackWrapper wrapper = new DistroVerifyCallbackWrapper(targetServer,
+                    verifyData.getDistroKey().getResourceKey(), callback);
+            clusterRpcClientProxy.asyncRequest(member, request, wrapper);
         } catch (NacosException nacosException) {
             callback.onFailed(nacosException);
         }
@@ -195,21 +198,22 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
     private class DistroRpcCallbackWrapper implements RequestCallBack<Response> {
         
         private final DistroCallback distroCallback;
-    
+        
         public DistroRpcCallbackWrapper(DistroCallback distroCallback) {
             this.distroCallback = distroCallback;
         }
-    
+        
         @Override
         public Executor getExecutor() {
             return GlobalExecutor.getCallbackExecutor();
         }
-    
+        
         @Override
         public long getTimeout() {
+            // TODO timeout can be configured.
             return 3000L;
         }
-    
+        
         @Override
         public void onResponse(Response response) {
             if (checkResponse(response)) {
@@ -218,7 +222,49 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
                 distroCallback.onFailed(null);
             }
         }
+        
+        @Override
+        public void onException(Throwable e) {
+            distroCallback.onFailed(e);
+        }
+    }
     
+    private class DistroVerifyCallbackWrapper implements RequestCallBack<Response> {
+        
+        private final String targetServer;
+        
+        private final String clientId;
+        
+        private final DistroCallback distroCallback;
+        
+        private DistroVerifyCallbackWrapper(String targetServer, String clientId, DistroCallback distroCallback) {
+            this.targetServer = targetServer;
+            this.clientId = clientId;
+            this.distroCallback = distroCallback;
+        }
+        
+        @Override
+        public Executor getExecutor() {
+            return GlobalExecutor.getCallbackExecutor();
+        }
+        
+        @Override
+        public long getTimeout() {
+            // TODO timeout can be configured.
+            return 3000L;
+        }
+        
+        @Override
+        public void onResponse(Response response) {
+            if (checkResponse(response)) {
+                distroCallback.onSuccess();
+            } else {
+                Loggers.DISTRO.info("Target {} verify client {} failed, sync new client", targetServer, clientId);
+                NotifyCenter.publishEvent(new ClientEvent.ClientVerifyFailedEvent(clientId, targetServer));
+                distroCallback.onFailed(null);
+            }
+        }
+        
         @Override
         public void onException(Throwable e) {
             distroCallback.onFailed(e);

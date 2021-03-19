@@ -166,15 +166,18 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     }
     
     private boolean checkLimit(Connection connection) {
+        String clientIp = connection.getMetaInfo().clientIp;
         
         if (connection.getMetaInfo().isClusterSource()) {
+            if (!connectionForClientIp.containsKey(clientIp)) {
+                connectionForClientIp.putIfAbsent(clientIp, new AtomicInteger(0));
+            }
             return true;
         }
         if (isOverLimit()) {
             return false;
         }
         
-        String clientIp = connection.getMetaInfo().clientIp;
         if (!connectionForClientIp.containsKey(clientIp)) {
             connectionForClientIp.putIfAbsent(clientIp, new AtomicInteger(0));
         }
@@ -217,9 +220,12 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         Connection remove = this.connections.remove(connectionId);
         if (remove != null) {
             String clientIp = remove.getMetaInfo().clientIp;
-            int count = connectionForClientIp.get(clientIp).decrementAndGet();
-            if (count == 0) {
-                connectionForClientIp.remove(clientIp);
+            AtomicInteger atomicInteger = connectionForClientIp.get(clientIp);
+            if (atomicInteger != null) {
+                int count = atomicInteger.decrementAndGet();
+                if (count <= 0) {
+                    connectionForClientIp.remove(clientIp);
+                }
             }
             remove.close();
             Loggers.REMOTE_DIGEST.info("[{}]Connection unregistered successfully. ", connectionId);

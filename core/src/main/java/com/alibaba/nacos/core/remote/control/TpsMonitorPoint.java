@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.control;
 
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.utils.Loggers;
 
 import java.text.SimpleDateFormat;
@@ -25,7 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * tps control point.
@@ -43,7 +44,7 @@ public class TpsMonitorPoint {
     
     private TpsRecorder tpsRecorder;
     
-    public Map<MonitorKeyMatcher, TpsRecorder> monitorKeysRecorder = new HashMap<MonitorKeyMatcher, TpsRecorder>();
+    public Map<String, TpsRecorder> monitorKeysRecorder = new HashMap<String, TpsRecorder>();
     
     public TpsMonitorPoint(String pointName) {
         this(pointName, -1, "monitor");
@@ -53,8 +54,9 @@ public class TpsMonitorPoint {
         // trim to second,uniform all tps control.
         this.startTime = getTrimMillsOfSecond(System.currentTimeMillis());
         this.pointName = pointName;
-        this.tpsRecorder = new TpsRecorder(startTime, DEFAULT_RECORD_SIZE);
-        this.tpsRecorder.setMaxTps(maxTps);
+        this.tpsRecorder = new TpsRecorder(startTime, TimeUnit.SECONDS, TpsControlRule.Rule.MODEL_FUZZY,
+                DEFAULT_RECORD_SIZE);
+        this.tpsRecorder.setMaxCount(maxTps);
         this.tpsRecorder.setMonitorType(monitorType);
     }
     
@@ -69,6 +71,30 @@ public class TpsMonitorPoint {
         String substring = millString.substring(0, millString.length() - 3);
         return Long.valueOf(substring + "000");
         
+    }
+    
+    /**
+     * get trim mills of second.
+     *
+     * @param timeStamp timestamp milliseconds.
+     * @return
+     */
+    public static long getTrimMillsOfMinute(long timeStamp) {
+        String millString = String.valueOf(timeStamp);
+        String substring = millString.substring(0, millString.length() - 3);
+        return Long.valueOf(Long.valueOf(substring) / 60 * 60 + "000");
+    }
+    
+    /**
+     * get trim mills of second.
+     *
+     * @param timeStamp timestamp milliseconds.
+     * @return
+     */
+    public static long getTrimMillsOfHour(long timeStamp) {
+        String millString = String.valueOf(timeStamp);
+        String substring = millString.substring(0, millString.length() - 3);
+        return Long.valueOf(Long.valueOf(substring) / (60 * 60) * (60 * 60) + "000");
     }
     
     /**
@@ -95,51 +121,51 @@ public class TpsMonitorPoint {
     public boolean applyTps(String connectionId, List<MonitorKey> monitorKeys) {
         
         long now = System.currentTimeMillis();
-        TpsRecorder.TpsSlot currentTps = tpsRecorder.createPointIfAbsent(now);
+        TpsRecorder.TpsSlot currentTps = tpsRecorder.createSlotIfAbsent(now);
         
         //1.check monitor keys.
-        List<TpsRecorder.TpsSlot> passedSlots = new ArrayList<>();
+        List<TpsRecorder.SlotCountHolder> passedSlots = new ArrayList<>();
         for (MonitorKey monitorKey : monitorKeys) {
-            Set<Map.Entry<MonitorKeyMatcher, TpsRecorder>> allMonitorKeys = monitorKeysRecorder.entrySet();
-            for (Map.Entry<MonitorKeyMatcher, TpsRecorder> entry : allMonitorKeys) {
-                if (entry.getKey().match(monitorKey.build())) {
+            for (Map.Entry<String, TpsRecorder> entry : monitorKeysRecorder.entrySet()) {
+                if (MonitorKeyMatcher.matchWithType(entry.getKey(), monitorKey.build())) {
                     TpsRecorder tpsRecorderKey = entry.getValue();
-                    
-                    TpsRecorder.TpsSlot currentKeySlot = tpsRecorderKey.createPointIfAbsent(now);
-                    long maxTpsOfIp = tpsRecorderKey.getMaxTps();
-                    boolean overLimit = maxTpsOfIp >= 0 && currentKeySlot.tps.longValue() >= maxTpsOfIp;
+                    TpsRecorder.TpsSlot currentKeySlot = tpsRecorderKey.createSlotIfAbsent(now);
+                    long maxTpsCount = tpsRecorderKey.getMaxCount();
+                    TpsRecorder.SlotCountHolder countHolder = currentKeySlot.getCountHolder(monitorKey.build());
+                    boolean overLimit = maxTpsCount >= 0 && countHolder.count.longValue() >= maxTpsCount;
                     if (overLimit) {
                         Loggers.TPS_CONTROL_DETAIL
-                                .info("[{}]Tps over limit ,pointName=[{}],barrier=[{}]，monitorModel={}", connectionId,
-                                        this.getPointName(), entry.getKey(), tpsRecorderKey.getMonitorType());
+                                .info("[{}]Tps over limit ,pointName=[{}],barrier=[{}]，monitorModel={},maxTps={}",
+                                        connectionId, this.getPointName(), entry.getKey(),
+                                        tpsRecorderKey.getMonitorType(), maxTpsCount + "/" + tpsRecorderKey.period);
                         if (tpsRecorderKey.isInterceptMode()) {
-                            currentKeySlot.interceptedTps.incrementAndGet();
-                            currentTps.interceptedTps.incrementAndGet();
+                            currentKeySlot.getCountHolder(monitorKey.build()).interceptedCount.incrementAndGet();
+                            currentTps.getCountHolder(monitorKey.build()).interceptedCount.incrementAndGet();
                             return false;
                         }
                     } else {
-                        passedSlots.add(currentKeySlot);
+                        passedSlots.add(countHolder);
                     }
                 }
             }
         }
         
         //2.check total tps.
-        long maxTps = tpsRecorder.getMaxTps();
-        boolean overLimit = maxTps >= 0 && currentTps.tps.longValue() >= maxTps;
+        long maxTps = tpsRecorder.getMaxCount();
+        boolean overLimit = maxTps >= 0 && currentTps.getCountHolder(pointName).count.longValue() >= maxTps;
         if (overLimit) {
             Loggers.TPS_CONTROL_DETAIL
                     .info("[{}]Tps over limit ,pointName=[{}],barrier=[{}]，monitorType={}", connectionId,
                             this.getPointName(), "pointRule", tpsRecorder.getMonitorType());
             if (tpsRecorder.isInterceptMode()) {
-                currentTps.interceptedTps.incrementAndGet();
+                currentTps.getCountHolder(pointName).interceptedCount.incrementAndGet();
                 return false;
             }
         }
         
-        currentTps.tps.incrementAndGet();
-        for (TpsRecorder.TpsSlot passedTpsSlot : passedSlots) {
-            passedTpsSlot.tps.incrementAndGet();
+        currentTps.getCountHolder(pointName).count.incrementAndGet();
+        for (TpsRecorder.SlotCountHolder passedTpsSlot : passedSlots) {
+            passedTpsSlot.count.incrementAndGet();
         }
         //3.check pass.
         return true;
@@ -182,64 +208,81 @@ public class TpsMonitorPoint {
         } else {
             Loggers.TPS_CONTROL.info("Update  point  control rule ,pointName=[{}],original maxTps={}, new maxTps={}"
                             + ",original monitorType={}, original monitorType={}, ", this.getPointName(),
-                    this.tpsRecorder.getMaxTps(), newPointRule.maxTps, this.tpsRecorder.getMonitorType(),
+                    this.tpsRecorder.getMaxCount(), newPointRule.maxCount, this.tpsRecorder.getMonitorType(),
                     newPointRule.monitorType);
             
-            this.tpsRecorder.setMaxTps(newPointRule.maxTps);
+            this.tpsRecorder.setMaxCount(newPointRule.maxCount);
             this.tpsRecorder.setMonitorType(newPointRule.monitorType);
         }
         
-        //3.check rule for ips.
+        //3.check monitor key rules.
         Map<String, TpsControlRule.Rule> newMonitorKeyRules = newControlRule.getMonitorKeyRule();
+        //3.1 clear all monitor keys.
         if (newMonitorKeyRules == null || newMonitorKeyRules.isEmpty()) {
             Loggers.TPS_CONTROL
                     .info("Clear point  control rule for monitorKeys, pointName=[{}]  ", this.getPointName());
             this.stopAllMonitorClient();
         } else {
-            Map<MonitorKeyMatcher, TpsRecorder> tpsRecordCurrent = this.monitorKeysRecorder;
+            Map<String, TpsRecorder> monitorKeysRecorderCurrent = this.monitorKeysRecorder;
             
-            for (Map.Entry<String, TpsControlRule.Rule> monitorRule : newMonitorKeyRules.entrySet()) {
-                if (monitorRule.getValue() == null) {
+            for (Map.Entry<String, TpsControlRule.Rule> newMonitorRule : newMonitorKeyRules.entrySet()) {
+                if (newMonitorRule.getValue() == null) {
                     continue;
                 }
-                
-                MonitorKeyMatcher check = MonitorKeyMatcherValidator.parse(monitorRule.getKey());
-                if (check == null) {
+                boolean checkPattern = newMonitorRule.getKey() != null;
+                if (!checkPattern) {
                     Loggers.TPS_CONTROL.info("Invalid monitor rule, pointName=[{}] ,monitorRule={} ,Ignore this.",
-                            this.getPointName(), monitorRule.getKey());
+                            this.getPointName(), newMonitorRule.getKey());
                     continue;
+                }
+                TpsControlRule.Rule newRule = newMonitorRule.getValue();
+                if (newRule.period == null) {
+                    newRule.period = TimeUnit.SECONDS;
+                }
+                
+                if (newRule.model == null) {
+                    newRule.model = TpsControlRule.Rule.MODEL_FUZZY;
                 }
                 
                 //update rule.
-                if (tpsRecordCurrent.containsKey(check)) {
-                    TpsRecorder tpsRecorder = tpsRecordCurrent.get(check);
+                if (monitorKeysRecorderCurrent.containsKey(newMonitorRule.getKey())) {
+                    TpsRecorder tpsRecorder = monitorKeysRecorderCurrent.get(newMonitorRule.getKey());
                     Loggers.TPS_CONTROL
                             .info("Update  point  control rule for client ip ,pointName=[{}],monitorKey=[{}],original maxTps={}"
                                             + ", new maxTps={},original monitorType={}, new monitorType={}, ",
-                                    this.getPointName(), monitorRule.getKey(), tpsRecorder.getMaxTps(),
-                                    monitorRule.getValue().maxTps, tpsRecorder.getMonitorType(),
-                                    monitorRule.getValue().monitorType);
-                    tpsRecorder.setMaxTps(monitorRule.getValue().maxTps);
-                    tpsRecorder.setMonitorType(monitorRule.getValue().monitorType);
+                                    this.getPointName(), newMonitorRule.getKey(), tpsRecorder.getMaxCount(),
+                                    newRule.maxCount, tpsRecorder.getMonitorType(), newRule.monitorType);
+                    
+                    if (!Objects.equals(tpsRecorder.period, newRule.period) || !Objects
+                            .equals(tpsRecorder.getModel(), newRule.model)) {
+                        TpsRecorder tpsRecorderNew = new TpsRecorder(startTime, newRule.period, newRule.model,
+                                DEFAULT_RECORD_SIZE);
+                        tpsRecorderNew.setMaxCount(newRule.maxCount);
+                        tpsRecorderNew.setMonitorType(newRule.monitorType);
+                        monitorKeysRecorderCurrent.put(newMonitorRule.getKey(), tpsRecorderNew);
+                    } else {
+                        tpsRecorder.setMaxCount(newRule.maxCount);
+                        tpsRecorder.setMonitorType(newRule.monitorType);
+                    }
+                    
                 } else {
                     Loggers.TPS_CONTROL
                             .info("Add  point  control rule for client ip ,pointName=[{}],monitorKey=[{}], new maxTps={}, new monitorType={}, ",
-                                    this.getPointName(), monitorRule.getKey(), monitorRule.getValue().maxTps,
-                                    monitorRule.getValue().monitorType);
+                                    this.getPointName(), newMonitorRule.getKey(), newMonitorRule.getValue().maxCount,
+                                    newMonitorRule.getValue().monitorType);
                     // add rule
-                    TpsRecorder tpsRecorderAdd = new TpsRecorder(startTime, DEFAULT_RECORD_SIZE);
-                    tpsRecorderAdd.setMaxTps(monitorRule.getValue().maxTps);
-                    tpsRecorderAdd.setMonitorType(monitorRule.getValue().monitorType);
-                    tpsRecordCurrent.put(check, tpsRecorderAdd);
+                    TpsRecorder tpsRecorderAdd = new TpsRecorder(startTime, newRule.period, newRule.model,
+                            DEFAULT_RECORD_SIZE);
+                    tpsRecorderAdd.setMaxCount(newRule.maxCount);
+                    tpsRecorderAdd.setMonitorType(newRule.monitorType);
+                    monitorKeysRecorderCurrent.put(newMonitorRule.getKey(), tpsRecorderAdd);
                 }
-                
             }
             
             //delete rule.
-            Iterator<Map.Entry<MonitorKeyMatcher, TpsRecorder>> iteratorCurrent = tpsRecordCurrent.entrySet()
-                    .iterator();
+            Iterator<Map.Entry<String, TpsRecorder>> iteratorCurrent = monitorKeysRecorderCurrent.entrySet().iterator();
             while (iteratorCurrent.hasNext()) {
-                Map.Entry<MonitorKeyMatcher, TpsRecorder> next1 = iteratorCurrent.next();
+                Map.Entry<String, TpsRecorder> next1 = iteratorCurrent.next();
                 if (!newMonitorKeyRules.containsKey(next1.getKey().toString())) {
                     Loggers.TPS_CONTROL.info("Delete  point  control rule for pointName=[{}] ,monitorKey=[{}]",
                             this.getPointName(), next1.getKey());

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
@@ -102,18 +103,20 @@ public class CommunicationController {
         // rpc listeners.
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         Set<String> listenersClients = configChangeListenContext.getListeners(groupKey);
-        SampleResult rpcSample = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenersClients.size(), 1);
-        for (String connectionId : listenersClients) {
-            Connection client = connectionManager.getConnection(connectionId);
-            if (client != null) {
-                String md5 = configChangeListenContext.getListenKeyMd5(connectionId, groupKey);
-                if (md5 != null) {
-                    lisentersGroupkeyStatus.put(client.getMetaInfo().getClientIp(), md5);
+        if (CollectionUtils.isNotEmpty(listenersClients)) {
+            Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenersClients.size(), 1);
+            for (String connectionId : listenersClients) {
+                Connection client = connectionManager.getConnection(connectionId);
+                if (client != null) {
+                    String md5 = configChangeListenContext.getListenKeyMd5(connectionId, groupKey);
+                    if (md5 != null) {
+                        lisentersGroupkeyStatus.put(client.getMetaInfo().getClientIp(), md5);
+                    }
                 }
             }
+            result.getLisentersGroupkeyStatus().putAll(lisentersGroupkeyStatus);
         }
-        result.getLisentersGroupkeyStatus().putAll(lisentersGroupkeyStatus);
+        
         return result;
     }
     
@@ -136,5 +139,5 @@ public class CommunicationController {
         return result;
         
     }
-
+    
 }

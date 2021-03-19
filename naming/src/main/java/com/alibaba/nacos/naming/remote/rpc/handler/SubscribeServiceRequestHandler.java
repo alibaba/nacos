@@ -28,6 +28,8 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -46,11 +48,15 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     
     private final ServiceStorage serviceStorage;
     
+    private final NamingMetadataManager metadataManager;
+
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
     public SubscribeServiceRequestHandler(ServiceStorage serviceStorage,
+            NamingMetadataManager metadataManager,
             EphemeralClientOperationServiceImpl clientOperationService) {
         this.serviceStorage = serviceStorage;
+        this.metadataManager = metadataManager;
         this.clientOperationService = clientOperationService;
     }
     
@@ -64,7 +70,9 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), "unknown",
                 meta.getClientIp(), namespaceId, groupedServiceName, 0, request.getClusters());
-        ServiceInfo serviceInfo = handleClusterData(serviceStorage.getData(service), subscriber);
+        ServiceInfo serviceInfo = handleClusterData(serviceStorage.getData(service),
+                metadataManager.getServiceMetadata(service).orElse(null),
+                subscriber);
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
         } else {
@@ -77,12 +85,13 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
      * For adapt push cluster feature. Will be remove after 2.1.x.
      *
      * @param data       original data
+     * @param metadata   service metadata
      * @param subscriber subscriber information
      * @return cluster filtered data
      */
     @Deprecated
-    private ServiceInfo handleClusterData(ServiceInfo data, Subscriber subscriber) {
+    private ServiceInfo handleClusterData(ServiceInfo data, ServiceMetadata metadata, Subscriber subscriber) {
         return StringUtils.isBlank(subscriber.getCluster()) ? data
-                : ServiceUtil.selectInstances(data, subscriber.getCluster());
+                : ServiceUtil.selectInstancesWithHealthyProtection(data, metadata, subscriber.getCluster());
     }
 }
