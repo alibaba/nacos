@@ -412,14 +412,11 @@ public class ClientWorker implements Closeable {
     }
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, final Properties properties)
-            throws NacosException {
+    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ServerListManager serverListManager,
+            final Properties properties) throws NacosException {
         this.configFilterChainManager = configFilterChainManager;
         
         init(properties);
-        
-        ServerListManager serverListManager = new ServerListManager(properties);
-        serverListManager.start();
         
         agent = new ConfigRpcTransportClient(properties, serverListManager);
         

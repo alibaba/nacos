@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote.control;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * tps control point.
@@ -31,6 +32,9 @@ public class TpsControlRule {
     
     private Rule pointRule;
     
+    /**
+     * Pattern,Rule map.
+     */
     private Map<String, Rule> monitorKeyRule = new HashMap<String, Rule>();
     
     public String getPointName() {
@@ -59,7 +63,15 @@ public class TpsControlRule {
     
     public static class Rule {
         
-        long maxTps = -1;
+        long maxCount = -1;
+        
+        TimeUnit period = TimeUnit.SECONDS;
+        
+        public static final String MODEL_FUZZY = "FUZZY";
+        
+        public static final String MODEL_PROTO = "PROTO";
+        
+        String model = MODEL_FUZZY;
         
         /**
          * monitor/intercept.
@@ -70,17 +82,43 @@ public class TpsControlRule {
         
         }
         
-        public Rule(long maxTps, String monitorType) {
-            this.maxTps = maxTps;
+        public boolean isFuzzyModel() {
+            return MODEL_FUZZY.equalsIgnoreCase(model);
+        }
+        
+        public boolean isProtoModel() {
+            return MODEL_PROTO.equalsIgnoreCase(model);
+        }
+        
+        public Rule(long maxCount, TimeUnit period, String model, String monitorType) {
+            this.maxCount = maxCount;
+            this.period = period;
+            this.model = model;
             this.monitorType = monitorType;
         }
         
-        public long getMaxTps() {
-            return maxTps;
+        public String getModel() {
+            return model;
         }
         
-        public void setMaxTps(long maxTps) {
-            this.maxTps = maxTps;
+        public void setModel(String model) {
+            this.model = model;
+        }
+        
+        public TimeUnit getPeriod() {
+            return period;
+        }
+        
+        public void setPeriod(TimeUnit period) {
+            this.period = period;
+        }
+        
+        public long getMaxCount() {
+            return maxCount;
+        }
+        
+        public void setMaxCount(long maxCount) {
+            this.maxCount = maxCount;
         }
         
         public String getMonitorType() {
@@ -93,7 +131,7 @@ public class TpsControlRule {
         
         @Override
         public String toString() {
-            return "Rule{" + "maxTps=" + maxTps + ", monitorType='" + monitorType + '\'' + '}';
+            return "Rule{" + "maxTps=" + maxCount + ", monitorType='" + monitorType + '\'' + '}';
         }
     }
     

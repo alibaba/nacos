@@ -29,7 +29,7 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
 import com.alibaba.nacos.core.distributed.distro.task.load.DistroLoadDataTask;
-import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTask;
+import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTimedTask;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -88,8 +88,8 @@ public class DistroProtocol {
     }
     
     private void startVerifyTask() {
-        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTask(memberManager, distroComponentHolder),
-                distroConfig.getVerifyIntervalMillis());
+        GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTimedTask(memberManager, distroComponentHolder,
+                distroTaskEngineHolder.getExecuteWorkersManager()), distroConfig.getVerifyIntervalMillis());
     }
     
     public boolean isInitialized() {
@@ -111,16 +111,29 @@ public class DistroProtocol {
      *
      * @param distroKey distro key of sync data
      * @param action    the action of data operation
+     * @param delay     delay time for sync
      */
     public void sync(DistroKey distroKey, DataOperation action, long delay) {
         for (Member each : memberManager.allMembersWithoutSelf()) {
-            DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
-                    each.getAddress());
-            DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
-            distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
-            if (Loggers.DISTRO.isDebugEnabled()) {
-                Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, each.getAddress());
-            }
+            syncToTarget(distroKey, action, each.getAddress(), delay);
+        }
+    }
+    
+    /**
+     * Start to sync to target server.
+     *
+     * @param distroKey    distro key of sync data
+     * @param action       the action of data operation
+     * @param targetServer target server
+     * @param delay        delay time for sync
+     */
+    public void syncToTarget(DistroKey distroKey, DataOperation action, String targetServer, long delay) {
+        DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
+                targetServer);
+        DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
+        distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
+        if (Loggers.DISTRO.isDebugEnabled()) {
+            Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, targetServer);
         }
     }
     
@@ -151,6 +164,7 @@ public class DistroProtocol {
      * @return true if handle receive data successfully, otherwise false
      */
     public boolean onReceive(DistroData distroData) {
+        Loggers.DISTRO.info("[DISTRO] Receive distro data type: {}, key: {}", distroData.getType(), distroData.getDistroKey());
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
@@ -163,17 +177,21 @@ public class DistroProtocol {
     /**
      * Receive verify data, find processor to process.
      *
-     * @param distroData verify data
+     * @param distroData    verify data
+     * @param sourceAddress source server address, might be get data from source server
      * @return true if verify data successfully, otherwise false
      */
-    public boolean onVerify(DistroData distroData) {
+    public boolean onVerify(DistroData distroData, String sourceAddress) {
+        if (Loggers.DISTRO.isDebugEnabled()) {
+            Loggers.DISTRO.debug("[DISTRO] Receive verify data type: {}, key: {}", distroData.getType(), distroData.getDistroKey());
+        }
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
             Loggers.DISTRO.warn("[DISTRO] Can't find verify data process for received data {}", resourceType);
             return false;
         }
-        return dataProcessor.processVerifyData(distroData);
+        return dataProcessor.processVerifyData(distroData, sourceAddress);
     }
     
     /**

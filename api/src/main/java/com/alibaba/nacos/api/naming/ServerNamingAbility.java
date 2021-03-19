@@ -16,13 +16,16 @@
 
 package com.alibaba.nacos.api.naming;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 /**
  * naming abilities of nacos server.
  *
  * @author liuzunfei
  * @version $Id: ServerNamingAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ServerNamingAbility {
+public class ServerNamingAbility implements Serializable {
     
     private boolean exampleAbility;
     
@@ -32,5 +35,22 @@ public class ServerNamingAbility {
     
     public void setExampleAbility(boolean exampleAbility) {
         this.exampleAbility = exampleAbility;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ServerNamingAbility that = (ServerNamingAbility) o;
+        return exampleAbility == that.exampleAbility;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(exampleAbility);
     }
 }

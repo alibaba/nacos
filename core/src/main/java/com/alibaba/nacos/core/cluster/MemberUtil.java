@@ -68,7 +68,7 @@ public class MemberUtil {
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static Member singleParse(String member) {
         // Nacos default port is 8848
-        int defaultPort = Integer.valueOf(System.getProperty("nacos.default.server.port", "8848"));
+        int defaultPort = EnvUtil.getProperty("server.port", Integer.class, 8848);
         // Set the default Raft port information for securit
         
         String address = member;
@@ -269,6 +269,11 @@ public class MemberUtil {
         if (!expected.getState().equals(actual.getState())) {
             return true;
         }
+        
+        if (!expected.getAbilities().equals(actual.getAbilities())) {
+            return true;
+        }
+        
         return isBasicInfoChangedInExtendInfo(expected, actual);
     }
     

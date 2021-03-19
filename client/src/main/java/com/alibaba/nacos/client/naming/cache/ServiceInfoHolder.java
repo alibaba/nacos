@@ -133,6 +133,10 @@ public class ServiceInfoHolder implements Closeable {
      * @return service info
      */
     public ServiceInfo processServiceInfo(ServiceInfo serviceInfo) {
+        String serviceKey = serviceInfo.getKey();
+        if (serviceKey == null) {
+            return null;
+        }
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore

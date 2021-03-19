@@ -53,17 +53,17 @@ public final class NacosGrpcService {
     String[] descriptorData = {
       "\n\030nacos_grpc_service.proto\032\031google/proto" +
       "buf/any.proto\032\037google/protobuf/timestamp" +
-      ".proto\"q\n\010Metadata\022\014\n\004type\030\003 \001(\t\022\'\n\007head" +
-      "ers\030\007 \003(\0132\026.Metadata.HeadersEntry\032.\n\014Hea" +
-      "dersEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028" +
-      "\001\"J\n\007Payload\022\033\n\010metadata\030\002 \001(\0132\t.Metadat" +
-      "a\022\"\n\004body\030\003 \001(\0132\024.google.protobuf.Any28\n" +
-      "\rRequestStream\022\'\n\rrequestStream\022\010.Payloa" +
-      "d\032\010.Payload\"\0000\0012*\n\007Request\022\037\n\007request\022\010." +
-      "Payload\032\010.Payload\"\0002>\n\017BiRequestStream\022+" +
-      "\n\017requestBiStream\022\010.Payload\032\010.Payload\"\000(" +
-      "\0010\001B#\n\037com.alibaba.nacos.api.grpc.autoP\001" +
-      "b\006proto3"
+      ".proto\"\203\001\n\010Metadata\022\014\n\004type\030\003 \001(\t\022\020\n\010cli" +
+      "entIp\030\010 \001(\t\022\'\n\007headers\030\007 \003(\0132\026.Metadata." +
+      "HeadersEntry\032.\n\014HeadersEntry\022\013\n\003key\030\001 \001(" +
+      "\t\022\r\n\005value\030\002 \001(\t:\0028\001\"J\n\007Payload\022\033\n\010metad" +
+      "ata\030\002 \001(\0132\t.Metadata\022\"\n\004body\030\003 \001(\0132\024.goo" +
+      "gle.protobuf.Any28\n\rRequestStream\022\'\n\rreq" +
+      "uestStream\022\010.Payload\032\010.Payload\"\0000\0012*\n\007Re" +
+      "quest\022\037\n\007request\022\010.Payload\032\010.Payload\"\0002>" +
+      "\n\017BiRequestStream\022+\n\017requestBiStream\022\010.P" +
+      "ayload\032\010.Payload\"\000(\0010\001B#\n\037com.alibaba.na" +
+      "cos.api.grpc.autoP\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -76,7 +76,7 @@ public final class NacosGrpcService {
     internal_static_Metadata_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_Metadata_descriptor,
-        new String[] { "Type", "Headers", });
+        new String[] { "Type", "ClientIp", "Headers", });
     internal_static_Metadata_HeadersEntry_descriptor =
       internal_static_Metadata_descriptor.getNestedTypes().get(0);
     internal_static_Metadata_HeadersEntry_fieldAccessorTable = new

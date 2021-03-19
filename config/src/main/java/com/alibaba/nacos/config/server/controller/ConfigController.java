@@ -537,7 +537,7 @@ public class ConfigController {
                         // Fixed use of "\r\n" here
                         .append(ci.getAppName()).append("\r\n");
             }
-            String itemName = ci.getGroup() + "/" + ci.getDataId();
+            String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
             zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
         }
         if (metaData != null) {
@@ -583,13 +583,15 @@ public class ConfigController {
         }
         
         List<ConfigAllInfo> configInfoList = null;
+        List<Map<String, String>> unrecognizedList = null;
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
             ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
             Map<String, String> metaDataMap = new HashMap<>(16);
             if (metaDataZipItem != null) {
-                String metaDataStr = metaDataZipItem.getItemData();
-                String[] metaDataArr = metaDataStr.split("\r\n");
+                // compatible all file separator
+                String metaDataStr = metaDataZipItem.getItemData().replaceAll("[\r\n]+", "|");
+                String[] metaDataArr = metaDataStr.split("\\|");
                 for (String metaDataItem : metaDataArr) {
                     String[] metaDataItemArr = metaDataItem.split("=");
                     if (metaDataItemArr.length != 2) {
@@ -602,11 +604,14 @@ public class ConfigController {
             List<ZipUtils.ZipItem> itemList = unziped.getZipItemList();
             if (itemList != null && !itemList.isEmpty()) {
                 configInfoList = new ArrayList<>(itemList.size());
+                unrecognizedList = new ArrayList<>();
                 for (ZipUtils.ZipItem item : itemList) {
-                    String[] groupAdnDataId = item.getItemName().split("/");
-                    if (!item.getItemName().contains("/") || groupAdnDataId.length != 2) {
-                        failedData.put("succCount", 0);
-                        return RestResultUtils.buildResult(ResultCodeEnum.DATA_VALIDATION_FAILED, failedData);
+                    String[] groupAdnDataId = item.getItemName().split(Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR);
+                    if (groupAdnDataId.length != 2) {
+                        Map<String, String> unrecognizedItem = new HashMap<>(1);
+                        unrecognizedItem.put("itemName", item.getItemName());
+                        unrecognizedList.add(unrecognizedItem);
+                        continue;
                     }
                     String group = groupAdnDataId[0];
                     String dataId = groupAdnDataId[1];
@@ -649,6 +654,11 @@ public class ConfigController {
                     .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
                             requestIpApp, time.getTime(), InetUtils.getSelfIP(),
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+        }
+        // unrecognizedCount
+        if (!unrecognizedList.isEmpty()) {
+            saveResult.put("unrecognizedCount", unrecognizedList.size());
+            saveResult.put("unrecognizedData", unrecognizedList);
         }
         return RestResultUtils.success("导入成功", saveResult);
     }

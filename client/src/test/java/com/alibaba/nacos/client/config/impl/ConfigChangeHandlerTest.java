@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.listener.impl;
+package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
-import com.alibaba.nacos.client.config.impl.ConfigChangeHandler;
 import org.junit.Assert;
 import org.junit.Test;
 

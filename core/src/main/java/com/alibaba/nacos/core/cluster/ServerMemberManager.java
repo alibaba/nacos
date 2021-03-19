@@ -349,12 +349,19 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Member existMember = serverList.get(address);
             if (existMember == null) {
                 hasChange = true;
+                // If the cluster information in cluster.conf or address-server has been changed,
+                // while the corresponding nacos-server has not been started yet, the member's state
+                // should be set to DOWN. If the corresponding nacos-server has been started, the
+                // member's state will be set to UP after detection in a few seconds.
+                member.setState(NodeState.DOWN);
                 tmpMap.put(address, member);
             } else {
                 //to keep extendInfo and abilities that report dynamically.
                 tmpMap.put(address, existMember);
             }
             
+            // Ensure that the node is created only once
+            tmpMap.put(address, member);
             if (NodeState.UP.equals(member.getState())) {
                 tmpAddressInfo.add(address);
             }
@@ -510,6 +517,18 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                             Loggers.CLUSTER
                                                     .warn("{} version is too low, it is recommended to upgrade the version : {}",
                                                             target, VersionUtils.version);
+                                            Member memberNew = target.copy();
+                                            if (memberNew.getAbilities() != null
+                                                    && memberNew.getAbilities().getRemoteAbility() != null && memberNew
+                                                    .getAbilities().getRemoteAbility().isSupportRemoteConnection()) {
+                                                memberNew.getAbilities().getRemoteAbility()
+                                                        .setSupportRemoteConnection(false);
+                                                Loggers.CLUSTER
+                                                        .warn("{} : Clear support remote connection flag,target may rollback version ",
+                                                                memberNew);
+                                                
+                                                update(memberNew);
+                                            }
                                             return;
                                         }
                                         if (result.ok()) {

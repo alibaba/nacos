@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.listener.impl;
+package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
-import com.alibaba.nacos.client.config.impl.YmlChangeParser;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Map;
 
-public class YmlChangeParserTest {
+public class PropertiesChangeParserTest {
     
-    private final YmlChangeParser parser = new YmlChangeParser();
+    private final PropertiesChangeParser parser = new PropertiesChangeParser();
     
-    private final String type = "yaml";
+    private final String type = "properties";
     
     @Test
     public void testType() {
@@ -37,23 +36,24 @@ public class YmlChangeParserTest {
     
     @Test
     public void testAddKey() throws IOException {
-        Map<String, ConfigChangeItem> map = parser.doParse("", "app:\n  name: nacos", type);
+        Map<String, ConfigChangeItem> map = parser.doParse("", "app.name = nacos", type);
         Assert.assertEquals(null, map.get("app.name").getOldValue());
         Assert.assertEquals("nacos", map.get("app.name").getNewValue());
     }
     
     @Test
     public void testRemoveKey() throws IOException {
-        Map<String, ConfigChangeItem> map = parser.doParse("app:\n  name: nacos", "", type);
+        Map<String, ConfigChangeItem> map = parser.doParse("app.name = nacos", "", type);
         Assert.assertEquals("nacos", map.get("app.name").getOldValue());
         Assert.assertEquals(null, map.get("app.name").getNewValue());
     }
     
     @Test
     public void testModifyKey() throws IOException {
-        Map<String, ConfigChangeItem> map = parser.doParse("app:\n  name: rocketMQ", "app:\n  name: nacos", type);
+        Map<String, ConfigChangeItem> map = parser.doParse("app.name = rocketMQ", "app.name = nacos", type);
         Assert.assertEquals("rocketMQ", map.get("app.name").getOldValue());
         Assert.assertEquals("nacos", map.get("app.name").getNewValue());
     }
+    
 }
 

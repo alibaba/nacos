@@ -176,6 +176,8 @@ public class Constants {
     
     public static final String SERVICE_INFO_SPLITER = "@@";
     
+    public static final int SERVICE_INFO_SPLIT_COUNT = 2;
+    
     public static final String NULL_STRING = "null";
     
     public static final String NUMBER_PATTERN = "^\\d+$";

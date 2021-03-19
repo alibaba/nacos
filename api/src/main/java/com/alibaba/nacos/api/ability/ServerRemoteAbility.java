@@ -16,13 +16,16 @@
 
 package com.alibaba.nacos.api.ability;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 /**
  * remote abilities of nacos server.
  *
  * @author liuzunfei
  * @version $Id: ServerRemoteAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ServerRemoteAbility {
+public class ServerRemoteAbility implements Serializable {
     
     /**
      * if support remote connection.
@@ -35,5 +38,22 @@ public class ServerRemoteAbility {
     
     public void setSupportRemoteConnection(boolean supportRemoteConnection) {
         this.supportRemoteConnection = supportRemoteConnection;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ServerRemoteAbility that = (ServerRemoteAbility) o;
+        return supportRemoteConnection == that.supportRemoteConnection;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(supportRemoteConnection);
     }
 }

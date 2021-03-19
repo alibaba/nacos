@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.utils;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -54,7 +55,7 @@ public class InstanceUtil {
             } else if (Constants.PUBLISH_INSTANCE_WEIGHT.equals(entry.getKey())) {
                 result.setWeight((Double) entry.getValue());
             } else {
-                instanceMetadata.put(entry.getKey(), entry.getValue().toString());
+                instanceMetadata.put(entry.getKey(), null != entry.getValue() ? entry.getValue().toString() : null);
             }
         }
         result.setMetadata(instanceMetadata);
@@ -75,5 +76,25 @@ public class InstanceUtil {
         for (Map.Entry<String, Object> entry : metadata.getExtendData().entrySet()) {
             instance.getMetadata().put(entry.getKey(), entry.getValue().toString());
         }
+    }
+
+    /**
+     * Deepcopy one instance.
+     * 
+     * @param source instance to be deepcopy
+     */
+    public static Instance deepCopy(Instance source) {
+        Instance target = new Instance();
+        target.setInstanceId(source.getInstanceId());
+        target.setIp(source.getIp());
+        target.setPort(source.getPort());
+        target.setWeight(source.getWeight());
+        target.setHealthy(source.isHealthy());
+        target.setEnabled(source.isEnabled());
+        target.setEphemeral(source.isEphemeral());
+        target.setClusterName(source.getClusterName());
+        target.setServiceName(source.getServiceName());
+        target.setMetadata(new HashMap<>(source.getMetadata()));
+        return target;
     }
 }

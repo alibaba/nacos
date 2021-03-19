@@ -14,28 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.control;
+package com.alibaba.nacos.naming.push.v2.hook;
 
 /**
- * MatchMode.
+ * Nacos naming push result hook.
  *
- * @author liuzunfei
- * @version $Id: MatchMode.java, v 0.1 2021年01月22日 12:38 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public class MonitorKeyEqualMatcher extends MonitorKeyMatcher {
+public interface PushResultHook {
     
-    public MonitorKeyEqualMatcher(String pattern) {
-        super.pattern = pattern;
-    }
+    /**
+     * Push success.
+     *
+     * @param result push result
+     */
+    void pushSuccess(PushResult result);
     
-    @Override
-    public boolean match(String monitorKey) {
-        return super.pattern.equals(monitorKey);
-    }
-    
-    @Override
-    public String getMatchModel() {
-        return MatchMode.EQUAL.model;
-    }
-    
+    /**
+     * Push failed.
+     *
+     * @param result push result
+     */
+    void pushFailed(PushResult result);
 }

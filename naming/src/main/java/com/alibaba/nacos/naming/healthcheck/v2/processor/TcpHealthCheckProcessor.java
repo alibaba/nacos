@@ -100,7 +100,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
             return;
         }
         // TODO handle marked(white list) logic like v1.x.
-        if (instance.tryStartCheck()) {
+        if (!instance.tryStartCheck()) {
             SRV_LOG.warn("tcp check started before last one finished, service: {} : {} : {}:{}",
                     service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
             healthCheckCommon
@@ -193,6 +193,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                         key.channel().close();
                     } else {
                         // not terminate request, ignore
+                        SRV_LOG.warn("Tcp check ok, but the connected server responses some msg. Connection won't be closed.");
                     }
                 }
             } catch (ConnectException e) {

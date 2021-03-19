@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.control;
+package com.alibaba.nacos.naming.constants;
 
 /**
- * MonitorKeyPrefixMatcher.
+ * Constants for client.
  *
- * @author liuzunfei
- * @version $Id: MonitorKeyPrefixMatcher.java, v 0.1 2021年01月22日 12:38 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public class MonitorKeyPrefixMatcher extends MonitorKeyMatcher {
+public class ClientConstants {
     
-    public MonitorKeyPrefixMatcher(String pattern) {
-        super.pattern = (pattern);
-    }
+    public static final String CONNECTION_TYPE = "connectionType";
     
-    @Override
-    public boolean match(String monitorKey) {
-        return monitorKey.startsWith(pattern);
-    }
+    public static final String DEFAULT_FACTORY = "default";
     
-    @Override
-    public String getMatchModel() {
-        return MatchMode.PREFIX.model;
-    }
+    public static final String EPHEMERAL_IP_PORT = "ephemeralIpPort";
+    
+    public static final String PERSISTENT_IP_PORT = "persistentIpPort";
     
 }

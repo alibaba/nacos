@@ -16,8 +16,13 @@
 
 package com.alibaba.nacos.api.utils;
 
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 
 /**
  * Net utils.
@@ -34,17 +39,58 @@ public class NetUtils {
      * @return local ip
      */
     public static String localIP() {
-        try {
-            if (!StringUtils.isEmpty(localIp)) {
-                return localIp;
-            }
-            
-            String ip = System.getProperty("com.alibaba.nacos.client.naming.local.ip",
-                    InetAddress.getLocalHost().getHostAddress());
-            
-            return localIp = ip;
-        } catch (UnknownHostException e) {
-            return "resolve_failed";
+        if (!StringUtils.isEmpty(localIp)) {
+            return localIp;
         }
+        
+        String ip = System.getProperty("com.alibaba.nacos.client.naming.local.ip", findFirstNonLoopbackAddress());
+        
+        return localIp = ip;
+        
+    }
+    
+    private static String findFirstNonLoopbackAddress() {
+        InetAddress result = null;
+        
+        try {
+            int lowest = Integer.MAX_VALUE;
+            for (Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
+                    nics.hasMoreElements(); ) {
+                NetworkInterface ifc = nics.nextElement();
+                if (ifc.isUp()) {
+                    if (ifc.getIndex() < lowest || result == null) {
+                        lowest = ifc.getIndex();
+                    } else {
+                        continue;
+                    }
+                    
+                    for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
+                        InetAddress address = addrs.nextElement();
+                        boolean isLegalIpVersion =
+                                Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"))
+                                        ? address instanceof Inet6Address : address instanceof Inet4Address;
+                        if (isLegalIpVersion && !address.isLoopbackAddress()) {
+                            result = address;
+                        }
+                    }
+                    
+                }
+            }
+        } catch (IOException ex) {
+            //ignore
+        }
+        
+        if (result != null) {
+            return result.getHostAddress();
+        }
+        
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            //ignore
+        }
+        
+        return "resolve_failed";
+        
     }
 }

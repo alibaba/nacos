@@ -22,8 +22,11 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
 import org.junit.After;
 import org.junit.Before;
@@ -53,6 +56,9 @@ public class PushDelayTaskExecuteEngineTest {
     private ServiceStorage serviceStorage;
     
     @Mock
+    private NamingMetadataManager metadataManager;
+    
+    @Mock
     private PushExecutor pushExecutor;
     
     @Mock
@@ -60,6 +66,9 @@ public class PushDelayTaskExecuteEngineTest {
     
     @Mock
     private Subscriber subscriber;
+    
+    @Mock
+    private SwitchDomain switchDomain;
     
     private final Service service = Service.newService("N", "G", "S");
     
@@ -73,7 +82,9 @@ public class PushDelayTaskExecuteEngineTest {
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(clientId));
         when(clientManager.getClient(clientId)).thenReturn(client);
         when(client.getSubscriber(service)).thenReturn(subscriber);
-        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, pushExecutor);
+        when(switchDomain.isPushEnabled()).thenReturn(true);
+        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, metadataManager, pushExecutor,
+                switchDomain);
     }
     
     @After
@@ -86,7 +97,7 @@ public class PushDelayTaskExecuteEngineTest {
         PushDelayTask pushDelayTask = new PushDelayTask(service, 0L);
         executeEngine.addTask(service, pushDelayTask);
         TimeUnit.MILLISECONDS.sleep(200L);
-        verify(pushExecutor).doPushWithCallback(anyString(), any(Subscriber.class), any(ServiceInfo.class),
+        verify(pushExecutor).doPushWithCallback(anyString(), any(Subscriber.class), any(PushDataWrapper.class),
                 any(PushCallBack.class));
     }
 }

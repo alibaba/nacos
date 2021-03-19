@@ -19,9 +19,14 @@ package com.alibaba.nacos.naming.push.v2.executor;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.PushCallBack;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
+import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 /**
  * Push execute service for udp.
@@ -31,6 +36,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class PushExecutorUdpImpl implements PushExecutor {
     
+    private static final String UDP_PUSH_DATA_FOR_V1 = "udpPushDataForV1";
+    
     private final UdpPushService pushService;
     
     public PushExecutorUdpImpl(UdpPushService pushService) {
@@ -38,13 +45,15 @@ public class PushExecutorUdpImpl implements PushExecutor {
     }
     
     @Override
-    public void doPush(String clientId, Subscriber subscriber, ServiceInfo data) {
-        pushService.pushDataWithoutCallback(subscriber, replaceServiceInfoName(data));
+    public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
+        pushService.pushDataWithoutCallback(subscriber, handleClusterData(replaceServiceInfoName(data), subscriber));
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, ServiceInfo data, PushCallBack callBack) {
-        pushService.pushDataWithCallback(subscriber, replaceServiceInfoName(data), callBack);
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
+            PushCallBack callBack) {
+        pushService.pushDataWithCallback(subscriber, handleClusterData(replaceServiceInfoName(data), subscriber),
+                callBack);
     }
     
     /**
@@ -57,16 +66,36 @@ public class PushExecutorUdpImpl implements PushExecutor {
      * name directly will has some effect for 2.x client.
      * </p>
      *
-     * @param serviceInfo original service info
+     * @param originalData original service info
      * @return new service info for 1.x
      */
-    private ServiceInfo replaceServiceInfoName(ServiceInfo serviceInfo) {
+    private ServiceInfo replaceServiceInfoName(PushDataWrapper originalData) {
+        Optional<ServiceInfo> original = originalData.getProcessedPushData(UDP_PUSH_DATA_FOR_V1);
+        if (original.isPresent()) {
+            return original.get();
+        }
+        ServiceInfo serviceInfo = originalData.getOriginalData();
         ServiceInfo result = new ServiceInfo();
         result.setName(NamingUtils.getGroupedName(serviceInfo.getName(), serviceInfo.getGroupName()));
         result.setClusters(serviceInfo.getClusters());
         result.setHosts(serviceInfo.getHosts());
         result.setLastRefTime(serviceInfo.getLastRefTime());
         result.setCacheMillis(serviceInfo.getCacheMillis());
+        originalData.addProcessedPushData(UDP_PUSH_DATA_FOR_V1, result);
         return result;
+    }
+    
+    /**
+     * For adapt push cluster feature for v1.x.
+     *
+     * @param data       original data
+     * @param subscriber subscriber information
+     * @return cluster filtered data
+     * @deprecated Will be removed after client can filter cluster
+     */
+    @Deprecated
+    private ServiceInfo handleClusterData(ServiceInfo data, Subscriber subscriber) {
+        return StringUtils.isBlank(subscriber.getCluster()) ? data
+                : ServiceUtil.selectInstances(data, subscriber.getCluster());
     }
 }
