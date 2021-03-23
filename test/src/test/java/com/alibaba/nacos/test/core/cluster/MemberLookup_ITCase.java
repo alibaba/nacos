@@ -25,10 +25,8 @@ import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.StandaloneMemberLookup;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.test.BaseTest;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -49,7 +47,7 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
-public class MemberLookup_ITCase extends BaseTest {
+public class MemberLookup_ITCase {
 
 	static final String path = Paths.get(System.getProperty("user.home"), "/member_look")
 			.toString();
