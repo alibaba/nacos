@@ -117,12 +117,3 @@ public class HttpHealthCheckProcessorTest {
         }
     }
 }
-
-
-
-
-
-
-
-
-
