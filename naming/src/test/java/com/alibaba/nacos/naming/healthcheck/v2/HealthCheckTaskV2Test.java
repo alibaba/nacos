@@ -32,6 +32,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -45,10 +47,17 @@ public class HealthCheckTaskV2Test {
     @Mock
     private ConfigurableApplicationContext context;
     
+    @Mock
+    private SwitchDomain switchDomain;
+    
+    @Mock
+    private Service service;
+    
     @Before
     public void initHealthCheckTaskV2() {
         ApplicationUtils.injectContext(context);
-        when(ApplicationUtils.getBean(SwitchDomain.class)).thenReturn(new SwitchDomain());
+        when(ApplicationUtils.getBean(SwitchDomain.class)).thenReturn(switchDomain);
+        when(switchDomain.getTcpHealthParams()).thenReturn(new SwitchDomain.TcpHealthParams());
         when(ApplicationUtils.getBean(NamingMetadataManager.class)).thenReturn(new NamingMetadataManager());
         healthCheckTaskV2 = new HealthCheckTaskV2(ipPortBasedClient);
     }
@@ -65,11 +74,13 @@ public class HealthCheckTaskV2Test {
         healthCheckTaskV2.run();
         healthCheckTaskV2.passIntercept();
         healthCheckTaskV2.doHealthCheck();
+        
+        verify(ipPortBasedClient, times(3)).getAllPublishedService();
+        verify(switchDomain, times(3)).isHealthCheckEnabled(service.getGroupedServiceName());
     }
     
     private List<Service> returnService() {
         List<Service> serviceList = new ArrayList<>();
-        Service service = Service.newService("public", "DEFAULT", "nacos", true);
         serviceList.add(service);
         return serviceList;
     }

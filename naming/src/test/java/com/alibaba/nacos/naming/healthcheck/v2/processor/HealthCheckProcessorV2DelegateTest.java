@@ -29,8 +29,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,6 +65,18 @@ public class HealthCheckProcessorV2DelegateTest {
         List<HealthCheckProcessorV2> list = new ArrayList<>();
         list.add(new TcpHealthCheckProcessor(null, null));
         healthCheckProcessorV2Delegate.addProcessor(list);
+        
+        Class<HealthCheckProcessorV2Delegate> healthCheckProcessorV2DelegateClass = HealthCheckProcessorV2Delegate.class;
+        try {
+            Field field = healthCheckProcessorV2DelegateClass.getDeclaredField("healthCheckProcessorMap");
+            field.setAccessible(true);
+            Map<String, HealthCheckProcessorV2> map = (Map<String, HealthCheckProcessorV2>) field
+                    .get(healthCheckProcessorV2Delegate);
+            HealthCheckProcessorV2 healthCheckProcessorV2 = map.get(HealthCheckType.TCP.name());
+            Assert.assertNotNull(healthCheckProcessorV2);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
     
     @Test

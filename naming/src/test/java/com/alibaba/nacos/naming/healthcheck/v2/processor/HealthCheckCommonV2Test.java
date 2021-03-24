@@ -59,7 +59,6 @@ public class HealthCheckCommonV2Test {
         when(healthCheckTaskV2.getClient()).thenReturn(ipPortBasedClient);
         when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(healthCheckInstancePublishInfo);
         when(healthCheckInstancePublishInfo.getFailCount()).thenReturn(new AtomicInteger());
-        when(healthCheckInstancePublishInfo.isHealthy()).thenReturn(true);
     }
     
     @Test
@@ -78,15 +77,42 @@ public class HealthCheckCommonV2Test {
     @Test
     public void checkOk() {
         healthCheckCommonV2.checkOk(healthCheckTaskV2, service, "test checkOk");
+        
+        verify(healthCheckTaskV2).getClient();
+        verify(service).getGroupedServiceName();
+        verify(ipPortBasedClient).getInstancePublishInfo(service);
+        verify(healthCheckInstancePublishInfo).isHealthy();
+        verify(healthCheckInstancePublishInfo).getCluster();
+        verify(healthCheckInstancePublishInfo).resetFailCount();
+        verify(healthCheckInstancePublishInfo).finishCheck();
+        
     }
     
     @Test
     public void checkFail() {
+        when(healthCheckInstancePublishInfo.isHealthy()).thenReturn(true);
         healthCheckCommonV2.checkFail(healthCheckTaskV2, service, "test checkFail");
+        
+        verify(healthCheckTaskV2).getClient();
+        verify(service).getGroupedServiceName();
+        verify(ipPortBasedClient).getInstancePublishInfo(service);
+        verify(healthCheckInstancePublishInfo).isHealthy();
+        verify(healthCheckInstancePublishInfo).getCluster();
+        verify(healthCheckInstancePublishInfo).resetOkCount();
+        verify(healthCheckInstancePublishInfo).finishCheck();
     }
     
     @Test
     public void checkFailNow() {
+        when(healthCheckInstancePublishInfo.isHealthy()).thenReturn(true);
         healthCheckCommonV2.checkFailNow(healthCheckTaskV2, service, "test checkFailNow");
+        
+        verify(healthCheckTaskV2).getClient();
+        verify(service).getGroupedServiceName();
+        verify(ipPortBasedClient).getInstancePublishInfo(service);
+        verify(healthCheckInstancePublishInfo).isHealthy();
+        verify(healthCheckInstancePublishInfo).getCluster();
+        verify(healthCheckInstancePublishInfo).resetOkCount();
+        verify(healthCheckInstancePublishInfo).finishCheck();
     }
 }

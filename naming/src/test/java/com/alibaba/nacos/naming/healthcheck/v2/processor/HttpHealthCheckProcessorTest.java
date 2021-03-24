@@ -97,21 +97,34 @@ public class HttpHealthCheckProcessorTest {
     }
     
     @Test
-    public void testCallback() {
+    public void testConstructor() {
         Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
         Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
         Class<?> aClass = Arrays.stream(classes).findFirst().get();
         try {
-            // test constructor
-            Constructor<?>[] constructors = aClass.getConstructors();
             Constructor<?> constructor = aClass
                     .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
                             HealthCheckTaskV2.class, Service.class);
             Object objects = constructor
                     .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
-            Assert.assertNotNull(objects);
             
-            // test onReceive
+            Assert.assertNotNull(objects);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Test
+    public void testOnReceive() {
+        Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
+        Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
+        Class<?> aClass = Arrays.stream(classes).findFirst().get();
+        try {
+            Constructor<?> constructor = aClass
+                    .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
+                            HealthCheckTaskV2.class, Service.class);
+            Object objects = constructor
+                    .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
             List<Integer> codeList = Stream
                     .of(HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_UNAVAILABLE, HttpURLConnection.HTTP_NOT_FOUND)
                     .collect(Collectors.toList());
@@ -119,11 +132,54 @@ public class HttpHealthCheckProcessorTest {
                 when(restResult.getCode()).thenReturn(code);
                 Method onReceive = aClass.getMethod("onReceive", RestResult.class);
                 onReceive.invoke(objects, restResult);
+                
+                //verify
+                this.verifyCall(code);
             }
-            
-            // test onError
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void verifyCall(int code) {
+        switch (code) {
+            case HttpURLConnection.HTTP_OK:
+                verify(healthCheckCommon).checkOk(healthCheckTaskV2, service, "http:" + restResult.getCode());
+                break;
+            case HttpURLConnection.HTTP_UNAVAILABLE:
+                verify(healthCheckCommon).checkFail(healthCheckTaskV2, service, "http:" + restResult.getCode());
+                verify(healthCheckCommon)
+                        .reEvaluateCheckRT(healthCheckTaskV2.getCheckRtNormalized() * 2, healthCheckTaskV2,
+                                switchDomain.getHttpHealthParams());
+                break;
+            case HttpURLConnection.HTTP_NOT_FOUND:
+                verify(healthCheckCommon).checkFailNow(healthCheckTaskV2, service, "http:" + restResult.getCode());
+                verify(healthCheckCommon)
+                        .reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), healthCheckTaskV2,
+                                switchDomain.getHttpHealthParams());
+                break;
+            default:
+        }
+    }
+    
+    @Test
+    public void testOnError() {
+        Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
+        Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
+        Class<?> aClass = Arrays.stream(classes).findFirst().get();
+        try {
+            Constructor<?> constructor = aClass
+                    .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
+                            HealthCheckTaskV2.class, Service.class);
+            Object objects = constructor
+                    .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
             Method onReceive = aClass.getMethod("onError", Throwable.class);
             onReceive.invoke(objects, connectException);
+            
+            verify(healthCheckCommon)
+                    .checkFailNow(healthCheckTaskV2, service, "http:unable2connect:" + connectException.getMessage());
+            verify(healthCheckCommon).reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), healthCheckTaskV2,
+                    switchDomain.getHttpHealthParams());
         } catch (Exception e) {
             e.printStackTrace();
         }
