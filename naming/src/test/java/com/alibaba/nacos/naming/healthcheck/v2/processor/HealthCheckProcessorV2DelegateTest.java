@@ -19,9 +19,6 @@ import java.util.List;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * HealthCheckProcessorV2DelegateTest.
- */
 @RunWith(MockitoJUnitRunner.class)
 public class HealthCheckProcessorV2DelegateTest {
     

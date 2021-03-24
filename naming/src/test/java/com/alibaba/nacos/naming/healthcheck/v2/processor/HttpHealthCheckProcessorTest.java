@@ -27,10 +27,6 @@ import java.util.stream.Stream;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
-/**
- * HttpHealthCheckProcessorTest.
- */
 @RunWith(MockitoJUnitRunner.class)
 public class HttpHealthCheckProcessorTest {
     

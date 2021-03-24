@@ -13,9 +13,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.Mockito.verify;
 
-/**
- * PersistentHealthStatusSynchronizerTest.
- */
 @RunWith(MockitoJUnitRunner.class)
 public class PersistentHealthStatusSynchronizerTest {
     

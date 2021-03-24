@@ -17,10 +17,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
-/**
- * HealthCheckCommonV2Test.
- */
 @RunWith(MockitoJUnitRunner.class)
 public class HealthCheckCommonV2Test {
     

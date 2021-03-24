@@ -1,6 +1,5 @@
 package com.alibaba.nacos.naming.healthcheck.v2;
 
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -19,9 +18,6 @@ import java.util.List;
 
 import static org.mockito.Mockito.when;
 
-/**
- * HealthCheckTaskV2Test.
- */
 @RunWith(MockitoJUnitRunner.class)
 public class HealthCheckTaskV2Test {
     
@@ -38,9 +34,7 @@ public class HealthCheckTaskV2Test {
         ApplicationUtils.injectContext(context);
         when(ApplicationUtils.getBean(SwitchDomain.class)).thenReturn(new SwitchDomain());
         when(ApplicationUtils.getBean(NamingMetadataManager.class)).thenReturn(new NamingMetadataManager());
-        if (Objects.isNull(healthCheckTaskV2)) {
-            healthCheckTaskV2 = new HealthCheckTaskV2(ipPortBasedClient);
-        }
+        healthCheckTaskV2 = new HealthCheckTaskV2(ipPortBasedClient);
     }
     
     @Test
