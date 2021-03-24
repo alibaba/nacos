@@ -25,13 +25,12 @@ import {
   Loading,
   Pagination,
   Table,
-  Dialog,
   Message,
   ConfigProvider,
 } from '@alifd/next';
 import { connect } from 'react-redux';
 import { getSubscribers, removeSubscribers } from '../../../reducers/subscribers';
-import { request } from '../../../globalLib';
+import { getParams } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
 
 import './SubscriberList.scss';
@@ -60,11 +59,19 @@ class SubscriberList extends React.Component {
       pageSize: 10,
       pageNo: 1,
       search: {
-        serviceName: '',
-        groupName: '',
+        serviceName: getParams('name') || '',
+        groupName: getParams('groupName') || '',
       },
+      nowNamespaceId: getParams('namespace') || '',
     };
     this.field = new Field(this);
+  }
+
+  componentDidMount() {
+    const { search } = this.state;
+    if (search.serviceName) {
+      this.querySubscriberList();
+    }
   }
 
   openLoading() {
@@ -91,7 +98,6 @@ class SubscriberList extends React.Component {
   }
 
   switchNamespace = () => {
-    this.setState({ search: { serviceName: '', groupName: '' } });
     this.props.removeSubscribers();
   };
 
