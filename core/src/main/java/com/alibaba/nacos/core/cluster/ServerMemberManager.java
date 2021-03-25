@@ -360,8 +360,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 tmpMap.put(address, existMember);
             }
             
-            // Ensure that the node is created only once
-            tmpMap.put(address, member);
             if (NodeState.UP.equals(member.getState())) {
                 tmpAddressInfo.add(address);
             }
