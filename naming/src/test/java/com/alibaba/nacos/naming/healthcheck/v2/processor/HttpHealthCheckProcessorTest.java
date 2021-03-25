@@ -32,6 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -76,7 +77,7 @@ public class HttpHealthCheckProcessorTest {
     private HttpHealthCheckProcessor httpHealthCheckProcessor;
     
     @Before
-    public void initBean() {
+    public void setUp() {
         when(switchDomain.getHttpHealthParams()).thenReturn(new SwitchDomain.HttpHealthParams());
         when(healthCheckTaskV2.getClient()).thenReturn(ipPortBasedClient);
         when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(healthCheckInstancePublishInfo);
@@ -97,47 +98,41 @@ public class HttpHealthCheckProcessorTest {
     }
     
     @Test
-    public void testConstructor() {
+    public void testConstructor()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
         Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
         Class<?> aClass = Arrays.stream(classes).findFirst().get();
-        try {
-            Constructor<?> constructor = aClass
-                    .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
-                            HealthCheckTaskV2.class, Service.class);
-            Object objects = constructor
-                    .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
-            
-            Assert.assertNotNull(objects);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Constructor<?> constructor = aClass
+                .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
+                        HealthCheckTaskV2.class, Service.class);
+        Object objects = constructor
+                .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
+        
+        Assert.assertNotNull(objects);
     }
     
     @Test
-    public void testOnReceive() {
+    public void testOnReceive()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
         Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
         Class<?> aClass = Arrays.stream(classes).findFirst().get();
-        try {
-            Constructor<?> constructor = aClass
-                    .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
-                            HealthCheckTaskV2.class, Service.class);
-            Object objects = constructor
-                    .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
-            List<Integer> codeList = Stream
-                    .of(HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_UNAVAILABLE, HttpURLConnection.HTTP_NOT_FOUND)
-                    .collect(Collectors.toList());
-            for (Integer code : codeList) {
-                when(restResult.getCode()).thenReturn(code);
-                Method onReceive = aClass.getMethod("onReceive", RestResult.class);
-                onReceive.invoke(objects, restResult);
-                
-                //verify
-                this.verifyCall(code);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        Constructor<?> constructor = aClass
+                .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
+                        HealthCheckTaskV2.class, Service.class);
+        Object objects = constructor
+                .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
+        List<Integer> codeList = Stream
+                .of(HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_UNAVAILABLE, HttpURLConnection.HTTP_NOT_FOUND)
+                .collect(Collectors.toList());
+        for (Integer code : codeList) {
+            when(restResult.getCode()).thenReturn(code);
+            Method onReceive = aClass.getMethod("onReceive", RestResult.class);
+            onReceive.invoke(objects, restResult);
+            
+            //verify
+            this.verifyCall(code);
         }
     }
     
@@ -163,25 +158,22 @@ public class HttpHealthCheckProcessorTest {
     }
     
     @Test
-    public void testOnError() {
+    public void testOnError()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
         Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
         Class<?> aClass = Arrays.stream(classes).findFirst().get();
-        try {
-            Constructor<?> constructor = aClass
-                    .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
-                            HealthCheckTaskV2.class, Service.class);
-            Object objects = constructor
-                    .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
-            Method onReceive = aClass.getMethod("onError", Throwable.class);
-            onReceive.invoke(objects, connectException);
-            
-            verify(healthCheckCommon)
-                    .checkFailNow(healthCheckTaskV2, service, "http:unable2connect:" + connectException.getMessage());
-            verify(healthCheckCommon).reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), healthCheckTaskV2,
-                    switchDomain.getHttpHealthParams());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Constructor<?> constructor = aClass
+                .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
+                        HealthCheckTaskV2.class, Service.class);
+        Object objects = constructor
+                .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
+        Method onReceive = aClass.getMethod("onError", Throwable.class);
+        onReceive.invoke(objects, connectException);
+        
+        verify(healthCheckCommon)
+                .checkFailNow(healthCheckTaskV2, service, "http:unable2connect:" + connectException.getMessage());
+        verify(healthCheckCommon).reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), healthCheckTaskV2,
+                switchDomain.getHttpHealthParams());
     }
 }

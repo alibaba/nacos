@@ -55,32 +55,28 @@ public class HealthCheckProcessorV2DelegateTest {
     private HealthCheckProcessorV2Delegate healthCheckProcessorV2Delegate;
     
     @Before
-    public void initBean() {
+    public void setUp() {
         healthCheckProcessorV2Delegate = new HealthCheckProcessorV2Delegate(healthCheckExtendProvider);
         verify(healthCheckExtendProvider).init();
     }
     
     @Test
-    public void testAddProcessor() {
+    public void testAddProcessor() throws NoSuchFieldException, IllegalAccessException {
         List<HealthCheckProcessorV2> list = new ArrayList<>();
         list.add(new TcpHealthCheckProcessor(null, null));
         healthCheckProcessorV2Delegate.addProcessor(list);
         
         Class<HealthCheckProcessorV2Delegate> healthCheckProcessorV2DelegateClass = HealthCheckProcessorV2Delegate.class;
-        try {
-            Field field = healthCheckProcessorV2DelegateClass.getDeclaredField("healthCheckProcessorMap");
-            field.setAccessible(true);
-            Map<String, HealthCheckProcessorV2> map = (Map<String, HealthCheckProcessorV2>) field
-                    .get(healthCheckProcessorV2Delegate);
-            HealthCheckProcessorV2 healthCheckProcessorV2 = map.get(HealthCheckType.TCP.name());
-            Assert.assertNotNull(healthCheckProcessorV2);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
+        Field field = healthCheckProcessorV2DelegateClass.getDeclaredField("healthCheckProcessorMap");
+        field.setAccessible(true);
+        Map<String, HealthCheckProcessorV2> map = (Map<String, HealthCheckProcessorV2>) field
+                .get(healthCheckProcessorV2Delegate);
+        HealthCheckProcessorV2 healthCheckProcessorV2 = map.get(HealthCheckType.TCP.name());
+        Assert.assertNotNull(healthCheckProcessorV2);
     }
     
     @Test
-    public void testProcess() {
+    public void testProcess() throws NoSuchFieldException, IllegalAccessException {
         testAddProcessor();
         when(clusterMetadata.getHealthyCheckType()).thenReturn(HealthCheckType.TCP.name());
         when(healthCheckTaskV2.getClient()).thenReturn(new IpPortBasedClient("127.0.0.1:80#true", true));

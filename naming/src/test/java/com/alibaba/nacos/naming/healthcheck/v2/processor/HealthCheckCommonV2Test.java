@@ -54,7 +54,7 @@ public class HealthCheckCommonV2Test {
     private HealthCheckCommonV2 healthCheckCommonV2;
     
     @Before
-    public void init() {
+    public void setUp() {
         healthCheckCommonV2 = new HealthCheckCommonV2();
         when(healthCheckTaskV2.getClient()).thenReturn(ipPortBasedClient);
         when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(healthCheckInstancePublishInfo);
@@ -62,7 +62,7 @@ public class HealthCheckCommonV2Test {
     }
     
     @Test
-    public void reEvaluateCheckRT() {
+    public void testReEvaluateCheckRT() {
         healthCheckCommonV2.reEvaluateCheckRT(1, healthCheckTaskV2, healthParams);
         
         verify(healthParams, times(2)).getMax();
@@ -75,7 +75,7 @@ public class HealthCheckCommonV2Test {
     }
     
     @Test
-    public void checkOk() {
+    public void testCheckOk() {
         healthCheckCommonV2.checkOk(healthCheckTaskV2, service, "test checkOk");
         
         verify(healthCheckTaskV2).getClient();
@@ -89,7 +89,7 @@ public class HealthCheckCommonV2Test {
     }
     
     @Test
-    public void checkFail() {
+    public void testCheckFail() {
         when(healthCheckInstancePublishInfo.isHealthy()).thenReturn(true);
         healthCheckCommonV2.checkFail(healthCheckTaskV2, service, "test checkFail");
         
@@ -103,7 +103,7 @@ public class HealthCheckCommonV2Test {
     }
     
     @Test
-    public void checkFailNow() {
+    public void testCheckFailNow() {
         when(healthCheckInstancePublishInfo.isHealthy()).thenReturn(true);
         healthCheckCommonV2.checkFailNow(healthCheckTaskV2, service, "test checkFailNow");
         

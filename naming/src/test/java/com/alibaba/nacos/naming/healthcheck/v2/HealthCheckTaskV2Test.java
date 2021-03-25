@@ -29,7 +29,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Mockito.times;
@@ -54,7 +54,7 @@ public class HealthCheckTaskV2Test {
     private Service service;
     
     @Before
-    public void initHealthCheckTaskV2() {
+    public void setUp() {
         ApplicationUtils.injectContext(context);
         when(ApplicationUtils.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(switchDomain.getTcpHealthParams()).thenReturn(new SwitchDomain.TcpHealthParams());
@@ -80,9 +80,7 @@ public class HealthCheckTaskV2Test {
     }
     
     private List<Service> returnService() {
-        List<Service> serviceList = new ArrayList<>();
-        serviceList.add(service);
-        return serviceList;
+        return Collections.singletonList(service);
     }
     
     @Test
