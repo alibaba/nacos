@@ -16,3 +16,4 @@
 
 com.alibaba.nacos.naming.healthcheck.heartbeat.ServiceEnableBeatCheckInterceptor
 com.alibaba.nacos.naming.healthcheck.heartbeat.InstanceEnableBeatCheckInterceptor
+com.alibaba.nacos.naming.healthcheck.heartbeat.InstanceBeatCheckResponsibleInterceptor
