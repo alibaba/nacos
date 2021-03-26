@@ -300,46 +300,6 @@ public class ConfigController {
         return rr;
     }
     
-    private void removeRequestContext(HttpServletRequest request) {
-        try {
-            
-            request.removeAttribute("body");
-            
-            Map<String, String[]> parameterMap = request.getParameterMap();
-            Field locked = parameterMap.getClass().getDeclaredField("locked");
-            locked.setAccessible(true);
-            locked.set(parameterMap, false);
-            parameterMap.remove(Constants.PROBE_MODIFY_REQUEST);
-            
-            Field inneRequestFiled = request.getClass().getDeclaredField("request");
-            inneRequestFiled.setAccessible(true);
-            Request innerRequest = (Request) inneRequestFiled.get(request);
-            
-            Field coyoteRequest = innerRequest.getClass().getDeclaredField("coyoteRequest");
-            coyoteRequest.setAccessible(true);
-            org.apache.coyote.Request coyotoRequest = (org.apache.coyote.Request) coyoteRequest.get(innerRequest);
-            Parameters parameters = coyotoRequest.getParameters();
-            Field hashMapField = parameters.getClass().getDeclaredField("paramHashValues");
-            hashMapField.setAccessible(true);
-            LinkedHashMap hashMaps = (LinkedHashMap) hashMapField.get(parameters);
-            hashMaps.remove(Constants.PROBE_MODIFY_REQUEST);
-            
-            Field tmpNameField = parameters.getClass().getDeclaredField("tmpName");
-            tmpNameField.setAccessible(true);
-            ByteChunk tmpName = (ByteChunk) tmpNameField.get(parameters);
-            byte[] bytemp = new byte[0];
-            tmpName.setBytes(bytemp, 0, 0);
-            
-            Field tmpValueField = parameters.getClass().getDeclaredField("tmpValue");
-            tmpValueField.setAccessible(true);
-            ByteChunk tmpValue = (ByteChunk) tmpValueField.get(parameters);
-            tmpValue.setBytes(bytemp, 0, 0);
-            
-        } catch (Exception e) {
-            LOGGER.warn("remove listen request param error", e);
-        }
-    }
-    
     /**
      * The client listens for configuration changes.
      */
