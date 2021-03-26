@@ -349,8 +349,6 @@ public class ConfigController {
             throws ServletException, IOException {
         
         request.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true);
-        //remove large listen context , reduce request content to optimize cms gc.
-        removeRequestContext(request);
         String probeModify = request.getParameter("Listening-Configs");
         if (StringUtils.isBlank(probeModify)) {
             LOGGER.warn("invalid probeModify is blank");
