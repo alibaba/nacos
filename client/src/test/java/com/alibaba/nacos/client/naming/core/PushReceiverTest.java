@@ -29,6 +29,7 @@ import java.lang.reflect.Field;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -66,10 +67,10 @@ public class PushReceiverTest {
         final String res2 = udpClientRun(pack2, pushReceiver);
         Assert.assertEquals("{\"type\": \"push-ack\", \"lastRefTime\":\"2\", \"data\":\"\"}", res2);
         verify(holder, times(1)).processServiceInfo(pack2.data);
-    
+        
     }
     
-    String udpClientRun(PushReceiver.PushPacket pack, PushReceiver pushReceiver) throws IOException {
+    private String udpClientRun(PushReceiver.PushPacket pack, PushReceiver pushReceiver) throws IOException {
         final int udpPort = pushReceiver.getUdpPort();
         String json = JacksonUtils.toJson(pack);
         final byte[] bytes = IoUtils.tryCompress(json, "UTF-8");
@@ -79,7 +80,7 @@ public class PushReceiverTest {
         final DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length);
         datagramSocket.receive(datagramPacket);
         final byte[] data = datagramPacket.getData();
-        String res = new String(data, "UTF-8");
+        String res = new String(data, StandardCharsets.UTF_8);
         return res.trim();
     }
     
@@ -103,7 +104,7 @@ public class PushReceiverTest {
         final String res1 = udpClientRun(pack1, pushReceiver);
         Assert.assertEquals("{\"type\": \"dump-ack\", \"lastRefTime\": \"1\", \"data\":\"{}\"}", res1);
         verify(holder, times(1)).getServiceInfoMap();
-    
+        
     }
     
     @Test
