@@ -115,6 +115,7 @@ public class SecurityProxy {
                 }
             }
         } catch (Throwable ignore) {
+            SECURITY_LOGGER.error("[SecurityProxy] login  failed, servers: {}, errorMsg: {}", servers,  ignore.getMessage());
         }
         
         return false;
