@@ -52,7 +52,7 @@ public class HealthCheckReactor {
      */
     public static void scheduleCheck(ClientBeatCheckTask task) {
         futureMap.computeIfAbsent(task.taskKey(),
-                k -> GlobalExecutor.scheduleNamingHealth(task, 5000, 5000, TimeUnit.MILLISECONDS));
+                k -> GlobalExecutor.scheduleNamingHealth(task, 5000, 1000, TimeUnit.MILLISECONDS));
     }
     
     /**
