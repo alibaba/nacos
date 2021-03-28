@@ -44,7 +44,47 @@ public class NetUtils {
             String ip = System.getProperty("com.alibaba.nacos.client.naming.local.ip",
                     InetAddress.getLocalHost().getHostAddress());
             
-            return localIp = ip;
+            String ip = System.getProperty("com.alibaba.nacos.client.naming.local.ip");
+            if (null != ip) {
+                return localIp = ip;
+            }
+            
+            InetAddress localAddress = null;
+            localAddress = InetAddress.getLocalHost();
+            if (!localAddress.isLoopbackAddress()
+                    && !localAddress.isAnyLocalAddress()
+                    && !localAddress.isLinkLocalAddress()) {
+                return localIp = localAddress.getHostAddress();
+            }
+            
+            InetAddress netAddress = null;
+            try {
+                Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                if (null != interfaces) {
+                    while (interfaces.hasMoreElements()) {
+                        NetworkInterface network = interfaces.nextElement();
+                        if (network.isLoopback() || network.isVirtual() || !network.isUp()) {
+                            continue;
+                        }
+                        Enumeration<InetAddress> addresses = network.getInetAddresses();
+                        while (addresses.hasMoreElements()) {
+                            InetAddress address = addresses.nextElement();
+                            if (!address.isLoopbackAddress()
+                                    && !address.isAnyLocalAddress()
+                                    && !address.isLinkLocalAddress()) {
+                                netAddress = address;
+                                break;
+                            }
+                        }
+                        if (null != netAddress) {
+                            break;
+                        }
+                    }
+                }
+            } catch (SocketException e) {
+                return localIp = localAddress.getHostAddress();
+            }
+            return localIp = (null != netAddress) ? netAddress.getHostAddress() : localAddress.getHostAddress();
         } catch (UnknownHostException e) {
             return "resolve_failed";
         }
