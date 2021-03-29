@@ -169,7 +169,11 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         //client close the stream.
                         return;
                     } else {
-                        serverCallStreamObserver.onCompleted();
+                        try {
+                            serverCallStreamObserver.onCompleted();
+                        } catch (Throwable throwable) {
+                            //ignore
+                        }
                     }
                 }
                 
@@ -186,7 +190,12 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         //client close the stream.
                         return;
                     } else {
-                        serverCallStreamObserver.onCompleted();
+                        try {
+                            serverCallStreamObserver.onCompleted();
+                        } catch (Throwable throwable) {
+                            //ignore
+                        }
+                        
                     }
                 }
             }
