@@ -76,7 +76,7 @@ public class ClientWorker implements Closeable {
      * @param listeners listeners
      */
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
         for (Listener listener : listeners) {
             cache.addListener(listener);
@@ -91,7 +91,7 @@ public class ClientWorker implements Closeable {
      * @param listener listener
      */
     public void removeListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         CacheData cache = getCache(dataId, group);
         if (null != cache) {
             cache.removeListener(listener);
@@ -111,7 +111,7 @@ public class ClientWorker implements Closeable {
      */
     public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners)
             throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         for (Listener listener : listeners) {
@@ -130,7 +130,7 @@ public class ClientWorker implements Closeable {
      */
     public void addTenantListenersWithContent(String dataId, String group, String content,
             List<? extends Listener> listeners) throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         cache.setContent(content);
@@ -147,7 +147,7 @@ public class ClientWorker implements Closeable {
      * @param listener listener
      */
     public void removeTenantListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
@@ -197,9 +197,9 @@ public class ClientWorker implements Closeable {
         }
         // reset so that server not hang this check
         lastCacheData.setInitializing(true);
-    
+        
         LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
-    
+        
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
         return lastCacheData;
     }
@@ -218,7 +218,7 @@ public class ClientWorker implements Closeable {
         if (cacheData != null) {
             return cacheData;
         }
-    
+        
         cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
         // multiple listeners on the same dataid+group and race condition
         CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
@@ -356,8 +356,8 @@ public class ClientWorker implements Closeable {
         }
     }
     
-    private String null2defaultGroup(String group) {
-        return (null == group) ? Constants.DEFAULT_GROUP : group.trim();
+    private String blank2defaultGroup(String group) {
+        return StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
     /**
