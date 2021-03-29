@@ -29,6 +29,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -89,6 +90,7 @@ public class AutoDeregisterInstance_ITCase {
      * @throws Exception
      */
     @Test
+    @Ignore("Nacos 2.0 does not support HTTP beat check any more, it uses gRPC instead.")
     public void autoDregDomClustersTest() throws Exception {
         String serviceName = randomDomainName();
         
@@ -100,7 +102,7 @@ public class AutoDeregisterInstance_ITCase {
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
         
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
         
@@ -126,6 +128,7 @@ public class AutoDeregisterInstance_ITCase {
      * @throws Exception
      */
     @Test
+    @Ignore("Nacos 2.0 does not support HTTP beat check any more, it uses gRPC instead.")
     public void autoDregDomTest() throws Exception {
         String serviceName = randomDomainName();
         
@@ -137,7 +140,7 @@ public class AutoDeregisterInstance_ITCase {
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
         
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
         
@@ -158,19 +161,19 @@ public class AutoDeregisterInstance_ITCase {
      * @throws Exception
      */
     @Test
+    @Ignore("Nacos 2.0 does not support HTTP beat check any more, it uses gRPC instead.")
     public void autoRegDomTest() throws Exception {
         
         String serviceName = randomDomainName();
         
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
-        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT);
         
         TimeUnit.SECONDS.sleep(5);
         
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
         
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
         
@@ -178,11 +181,11 @@ public class AutoDeregisterInstance_ITCase {
                 .removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1",
                         TEST_PORT);
         
-        verifyInstanceList(instances, 1, serviceName);
+        verifyInstanceList(instances, 0, serviceName);
         
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals(0, instances.size());
         BeatInfo beatInfo = new BeatInfo();
         beatInfo.setServiceName(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName);
         beatInfo.setIp("127.0.0.1");
@@ -191,11 +194,11 @@ public class AutoDeregisterInstance_ITCase {
         NamingTestUtils.getBeatReactorByReflection(namingServiceImpl)
                 .addBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, beatInfo);
         
-        verifyInstanceList(instances, 2, serviceName);
+        verifyInstanceList(instances, 1, serviceName);
         
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
     }
     
     /**
@@ -204,19 +207,19 @@ public class AutoDeregisterInstance_ITCase {
      * @throws Exception
      */
     @Test
+    @Ignore("Nacos 2.0 does not support HTTP beat check any more, it uses gRPC instead.")
     public void autoRegDomClustersTest() throws Exception {
         
         String serviceName = randomDomainName();
         
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
         
         TimeUnit.SECONDS.sleep(5);
         
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
         
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
         
@@ -242,7 +245,7 @@ public class AutoDeregisterInstance_ITCase {
         
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
         
         instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
         Assert.assertEquals(1, instances.size());
