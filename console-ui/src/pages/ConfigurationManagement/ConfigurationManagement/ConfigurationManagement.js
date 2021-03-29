@@ -223,11 +223,25 @@ class ConfigurationManagement extends React.Component {
   navTo(url, record) {
     this.serverId = getParams('serverId') || '';
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
-    this.props.history.push(
-      `${url}?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
-        record.group
-      }&namespace=${this.tenant}`
-    );
+    switch (url) {
+      case '/historyRollback':
+        url = `${url}?historyServerId=${this.serverId || ''}&historyDataId=${
+          record.dataId
+        }&historyGroup=${record.group}&namespace=${this.tenant}`;
+        break;
+      case '/listeningToQuery':
+        url = `${url}?listeningServerId=${this.serverId || ''}&listeningDataId=${
+          record.dataId
+        }&listeningGroup=${record.group}&namespace=${this.tenant}`;
+        break;
+      case '/pushTrajectory':
+        url = `${url}?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
+          record.group
+        }&namespace=${this.tenant}`;
+        break;
+      default:
+    }
+    this.props.history.push(url);
   }
 
   openLoading() {
@@ -442,12 +456,14 @@ class ConfigurationManagement extends React.Component {
   }
 
   onChangeSort(dataIndex, order) {
-    this.dataSource.sort(function(a, b) {
+    const { configurations = {} } = this.props;
+    configurations.pageItems.sort(function(a, b) {
       if (order === 'asc') {
         return (a[dataIndex] + '').localeCompare(b[dataIndex] + '');
       }
       return (b[dataIndex] + '').localeCompare(a[dataIndex] + '');
     });
+    this.forceUpdate();
   }
 
   handlePageSizeChange(pageSize) {
@@ -1411,7 +1427,7 @@ class ConfigurationManagement extends React.Component {
               ref="dataTable"
               loading={this.state.loading}
               rowSelection={this.state.rowSelection}
-              onSort={this.onChangeSort}
+              onSort={this.onChangeSort.bind(this)}
             >
               <Table.Column sortable={true} title={'Data Id'} dataIndex={'dataId'} />
               <Table.Column sortable={true} title={'Group'} dataIndex={'group'} />
