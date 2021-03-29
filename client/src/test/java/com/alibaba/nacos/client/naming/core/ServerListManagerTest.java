@@ -87,11 +87,15 @@ public class ServerListManagerTest {
     }
     
     @Test
-    public void shutdown() throws NacosException {
+    public void testShutdown() {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final ServerListManager serverListManager = new ServerListManager(properties);
-        serverListManager.shutdown();
+        try {
+            serverListManager.shutdown();
+        } catch (Exception e) {
+            Assert.fail();
+        }
     }
     
 }
