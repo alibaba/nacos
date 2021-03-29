@@ -65,10 +65,10 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
     @Override
     public void afterConstruct() {
         super.afterConstruct();
-        this.protocol.addRequestProcessors(Collections.singletonList(this));
         this.protocol.protocolMetaData()
                 .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
                         (o, arg) -> hasLeader = StringUtils.isNotBlank(String.valueOf(arg)));
+        this.protocol.addRequestProcessors(Collections.singletonList(this));
         // If you choose to use the new RAFT protocol directly, there will be no compatible logical execution
         if (EnvUtil.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
             NotifyCenter.registerSubscriber(notifier);

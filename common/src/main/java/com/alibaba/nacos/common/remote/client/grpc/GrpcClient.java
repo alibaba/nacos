@@ -272,13 +272,15 @@ public abstract class GrpcClient extends RpcClient {
                 grpcConn.setPayloadStreamObserver(payloadStreamObserver);
                 grpcConn.setGrpcFutureServiceStub(newChannelStubTemp);
                 grpcConn.setChannel((ManagedChannel) newChannelStubTemp.getChannel());
-                //send a connection setup request.
+                //send a  setup request.
                 ConnectionSetupRequest conSetupRequest = new ConnectionSetupRequest();
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
                 conSetupRequest.setAbilities(super.clientAbilities);
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
+                //wait to register connection setup
+                Thread.sleep(100L);
                 return grpcConn;
             }
             return null;

@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
+import com.alibaba.nacos.naming.healthcheck.RsInfo;
 
 /**
  * Distro IP and port tag generator.
@@ -26,6 +29,8 @@ import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
  * @author xiweng.yy
  */
 public class DistroIpPortTagGenerator implements DistroTagGenerator {
+    
+    private static final String PARAMETER_BEAT = "beat";
     
     private static final String PARAMETER_IP = "ip";
     
@@ -35,6 +40,18 @@ public class DistroIpPortTagGenerator implements DistroTagGenerator {
     public String getResponsibleTag(ReuseHttpServletRequest request) {
         String ip = request.getParameter(PARAMETER_IP);
         String port = request.getParameter(PARAMETER_PORT);
+        if (StringUtils.isBlank(ip)) {
+            // some old version clients using beat parameter
+            String beatStr = request.getParameter(PARAMETER_BEAT);
+            if (StringUtils.isNotBlank(beatStr)) {
+                try {
+                    RsInfo rsInfo = JacksonUtils.toObj(beatStr, RsInfo.class);
+                    ip = rsInfo.getIp();
+                    port = String.valueOf(rsInfo.getPort());
+                } catch (NacosDeserializationException ignored) {
+                }
+            }
+        }
         if (StringUtils.isNotBlank(ip)) {
             ip = ip.trim();
         }

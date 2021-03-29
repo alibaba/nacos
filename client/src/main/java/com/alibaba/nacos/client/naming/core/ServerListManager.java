@@ -60,9 +60,9 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private final AtomicInteger currentIndex = new AtomicInteger();
     
-    private List<String> serversFromEndpoint = new ArrayList<String>();
+    private final List<String> serverList = new ArrayList<>();
     
-    private List<String> serverList = new ArrayList<String>();
+    private List<String> serversFromEndpoint = new ArrayList<>();
     
     private ScheduledExecutorService refreshServerListExecutor;
     
@@ -85,12 +85,9 @@ public class ServerListManager implements ServerListFactory, Closeable {
             this.serversFromEndpoint = getServerListFromEndpoint();
             refreshServerListExecutor = new ScheduledThreadPoolExecutor(1,
                     new NameThreadFactory("com.alibaba.nacos.client.naming.server.list.refresher"));
-            refreshServerListExecutor.scheduleWithFixedDelay(new Runnable() {
-                @Override
-                public void run() {
-                    refreshServerListIfNeed();
-                }
-            }, 0, refreshServerListInternal, TimeUnit.MILLISECONDS);
+            refreshServerListExecutor
+                    .scheduleWithFixedDelay(this::refreshServerListIfNeed, 0, refreshServerListInternal,
+                            TimeUnit.MILLISECONDS);
         } else {
             String serverListFromProps = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
             if (StringUtils.isNotEmpty(serverListFromProps)) {
@@ -138,7 +135,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
             if (CollectionUtils.isEmpty(list)) {
                 throw new Exception("Can not acquire Nacos list");
             }
-            if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
+            if (null == serversFromEndpoint || !CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
                 NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
             }
             serversFromEndpoint = list;
@@ -156,6 +153,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
         return nacosDomain;
     }
     
+    @Override
     public List<String> getServerList() {
         return serverList.isEmpty() ? serversFromEndpoint : serverList;
     }

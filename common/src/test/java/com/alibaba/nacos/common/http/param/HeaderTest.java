@@ -13,37 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.test;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+package com.alibaba.nacos.common.http.param;
 
-/**
- * Unit test for simple App.
- */
-public class AppTest
-    extends TestCase {
-    /**
-     * Create the test case
-     *
-     * @param testName name of the test case
-     */
-    public AppTest(String testName) {
-        super(testName);
-    }
+import org.junit.Test;
 
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite() {
-        return new TestSuite(AppTest.class);
-    }
+import static org.junit.Assert.assertEquals;
 
-    /**
-     * Rigourous Test :-)
-     */
-    public void testApp() {
-        assertTrue(true);
+public class HeaderTest {
+    
+    @Test
+    public void testHeaderKyeIgnoreCase() {
+        Header header = Header.newInstance();
+        header.addParam("Content-Encoding", "gzip");
+        assertEquals("gzip", header.getValue("content-encoding"));
     }
 }

@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {
-        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class RegisterInstance_ITCase {
     
     private NamingService naming;

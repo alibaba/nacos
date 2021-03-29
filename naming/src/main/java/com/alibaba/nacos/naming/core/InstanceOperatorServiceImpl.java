@@ -25,6 +25,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
+import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.push.v1.ClientInfo;
@@ -44,8 +46,14 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.EPHEMERAL;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.PERSIST;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
 
 /**
  * Implementation of {@link InstanceOperator} by service for v1.x.
@@ -217,13 +225,10 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", result.getName());
             result.setReachProtectionThreshold(true);
-            hosts = Stream.of(Boolean.TRUE, Boolean.FALSE)
-                .map(ipMap::get)
-                .flatMap(Collection::stream)
-                .map(InstanceUtil::deepCopy)
-                // set all to `healthy` state to protect
-                .peek(instance -> instance.setHealthy(true))
-                .collect(Collectors.toCollection(LinkedList::new));
+            hosts = Stream.of(Boolean.TRUE, Boolean.FALSE).map(ipMap::get).flatMap(Collection::stream)
+                    .map(InstanceUtil::deepCopy)
+                    // set all to `healthy` state to protect
+                    .peek(instance -> instance.setHealthy(true)).collect(Collectors.toCollection(LinkedList::new));
         } else {
             result.setReachProtectionThreshold(false);
             hosts = new LinkedList<>(ipMap.get(Boolean.TRUE));
@@ -327,5 +332,42 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             throw new NacosException(NacosException.NOT_FOUND, "service: " + serviceName + " not found.");
         }
         return service.allIPs();
+    }
+    
+    @Override
+    public List<String> batchUpdateMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
+            Map<String, String> metadata) throws NacosException {
+        return batchOperate(namespaceId, instanceOperationInfo, metadata, UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
+    }
+    
+    @Override
+    public List<String> batchDeleteMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
+            Map<String, String> metadata) throws NacosException {
+        return batchOperate(namespaceId, instanceOperationInfo, metadata, UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
+    }
+    
+    private List<String> batchOperate(String namespaceId, InstanceOperationInfo instanceOperationInfo,
+            Map<String, String> metadata, String updateInstanceMetadataAction) {
+        List<String> result = new LinkedList<>();
+        for (com.alibaba.nacos.naming.core.Instance each : batchOperateMetadata(namespaceId, instanceOperationInfo,
+                metadata, updateInstanceMetadataAction)) {
+            result.add(each.getDatumKey() + ":" + (each.isEphemeral() ? EPHEMERAL : PERSIST));
+        }
+        return result;
+    }
+    
+    private List<com.alibaba.nacos.naming.core.Instance> batchOperateMetadata(String namespace,
+            InstanceOperationInfo instanceOperationInfo, Map<String, String> metadata, String action) {
+        Function<InstanceOperationContext, List<com.alibaba.nacos.naming.core.Instance>> operateFunction = instanceOperationContext -> {
+            try {
+                return serviceManager.updateMetadata(instanceOperationContext.getNamespace(),
+                        instanceOperationContext.getServiceName(), instanceOperationContext.getEphemeral(), action,
+                        instanceOperationContext.getAll(), instanceOperationContext.getInstances(), metadata);
+            } catch (NacosException e) {
+                Loggers.SRV_LOG.warn("UPDATE-METADATA: updateMetadata failed", e);
+            }
+            return new ArrayList<>();
+        };
+        return serviceManager.batchOperate(namespace, instanceOperationInfo, operateFunction);
     }
 }

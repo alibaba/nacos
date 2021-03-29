@@ -31,6 +31,16 @@ public interface MetadataOrBuilder extends
       getTypeBytes();
 
   /**
+   * <code>string clientIp = 8;</code>
+   */
+  String getClientIp();
+  /**
+   * <code>string clientIp = 8;</code>
+   */
+  com.google.protobuf.ByteString
+      getClientIpBytes();
+
+  /**
    * <code>map&lt;string, string&gt; headers = 7;</code>
    */
   int getHeadersCount();

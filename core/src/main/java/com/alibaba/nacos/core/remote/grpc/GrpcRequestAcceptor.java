@@ -22,9 +22,9 @@ import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
+import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.Connection;
@@ -37,8 +37,6 @@ import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_IP;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_CLIENT_PORT;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
 
 /**
@@ -57,9 +55,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     private ConnectionManager connectionManager;
     
     private void traceIfNecessary(Payload grpcRequest, boolean receive) {
-        String clientIp = CONTEXT_KEY_CONN_CLIENT_IP.get();
+        String clientIp = grpcRequest.getMetadata().getClientIp();
         String connectionId = CONTEXT_KEY_CONN_ID.get();
-        
         try {
             if (connectionManager.traced(clientIp)) {
                 Loggers.REMOTE_DIGEST.info("[{}]Payload {},meta={},body={}", connectionId, receive ? "receive" : "send",
@@ -163,9 +160,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         try {
             Connection connection = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
             RequestMeta requestMeta = new RequestMeta();
-            requestMeta.setClientIp(CONTEXT_KEY_CONN_CLIENT_IP.get());
+            requestMeta.setClientIp(connection.getMetaInfo().getClientIp());
             requestMeta.setConnectionId(CONTEXT_KEY_CONN_ID.get());
-            requestMeta.setClientPort(CONTEXT_KEY_CONN_CLIENT_PORT.get());
             requestMeta.setClientVersion(connection.getMetaInfo().getVersion());
             requestMeta.setLabels(connection.getMetaInfo().getLabels());
             connectionManager.refreshActiveTime(requestMeta.getConnectionId());
@@ -178,8 +174,9 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             Loggers.REMOTE_DIGEST
                     .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,
                             e);
-            Payload payloadResponse = GrpcUtils
-                    .convert(buildErrorResponse(ResponseCode.FAIL.getCode(), e.getMessage()));
+            Payload payloadResponse = GrpcUtils.convert(buildErrorResponse(
+                    (e instanceof NacosException) ? ((NacosException) e).getErrCode() : ResponseCode.FAIL.getCode(),
+                    e.getMessage()));
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();

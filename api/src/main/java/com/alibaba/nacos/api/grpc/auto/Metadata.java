@@ -30,6 +30,7 @@ private static final long serialVersionUID = 0L;
   }
   private Metadata() {
     type_ = "";
+    clientIp_ = "";
   }
 
   @Override
@@ -80,6 +81,12 @@ private static final long serialVersionUID = 0L;
                 HeadersDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
             headers_.getMutableMap().put(
                 headers__.getKey(), headers__.getValue());
+            break;
+          }
+          case 66: {
+            String s = input.readStringRequireUtf8();
+
+            clientIp_ = s;
             break;
           }
           default: {
@@ -154,6 +161,40 @@ private static final long serialVersionUID = 0L;
           com.google.protobuf.ByteString.copyFromUtf8(
               (String) ref);
       type_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int CLIENTIP_FIELD_NUMBER = 8;
+  private volatile Object clientIp_;
+  /**
+   * <code>string clientIp = 8;</code>
+   */
+  public String getClientIp() {
+    Object ref = clientIp_;
+    if (ref instanceof String) {
+      return (String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      String s = bs.toStringUtf8();
+      clientIp_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string clientIp = 8;</code>
+   */
+  public com.google.protobuf.ByteString
+      getClientIpBytes() {
+    Object ref = clientIp_;
+    if (ref instanceof String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (String) ref);
+      clientIp_ = b;
       return b;
     } else {
       return (com.google.protobuf.ByteString) ref;
@@ -259,6 +300,9 @@ private static final long serialVersionUID = 0L;
         internalGetHeaders(),
         HeadersDefaultEntryHolder.defaultEntry,
         7);
+    if (!getClientIpBytes().isEmpty()) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 8, clientIp_);
+    }
     unknownFields.writeTo(output);
   }
 
@@ -281,6 +325,9 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(7, headers__);
     }
+    if (!getClientIpBytes().isEmpty()) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, clientIp_);
+    }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
     return size;
@@ -298,6 +345,8 @@ private static final long serialVersionUID = 0L;
 
     if (!getType()
         .equals(other.getType())) return false;
+    if (!getClientIp()
+        .equals(other.getClientIp())) return false;
     if (!internalGetHeaders().equals(
         other.internalGetHeaders())) return false;
     if (!unknownFields.equals(other.unknownFields)) return false;
@@ -313,6 +362,8 @@ private static final long serialVersionUID = 0L;
     hash = (19 * hash) + getDescriptor().hashCode();
     hash = (37 * hash) + TYPE_FIELD_NUMBER;
     hash = (53 * hash) + getType().hashCode();
+    hash = (37 * hash) + CLIENTIP_FIELD_NUMBER;
+    hash = (53 * hash) + getClientIp().hashCode();
     if (!internalGetHeaders().getMap().isEmpty()) {
       hash = (37 * hash) + HEADERS_FIELD_NUMBER;
       hash = (53 * hash) + internalGetHeaders().hashCode();
@@ -474,6 +525,8 @@ private static final long serialVersionUID = 0L;
       super.clear();
       type_ = "";
 
+      clientIp_ = "";
+
       internalGetMutableHeaders().clear();
       return this;
     }
@@ -503,6 +556,7 @@ private static final long serialVersionUID = 0L;
       Metadata result = new Metadata(this);
       int from_bitField0_ = bitField0_;
       result.type_ = type_;
+      result.clientIp_ = clientIp_;
       result.headers_ = internalGetHeaders();
       result.headers_.makeImmutable();
       onBuilt();
@@ -555,6 +609,10 @@ private static final long serialVersionUID = 0L;
       if (other == Metadata.getDefaultInstance()) return this;
       if (!other.getType().isEmpty()) {
         type_ = other.type_;
+        onChanged();
+      }
+      if (!other.getClientIp().isEmpty()) {
+        clientIp_ = other.clientIp_;
         onChanged();
       }
       internalGetMutableHeaders().mergeFrom(
@@ -654,6 +712,75 @@ private static final long serialVersionUID = 0L;
   checkByteStringIsUtf8(value);
       
       type_ = value;
+      onChanged();
+      return this;
+    }
+
+    private Object clientIp_ = "";
+    /**
+     * <code>string clientIp = 8;</code>
+     */
+    public String getClientIp() {
+      Object ref = clientIp_;
+      if (!(ref instanceof String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        clientIp_ = s;
+        return s;
+      } else {
+        return (String) ref;
+      }
+    }
+    /**
+     * <code>string clientIp = 8;</code>
+     */
+    public com.google.protobuf.ByteString
+        getClientIpBytes() {
+      Object ref = clientIp_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        clientIp_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string clientIp = 8;</code>
+     */
+    public Builder setClientIp(
+        String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      clientIp_ = value;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string clientIp = 8;</code>
+     */
+    public Builder clearClientIp() {
+      
+      clientIp_ = getDefaultInstance().getClientIp();
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string clientIp = 8;</code>
+     */
+    public Builder setClientIpBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      clientIp_ = value;
       onChanged();
       return this;
     }

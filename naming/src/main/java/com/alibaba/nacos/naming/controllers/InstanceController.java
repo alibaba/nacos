@@ -36,7 +36,6 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.web.CanDistro;
@@ -58,16 +57,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME;
-import static com.alibaba.nacos.naming.misc.UtilsAndCommons.EPHEMERAL;
-import static com.alibaba.nacos.naming.misc.UtilsAndCommons.PERSIST;
-import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
-import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_UPDATE;
 
 /**
  * Instance operation controller.
@@ -111,7 +105,7 @@ public class InstanceController {
         NamingUtils.checkServiceNameFormat(serviceName);
         
         final Instance instance = parseInstance(request);
-    
+        
         getInstanceOperator().registerInstance(namespaceId, serviceName, instance);
         return "ok";
     }
@@ -131,7 +125,7 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-    
+        
         getInstanceOperator().removeInstance(namespaceId, serviceName, instance);
         return "ok";
     }
@@ -165,32 +159,24 @@ public class InstanceController {
     @CanDistro
     @PutMapping(value = "/metadata/batch")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public ObjectNode batchUpdateInstanceMatadata(HttpServletRequest request) throws Exception {
+    public ObjectNode batchUpdateInstanceMetadata(HttpServletRequest request) throws Exception {
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        
         String consistencyType = WebUtils.optional(request, "consistencyType", StringUtils.EMPTY);
-        
         String instances = WebUtils.optional(request, "instances", StringUtils.EMPTY);
-        
         List<Instance> targetInstances = parseBatchInstances(instances);
-        
         String metadata = WebUtils.required(request, "metadata");
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
+        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(serviceName, consistencyType, targetInstances);
         
-        List<Instance> operatedInstances = batchOperateMetadata(namespaceId,
-                buildOperationInfo(serviceName, consistencyType, targetInstances), targetMetadata,
-                UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
-        
+        List<String> operatedInstances = getInstanceOperator()
+                .batchUpdateMetadata(namespaceId, instanceOperationInfo, targetMetadata);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
-        
-        for (Instance ip : operatedInstances) {
-            ipArray.add(ip.getDatumKey() + ":" + (ip.isEphemeral() ? EPHEMERAL : PERSIST));
+        for (String ip : operatedInstances) {
+            ipArray.add(ip);
         }
-        
         result.replace("updated", ipArray);
         return result;
     }
@@ -206,32 +192,24 @@ public class InstanceController {
     @CanDistro
     @DeleteMapping("/metadata/batch")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public ObjectNode batchDeleteInstanceMatadata(HttpServletRequest request) throws Exception {
+    public ObjectNode batchDeleteInstanceMetadata(HttpServletRequest request) throws Exception {
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        
         String consistencyType = WebUtils.optional(request, "consistencyType", StringUtils.EMPTY);
-        
         String instances = WebUtils.optional(request, "instances", StringUtils.EMPTY);
-        
         List<Instance> targetInstances = parseBatchInstances(instances);
-        
         String metadata = WebUtils.required(request, "metadata");
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
-        
-        List<Instance> operatedInstances = batchOperateMetadata(namespaceId,
-                buildOperationInfo(serviceName, consistencyType, targetInstances), targetMetadata,
-                UPDATE_INSTANCE_METADATA_ACTION_REMOVE);
+        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(serviceName, consistencyType, targetInstances);
+        List<String> operatedInstances = getInstanceOperator()
+                .batchDeleteMetadata(namespaceId, instanceOperationInfo, targetMetadata);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
-        
-        for (Instance ip : operatedInstances) {
-            ipArray.add(ip.getDatumKey() + ":" + (ip.isEphemeral() ? EPHEMERAL : PERSIST));
+        for (String ip : operatedInstances) {
+            ipArray.add(ip);
         }
-        
         result.replace("updated", ipArray);
         return result;
     }
@@ -255,23 +233,9 @@ public class InstanceController {
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("UPDATE-METADATA: Param 'instances' is illegal, ignore this operation", e);
         }
-        return null;
+        return Collections.emptyList();
     }
     
-    private List<Instance> batchOperateMetadata(String namespace, InstanceOperationInfo instanceOperationInfo,
-            Map<String, String> metadata, String action) {
-        Function<InstanceOperationContext, List<Instance>> operateFunction = instanceOperationContext -> {
-            try {
-                return serviceManager.updateMetadata(instanceOperationContext.getNamespace(),
-                        instanceOperationContext.getServiceName(), instanceOperationContext.getEphemeral(), action,
-                        instanceOperationContext.getAll(), instanceOperationContext.getInstances(), metadata);
-            } catch (NacosException e) {
-                Loggers.SRV_LOG.warn("UPDATE-METADATA: updateMetadata failed", e);
-            }
-            return new ArrayList<>();
-        };
-        return serviceManager.batchOperate(namespace, instanceOperationInfo, operateFunction);
-    }
     
     /**
      * Patch instance.
@@ -346,7 +310,7 @@ public class InstanceController {
         String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
         
         Subscriber subscriber = new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName,
-                        udpPort, clusters);
+                udpPort, clusters);
         return getInstanceOperator().listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
     }
     
