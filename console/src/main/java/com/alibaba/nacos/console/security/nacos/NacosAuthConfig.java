@@ -71,6 +71,9 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private NacosUserDetailsServiceImpl userDetailsService;
     
+    @Autowired
+    private LdapAuthenticationProvider ldapAuthenticationProvider;
+    
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
@@ -82,6 +85,8 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
         
         String ignoreUrls = null;
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            ignoreUrls = "/**";
+        } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             ignoreUrls = "/**";
         }
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
@@ -96,7 +101,11 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            auth.authenticationProvider(ldapAuthenticationProvider);
+        }
     }
     
     @Override
