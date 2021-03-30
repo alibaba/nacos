@@ -134,14 +134,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
-        serverList.put(self.getAddress(), self);
         
         // register NodeChangeEvent publisher to NotifyManager
         registerClusterEvent();
         
         // Initializes the lookup mode
         initAndStartLookup();
-        
+
+        serverList.put(self.getAddress(), self);
         if (serverList.isEmpty()) {
             throw new NacosException(NacosException.SERVER_ERROR, "cannot get serverlist, so exit.");
         }
