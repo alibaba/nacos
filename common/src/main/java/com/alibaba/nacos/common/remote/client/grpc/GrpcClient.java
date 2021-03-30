@@ -248,7 +248,7 @@ public abstract class GrpcClient extends RpcClient {
                 
                 grpcExecutor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 8,
                         Runtime.getRuntime().availableProcessors() * 8, 10L, TimeUnit.SECONDS,
-                        new LinkedBlockingQueue<>(1000),
+                        new LinkedBlockingQueue<>(10000),
                         new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-client-executor-%d")
                                 .build());
                 grpcExecutor.allowCoreThreadTimeOut(true);
