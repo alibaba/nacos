@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NamingHttpClientProxy_ITCase {
     @LocalServerPort
     private int port;

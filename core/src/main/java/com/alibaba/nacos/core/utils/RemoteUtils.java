@@ -28,7 +28,15 @@ public class RemoteUtils {
     
     public static final float LOADER_FACTOR = 0.1f;
     
-    private static final int REMOTE_EXECUTOR_TIMES_OF_PROCESSORS = 64;
+    /**
+     * Default remote execute times for CPU count of task processors.
+     */
+    private static final int REMOTE_EXECUTOR_TIMES_OF_PROCESSORS = 1 << 4;
+    
+    /**
+     * Default remote execute queue size: 16384.
+     */
+    private static final int REMOTE_EXECUTOR_QUEUE_SIZE = 1 << 14;
     
     /**
      * get remote executors thread times of processors,default is 64. see the usage of this method for detail.
@@ -42,6 +50,16 @@ public class RemoteUtils {
             return times > 0 ? times : REMOTE_EXECUTOR_TIMES_OF_PROCESSORS;
         } else {
             return REMOTE_EXECUTOR_TIMES_OF_PROCESSORS;
+        }
+    }
+    
+    public static int getRemoteExecutorQueueSize() {
+        String queueSizeString = System.getProperty("remote.executor.queue.size");
+        if (NumberUtil.isDigits(queueSizeString)) {
+            Integer size = Integer.valueOf(queueSizeString);
+            return size > 0 ? size : REMOTE_EXECUTOR_QUEUE_SIZE;
+        } else {
+            return REMOTE_EXECUTOR_QUEUE_SIZE;
         }
     }
 }
