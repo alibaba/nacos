@@ -51,5 +51,35 @@ public enum TpsMonitorItem {
     /**
      * Naming udp fail push.
      */
-    NAMING_UDP_PUSH_FAIL;
+    NAMING_UDP_PUSH_FAIL,
+    
+    /**
+     * Naming rpc distro sync total count.
+     */
+    NAMING_DISTRO_SYNC,
+    
+    /**
+     * Naming rpc distro sync success count.
+     */
+    NAMING_DISTRO_SYNC_SUCCESS,
+    
+    /**
+     * Naming rpc distro sync fail count.
+     */
+    NAMING_DISTRO_SYNC_FAIL,
+    
+    /**
+     * Naming rpc distro verify fail count.
+     */
+    NAMING_DISTRO_VERIFY,
+    
+    /**
+     * Naming rpc distro verify fail count.
+     */
+    NAMING_DISTRO_VERIFY_SUCCESS,
+    
+    /**
+     * Naming rpc distro verify fail count.
+     */
+    NAMING_DISTRO_VERIFY_FAIL,
 }

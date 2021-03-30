@@ -106,7 +106,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
         @Override
         public long getTimeout() {
             // TODO timeout should can be config
-            return 3000L;
+            return 5000L;
         }
         
         @Override

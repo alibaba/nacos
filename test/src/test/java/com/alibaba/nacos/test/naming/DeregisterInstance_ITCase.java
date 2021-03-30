@@ -45,7 +45,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class DeregisterInstance_ITCase {
 
     private NamingService naming;
@@ -87,13 +87,12 @@ public class DeregisterInstance_ITCase {
         String serviceName = randomDomainName();
         System.out.println(serviceName);
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
-        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT);
 
         List<Instance> instances = naming.getAllInstances(serviceName);
-        verifyInstanceList(instances, 2, serviceName);
+        verifyInstanceList(instances, 1, serviceName);
 
         instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
 
@@ -101,15 +100,7 @@ public class DeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
-        Assert.assertEquals(instances.get(0).getIp(), "127.0.0.2");
-
-        naming.deregisterInstance(serviceName, "127.0.0.2", TEST_PORT);
-
-        TimeUnit.SECONDS.sleep(3);
-
-        instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(0, instances.size());
+        Assert.assertEquals(instances.size(), 0);
     }
 
     /**
@@ -124,14 +115,13 @@ public class DeregisterInstance_ITCase {
         System.out.println(serviceName);
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
 
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
-        verifyInstanceList(instances, 2, serviceName);
+        verifyInstanceList(instances, 1, serviceName);
 
         instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(instances.size(), 2);
+        Assert.assertEquals(1, instances.size());
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
 
@@ -139,12 +129,7 @@ public class DeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(1, instances.size());
-
-        instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
-        Assert.assertEquals(instances.size(), 1);
-
-        instances = naming.getAllInstances(serviceName, Arrays.asList("c1"));
+        Assert.assertEquals(0, instances.size());
     }
 
 
@@ -161,14 +146,12 @@ public class DeregisterInstance_ITCase {
         String serviceName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
 
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
-        verifyInstanceList(instances, 2, serviceName);
+        verifyInstanceList(instances, 1, serviceName);
 
-        instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
 
@@ -176,14 +159,6 @@ public class DeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(1, instances.size());
-
-        instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
-        Assert.assertEquals(1, instances.size());
-
-        naming.deregisterInstance(serviceName,"127.0.0.2", TEST_PORT, "c2");
-        TimeUnit.SECONDS.sleep(5);
-        instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(0, instances.size());
     }
 
