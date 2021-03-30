@@ -27,8 +27,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import com.alibaba.nacos.test.BaseTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -51,8 +49,8 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  **/
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class NamingMaintainService_ITCase extends BaseTest {
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class NamingMaintainService_ITCase {
 
     private NamingMaintainService namingMaintainService;
     private NamingService namingService;

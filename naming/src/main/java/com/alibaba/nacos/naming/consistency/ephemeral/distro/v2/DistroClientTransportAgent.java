@@ -36,6 +36,7 @@ import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.monitor.NamingTpsMonitor;
 
 import java.util.concurrent.Executor;
 
@@ -89,7 +90,7 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         DistroDataRequest request = new DistroDataRequest(data, data.getType());
         Member member = memberManager.find(targetServer);
         try {
-            clusterRpcClientProxy.asyncRequest(member, request, new DistroRpcCallbackWrapper(callback));
+            clusterRpcClientProxy.asyncRequest(member, request, new DistroRpcCallbackWrapper(callback, member));
         } catch (NacosException nacosException) {
             callback.onFailed(nacosException);
         }
@@ -126,7 +127,7 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         Member member = memberManager.find(targetServer);
         try {
             DistroVerifyCallbackWrapper wrapper = new DistroVerifyCallbackWrapper(targetServer,
-                    verifyData.getDistroKey().getResourceKey(), callback);
+                    verifyData.getDistroKey().getResourceKey(), callback, member);
             clusterRpcClientProxy.asyncRequest(member, request, wrapper);
         } catch (NacosException nacosException) {
             callback.onFailed(nacosException);
@@ -199,8 +200,11 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         
         private final DistroCallback distroCallback;
         
-        public DistroRpcCallbackWrapper(DistroCallback distroCallback) {
+        private final Member member;
+        
+        public DistroRpcCallbackWrapper(DistroCallback distroCallback, Member member) {
             this.distroCallback = distroCallback;
+            this.member = member;
         }
         
         @Override
@@ -217,8 +221,10 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         @Override
         public void onResponse(Response response) {
             if (checkResponse(response)) {
+                NamingTpsMonitor.distroSyncSuccess(member.getAddress(), member.getIp());
                 distroCallback.onSuccess();
             } else {
+                NamingTpsMonitor.distroSyncFail(member.getAddress(), member.getIp());
                 distroCallback.onFailed(null);
             }
         }
@@ -236,11 +242,15 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         private final String clientId;
         
         private final DistroCallback distroCallback;
+    
+        private final Member member;
         
-        private DistroVerifyCallbackWrapper(String targetServer, String clientId, DistroCallback distroCallback) {
+        private DistroVerifyCallbackWrapper(String targetServer, String clientId, DistroCallback distroCallback,
+                Member member) {
             this.targetServer = targetServer;
             this.clientId = clientId;
             this.distroCallback = distroCallback;
+            this.member = member;
         }
         
         @Override
@@ -257,10 +267,12 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         @Override
         public void onResponse(Response response) {
             if (checkResponse(response)) {
+                NamingTpsMonitor.distroVerifySuccess(member.getAddress(), member.getIp());
                 distroCallback.onSuccess();
             } else {
                 Loggers.DISTRO.info("Target {} verify client {} failed, sync new client", targetServer, clientId);
                 NotifyCenter.publishEvent(new ClientEvent.ClientVerifyFailedEvent(clientId, targetServer));
+                NamingTpsMonitor.distroVerifyFail(member.getAddress(), member.getIp());
                 distroCallback.onFailed(null);
             }
         }

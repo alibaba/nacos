@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {
-        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class RegisterInstance_ITCase {
     
     private NamingService naming;
@@ -95,7 +95,7 @@ public class RegisterInstance_ITCase {
         naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
         List<Instance> instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
     }
 
     /**
@@ -114,8 +114,6 @@ public class RegisterInstance_ITCase {
         List<Instance> instances = naming.getAllInstances(serviceName);
 
         Assert.assertEquals(1, instances.size());
-        Assert.assertTrue(instances.get(0).getInstanceId().contains(serviceName));
-        //Assert.assertEquals(instances.get(0).getService().getName(), serviceName);
         Assert.assertEquals(instances.get(0).getIp(), NamingBase.TEST_IP_4_DOM_1);
         Assert.assertEquals(instances.get(0).getPort(), NamingBase.TEST_PORT);
     }
@@ -139,20 +137,14 @@ public class RegisterInstance_ITCase {
         List<Instance> instances = naming.getAllInstances(serviceName);
 
         Assert.assertEquals(1, instances.size());
-        Assert.assertTrue(instances.get(0).getInstanceId().contains(serviceName));
-        //Assert.assertEquals(instances2.get(0).getService().getName(), serviceName);
         Assert.assertEquals(instances.get(0).getIp(), NamingBase.TEST_IP_4_DOM_1);
         Assert.assertEquals(instances.get(0).getPort(), NamingBase.TEST_PORT);
-        //Assert.assertEquals(instances.get(0).getCluster().getName(), TEST_NEW_CLUSTER_4_DOM_1);
 
         List<Instance> instances2 = naming.getAllInstances(serviceName, Arrays.asList(NamingBase.TEST_NEW_CLUSTER_4_DOM_1));
 
         Assert.assertEquals(instances2.size(), 1);
-        Assert.assertTrue(instances2.get(0).getInstanceId().contains(serviceName));
-        //Assert.assertEquals(instances2.get(0).getService().getName(), serviceName);
         Assert.assertEquals(instances2.get(0).getIp(), NamingBase.TEST_IP_4_DOM_1);
         Assert.assertEquals(instances2.get(0).getPort(), NamingBase.TEST_PORT);
-        //Assert.assertEquals(instances2.get(0).getCluster().getName(), TEST_NEW_CLUSTER_4_DOM_1);
     }
 
     /**

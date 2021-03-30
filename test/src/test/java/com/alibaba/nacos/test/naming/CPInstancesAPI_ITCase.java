@@ -55,7 +55,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class CPInstancesAPI_ITCase {
 
     private NamingService naming;
@@ -130,7 +130,8 @@ public class CPInstancesAPI_ITCase {
         instance.setIp("11.11.11.11");
         instance.setPort(80);
         naming1.registerInstance(serviceName, TEST_GROUP_1, instance);
-
+        TimeUnit.SECONDS.sleep(3L);
+        naming1.deregisterInstance(serviceName, TEST_GROUP_1, instance);
         namingServiceDelete(serviceName, TEST_NAMESPACE_1, TEST_GROUP_1);
     }
 
@@ -175,11 +176,11 @@ public class CPInstancesAPI_ITCase {
      * @ExpectResult :
      */
     @Test
-    public void deleteService_hasInstace() throws Exception {
+    public void deleteService_hasInstace() {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, TEST_NAMESPACE_1);
 
-        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/instance",
+        ResponseEntity<String> registerResponse = request(NamingBase.NAMING_CONTROLLER_PATH + "/instance",
             Params.newParams()
                 .appendParam("serviceName", serviceName)
                 .appendParam("ip", "11.11.11.11")
@@ -188,8 +189,16 @@ public class CPInstancesAPI_ITCase {
                 .done(),
             String.class,
             HttpMethod.POST);
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        namingServiceDelete(serviceName, TEST_NAMESPACE_1);
+        Assert.assertTrue(registerResponse.getStatusCode().is2xxSuccessful());
+    
+        ResponseEntity<String> deleteServiceResponse = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+                Params.newParams()
+                        .appendParam("serviceName", serviceName)
+                        .appendParam("namespaceId", TEST_NAMESPACE_1)
+                        .done(),
+                String.class,
+                HttpMethod.DELETE);
+        Assert.assertTrue(deleteServiceResponse.getStatusCode().is4xxClientError());
     }
 
     /**
