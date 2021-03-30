@@ -39,6 +39,9 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     public ThreadPoolExecutor getRpcExecutor() {
+        if (!GlobalExecutor.clusterRpcExecutor.allowsCoreThreadTimeOut()) {
+            GlobalExecutor.clusterRpcExecutor.allowCoreThreadTimeOut(true);
+        }
         return GlobalExecutor.clusterRpcExecutor;
     }
 }

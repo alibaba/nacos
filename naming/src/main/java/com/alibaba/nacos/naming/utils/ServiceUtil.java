@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -158,7 +159,7 @@ public class ServiceUtil {
             start = 0;
         }
         if (start >= result.size()) {
-            return result;
+            return Collections.emptyList();
         }
         int end = start + pageSize;
         if (end > result.size()) {

@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ClientBeat_ITCase extends NamingBase {
 
     private NamingService naming;
@@ -81,7 +81,7 @@ public class ClientBeat_ITCase extends NamingBase {
         TimeUnit.SECONDS.sleep(2L);
 
         List<Instance> list = naming.getAllInstances(serviceName);
-        Assert.assertEquals(2, list.size());
+        Assert.assertEquals(1, list.size());
         for (Instance instance1 : list) {
             Assert.assertEquals("1.2.3.4", instance1.getIp());
             Assert.assertTrue(instance1.getPort() == 80 || instance1.getPort() == 81);
@@ -95,7 +95,7 @@ public class ClientBeat_ITCase extends NamingBase {
         TimeUnit.SECONDS.sleep(35L);
 
         list = naming.getAllInstances(serviceName);
-        Assert.assertEquals(2, list.size());
+        Assert.assertEquals(1, list.size());
         for (Instance instance1 : list) {
             Assert.assertEquals("1.2.3.4", instance1.getIp());
             Assert.assertTrue(instance1.getPort() == 80 || instance1.getPort() == 81);
@@ -120,7 +120,7 @@ public class ClientBeat_ITCase extends NamingBase {
         TimeUnit.SECONDS.sleep(35L);
 
         list = naming.getAllInstances(serviceName);
-        Assert.assertEquals(2, list.size());
+        Assert.assertEquals(1, list.size());
         for (Instance instance1 : list) {
             Assert.assertEquals("1.2.3.4", instance1.getIp());
             Assert.assertTrue(instance1.getPort() == 80 || instance1.getPort() == 81);

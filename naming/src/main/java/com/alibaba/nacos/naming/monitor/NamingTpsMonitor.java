@@ -34,6 +34,7 @@ public class NamingTpsMonitor {
     private NamingTpsMonitor() {
         this.tpsMonitorManager = ApplicationUtils.getBean(TpsMonitorManager.class);
         registerPushMonitorPoint();
+        registerDistroMonitorPoint();
     }
     
     private void registerPushMonitorPoint() {
@@ -43,6 +44,15 @@ public class NamingTpsMonitor {
         tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(TpsMonitorItem.NAMING_UDP_PUSH.name()));
         tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(TpsMonitorItem.NAMING_UDP_PUSH_SUCCESS.name()));
         tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(TpsMonitorItem.NAMING_UDP_PUSH_FAIL.name()));
+    }
+    
+    private void registerDistroMonitorPoint() {
+        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(TpsMonitorItem.NAMING_DISTRO_SYNC.name()));
+        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(TpsMonitorItem.NAMING_DISTRO_SYNC_SUCCESS.name()));
+        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(TpsMonitorItem.NAMING_DISTRO_SYNC_FAIL.name()));
+        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(TpsMonitorItem.NAMING_DISTRO_VERIFY.name()));
+        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(TpsMonitorItem.NAMING_DISTRO_VERIFY_SUCCESS.name()));
+        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(TpsMonitorItem.NAMING_DISTRO_VERIFY_FAIL.name()));
     }
     
     public static NamingTpsMonitor getInstance() {
@@ -91,5 +101,49 @@ public class NamingTpsMonitor {
     public static void udpPushFail(String clientId, String clientIp) {
         INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_UDP_PUSH.name(), clientId, clientIp);
         INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_UDP_PUSH_FAIL.name(), clientId, clientIp);
+    }
+    
+    /**
+     * Apply distro sync success.
+     *
+     * @param clientId client id
+     * @param clientIp client ip
+     */
+    public static void distroSyncSuccess(String clientId, String clientIp) {
+        INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_DISTRO_SYNC.name(), clientId, clientIp);
+        INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_DISTRO_SYNC_SUCCESS.name(), clientId, clientIp);
+    }
+    
+    /**
+     * Apply distro sync fail.
+     *
+     * @param clientId client id
+     * @param clientIp client ip
+     */
+    public static void distroSyncFail(String clientId, String clientIp) {
+        INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_DISTRO_SYNC.name(), clientId, clientIp);
+        INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_DISTRO_SYNC_FAIL.name(), clientId, clientIp);
+    }
+    
+    /**
+     * Apply distro verify success.
+     *
+     * @param clientId client id
+     * @param clientIp client ip
+     */
+    public static void distroVerifySuccess(String clientId, String clientIp) {
+        INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_DISTRO_VERIFY.name(), clientId, clientIp);
+        INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_DISTRO_VERIFY_SUCCESS.name(), clientId, clientIp);
+    }
+    
+    /**
+     * Apply distro verify fail.
+     *
+     * @param clientId client id
+     * @param clientIp client ip
+     */
+    public static void distroVerifyFail(String clientId, String clientIp) {
+        INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_DISTRO_VERIFY.name(), clientId, clientIp);
+        INSTANCE.tpsMonitorManager.applyTpsForClientIp(TpsMonitorItem.NAMING_DISTRO_VERIFY_FAIL.name(), clientId, clientIp);
     }
 }

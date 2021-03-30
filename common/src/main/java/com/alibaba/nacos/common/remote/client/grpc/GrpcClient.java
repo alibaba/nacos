@@ -42,7 +42,7 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -245,10 +245,14 @@ public abstract class GrpcClient extends RpcClient {
     public Connection connectToServer(ServerInfo serverInfo) {
         try {
             if (grpcExecutor == null) {
-                grpcExecutor = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors() * 8, 10L,
-                        TimeUnit.SECONDS, new SynchronousQueue(),
+                
+                grpcExecutor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 8,
+                        Runtime.getRuntime().availableProcessors() * 8, 10L, TimeUnit.SECONDS,
+                        new LinkedBlockingQueue<>(10000),
                         new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-client-executor-%d")
                                 .build());
+                grpcExecutor.allowCoreThreadTimeOut(true);
+                
             }
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(),
                     serverInfo.getServerPort() + rpcPortOffset());
