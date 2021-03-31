@@ -21,19 +21,14 @@
         <groupId>com.alibaba.nacos</groupId>
         <version>${revision}</version>
     </parent>
-
+    
     <modelVersion>4.0.0</modelVersion>
     <artifactId>nacos-istio</artifactId>
     <packaging>jar</packaging>
-    <properties>
-        <protobuf.version>3.9.1</protobuf.version><!-- Keep the Protobuf version in sync with grpc-java -->
-        <grpc.version>1.22.1</grpc.version>
-    </properties>
-
-
+    
     <name>nacos-istio ${project.version}</name>
     <url>http://nacos.io</url>
-
+    
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
@@ -60,7 +55,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-core</artifactId>
         </dependency>
-
+        
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
@@ -142,9 +137,9 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <version>0.6.1</version>
                 <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}</protocArtifact>
                     <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${protoc-gen-grpc-java.version}:exe:${os.detected.classifier}</pluginArtifact>
 
                     <useArgumentFile>true</useArgumentFile>
                     <checkStaleness>true</checkStaleness>
