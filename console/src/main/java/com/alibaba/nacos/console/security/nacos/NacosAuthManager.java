@@ -34,6 +34,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
@@ -78,11 +79,20 @@ public class NacosAuthManager implements AuthManager {
         Authentication authentication = tokenManager.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         
-        String username = authentication.getName();
+        UserDetails authUser = (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+        String userName = authUser.getUsername();
+        String passWord = authUser.getPassword();
+        try {
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userName,
+                    passWord);
+            authenticationManager.authenticate(authenticationToken);
+        } catch (AuthenticationException e) {
+            throw new AccessException("unknown user!");
+        }
         NacosUser user = new NacosUser();
-        user.setUserName(username);
+        user.setUserName(userName);
         user.setToken(token);
-        List<RoleInfo> roleInfoList = roleService.getRoles(username);
+        List<RoleInfo> roleInfoList = roleService.getRoles(userName);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
                 if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
@@ -134,6 +144,6 @@ public class NacosAuthManager implements AuthManager {
             throw new AccessException("unknown user!");
         }
         
-        return tokenManager.createToken(userName);
+        return tokenManager.createToken(userName, rawPassword);
     }
 }

@@ -228,7 +228,7 @@ public class UserController {
             //将 Authentication 绑定到 SecurityContext
             SecurityContextHolder.getContext().setAuthentication(authentication);
             //生成Token
-            String token = jwtTokenManager.createToken(authentication);
+            String token = jwtTokenManager.createToken(username, password);
             //将Token写入到Http头部
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, "Bearer " + token);
             rr.setCode(200);
