@@ -30,7 +30,9 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * JWT token manager.
@@ -42,6 +44,10 @@ import java.util.List;
 public class JwtTokenManager {
     
     private static final String AUTHORITIES_KEY = "auth";
+    
+    private static final String USER_NAME = "userName";
+    
+    private static final String PASS_WORD = "passWord";
     
     @Autowired
     private AuthConfigs authConfigs;
@@ -75,6 +81,25 @@ public class JwtTokenManager {
     }
     
     /**
+     * Create token.
+     *
+     * @param userName auth info
+     * @return token
+     */
+    public String createToken(String userName, String passWord) {
+        
+        long now = System.currentTimeMillis();
+        
+        Date validity;
+        validity = new Date(now + authConfigs.getTokenValidityInSeconds() * 1000L);
+        Map<String, Object> claims = new HashMap<String, Object>(2);
+        claims.put(USER_NAME, userName);
+        claims.put(PASS_WORD, passWord);
+        return Jwts.builder().setClaims(claims).setExpiration(validity)
+                .signWith(Keys.hmacShaKeyFor(authConfigs.getSecretKeyBytes()), SignatureAlgorithm.HS256).compact();
+    }
+    
+    /**
      * Get auth Info.
      *
      * @param token token
@@ -86,8 +111,9 @@ public class JwtTokenManager {
         
         List<GrantedAuthority> authorities = AuthorityUtils
                 .commaSeparatedStringToAuthorityList((String) claims.get(AUTHORITIES_KEY));
-        
-        User principal = new User(claims.getSubject(), "", authorities);
+        String userName = claims.get(USER_NAME, String.class);
+        String passWord = claims.get(PASS_WORD, String.class);
+        User principal = new User(userName, passWord, authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
     
