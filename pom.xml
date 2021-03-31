@@ -278,6 +278,9 @@
                         <exclude>**/istio/model/naming/*.java</exclude>
                         <exclude>**/istio/model/*.java</exclude>
                         <exclude>**/api/grpc/auto/*.java</exclude>
+                        <exclude>**/istio/mcp/**</exclude>
+                        <exclude>**/istio/networking/**</exclude>
+                        <exclude>**/google/protobuf/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -305,7 +308,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <excludes>**/istio/model/**,**/consistency/entity/**,**/nacos/test/**,**/api/grpc/auto/**</excludes>
+                    <excludes>**/consistency/entity/**,**/nacos/test/**,**/api/grpc/auto/**,**/istio/**,**/protobuf/**</excludes>
                 </configuration>
                 <executions>
                     <execution>
@@ -341,6 +344,8 @@
                         <exclude>**/*.txt</exclude>
                         <exclude>**/*.factories</exclude>
                         <exclude>/console-ui/**</exclude>
+                        <exclude>**/gogo.proto</exclude>
+                        <exclude>**/any.proto</exclude>
                     </excludes>
                 </configuration>
                 <executions>
