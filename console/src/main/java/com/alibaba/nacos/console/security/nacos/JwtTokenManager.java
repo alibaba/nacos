@@ -84,6 +84,7 @@ public class JwtTokenManager {
      * Create token.
      *
      * @param userName auth info
+     * @param passWord auth info
      * @return token
      */
     public String createToken(String userName, String passWord) {
