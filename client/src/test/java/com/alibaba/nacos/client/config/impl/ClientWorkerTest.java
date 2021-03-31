@@ -131,7 +131,9 @@ public class ClientWorkerTest {
         String betaIps = "1.1.1.1";
         String casMd5 = "1111";
         
-        boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, casMd5);
+        String type = "properties";
+        
+        boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, casMd5, type);
         Assert.assertFalse(b);
         try {
             clientWorker.removeConfig(dataId, group, tenant, tag);

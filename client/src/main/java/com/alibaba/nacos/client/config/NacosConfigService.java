@@ -201,7 +201,7 @@ public class NacosConfigService implements ConfigService {
         configFilterChainManager.doFilter(cr, null);
         content = cr.getContent();
         
-        return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, casMd5);
+        return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, casMd5, type);
         
     }
     

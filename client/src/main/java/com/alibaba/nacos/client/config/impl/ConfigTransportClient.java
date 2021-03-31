@@ -316,12 +316,13 @@ public abstract class ConfigTransportClient {
      * @param tag     tag.
      * @param betaIps betaIps.
      * @param content content.
-     * @param casMd5 casMd5.
+     * @param casMd5  casMd5.
+     * @param type    type.
      * @return success or not.
      * @throws NacosException throw where publish fail.
      */
     public abstract boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
-            String betaIps, String content, String casMd5) throws NacosException;
+            String betaIps, String content, String casMd5, String type) throws NacosException;
     
     /**
      * remove config.
