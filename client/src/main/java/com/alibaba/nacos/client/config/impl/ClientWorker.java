@@ -29,7 +29,6 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -67,39 +66,6 @@ import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 public class ClientWorker implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
-    
-    /**
-     * Add listeners for data.
-     *
-     * @param dataId    dataId of data
-     * @param group     group of data
-     * @param listeners listeners
-     */
-    public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
-        group = blank2defaultGroup(group);
-        CacheData cache = addCacheDataIfAbsent(dataId, group);
-        for (Listener listener : listeners) {
-            cache.addListener(listener);
-        }
-    }
-    
-    /**
-     * Remove listener.
-     *
-     * @param dataId   dataId of data
-     * @param group    group of data
-     * @param listener listener
-     */
-    public void removeListener(String dataId, String group, Listener listener) {
-        group = blank2defaultGroup(group);
-        CacheData cache = getCache(dataId, group);
-        if (null != cache) {
-            cache.removeListener(listener);
-            if (cache.getListeners().isEmpty()) {
-                removeCache(dataId, group);
-            }
-        }
-    }
     
     /**
      * Add listeners for tenant.
@@ -158,50 +124,12 @@ public class ClientWorker implements Closeable {
         }
     }
     
-    private void removeCache(String dataId, String group) {
-        String groupKey = GroupKey.getKey(dataId, group);
-        cacheMap.remove(groupKey);
-        LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
-    }
-    
     void removeCache(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
         cacheMap.remove(groupKey);
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
-    }
-    
-    /**
-     * Add cache data if absent.
-     *
-     * @param dataId data id if data
-     * @param group  group of data
-     * @return cache data
-     */
-    public CacheData addCacheDataIfAbsent(String dataId, String group) {
-        String key = GroupKey.getKey(dataId, group);
-        CacheData cacheData = cacheMap.get(key);
-        if (cacheData != null) {
-            return cacheData;
-        }
-        
-        cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
-        // multiple listeners on the same dataid+group and race condition
-        CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
-        if (lastCacheData == null) {
-            int taskId = cacheMap.size() / (int) ParamUtil.getPerTaskConfigSize();
-            lastCacheData = cacheData;
-            lastCacheData.setTaskId(taskId);
-        }
-        // reset so that server not hang this check
-        lastCacheData.setInitializing(true);
-        
-        LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
-        
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
-        return lastCacheData;
     }
     
     /**
@@ -240,10 +168,6 @@ public class ClientWorker implements Closeable {
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
         
         return lastCacheData;
-    }
-    
-    public CacheData getCache(String dataId, String group) {
-        return getCache(dataId, group, TenantUtil.getUserTenantForAcm());
     }
     
     public CacheData getCache(String dataId, String group, String tenant) {
