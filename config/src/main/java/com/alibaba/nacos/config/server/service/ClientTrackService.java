@@ -133,7 +133,8 @@ public class ClientTrackService {
     }
     
     /**
-     * Specify subscriber's ip and look up whether data is latest. groupKey -> isUptodate.
+     * Specify subscriber's ip and look up whether data is latest.
+     * groupKey -> isUptodate.
      */
     public static Map<String, Boolean> isClientUptodate(String ip) {
         Map<String, Boolean> result = new HashMap<String, Boolean>(100);
@@ -147,7 +148,8 @@ public class ClientTrackService {
     }
     
     /**
-     * Specify groupKey and look up whether subscriber and data is latest. IP -> isUptodate.
+     * Specify groupKey and look up whether subscriber and data is latest.
+     * IP -> isUptodate.
      */
     public static Map<String, Boolean> listSubscriberByGroup(String groupKey) {
         Map<String, Boolean> subs = new HashMap<String, Boolean>(100);
