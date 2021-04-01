@@ -129,26 +129,26 @@ public class ConfigSubService {
      */
     public SampleResult mergeSampleResult(SampleResult sampleCollectResult, List<SampleResult> sampleResults) {
         SampleResult mergeResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = null;
+        Map<String, String> listenersGroupkeyStatus = null;
         if (sampleCollectResult.getLisentersGroupkeyStatus() == null || sampleCollectResult.getLisentersGroupkeyStatus()
                 .isEmpty()) {
-            lisentersGroupkeyStatus = new HashMap<String, String>(10);
+            listenersGroupkeyStatus = new HashMap<String, String>(10);
         } else {
-            lisentersGroupkeyStatus = sampleCollectResult.getLisentersGroupkeyStatus();
+            listenersGroupkeyStatus = sampleCollectResult.getLisentersGroupkeyStatus();
         }
         
         for (SampleResult sampleResult : sampleResults) {
-            Map<String, String> lisentersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
-            for (Map.Entry<String, String> entry : lisentersGroupkeyStatusTmp.entrySet()) {
-                lisentersGroupkeyStatus.put(entry.getKey(), entry.getValue());
+            Map<String, String> listenersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
+            for (Map.Entry<String, String> entry : listenersGroupkeyStatusTmp.entrySet()) {
+                listenersGroupkeyStatus.put(entry.getKey(), entry.getValue());
             }
         }
-        mergeResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        mergeResult.setLisentersGroupkeyStatus(listenersGroupkeyStatus);
         return mergeResult;
     }
     
     /**
-     * Query subsrciber's task from every nacos server nodes.
+     * Query subscriber's task from every nacos server nodes.
      *
      * @author Nacos
      */
@@ -177,8 +177,7 @@ public class ConfigSubService {
                 }
                 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
-                RestResult<String> result = NotifyService
-                        .invokeURL(urlAll, null, Constants.ENCODE);
+                RestResult<String> result = NotifyService.invokeURL(urlAll, null, Constants.ENCODE);
                 
                 // Http code 200
                 if (result.ok()) {

@@ -75,7 +75,7 @@ public class Http extends AbstractHealthChecker {
             return Collections.emptyMap();
         }
         final Map<String, String> headerMap = new HashMap<String, String>(16);
-        for (final String s : headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
+        for (final String s : headers.split(Constants.NAMING_HTTP_HEADER_SPLITTER)) {
             final String[] splits = s.split(":");
             if (splits.length != 2) {
                 continue;

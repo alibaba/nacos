@@ -158,7 +158,7 @@ public class Constants {
     
     public static final int NAMING_INSTANCE_ID_SEG_COUNT = 4;
     
-    public static final String NAMING_HTTP_HEADER_SPILIER = "\\|";
+    public static final String NAMING_HTTP_HEADER_SPLITTER = "\\|";
     
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
     

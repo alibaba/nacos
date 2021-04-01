@@ -197,9 +197,9 @@ public class ClientWorker implements Closeable {
         }
         // reset so that server not hang this check
         lastCacheData.setInitializing(true);
-    
+        
         LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
-    
+        
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
         return lastCacheData;
     }
@@ -218,7 +218,7 @@ public class ClientWorker implements Closeable {
         if (cacheData != null) {
             return cacheData;
         }
-    
+        
         cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
         // multiple listeners on the same dataid+group and race condition
         CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
@@ -364,7 +364,7 @@ public class ClientWorker implements Closeable {
      * Check config info.
      */
     public void checkConfigInfo() {
-        // Dispatch taskes.
+        // Dispatch tasks.
         int listenerSize = cacheMap.size();
         // Round up the longingTaskCount.
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
@@ -380,7 +380,7 @@ public class ClientWorker implements Closeable {
     /**
      * Fetch the dataId list from server.
      *
-     * @param cacheDatas              CacheDatas for config infomations.
+     * @param cacheDatas              CacheDatas for config information.
      * @param inInitializingCacheList initial cache lists.
      * @return String include dataId and group (ps: it maybe null).
      * @throws Exception Exception.
@@ -398,7 +398,7 @@ public class ClientWorker implements Closeable {
                     sb.append(cacheData.getTenant()).append(LINE_SEPARATOR);
                 }
                 if (cacheData.isInitializing()) {
-                    // It updates when cacheData occours in cacheMap by first time.
+                    // It updates when cacheData occurs in cacheMap by first time.
                     inInitializingCacheList
                             .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
                 }

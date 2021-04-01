@@ -366,7 +366,7 @@ public class ConfigAPI_CITCase {
         Listener ml = new Listener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                System.out.println("recieve23:" + configInfo);
+                System.out.println("receive23:" + configInfo);
                 count.incrementAndGet();
                 Assert.assertEquals(content, configInfo);
             }
@@ -582,7 +582,7 @@ public class ConfigAPI_CITCase {
             iconfig.removeListener(dataId, group, new AbstractListener() {
                 @Override
                 public void receiveConfigInfo(String configInfo) {
-                    System.out.println("remove recieve:" + configInfo);
+                    System.out.println("remove receive:" + configInfo);
                 }
             });
         } catch (Exception e) {
@@ -633,7 +633,7 @@ public class ConfigAPI_CITCase {
         Listener ml1 = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                //System.out.println("ml1 remove listener recieve:" + configInfo);
+                //System.out.println("ml1 remove listener receive:" + configInfo);
                 count.incrementAndGet();
                 Assert.assertEquals(contentRemove, configInfo);
             }
