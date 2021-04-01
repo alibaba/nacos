@@ -622,7 +622,7 @@ public abstract class RpcClient implements Closeable {
         while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < timeoutMills + start) {
             boolean waitReconnect = false;
             try {
-                if (this.currentConnection == null) {
+                if (this.currentConnection == null || !isRunning()) {
                     waitReconnect = true;
                     throw new NacosException(NacosException.CLIENT_DISCONNECT,
                             "Client not connected,current status:" + rpcClientStatus.get());
@@ -636,6 +636,9 @@ public abstract class RpcClient implements Closeable {
                         synchronized (this) {
                             waitReconnect = true;
                             if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
+                                LoggerUtils.printIfErrorEnabled(LOGGER,
+                                        "Connection is unregistered, switch server,connectionId={},request={}",
+                                        currentConnection.getConnectionId(), request.getClass().getSimpleName());
                                 switchServerAsync();
                             }
                         }
@@ -692,12 +695,11 @@ public abstract class RpcClient implements Closeable {
         while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < start + callback.getTimeout()) {
             boolean waitReconnect = false;
             try {
-                if (this.currentConnection == null) {
+                if (this.currentConnection == null || !isRunning()) {
                     waitReconnect = true;
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
                 }
                 this.currentConnection.asyncRequest(request, callback);
-                lastActiveTimeStamp = System.currentTimeMillis();
                 return;
             } catch (Exception e) {
                 if (waitReconnect) {
@@ -747,7 +749,6 @@ public abstract class RpcClient implements Closeable {
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
                 }
                 RequestFuture requestFuture = this.currentConnection.requestFuture(request);
-                lastActiveTimeStamp = System.currentTimeMillis();
                 return requestFuture;
             } catch (Exception e) {
                 if (waitReconnect) {
