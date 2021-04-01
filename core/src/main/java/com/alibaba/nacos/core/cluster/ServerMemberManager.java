@@ -141,7 +141,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         // Initializes the lookup mode
         initAndStartLookup();
 
-        serverList.put(self.getAddress(), self);
         if (serverList.isEmpty()) {
             throw new NacosException(NacosException.SERVER_ERROR, "cannot get serverlist, so exit.");
         }
