@@ -18,7 +18,6 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
@@ -62,14 +61,14 @@ public class NamingGrpcClientProxyTest {
         ServerListFactory factory = mock(ServerListFactory.class);
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         Properties prop = new Properties();
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
         
         String serviceName = "service1";
-        String groupName = "group1";
         Instance instance = new Instance();
         instance.setServiceName(serviceName);
         instance.setIp("1.1.1.1");
         instance.setPort(1111);
+        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
+        
         // inject rpcClient;
         RpcClient rpc = mock(RpcClient.class);
         Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
@@ -78,6 +77,8 @@ public class NamingGrpcClientProxyTest {
         
         Response res = new InstanceResponse();
         when(rpc.request(any())).thenReturn(res);
+        
+        String groupName = "group1";
         
         // when
         client.registerService(serviceName, groupName, instance);
@@ -104,14 +105,14 @@ public class NamingGrpcClientProxyTest {
         ServerListFactory factory = mock(ServerListFactory.class);
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         Properties prop = new Properties();
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
         
         String serviceName = "service1";
-        String groupName = "group1";
         Instance instance = new Instance();
         instance.setServiceName(serviceName);
         instance.setIp("1.1.1.1");
         instance.setPort(1111);
+        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
+        
         // inject rpcClient;
         RpcClient rpc = mock(RpcClient.class);
         Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
@@ -120,6 +121,8 @@ public class NamingGrpcClientProxyTest {
         
         Response res = new InstanceResponse();
         when(rpc.request(any())).thenReturn(res);
+        
+        String groupName = "group1";
         
         // when
         client.deregisterService(serviceName, groupName, instance);
@@ -145,14 +148,16 @@ public class NamingGrpcClientProxyTest {
         ServerListFactory factory = mock(ServerListFactory.class);
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         Properties prop = new Properties();
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
         
         String serviceName = "service1";
-        String groupName = "group1";
+        
         Instance instance = new Instance();
         instance.setServiceName(serviceName);
         instance.setIp("1.1.1.1");
         instance.setPort(1111);
+        
+        String groupName = "group1";
+        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
         
         client.updateInstance(serviceName, groupName, instance);
     }
@@ -165,23 +170,25 @@ public class NamingGrpcClientProxyTest {
         ServerListFactory factory = mock(ServerListFactory.class);
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         Properties prop = new Properties();
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
         
         String serviceName = "service1";
-        String groupName = "group1";
-        String clusters = "cluster1";
         
         Instance instance = new Instance();
         instance.setServiceName(serviceName);
         instance.setIp("1.1.1.1");
         instance.setPort(1111);
         // inject rpcClient;
+        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
+        
         RpcClient rpc = mock(RpcClient.class);
         Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClient.setAccessible(true);
         rpcClient.set(client, rpc);
         
         QueryServiceResponse res = new QueryServiceResponse();
+        String clusters = "cluster1";
+        String groupName = "group1";
+        
         ServiceInfo info = new ServiceInfo(groupName + "@@" + serviceName + "@@" + clusters);
         res.setServiceInfo(info);
         when(rpc.request(any())).thenReturn(res);

@@ -20,7 +20,6 @@ package com.alibaba.nacos.client.naming.remote.gprc;
 
 import org.junit.Test;
 
-
 public class NamingGrpcConnectionEventListenerTest {
     
     @Test
