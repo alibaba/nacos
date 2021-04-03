@@ -116,7 +116,7 @@ public class CatalogController {
         
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
+            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
         }
         
         if (!service.getClusterMap().containsKey(clusterName)) {

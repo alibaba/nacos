@@ -90,7 +90,7 @@ public class CapacityController {
     }
     
     /**
-     * Modify group or capacity of tenant, and init record when capacity informations are still initial.
+     * Modify group or capacity of tenant, and init record when capacity information are still initial.
      */
     @PostMapping
     public RestResult<Boolean> updateCapacity(HttpServletResponse response,
