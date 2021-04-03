@@ -126,7 +126,7 @@ public class ApiController extends InstanceController {
      * Get service ips.
      *
      * @param request http request
-     * @return service detail infomation
+     * @return service detail information
      * @throws Exception exception
      */
     @RequestMapping("/srvIPXT")

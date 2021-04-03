@@ -97,7 +97,7 @@ public class ConfigServletInner {
         }
         int versionNum = Protocol.getVersionNumber(version);
         
-        // Befor 2.0.4 version, return value is put into header.
+        // Before 2.0.4 version, return value is put into header.
         if (versionNum < START_LONG_POLLING_VERSION_NUM) {
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE, oldResult);
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE_NEW, newResult);
@@ -137,14 +137,14 @@ public class ConfigServletInner {
                 if (cacheItem.isBeta() && cacheItem.getIps4Beta().contains(clientIp)) {
                     isBeta = true;
                 }
-
+                
                 final String configType =
                         (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
                 response.setHeader("Config-Type", configType);
                 FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
                 String contentTypeHeader = fileTypeEnum.getContentType();
                 response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
-
+                
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
                 PrintWriter out = null;
@@ -295,9 +295,10 @@ public class ConfigServletInner {
     private static void releaseConfigReadLock(String groupKey) {
         ConfigCacheService.releaseReadLock(groupKey);
     }
-
+    
     /**
      * Try to add read lock.
+     *
      * @param groupKey groupKey string value.
      * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed。
      */
