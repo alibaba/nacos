@@ -55,7 +55,7 @@ sh startup.sh -m standalone
 
 On the **Windows** platform, run the following command to start server with standalone mode.  Alternatively, you can also double-click the `startup.cmd` to run NacosServer.
 ```
-cmd startup.cmd -m standalone
+startup.cmd -m standalone
 ```
 
 For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.html)
