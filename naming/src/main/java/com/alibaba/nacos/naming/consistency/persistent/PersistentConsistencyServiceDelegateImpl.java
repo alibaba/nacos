@@ -89,6 +89,11 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
         return switchOne().isAvailable();
     }
     
+    @Override
+    public boolean isReadable() {
+        return switchOne().isReadable();
+    }
+    
     private PersistentConsistencyService switchOne() {
         return switchNewPersistentService ? newPersistentConsistencyService : oldPersistentConsistencyService;
     }

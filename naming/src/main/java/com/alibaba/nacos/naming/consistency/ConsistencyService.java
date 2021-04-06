@@ -83,4 +83,11 @@ public interface ConsistencyService {
      * @return true if available
      */
     boolean isAvailable();
+    
+    /**
+     * Tell whether this consistency service is read only.
+     *
+     * @return true if read only
+     */
+    boolean isReadable();
 }

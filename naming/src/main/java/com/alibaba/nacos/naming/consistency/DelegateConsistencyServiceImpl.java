@@ -81,6 +81,11 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
     }
     
+    @Override
+    public boolean isReadable() {
+        return ephemeralConsistencyService.isReadable() && persistentConsistencyService.isReadable();
+    }
+    
     private ConsistencyService mapConsistencyService(String key) {
         return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
     }

@@ -355,6 +355,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         return isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
     }
     
+    @Override
+    public boolean isReadable() {
+        return isInitialized()
+                || ServerStatus.READ_ONLY.name().equals(switchDomain.getOverriddenServerStatus())
+                || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
+    }
+    
     public boolean isInitialized() {
         return distroProtocol.isInitialized() || !globalConfig.isDataWarmup();
     }

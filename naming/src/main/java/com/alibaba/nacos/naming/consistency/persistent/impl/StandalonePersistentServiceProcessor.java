@@ -107,4 +107,9 @@ public class StandalonePersistentServiceProcessor extends BasePersistentServiceP
     public boolean isAvailable() {
         return !hasError;
     }
+    
+    @Override
+    public boolean isReadable() {
+        return !hasError;
+    }
 }

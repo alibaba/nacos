@@ -59,6 +59,8 @@ public class ServerStatusManager {
         
         if (consistencyService.isAvailable()) {
             serverStatus = ServerStatus.UP;
+        } else if (consistencyService.isReadable()) {
+            serverStatus = ServerStatus.READ_ONLY;
         } else {
             serverStatus = ServerStatus.DOWN;
         }

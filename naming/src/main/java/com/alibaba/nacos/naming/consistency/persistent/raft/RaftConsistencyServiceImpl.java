@@ -127,6 +127,13 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
         return raftCore.isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
     }
     
+    @Override
+    public boolean isReadable() {
+        return raftCore.isInitialized()
+                || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus())
+                || ServerStatus.READ_ONLY.name().equals(switchDomain.getOverriddenServerStatus());
+    }
+    
     /**
      * Put a new datum from other server.
      *

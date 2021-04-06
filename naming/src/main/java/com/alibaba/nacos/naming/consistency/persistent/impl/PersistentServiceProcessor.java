@@ -151,4 +151,9 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
     public boolean isAvailable() {
         return hasLeader && !hasError;
     }
+    
+    @Override
+    public boolean isReadable() {
+        return !hasError;
+    }
 }
