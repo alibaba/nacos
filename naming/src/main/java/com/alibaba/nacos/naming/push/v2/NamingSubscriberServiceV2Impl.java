@@ -123,12 +123,13 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
             // If service changed, push to all subscribers.
             ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
             Service service = serviceChangedEvent.getService();
-            delayTaskEngine.addTask(service, new PushDelayTask(service, 500L));
+            delayTaskEngine.addTask(service, new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay()));
         } else if (event instanceof ServiceEvent.ServiceSubscribedEvent) {
             // If service is subscribed by one client, only push this client.
             ServiceEvent.ServiceSubscribedEvent subscribedEvent = (ServiceEvent.ServiceSubscribedEvent) event;
             Service service = subscribedEvent.getService();
-            delayTaskEngine.addTask(service, new PushDelayTask(service, 500L, subscribedEvent.getClientId()));
+            // Should push data to subscriber immediately.
+            delayTaskEngine.addTask(service, new PushDelayTask(service, 0L, subscribedEvent.getClientId()));
         }
     }
     
