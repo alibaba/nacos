@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -40,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -68,12 +70,17 @@ public class ClientBeatCheckTaskV2Test {
     @Mock
     private ConfigurableApplicationContext applicationContext;
     
+    @Mock
+    private DistroMapper distroMapper;
+    
     private IpPortBasedClient client;
     
     @Before
     public void setUp() throws Exception {
         when(applicationContext.getBean(NamingMetadataManager.class)).thenReturn(namingMetadataManager);
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
+        when(applicationContext.getBean(DistroMapper.class)).thenReturn(distroMapper);
+        when(distroMapper.responsible(anyString())).thenReturn(true);
         ApplicationUtils.injectContext(applicationContext);
         client = new IpPortBasedClient(CLIENT_ID, true);
         beatCheckTask = new ClientBeatCheckTaskV2(client);

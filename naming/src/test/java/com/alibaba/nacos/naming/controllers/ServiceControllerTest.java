@@ -72,7 +72,7 @@ public class ServiceControllerTest extends BaseTest {
         Mockito.when(serviceManager.chooseServiceMap(Constants.DEFAULT_NAMESPACE_ID)).thenReturn(serviceNameList);
         
         mockmvc.perform(MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service" + "/list")
-                .param("pageNo", "2").param("pageSize", "10").accept(MediaType.APPLICATION_JSON))
+                .param("pageNo", "1").param("pageSize", "10").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.doms").isArray())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.doms").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.count").value(serviceNameList.size()));
