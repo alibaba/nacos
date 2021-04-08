@@ -83,11 +83,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             .getNacosAsyncRestTemplate(Loggers.CORE);
     
     /**
-     * Broadcast this node element information task.
-     */
-    private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
-    
-    /**
      * Cluster node list.
      */
     private volatile ConcurrentSkipListMap<String, Member> serverList;
@@ -121,6 +116,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      * here is always the node information of the "UP" state.
      */
     private volatile Set<String> memberAddressInfos = new ConcurrentHashSet<>();
+    
+    /**
+     * Broadcast this node element information task.
+     */
+    private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
     
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap<>();
@@ -415,13 +415,13 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     }
     
     @JustForTest
-    public void setMemberAddressInfos(Set<String> memberAddressInfos) {
-        this.memberAddressInfos = memberAddressInfos;
+    public void updateMember(Member member) {
+        serverList.put(member.getAddress(), member);
     }
     
     @JustForTest
-    public void updateMember(Member member) {
-        serverList.put(member.getAddress(), member);
+    public void setMemberAddressInfos(Set<String> memberAddressInfos) {
+        this.memberAddressInfos = memberAddressInfos;
     }
     
     @JustForTest
@@ -468,37 +468,41 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 Header header = Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version);
                 AuthHeaderUtil.addIdentityToHeader(header);
                 asyncRestTemplate
-                        .post(url, header, Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
-                            @Override
-                            public void onReceive(RestResult<String> result) {
-                                if (result.getCode() == HttpStatus.NOT_IMPLEMENTED.value()
-                                        || result.getCode() == HttpStatus.NOT_FOUND.value()) {
-                                    Loggers.CLUSTER
-                                            .warn("{} version is too low, it is recommended to upgrade the version : {}",
-                                                    target, VersionUtils.version);
-                                    return;
-                                }
-                                if (result.ok()) {
-                                    MemberUtil.onSuccess(ServerMemberManager.this, target);
-                                } else {
-                                    Loggers.CLUSTER.warn("failed to report new info to target node : {}, result : {}",
-                                            target.getAddress(), result);
-                                    MemberUtil.onFail(ServerMemberManager.this, target);
-                                }
-                            }
-                            
-                            @Override
-                            public void onError(Throwable throwable) {
-                                Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}",
-                                        target.getAddress(), ExceptionUtil.getAllExceptionMsg(throwable));
-                                MemberUtil.onFail(ServerMemberManager.this, target, throwable);
-                            }
-                            
-                            @Override
-                            public void onCancel() {
-                            
-                            }
-                        });
+                        .post(url, header,
+                                Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
+                                    @Override
+                                    public void onReceive(RestResult<String> result) {
+                                        if (result.getCode() == HttpStatus.NOT_IMPLEMENTED.value()
+                                                || result.getCode() == HttpStatus.NOT_FOUND.value()) {
+                                            Loggers.CLUSTER
+                                                    .warn("{} version is too low, it is recommended to upgrade the version : {}",
+                                                            target, VersionUtils.version);
+                                            return;
+                                        }
+                                        if (result.ok()) {
+                                            MemberUtil.onSuccess(ServerMemberManager.this, target);
+                                        } else {
+                                            Loggers.CLUSTER
+                                                    .warn("failed to report new info to target node : {}, result : {}",
+                                                            target.getAddress(), result);
+                                            MemberUtil.onFail(ServerMemberManager.this, target);
+                                        }
+                                    }
+                                    
+                                    @Override
+                                    public void onError(Throwable throwable) {
+                                        Loggers.CLUSTER
+                                                .error("failed to report new info to target node : {}, error : {}",
+                                                        target.getAddress(),
+                                                        ExceptionUtil.getAllExceptionMsg(throwable));
+                                        MemberUtil.onFail(ServerMemberManager.this, target, throwable);
+                                    }
+                                    
+                                    @Override
+                                    public void onCancel() {
+                                    
+                                    }
+                                });
             } catch (Throwable ex) {
                 Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}", target.getAddress(),
                         ExceptionUtil.getAllExceptionMsg(ex));
