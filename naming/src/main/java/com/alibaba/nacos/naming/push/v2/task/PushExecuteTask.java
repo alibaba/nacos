@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
+import com.alibaba.nacos.naming.push.v2.PushConfig;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.hook.PushResult;
 import com.alibaba.nacos.naming.push.v2.hook.PushResultHookHolder;
@@ -63,7 +64,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
                 }
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
                 delayTaskEngine.getPushExecutor().doPushWithCallback(each, subscriber, wrapper,
-                        new NamingPushCallback(each, subscriber, wrapper.getOriginalData()));
+                        new NamingPushCallback(each, subscriber, wrapper.getOriginalData(), delayTask.isPushToAll()));
             }
         } catch (Exception e) {
             Loggers.PUSH.error("Push task for service" + service.getGroupedServiceName() + " execute failed ", e);
@@ -96,17 +97,20 @@ public class PushExecuteTask extends AbstractExecuteTask {
          */
         private final long executeStartTime;
         
-        private NamingPushCallback(String clientId, Subscriber subscriber, ServiceInfo serviceInfo) {
+        private final boolean isPushToAll;
+        
+        private NamingPushCallback(String clientId, Subscriber subscriber, ServiceInfo serviceInfo,
+                boolean isPushToAll) {
             this.clientId = clientId;
             this.subscriber = subscriber;
             this.serviceInfo = serviceInfo;
+            this.isPushToAll = isPushToAll;
             this.executeStartTime = System.currentTimeMillis();
         }
         
         @Override
         public long getTimeout() {
-            // TODO timeout should can be config
-            return 5000L;
+            return PushConfig.getInstance().getPushTaskTimeout();
         }
         
         @Override
@@ -120,7 +124,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
                     serviceInfo.getHosts().size(), subscriber.getIp());
             PushResult result = PushResult
                     .pushSuccess(service, clientId, serviceInfo, subscriber, pushCostTimeForNetWork, pushCostTimeForAll,
-                            serviceLevelAgreementTime);
+                            serviceLevelAgreementTime, isPushToAll);
             PushResultHookHolder.getInstance().pushSuccess(result);
         }
         
@@ -131,9 +135,11 @@ public class PushExecuteTask extends AbstractExecuteTask {
                     subscriber.getIp());
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Reason detail: ", e);
-                delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L, clientId));
+                delayTaskEngine.addTask(service,
+                        new PushDelayTask(service, PushConfig.getInstance().getPushTaskRetryDelay(), clientId));
             }
-            PushResult result = PushResult.pushFailed(service, clientId, serviceInfo, subscriber, pushCostTime, e);
+            PushResult result = PushResult
+                    .pushFailed(service, clientId, serviceInfo, subscriber, pushCostTime, e, isPushToAll);
             PushResultHookHolder.getInstance().pushFailed(result);
         }
     }
