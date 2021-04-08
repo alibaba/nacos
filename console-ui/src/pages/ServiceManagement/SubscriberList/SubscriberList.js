@@ -156,7 +156,7 @@ class SubscriberList extends React.Component {
           >
             <Col span="24">
               <Form inline field={this.field}>
-                <FormItem label={serviceName}>
+                <FormItem label={serviceName} required>
                   <Input
                     placeholder={serviceNamePlaceholder}
                     style={{ width: 200 }}
