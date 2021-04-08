@@ -66,10 +66,9 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         String namespaceId = request.getNamespace();
         String serviceName = request.getServiceName();
         String groupName = request.getGroupName();
-        String app = request.getHeader("app", "unknown");
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
-        Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app,
+        Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), "unknown",
                 meta.getClientIp(), namespaceId, groupedServiceName, 0, request.getClusters());
         ServiceInfo serviceInfo = handleClusterData(serviceStorage.getData(service),
                 metadataManager.getServiceMetadata(service).orElse(null),
