@@ -18,18 +18,30 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import org.junit.Test;
+
+import static org.mockito.Mockito.mock;
 
 public class NamingGrpcConnectionEventListenerTest {
     
     @Test
     public void testOnConnected() {
+        NamingGrpcClientProxy proxy = mock(NamingGrpcClientProxy.class);
+        NamingGrpcConnectionEventListener listener = new NamingGrpcConnectionEventListener(proxy);
+        listener.onConnected();
+        //TODO
     }
     
-    public void testOnDisConnect() {
-    }
-    
+    @Test
     public void testCacheInstanceForRedo() {
+        NamingGrpcClientProxy proxy = mock(NamingGrpcClientProxy.class);
+        NamingGrpcConnectionEventListener listener = new NamingGrpcConnectionEventListener(proxy);
+        String serviceName = "service1";
+        String groupName = "group1";
+        Instance instance = new Instance();
+        
+        listener.cacheInstanceForRedo(serviceName, groupName, instance);
     }
     
     public void testRemoveInstanceForRedo() {
