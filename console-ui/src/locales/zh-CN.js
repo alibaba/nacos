@@ -118,6 +118,7 @@ const I18N_CONF = {
     prompt: '提示',
     promptDelete: '确定要删除当前服务吗？',
     create: '创建服务',
+    subscriber: '订阅者',
   },
   SubscriberList: {
     subscriberList: '订阅者列表',
@@ -508,6 +509,14 @@ const I18N_CONF = {
     versionComparison: '版本对比',
     dialogCurrentArea: '当前版本',
     dialogOriginalArea: '上一版本',
+    configComparison: '配置对比',
+    dialogCurrentConfig: '当前配置',
+    dialogComparedConfig: '被比较配置',
+    configComparisonTitle: '选择配置',
+    dataIdInput: '请输入Data Id',
+    groupInput: '请输入Group',
+    namespaceSelect: '请选择命名空间',
+    configNotFind: '未查询到指定配置,请重新选择',
   },
   ConfigRollback: {
     rollBack: '回滚配置',

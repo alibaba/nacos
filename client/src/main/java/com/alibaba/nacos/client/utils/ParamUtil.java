@@ -164,12 +164,7 @@ public class ParamUtil {
                         String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
         
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
-            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-                @Override
-                public String call() {
-                    return TenantUtil.getUserTenantForAcm();
-                }
-            });
+            namespaceTmp = TenantUtil.getUserTenantForAcm();
             
             namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
                 @Override

@@ -941,7 +941,7 @@ public class ServiceManager implements RecordListener<Service> {
         
         if (StringUtils.isNotBlank(param)) {
             StringJoiner regex = new StringJoiner(Constants.SERVICE_INFO_SPLITER);
-            for (String s : param.split(Constants.SERVICE_INFO_SPLITER)) {
+            for (String s : param.split(Constants.SERVICE_INFO_SPLITER, Constants.SERVICE_INFO_SPLIT_COUNT)) {
                 regex.add(StringUtils.isBlank(s) ? Constants.ANY_PATTERN
                         : Constants.ANY_PATTERN + s + Constants.ANY_PATTERN);
             }
