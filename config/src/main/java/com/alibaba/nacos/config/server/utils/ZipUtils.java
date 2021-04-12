@@ -134,7 +134,11 @@ public class ZipUtils {
                         out.write(buffer, 0, offset);
                     }
                     String entryName = entry.getName();
-                    if (".meta.yml".equals(entryName)) {
+                    if (metaDataItem == null && ".meta.yml".equals(entryName)) {
+                        metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
+                        continue;
+                    }
+                    if (metaDataItem == null && ".metadata.yml".equals(entryName)) {
                         metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
                         continue;
                     }

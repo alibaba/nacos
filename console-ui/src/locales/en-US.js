@@ -310,6 +310,8 @@ const I18N_CONF = {
     unrecognizedEntries: 'Unrecognized entries',
     skippedEntries: 'skipped entries',
     exportSelected: 'Export selected configs',
+    newExportVersionTitle: 'Version selection',
+    newExportVersionContent: 'Export with new version...',
     clone: 'Clone',
     exportSelectedAlertTitle: 'Export config',
     exportSelectedAlertContent: 'please select the configuration to export',

@@ -307,6 +307,8 @@ const I18N_CONF = {
     unrecognizedEntries: '未识别的条目',
     skippedEntries: '跳过的条目',
     exportSelected: '导出选中的配置',
+    newExportVersionTitle: '版本选择',
+    newExportVersionContent: '使用新版导出...',
     clone: '克隆',
     exportSelectedAlertTitle: '配置导出',
     exportSelectedAlertContent: '请选择要导出的配置',

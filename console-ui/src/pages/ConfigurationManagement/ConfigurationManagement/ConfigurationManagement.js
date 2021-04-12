@@ -513,21 +513,53 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
-  exportData() {
+  exportData = () => {
+    const { locale = {} } = this.props;
+    Dialog.confirm({
+      title: locale.newExportVersionTitle,
+      content: locale.newExportVersionContent,
+      onOk: () => this.doExportData(true),
+      onCancel: () => this.doExportData(false),
+    });
+  };
+
+  doExportData(newVersion) {
     const { group, appName, dataId, openUri } = this;
     const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
-    openUri('v1/cs/configs', {
-      export: 'true',
-      tenant: getParams('namespace'),
-      group,
-      appName,
-      dataId,
-      ids: '',
-      accessToken,
-    });
+    if (newVersion) {
+      openUri('v1/cs/configs', {
+        export: 'true',
+        tenant: getParams('namespace'),
+        group,
+        appName,
+        dataId,
+        ids: '',
+        accessToken,
+      });
+    } else {
+      openUri('v1/cs/configs', {
+        exportV2: 'true',
+        tenant: getParams('namespace'),
+        group,
+        appName,
+        dataId,
+        ids: '',
+        accessToken,
+      });
+    }
   }
 
-  exportSelectedData() {
+  exportSelectedData = () => {
+    const { locale = {} } = this.props;
+    Dialog.confirm({
+      title: locale.newExportVersionTitle,
+      content: locale.newExportVersionContent,
+      onOk: () => this.doExportSelectedData(true),
+      onCancel: () => this.doExportSelectedData(false),
+    });
+  };
+
+  doExportSelectedData(newVersion) {
     const ids = [];
     const { locale = {} } = this.props;
     const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
@@ -539,14 +571,25 @@ class ConfigurationManagement extends React.Component {
       return;
     }
     configsTableSelected.forEach((value, key, map) => ids.push(key));
-    this.openUri('v1/cs/configs', {
-      export: 'true',
-      tenant: '',
-      group: '',
-      appName: '',
-      ids: ids.join(','),
-      accessToken,
-    });
+    if (newVersion) {
+      this.openUri('v1/cs/configs', {
+        exportV2: 'true',
+        tenant: '',
+        group: '',
+        appName: '',
+        ids: ids.join(','),
+        accessToken,
+      });
+    } else {
+      this.openUri('v1/cs/configs', {
+        export: 'true',
+        tenant: '',
+        group: '',
+        appName: '',
+        ids: ids.join(','),
+        accessToken,
+      });
+    }
   }
 
   multipleSelectionDeletion() {
