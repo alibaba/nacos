@@ -513,53 +513,35 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
-  exportData = () => {
-    const { locale = {} } = this.props;
-    Dialog.confirm({
-      title: locale.newExportVersionTitle,
-      content: locale.newExportVersionContent,
-      onOk: () => this.doExportData(true),
-      onCancel: () => this.doExportData(false),
-    });
-  };
-
-  doExportData(newVersion) {
+  exportData() {
     const { group, appName, dataId, openUri } = this;
     const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
-    if (newVersion) {
-      openUri('v1/cs/configs', {
-        export: 'true',
-        tenant: getParams('namespace'),
-        group,
-        appName,
-        dataId,
-        ids: '',
-        accessToken,
-      });
-    } else {
-      openUri('v1/cs/configs', {
-        exportV2: 'true',
-        tenant: getParams('namespace'),
-        group,
-        appName,
-        dataId,
-        ids: '',
-        accessToken,
-      });
-    }
+    openUri('v1/cs/configs', {
+      export: 'true',
+      tenant: getParams('namespace'),
+      group,
+      appName,
+      dataId,
+      ids: '',
+      accessToken,
+    });
   }
 
-  exportSelectedData = () => {
-    const { locale = {} } = this.props;
-    Dialog.confirm({
-      title: locale.newExportVersionTitle,
-      content: locale.newExportVersionContent,
-      onOk: () => this.doExportSelectedData(true),
-      onCancel: () => this.doExportSelectedData(false),
+  exportDataNew() {
+    const { group, appName, dataId, openUri } = this;
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    openUri('v1/cs/configs', {
+      exportV2: 'true',
+      tenant: getParams('namespace'),
+      group,
+      appName,
+      dataId,
+      ids: '',
+      accessToken,
     });
-  };
+  }
 
-  doExportSelectedData(newVersion) {
+  exportSelectedData(newVersion) {
     const ids = [];
     const { locale = {} } = this.props;
     const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
@@ -1211,6 +1193,16 @@ class ConfigurationManagement extends React.Component {
                   <Button
                     type={'primary'}
                     style={{ marginRight: 10 }}
+                    onClick={this.exportDataNew.bind(this)}
+                    data-spm-click={'gostr=/aliyun;locaid=configsExport'}
+                  >
+                    {locale.newExport}
+                  </Button>
+                </Form.Item>
+                <Form.Item label={''}>
+                  <Button
+                    type={'primary'}
+                    style={{ marginRight: 10 }}
                     onClick={this.importData.bind(this)}
                     data-spm-click={'gostr=/aliyun;locaid=configsExport'}
                   >
@@ -1298,7 +1290,12 @@ class ConfigurationManagement extends React.Component {
                     {
                       text: locale.exportSelected,
                       locaid: 'configsExport',
-                      onClick: () => this.exportSelectedData(),
+                      onClick: () => this.exportSelectedData(false),
+                    },
+                    {
+                      text: locale.newExportSelected,
+                      locaid: 'configsExport',
+                      onClick: () => this.exportSelectedData(true),
                     },
                     {
                       text: locale.clone,
