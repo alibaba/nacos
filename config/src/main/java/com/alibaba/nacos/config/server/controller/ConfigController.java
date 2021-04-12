@@ -500,7 +500,7 @@ public class ConfigController {
             zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
         }
         if (metaData != null) {
-            zipItemList.add(new ZipUtils.ZipItem(".meta.yml", metaData.toString()));
+            zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA, metaData.toString()));
         }
         
         HttpHeaders headers = new HttpHeaders();
@@ -548,7 +548,7 @@ public class ConfigController {
         ConfigMetadata configMetadata = new ConfigMetadata();
         configMetadata.setMetadata(configMetadataItems);
         
-        zipItemList.add(new ZipUtils.ZipItem(".metadata.yml", YamlParserUtil.dumpObject(configMetadata)));
+        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, YamlParserUtil.dumpObject(configMetadata)));
         
         HttpHeaders headers = new HttpHeaders();
         String fileName =
@@ -592,7 +592,7 @@ public class ConfigController {
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
             ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
-            if (metaDataZipItem != null && ".metadata.yml".equals(metaDataZipItem.getItemName())) {
+            if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
                 RestResult<Map<String, Object>> errorResult = parseImportDataV2(unziped, configInfoList,
                         unrecognizedList);

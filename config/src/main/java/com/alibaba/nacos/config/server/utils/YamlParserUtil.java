@@ -22,6 +22,11 @@ import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Representer;
 
+/**
+ * YamlParserUtil.
+ *
+ * @author Nacos
+ */
 public class YamlParserUtil {
     
     private static Yaml yaml;

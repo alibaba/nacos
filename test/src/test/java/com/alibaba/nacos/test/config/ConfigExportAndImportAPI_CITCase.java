@@ -22,6 +22,7 @@ import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
@@ -419,7 +420,7 @@ public class ConfigExportAndImportAPI_CITCase {
         String metaDataStr = "metadata:\n" + "- appName: testAppName\n" + "  dataId: test1\n"
                 + "  desc: testDesc\n" + "  group: TEST_IMPORT2\n" + "  type: yaml";
         
-        zipItemList.add(new ZipUtils.ZipItem(".metadata.yml", metaDataStr));
+        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
@@ -453,7 +454,7 @@ public class ConfigExportAndImportAPI_CITCase {
         String metaDataStr = "metadata:\n" + "- appName: testAppName\n" + "  desc: test desc\n"
                 + "  group: TEST_IMPORT\n" + "  type: yaml";
     
-        zipItemList.add(new ZipUtils.ZipItem(".metadata.yml", metaDataStr));
+        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
@@ -477,7 +478,7 @@ public class ConfigExportAndImportAPI_CITCase {
         String metaDataStr = "metadata:\n" + "- dataId: notExist\n" + "  group: TEST_IMPORT2\n" + "  type: yaml\n"
                 + "- dataId: test3.yml\n" + "  group: TEST_IMPORT2\n" + "  type: yaml";
     
-        zipItemList.add(new ZipUtils.ZipItem(".metadata.yml", metaDataStr));
+        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
@@ -508,7 +509,7 @@ public class ConfigExportAndImportAPI_CITCase {
         String metaDataStr = "metadata:\n" + "- appName: testAppName\n" + "  dataId: test4\n"
                 + "  desc: testDesc\n" + "  group: TEST_IMPORT2\n" + "  type: yaml";
         
-        zipItemList.add(new ZipUtils.ZipItem(".metadata.yml", metaDataStr));
+        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
