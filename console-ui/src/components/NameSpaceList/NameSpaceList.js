@@ -165,8 +165,8 @@ class NameSpaceList extends React.Component {
     const namespacesBtn = namespaceList.map((obj, index) => {
       const style =
         obj.namespace === nownamespace
-          ? { color: '#00C1DE', marginRight: 10, border: 'none', fontSize: 12 }
-          : { color: '#666', marginRight: 10, border: 'none', fontSize: 12 };
+          ? { color: '#00C1DE', paddingRight: 10, border: 'none', fontSize: 12 }
+          : { color: '#666', paddingRight: 10, border: 'none', fontSize: 12 };
       return (
         <div key={index} style={{ float: 'left', cursor: 'pointer' }}>
           {index === 0 ? '' : <span style={{ marginRight: 5, marginLeft: 5 }}>|</span>}
