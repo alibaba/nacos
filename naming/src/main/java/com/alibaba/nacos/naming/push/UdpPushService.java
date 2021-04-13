@@ -280,7 +280,7 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
     }
     
     public static String getPushCacheKey(String serviceName, String clientIP, String agent) {
-        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
+        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITTER + agent;
     }
     
     /**
