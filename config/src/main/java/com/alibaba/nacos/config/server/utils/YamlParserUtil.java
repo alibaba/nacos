@@ -119,7 +119,7 @@ public class YamlParserUtil {
                 ConfigMetadata.ConfigExportItem configExportItem = new ConfigMetadata.ConfigExportItem();
                 MappingNode itemMap = (MappingNode) itemValue;
                 List<NodeTuple> propertyValues = itemMap.getValue();
-                Map<String, String> metadataMap = new HashMap<>();
+                Map<String, String> metadataMap = new HashMap<>(propertyValues.size());
                 propertyValues.forEach(metadata -> {
                     ScalarNode keyNode = (ScalarNode) metadata.getKeyNode();
                     ScalarNode valueNode = (ScalarNode) metadata.getValueNode();
