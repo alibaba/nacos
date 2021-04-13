@@ -735,10 +735,11 @@ public class ConfigController {
                 .collect(Collectors.toSet());
         
         Map<String, String> configContentMap = new HashMap<>(zipItemList.size());
+        int itemNameLength = 2;
         zipItemList.forEach(item -> {
             String itemName = item.getItemName();
             String[] groupAdnDataId = itemName.split(Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR);
-            if (groupAdnDataId.length != 2) {
+            if (groupAdnDataId.length != itemNameLength) {
                 Map<String, String> unrecognizedItem = new HashMap<>(2);
                 unrecognizedItem.put("itemName", item.getItemName());
                 unrecognizedList.add(unrecognizedItem);
