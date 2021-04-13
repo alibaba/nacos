@@ -52,7 +52,7 @@ public interface CmdbReader {
      *
      * @param labelName  name of label
      * @param labelValue value of label
-     * @return list of entiy
+     * @return list of entity
      */
     List<Entity> queryEntitiesByLabel(String labelName, String labelValue);
 }

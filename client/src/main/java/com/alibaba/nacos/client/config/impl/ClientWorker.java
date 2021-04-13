@@ -100,7 +100,7 @@ public class ClientWorker implements Closeable {
      * @param listeners listeners
      */
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
         synchronized (cache) {
             
@@ -123,7 +123,7 @@ public class ClientWorker implements Closeable {
      */
     public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners)
             throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         synchronized (cache) {
@@ -147,7 +147,7 @@ public class ClientWorker implements Closeable {
      */
     public void addTenantListenersWithContent(String dataId, String group, String content,
             List<? extends Listener> listeners) throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         synchronized (cache) {
@@ -169,7 +169,7 @@ public class ClientWorker implements Closeable {
      * @param listener listener
      */
     public void removeListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         CacheData cache = getCache(dataId, group);
         if (null != cache) {
             synchronized (cache) {
@@ -191,7 +191,7 @@ public class ClientWorker implements Closeable {
      * @param listener listener
      */
     public void removeTenantListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
@@ -409,8 +409,8 @@ public class ClientWorker implements Closeable {
         }
     }
     
-    private String null2defaultGroup(String group) {
-        return (null == group) ? Constants.DEFAULT_GROUP : group.trim();
+    private String blank2defaultGroup(String group) {
+        return StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")

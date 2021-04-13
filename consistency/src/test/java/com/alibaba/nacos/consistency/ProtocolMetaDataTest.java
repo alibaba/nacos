@@ -46,8 +46,9 @@ public class ProtocolMetaDataTest {
         
         CountDownLatch latch = new CountDownLatch(2);
         
-        metaData.subscribe("global", "test-1", (o, arg) -> {
-            System.out.println(arg);
+        metaData.subscribe("global", "test-1", o -> {
+            ProtocolMetaData.ValueItem item = (ProtocolMetaData.ValueItem) o;
+            System.out.println(item.getData());
             count.incrementAndGet();
             latch.countDown();
         });

@@ -96,7 +96,7 @@ public class ConfigServletInner {
         }
         int versionNum = Protocol.getVersionNumber(version);
         
-        // Befor 2.0.4 version, return value is put into header.
+        // Before 2.0.4 version, return value is put into header.
         if (versionNum < START_LONG_POLLING_VERSION_NUM) {
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE, oldResult);
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE_NEW, newResult);
