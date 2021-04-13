@@ -20,6 +20,7 @@ import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.yaml.snakeyaml.constructor.ConstructorException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,4 +77,21 @@ public class YamlParserUtilTest {
         Assert.assertEquals(configExportItem2, item2);
     }
     
+    @Test(expected = ConstructorException.class)
+    public void testNotSupportType() {
+        YamlParserUtil.loadObject("name: test", YamlTest.class);
+    }
+    
+    private static class YamlTest {
+        
+        private String name;
+        
+        public String getName() {
+            return name;
+        }
+        
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
 }

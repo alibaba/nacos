@@ -531,25 +531,24 @@ public class ConfigController {
         ids.removeAll(Collections.singleton(null));
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
         List<ConfigAllInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
-        List<ZipUtils.ZipItem> zipItemList = dataList.stream().map(ci -> {
-            String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            return new ZipUtils.ZipItem(itemName, ci.getContent());
-        }).collect(Collectors.toList());
-        
-        List<ConfigMetadata.ConfigExportItem> configMetadataItems = dataList.stream().map(ci -> {
+        List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
+        List<ConfigMetadata.ConfigExportItem> configMetadataItems = new ArrayList<>();
+        for (ConfigAllInfo ci : dataList) {
             ConfigMetadata.ConfigExportItem configMetadataItem = new ConfigMetadata.ConfigExportItem();
             configMetadataItem.setAppName(ci.getAppName());
             configMetadataItem.setDataId(ci.getDataId());
             configMetadataItem.setDesc(ci.getDesc());
             configMetadataItem.setGroup(ci.getGroup());
             configMetadataItem.setType(ci.getType());
-            return configMetadataItem;
-        }).collect(Collectors.toList());
+            configMetadataItems.add(configMetadataItem);
+            String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
+            zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
+        }
         ConfigMetadata configMetadata = new ConfigMetadata();
         configMetadata.setMetadata(configMetadataItems);
-        
-        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, YamlParserUtil.dumpObject(configMetadata)));
-        
+    
+        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
+                YamlParserUtil.dumpObject(configMetadata)));
         HttpHeaders headers = new HttpHeaders();
         String fileName =
                 EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
@@ -595,13 +594,13 @@ public class ConfigController {
             if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
                 RestResult<Map<String, Object>> errorResult = parseImportDataV2(unziped, configInfoList,
-                        unrecognizedList);
+                        unrecognizedList, namespace);
                 if (errorResult != null) {
                     return errorResult;
                 }
             } else {
-                RestResult<Map<String, Object>> errorResult = parseImportData(unziped, configInfoList,
-                        unrecognizedList);
+                RestResult<Map<String, Object>> errorResult = parseImportData(unziped, configInfoList, unrecognizedList,
+                        namespace);
                 if (errorResult != null) {
                     return errorResult;
                 }
@@ -615,9 +614,6 @@ public class ConfigController {
         if (CollectionUtils.isEmpty(configInfoList)) {
             failedData.put("succCount", 0);
             return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
-        }
-        for (ConfigInfo configInfo : configInfoList) {
-            configInfo.setTenant(namespace);
         }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
@@ -647,10 +643,11 @@ public class ConfigController {
      * @param unziped          export file.
      * @param configInfoList   parse file result.
      * @param unrecognizedList unrecognized file.
+     * @param namespace        import namespace.
      * @return error result.
      */
     private RestResult<Map<String, Object>> parseImportData(ZipUtils.UnZipResult unziped,
-            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList) {
+            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
         ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
         
         Map<String, String> metaDataMap = new HashMap<>(16);
@@ -694,6 +691,7 @@ public class ConfigController {
                 if (metaDataMap.get(metaDataId) != null) {
                     ci.setAppName(metaDataMap.get(metaDataId));
                 }
+                ci.setTenant(namespace);
                 configInfoList.add(ci);
             }
         }
@@ -706,10 +704,11 @@ public class ConfigController {
      * @param unziped          export file.
      * @param configInfoList   parse file result.
      * @param unrecognizedList unrecognized file.
+     * @param namespace        import namespace.
      * @return error result.
      */
     private RestResult<Map<String, Object>> parseImportDataV2(ZipUtils.UnZipResult unziped,
-            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList) {
+            List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
         ZipUtils.ZipItem metaDataItem = unziped.getMetaDataItem();
         String metaData = metaDataItem.getItemData();
         Map<String, Object> failedData = new HashMap<>(4);
@@ -778,6 +777,7 @@ public class ConfigController {
             ci.setType(configExportItem.getType());
             ci.setDesc(configExportItem.getDesc());
             ci.setAppName(configExportItem.getAppName());
+            ci.setTenant(namespace);
             configInfoList.add(ci);
         }
         return null;
