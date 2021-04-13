@@ -37,12 +37,12 @@ class HistoryRollback extends React.Component {
     this.field = new Field(this);
     this.appName = getParams('appName') || '';
     this.preAppName = this.appName;
-    this.group = getParams('group') || '';
+    this.group = getParams('historyGroup') || '';
     this.preGroup = this.group;
 
-    this.dataId = getParams('dataId') || '';
+    this.dataId = getParams('historyDataId') || '';
     this.preDataId = this.dataId;
-    this.serverId = getParams('serverId') || '';
+    this.serverId = getParams('historyServerId') || '';
     this.state = {
       value: '',
       visible: false,
@@ -59,13 +59,6 @@ class HistoryRollback extends React.Component {
       selectValue: [],
       loading: false,
     };
-    const obj = {
-      dataId: this.dataId || '',
-      group: this.preGroup || '',
-      appName: this.appName || '',
-      serverId: this.serverId || '',
-    };
-    setParams(obj);
   }
 
   componentDidMount() {

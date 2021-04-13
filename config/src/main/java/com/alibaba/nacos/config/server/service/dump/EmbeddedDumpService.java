@@ -24,12 +24,13 @@ import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
@@ -89,7 +90,11 @@ public class EmbeddedDumpService extends DumpService {
         Observer observer = new Observer() {
             
             @Override
-            public void update(Observable o, Object arg) {
+            public void update(Observable o) {
+                if (!(o instanceof ProtocolMetaData.ValueItem)) {
+                    return;
+                }
+                final Object arg = ((ProtocolMetaData.ValueItem) o).getData();
                 GlobalExecutor.executeByCommon(() -> {
                     // must make sure that there is a value here to perform the correct operation that follows
                     if (Objects.isNull(arg)) {

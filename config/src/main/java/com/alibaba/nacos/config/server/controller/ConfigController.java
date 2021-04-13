@@ -148,7 +148,7 @@ public class ConfigController {
         ParamUtils.checkParam(configAdvanceInfo);
         
         if (AggrWhitelist.isAggrDataId(dataId)) {
-            LOGGER.warn("[aggr-conflict] {} attemp to publish single data, {}, {}", RequestUtil.getRemoteIp(request),
+            LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", RequestUtil.getRemoteIp(request),
                     dataId, group);
             throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
         }
@@ -664,14 +664,14 @@ public class ConfigController {
         List<ConfigAllInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
         
         for (ConfigAllInfo ci : queryedDataList) {
-            SameNamespaceCloneConfigBean prarmBean = configBeansMap.get(ci.getId());
+            SameNamespaceCloneConfigBean paramBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
             ci4save.setTenant(namespace);
             ci4save.setType(ci.getType());
-            ci4save.setGroup((prarmBean != null && StringUtils.isNotBlank(prarmBean.getGroup())) ? prarmBean.getGroup()
+            ci4save.setGroup((paramBean != null && StringUtils.isNotBlank(paramBean.getGroup())) ? paramBean.getGroup()
                     : ci.getGroup());
             ci4save.setDataId(
-                    (prarmBean != null && StringUtils.isNotBlank(prarmBean.getDataId())) ? prarmBean.getDataId()
+                    (paramBean != null && StringUtils.isNotBlank(paramBean.getDataId())) ? paramBean.getDataId()
                             : ci.getDataId());
             ci4save.setContent(ci.getContent());
             if (StringUtils.isNotBlank(ci.getAppName())) {

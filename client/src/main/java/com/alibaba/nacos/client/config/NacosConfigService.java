@@ -34,6 +34,7 @@ import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
@@ -133,7 +134,7 @@ public class NacosConfigService implements ConfigService {
     }
     
     private String getConfigInner(String tenant, String dataId, String group, long timeoutMs) throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         ConfigResponse cr = new ConfigResponse();
         
@@ -177,19 +178,19 @@ public class NacosConfigService implements ConfigService {
         return content;
     }
     
-    private String null2defaultGroup(String group) {
-        return (null == group) ? Constants.DEFAULT_GROUP : group.trim();
+    private String blank2defaultGroup(String group) {
+        return (StringUtils.isBlank(group)) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
     private boolean removeConfigInner(String tenant, String dataId, String group, String tag) throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         return worker.removeConfig(dataId, group, tenant, tag);
     }
     
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
             String betaIps, String content, String type, String casMd5) throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         ParamUtils.checkParam(dataId, group, content);
         
         ConfigRequest cr = new ConfigRequest();
