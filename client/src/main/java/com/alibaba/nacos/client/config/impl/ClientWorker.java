@@ -100,7 +100,7 @@ public class ClientWorker implements Closeable {
      * @param listeners listeners
      */
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
         synchronized (cache) {
             
@@ -169,7 +169,7 @@ public class ClientWorker implements Closeable {
      * @param listener listener
      */
     public void removeListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         CacheData cache = getCache(dataId, group);
         if (null != cache) {
             synchronized (cache) {
@@ -347,6 +347,10 @@ public class ClientWorker implements Closeable {
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
         
         return cache;
+    }
+    
+    public CacheData getCache(String dataId, String group) {
+        return getCache(dataId, group, TenantUtil.getUserTenantForAcm());
     }
     
     public CacheData getCache(String dataId, String group, String tenant) {
