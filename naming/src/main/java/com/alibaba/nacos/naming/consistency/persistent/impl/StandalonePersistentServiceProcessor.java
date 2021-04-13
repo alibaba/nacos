@@ -31,6 +31,7 @@ import com.google.protobuf.ByteString;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Persistent service manipulation layer in stand-alone mode.
@@ -106,5 +107,16 @@ public class StandalonePersistentServiceProcessor extends BasePersistentServiceP
     @Override
     public boolean isAvailable() {
         return !hasError;
+    }
+    
+    @Override
+    public Optional<String> getErrorMsg() {
+        String errorMsg;
+        if (hasError) {
+            errorMsg = "The raft peer is in error: " + jRaftErrorMsg;
+        } else {
+            errorMsg = null;
+        }
+        return Optional.ofNullable(errorMsg);
     }
 }

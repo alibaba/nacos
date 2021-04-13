@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import java.util.Optional;
 
 /**
  * Detect and control the working status of local server.
@@ -66,6 +67,10 @@ public class ServerStatusManager {
     
     public ServerStatus getServerStatus() {
         return serverStatus;
+    }
+    
+    public Optional<String> getErrorMsg() {
+        return consistencyService.getErrorMsg();
     }
     
     public class ServerStatusUpdater implements Runnable {
