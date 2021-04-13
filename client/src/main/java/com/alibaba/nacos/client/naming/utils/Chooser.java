@@ -119,7 +119,7 @@ public class Chooser<K, T> {
         public Ref(List<Pair<T>> itemsWithWeight) {
             this.itemsWithWeight = itemsWithWeight;
         }
-    
+        
         /**
          * Refresh.
          */
@@ -168,7 +168,7 @@ public class Chooser<K, T> {
                 return;
             }
             throw new IllegalStateException(
-                    "Cumulative Weight caculate wrong , the sum of probabilities does not equals 1.");
+                    "Cumulative Weight calculate wrong , the sum of probabilities does not equals 1.");
         }
         
         @Override

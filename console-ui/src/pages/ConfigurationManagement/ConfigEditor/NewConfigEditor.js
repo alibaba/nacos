@@ -239,6 +239,7 @@ class ConfigEditor extends React.Component {
       payload[key] = form[key];
     });
     const stringify = require('qs/lib/stringify');
+    this.setState({ loading: true });
     return request({
       url: 'v1/cs/configs',
       method: 'post',
@@ -251,6 +252,7 @@ class ConfigEditor extends React.Component {
         }
         this.getConfig(beta);
       }
+      this.setState({ loading: false });
       return res;
     });
   }
