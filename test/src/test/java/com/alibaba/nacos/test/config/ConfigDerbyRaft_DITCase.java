@@ -263,7 +263,7 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
     public void test_e_derby_ops() throws Exception {
         String url = "http://127.0.0.1:8848/nacos/v1/cs/ops/derby";
         Query query = Query.newInstance().addParam("sql", "select * from users");
-        RestResult<List<Map<String, Object>>> result = restTemplate
+        RestResult<List<Map<String, Object>>> result = NACOS_REST_TEMPLATE
                 .get(url, Header.EMPTY, query, new GenericType<RestResult<List<Map<String, Object>>>>() {
                 }.getType());
         System.out.println(result.getData());
@@ -277,7 +277,7 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
     public void test_g_derby_ops_no_select() throws Exception {
         String url = "http://127.0.0.1:8848/nacos/v1/cs/ops/derby";
         Query query = Query.newInstance().addParam("sql", "update users set username='nacos'");
-        RestResult<Object> result = restTemplate.get(url, Header.EMPTY, query, new GenericType<RestResult<Object>>() {
+        RestResult<Object> result = NACOS_REST_TEMPLATE.get(url, Header.EMPTY, query, new GenericType<RestResult<Object>>() {
         }.getType());
         System.out.println(result);
         Assert.assertFalse(result.ok());
