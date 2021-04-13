@@ -223,14 +223,12 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                     Loggers.MAIN.info("ACK nonce: {}, type: {}", value.getResponseNonce(), value.getCollection());
                     return;
                 }
-                
-                if (!CollectionTypes.SERVICE_ENTRY.equals(value.getCollection())) {
-                    // Return empty resources for other types:
-                    Resources resources = Resources.newBuilder().setCollection(value.getCollection())
-                            .setNonce(String.valueOf(System.currentTimeMillis())).build();
-                    
-                    responseObserver.onNext(resources);
-                }
+
+                // Istio will send request to establish the stream, should respond all kinds of collections.
+                Resources resources = Resources.newBuilder().setCollection(value.getCollection())
+                        .setNonce(String.valueOf(System.currentTimeMillis())).build();
+
+                responseObserver.onNext(resources);
             }
             
             @Override
