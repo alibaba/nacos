@@ -18,12 +18,33 @@
 
 package com.alibaba.nacos.client.naming.remote.http;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.core.ServerListManager;
+import com.alibaba.nacos.client.security.SecurityProxy;
 import org.junit.Test;
+
+import java.util.Properties;
+
+import static org.mockito.Mockito.mock;
 
 public class NamingHttpClientProxyTest {
     
     @Test
-    public void testRegisterService() {
+    public void testRegisterService() throws NacosException {
+        //given
+        SecurityProxy proxy = mock(SecurityProxy.class);
+        ServerListManager mgr = mock(ServerListManager.class);
+        Properties props = new Properties();
+        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
+        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
+        String serviceName = "service1";
+        String groupName = "group1";
+        Instance instance = new Instance();
+        //when
+        clientProxy.registerService(serviceName, groupName, instance);
+        //then
     }
     
     public void testDeregisterService() {
