@@ -108,7 +108,7 @@ public class NamingProxy implements Closeable {
     private Properties properties;
     
     private ScheduledExecutorService executorService;
-
+    
     private int maxRetry;
     
     public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
@@ -119,8 +119,8 @@ public class NamingProxy implements Closeable {
         this.namespaceId = namespaceId;
         this.endpoint = endpoint;
         this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
-            String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
-
+                String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
+        
         if (StringUtils.isNotEmpty(serverList)) {
             this.serverList = Arrays.asList(serverList.split(","));
             if (this.serverList.size() == 1) {
@@ -142,6 +142,9 @@ public class NamingProxy implements Closeable {
             }
         });
         
+        refreshSrvIfNeed();
+        this.securityProxy.login(getServerList());
+        
         this.executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -155,9 +158,6 @@ public class NamingProxy implements Closeable {
                 securityProxy.login(getServerList());
             }
         }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-        
-        refreshSrvIfNeed();
-        this.securityProxy.login(getServerList());
     }
     
     public List<String> getServerListFromEndpoint() {
@@ -514,12 +514,12 @@ public class NamingProxy implements Closeable {
         
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
         
-        if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
+        if (CollectionUtils.isEmpty(servers) && StringUtils.isBlank(nacosDomain)) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
         
         NacosException exception = new NacosException();
-
+        
         if (StringUtils.isNotBlank(nacosDomain)) {
             for (int i = 0; i < maxRetry; i++) {
                 try {
@@ -531,10 +531,7 @@ public class NamingProxy implements Closeable {
                     }
                 }
             }
-        }
-
-        if (servers != null && !servers.isEmpty()) {
-            
+        } else {
             Random random = new Random(System.currentTimeMillis());
             int index = random.nextInt(servers.size());
             
@@ -722,6 +719,7 @@ public class NamingProxy implements Closeable {
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NamingHttpClientManager.getInstance().shutdown();
+        SpasAdapter.freeCredentialInstance();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }

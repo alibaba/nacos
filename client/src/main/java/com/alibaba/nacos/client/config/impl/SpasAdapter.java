@@ -74,6 +74,10 @@ public class SpasAdapter {
         return CredentialService.getInstance().getCredential().getAccessKey();
     }
     
+    public static void freeCredentialInstance() {
+        CredentialService.freeInstance();
+    }
+    
     /**
      * Sign with hmac SHA1 encrtpt.
      *

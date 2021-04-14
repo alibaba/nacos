@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.istio.misc;
+package com.alibaba.nacos.common.http.param;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.junit.Test;
 
-/**
- * Stores some configurations for Istio integration.
- *
- * @author nkorange
- * @since 1.1.4
- */
-@Component
-public class IstioConfig {
+import static org.junit.Assert.assertEquals;
+
+public class HeaderTest {
     
-    @Value("${nacos.istio.mcp.server.enabled:false}")
-    private boolean mcpServerEnabled = false;
-    
-    public boolean isMcpServerEnabled() {
-        return mcpServerEnabled;
+    @Test
+    public void testHeaderKyeIgnoreCase() {
+        Header header = Header.newInstance();
+        header.addParam("Content-Encoding", "gzip");
+        assertEquals("gzip", header.getValue("content-encoding"));
     }
 }

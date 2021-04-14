@@ -17,9 +17,9 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -85,17 +85,16 @@ public class NamingProxy {
                                         result.getCode(), result.getMessage());
                             }
                         }
-    
+                        
                         @Override
                         public void onError(Throwable throwable) {
-                            Loggers.DISTRO
-                                    .error("failed to req API:" + "http://" + server + EnvUtil.getContextPath()
-                                            + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL, throwable);
+                            Loggers.DISTRO.error("failed to req API:" + "http://" + server + EnvUtil.getContextPath()
+                                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL, throwable);
                         }
-    
+                        
                         @Override
                         public void onCancel() {
-        
+                        
                         }
                     });
         } catch (Exception e) {
@@ -116,8 +115,8 @@ public class NamingProxy {
         Map<String, String> params = new HashMap<>(8);
         params.put("keys", StringUtils.join(keys, ","));
         RestResult<String> result = HttpClient.httpGetLarge(
-                "http://" + server + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                        + DATA_GET_URL, new HashMap<>(8), JacksonUtils.toJson(params));
+                "http://" + server + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL,
+                new HashMap<>(8), JacksonUtils.toJson(params));
         
         if (result.ok()) {
             return result.getData().getBytes();
@@ -139,8 +138,8 @@ public class NamingProxy {
         
         Map<String, String> params = new HashMap<>(8);
         RestResult<String> result = HttpClient.httpGet(
-                "http://" + server + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                        + ALL_DATA_GET_URL, new ArrayList<>(), params);
+                "http://" + server + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + ALL_DATA_GET_URL,
+                new ArrayList<>(), params);
         
         if (result.ok()) {
             return result.getData().getBytes();
@@ -301,12 +300,12 @@ public class NamingProxy {
             
             if (isPost) {
                 result = HttpClient.httpPost(
-                        "http://" + curServer + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                                + path, headers, params);
+                        "http://" + curServer + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + path,
+                        headers, params);
             } else {
                 result = HttpClient.httpGet(
-                        "http://" + curServer + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                                + path, headers, params);
+                        "http://" + curServer + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + path,
+                        headers, params);
             }
             
             if (result.ok()) {
@@ -318,8 +317,8 @@ public class NamingProxy {
             }
             
             throw new IOException("failed to req API:" + "http://" + curServer + EnvUtil.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + path + ". code:" + result.getCode() + " msg: "
-                    + result.getMessage());
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + path + ". code:" + result.getCode() + " msg: " + result
+                    .getMessage());
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }

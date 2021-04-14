@@ -78,16 +78,18 @@ public class HostReactor implements Closeable {
     
     private final String cacheDir;
     
+    private final boolean pushEmptyProtection;
+    
     private final ScheduledExecutorService executor;
     
     private final InstancesChangeNotifier notifier;
     
     public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
-        this(serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+        this(serverProxy, beatReactor, cacheDir, false, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
     
     public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir, boolean loadCacheAtStart,
-            int pollingThreadCount) {
+            boolean pushEmptyProtection, int pollingThreadCount) {
         // init executorService
         this.executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
             @Override
@@ -107,12 +109,12 @@ public class HostReactor implements Closeable {
         } else {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
         }
-        
+        this.pushEmptyProtection = pushEmptyProtection;
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
         this.notifier = new InstancesChangeNotifier();
-    
+        
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(notifier);
     }
@@ -160,8 +162,13 @@ public class HostReactor implements Closeable {
      */
     public ServiceInfo processServiceJson(String json) {
         ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
-        ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
-        if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
+        String serviceKey = serviceInfo.getKey();
+        if (serviceKey == null) {
+            return null;
+        }
+        ServiceInfo oldService = serviceInfoMap.get(serviceKey);
+        
+        if (pushEmptyProtection && !serviceInfo.validate()) {
             //empty or error push, just ignore
             return oldService;
         }

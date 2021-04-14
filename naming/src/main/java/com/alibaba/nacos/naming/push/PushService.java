@@ -362,7 +362,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     }
     
     public static String getPushCacheKey(String serviceName, String clientIP, String agent) {
-        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
+        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITTER + agent;
     }
     
     /**
@@ -405,6 +405,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             return true;
         } else if (ClientInfo.ClientType.GO == clientInfo.type
                 && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushGoVersion())) >= 0) {
+            return true;
+        } else if (ClientInfo.ClientType.CSHARP == clientInfo.type
+                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushCSharpVersion())) >= 0) {
             return true;
         }
         
