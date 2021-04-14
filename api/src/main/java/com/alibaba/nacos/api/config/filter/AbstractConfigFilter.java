@@ -17,33 +17,18 @@
 package com.alibaba.nacos.api.config.filter;
 
 /**
- * Config Response Interface.
+ * Config Filter Interface default implementation.
  *
- * @author Nacos
+ * @author luyanbo(RobberPhex)
  */
-public interface IConfigResponse {
+public abstract class AbstractConfigFilter implements IConfigFilter {
     
     /**
-     * get param.
+     * init.
      *
-     * @param key key
-     * @return value
+     * @param filterConfig Filter Config
      */
-    Object getParameter(String key);
-    
-    /**
-     * put param.
-     *
-     * @param key   key
-     * @param value value
-     */
-    void putParameter(String key, Object value);
-    
-    /**
-     * Get config context.
-     *
-     * @return configContext
-     */
-    IConfigContext getConfigContext();
-    
+    @Override
+    public void init(IFilterConfig filterConfig) {
+    }
 }

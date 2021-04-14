@@ -30,6 +30,7 @@ import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
+import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -71,7 +72,7 @@ public class NacosConfigService implements ConfigService {
     
     private final String encode;
     
-    private final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
+    private final ConfigFilterChainManager configFilterChainManager;
     
     public NacosConfigService(Properties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);
@@ -82,6 +83,7 @@ public class NacosConfigService implements ConfigService {
             this.encode = encodeTmp.trim();
         }
         initNamespace(properties);
+        this.configFilterChainManager = new ConfigFilterChainManager(properties);
         
         this.agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         this.agent.start();
@@ -146,14 +148,19 @@ public class NacosConfigService implements ConfigService {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
                     dataId, group, tenant, ContentUtils.truncateContent(content));
             cr.setContent(content);
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor
+                    .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+            cr.setEncryptedDataKey(encryptedDataKey);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
             return content;
         }
         
         try {
-            String[] ct = worker.getServerConfig(dataId, group, tenant, timeoutMs);
-            cr.setContent(ct[0]);
+            ConfigResponse response = worker.getServerConfig(dataId, group, tenant, timeoutMs);
+            cr.setContent(response.getContent());
+            cr.setEncryptedDataKey(response.getEncryptedDataKey());
+            configFilterChainManager.doFilter(null, cr);
             
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -171,6 +178,9 @@ public class NacosConfigService implements ConfigService {
                 dataId, group, tenant, ContentUtils.truncateContent(content));
         content = LocalConfigInfoProcessor.getSnapshot(agent.getName(), dataId, group, tenant);
         cr.setContent(content);
+        String encryptedDataKey = LocalEncryptedDataKeyProcessor
+                .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+        cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
         return content;
@@ -243,6 +253,10 @@ public class NacosConfigService implements ConfigService {
         }
         if (StringUtils.isNotEmpty(tag)) {
             params.put("tag", tag);
+        }
+        String dataKey = (String) cr.getParameter("encryptedDataKey");
+        if (StringUtils.isNotEmpty(dataKey)) {
+            params.put("encryptedDataKey", dataKey);
         }
         Map<String, String> headers = new HashMap<String, String>(1);
         if (StringUtils.isNotEmpty(betaIps)) {
