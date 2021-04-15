@@ -53,7 +53,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
         if (!upgradeJudgement.isUseGrpcFeatures()) {
             throw new NacosException(NacosException.SERVER_ERROR,
-                    "Nacos server can not use gRPC features now, please try again later.");
+                    "Nacos cluster is running with 1.X mode, can't accept gRPC request temporarily. Please check the server status or close Double write to force open 2.0 mode. Detail https://nacos.io/en-us/docs/2.0.0-upgrading.html.");
         }
         Service service = Service
                 .newService(request.getNamespace(), request.getGroupName(), request.getServiceName(), true);
