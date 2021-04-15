@@ -587,18 +587,16 @@ public class NamingProxy implements Closeable {
         long end = 0;
         injectSecurityInfo(params);
         Header header = builderHeader();
-        
-        String url;
-        if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
-            url = curServer + api;
-        } else {
-            if (!IPUtil.containsPort(curServer)) {
-                curServer = curServer + IPUtil.IP_PORT_SPLITER + serverPort;
-            }
-            url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
-        }
-        
         try {
+            String url;
+            if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
+                url = curServer + api;
+            } else {
+                if (!IPUtil.containsPort(curServer)) {
+                    curServer = curServer + IPUtil.IP_PORT_SPLITER + serverPort;
+                }
+                url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
+            }
             HttpRestResult<String> restResult = nacosRestTemplate
                     .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
