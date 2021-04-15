@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Nacos naming example.
+ * <p>Add the JVM parameter to run the NamingExample:</p>
+ * {@code -DserverAddr=127.0.0.1:8848 -Dnamespace=dev}
  *
  * @author nkorange
  */
