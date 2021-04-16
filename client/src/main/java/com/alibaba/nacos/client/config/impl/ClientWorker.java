@@ -77,7 +77,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -423,14 +422,11 @@ public class ClientWorker implements Closeable {
         agent = new ConfigRpcTransportClient(properties, serverListManager);
         
         ScheduledExecutorService executorService = Executors
-                .newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread t = new Thread(r);
-                        t.setName("com.alibaba.nacos.client.Worker");
-                        t.setDaemon(true);
-                        return t;
-                    }
+                .newScheduledThreadPool(ThreadUtils.getSuitableThreadCount(1), r -> {
+                    Thread t = new Thread(r);
+                    t.setName("com.alibaba.nacos.client.Worker");
+                    t.setDaemon(true);
+                    return t;
                 });
         agent.setExecutor(executorService);
         agent.start();

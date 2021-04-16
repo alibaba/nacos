@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
 import java.net.ConnectException;
@@ -63,8 +64,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
     /**
      * this value has been carefully tuned, do not modify unless you're confident.
      */
-    private static final int NIO_THREAD_COUNT =
-            Runtime.getRuntime().availableProcessors() <= 1 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
+    private static final int NIO_THREAD_COUNT = EnvUtil.getAvailableProcessors(0.5);
     
     /**
      * because some hosts doesn't support keep-alive connections, disabled temporarily.
@@ -193,7 +193,8 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                         key.channel().close();
                     } else {
                         // not terminate request, ignore
-                        SRV_LOG.warn("Tcp check ok, but the connected server responses some msg. Connection won't be closed.");
+                        SRV_LOG.warn(
+                                "Tcp check ok, but the connected server responses some msg. Connection won't be closed.");
                     }
                 }
             } catch (ConnectException e) {

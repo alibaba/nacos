@@ -196,7 +196,7 @@ public class ServerListManager extends MemberChangeListener {
                     return;
                 }
                 
-                int weight = Runtime.getRuntime().availableProcessors() / 2;
+                int weight = EnvUtil.getAvailableProcessors(0.5);
                 if (weight <= 0) {
                     weight = 1;
                 }
