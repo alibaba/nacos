@@ -26,7 +26,9 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -37,6 +39,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class InstanceRequestHandler extends RequestHandler<InstanceRequest, InstanceResponse> {
     
+    @Autowired
+    private UpgradeJudgement upgradeJudgement;
+    
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
     public InstanceRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
@@ -46,6 +51,10 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     @Override
     @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
     public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
+        if (!upgradeJudgement.isUseGrpcFeatures()) {
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "Nacos cluster is running with 1.X mode, can't accept gRPC request temporarily. Please check the server status or close Double write to force open 2.0 mode. Detail https://nacos.io/en-us/docs/2.0.0-upgrading.html.");
+        }
         Service service = Service
                 .newService(request.getNamespace(), request.getGroupName(), request.getServiceName(), true);
         switch (request.getType()) {
