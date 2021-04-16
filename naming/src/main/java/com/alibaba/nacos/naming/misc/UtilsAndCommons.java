@@ -36,7 +36,7 @@ import java.util.Map;
  * @author nacos
  * @author jifengnan
  */
-@SuppressWarnings("PMD.ThreadPoolCreationRule")
+@SuppressWarnings("PMD.ThreadPoolCreationle")
 public class UtilsAndCommons {
     
     // ********************** Nacos HTTP Context ************************ \\

@@ -20,6 +20,7 @@ import com.alibaba.nacos.cmdb.CmdbApp;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ClassUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -33,8 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class CmdbExecutor {
     
     private static final ScheduledExecutorService GLOBAL_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(CmdbApp.class),
-                    Runtime.getRuntime().availableProcessors(),
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(CmdbApp.class), EnvUtil.getAvailableProcessors(),
                     new NameThreadFactory("com.alibaba.nacos.cmdb.global.executor"));
     
     public static void scheduleCmdbTask(Runnable runnable, long delay, TimeUnit unit) {

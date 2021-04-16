@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.Collection;
 import java.util.List;
@@ -48,13 +49,11 @@ public class GlobalExecutor {
     
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
     
-    public static final int DEFAULT_THREAD_COUNT =
-            Runtime.getRuntime().availableProcessors() <= 1 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
+    public static final int DEFAULT_THREAD_COUNT = EnvUtil.getAvailableProcessors(0.5);
     
     private static final ScheduledExecutorService NAMING_TIMER_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    Runtime.getRuntime().availableProcessors() * 2,
-                    new NameThreadFactory("com.alibaba.nacos.naming.timer"));
+                    EnvUtil.getAvailableProcessors(2), new NameThreadFactory("com.alibaba.nacos.naming.timer"));
     
     private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
