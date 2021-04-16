@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Nacos naming example.
  * <p>Add the JVM parameter to run the NamingExample:</p>
- * {@code -DserverAddr=127.0.0.1:8848 -Dnamespace=dev}
+ * {@code -DserverAddr=${nacos.server.ip}:${nacos.server.port} -Dnamespace=${namespaceId}}
  *
  * @author nkorange
  */
