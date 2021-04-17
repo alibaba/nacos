@@ -33,6 +33,7 @@ public class IPUtilTest {
         Assert.assertFalse(IPUtil.isIPv4("[::1]"));
         Assert.assertFalse(IPUtil.isIPv4("asdfasf"));
         Assert.assertFalse(IPUtil.isIPv4("ffgertert"));
+        Assert.assertFalse(IPUtil.isIPv4("127.100.19"));
     }
     
     @Test
@@ -47,6 +48,7 @@ public class IPUtilTest {
         Assert.assertTrue(IPUtil.isIP("[::1]"));
         Assert.assertTrue(IPUtil.isIP("127.0.0.1"));
         Assert.assertFalse(IPUtil.isIP("er34234"));
+        Assert.assertFalse(IPUtil.isIP("127.100.19"));
     }
     
     @Test
