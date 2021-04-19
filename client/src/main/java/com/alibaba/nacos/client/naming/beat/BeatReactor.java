@@ -121,7 +121,7 @@ public class BeatReactor implements Closeable {
      * Build new beat information.
      *
      * @param groupedServiceName service name with group name, format: ${groupName}@@${serviceName}
-     * @param instance           instance
+     * @param instance instance
      * @return new beat information
      */
     public BeatInfo buildBeatInfo(String groupedServiceName, Instance instance) {
