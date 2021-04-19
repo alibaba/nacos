@@ -674,6 +674,9 @@ public class ClientWorker implements Closeable {
                         try {
                             listenExecutebell.poll(5L, TimeUnit.SECONDS);
                             executeConfigListen();
+                        } catch (InterruptedException e) {
+                            LOGGER.info("[ rpc listen execute ] Interrupted, stop the config listen task now.");
+                            break;
                         } catch (Exception e) {
                             LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
                         }
