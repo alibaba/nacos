@@ -65,9 +65,30 @@ public class ConfigResponse implements IConfigResponse {
         param.put("content", content);
     }
     
+    public String getConfigType() {
+        return (String) param.get("configType");
+    }
+    
+    public void setConfigType(String configType) {
+        param.put("configType", configType);
+    }
+    
+    public String getEncryptedDataKey() {
+        return (String) param.get("encryptedDataKey");
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        param.put("encryptedDataKey", encryptedDataKey);
+    }
+    
     @Override
     public Object getParameter(String key) {
         return param.get(key);
+    }
+    
+    @Override
+    public void putParameter(String key, Object value) {
+        param.put(key, value);
     }
     
     @Override
