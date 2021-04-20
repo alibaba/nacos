@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -105,6 +106,9 @@ public class SubscribeManager {
                 if (result.ok()) {
                     Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
+                } else {
+                    Loggers.SRV_LOG.warn("get subscriber from other member error, server:{}, resultCode:{}, resultMsg:{}",
+                            server.getAddress(), result.getCode(), result.getMessage());
                 }
             }
             return CollectionUtils.isNotEmpty(subscriberList) ? subscriberList.stream()
