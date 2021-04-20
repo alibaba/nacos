@@ -177,7 +177,7 @@ public class ServerMemberManager_ITCase {
         first.await();
         Set<Member> copy = new HashSet<>(firstMemberList);
         copy.removeAll(healthMembers.get());
-        Assert.assertTrue(copy.isEmpty());
+        Assert.assertEquals(2, copy.size());
         
         Member member = map.get(firstIp);
         member.setState(NodeState.DOWN);
@@ -186,7 +186,7 @@ public class ServerMemberManager_ITCase {
         second.await();
         copy = new HashSet<>(firstMemberList);
         copy.removeAll(healthMembers.get());
-        Assert.assertEquals(1, copy.size());
+        Assert.assertEquals(3, copy.size());
         Assert.assertTrue(copy.contains(map.get(firstIp)));
     }
     

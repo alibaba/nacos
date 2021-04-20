@@ -44,7 +44,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * @date 2019-07-03
  **/
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7002"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigBeta_CITCase {
 
