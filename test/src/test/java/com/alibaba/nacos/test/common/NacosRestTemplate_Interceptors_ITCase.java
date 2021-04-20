@@ -120,7 +120,7 @@ public class NacosRestTemplate_Interceptors_ITCase {
         HttpRestResult<String> restResult = nacosRestTemplate
                 .postForm(url, Header.newInstance(), param, String.class);
         Assert.assertEquals(500, restResult.getCode());
-        Assert.assertEquals("Stop request", restResult.getData());
+        Assert.assertEquals("Stop request", restResult.getMessage());
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
     }

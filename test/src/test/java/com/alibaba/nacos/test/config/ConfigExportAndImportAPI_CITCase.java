@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2019/5/23 15:26
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7003"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigExportAndImportAPI_CITCase {
 

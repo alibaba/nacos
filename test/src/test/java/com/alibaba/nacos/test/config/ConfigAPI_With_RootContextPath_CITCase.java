@@ -16,7 +16,15 @@
 
 package com.alibaba.nacos.test.config;
 
-import org.springframework.test.context.TestPropertySource;
+import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.runner.RunWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.io.IOException;
 
 
 /**
@@ -24,7 +32,22 @@ import org.springframework.test.context.TestPropertySource;
  *
  * @see <a href="https://github.com/alibaba/nacos/issues/4181">#4171</a>
  */
-@TestPropertySource( properties = {"server.servlet.context-path=/", "server.port=7007"})
-public class ConfigAPI_With_RootContextPath_CITCase extends ConfigAPI_CITCase {
-
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/",
+        "server.port=7001"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class ConfigAPI_With_RootContextPath_CITCase extends AbstractConfigAPI_CITCase {
+    
+    @BeforeClass
+    public static void beforeClass() throws IOException {
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPI_With_RootContextPath_CITCase.class.getSimpleName());
+        ConfigCleanUtils.cleanClientCache();
+        EnvUtil.setPort(7001);
+        
+    }
+    
+    @AfterClass
+    public static void cleanClientCache() throws Exception {
+        ConfigCleanUtils.cleanClientCache();
+        EnvUtil.setPort(8848);
+    }
 }
