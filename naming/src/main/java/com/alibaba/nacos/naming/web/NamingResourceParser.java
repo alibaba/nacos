@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.model.Resource;
@@ -48,6 +49,11 @@ public class NamingResourceParser implements ResourceParser {
             namespaceId = NamespaceUtil.processNamespaceParameter(req.getParameter(CommonParams.NAMESPACE_ID));
             serviceName = req.getParameter(CommonParams.SERVICE_NAME);
             groupName = req.getParameter(CommonParams.GROUP_NAME);
+        } else if (requestObj instanceof AbstractNamingRequest) {
+            AbstractNamingRequest request = (AbstractNamingRequest) requestObj;
+            namespaceId = request.getNamespace();
+            groupName = request.getGroupName();
+            serviceName = request.getServiceName();
         } else if (requestObj instanceof Request) {
             Request request = (Request) requestObj;
             namespaceId = (String) ReflectUtils.getFieldValue(request, "namespace", "");
