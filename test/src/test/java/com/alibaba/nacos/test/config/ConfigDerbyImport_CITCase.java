@@ -42,8 +42,8 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-        "server.port=7006"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigDerbyImport_CITCase {
     
     @Autowired

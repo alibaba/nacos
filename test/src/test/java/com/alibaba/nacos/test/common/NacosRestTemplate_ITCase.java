@@ -29,6 +29,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
@@ -110,6 +111,7 @@ public class NacosRestTemplate_ITCase {
     }
     
     @Test
+    @Ignore("new version can't update instance when service and instance is not exist")
     public void test_url_put_from() throws Exception {
         String url = IP + INSTANCE_PATH + "/instance";
         Map<String, String> param = new HashMap<>();
@@ -128,7 +130,7 @@ public class NacosRestTemplate_ITCase {
         Query query = Query.newInstance().addParam("serviceName", "app-test");
         HttpRestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), query, Map.class);
         Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("dom"), "app-test");
+        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
         System.out.println(restResult.getData());
     }
     
@@ -139,7 +141,7 @@ public class NacosRestTemplate_ITCase {
         param.put("serviceName", "app-test");
         HttpRestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class);
         Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("dom"), "app-test");
+        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
         System.out.println(restResult.getData());
     }
     

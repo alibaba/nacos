@@ -37,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 /**
@@ -65,6 +66,7 @@ public class ConfigAuth_ITCase extends AuthBase {
 
     @After
     public void destroy(){
+        super.destroy();
         try {
             iconfig.shutDown();
         }catch (NacosException ex) {
@@ -79,22 +81,12 @@ public class ConfigAuth_ITCase extends AuthBase {
         // Construct configService:
         properties.put(PropertyKeyConst.USERNAME, username1);
         properties.put(PropertyKeyConst.PASSWORD, password1);
+        properties.put(PropertyKeyConst.NAMESPACE, namespace1);
         iconfig = NacosFactory.createConfigService(properties);
 
         final String content = "test";
-        try {
-            iconfig.publishConfig(dataId, group, content);
-            fail();
-        } catch (NacosException ne) {
-            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
-        }
-
-        try {
-            iconfig.removeConfig(dataId, group);
-            fail();
-        } catch (NacosException ne) {
-            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
-        }
+        assertFalse(iconfig.publishConfig(dataId, group, content));
+        assertFalse(iconfig.removeConfig(dataId, group));
     }
 
     @Test

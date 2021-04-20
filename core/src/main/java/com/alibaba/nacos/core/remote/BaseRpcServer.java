@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * abstract rpc server .
@@ -103,6 +104,7 @@ public abstract class BaseRpcServer {
     /**
      * the increase offset of nacos server port for rpc server port.
      */
+    @PreDestroy
     public abstract void shutdownServer();
 
 }
