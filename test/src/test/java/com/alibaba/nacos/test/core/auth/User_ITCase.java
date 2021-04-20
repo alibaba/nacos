@@ -85,6 +85,8 @@ public class User_ITCase extends HttpClient4Test {
                 HttpMethod.DELETE);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+    
+        System.setProperty("nacos.core.auth.enabled", "false");
     }
 
 
@@ -296,7 +298,5 @@ public class User_ITCase extends HttpClient4Test {
                 String.class,
                 HttpMethod.PUT);
         Assert.assertEquals(response.getStatusCode(), HttpStatus.FORBIDDEN);
-
-        System.setProperty("nacos.core.auth.enabled", "false");
     }
 }
