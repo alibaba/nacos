@@ -29,6 +29,7 @@ import com.alibaba.nacos.test.utils.NamingTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,7 +123,6 @@ public class MultiTenant_InstanceAPI_ITCase {
         naming2.registerInstance(serviceName, "22.22.22.22", 80);
         
         naming.registerInstance(serviceName, "33.33.33.33", 8888);
-        naming.registerInstance(serviceName, "44.44.44.44", 8888);
         
         TimeUnit.SECONDS.sleep(5L);
         
@@ -139,7 +139,7 @@ public class MultiTenant_InstanceAPI_ITCase {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         json = JacksonUtils.toObj(response.getBody());
         
-        Assert.assertEquals(2, json.get("hosts").size());
+        Assert.assertEquals(1, json.get("hosts").size());
     }
     
     /**
@@ -193,7 +193,6 @@ public class MultiTenant_InstanceAPI_ITCase {
         naming2.registerInstance(serviceName, "22.22.22.22", 80);
         
         naming.registerInstance(serviceName, "33.33.33.33", 8888, "c1");
-        naming.registerInstance(serviceName, "44.44.44.44", 8888);
         
         TimeUnit.SECONDS.sleep(5L);
         
@@ -251,6 +250,7 @@ public class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
+    @Ignore("nacos 2.0 will not use beat to ensure healthy status")
     public void multipleTenant_deleteInstance() throws Exception {
         String serviceName = randomDomainName();
         
@@ -288,6 +288,7 @@ public class MultiTenant_InstanceAPI_ITCase {
      * @ExpectResult :
      */
     @Test
+    @Ignore("nacos 2.0 will not use beat to ensure healthy status")
     public void multipleTenant_group_deleteInstance() throws Exception {
         String serviceName = randomDomainName();
         
@@ -370,14 +371,13 @@ public class MultiTenant_InstanceAPI_ITCase {
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
         naming2.registerInstance(serviceName, TEST_GROUP_2, "22.22.22.22", 80);
         
-        TimeUnit.SECONDS.sleep(5L);
-        
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
                 Params.newParams().appendParam("serviceName", serviceName).appendParam("groupName", TEST_GROUP_2)
                         .appendParam("ip", "22.22.22.22").appendParam("port", "80")
                         .appendParam("namespaceId", "namespace-2").appendParam("weight", "8.0").done(), String.class,
                 HttpMethod.PUT);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        TimeUnit.SECONDS.sleep(5L);
         
         response = request("/nacos/v1/ns/instance/list",
                 Params.newParams().appendParam("serviceName", serviceName) //获取naming中的实例
@@ -401,7 +401,7 @@ public class MultiTenant_InstanceAPI_ITCase {
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
         naming2.registerInstance(serviceName, TEST_GROUP_2, "22.22.22.22", 80);
         
-        TimeUnit.SECONDS.sleep(5L);
+        TimeUnit.SECONDS.sleep(3L);
         
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
                 Params.newParams().appendParam("serviceName", serviceName).appendParam("groupName", TEST_GROUP_2)
@@ -415,6 +415,8 @@ public class MultiTenant_InstanceAPI_ITCase {
                         .appendParam("ip", "22.22.22.22").appendParam("port", "80")
                         .appendParam("namespaceId", "namespace-2").done(), String.class, HttpMethod.PATCH);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+    
+        TimeUnit.SECONDS.sleep(3L);
         
         response = request("/nacos/v1/ns/instance/list",
                 Params.newParams().appendParam("serviceName", serviceName) //获取naming中的实例
@@ -442,14 +444,13 @@ public class MultiTenant_InstanceAPI_ITCase {
         naming.registerInstance(serviceName, "33.33.33.33", 8888);
         naming.registerInstance(serviceName, "44.44.44.44", 8888);
         
-        TimeUnit.SECONDS.sleep(5L);
-        
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
                 Params.newParams().appendParam("serviceName", serviceName).appendParam("ip", "33.33.33.33")
                         .appendParam("port", "8888").appendParam("namespaceId", "namespace-1") //新增
                         .done(), String.class, HttpMethod.POST);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        
+    
+        TimeUnit.SECONDS.sleep(5L);
         response = request("/nacos/v1/ns/instance/list",
                 Params.newParams().appendParam("serviceName", serviceName) //获取naming中的实例
                         .appendParam("namespaceId", "namespace-1").done(), String.class);

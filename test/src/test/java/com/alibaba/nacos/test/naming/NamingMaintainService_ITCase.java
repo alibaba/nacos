@@ -90,21 +90,22 @@ public class NamingMaintainService_ITCase {
     }
 
     @Test
-    public void updateInstance() throws NacosException {
+    public void updateInstance() throws NacosException, InterruptedException {
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external-update");
         map.put("version", "2.0");
         namingService.registerInstance(serviceName, instance);
         instance.setMetadata(map);
         namingMaintainService.updateInstance(serviceName, instance);
-        List<Instance> instances = namingService.getAllInstances(serviceName, true);
-
+        TimeUnit.SECONDS.sleep(3L);
+        List<Instance> instances = namingService.getAllInstances(serviceName, false);
         Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals("2.0", instances.get(0).getMetadata().get("version"));
         System.out.println(instances.get(0));
     }
 
     @Test
-    public void updateInstanceWithDisable() throws NacosException {
+    public void updateInstanceWithDisable() throws NacosException, InterruptedException {
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external-update");
         map.put("version", "2.0");
@@ -112,14 +113,14 @@ public class NamingMaintainService_ITCase {
         instance.setMetadata(map);
         instance.setEnabled(false);
         namingMaintainService.updateInstance(serviceName, instance);
-        List<Instance> instances = namingService.getAllInstances(serviceName, true);
-
-        Assert.assertEquals(instances.size(), 0);
+        TimeUnit.SECONDS.sleep(3L);
+        List<Instance> instances = namingService.getAllInstances(serviceName, false);
+        Assert.assertEquals(0, instances.size());
     }
 
     @Test
     public void createAndUpdateService() throws NacosException {
-
+        String serviceName = randomDomainName();
         // register service
         Service preService = new Service();
         preService.setName(serviceName);
@@ -154,7 +155,7 @@ public class NamingMaintainService_ITCase {
 
     @Test
     public void deleteService() throws NacosException {
-
+        String serviceName = randomDomainName();
         Service preService = new Service();
         preService.setName(serviceName);
         System.out.println("service info : " + preService);

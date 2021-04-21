@@ -55,18 +55,10 @@ public class SubscribeCluster_ITCase {
 
     @Before
     public void init() throws Exception {
-        NamingBase.prepareServer(port);
         instances.clear();
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-        }
-        while (true) {
-            if (!"UP".equals(naming.getServerStatus())) {
-                Thread.sleep(1000L);
-                continue;
-            }
-            break;
         }
     }
 
@@ -77,7 +69,7 @@ public class SubscribeCluster_ITCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout = 10000L)
     public void subscribeAdd() throws Exception {
         String serviceName = randomDomainName();
 
@@ -104,11 +96,10 @@ public class SubscribeCluster_ITCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout = 10000L)
     public void subscribeDelete() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c1");
 
         TimeUnit.SECONDS.sleep(3);
 
@@ -126,14 +117,16 @@ public class SubscribeCluster_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
+    
+        TimeUnit.SECONDS.sleep(1);
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
 
-        while (instances.isEmpty()) {
+        while (!instances.isEmpty()) {
             Thread.sleep(1000L);
         }
 
-        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        Assert.assertTrue(instances.isEmpty());
     }
 
     /**
@@ -141,7 +134,7 @@ public class SubscribeCluster_ITCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout = 10000L)
     public void subscribeUnhealthy() throws Exception {
         String serviceName = randomDomainName();
 
