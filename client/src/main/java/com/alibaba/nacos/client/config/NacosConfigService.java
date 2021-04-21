@@ -160,7 +160,6 @@ public class NacosConfigService implements ConfigService {
             ConfigResponse response = worker.getServerConfig(dataId, group, tenant, timeoutMs);
             cr.setContent(response.getContent());
             cr.setEncryptedDataKey(response.getEncryptedDataKey());
-            configFilterChainManager.doFilter(null, cr);
             
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
