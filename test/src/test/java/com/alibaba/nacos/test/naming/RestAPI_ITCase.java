@@ -57,17 +57,16 @@ public class RestAPI_ITCase extends NamingBase {
     public void metrics() throws Exception {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/operator/metrics",
-            Params.newParams()
-                .done(),
+            Params.newParams().appendParam("onlyStatus", "false").done(),
             String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         JsonNode json = JacksonUtils.toObj(response.getBody());
-        Assert.assertTrue(json.get("serviceCount").asInt() > 0);
-        Assert.assertTrue(json.get("instanceCount").asInt() > 0);
-        Assert.assertTrue(json.get("responsibleServiceCount").asInt() > 0);
-        Assert.assertTrue(json.get("responsibleInstanceCount").asInt() > 0);
+        Assert.assertNotNull(json.get("serviceCount"));
+        Assert.assertNotNull(json.get("instanceCount"));
+        Assert.assertNotNull(json.get("responsibleServiceCount"));
+        Assert.assertNotNull(json.get("responsibleInstanceCount"));
     }
 
     /**
@@ -138,7 +137,7 @@ public class RestAPI_ITCase extends NamingBase {
             Params.newParams()
                 .appendParam("serviceName", serviceName)
                 .appendParam("pageNo", "1")
-                .appendParam("pageSize", "15")
+                .appendParam("pageSize", "150")
                 .done(),
             String.class);
 
@@ -161,7 +160,7 @@ public class RestAPI_ITCase extends NamingBase {
             Params.newParams()
                 .appendParam("serviceName", serviceName)
                 .appendParam("pageNo", "1")
-                .appendParam("pageSize", "15")
+                .appendParam("pageSize", "150")
                 .done(),
             String.class);
 
