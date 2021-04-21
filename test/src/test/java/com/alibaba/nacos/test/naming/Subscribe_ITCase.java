@@ -36,8 +36,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -49,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class Subscribe_ITCase extends RestAPI_ITCase {
+public class Subscribe_ITCase extends NamingBase {
 
     private NamingService naming;
     @LocalServerPort
@@ -57,19 +59,16 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
 
     @Before
     public void init() throws Exception {
-        NamingBase.prepareServer(port);
         instances.clear();
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            Properties properties = new Properties();
+            properties.setProperty("namingRequestTimeout", "300000");
+            properties.setProperty("serverAddr", "127.0.0.1" + ":" + port);
+            naming = NamingFactory.createNamingService(properties);
         }
-        while (true) {
-            if (!"UP".equals(naming.getServerStatus())) {
-                Thread.sleep(1000L);
-                continue;
-            }
-            break;
-        }
+        String url = String.format("http://localhost:%d/", port);
+        this.base = new URL(url);
     }
 
     private volatile List<Instance> instances = Collections.emptyList();
@@ -79,7 +78,7 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout = 4 * TIME_OUT)
     public void subscribeAdd() throws Exception {
         String serviceName = randomDomainName();
 
@@ -106,11 +105,10 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout = 4 * TIME_OUT)
     public void subscribeDelete() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c1");
 
         TimeUnit.SECONDS.sleep(3);
 
@@ -128,14 +126,16 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
+    
+        TimeUnit.SECONDS.sleep(1);
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
 
-        while (instances.isEmpty()) {
+        while (!instances.isEmpty()) {
             Thread.sleep(1000L);
         }
 
-        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        Assert.assertTrue(instances.isEmpty());
     }
 
     /**
@@ -143,7 +143,7 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
      *
      * @throws Exception
      */
-    @Test
+    @Test(timeout = 4 * TIME_OUT)
     public void subscribeUnhealthy() throws Exception {
         String serviceName = randomDomainName();
 
@@ -164,8 +164,8 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
 
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
-
-    @Test(timeout = 20*TIME_OUT)
+    
+    @Test(timeout = 4 * TIME_OUT)
     public void subscribeEmpty() throws Exception {
 
         String serviceName = randomDomainName();
@@ -230,8 +230,11 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
         JsonNode body = JacksonUtils.toObj(response.getBody());
 
         Assert.assertEquals(1, body.get("subscribers").size());
-
-        NamingService naming2 = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+    
+        Properties properties = new Properties();
+        properties.setProperty("namingRequestTimeout", "300000");
+        properties.setProperty("serverAddr", "127.0.0.1" + ":" + port);
+        NamingService naming2 = NamingFactory.createNamingService(properties);
 
         naming2.subscribe(serviceName, new EventListener() {
             @Override
@@ -256,7 +259,8 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
 
         body = JacksonUtils.toObj(response.getBody());
 
-        Assert.assertEquals(2, body.get("subscribers").size());
+        // server will remove duplicate subscriber by ip port service app and so on
+        Assert.assertEquals(1, body.get("subscribers").size());
     }
 
 }

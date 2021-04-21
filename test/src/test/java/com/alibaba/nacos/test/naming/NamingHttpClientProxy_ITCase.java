@@ -30,6 +30,7 @@ import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@Ignore("Http sync will stop for 2.0 server, and will be removed")
 public class NamingHttpClientProxy_ITCase {
     @LocalServerPort
     private int port;

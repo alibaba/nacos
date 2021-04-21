@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -100,7 +101,6 @@ public class MultiTenant_ITCase {
         naming2.registerInstance(serviceName, "22.22.22.22", 80);
 
         naming.registerInstance(serviceName, "33.33.33.33", 8888);
-        naming.registerInstance(serviceName, "44.44.44.44", 8888);
 
         TimeUnit.SECONDS.sleep(5L);
 
@@ -115,7 +115,7 @@ public class MultiTenant_ITCase {
         Assert.assertEquals(80, instances.get(0).getPort());
 
         instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
     }
 
     /**
@@ -132,7 +132,6 @@ public class MultiTenant_ITCase {
         naming2.registerInstance(serviceName, TEST_GROUP_2,"22.22.22.22", 80);
 
         naming.registerInstance(serviceName, "33.33.33.33", 8888);
-        naming.registerInstance(serviceName, "44.44.44.44", 8888);
 
         TimeUnit.SECONDS.sleep(5L);
 
@@ -145,7 +144,7 @@ public class MultiTenant_ITCase {
         Assert.assertEquals(80, instances.get(0).getPort());
 
         instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
 
         naming1.deregisterInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
         naming1.deregisterInstance(serviceName, TEST_GROUP_2,"22.22.22.22", 80);
@@ -196,7 +195,6 @@ public class MultiTenant_ITCase {
         naming2.registerInstance(serviceName, "22.22.22.22", 80);
 
         naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
-        naming.registerInstance(serviceName, "44.44.44.44", 8888);
 
         TimeUnit.SECONDS.sleep(5L);
 
@@ -211,7 +209,7 @@ public class MultiTenant_ITCase {
 
 
         instances = naming.selectInstances(serviceName, true);
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(1, instances.size());
     }
 
     /**
@@ -254,6 +252,7 @@ public class MultiTenant_ITCase {
         String serviceName = randomDomainName();
         System.out.println(serviceName);
         naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
+        // will cover the instance before
         naming1.registerInstance(serviceName, TEST_GROUP_2,"11.11.11.11", 80);
 
         naming.registerInstance(serviceName, Constants.DEFAULT_GROUP,"11.11.11.11", 80);
@@ -299,6 +298,7 @@ public class MultiTenant_ITCase {
 
         String serviceName = randomDomainName();
         naming1.registerInstance(serviceName, TEST_GROUP_1, "11.11.11.11",  TEST_PORT, "c1");
+        // will cover the instance before
         naming1.registerInstance(serviceName, TEST_GROUP_2, "22.22.22.22",  TEST_PORT, "c1");
         TimeUnit.SECONDS.sleep(5L);
 
@@ -505,19 +505,18 @@ public class MultiTenant_ITCase {
 
         String serviceName = randomDomainName();
 
-        naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
         naming1.registerInstance(serviceName, "22.22.22.22", TEST_PORT, "c1");
         naming2.registerInstance(serviceName, "22.22.22.22", TEST_PORT, "c1");
 
         List<Instance> instances = naming1.getAllInstances(serviceName);
-        verifyInstanceListForNaming(naming1, 2, serviceName);
+        verifyInstanceListForNaming(naming1, 1, serviceName);
 
-        Assert.assertEquals(2, naming1.getAllInstances(serviceName).size());
+        Assert.assertEquals(1, naming1.getAllInstances(serviceName).size());
 
         naming1.deregisterInstance(serviceName, "22.22.22.22", TEST_PORT, "c1");
         TimeUnit.SECONDS.sleep(12);
 
-        Assert.assertEquals(1, naming1.getAllInstances(serviceName).size());
+        Assert.assertEquals(0, naming1.getAllInstances(serviceName).size());
         Assert.assertEquals(1, naming2.getAllInstances(serviceName).size());
     }
 
@@ -528,6 +527,7 @@ public class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
+    @Ignore("nacos 2.0 deregister only judged by client and service")
     public void multipleTenant_group_deregisterInstance() throws Exception {
 
         String serviceName = randomDomainName();
@@ -552,6 +552,7 @@ public class MultiTenant_ITCase {
      * @ExpectResult :
      */
     @Test
+    @Ignore("nacos 2.0 deregister only judged by client and service")
     public void multipleTenant_group_cluster_deregisterInstance() throws Exception {
 
         String serviceName = randomDomainName();
@@ -581,21 +582,20 @@ public class MultiTenant_ITCase {
     public void multipleTenant_selectOneHealthyInstance() throws Exception {
 
         String serviceName = randomDomainName();
-
-        naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
+        
         naming1.registerInstance(serviceName, "22.22.22.22", TEST_PORT, "c2");
         naming2.registerInstance(serviceName, "22.22.22.22", TEST_PORT, "c3");
 
         List<Instance> instances = naming1.getAllInstances(serviceName);
-        verifyInstanceListForNaming(naming1, 2, serviceName);
+        verifyInstanceListForNaming(naming1, 1, serviceName);
 
-        Assert.assertEquals(2, naming1.getAllInstances(serviceName).size());
+        Assert.assertEquals(1, naming1.getAllInstances(serviceName).size());
 
-        Instance instance = naming1.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
-        Assert.assertEquals("11.11.11.11", instance.getIp());
-
-        naming1.deregisterInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
-        TimeUnit.SECONDS.sleep(12);
+        Instance instance = naming1.selectOneHealthyInstance(serviceName, Arrays.asList("c2"));
+        Assert.assertEquals("22.22.22.22", instance.getIp());
+    
+        naming2.deregisterInstance(serviceName, "22.22.22.22", TEST_PORT, "c3");
+        TimeUnit.SECONDS.sleep(5);
         instance = naming1.selectOneHealthyInstance(serviceName);
         Assert.assertEquals("22.22.22.22", instance.getIp());
     }
