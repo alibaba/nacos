@@ -449,7 +449,7 @@ public class ServiceController {
     public ObjectNode subscribers(HttpServletRequest request) {
         
         int pageNo = NumberUtils.toInt(WebUtils.optional(request, "pageNo", "1"));
-        int pageSize = NumberUtils.toInt(WebUtils.optional(request, "pageSize", "10000"));
+        int pageSize = NumberUtils.toInt(WebUtils.optional(request, "pageSize", "1000"));
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
