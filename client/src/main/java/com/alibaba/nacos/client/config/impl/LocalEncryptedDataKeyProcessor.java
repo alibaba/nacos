@@ -91,6 +91,13 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
                     LOGGER.error("[" + envName + "] delete snapshot error, " + file, ioe);
                 }
             } else {
+                File parentFile = file.getParentFile();
+                if (!parentFile.exists()) {
+                    boolean isMdOk = parentFile.mkdirs();
+                    if (!isMdOk) {
+                        LOGGER.error("[{}] save snapshot error", envName);
+                    }
+                }
                 if (JvmUtil.isMultiInstance()) {
                     ConcurrentDiskUtil.writeFileContent(file, encryptDataKey, Constants.ENCODE);
                 } else {
