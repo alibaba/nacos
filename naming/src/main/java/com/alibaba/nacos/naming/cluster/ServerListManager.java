@@ -132,15 +132,15 @@ public class ServerListManager extends MemberChangeListener {
                             .port(Integer.parseInt(info[1])).build());
             
             // This metadata information exists from 1.3.0 onwards "version"
-            if (server.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
-                continue;
+            if (server.getExtendVal(MemberMetaDataConstants.VERSION) == null) {
+                // copy to trigger member change event
+                server = server.copy();
+                // received heartbeat from server of version before 1.3.0
+                if (!server.getState().equals(NodeState.UP)) {
+                    Loggers.SRV_LOG.info("member {} state changed to UP", server);
+                }
+                server.setState(NodeState.UP);
             }
-            // received heartbeat from server of version before 1.3.0
-            server = server.copy();  // copy to trigger member change event
-            if (!server.getState().equals(NodeState.UP)) {
-                Loggers.SRV_LOG.info("member {} state changed to UP", server);
-            }
-            server.setState(NodeState.UP);
             server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
             server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
             memberManager.update(server);
