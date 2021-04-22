@@ -16,10 +16,11 @@
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +46,11 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class SelectOneHealthyInstance_ITCase {
 
-    private NamingService naming;
+    private static NamingService naming;
+    private static NamingService naming1;
+    private static NamingService naming2;
+    private static NamingService naming3;
+    private static NamingService naming4;
     @LocalServerPort
     private int port;
     @Before
@@ -53,9 +58,31 @@ public class SelectOneHealthyInstance_ITCase {
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            naming1 = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            naming2 = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            naming3 = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            naming4 = NamingFactory.createNamingService("127.0.0.1"+":"+port);
         }
     }
-
+    
+    @AfterClass
+    public static void tearDown() throws NacosException {
+        if (null != naming) {
+            naming.shutDown();
+        }
+        if (null != naming1) {
+            naming1.shutDown();
+        }
+        if (null != naming2) {
+            naming2.shutDown();
+        }
+        if (null != naming3) {
+            naming3.shutDown();
+        }
+        if (null != naming4) {
+            naming4.shutDown();
+        }
+    }
 
     /**
      * 获取一个健康的Instance
@@ -65,7 +92,7 @@ public class SelectOneHealthyInstance_ITCase {
     public void selectOneHealthyInstances() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
-        naming.registerInstance(serviceName, "127.0.0.1", 60000);
+        naming1.registerInstance(serviceName, "127.0.0.1", 60000);
 
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName);
@@ -92,10 +119,10 @@ public class SelectOneHealthyInstance_ITCase {
     public void selectOneHealthyInstancesCluster() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "127.0.0.1", 60000, "c1");
-        naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "127.0.0.1", 60001, "c1");
-        naming.registerInstance(serviceName, "127.0.0.1", 60002, "c2");
+        naming1.registerInstance(serviceName, "127.0.0.1", 60000, "c1");
+        naming2.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
+        naming3.registerInstance(serviceName, "127.0.0.1", 60001, "c1");
+        naming4.registerInstance(serviceName, "127.0.0.1", 60002, "c2");
 
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
@@ -125,9 +152,9 @@ public class SelectOneHealthyInstance_ITCase {
     public void selectOneHealthyInstancesClusters() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "127.0.0.1", 60000, "c1");
-        naming.registerInstance(serviceName, "127.0.0.1", 60001, "c2");
+        naming1.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+        naming2.registerInstance(serviceName, "127.0.0.1", 60000, "c1");
+        naming3.registerInstance(serviceName, "127.0.0.1", 60001, "c2");
 
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1", "c2"));
