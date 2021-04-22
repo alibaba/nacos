@@ -21,14 +21,14 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.naming.misc.HttpClient;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.Subscribers;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -74,11 +74,13 @@ public class SubscribeManager {
      * @param serviceName service name
      * @param namespaceId namespace id
      * @param aggregation aggregation
+     * @param pageNo 页码
+     * @param pageSize 页大小
      * @return list of subscriber
      * @throws InterruptedException interrupted exception
      */
-    public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation)
-            throws InterruptedException {
+    public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation,
+            int pageNo, int pageSize) throws InterruptedException {
         if (aggregation) {
             // size = 1 means only myself in the list, we need at least one another server alive:
             if (memberManager.getServerList().size() <= 1) {
@@ -93,6 +95,8 @@ public class SubscribeManager {
                 paramValues.put(CommonParams.SERVICE_NAME, serviceName);
                 paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
                 paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
+                paramValues.put("pageNo", String.valueOf(pageNo));
+                paramValues.put("pageSize", String.valueOf(pageSize));
                 if (NetUtils.localServer().equals(server.getAddress())) {
                     subscriberList.addAll(getSubscribersFuzzy(serviceName, namespaceId));
                     continue;
@@ -107,7 +111,7 @@ public class SubscribeManager {
                     Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
                 } else {
-                    Loggers.SRV_LOG.warn("get subscriber from other member error, server:{}, resultCode:{}, resultMsg:{}",
+                    Loggers.SRV_LOG.warn("[SubscriberManager] get subscriber from other member error, server:{}, resultCode:{}, resultMsg:{}",
                             server.getAddress(), result.getCode(), result.getMessage());
                 }
             }

@@ -62,13 +62,15 @@ public class SubscribeManagerTest extends BaseTest {
         String serviceName = "test";
         String namespaceId = "public";
         boolean aggregation = Boolean.FALSE;
+        int pageNo = 1;
+        int pageSize = 10;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
                     serviceName);
             clients.add(subscriber);
             Mockito.when(pushService.getClients(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
-            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation, pageNo, pageSize);
             Assert.assertNotNull(list);
             Assert.assertEquals(1, list.size());
             Assert.assertEquals("public", list.get(0).getNamespaceId());
@@ -82,13 +84,15 @@ public class SubscribeManagerTest extends BaseTest {
         String serviceName = "test";
         String namespaceId = "public";
         boolean aggregation = Boolean.TRUE;
+        int pageNo = 1;
+        int pageSize = 10;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
                     "testGroupName@@test_subscriber");
             clients.add(subscriber);
             Mockito.when(pushService.getClientsFuzzy(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
-            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation, pageNo, pageSize);
             Assert.assertNotNull(list);
             Assert.assertEquals(1, list.size());
             Assert.assertEquals("testGroupName@@test_subscriber", list.get(0).getServiceName());
@@ -102,6 +106,8 @@ public class SubscribeManagerTest extends BaseTest {
         String serviceName = "test";
         String namespaceId = "public";
         boolean aggregation = Boolean.TRUE;
+        int pageNo = 1;
+        int pageSize = 10;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
@@ -124,7 +130,7 @@ public class SubscribeManagerTest extends BaseTest {
             
             Mockito.when(memberManager.allMembers()).thenReturn(healthyServers);
             //Mockito.doReturn(3).when(serverListManager.getHealthyServers().size());
-            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation, pageNo, pageSize);
             Assert.assertNotNull(list);
             Assert.assertEquals(2, list.size());
             Assert.assertEquals("public", list.get(0).getNamespaceId());

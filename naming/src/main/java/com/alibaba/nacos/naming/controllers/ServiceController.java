@@ -459,7 +459,7 @@ public class ServiceController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
         try {
-            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation, pageNo, pageSize);
             
             int start = (pageNo - 1) * pageSize;
             if (start < 0) {
