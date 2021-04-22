@@ -102,19 +102,16 @@ public class SecurityProxy {
      */
     public boolean login(List<String> servers) {
         
-        try {
-            if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
-                    .toMillis(tokenTtl - tokenRefreshWindow)) {
+        if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
+                .toMillis(tokenTtl - tokenRefreshWindow)) {
+            return true;
+        }
+    
+        for (String server : servers) {
+            if (login(server)) {
+                lastRefreshTime = System.currentTimeMillis();
                 return true;
             }
-            
-            for (String server : servers) {
-                if (login(server)) {
-                    lastRefreshTime = System.currentTimeMillis();
-                    return true;
-                }
-            }
-        } catch (Throwable ignore) {
         }
         
         return false;
