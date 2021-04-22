@@ -78,7 +78,7 @@ public class MultiTenant_InstanceAPI_ITCase {
     
     private URL base;
     
-    private volatile List<Instance> instances = Collections.emptyList();
+    private final List<Instance> instances = Collections.emptyList();
     
     @Before
     public void init() throws Exception {
@@ -415,7 +415,7 @@ public class MultiTenant_InstanceAPI_ITCase {
                         .appendParam("ip", "22.22.22.22").appendParam("port", "80")
                         .appendParam("namespaceId", "namespace-2").done(), String.class, HttpMethod.PATCH);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-    
+        
         TimeUnit.SECONDS.sleep(3L);
         
         response = request("/nacos/v1/ns/instance/list",
@@ -449,7 +449,7 @@ public class MultiTenant_InstanceAPI_ITCase {
                         .appendParam("port", "8888").appendParam("namespaceId", "namespace-1") //新增
                         .done(), String.class, HttpMethod.POST);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-    
+        
         TimeUnit.SECONDS.sleep(5L);
         response = request("/nacos/v1/ns/instance/list",
                 Params.newParams().appendParam("serviceName", serviceName) //获取naming中的实例
