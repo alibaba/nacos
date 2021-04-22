@@ -238,6 +238,10 @@ class ConfigEditor extends React.Component {
     Object.keys(form).forEach(key => {
       payload[key] = form[key];
     });
+    let configTags = this.state.form.config_tags;
+    if (configTags.length > 0) {
+      payload.config_tags = configTags.join(',');
+    }
     const stringify = require('qs/lib/stringify');
     this.setState({ loading: true });
     return request({
@@ -308,18 +312,20 @@ class ConfigEditor extends React.Component {
 
   setConfigTags(tags) {
     const { tagDataSource } = this.state;
-    const lastTag = tags[tags.length - 1];
-    if (tagDataSource.indexOf(lastTag) < 0) {
-      this.setState({ tagDataSource: [...tagDataSource, lastTag] });
-    }
-    if (tags.length > 5) {
-      tags.pop();
-    }
-    tags.forEach((v, i) => {
-      if (v.indexOf(',') !== -1 || v.indexOf('=') !== -1) {
-        tags.splice(i, 1);
+    if (tags.length > 0) {
+      const lastTag = tags[tags.length - 1];
+      if (tagDataSource.indexOf(lastTag) < 0) {
+        this.setState({ tagDataSource: [...tagDataSource, lastTag] });
       }
-    });
+      if (tags.length > 5) {
+        tags.pop();
+      }
+      tags.forEach((v, i) => {
+        if (v.indexOf(',') !== -1 || v.indexOf('=') !== -1) {
+          tags.splice(i, 1);
+        }
+      });
+    }
     this.changeForm({ config_tags: tags });
   }
 
@@ -365,6 +371,9 @@ class ConfigEditor extends React.Component {
       this.changeForm({ ...form, config_tags: configTags ? configTags.split(',') : [] });
       this.initMoacoEditor(type, content);
       this.codeVal = content;
+      this.setState({
+        tagDataSource: this.state.form.config_tags,
+      });
       return res;
     });
   }
