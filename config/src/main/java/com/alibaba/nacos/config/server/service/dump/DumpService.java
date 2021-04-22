@@ -344,6 +344,9 @@ public abstract class DumpService {
         dump(dataId, group, tenant, lastModified, handleIp, false);
     }
     
+    /**
+     * Add DumpTask to TaskManager, it will execute asynchronously.
+     */
     public void dump(String dataId, String group, String tenant, long lastModified, String handleIp, boolean isBeta) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta));
@@ -351,6 +354,9 @@ public abstract class DumpService {
         DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
     }
     
+    /**
+     * Add DumpTask to TaskManager, it will execute asynchronously.
+     */
     public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp,
             boolean isBeta) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
