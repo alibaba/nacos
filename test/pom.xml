@@ -26,11 +26,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>nacos-test</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <name>nacos-test ${project.version}</name>
     <url>http://nacos.io</url>
-
+    <modules>
+        <module>config-test</module>
+        <module>naming-test</module>
+        <module>core-test</module>
+    </modules>
+    
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -118,18 +123,4 @@
         </dependency>
 
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-Dnacos.standalone=true</argLine>
-                    <parallel>methods</parallel>
-                    <useUnlimitedThreads>true</useUnlimitedThreads>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>

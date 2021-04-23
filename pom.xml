@@ -531,50 +531,34 @@
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven-failsafe-plugin.version}</version>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
                         <configuration>
-                            <argLine>@{failsafeArgLine}</argLine>
-                            <argLine>-Dnacos.standalone=true</argLine>
+                            <testFailureIgnore>false</testFailureIgnore>
                             <includes>
                                 <include>**/*CITCase.java</include>
                             </includes>
                         </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
         </profile>
         <profile>
             <!--  Run integration tests for all modules separately  -->
-            <id>it-test</id>
+            <id>nit-test</id>
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven-failsafe-plugin.version}</version>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
                         <configuration>
-                            <argLine>@{failsafeArgLine}</argLine>
-                            <argLine>-Dnacos.standalone=true</argLine>
+                            <testFailureIgnore>false</testFailureIgnore>
                             <includes>
-                                <include>**/*ITCase.java</include>
+                                <include>**/naming/*ITCase.java</include>
                             </includes>
                         </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
