@@ -29,6 +29,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 public class ConfigFilterChainManagerTest {
     
@@ -42,9 +43,13 @@ public class ConfigFilterChainManagerTest {
             this.name = name;
             this.order = order;
         }
-        
+    
         @Override
         public void init(IFilterConfig filterConfig) {
+        }
+    
+        @Override
+        public void init(Properties properties) {
         }
         
         @Override
@@ -74,10 +79,6 @@ public class ConfigFilterChainManagerTest {
         }
         
         @Override
-        public void deploy() {
-        }
-        
-        @Override
         public int getOrder() {
             return order;
         }
@@ -90,7 +91,7 @@ public class ConfigFilterChainManagerTest {
     
     @Test
     public void testAddFilterOrder() throws NacosException {
-        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
+        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
         MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
         MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
         MyIConfigFilter filter3 = new MyIConfigFilter("filter3", 3);
@@ -118,7 +119,7 @@ public class ConfigFilterChainManagerTest {
     
     @Test
     public void testAddFilterNotRepeat() throws NacosException {
-        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
+        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
         MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
         MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
         MyIConfigFilter repeatFilter = new MyIConfigFilter("filter1", 1);

@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.identify.StsConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -303,7 +304,7 @@ public abstract class ConfigTransportClient {
      * @return content.
      * @throws NacosException throw where query fail .
      */
-    public abstract String[] queryConfig(String dataId, String group, String tenat, long readTimeous, boolean notify)
+    public abstract ConfigResponse queryConfig(String dataId, String group, String tenat, long readTimeous, boolean notify)
             throws NacosException;
     
     /**
@@ -316,13 +317,14 @@ public abstract class ConfigTransportClient {
      * @param tag     tag.
      * @param betaIps betaIps.
      * @param content content.
+     * @param encryptedDataKey encryptedDataKey
      * @param casMd5  casMd5.
      * @param type    type.
      * @return success or not.
      * @throws NacosException throw where publish fail.
      */
     public abstract boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
-            String betaIps, String content, String casMd5, String type) throws NacosException;
+            String betaIps, String content, String encryptedDataKey, String casMd5, String type) throws NacosException;
     
     /**
      * remove config.
