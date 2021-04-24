@@ -18,6 +18,7 @@ package com.alibaba.nacos.test;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -33,7 +34,12 @@ public class BaseTest {
 	public void test_rs_json() {
 		String json = "{\"cluster\":\"DEFAULT\",\"ip\":\"127.0.0.1\",\"metadata\":{},\"port\":60000,\"scheduled\":true,\"serviceName\":\"DEFAULT_GROUP@@jinhan9J7ye.Vj6hx.net\",\"weight\":1.0}";
 		RsInfo client = JacksonUtils.toObj(json, RsInfo.class);
-		System.out.println(client);
+		Assert.assertEquals(60000, client.getPort());
+		Assert.assertEquals("DEFAULT_GROUP@@jinhan9J7ye.Vj6hx.net", client.getServiceName());
+		Assert.assertEquals("DEFAULT", client.getCluster());
+		Assert.assertEquals(1D, client.getWeight(), 0);
+		Assert.assertTrue(client.getMetadata().isEmpty());
+		Assert.assertEquals("127.0.0.1", client.getIp());
 	}
 
 }

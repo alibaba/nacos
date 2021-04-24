@@ -17,6 +17,7 @@
 package com.alibaba.nacos.address;
 
 import com.alibaba.nacos.common.utils.IPUtil;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class ParamCheckUtilTests {
@@ -24,9 +25,9 @@ public class ParamCheckUtilTests {
     @Test
     public void checkIPs() {
         String[] ips = {"127.0.0.1"};
-        System.out.println(IPUtil.checkIPs(ips));
+        Assert.assertEquals("ok", IPUtil.checkIPs(ips));
         
-        String[] illlegalIps = {"127.100.19", "127.0.0.1"};
-        System.err.println(IPUtil.checkIPs(illlegalIps));
+        String[] illegalIps = {"127.100.19", "127.0.0.1"};
+        Assert.assertEquals("illegal ip: 127.100.19", IPUtil.checkIPs(illegalIps));
     }
 }
