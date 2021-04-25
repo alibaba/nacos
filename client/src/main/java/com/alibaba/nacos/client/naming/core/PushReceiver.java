@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.core;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -25,6 +26,7 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -51,10 +53,19 @@ public class PushReceiver implements Runnable, Closeable {
     
     private volatile boolean closed = false;
     
+    public static String getPushReceiverUdpPort() {
+        return System.getenv(PropertyKeyConst.PUSH_RECEIVER_UDP_PORT);
+    }
+    
     public PushReceiver(HostReactor hostReactor) {
         try {
             this.hostReactor = hostReactor;
-            this.udpSocket = new DatagramSocket();
+            String udpPort = getPushReceiverUdpPort();
+            if (StringUtils.isEmpty(udpPort)) {
+                this.udpSocket = new DatagramSocket();
+            } else {
+                this.udpSocket = new DatagramSocket(new InetSocketAddress(Integer.parseInt(udpPort)));
+            }
             this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
