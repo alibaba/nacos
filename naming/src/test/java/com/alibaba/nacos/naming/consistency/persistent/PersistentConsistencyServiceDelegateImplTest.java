@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.persistent.impl.BasePersistentServiceProcessor;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.junit.Before;
@@ -27,6 +28,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.lang.reflect.Field;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PersistentConsistencyServiceDelegateImplTest {
@@ -46,58 +49,97 @@ public class PersistentConsistencyServiceDelegateImplTest {
     @Mock
     private RecordListener recordListener;
     
-    private PersistentConsistencyServiceDelegateImpl persistentConsistencyServiceDelegate;
+    @Mock
+    private BasePersistentServiceProcessor basePersistentServiceProcessor;
+    
+    private PersistentConsistencyServiceDelegateImpl oldPersistentConsistencyServiceDelegate;
+    
+    private PersistentConsistencyServiceDelegateImpl newPersistentConsistencyServiceDelegate;
     
     @Before
     public void setUp() throws Exception {
-        persistentConsistencyServiceDelegate = new PersistentConsistencyServiceDelegateImpl(clusterVersionJudgement,
+        oldPersistentConsistencyServiceDelegate = new PersistentConsistencyServiceDelegateImpl(clusterVersionJudgement,
                 raftConsistencyService, protocolManager);
+        
+        newPersistentConsistencyServiceDelegate = new PersistentConsistencyServiceDelegateImpl(clusterVersionJudgement,
+                raftConsistencyService, protocolManager);
+        Class<PersistentConsistencyServiceDelegateImpl> persistentConsistencyServiceDelegateClass = PersistentConsistencyServiceDelegateImpl.class;
+        Field switchNewPersistentService = persistentConsistencyServiceDelegateClass
+                .getDeclaredField("switchNewPersistentService");
+        switchNewPersistentService.setAccessible(true);
+        switchNewPersistentService.set(newPersistentConsistencyServiceDelegate, true);
+    
+        Field newPersistentConsistencyService = persistentConsistencyServiceDelegateClass
+                .getDeclaredField("newPersistentConsistencyService");
+        newPersistentConsistencyService.setAccessible(true);
+        newPersistentConsistencyService.set(newPersistentConsistencyServiceDelegate, basePersistentServiceProcessor);
     }
     
-    @Test
+    @Test()
     public void testPut() throws Exception {
         String key = "record_key";
-        persistentConsistencyServiceDelegate.put(key, record);
+        oldPersistentConsistencyServiceDelegate.put(key, record);
         Mockito.verify(raftConsistencyService).put(key, record);
+        
+        newPersistentConsistencyServiceDelegate.put(key, record);
+        Mockito.verify(basePersistentServiceProcessor).put(key, record);
     }
     
     @Test
     public void testRemove() throws NacosException {
         String key = "record_key";
-        persistentConsistencyServiceDelegate.remove(key);
+        oldPersistentConsistencyServiceDelegate.remove(key);
         Mockito.verify(raftConsistencyService).remove(key);
+        
+        newPersistentConsistencyServiceDelegate.remove(key);
+        Mockito.verify(basePersistentServiceProcessor).remove(key);
     }
     
-    @Test
+    @Test()
     public void testGet() throws NacosException {
         String key = "record_key";
-        persistentConsistencyServiceDelegate.get(key);
+        oldPersistentConsistencyServiceDelegate.get(key);
         Mockito.verify(raftConsistencyService).get(key);
+        
+        newPersistentConsistencyServiceDelegate.get(key);
+        Mockito.verify(basePersistentServiceProcessor).get(key);
     }
     
     @Test
     public void testListen() throws NacosException {
         String key = "listen_key";
-        persistentConsistencyServiceDelegate.listen(key, recordListener);
+        oldPersistentConsistencyServiceDelegate.listen(key, recordListener);
         Mockito.verify(raftConsistencyService).listen(key, recordListener);
+        
+        newPersistentConsistencyServiceDelegate.listen(key, recordListener);
+        Mockito.verify(basePersistentServiceProcessor).listen(key, recordListener);
     }
     
     @Test
     public void testUnListen() throws NacosException {
         String key = "listen_key";
-        persistentConsistencyServiceDelegate.unListen(key, recordListener);
+        oldPersistentConsistencyServiceDelegate.unListen(key, recordListener);
         Mockito.verify(raftConsistencyService).unListen(key, recordListener);
+        
+        newPersistentConsistencyServiceDelegate.unListen(key, recordListener);
+        Mockito.verify(basePersistentServiceProcessor).unListen(key, recordListener);
     }
     
     @Test
     public void testIsAvailable() {
-        persistentConsistencyServiceDelegate.isAvailable();
+        oldPersistentConsistencyServiceDelegate.isAvailable();
         Mockito.verify(raftConsistencyService).isAvailable();
+    
+        newPersistentConsistencyServiceDelegate.isAvailable();
+        Mockito.verify(basePersistentServiceProcessor).isAvailable();
     }
     
     @Test
     public void testGetErrorMsg() {
-        persistentConsistencyServiceDelegate.getErrorMsg();
+        oldPersistentConsistencyServiceDelegate.getErrorMsg();
         Mockito.verify(raftConsistencyService).getErrorMsg();
+    
+        newPersistentConsistencyServiceDelegate.getErrorMsg();
+        Mockito.verify(basePersistentServiceProcessor).getErrorMsg();
     }
 }
