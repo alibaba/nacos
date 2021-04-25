@@ -159,7 +159,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
     }
     
     @Override
-    public void addLogProcessors(Collection<RequestProcessor4CP> processors) {
+    public void addRequestProcessors(Collection<RequestProcessor4CP> processors) {
         raftServer.createMultiRaftGroup(processors);
     }
     
@@ -175,14 +175,14 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
     }
     
     @Override
-    public Response submit(WriteRequest request) throws Exception {
-        CompletableFuture<Response> future = submitAsync(request);
+    public Response write(WriteRequest request) throws Exception {
+        CompletableFuture<Response> future = writeAsync(request);
         // Here you wait for 10 seconds, as long as possible, for the request to complete
         return future.get(10_000L, TimeUnit.MILLISECONDS);
     }
     
     @Override
-    public CompletableFuture<Response> submitAsync(WriteRequest request) {
+    public CompletableFuture<Response> writeAsync(WriteRequest request) {
         return raftServer.commit(request.getGroup(), request, new CompletableFuture<>());
     }
     

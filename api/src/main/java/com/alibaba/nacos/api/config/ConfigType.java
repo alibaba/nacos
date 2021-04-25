@@ -18,6 +18,9 @@ package com.alibaba.nacos.api.config;
 
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Config data type.
  *
@@ -53,9 +56,22 @@ public enum ConfigType {
     /**
      * config type is "yaml".
      */
-    YAML("yaml");
+    YAML("yaml"),
     
-    String type;
+    /**
+     * not a real type.
+     */
+    UNSET("unset");
+    
+    private final String type;
+    
+    private static final Map<String, ConfigType> LOCAL_MAP = new HashMap<String, ConfigType>();
+    
+    static {
+        for (ConfigType configType : values()) {
+            LOCAL_MAP.put(configType.getType(), configType);
+        }
+    }
     
     ConfigType(String type) {
         this.type = type;
@@ -79,11 +95,6 @@ public enum ConfigType {
         if (StringUtils.isBlank(type)) {
             return false;
         }
-        for (ConfigType value : values()) {
-            if (value.type.equals(type)) {
-                return true;
-            }
-        }
-        return false;
+        return null != LOCAL_MAP.get(type) ? true : false;
     }
 }

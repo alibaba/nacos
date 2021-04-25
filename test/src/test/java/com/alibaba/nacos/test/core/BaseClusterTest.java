@@ -27,13 +27,13 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.service.repository.embedded.DistributedDatabaseOperateImpl;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
@@ -57,12 +57,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- */
 public class BaseClusterTest extends HttpClient4Test {
     
-    private static final Logger logger = LoggerFactory.getLogger(BaseClusterTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseClusterTest.class);
     
     protected static final String CONFIG_INFO_ID = "config-info-id";
     
@@ -78,9 +75,9 @@ public class BaseClusterTest extends HttpClient4Test {
     
     protected static NamingService inaming9;
     
-    protected static final NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(logger);
+    protected static final NacosRestTemplate NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(LOGGER);
     
-    protected static final AtomicBoolean[] finished = new AtomicBoolean[] {new AtomicBoolean(false),
+    protected static final AtomicBoolean[] FINISHED = new AtomicBoolean[] {new AtomicBoolean(false),
             new AtomicBoolean(false), new AtomicBoolean(false)};
     
     protected static Map<String, ConfigurableApplicationContext> applications = new HashMap<>();
@@ -212,9 +209,10 @@ public class BaseClusterTest extends HttpClient4Test {
                 DistributedDatabaseOperateImpl operate = context.getBean(DistributedDatabaseOperateImpl.class);
                 CPProtocol protocol = context.getBean(CPProtocol.class);
                 
-                protocol.protocolMetaData().subscribe(operate.group(), MetadataKey.LEADER_META_DATA, (o, arg) -> {
-                    System.out.println("node : 884" + (7 + index) + "-> select leader is : " + arg);
-                    if (finished[index].compareAndSet(false, true)) {
+                protocol.protocolMetaData().subscribe(operate.group(), MetadataKey.LEADER_META_DATA, o -> {
+                    ProtocolMetaData.ValueItem item = (ProtocolMetaData.ValueItem) o;
+                    System.out.println("node : 884" + (7 + index) + "-> select leader is : " + item.getData());
+                    if (FINISHED[index].compareAndSet(false, true)) {
                         latch.countDown();
                     }
                 });
@@ -225,7 +223,7 @@ public class BaseClusterTest extends HttpClient4Test {
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
-                        if (finished[index].compareAndSet(false, true)) {
+                        if (FINISHED[index].compareAndSet(false, true)) {
                             latch.countDown();
                         }
                     }

@@ -27,6 +27,8 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosGetRequestProcessor;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosLogProcessor;
+import com.alibaba.nacos.core.distributed.raft.processor.NacosReadRequestProcessor;
+import com.alibaba.nacos.core.distributed.raft.processor.NacosWriteRequestProcessor;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.DiskUtils;
@@ -78,8 +80,13 @@ public class JRaftUtils {
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
                 RaftExecutor.getRaftCliServiceExecutor());
         
+        // Deprecated
         rpcServer.registerProcessor(new NacosLogProcessor(server, SerializeFactory.getDefault()));
+        // Deprecated
         rpcServer.registerProcessor(new NacosGetRequestProcessor(server, SerializeFactory.getDefault()));
+        
+        rpcServer.registerProcessor(new NacosWriteRequestProcessor(server, SerializeFactory.getDefault()));
+        rpcServer.registerProcessor(new NacosReadRequestProcessor(server, SerializeFactory.getDefault()));
         
         return rpcServer;
     }
@@ -95,7 +102,7 @@ public class JRaftUtils {
             DiskUtils.forceMkdir(new File(snapshotUri));
             DiskUtils.forceMkdir(new File(metaDataUri));
         } catch (Exception e) {
-            Loggers.RAFT.error("Init Raft-File dir have some error : {}", e);
+            Loggers.RAFT.error("Init Raft-File dir have some error, cause: ", e);
             throw new RuntimeException(e);
         }
         

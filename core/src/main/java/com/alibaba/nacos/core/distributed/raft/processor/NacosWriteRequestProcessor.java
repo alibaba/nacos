@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.distributed.raft.processor;
 
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
+import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alipay.sofa.jraft.rpc.RpcContext;
 import com.alipay.sofa.jraft.rpc.RpcProcessor;
 
@@ -28,17 +29,22 @@ import com.alipay.sofa.jraft.rpc.RpcProcessor;
  */
 public class NacosWriteRequestProcessor extends AbstractProcessor implements RpcProcessor<WriteRequest> {
     
-    public NacosWriteRequestProcessor(Serializer serializer) {
+    private static final String INTEREST_NAME = WriteRequest.class.getName();
+    
+    private final JRaftServer server;
+    
+    public NacosWriteRequestProcessor(JRaftServer server, Serializer serializer) {
         super(serializer);
+        this.server = server;
     }
     
     @Override
     public void handleRequest(RpcContext rpcCtx, WriteRequest request) {
-    
+        handleRequest(server, request.getGroup(), rpcCtx, request);
     }
     
     @Override
     public String interest() {
-        return null;
+        return INTEREST_NAME;
     }
 }
