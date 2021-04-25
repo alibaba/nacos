@@ -160,6 +160,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private ServerAbilities initMemberAbilities() {
         ServerAbilities serverAbilities = new ServerAbilities();
         serverAbilities.getRemoteAbility().setSupportRemoteConnection(true);
+        // TODO naming and config ability should build and init by sub module.
+        serverAbilities.getNamingAbility().setSupportJraft(true);
         return serverAbilities;
     }
     
