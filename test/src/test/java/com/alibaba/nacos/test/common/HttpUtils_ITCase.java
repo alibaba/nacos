@@ -53,7 +53,9 @@ public class HttpUtils_ITCase {
 	public void test_rest_result() throws Exception {
 		String json = "{\"code\":200,\"message\":null,\"data\":[{\"USERNAME\":\"nacos\",\"PASSWORD\":\"$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu\",\"ENABLED\":true}]}";
 		RestResult<Object> result = ResponseHandler.convert(json, new GenericType<RestResult<Object>>(){}.getType());
-		System.out.println(result);
+		Assert.assertEquals(200, result.getCode());
+		Assert.assertNull(result.getMessage());
+		Assert.assertNotNull(result.getData());
 	}
 
 	@Test
