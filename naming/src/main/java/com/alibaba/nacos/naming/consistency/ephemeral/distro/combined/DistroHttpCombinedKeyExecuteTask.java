@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTaskExecuteEngine;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -57,7 +58,7 @@ public class DistroHttpCombinedKeyExecuteTask extends AbstractExecuteTask {
             DistroKey newKey = new DistroKey(DistroHttpCombinedKey.getSequenceKey(),
                     DistroHttpCombinedKeyDelayTask.class.getSimpleName(), singleDistroKey.getTargetServer());
             DistroHttpCombinedKeyDelayTask combinedTask = new DistroHttpCombinedKeyDelayTask(newKey, taskAction,
-                    globalConfig.getTaskDispatchPeriod() / 2, globalConfig.getBatchSyncKeyCount());
+                    DistroConfig.getInstance().getSyncDelayMillis(), globalConfig.getBatchSyncKeyCount());
             combinedTask.getActualResourceKeys().add(singleDistroKey.getResourceKey());
             distroDelayTaskExecuteEngine.addTask(newKey, combinedTask);
         } catch (Exception e) {

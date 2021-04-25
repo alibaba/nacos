@@ -26,6 +26,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
@@ -214,8 +215,7 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         
         @Override
         public long getTimeout() {
-            // TODO timeout can be configured.
-            return 3000L;
+            return DistroConfig.getInstance().getSyncTimeoutMillis();
         }
         
         @Override
@@ -260,8 +260,7 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         
         @Override
         public long getTimeout() {
-            // TODO timeout can be configured.
-            return 3000L;
+            return DistroConfig.getInstance().getVerifyTimeoutMillis();
         }
         
         @Override

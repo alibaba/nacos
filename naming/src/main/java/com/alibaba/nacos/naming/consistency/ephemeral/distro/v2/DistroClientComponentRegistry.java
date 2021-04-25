@@ -25,7 +25,6 @@ import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
-import com.alibaba.nacos.naming.misc.GlobalConfig;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -46,8 +45,6 @@ public class DistroClientComponentRegistry {
     
     private final DistroTaskEngineHolder taskEngineHolder;
     
-    private final GlobalConfig globalConfig;
-    
     private final ClientManager clientManager;
     
     private final ClusterRpcClientProxy clusterRpcClientProxy;
@@ -55,14 +52,13 @@ public class DistroClientComponentRegistry {
     private final UpgradeJudgement upgradeJudgement;
     
     public DistroClientComponentRegistry(ServerMemberManager serverMemberManager, DistroProtocol distroProtocol,
-            DistroComponentHolder componentHolder, DistroTaskEngineHolder taskEngineHolder, GlobalConfig globalConfig,
+            DistroComponentHolder componentHolder, DistroTaskEngineHolder taskEngineHolder,
             ClientManagerDelegate clientManager, ClusterRpcClientProxy clusterRpcClientProxy,
             UpgradeJudgement upgradeJudgement) {
         this.serverMemberManager = serverMemberManager;
         this.distroProtocol = distroProtocol;
         this.componentHolder = componentHolder;
         this.taskEngineHolder = taskEngineHolder;
-        this.globalConfig = globalConfig;
         this.clientManager = clientManager;
         this.clusterRpcClientProxy = clusterRpcClientProxy;
         this.upgradeJudgement = upgradeJudgement;
@@ -78,8 +74,7 @@ public class DistroClientComponentRegistry {
                 upgradeJudgement);
         DistroTransportAgent transportAgent = new DistroClientTransportAgent(clusterRpcClientProxy,
                 serverMemberManager);
-        DistroClientTaskFailedHandler taskFailedHandler = new DistroClientTaskFailedHandler(globalConfig,
-                taskEngineHolder);
+        DistroClientTaskFailedHandler taskFailedHandler = new DistroClientTaskFailedHandler(taskEngineHolder);
         componentHolder.registerDataStorage(DistroClientDataProcessor.TYPE, dataProcessor);
         componentHolder.registerDataProcessor(dataProcessor);
         componentHolder.registerTransportAgent(DistroClientDataProcessor.TYPE, transportAgent);
