@@ -19,18 +19,19 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.Objects;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
-import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
-import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
-import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -112,7 +113,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
         distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE,
-                globalConfig.getTaskDispatchPeriod() / 2);
+                DistroConfig.getInstance().getSyncDelayMillis());
     }
     
     @Override
