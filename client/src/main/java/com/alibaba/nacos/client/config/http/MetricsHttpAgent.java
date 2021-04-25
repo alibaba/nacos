@@ -53,7 +53,6 @@ public class MetricsHttpAgent implements HttpAgent {
             throw e;
         } finally {
             timer.observeDuration();
-            timer.close();
         }
         
         return result;
@@ -70,7 +69,6 @@ public class MetricsHttpAgent implements HttpAgent {
             throw e;
         } finally {
             timer.observeDuration();
-            timer.close();
         }
         
         return result;
@@ -84,11 +82,9 @@ public class MetricsHttpAgent implements HttpAgent {
         try {
             result = httpAgent.httpDelete(path, headers, paramValues, encode, readTimeoutMs);
         } catch (IOException e) {
-            
             throw e;
         } finally {
             timer.observeDuration();
-            timer.close();
         }
         
         return result;

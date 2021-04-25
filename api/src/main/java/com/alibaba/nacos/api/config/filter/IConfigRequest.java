@@ -24,6 +24,14 @@ package com.alibaba.nacos.api.config.filter;
 public interface IConfigRequest {
     
     /**
+     * put param.
+     *
+     * @param key   key
+     * @param value value
+     */
+    void putParameter(String key, Object value);
+    
+    /**
      * get param.
      *
      * @param key key

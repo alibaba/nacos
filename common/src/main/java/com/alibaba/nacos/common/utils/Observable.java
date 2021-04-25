@@ -31,8 +31,6 @@ public class Observable {
     
     private volatile int observerCnt = 0;
     
-    private boolean alreadyAddObserver = false;
-    
     /**
      * Adds an observer to the set of observers for this object, provided that it is not the same as some observer
      * already in the set. The order in which notifications will be delivered to multiple observers is not specified.
@@ -45,10 +43,7 @@ public class Observable {
         Objects.requireNonNull(o, "Observer");
         obs.add(o);
         observerCnt++;
-        if (!alreadyAddObserver) {
-            notifyAll();
-        }
-        alreadyAddObserver = true;
+        o.update(this);
     }
     
     /**
@@ -66,25 +61,9 @@ public class Observable {
      * If this object has changed, as indicated by the {@code hasChanged} method, then notify all of its observers and
      * then call the {@code clearChanged} method to indicate that this object has no longer changed.
      *
-     * <p>Each observer has its {@code update} method called with two arguments: this observable object and {@code
-     * null}. In other words, this method is equivalent to:
-     * <blockquote>{@code
-     * notifyObservers(null)}</blockquote>
+     * <p>Each observer has its {@code update} method called with one argument: this observable object.
      */
     public void notifyObservers() {
-        notifyObservers(null);
-    }
-    
-    /**
-     * If this object has changed, as indicated by the {@code hasChanged} method, then notify all of its observers and
-     * then call the {@code clearChanged} method to indicate that this object has no longer changed.
-     *
-     * <p>Each observer has its {@code update} method called with two arguments: this observable object and the {@code
-     * arg} argument.
-     *
-     * @param arg any object.
-     */
-    public void notifyObservers(Object arg) {
         synchronized (this) {
             /* We don't want the Observer doing callbacks into
              * arbitrary code while holding its own Monitor.
@@ -102,13 +81,9 @@ public class Observable {
                 return;
             }
             clearChanged();
-            if (!alreadyAddObserver) {
-                ThreadUtils.objectWait(this);
-            }
         }
-        
         for (Observer observer : obs) {
-            observer.update(this, arg);
+            observer.update(this);
         }
     }
     

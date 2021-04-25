@@ -102,6 +102,16 @@ public class InstanceController {
                         client.getClusters(), client.getSocketAddr().getAddress().getHostAddress(), 0,
                         StringUtils.EMPTY, false, StringUtils.EMPTY, StringUtils.EMPTY, false);
             } catch (Exception e) {
+                String serviceNameField = "name";
+                String lastRefTimeField = "lastRefTime";
+                if (result.get(serviceNameField) == null) {
+                    String serviceName = client.getServiceName();
+                    if (serviceName == null) {
+                        serviceName = StringUtils.trimToEmpty(serviceName);
+                    }
+                    result.put(serviceNameField, serviceName);
+                    result.put(lastRefTimeField, System.currentTimeMillis());
+                }
                 Loggers.SRV_LOG.warn("PUSH-SERVICE: service is not modified", e);
             }
             

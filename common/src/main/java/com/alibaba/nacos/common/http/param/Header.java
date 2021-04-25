@@ -23,9 +23,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Http header.
@@ -41,8 +41,8 @@ public class Header {
     private final Map<String, List<String>> originalResponseHeader;
     
     private Header() {
-        header = new LinkedHashMap<String, String>();
-        originalResponseHeader = new LinkedHashMap<String, List<String>>();
+        header = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        originalResponseHeader = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
         addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip");
@@ -142,14 +142,13 @@ public class Header {
      *
      * <p>Currently only corresponds to the response header of JDK.
      *
-     * @param headers original response header
+     * @param key original response header key
+     * @param values original response header values
      */
-    public void setOriginalResponseHeader(Map<String, List<String>> headers) {
-        if (MapUtils.isNotEmpty(headers)) {
-            this.originalResponseHeader.putAll(headers);
-            for (Map.Entry<String, List<String>> entry : this.originalResponseHeader.entrySet()) {
-                addParam(entry.getKey(), entry.getValue().get(0));
-            }
+    public void addOriginalResponseHeader(String key, List<String> values) {
+        if (StringUtils.isNotEmpty(key)) {
+            this.originalResponseHeader.put(key, values);
+            addParam(key, values.get(0));
         }
     }
     

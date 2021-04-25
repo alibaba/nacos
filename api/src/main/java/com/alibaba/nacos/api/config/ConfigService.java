@@ -58,7 +58,7 @@ public interface ConfigService {
     /**
      * Add a listener to the configuration, after the server modified the configuration, the client will use the
      * incoming listener callback. Recommended asynchronous processing, the application can implement the getExecutor
-     * method in the ManagerListener, provide a thread pool of execution. If provided, use the main thread callback, May
+     * method in the ManagerListener, provide a thread pool of execution. If not provided, use the main thread callback, May
      * block other configurations or be blocked by other configurations.
      *
      * @param dataId   dataId

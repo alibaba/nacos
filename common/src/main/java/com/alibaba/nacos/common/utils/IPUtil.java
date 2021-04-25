@@ -73,11 +73,7 @@ public class IPUtil {
      * @return boolean
      */
     public static boolean isIPv4(String addr) {
-        try {
-            return InetAddress.getByName(addr).getAddress().length == IPV4_ADDRESS_LENGTH;
-        } catch (UnknownHostException e) {
-            return false;
-        }
+        return ipv4Pattern.matcher(addr).matches();
     }
     
     /**
@@ -101,12 +97,7 @@ public class IPUtil {
      * @return boolean
      */
     public static boolean isIP(String addr) {
-        try {
-            InetAddress.getByName(addr);
-            return true;
-        } catch (UnknownHostException e) {
-            return false;
-        }
+        return isIPv4(addr) || isIPv6(addr);
     }
     
     /**
@@ -148,9 +139,6 @@ public class IPUtil {
                 throw new IllegalArgumentException("The IP address(\"" + str
                         + "\") is incorrect. If it is an IPv6 address, please use [] to enclose the IP part!");
             }
-            if (!isIPv4(serverAddrArr[0])) {
-                throw new IllegalArgumentException("The IPv4 address(\"" + serverAddrArr[0] + "\") is incorrect.");
-            }
         }
         return serverAddrArr;
     }
@@ -174,9 +162,6 @@ public class IPUtil {
             Matcher m = ipv4Pattern.matcher(str);
             if (m.find()) {
                 result = m.group();
-                if (!isIPv4(result)) {
-                    result = "";
-                }
             }
         }
         return result;
