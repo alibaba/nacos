@@ -49,16 +49,13 @@ public class DistroProtocol {
     
     private final DistroTaskEngineHolder distroTaskEngineHolder;
     
-    private final DistroConfig distroConfig;
-    
     private volatile boolean isInitialized = false;
     
     public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
-            DistroTaskEngineHolder distroTaskEngineHolder, DistroConfig distroConfig) {
+            DistroTaskEngineHolder distroTaskEngineHolder) {
         this.memberManager = memberManager;
         this.distroComponentHolder = distroComponentHolder;
         this.distroTaskEngineHolder = distroTaskEngineHolder;
-        this.distroConfig = distroConfig;
         startDistroTask();
     }
     
@@ -84,12 +81,13 @@ public class DistroProtocol {
             }
         };
         GlobalExecutor.submitLoadDataTask(
-                new DistroLoadDataTask(memberManager, distroComponentHolder, distroConfig, loadCallback));
+                new DistroLoadDataTask(memberManager, distroComponentHolder, DistroConfig.getInstance(), loadCallback));
     }
     
     private void startVerifyTask() {
         GlobalExecutor.schedulePartitionDataTimedSync(new DistroVerifyTimedTask(memberManager, distroComponentHolder,
-                distroTaskEngineHolder.getExecuteWorkersManager()), distroConfig.getVerifyIntervalMillis());
+                        distroTaskEngineHolder.getExecuteWorkersManager()),
+                DistroConfig.getInstance().getVerifyIntervalMillis());
     }
     
     public boolean isInitialized() {
@@ -103,7 +101,7 @@ public class DistroProtocol {
      * @param action    the action of data operation
      */
     public void sync(DistroKey distroKey, DataOperation action) {
-        sync(distroKey, action, distroConfig.getSyncDelayMillis());
+        sync(distroKey, action, DistroConfig.getInstance().getSyncDelayMillis());
     }
     
     /**
@@ -164,7 +162,8 @@ public class DistroProtocol {
      * @return true if handle receive data successfully, otherwise false
      */
     public boolean onReceive(DistroData distroData) {
-        Loggers.DISTRO.info("[DISTRO] Receive distro data type: {}, key: {}", distroData.getType(), distroData.getDistroKey());
+        Loggers.DISTRO.info("[DISTRO] Receive distro data type: {}, key: {}", distroData.getType(),
+                distroData.getDistroKey());
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
@@ -183,7 +182,8 @@ public class DistroProtocol {
      */
     public boolean onVerify(DistroData distroData, String sourceAddress) {
         if (Loggers.DISTRO.isDebugEnabled()) {
-            Loggers.DISTRO.debug("[DISTRO] Receive verify data type: {}, key: {}", distroData.getType(), distroData.getDistroKey());
+            Loggers.DISTRO.debug("[DISTRO] Receive verify data type: {}, key: {}", distroData.getType(),
+                    distroData.getDistroKey());
         }
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
