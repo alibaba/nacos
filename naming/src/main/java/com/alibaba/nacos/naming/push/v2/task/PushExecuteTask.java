@@ -119,9 +119,15 @@ public class PushExecuteTask extends AbstractExecuteTask {
             long pushCostTimeForNetWork = pushFinishTime - executeStartTime;
             long pushCostTimeForAll = pushFinishTime - delayTask.getLastProcessTime();
             long serviceLevelAgreementTime = pushFinishTime - service.getLastUpdatedTime();
-            Loggers.PUSH.info("[PUSH-SUCC] {}ms, all delay time {}ms, SLA {}ms, {}, DataSize={}, target={}",
-                    pushCostTimeForNetWork, pushCostTimeForAll, serviceLevelAgreementTime, service,
-                    serviceInfo.getHosts().size(), subscriber.getIp());
+            if (isPushToAll) {
+                Loggers.PUSH.info("[PUSH-SUCC] {}ms, all delay time {}ms, SLA {}ms, {}, DataSize={}, target={}",
+                        pushCostTimeForNetWork, pushCostTimeForAll, serviceLevelAgreementTime, service,
+                        serviceInfo.getHosts().size(), subscriber.getIp());
+            } else {
+                Loggers.PUSH.info("[PUSH-SUCC] {}ms, all delay time {}ms for subscriber {}, {}, DataSize={}",
+                        pushCostTimeForNetWork, pushCostTimeForAll, subscriber.getIp(), service,
+                        serviceInfo.getHosts().size());
+            }
             PushResult result = PushResult
                     .pushSuccess(service, clientId, serviceInfo, subscriber, pushCostTimeForNetWork, pushCostTimeForAll,
                             serviceLevelAgreementTime, isPushToAll);

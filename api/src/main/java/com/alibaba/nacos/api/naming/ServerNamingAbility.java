@@ -27,14 +27,19 @@ import java.util.Objects;
  */
 public class ServerNamingAbility implements Serializable {
     
-    private boolean exampleAbility;
+    private static final long serialVersionUID = 8308895444341445512L;
     
-    public boolean isExampleAbility() {
-        return exampleAbility;
+    /**
+     * Nacos server can use SOFA-Jraft to handle persist service and metadata.
+     */
+    private boolean supportJraft;
+    
+    public boolean isSupportJraft() {
+        return supportJraft;
     }
     
-    public void setExampleAbility(boolean exampleAbility) {
-        this.exampleAbility = exampleAbility;
+    public void setSupportJraft(boolean supportJraft) {
+        this.supportJraft = supportJraft;
     }
     
     @Override
@@ -42,15 +47,15 @@ public class ServerNamingAbility implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ServerNamingAbility)) {
             return false;
         }
         ServerNamingAbility that = (ServerNamingAbility) o;
-        return exampleAbility == that.exampleAbility;
+        return supportJraft == that.supportJraft;
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(exampleAbility);
+        return Objects.hash(supportJraft);
     }
 }
