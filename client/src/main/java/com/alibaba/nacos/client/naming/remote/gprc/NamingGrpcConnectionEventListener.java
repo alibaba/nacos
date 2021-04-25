@@ -57,6 +57,7 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     }
     
     private void redoSubscribe() {
+        LogUtils.NAMING_LOGGER.info("Grpc re-connect, redo subscribe services");
         for (String each : subscribes) {
             ServiceInfo serviceInfo = ServiceInfo.fromKey(each);
             try {
@@ -68,6 +69,7 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     }
     
     private void redoRegisterEachService() {
+        LogUtils.NAMING_LOGGER.info("Grpc re-connect, redo register services");
         for (Map.Entry<String, Set<Instance>> each : registeredInstanceCached.entrySet()) {
             String serviceName = NamingUtils.getServiceName(each.getKey());
             String groupName = NamingUtils.getGroupName(each.getKey());
@@ -88,6 +90,7 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     
     @Override
     public void onDisConnect() {
+        LogUtils.NAMING_LOGGER.warn("Grpc connection disconnect");
     }
     
     /**
