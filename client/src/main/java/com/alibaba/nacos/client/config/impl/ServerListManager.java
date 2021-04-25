@@ -257,6 +257,10 @@ public class ServerListManager implements Closeable {
         GetServerListTask getServersTask = new GetServerListTask(addressServerUrl);
         for (int i = 0; i < initServerlistRetryTimes && serverUrls.isEmpty(); ++i) {
             getServersTask.run();
+            // When serverUrls is not empty, skip subsequent blocking directly.
+            if (!serverUrls.isEmpty()) {
+                break;
+            }
             try {
                 this.wait((i + 1) * 100L);
             } catch (Exception e) {
