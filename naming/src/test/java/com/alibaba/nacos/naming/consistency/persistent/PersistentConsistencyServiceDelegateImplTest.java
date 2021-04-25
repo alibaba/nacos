@@ -48,13 +48,11 @@ public class PersistentConsistencyServiceDelegateImplTest {
     
     private PersistentConsistencyServiceDelegateImpl persistentConsistencyServiceDelegate;
     
-    
     @Before
     public void setUp() throws Exception {
         persistentConsistencyServiceDelegate = new PersistentConsistencyServiceDelegateImpl(clusterVersionJudgement,
                 raftConsistencyService, protocolManager);
     }
-    
     
     @Test
     public void testPut() throws Exception {
