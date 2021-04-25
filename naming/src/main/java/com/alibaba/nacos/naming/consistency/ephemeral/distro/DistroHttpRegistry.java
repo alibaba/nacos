@@ -73,7 +73,7 @@ public class DistroHttpRegistry {
                 new DistroDataStorageImpl(dataStore, distroMapper));
         componentHolder.registerTransportAgent(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, new DistroHttpAgent(memberManager));
         componentHolder.registerFailedTaskHandler(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
-                new DistroHttpCombinedKeyTaskFailedHandler(globalConfig, taskEngineHolder));
+                new DistroHttpCombinedKeyTaskFailedHandler(taskEngineHolder));
         taskEngineHolder.registerNacosTaskProcessor(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
                 new DistroHttpDelayTaskProcessor(globalConfig, taskEngineHolder));
         componentHolder.registerDataProcessor(consistencyService);

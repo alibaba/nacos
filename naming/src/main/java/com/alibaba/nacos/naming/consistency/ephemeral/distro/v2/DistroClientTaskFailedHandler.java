@@ -17,11 +17,11 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.v2;
 
 import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandler;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
-import com.alibaba.nacos.naming.misc.GlobalConfig;
 
 /**
  * Distro client task failed handler.
@@ -30,18 +30,16 @@ import com.alibaba.nacos.naming.misc.GlobalConfig;
  */
 public class DistroClientTaskFailedHandler implements DistroFailedTaskHandler {
     
-    private final GlobalConfig globalConfig;
-    
     private final DistroTaskEngineHolder distroTaskEngineHolder;
     
-    public DistroClientTaskFailedHandler(GlobalConfig globalConfig, DistroTaskEngineHolder distroTaskEngineHolder) {
-        this.globalConfig = globalConfig;
+    public DistroClientTaskFailedHandler(DistroTaskEngineHolder distroTaskEngineHolder) {
         this.distroTaskEngineHolder = distroTaskEngineHolder;
     }
     
     @Override
     public void retry(DistroKey distroKey, DataOperation action) {
-        DistroDelayTask retryTask = new DistroDelayTask(distroKey, action, globalConfig.getSyncRetryDelay());
+        DistroDelayTask retryTask = new DistroDelayTask(distroKey, action,
+                DistroConfig.getInstance().getSyncRetryDelayMillis());
         distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKey, retryTask);
     }
 }
