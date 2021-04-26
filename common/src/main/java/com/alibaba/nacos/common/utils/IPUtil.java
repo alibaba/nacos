@@ -28,33 +28,33 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
 public class IPUtil {
-    
+
     public static final boolean PREFER_IPV6_ADDRESSES = Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"));
-    
+
     public static final String IPV6_START_MARK = "[";
-    
+
     public static final String IPV6_END_MARK = "]";
-    
+
     public static final String ILLEGAL_IP_PREFIX = "illegal ip: ";
-    
+
     public static final String IP_PORT_SPLITER = ":";
-    
+
     public static final int SPLIT_IP_PORT_RESULT_LENGTH = 2;
-    
+
     public static final String PERCENT_SIGN_IN_IPV6 = "%";
-    
+
     private static final String LOCAL_HOST_IP_V4 = "127.0.0.1";
-    
+
     private static final String LOCAL_HOST_IP_V6 = "[::1]";
-    
+
     private static Pattern ipv4Pattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
-    
+
     private static final int IPV4_ADDRESS_LENGTH = 4;
-    
+
     private static final int IPV6_ADDRESS_LENGTH = 16;
-    
+
     private static final String CHECK_OK = "ok";
-    
+
     /**
      * get localhost ip.
      * @return java.lang.String
@@ -65,7 +65,7 @@ public class IPUtil {
         }
         return LOCAL_HOST_IP_V4;
     }
-    
+
     /**
      * check whether the ip address is IPv4.
      *
@@ -75,7 +75,7 @@ public class IPUtil {
     public static boolean isIPv4(String addr) {
         return ipv4Pattern.matcher(addr).matches();
     }
-    
+
     /**
      * check whether the ip address is IPv6.
      *
@@ -89,7 +89,7 @@ public class IPUtil {
             return false;
         }
     }
-    
+
     /**
      * check whether the str is ip address (IPv4 or IPv6).
      *
@@ -99,7 +99,7 @@ public class IPUtil {
     public static boolean isIP(String addr) {
         return isIPv4(addr) || isIPv6(addr);
     }
-    
+
     /**
      * Check if the address contains a port.
      * 2020/9/3 14:53
@@ -109,7 +109,7 @@ public class IPUtil {
     public static boolean containsPort(String address) {
         return splitIPPortStr(address).length == SPLIT_IP_PORT_RESULT_LENGTH;
     }
-    
+
     /**
      * Split IP and port strings, support IPv4 and IPv6, IP in IPv6 must be enclosed with [].
      *
@@ -130,9 +130,6 @@ public class IPUtil {
                 serverAddrArr[0] = str.substring(0, (str.indexOf(IPV6_END_MARK) + 1));
                 serverAddrArr[1] = str.substring((str.indexOf(IPV6_END_MARK) + 2));
             }
-            if (!isIPv6(serverAddrArr[0])) {
-                throw new IllegalArgumentException("The IPv6 address(\"" + serverAddrArr[0] + "\") is incorrect.");
-            }
         } else {
             serverAddrArr = str.split(":");
             if (serverAddrArr.length > SPLIT_IP_PORT_RESULT_LENGTH) {
@@ -142,7 +139,7 @@ public class IPUtil {
         }
         return serverAddrArr;
     }
-    
+
     /**
      * Resolve the IP from the string containing the IP address.
      * @param str string containing IP address
@@ -155,9 +152,6 @@ public class IPUtil {
         String result = "";
         if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK) && StringUtils.containsIgnoreCase(str, IPV6_END_MARK)) {
             result = str.substring(str.indexOf(IPV6_START_MARK), (str.indexOf(IPV6_END_MARK) + 1));
-            if (!isIPv6(result)) {
-                result = "";
-            }
         } else {
             Matcher m = ipv4Pattern.matcher(str);
             if (m.find()) {
@@ -166,7 +160,7 @@ public class IPUtil {
         }
         return result;
     }
-    
+
     /**
      * Check ips.
      *
@@ -174,9 +168,9 @@ public class IPUtil {
      * @return 'ok' if check passed, otherwise illegal ip
      */
     public static String checkIPs(String... ips) {
-        
+
         if (ips == null || ips.length == 0) {
-            
+
             return CHECK_OK;
         }
         // illegal response
@@ -187,14 +181,14 @@ public class IPUtil {
             }
             illegalResponse.append(ip + ",");
         }
-        
+
         if (illegalResponse.length() == 0) {
             return CHECK_OK;
         }
-        
+
         return ILLEGAL_IP_PREFIX + illegalResponse.substring(0, illegalResponse.length() - 1);
     }
-    
+
     /**
      * Check whether checkIPs result is "ok".
      * @param checkIPsResult checkIPs result
@@ -203,5 +197,5 @@ public class IPUtil {
     public static boolean checkOK(String checkIPsResult) {
         return CHECK_OK.equals(checkIPsResult);
     }
-    
+
 }
