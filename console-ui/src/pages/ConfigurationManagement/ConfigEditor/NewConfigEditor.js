@@ -531,7 +531,7 @@ class ConfigEditor extends React.Component {
                     size="medium"
                     hasArrow
                     autoWidth
-                    mode="multiple"
+                    mode="tag"
                     filterLocal
                     dataSource={subscriberDataSource}
                     onChange={betaIps => this.setState({ betaIps: betaIps.join(',') })}
