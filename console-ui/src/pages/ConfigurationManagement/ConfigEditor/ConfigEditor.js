@@ -369,7 +369,7 @@ class ConfigEditor extends React.Component {
       appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
       group: this.field.getValue('group'),
       desc: this.field.getValue('desc'),
-      config_tags: this.state.config_tags.join(),
+      config_tags: this.state.config_tags.join(','),
       type: this.state.configType,
       content,
       tenant: this.tenant,
