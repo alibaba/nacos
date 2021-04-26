@@ -32,6 +32,8 @@ public class ConfigQueryResponse extends Response {
     
     String content;
     
+    String encryptedDataKey;
+    
     String contentType;
     
     String md5;
@@ -118,6 +120,14 @@ public class ConfigQueryResponse extends Response {
      */
     public void setContent(String content) {
         this.content = content;
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        this.encryptedDataKey = encryptedDataKey;
+    }
+    
+    public String getEncryptedDataKey() {
+        return encryptedDataKey;
     }
     
     /**
