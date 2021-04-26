@@ -32,6 +32,14 @@ public interface IConfigRequest {
     Object getParameter(String key);
     
     /**
+     * put param.
+     *
+     * @param key   key
+     * @param value value
+     */
+    void putParameter(String key, Object value);
+    
+    /**
      * get config context.
      *
      * @return {@link IConfigContext}

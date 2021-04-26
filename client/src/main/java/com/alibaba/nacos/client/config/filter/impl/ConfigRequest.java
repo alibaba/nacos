@@ -79,6 +79,11 @@ public class ConfigRequest implements IConfigRequest {
     }
     
     @Override
+    public void putParameter(String key, Object value) {
+        param.put(key, value);
+    }
+    
+    @Override
     public IConfigContext getConfigContext() {
         return configContext;
     }
