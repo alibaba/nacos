@@ -28,6 +28,8 @@ import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 /**
  * Persistent consistency service delegate.
  *
@@ -87,6 +89,11 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     @Override
     public boolean isAvailable() {
         return switchOne().isAvailable();
+    }
+    
+    @Override
+    public Optional<String> getErrorMsg() {
+        return switchOne().getErrorMsg();
     }
     
     private PersistentConsistencyService switchOne() {

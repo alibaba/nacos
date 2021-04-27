@@ -406,7 +406,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                 }
                 return RestResultUtils.success();
             } catch (Throwable ex) {
-                LogUtil.DEFAULT_LOG.error("data import has error : {}", ex);
+                LogUtil.DEFAULT_LOG.error("data import has error :", ex);
                 return RestResultUtils.failed(ex.getMessage());
             }
         });

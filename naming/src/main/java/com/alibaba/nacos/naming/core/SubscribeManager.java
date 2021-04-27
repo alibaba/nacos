@@ -55,6 +55,8 @@ public class SubscribeManager {
      * @param serviceName service name
      * @param namespaceId namespace id
      * @param aggregation aggregation
+     * @param pageNo 页码
+     * @param pageSize 页大小
      * @return list of subscriber
      */
     public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation) {
