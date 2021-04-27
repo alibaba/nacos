@@ -180,10 +180,14 @@
                                             <include>io.opencensus:*</include>
                                             <include>io.perfmark:*</include>
                                             <include>com.google.guava:guava</include>
+                                            <include>com.google.guava:failureaccess</include>
+                                            <include>com.google.errorprone:error_prone_annotations</include>
+                                            <include>com.google.j2objc:j2objc-annotations</include>
                                             <include>com.google.code.gson:gson</include>
                                             <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.alibaba.nacos:nacos-api</include>
                                             <include>com.alibaba.nacos:nacos-common</include>
+                                            <include>org.checkerframework:checker-qual</include>
                                         </includes>
                                     </artifactSet>
                     
@@ -281,10 +285,14 @@
                                             <include>io.opencensus:*</include>
                                             <include>io.perfmark:*</include>
                                             <include>com.google.guava:guava</include>
+                                            <include>com.google.guava:failureaccess</include>
+                                            <include>com.google.errorprone:error_prone_annotations</include>
+                                            <include>com.google.j2objc:j2objc-annotations</include>
                                             <include>com.google.code.gson:gson</include>
                                             <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.alibaba.nacos:nacos-api</include>
                                             <include>com.alibaba.nacos:nacos-common</include>
+                                            <include>org.checkerframework:checker-qual</include>
                                         </includes>
                                     </artifactSet>
                                 
