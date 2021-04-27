@@ -85,6 +85,7 @@ class ConfigEditor extends React.Component {
         type: 'text', // 配置格式
       },
       tagDataSource: [],
+      subscriberDataSource: [],
       openAdvancedSettings: false,
     };
     this.successDialog = React.createRef();
@@ -113,6 +114,7 @@ class ConfigEditor extends React.Component {
                 betaPublishSuccess: true,
               });
             });
+            this.getSubscribesByNamespace();
           }
         );
       } else {
@@ -378,6 +380,28 @@ class ConfigEditor extends React.Component {
     });
   }
 
+  getSubscribesByNamespace() {
+    const namespace = getParams('namespace');
+    const { dataId, group } = this.state.form;
+    const params = {
+      dataId,
+      group,
+      namespaceId: namespace,
+      tenant: namespace,
+    };
+    // get subscribes of the namespace
+    return request.get('v1/cs/configs/listener', { params }).then(res => {
+      const { subscriberDataSource } = this.state;
+      const lisentersGroupkeyIpMap = res.lisentersGroupkeyStatus;
+      if (lisentersGroupkeyIpMap) {
+        this.setState({
+          subscriberDataSource: subscriberDataSource.concat(Object.keys(lisentersGroupkeyIpMap)),
+        });
+      }
+      return res;
+    });
+  }
+
   validation() {
     const { locale } = this.props;
     const { form } = this.state;
@@ -416,6 +440,7 @@ class ConfigEditor extends React.Component {
       tabActiveKey,
       dataIdError = {},
       groupError = {},
+      subscriberDataSource,
     } = this.state;
     const { locale = {} } = this.props;
 
@@ -502,11 +527,16 @@ class ConfigEditor extends React.Component {
                   </Checkbox>
                 )}
                 {isBeta && (
-                  <Input.TextArea
-                    aria-label="TextArea"
-                    placeholder="127.0.0.1,127.0.0.2"
-                    value={betaIps}
-                    onChange={betaIps => this.setState({ betaIps })}
+                  <Select
+                    size="medium"
+                    hasArrow
+                    autoWidth
+                    mode="tag"
+                    filterLocal
+                    dataSource={subscriberDataSource}
+                    onChange={betaIps => this.setState({ betaIps: betaIps.join(',') })}
+                    hasClear
+                    value={betaIps ? betaIps.split(',') : []}
                   />
                 )}
               </Form.Item>
