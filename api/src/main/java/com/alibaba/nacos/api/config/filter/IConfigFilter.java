@@ -23,7 +23,10 @@ import java.util.Properties;
 /**
  * Config Filter Interface.
  *
+ * <p>DO NOT implement this interface directly, you should extend <code>AbstractConfigFilter</code>.
+ *
  * @author Nacos
+ * @see AbstractConfigFilter
  */
 public interface IConfigFilter {
     

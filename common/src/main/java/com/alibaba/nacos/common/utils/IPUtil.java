@@ -73,11 +73,7 @@ public class IPUtil {
      * @return boolean
      */
     public static boolean isIPv4(String addr) {
-        try {
-            return InetAddress.getByName(addr).getAddress().length == IPV4_ADDRESS_LENGTH;
-        } catch (UnknownHostException e) {
-            return false;
-        }
+        return ipv4Pattern.matcher(addr).matches();
     }
     
     /**
@@ -101,12 +97,7 @@ public class IPUtil {
      * @return boolean
      */
     public static boolean isIP(String addr) {
-        try {
-            InetAddress.getByName(addr);
-            return true;
-        } catch (UnknownHostException e) {
-            return false;
-        }
+        return isIPv4(addr) || isIPv6(addr);
     }
     
     /**

@@ -220,7 +220,7 @@ public class JRaftServer {
                 createMultiRaftGroup(processors);
                 Loggers.RAFT.info("========= The raft protocol start finished... =========");
             } catch (Exception e) {
-                Loggers.RAFT.error("raft protocol start failure, error : {}", e);
+                Loggers.RAFT.error("raft protocol start failure, cause: ", e);
                 throw new JRaftException(e);
             }
         }
@@ -412,7 +412,7 @@ public class JRaftServer {
             
             Loggers.RAFT.info("========= The raft protocol has been closed =========");
         } catch (Throwable t) {
-            Loggers.RAFT.error("There was an error in the raft protocol shutdown, error : {}", t);
+            Loggers.RAFT.error("There was an error in the raft protocol shutdown, cause: ", t);
         }
     }
     

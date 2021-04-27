@@ -121,7 +121,7 @@
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <maven-failsafe-plugin.version>2.19.1</maven-failsafe-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
-        <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
+        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
         <maven-flatten-version>1.1.0</maven-flatten-version>
         <!-- dependency version related to plugin -->
         <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
@@ -131,7 +131,7 @@
         <spring-boot-dependencies.version>2.1.17.RELEASE</spring-boot-dependencies.version>
         <servlet-api.version>3.0</servlet-api.version>
         <commons-lang3.version>3.4</commons-lang3.version>
-        <commons-io.version>2.2</commons-io.version>
+        <commons-io.version>2.7</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-logging.version>1.2</commons-logging.version>
         <commons-dbcp.version>1.4</commons-dbcp.version>
@@ -152,7 +152,7 @@
         <jjwt.version>0.11.2</jjwt.version>
         <netty-all.version>4.1.59.Final</netty-all.version>
         <mina-core.version>2.0.0-RC1</mina-core.version>
-        <guava.version>24.1.1-jre</guava.version>
+        <guava.version>30.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
         <commonOkHttp.version>0.4.1</commonOkHttp.version>
         <grpc-java.version>1.24.0</grpc-java.version>
