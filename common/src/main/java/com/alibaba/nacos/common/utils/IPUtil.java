@@ -130,9 +130,6 @@ public class IPUtil {
                 serverAddrArr[0] = str.substring(0, (str.indexOf(IPV6_END_MARK) + 1));
                 serverAddrArr[1] = str.substring((str.indexOf(IPV6_END_MARK) + 2));
             }
-            if (!isIPv6(serverAddrArr[0])) {
-                throw new IllegalArgumentException("The IPv6 address(\"" + serverAddrArr[0] + "\") is incorrect.");
-            }
         } else {
             serverAddrArr = str.split(":");
             if (serverAddrArr.length > SPLIT_IP_PORT_RESULT_LENGTH) {
@@ -155,9 +152,6 @@ public class IPUtil {
         String result = "";
         if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK) && StringUtils.containsIgnoreCase(str, IPV6_END_MARK)) {
             result = str.substring(str.indexOf(IPV6_START_MARK), (str.indexOf(IPV6_END_MARK) + 1));
-            if (!isIPv6(result)) {
-                result = "";
-            }
         } else {
             Matcher m = ipv4Pattern.matcher(str);
             if (m.find()) {
