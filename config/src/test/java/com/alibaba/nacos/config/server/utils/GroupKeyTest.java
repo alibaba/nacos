@@ -28,7 +28,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @WebAppConfiguration
 public class GroupKeyTest {
     
-    Assert.assertEquals(header.getValue(
+    @Rule
     public final ExpectedException thrown = ExpectedException.none();
     
     @Test
