@@ -92,6 +92,8 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
      */
     protected volatile boolean hasError = false;
     
+    protected volatile String jRaftErrorMsg;
+    
     /**
      * If use old raft, should not notify listener even new listener add.
      */
@@ -211,6 +213,7 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     public void onError(Throwable error) {
         super.onError(error);
         hasError = true;
+        jRaftErrorMsg = error.getMessage();
     }
     
     protected Type getDatumTypeFromKey(String key) {
