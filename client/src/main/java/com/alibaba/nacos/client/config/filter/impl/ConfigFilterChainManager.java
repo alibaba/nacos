@@ -44,14 +44,6 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         }
     }
     
-    public ConfigFilterChainManager(Properties properties) {
-        ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
-        for (IConfigFilter configFilter : configFilters) {
-            configFilter.init(properties);
-            addFilter(configFilter);
-        }
-    }
-    
     /**
      * Add filter.
      *

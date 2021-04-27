@@ -74,11 +74,6 @@ public class ConfigRequest implements IConfigRequest {
     }
     
     @Override
-    public void putParameter(String key, Object value) {
-        param.put(key, value);
-    }
-    
-    @Override
     public Object getParameter(String key) {
         return param.get(key);
     }
