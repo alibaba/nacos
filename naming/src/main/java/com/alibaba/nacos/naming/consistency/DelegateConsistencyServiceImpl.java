@@ -23,6 +23,8 @@ import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 /**
  * Consistency delegate.
  *
@@ -79,6 +81,25 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     @Override
     public boolean isAvailable() {
         return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
+    }
+    
+    @Override
+    public Optional<String> getErrorMsg() {
+        String errorMsg;
+        if (ephemeralConsistencyService.getErrorMsg().isPresent()
+                && persistentConsistencyService.getErrorMsg().isPresent()) {
+            errorMsg = "'" + ephemeralConsistencyService.getErrorMsg().get() + "' in Distro protocol and '"
+                    + persistentConsistencyService.getErrorMsg().get() + "' in jRaft protocol";
+        } else if (ephemeralConsistencyService.getErrorMsg().isPresent()
+                && !persistentConsistencyService.getErrorMsg().isPresent()) {
+            errorMsg = ephemeralConsistencyService.getErrorMsg().get();
+        } else if (!ephemeralConsistencyService.getErrorMsg().isPresent()
+                && persistentConsistencyService.getErrorMsg().isPresent()) {
+            errorMsg = persistentConsistencyService.getErrorMsg().get();
+        } else {
+            errorMsg = null;
+        }
+        return Optional.ofNullable(errorMsg);
     }
     
     private ConsistencyService mapConsistencyService(String key) {

@@ -330,8 +330,8 @@ public class ServiceController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode subscribers(HttpServletRequest request) {
         
-        int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
-        int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
+        int pageNo = NumberUtils.toInt(WebUtils.optional(request, "pageNo", "1"));
+        int pageSize = NumberUtils.toInt(WebUtils.optional(request, "pageSize", "1000"));
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);

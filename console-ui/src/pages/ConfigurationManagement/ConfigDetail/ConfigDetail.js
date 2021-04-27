@@ -59,6 +59,7 @@ class ConfigDetail extends React.Component {
       checkedBeta: false,
       switchEncrypt: false,
       tag: [],
+      editorClass: 'editor-normal',
     };
     this.field = new Field(this);
     this.dataId = getParams('dataId') || 'yanlin';
@@ -78,6 +79,7 @@ class ConfigDetail extends React.Component {
   componentDidMount() {
     this.initData();
     this.getDataDetail();
+    this.initFullScreenEvent();
   }
 
   initData() {
@@ -88,6 +90,22 @@ class ConfigDetail extends React.Component {
       });
     }
     this.setState({ tag: [{ title: locale.official, key: 'normal' }] });
+  }
+
+  initFullScreenEvent() {
+    document.body.addEventListener('keydown', e => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        this.setState({
+          editorClass: 'editor-full-screen',
+        });
+      }
+      if (e.key === 'Escape') {
+        this.setState({
+          editorClass: 'editor-normal',
+        });
+      }
+    });
   }
 
   openLoading() {
@@ -262,7 +280,7 @@ class ConfigDetail extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const { configCompareVisible } = this.state;
+    const { configCompareVisible, editorClass } = this.state;
     const { init } = this.field;
     const formItemLayout = {
       labelCol: {
@@ -347,7 +365,7 @@ class ConfigDetail extends React.Component {
               <Input htmlType={'text'} readOnly {...init('md5')} />
             </FormItem>
             <FormItem label={locale.configuration} required {...formItemLayout}>
-              <div style={{ clear: 'both', height: 300 }} id="container" />
+              <div className={editorClass} id="container" />
             </FormItem>
           </Form>
           <Row>
