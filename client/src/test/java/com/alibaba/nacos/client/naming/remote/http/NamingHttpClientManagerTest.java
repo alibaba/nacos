@@ -24,7 +24,6 @@ public class NamingHttpClientManagerTest {
     
     @Test
     public void testGetInstance() {
-        NamingHttpClientManager namingHttpClientManager = new NamingHttpClientManager();
     }
     
     @Test
