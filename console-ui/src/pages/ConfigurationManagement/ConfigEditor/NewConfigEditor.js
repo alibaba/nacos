@@ -87,6 +87,7 @@ class ConfigEditor extends React.Component {
       tagDataSource: [],
       subscriberDataSource: [],
       openAdvancedSettings: false,
+      editorClass: 'editor-normal',
     };
     this.successDialog = React.createRef();
     this.diffEditorDialog = React.createRef();
@@ -123,6 +124,7 @@ class ConfigEditor extends React.Component {
         }
         this.initMoacoEditor('text', '');
       }
+      this.initFullScreenEvent();
     });
   }
 
@@ -153,6 +155,22 @@ class ConfigEditor extends React.Component {
     } else {
       this.monacoEditor = window.monaco.editor.create(container, options);
     }
+  }
+
+  initFullScreenEvent() {
+    document.body.addEventListener('keydown', e => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        this.setState({
+          editorClass: 'editor-full-screen',
+        });
+      }
+      if (e.key === 'Escape') {
+        this.setState({
+          editorClass: 'editor-normal',
+        });
+      }
+    });
   }
 
   createDiffCodeMirror(leftCode, rightCode) {
@@ -441,6 +459,7 @@ class ConfigEditor extends React.Component {
       dataIdError = {},
       groupError = {},
       subscriberDataSource,
+      editorClass,
     } = this.state;
     const { locale = {} } = this.props;
 
@@ -574,7 +593,7 @@ class ConfigEditor extends React.Component {
                 </div>
               }
             >
-              <div style={{ clear: 'both', height: 300 }} id="container" />
+              <div id="container" className={editorClass} />
             </Form.Item>
           </Form>
           <Row>

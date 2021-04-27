@@ -102,7 +102,6 @@ class DiffEditorDialog extends React.Component {
         )}
       </div>
     );
-    console.log(footer);
     return (
       <div>
         <Dialog
