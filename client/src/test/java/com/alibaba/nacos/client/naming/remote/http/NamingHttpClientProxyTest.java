@@ -33,7 +33,6 @@ import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,9 +48,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.endsWith;
 import static org.mockito.ArgumentMatchers.eq;
@@ -593,7 +589,6 @@ public class NamingHttpClientProxyTest {
     public void testCallServerFail() throws Exception {
         //then
         thrown.expect(NacosException.class);
-        thrown.expectCause(allOf(instanceOf(NacosException.class), hasProperty("errMsg", Matchers.is("fail"))));
         
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
