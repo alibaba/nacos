@@ -33,7 +33,7 @@ public class ClientInfo {
 
     public ClientInfo(String userAgent) {
         String versionStr = StringUtils.isEmpty(userAgent) ? StringUtils.EMPTY : userAgent;
-        if(com.alibaba.nacos.common.utils.StringUtils.isBlank(versionStr)) {
+        if (com.alibaba.nacos.common.utils.StringUtils.isBlank(versionStr)) {
             //we're not eager to implement other type yet
             this.type = ClientType.UNKNOWN;
             this.version = Version.unknownVersion();
@@ -92,8 +92,8 @@ public class ClientInfo {
         }
 
         public static ClientType getDes(String ver) {
-            for(ClientType clientType : ClientType.values()) {
-                if(ver.startsWith(clientType.des)) {
+            for (ClientType clientType : ClientType.values()) {
+                if (ver.startsWith(clientType.des)) {
                     return clientType;
                 }
             }
