@@ -42,31 +42,47 @@ import static com.alibaba.nacos.naming.constants.Constants.LOAD_DATA_RETRY_DELAY
 @Component
 public class GlobalConfig {
     
-    private final DistroConfig distroConfig;
-    
-    public GlobalConfig(DistroConfig distroConfig) {
-        this.distroConfig = distroConfig;
-    }
-    
     @PostConstruct
     public void printGlobalConfig() {
         overrideDistroConfiguration();
     }
     
     private void overrideDistroConfiguration() {
-        distroConfig.setSyncDelayMillis(getTaskDispatchPeriod());
-        distroConfig.setSyncRetryDelayMillis(getSyncRetryDelay());
-        distroConfig.setLoadDataRetryDelayMillis(getLoadDataRetryDelayMillis());
+        Loggers.SRV_LOG.warn("naming.distro config will be removed, please use core.protocol.distro replace.");
+        Loggers.SRV_LOG.warn("Using naming.distro config to replace core.distro config");
+        DistroConfig.getInstance().setSyncDelayMillis(getTaskDispatchPeriod());
+        DistroConfig.getInstance().setSyncRetryDelayMillis(getSyncRetryDelay());
+        DistroConfig.getInstance().setLoadDataRetryDelayMillis(getLoadDataRetryDelayMillis());
     }
     
+    /**
+     * Get distro task dispatch period.
+     *
+     * @return period
+     * @deprecated Will remove on v2.1.X, see {@link DistroConfig#getSyncDelayMillis()}.
+     */
+    @Deprecated
     public int getTaskDispatchPeriod() {
         return EnvUtil.getProperty(DISTRO_TASK_DISPATCH_PERIOD, Integer.class, 2000);
     }
     
+    /**
+     * Get batch count for sync key.
+     *
+     * @return batch count
+     * @deprecated will remove on v2.1.X.
+     */
+    @Deprecated
     public int getBatchSyncKeyCount() {
         return EnvUtil.getProperty(DISTRO_BATCH_SYNC_KEY_COUNT, Integer.class, 1000);
     }
     
+    /**
+     * Get distro task sync retry delay after sync fail.
+     *
+     * @return distro task sync retry delay
+     * @deprecated will remove on v2.1.X, see {@link DistroConfig#getSyncRetryDelayMillis()}.
+     */
     public long getSyncRetryDelay() {
         return EnvUtil.getProperty(DISTRO_SYNC_RETRY_DELAY, Long.class, 5000L);
     }
@@ -79,6 +95,12 @@ public class GlobalConfig {
         return EnvUtil.getProperty(EXPIRE_INSTANCE, Boolean.class, true);
     }
     
+    /**
+     * Get Distro load data retry delay after load fail.
+     *
+     * @return load retry delay time
+     * @deprecated will remove on v2.1.X, see {@link DistroConfig#getLoadDataRetryDelayMillis()}
+     */
     public long getLoadDataRetryDelayMillis() {
         return EnvUtil.getProperty(LOAD_DATA_RETRY_DELAY_MILLIS, Long.class, 60000L);
     }

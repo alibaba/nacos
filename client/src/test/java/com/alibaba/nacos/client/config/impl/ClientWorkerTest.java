@@ -34,7 +34,7 @@ public class ClientWorkerTest {
     @Test
     public void testConstruct() throws NacosException {
         Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         Assert.assertNotNull(clientWorker);
@@ -43,7 +43,7 @@ public class ClientWorkerTest {
     @Test
     public void testAddListenerWithoutTenant() throws NacosException {
         Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         String dataId = "a";
@@ -71,7 +71,7 @@ public class ClientWorkerTest {
     @Test
     public void testListenerWithTenant() throws NacosException {
         Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         
@@ -115,7 +115,7 @@ public class ClientWorkerTest {
     @Test
     public void testPublishConfig() throws NacosException {
         Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         ClientWorker.ConfigRpcTransportClient mockClient = Mockito.mock(ClientWorker.ConfigRpcTransportClient.class);
@@ -131,7 +131,10 @@ public class ClientWorkerTest {
         String betaIps = "1.1.1.1";
         String casMd5 = "1111";
         
-        boolean b = clientWorker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, casMd5);
+        String type = "properties";
+        
+        boolean b = clientWorker
+                .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5, type);
         Assert.assertFalse(b);
         try {
             clientWorker.removeConfig(dataId, group, tenant, tag);
@@ -153,7 +156,7 @@ public class ClientWorkerTest {
     @Test
     public void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         String dataId = "a";

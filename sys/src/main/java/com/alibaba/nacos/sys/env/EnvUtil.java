@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.sun.management.OperatingSystemMXBean;
@@ -390,4 +391,48 @@ public class EnvUtil {
         return new InputStreamResource(inputStream);
     }
     
+    /**
+     * Get available processor numbers from environment.
+     *
+     * <p>
+     *     If there are setting of {@code nacos.core.sys.basic.processors} in config/JVM/system, use it.
+     *     If no setting, use the one time {@code ThreadUtils.getSuitableThreadCount()}.
+     * </p>
+     *
+     * @return available processor numbers from environment, will not lower than 1.
+     */
+    public static int getAvailableProcessors() {
+        int result = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class,
+                ThreadUtils.getSuitableThreadCount(1));
+        return result > 0 ? result : 1;
+    }
+    
+    /**
+     * Get a multiple time of available processor numbers from environment.
+     *
+     * @param multiple multiple of available processor numbers
+     * @return available processor numbers from environment, will not lower than 1.
+     */
+    public static int getAvailableProcessors(int multiple) {
+        if (multiple < 1) {
+            throw new IllegalArgumentException("processors multiple must upper than 1");
+        }
+        Integer processor = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, Integer.class);
+        return null != processor && processor > 0 ? processor * multiple : ThreadUtils.getSuitableThreadCount(multiple);
+    }
+    
+    /**
+     * Get a scale of available processor numbers from environment.
+     *
+     * @param scale scale from 0 to 1.
+     * @return available processor numbers from environment, will not lower than 1.
+     */
+    public static int getAvailableProcessors(double scale) {
+        if (scale < 0 || scale > 1) {
+            throw new IllegalArgumentException("processors scale must between 0 and 1");
+        }
+        double result = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class,
+                ThreadUtils.getSuitableThreadCount(1)) * scale;
+        return result > 1 ? (int) result : 1;
+    }
 }

@@ -118,6 +118,7 @@ const I18N_CONF = {
     prompt: '提示',
     promptDelete: '确定要删除当前服务吗？',
     create: '创建服务',
+    subscriber: '订阅者',
   },
   SubscriberList: {
     subscriberList: '订阅者列表',
@@ -282,6 +283,7 @@ const I18N_CONF = {
     application: '归属应用:',
     operation: '操作',
     export: '导出查询结果',
+    newExport: '新版导出查询结果',
     import: '导入配置',
     uploadBtn: '上传文件',
     importSucc: '导入成功',
@@ -306,6 +308,7 @@ const I18N_CONF = {
     unrecognizedEntries: '未识别的条目',
     skippedEntries: '跳过的条目',
     exportSelected: '导出选中的配置',
+    newExportSelected: '新版导出选中的配置',
     clone: '克隆',
     exportSelectedAlertTitle: '配置导出',
     exportSelectedAlertContent: '请选择要导出的配置',

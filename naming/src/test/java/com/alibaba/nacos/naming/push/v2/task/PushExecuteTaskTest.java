@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -35,6 +36,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,6 +70,9 @@ public class PushExecuteTaskTest {
     private TpsMonitorManager tpsMonitorManager;
     
     @Mock
+    private NamingMetadataManager metadataManager;
+    
+    @Mock
     private ConfigurableApplicationContext context;
     
     @Mock
@@ -87,6 +92,8 @@ public class PushExecuteTaskTest {
         when(delayTaskExecuteEngine.getIndexesManager()).thenReturn(indexesManager);
         when(delayTaskExecuteEngine.getPushExecutor()).thenReturn(pushExecutor);
         when(delayTaskExecuteEngine.getServiceStorage()).thenReturn(serviceStorage);
+        when(delayTaskExecuteEngine.getMetadataManager()).thenReturn(metadataManager);
+        when(metadataManager.getServiceMetadata(service)).thenReturn(Optional.empty());
         ApplicationUtils.injectContext(context);
         when(context.getBean(TpsMonitorManager.class)).thenReturn(tpsMonitorManager);
     }

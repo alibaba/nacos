@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -159,6 +160,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private ServerAbilities initMemberAbilities() {
         ServerAbilities serverAbilities = new ServerAbilities();
         serverAbilities.getRemoteAbility().setSupportRemoteConnection(true);
+        // TODO naming and config ability should build and init by sub module.
+        serverAbilities.getNamingAbility().setSupportJraft(true);
         return serverAbilities;
     }
     
@@ -349,11 +352,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Member existMember = serverList.get(address);
             if (existMember == null) {
                 hasChange = true;
-                // If the cluster information in cluster.conf or address-server has been changed,
-                // while the corresponding nacos-server has not been started yet, the member's state
-                // should be set to DOWN. If the corresponding nacos-server has been started, the
-                // member's state will be set to UP after detection in a few seconds.
-                member.setState(NodeState.DOWN);
                 tmpMap.put(address, member);
             } else {
                 //to keep extendInfo and abilities that report dynamically.
@@ -505,8 +503,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                             "/cluster/report");
             
             try {
+                Header header = Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version);
+                AuthHeaderUtil.addIdentityToHeader(header);
                 asyncRestTemplate
-                        .post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version),
+                        .post(url, header,
                                 Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
                                     @Override
                                     public void onReceive(RestResult<String> result) {

@@ -540,7 +540,7 @@ public final class DiskUtils {
         }
         
         @Override
-        public void close() {
+        public void close() throws IOException {
             target.close();
         }
         

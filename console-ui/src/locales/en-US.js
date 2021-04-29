@@ -119,6 +119,7 @@ const I18N_CONF = {
     prompt: 'Confirm',
     promptDelete: 'Do you want to delete the service?',
     create: 'Create Service',
+    subscriber: 'Subscriber',
   },
   SubscriberList: {
     subscriberList: 'Subscriber List',
@@ -284,6 +285,7 @@ const I18N_CONF = {
     application: 'Application',
     operation: 'Operation',
     export: 'Export query results',
+    newExport: 'New version export query results',
     import: 'Import',
     uploadBtn: 'Upload File',
     importSucc: 'The import was successful',
@@ -309,6 +311,7 @@ const I18N_CONF = {
     unrecognizedEntries: 'Unrecognized entries',
     skippedEntries: 'skipped entries',
     exportSelected: 'Export selected configs',
+    newExportSelected: 'New version export selected configs',
     clone: 'Clone',
     exportSelectedAlertTitle: 'Export config',
     exportSelectedAlertContent: 'please select the configuration to export',

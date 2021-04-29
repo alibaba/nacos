@@ -27,12 +27,10 @@ import {
   Form,
   Icon,
   Input,
-  Loading,
   Menu,
   Pagination,
   Select,
   Table,
-  Grid,
   Upload,
   Message,
 } from '@alifd/next';
@@ -41,7 +39,7 @@ import RegionGroup from 'components/RegionGroup';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
-import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
+import { getParams, setParams, request } from '@/globalLib';
 import { connect } from 'react-redux';
 import { getConfigs } from '../../../reducers/configuration';
 
@@ -162,47 +160,6 @@ class ConfigurationManagement extends React.Component {
     this.setState({ isCn: localStorage.getItem(LANGUAGE_KEY) === 'zh-CN' });
   }
 
-  /**
-   * 获取概览页数据
-   */
-  getContentList() {
-    request({
-      url: 'com.alibaba.nacos.service.dashlist', // 以 com.alibaba. 开头最终会转换为真正的url地址
-      data: {},
-      $data: {}, // 替换请求url路径中{}占位符的内容
-      success: res => {
-        if (res.code === 200 && res.data) {
-          if (res.data.length === 0) {
-            this.setState({
-              hasdash: false,
-            });
-          } else {
-            // 前端默认排序
-            let sortList = [];
-            for (let j = 0, len = res.data.length; j < len; j++) {
-              let item = res.data[j];
-              sortList.push({
-                k: item.appName || '' + item.group || '' + item.dataId || '',
-                v: item,
-              });
-            }
-            sortList.sort(function(a, b) {
-              return a.k.localeCompare(b.k);
-            });
-            let showList = [];
-            for (let j = 0, len = sortList.length; j < len; j++) {
-              showList.push(sortList[j].v);
-            }
-            this.setState({
-              hasdash: true,
-              contentList: showList,
-            });
-          }
-        }
-      },
-    });
-  }
-
   toggleShowQuestionnaire(value) {
     if (value) {
       localStorage.setItem('acm_questionnaire', 1);
@@ -223,11 +180,25 @@ class ConfigurationManagement extends React.Component {
   navTo(url, record) {
     this.serverId = getParams('serverId') || '';
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
-    this.props.history.push(
-      `${url}?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
-        record.group
-      }&namespace=${this.tenant}`
-    );
+    switch (url) {
+      case '/historyRollback':
+        url = `${url}?historyServerId=${this.serverId || ''}&historyDataId=${
+          record.dataId
+        }&historyGroup=${record.group}&namespace=${this.tenant}`;
+        break;
+      case '/listeningToQuery':
+        url = `${url}?listeningServerId=${this.serverId || ''}&listeningDataId=${
+          record.dataId
+        }&listeningGroup=${record.group}&namespace=${this.tenant}`;
+        break;
+      case '/pushTrajectory':
+        url = `${url}?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
+          record.group
+        }&namespace=${this.tenant}`;
+        break;
+      default:
+    }
+    this.props.history.push(url);
   }
 
   openLoading() {
@@ -318,8 +289,6 @@ class ConfigurationManagement extends React.Component {
       });
   }
 
-  showMore() {}
-
   chooseNav(record, key) {
     const self = this;
     switch (key) {
@@ -384,10 +353,6 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
-  renderLastTime(value, index, record) {
-    return <div>{aliwareIntl.intlNumberFormat(record.lastModifiedTime)}</div>;
-  }
-
   showCode(record) {
     this.showcode.current.getInstance().openDialog(record);
   }
@@ -442,54 +407,18 @@ class ConfigurationManagement extends React.Component {
   }
 
   onChangeSort(dataIndex, order) {
-    this.dataSource.sort(function(a, b) {
+    const { configurations = {} } = this.props;
+    configurations.pageItems.sort(function(a, b) {
       if (order === 'asc') {
         return (a[dataIndex] + '').localeCompare(b[dataIndex] + '');
       }
       return (b[dataIndex] + '').localeCompare(a[dataIndex] + '');
     });
+    this.forceUpdate();
   }
 
   handlePageSizeChange(pageSize) {
     this.setState({ pageSize }, () => this.changePage(1));
-  }
-
-  chooseFieldChange(fieldValue) {
-    this.setState({
-      fieldValue,
-    });
-  }
-
-  showSelect(value) {
-    this.setState({
-      selectValue: value,
-    });
-    if (value.indexOf('appName') !== -1) {
-      this.setState({
-        showAppName: true,
-      });
-    } else {
-      this.setState({
-        showAppName: false,
-      });
-    }
-    if (value.indexOf('group') !== -1) {
-      this.setState({
-        showgroup: true,
-      });
-    } else {
-      this.setState({
-        showgroup: false,
-      });
-    }
-    this.chooseFieldChange(value);
-  }
-
-  getAppName(value) {
-    this.appName = value;
-    this.setState({
-      appName: value,
-    });
   }
 
   setAppName(value) {
@@ -521,21 +450,6 @@ class ConfigurationManagement extends React.Component {
     setParams('group', this.group);
     setParams('appName', this.appName);
     this.getData();
-  }
-
-  resetAll() {
-    this.dataId = '';
-    this.appName = '';
-    this.group = '';
-    this.setState({
-      selectValue: [],
-      dataId: '',
-      appName: '',
-      group: '',
-      showAppName: false,
-      showgroup: false,
-    });
-    this.selectAll();
   }
 
   chooseEnv(value) {
@@ -582,103 +496,11 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
-  goConfigSync(record) {
-    this.serverId = getParams('serverId') || 'center';
-    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
-    this.props.history.push(
-      `/configsync?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${
-        record.group
-      }&namespace=${this.tenant}`
-    );
-  }
-
-  onSelectChange(...args) {
-    const record = [];
-    args[1].forEach(item => {
-      if (args[0].indexOf(item.id) >= 0 && this.state.selectedKeys.indexOf(item.id) < 0) {
-        record.push(item);
-      }
-    });
-    this.state.selectedRecord.forEach(item => {
-      if (args[0].indexOf(item.id) >= 0) {
-        record.push(item);
-      }
-    });
-    this.setState({
-      selectedRecord: record,
-      selectedKeys: args[0],
-      isCheckAll: record.length > 0 && record.length === this.state.dataSource.length,
-    });
-  }
-
-  getBatchFailedContent(res) {
-    const { locale = {} } = this.props;
-    return (
-      <div>
-        <div style={{ fontSize: 18, color: '#373D41', overflow: 'auto' }}>{res.message}</div>
-        {'data' in res && res.data != null && (
-          <Collapse style={{ width: '500px' }}>
-            {'failedItems' in res.data && res.data.failedItems.length > 0 ? (
-              <Panel title={locale.failedEntry + res.data.failedItems.length}>
-                <Table dataSource={res.data.failedItems} fixedHeader>
-                  <Table.Column title={'Data ID'} dataIndex={'dataId'} />
-                  <Table.Column title={'Group'} dataIndex={'group'} />
-                </Table>
-              </Panel>
-            ) : (
-              <Panel style={{ display: 'none' }} />
-            )}
-            {'succeededItems' in res.data && res.data.succeededItems.length > 0 ? (
-              <Panel title={locale.successfulEntry + res.data.succeededItems.length}>
-                <Table dataSource={res.data.succeededItems} fixedHeader>
-                  <Table.Column title={'Data ID'} dataIndex={'dataId'} />
-                  <Table.Column title={'Group'} dataIndex={'group'} />
-                </Table>
-              </Panel>
-            ) : (
-              <Panel style={{ display: 'none' }} />
-            )}
-            {'unprocessedItems' in res.data && res.data.unprocessedItems.length > 0 ? (
-              <Panel title={locale.unprocessedEntry + res.data.unprocessedItems.length}>
-                <Table dataSource={res.data.unprocessedItems} fixedHeader>
-                  <Table.Column title={'Data ID'} dataIndex={'dataId'} />
-                  <Table.Column title={'Group'} dataIndex={'group'} />
-                </Table>
-              </Panel>
-            ) : (
-              <Panel style={{ display: 'none' }} />
-            )}
-          </Collapse>
-        )}
-      </div>
-    );
-  }
-
-  onClickBatchHandle() {
-    this.batchHandle &&
-      this.batchHandle.openDialog({
-        serverId: this.serverId,
-        group: this.group,
-        dataId: this.dataId,
-        appName: this.appName,
-        config_tags: this.state.config_tags || '',
-        pageSize: this.state.pageSize,
-      });
-  }
-
   changeAdvancedQuery = () => {
     this.setState({
       isAdvancedQuery: !this.state.isAdvancedQuery,
     });
   };
-
-  checkAllHandle(checked) {
-    this.setState({
-      isCheckAll: checked,
-      selectedKeys: checked ? this.state.dataSource.map(item => item.id) : [],
-      selectedRecord: checked ? this.state.dataSource : [],
-    });
-  }
 
   openUri(url, params) {
     window.open(
@@ -705,7 +527,21 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
-  exportSelectedData() {
+  exportDataNew() {
+    const { group, appName, dataId, openUri } = this;
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    openUri('v1/cs/configs', {
+      exportV2: 'true',
+      tenant: getParams('namespace'),
+      group,
+      appName,
+      dataId,
+      ids: '',
+      accessToken,
+    });
+  }
+
+  exportSelectedData(newVersion) {
     const ids = [];
     const { locale = {} } = this.props;
     const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
@@ -717,14 +553,25 @@ class ConfigurationManagement extends React.Component {
       return;
     }
     configsTableSelected.forEach((value, key, map) => ids.push(key));
-    this.openUri('v1/cs/configs', {
-      export: 'true',
-      tenant: '',
-      group: '',
-      appName: '',
-      ids: ids.join(','),
-      accessToken,
-    });
+    if (newVersion) {
+      this.openUri('v1/cs/configs', {
+        exportV2: 'true',
+        tenant: '',
+        group: '',
+        appName: '',
+        ids: ids.join(','),
+        accessToken,
+      });
+    } else {
+      this.openUri('v1/cs/configs', {
+        export: 'true',
+        tenant: '',
+        group: '',
+        appName: '',
+        ids: ids.join(','),
+        accessToken,
+      });
+    }
   }
 
   multipleSelectionDeletion() {
@@ -1346,6 +1193,16 @@ class ConfigurationManagement extends React.Component {
                   <Button
                     type={'primary'}
                     style={{ marginRight: 10 }}
+                    onClick={this.exportDataNew.bind(this)}
+                    data-spm-click={'gostr=/aliyun;locaid=configsExport'}
+                  >
+                    {locale.newExport}
+                  </Button>
+                </Form.Item>
+                <Form.Item label={''}>
+                  <Button
+                    type={'primary'}
+                    style={{ marginRight: 10 }}
                     onClick={this.importData.bind(this)}
                     data-spm-click={'gostr=/aliyun;locaid=configsExport'}
                   >
@@ -1411,7 +1268,7 @@ class ConfigurationManagement extends React.Component {
               ref="dataTable"
               loading={this.state.loading}
               rowSelection={this.state.rowSelection}
-              onSort={this.onChangeSort}
+              onSort={this.onChangeSort.bind(this)}
             >
               <Table.Column sortable={true} title={'Data Id'} dataIndex={'dataId'} />
               <Table.Column sortable={true} title={'Group'} dataIndex={'group'} />
@@ -1433,7 +1290,12 @@ class ConfigurationManagement extends React.Component {
                     {
                       text: locale.exportSelected,
                       locaid: 'configsExport',
-                      onClick: () => this.exportSelectedData(),
+                      onClick: () => this.exportSelectedData(false),
+                    },
+                    {
+                      text: locale.newExportSelected,
+                      locaid: 'configsExport',
+                      onClick: () => this.exportSelectedData(true),
                     },
                     {
                       text: locale.clone,

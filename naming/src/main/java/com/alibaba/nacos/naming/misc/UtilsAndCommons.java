@@ -36,7 +36,7 @@ import java.util.Map;
  * @author nacos
  * @author jifengnan
  */
-@SuppressWarnings("PMD.ThreadPoolCreationRule")
+@SuppressWarnings("PMD.ThreadPoolCreationle")
 public class UtilsAndCommons {
     
     // ********************** Nacos HTTP Context ************************ \\
@@ -93,7 +93,7 @@ public class UtilsAndCommons {
     
     public static final String SELF_SERVICE_CLUSTER_ENV = "naming_self_service_cluster_ips";
     
-    public static final String CACHE_KEY_SPLITER = "@@@@";
+    public static final String CACHE_KEY_SPLITTER = "@@@@";
     
     public static final int MAX_PUBLISH_WAIT_TIME_MILLIS = 5000;
     
