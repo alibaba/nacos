@@ -72,7 +72,7 @@ public class NamingKvStorage extends MemoryKvStorage {
                 }
             } catch (Exception e) {
                 throw new KvStorageException(ErrorCode.KVStorageWriteError.getCode(),
-                        "Get data failed, key: " + new String(key), e);
+                        "Get data failed, key: " + new String(key) + ", detail: " + e.getMessage(), e);
             }
         }
         return result;
@@ -97,7 +97,7 @@ public class NamingKvStorage extends MemoryKvStorage {
             storage.put(key, value);
         } catch (Exception e) {
             throw new KvStorageException(ErrorCode.KVStorageWriteError.getCode(),
-                    "Put data failed, key: " + new String(key), e);
+                    "Put data failed, key: " + new String(key) + ", detail: " + e.getMessage(), e);
         }
         // after actual storage put success, put it in memory, memory put should success all the time
         super.put(key, value);
@@ -124,15 +124,15 @@ public class NamingKvStorage extends MemoryKvStorage {
             }
         } catch (Exception e) {
             throw new KvStorageException(ErrorCode.KVStorageDeleteError.getCode(),
-                    "Delete data failed, key: " + new String(key), e);
+                    "Delete data failed, key: " + new String(key) + ", detail: " + e.getMessage(), e);
         }
         // after actual storage delete success, put it in memory, memory delete should success all the time
         super.delete(key);
     }
     
     @Override
-    public void batchDelete(List<byte[]> key) throws KvStorageException {
-        for (byte[] each : key) {
+    public void batchDelete(List<byte[]> keys) throws KvStorageException {
+        for (byte[] each : keys) {
             delete(each);
         }
     }

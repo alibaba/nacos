@@ -23,13 +23,13 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
+import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -56,6 +56,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
+import static com.alibaba.nacos.api.common.Constants.ENCRYPTED_DATA_KEY;
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
@@ -69,39 +70,6 @@ public class ClientWorker implements Closeable {
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
     /**
-     * Add listeners for data.
-     *
-     * @param dataId    dataId of data
-     * @param group     group of data
-     * @param listeners listeners
-     */
-    public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
-        group = null2defaultGroup(group);
-        CacheData cache = addCacheDataIfAbsent(dataId, group);
-        for (Listener listener : listeners) {
-            cache.addListener(listener);
-        }
-    }
-    
-    /**
-     * Remove listener.
-     *
-     * @param dataId   dataId of data
-     * @param group    group of data
-     * @param listener listener
-     */
-    public void removeListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
-        CacheData cache = getCache(dataId, group);
-        if (null != cache) {
-            cache.removeListener(listener);
-            if (cache.getListeners().isEmpty()) {
-                removeCache(dataId, group);
-            }
-        }
-    }
-    
-    /**
      * Add listeners for tenant.
      *
      * @param dataId    dataId of data
@@ -111,7 +79,7 @@ public class ClientWorker implements Closeable {
      */
     public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners)
             throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         for (Listener listener : listeners) {
@@ -130,7 +98,7 @@ public class ClientWorker implements Closeable {
      */
     public void addTenantListenersWithContent(String dataId, String group, String content,
             List<? extends Listener> listeners) throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         cache.setContent(content);
@@ -147,7 +115,7 @@ public class ClientWorker implements Closeable {
      * @param listener listener
      */
     public void removeTenantListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
@@ -158,50 +126,12 @@ public class ClientWorker implements Closeable {
         }
     }
     
-    private void removeCache(String dataId, String group) {
-        String groupKey = GroupKey.getKey(dataId, group);
-        cacheMap.remove(groupKey);
-        LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
-    }
-    
     void removeCache(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
         cacheMap.remove(groupKey);
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
-    }
-    
-    /**
-     * Add cache data if absent.
-     *
-     * @param dataId data id if data
-     * @param group  group of data
-     * @return cache data
-     */
-    public CacheData addCacheDataIfAbsent(String dataId, String group) {
-        String key = GroupKey.getKey(dataId, group);
-        CacheData cacheData = cacheMap.get(key);
-        if (cacheData != null) {
-            return cacheData;
-        }
-        
-        cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
-        // multiple listeners on the same dataid+group and race condition
-        CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
-        if (lastCacheData == null) {
-            int taskId = cacheMap.size() / (int) ParamUtil.getPerTaskConfigSize();
-            lastCacheData = cacheData;
-            lastCacheData.setTaskId(taskId);
-        }
-        // reset so that server not hang this check
-        lastCacheData.setInitializing(true);
-    
-        LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
-    
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
-        return lastCacheData;
     }
     
     /**
@@ -218,15 +148,15 @@ public class ClientWorker implements Closeable {
         if (cacheData != null) {
             return cacheData;
         }
-    
+        
         cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
         // multiple listeners on the same dataid+group and race condition
         CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
         if (lastCacheData == null) {
             //fix issue # 1317
             if (enableRemoteSyncConfig) {
-                String[] ct = getServerConfig(dataId, group, tenant, 3000L);
-                cacheData.setContent(ct[0]);
+                ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L);
+                cacheData.setContent(response.getContent());
             }
             int taskId = cacheMap.size() / (int) ParamUtil.getPerTaskConfigSize();
             cacheData.setTaskId(taskId);
@@ -242,10 +172,6 @@ public class ClientWorker implements Closeable {
         return lastCacheData;
     }
     
-    public CacheData getCache(String dataId, String group) {
-        return getCache(dataId, group, TenantUtil.getUserTenantForAcm());
-    }
-    
     public CacheData getCache(String dataId, String group, String tenant) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException();
@@ -253,9 +179,9 @@ public class ClientWorker implements Closeable {
         return cacheMap.get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
-    public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
+    public ConfigResponse getServerConfig(String dataId, String group, String tenant, long readTimeout)
             throws NacosException {
-        String[] ct = new String[2];
+        ConfigResponse configResponse = new ConfigResponse();
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
@@ -283,16 +209,23 @@ public class ClientWorker implements Closeable {
         switch (result.getCode()) {
             case HttpURLConnection.HTTP_OK:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.getData());
-                ct[0] = result.getData();
+                configResponse.setContent(result.getData());
+                String configType;
                 if (result.getHeader().getValue(CONFIG_TYPE) != null) {
-                    ct[1] = result.getHeader().getValue(CONFIG_TYPE);
+                    configType = result.getHeader().getValue(CONFIG_TYPE);
                 } else {
-                    ct[1] = ConfigType.TEXT.getType();
+                    configType = ConfigType.TEXT.getType();
                 }
-                return ct;
+                configResponse.setConfigType(configType);
+                String encryptedDataKey = result.getHeader().getValue(ENCRYPTED_DATA_KEY);
+                LocalEncryptedDataKeyProcessor
+                        .saveEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant, encryptedDataKey);
+                configResponse.setEncryptedDataKey(encryptedDataKey);
+                return configResponse;
             case HttpURLConnection.HTTP_NOT_FOUND:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
-                return ct;
+                LocalEncryptedDataKeyProcessor.saveEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant, null);
+                return configResponse;
             case HttpURLConnection.HTTP_CONFLICT: {
                 LOGGER.error(
                         "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
@@ -327,6 +260,9 @@ public class ClientWorker implements Closeable {
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor
+                    .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+            cacheData.setEncryptedDataKey(encryptedDataKey);
             
             LOGGER.warn(
                     "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
@@ -350,21 +286,24 @@ public class ClientWorker implements Closeable {
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor
+                    .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+            cacheData.setEncryptedDataKey(encryptedDataKey);
             LOGGER.warn(
                     "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
                     agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
         }
     }
     
-    private String null2defaultGroup(String group) {
-        return (null == group) ? Constants.DEFAULT_GROUP : group.trim();
+    private String blank2defaultGroup(String group) {
+        return StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
     /**
      * Check config info.
      */
     public void checkConfigInfo() {
-        // Dispatch taskes.
+        // Dispatch tasks.
         int listenerSize = cacheMap.size();
         // Round up the longingTaskCount.
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
@@ -380,7 +319,7 @@ public class ClientWorker implements Closeable {
     /**
      * Fetch the dataId list from server.
      *
-     * @param cacheDatas              CacheDatas for config infomations.
+     * @param cacheDatas              CacheDatas for config information.
      * @param inInitializingCacheList initial cache lists.
      * @return String include dataId and group (ps: it maybe null).
      * @throws Exception Exception.
@@ -398,7 +337,7 @@ public class ClientWorker implements Closeable {
                     sb.append(cacheData.getTenant()).append(LINE_SEPARATOR);
                 }
                 if (cacheData.isInitializing()) {
-                    // It updates when cacheData occours in cacheMap by first time.
+                    // It updates when cacheData occurs in cacheMap by first time.
                     inInitializingCacheList
                             .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
                 }
@@ -607,15 +546,16 @@ public class ClientWorker implements Closeable {
                         tenant = key[2];
                     }
                     try {
-                        String[] ct = getServerConfig(dataId, group, tenant, 3000L);
+                        ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L);
                         CacheData cache = cacheMap.get(GroupKey.getKeyTenant(dataId, group, tenant));
-                        cache.setContent(ct[0]);
-                        if (null != ct[1]) {
-                            cache.setType(ct[1]);
+                        cache.setContent(response.getContent());
+                        cache.setEncryptedDataKey(response.getEncryptedDataKey());
+                        if (null != response.getConfigType()) {
+                            cache.setType(response.getConfigType());
                         }
                         LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
                                 agent.getName(), dataId, group, tenant, cache.getMd5(),
-                                ContentUtils.truncateContent(ct[0]), ct[1]);
+                                ContentUtils.truncateContent(response.getContent()), response.getConfigType());
                     } catch (NacosException ioe) {
                         String message = String
                                 .format("[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",

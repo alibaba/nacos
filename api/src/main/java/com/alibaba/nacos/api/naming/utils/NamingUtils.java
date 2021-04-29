@@ -46,6 +46,9 @@ public class NamingUtils {
         if (StringUtils.isBlank(serviceName)) {
             throw new IllegalArgumentException("Param 'serviceName' is illegal, serviceName is blank");
         }
+        if (StringUtils.isBlank(groupName)) {
+            throw new IllegalArgumentException("Param 'groupName' is illegal, groupName is blank");
+        }
         final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         return resultGroupedName.intern();
     }
@@ -75,7 +78,7 @@ public class NamingUtils {
      * <pre>
      * serviceName = "@@";                 the length = 0; illegal
      * serviceName = "group@@";            the length = 1; illegal
-     * serviceName = "@@serviceName";      the length = 2; legal
+     * serviceName = "@@serviceName";      the length = 2; illegal
      * serviceName = "group@@serviceName"; the length = 2; legal
      * </pre>
      *
@@ -86,6 +89,9 @@ public class NamingUtils {
         if (split.length <= 1) {
             throw new IllegalArgumentException(
                     "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
+        }
+        if (split[0].isEmpty()) {
+            throw new IllegalArgumentException("Param 'serviceName' is illegal, groupName can't be empty");
         }
     }
     

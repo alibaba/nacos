@@ -24,6 +24,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.google.common.collect.Lists;
 
 import java.util.List;
+import java.util.Properties;
+import java.util.ServiceLoader;
 
 /**
  * Config Filter Chain Management.
@@ -33,6 +35,14 @@ import java.util.List;
 public class ConfigFilterChainManager implements IConfigFilterChain {
     
     private final List<IConfigFilter> filters = Lists.newArrayList();
+    
+    public ConfigFilterChainManager(Properties properties) {
+        ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
+        for (IConfigFilter configFilter : configFilters) {
+            configFilter.init(properties);
+            addFilter(configFilter);
+        }
+    }
     
     /**
      * Add filter.

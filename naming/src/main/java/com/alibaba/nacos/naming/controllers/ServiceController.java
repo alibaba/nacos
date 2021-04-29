@@ -43,7 +43,6 @@ import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -449,8 +448,8 @@ public class ServiceController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode subscribers(HttpServletRequest request) {
         
-        int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
-        int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
+        int pageNo = NumberUtils.toInt(WebUtils.optional(request, "pageNo", "1"));
+        int pageSize = NumberUtils.toInt(WebUtils.optional(request, "pageSize", "1000"));
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -460,7 +459,7 @@ public class ServiceController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
         try {
-            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation, pageNo, pageSize);
             
             int start = (pageNo - 1) * pageSize;
             if (start < 0) {

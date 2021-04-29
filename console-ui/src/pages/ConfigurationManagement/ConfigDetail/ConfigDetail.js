@@ -32,6 +32,8 @@ import DiffEditorDialog from '../../../components/DiffEditorDialog';
 
 import './index.scss';
 import PropTypes from 'prop-types';
+import requestUtils from '../../../utils/request';
+import ConfigCompared from './ConfigCompared';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
@@ -57,6 +59,7 @@ class ConfigDetail extends React.Component {
       checkedBeta: false,
       switchEncrypt: false,
       tag: [],
+      editorClass: 'editor-normal',
     };
     this.field = new Field(this);
     this.dataId = getParams('dataId') || 'yanlin';
@@ -69,12 +72,14 @@ class ConfigDetail extends React.Component {
     this.pageSize = getParams('pageSize');
     this.pageNo = getParams('pageNo');
     this.diffEditorDialog = React.createRef();
+    this.compareEditorDialog = React.createRef();
     // this.params = window.location.hash.split('?')[1]||'';
   }
 
   componentDidMount() {
     this.initData();
     this.getDataDetail();
+    this.initFullScreenEvent();
   }
 
   initData() {
@@ -85,6 +90,22 @@ class ConfigDetail extends React.Component {
       });
     }
     this.setState({ tag: [{ title: locale.official, key: 'normal' }] });
+  }
+
+  initFullScreenEvent() {
+    document.body.addEventListener('keydown', e => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        this.setState({
+          editorClass: 'editor-full-screen',
+        });
+      }
+      if (e.key === 'Escape') {
+        this.setState({
+          editorClass: 'editor-normal',
+        });
+      }
+    });
   }
 
   openLoading() {
@@ -227,8 +248,39 @@ class ConfigDetail extends React.Component {
     });
   }
 
+  openCompare = ([dataId, group, tenant]) => {
+    let self = this;
+    const { locale = {} } = this.props;
+    let leftvalue = this.monacoEditor.getValue();
+    const params = {
+      show: 'all',
+      group,
+      dataId,
+      tenant,
+    };
+    requestUtils.get('v1/cs/configs', { params }).then(res => {
+      if (res != null && res !== '') {
+        let rightvalue = res.content;
+        leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+        rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+        self.compareEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
+      } else {
+        Dialog.alert({ title: locale.error, content: locale.configNotFind });
+      }
+    });
+  };
+
+  onClickConfigCompare() {
+    this.setState({ configCompareVisible: true });
+  }
+
+  closeConfigCompare() {
+    this.setState({ configCompareVisible: false });
+  }
+
   render() {
     const { locale = {} } = this.props;
+    const { configCompareVisible, editorClass } = this.state;
     const { init } = this.field;
     const formItemLayout = {
       labelCol: {
@@ -313,11 +365,14 @@ class ConfigDetail extends React.Component {
               <Input htmlType={'text'} readOnly {...init('md5')} />
             </FormItem>
             <FormItem label={locale.configuration} required {...formItemLayout}>
-              <div style={{ clear: 'both', height: 300 }} id="container" />
+              <div className={editorClass} id="container" />
             </FormItem>
           </Form>
           <Row>
             <Col span="24" className="button-list">
+              <Button size="large" type="primary" onClick={() => this.onClickConfigCompare()}>
+                {locale.configComparison}
+              </Button>{' '}
               <Button size="large" type="primary" onClick={this.openDiff.bind(this)}>
                 {locale.versionComparison}
               </Button>{' '}
@@ -332,7 +387,22 @@ class ConfigDetail extends React.Component {
             currentArea={locale.dialogCurrentArea}
             originalArea={locale.dialogOriginalArea}
           />
+          <DiffEditorDialog
+            ref={this.compareEditorDialog}
+            title={locale.configComparison}
+            currentArea={locale.dialogCurrentConfig}
+            originalArea={locale.dialogComparedConfig}
+          />
         </Loading>
+        <ConfigCompared
+          visible={configCompareVisible}
+          dataId={this.dataId}
+          group={this.group}
+          onOk={config => {
+            this.openCompare(config);
+          }}
+          onCancel={() => this.closeConfigCompare()}
+        />
       </div>
     );
   }

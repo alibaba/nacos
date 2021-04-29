@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.address;
+package com.alibaba.nacos.common.http.param;
 
-import com.alibaba.nacos.common.utils.IPUtil;
 import org.junit.Test;
 
-public class ParamCheckUtilTests {
+import static org.junit.Assert.assertEquals;
+
+public class HeaderTest {
     
     @Test
-    public void checkIPs() {
-        String[] ips = {"127.0.0.1"};
-        System.out.println(IPUtil.checkIPs(ips));
-        
-        String[] illlegalIps = {"127.100.19", "127.0.0.1"};
-        System.err.println(IPUtil.checkIPs(illlegalIps));
+    public void testHeaderKyeIgnoreCase() {
+        Header header = Header.newInstance();
+        header.addParam("Content-Encoding", "gzip");
+        assertEquals("gzip", header.getValue("content-encoding"));
     }
 }

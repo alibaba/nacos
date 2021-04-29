@@ -47,6 +47,7 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -348,6 +349,17 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public boolean isAvailable() {
         return isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
+    }
+    
+    @Override
+    public Optional<String> getErrorMsg() {
+        String errorMsg;
+        if (!isInitialized() && !ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus())) {
+            errorMsg = "Distro protocol is not initialized";
+        } else {
+            errorMsg = null;
+        }
+        return Optional.ofNullable(errorMsg);
     }
     
     public boolean isInitialized() {

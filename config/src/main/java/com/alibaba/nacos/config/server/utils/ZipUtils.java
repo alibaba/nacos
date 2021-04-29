@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.constant.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,11 +134,16 @@ public class ZipUtils {
                     while ((offset = zipIn.read(buffer)) != -1) {
                         out.write(buffer, 0, offset);
                     }
-                    if (".meta.yml".equals(entry.getName())) {
-                        metaDataItem = new ZipItem(entry.getName(), out.toString("UTF-8"));
-                    } else {
-                        itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
+                    String entryName = entry.getName();
+                    if (metaDataItem == null && Constants.CONFIG_EXPORT_METADATA.equals(entryName)) {
+                        metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
+                        continue;
                     }
+                    if (metaDataItem == null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(entryName)) {
+                        metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
+                        continue;
+                    }
+                    itemList.add(new ZipItem(entryName, out.toString("UTF-8")));
                 } catch (IOException e) {
                     LOGGER.error("unzip error", e);
                 }

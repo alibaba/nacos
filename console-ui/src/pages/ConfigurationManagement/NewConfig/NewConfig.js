@@ -80,6 +80,7 @@ class NewConfig extends React.Component {
       encrypt: false,
       addonBefore: '',
       showGroupWarning: false,
+      editorClass: 'editor-normal',
     };
     this.codeValue = '';
     this.mode = 'text';
@@ -99,6 +100,7 @@ class NewConfig extends React.Component {
     } else {
       this.initMoacoEditor();
     }
+    this.initFullScreenEvent();
   }
 
   changeModel(type) {
@@ -135,6 +137,22 @@ class NewConfig extends React.Component {
       wordWrap: 'wordWrapColumn',
       cursorStyle: 'line',
       automaticLayout: true,
+    });
+  }
+
+  initFullScreenEvent() {
+    document.body.addEventListener('keydown', e => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        this.setState({
+          editorClass: 'editor-full-screen',
+        });
+      }
+      if (e.key === 'Escape') {
+        this.setState({
+          editorClass: 'editor-normal',
+        });
+      }
     });
   }
 
@@ -435,6 +453,7 @@ class NewConfig extends React.Component {
         label: 'Properties',
       },
     ];
+    const { editorClass } = this.state;
 
     return (
       <div style={{ padding: 10 }}>
@@ -575,7 +594,7 @@ class NewConfig extends React.Component {
               }
               required
             >
-              <div id={'container'} style={{ width: '100%', height: 300 }} />
+              <div id={'container'} className={editorClass} />
             </FormItem>
 
             <FormItem label=" ">

@@ -162,7 +162,11 @@ public class HostReactor implements Closeable {
      */
     public ServiceInfo processServiceJson(String json) {
         ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
-        ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
+        String serviceKey = serviceInfo.getKey();
+        if (serviceKey == null) {
+            return null;
+        }
+        ServiceInfo oldService = serviceInfoMap.get(serviceKey);
         
         if (pushEmptyProtection && !serviceInfo.validate()) {
             //empty or error push, just ignore

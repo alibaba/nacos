@@ -22,7 +22,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>1.4.1</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-1.4.1</tag>
+        <tag>nacos-all-${revision}</tag>
     </scm>
 
     <mailingLists>
@@ -88,6 +88,7 @@
     </issueManagement>
 
     <properties>
+        <revision>1.4.2</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -120,7 +121,8 @@
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <maven-failsafe-plugin.version>2.19.1</maven-failsafe-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
-        <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
+        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
+        <maven-flatten-version>1.1.0</maven-flatten-version>
         <!-- dependency version related to plugin -->
         <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
         <p3c-pmd.version>1.3.0</p3c-pmd.version>
@@ -129,7 +131,7 @@
         <spring-boot-dependencies.version>2.1.17.RELEASE</spring-boot-dependencies.version>
         <servlet-api.version>3.0</servlet-api.version>
         <commons-lang3.version>3.4</commons-lang3.version>
-        <commons-io.version>2.2</commons-io.version>
+        <commons-io.version>2.7</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-logging.version>1.2</commons-logging.version>
         <commons-dbcp.version>1.4</commons-dbcp.version>
@@ -140,18 +142,19 @@
         <httpcore.version>4.4.1</httpcore.version>
         <httpclient.version>4.5</httpclient.version>
         <httpasyncclient.version>4.1.3</httpasyncclient.version>
-        <mysql-connector-java.version>8.0.16</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.21</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <cglib-nodep.version>2.1</cglib-nodep.version>
         <jcip-annotations.version>1.0</jcip-annotations.version>
-        <jackson-core.version>2.10.4</jackson-core.version>
-        <jackson-databind.version>2.10.4</jackson-databind.version>
+        <jackson-core.version>2.12.2</jackson-core.version>
+        <jackson-databind.version>2.12.2</jackson-databind.version>
+        <jackson.annotations.version>2.12.2</jackson.annotations.version>
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
-        <netty-all.version>4.1.42.Final</netty-all.version>
-        <netty-common.version>4.1.31.Final</netty-common.version>
+        <netty-all.version>4.1.59.Final</netty-all.version>
+        <netty-common.version>4.1.59.Final</netty-common.version>
         <mina-core.version>2.0.0-RC1</mina-core.version>
-        <guava.version>24.1.1-jre</guava.version>
+        <guava.version>30.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
         <commonOkHttp.version>0.4.1</commonOkHttp.version>
         <grpc-java.version>1.24.0</grpc-java.version>
@@ -163,7 +166,7 @@
         <mockito-all.version>1.10.19</mockito-all.version>
         <hamcrest-all.version>1.3</hamcrest-all.version>
         <prometheus-simpleclient.version>0.5.0</prometheus-simpleclient.version>
-        <tomcat-embed-jasper.version>9.0.37</tomcat-embed-jasper.version>
+        <tomcat-embed-jasper.version>9.0.40</tomcat-embed-jasper.version>
         <truth.version>0.30</truth.version>
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.3.5</jraft-core.version>
@@ -424,6 +427,34 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven-assembly-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>${maven-flatten-version}</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    <pomElements>
+                        <dependencies>expand</dependencies>
+                    </pomElements>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -903,6 +934,11 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson-databind.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.annotations.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
