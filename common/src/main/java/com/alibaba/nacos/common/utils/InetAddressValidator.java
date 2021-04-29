@@ -1,12 +1,9 @@
 /**
  * Copyright 2018-2021 Dynatrace LLC
- * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,12 +13,14 @@
 
 package com.alibaba.nacos.common.utils;
 
-
 import java.util.regex.Pattern;
 
 /**
+ * ipv4 ipv6 check util.
+ *
  * @author Dynatrace LLC
  */
+@SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
 public class InetAddressValidator {
     
     private static final String PERCENT = "%";
@@ -53,17 +52,13 @@ public class InetAddressValidator {
             "^" + "(" + "(?:[0-9A-Fa-f]{1,4}" + "(?::[0-9A-Fa-f]{1,4})*)?" + ")" + "::" + "(" + "(?:[0-9A-Fa-f]{1,4}:"
                     + "(?:[0-9A-Fa-f]{1,4}:)*)?" + ")" + "$");
     
-    
     private static final Pattern IPV6_MIXED_UNCOMPRESSED_REGEX = Pattern
             .compile("^" + "(?:[0-9a-fA-F]{1,4}:){6}" + "$");
     
     /**
-     * Check if <code>input</code> is a valid IPv4 address
-     * <p>
-     * <p>
+     * Check if <code>input</code> is a valid IPv4 address.
      * The format is 'xxx.xxx.xxx.xxx'. Four blocks of integer numbers ranging from 0 to 255
      * are required. Letters are not allowed.
-     * </p>
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv4 notation.
@@ -74,11 +69,8 @@ public class InetAddressValidator {
     
     /**
      * Check if the given address is a valid IPv6 address in the standard format
-     * <p>
-     * <p>
      * The format is 'xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx'. Eight blocks of hexadecimal digits
      * are required.
-     * </p>
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 notation.
@@ -89,11 +81,8 @@ public class InetAddressValidator {
     
     /**
      * Check if the given address is a valid IPv6 address in the hex-compressed notation
-     * <p>
-     * <p>
      * The format is 'xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx'. If all digits in a block are '0'
      * the block can be left empty.
-     * </p>
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 (hex-compressed) notation.
@@ -104,14 +93,12 @@ public class InetAddressValidator {
     
     /**
      * Check if <code>input</code> is a IPv6 address.
-     * <p>
      * Possible notations for valid IPv6 are:
      * - Standard IPv6 address
      * - Hex-compressed IPv6 address
      * - Link-local IPv6 address
      * - IPv4-mapped-to-IPV6 address
      * - IPv6 mixed address
-     * </p>
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 notation.
@@ -123,7 +110,6 @@ public class InetAddressValidator {
     
     /**
      * Check if the given address is a valid IPv6 address in the mixed-standard or mixed-compressed notation.
-     * <p>
      * IPV6 Mixed mode consists of two parts, the first 96 bits (up to 6 blocks of 4 hex digits) are IPv6
      * the IPV6 part can be either compressed or uncompressed
      * the second block is a full IPv4 address
@@ -156,9 +142,7 @@ public class InetAddressValidator {
     /**
      * Check if <code>input</code> is an IPv4 address mapped into a IPv6 address. These are
      * starting with "::ffff:" followed by the IPv4 address in a dot-seperated notation.
-     * <p>
      * The format is '::ffff:d.d.d.d'
-     * </p>
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 notation containing an IPv4 address
@@ -203,9 +187,8 @@ public class InetAddressValidator {
         return isIPv4Address(ipAddress) || isIPv6Address(ipAddress);
     }
     
-    
     /**
-     * get to ipv4 pattern
+     * get to ipv4 pattern.
      *
      * @return
      */

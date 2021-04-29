@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,7 +52,6 @@ public class IPUtil {
     private static final String CHECK_OK = "ok";
     
     private static Pattern domainPattern = Pattern.compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
-    
     
     /**
      * get localhost ip.
@@ -205,16 +202,16 @@ public class IPUtil {
     }
     
     /**
-     * remove brackets "[]"
+     * remove brackets "[]".
      *
-     * @param str
+     * @param str is ipv6 address
      * @return
      */
-    public static String removeBrackets(String str){
-        if(StringUtils.isBlank(str)){
+    public static String removeBrackets(String str) {
+        if (StringUtils.isBlank(str)) {
             return "";
         }
-        return str.replaceAll("[\\[\\]]","");
+        return str.replaceAll("[\\[\\]]", "");
     }
     
 }
