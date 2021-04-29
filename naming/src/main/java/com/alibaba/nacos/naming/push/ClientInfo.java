@@ -56,7 +56,7 @@ public class ClientInfo {
         /**
          * C client type.
          */
-        C("Nacos-C-Client"),
+        C("Nacos-C-Client,vip-client4cpp"),
         /**
          * CSharp client type.
          */
@@ -93,8 +93,10 @@ public class ClientInfo {
 
         public static ClientType getDes(String ver) {
             for (ClientType clientType : ClientType.values()) {
-                if (ver.startsWith(clientType.des)) {
-                    return clientType;
+                for (String key : clientType.des.split(",")) {
+                    if (ver.startsWith(key)) {
+                        return clientType;
+                    }
                 }
             }
             return UNKNOWN;
