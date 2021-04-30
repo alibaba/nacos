@@ -22,6 +22,11 @@ import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.nacos.client.config.common.Constants.CONTENT;
+import static com.alibaba.nacos.client.config.common.Constants.DATA_ID;
+import static com.alibaba.nacos.client.config.common.Constants.GROUP;
+import static com.alibaba.nacos.client.config.common.Constants.TENANT;
+
 /**
  * Config Request.
  *
@@ -34,35 +39,35 @@ public class ConfigRequest implements IConfigRequest {
     private final IConfigContext configContext = new ConfigContext();
     
     public String getTenant() {
-        return (String) param.get("tenant");
+        return (String) param.get(TENANT);
     }
     
     public void setTenant(String tenant) {
-        param.put("tenant", tenant);
+        param.put(TENANT, tenant);
     }
     
     public String getDataId() {
-        return (String) param.get("dataId");
+        return (String) param.get(DATA_ID);
     }
     
     public void setDataId(String dataId) {
-        param.put("dataId", dataId);
+        param.put(DATA_ID, dataId);
     }
     
     public String getGroup() {
-        return (String) param.get("group");
+        return (String) param.get(GROUP);
     }
     
     public void setGroup(String group) {
-        param.put("group", group);
+        param.put(GROUP, group);
     }
     
     public String getContent() {
-        return (String) param.get("content");
+        return (String) param.get(CONTENT);
     }
     
     public void setContent(String content) {
-        param.put("content", content);
+        param.put(CONTENT, content);
     }
     
     @Override
