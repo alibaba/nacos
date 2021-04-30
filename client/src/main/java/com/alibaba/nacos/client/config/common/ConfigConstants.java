@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.client.config.common;
 
-public class Constants {
+/**
+ * @author Nacos
+ */
+public class ConfigConstants {
     
     public static final String TENANT = "tenant";
     
