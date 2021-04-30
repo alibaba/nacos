@@ -40,8 +40,8 @@ public class ClientInfo {
             return;
         }
         versionStr = versionStr.substring(versionStr.indexOf(":v") + 2);
-        version = VersionUtil.parseVersion(versionStr);
-        type = ClientType.getDes(versionStr);
+        this.version = VersionUtil.parseVersion(versionStr);
+        this.type = ClientType.getDes(versionStr);
     }
 
     public enum ClientType {
