@@ -29,13 +29,13 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.sys.env.Constants.IP_ADDRESS;
 import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
@@ -61,6 +61,9 @@ public class InetUtils {
     private static final List<String> PREFERRED_NETWORKS = new ArrayList<String>();
     
     private static final List<String> IGNORED_INTERFACES = new ArrayList<String>();
+    
+    private static Pattern domainPattern = Pattern
+            .compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
     
     static {
         NotifyCenter.registerToSharePublisher(IPChangeEvent.class);
@@ -92,8 +95,7 @@ public class InetUtils {
                     preferHostnameOverIP = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
                     
                     if (!preferHostnameOverIP) {
-                        preferHostnameOverIP = Boolean
-                                .parseBoolean(EnvUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
+                        preferHostnameOverIP = Boolean.parseBoolean(EnvUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
                     }
                     
                     if (preferHostnameOverIP) {
@@ -157,7 +159,7 @@ public class InetUtils {
                     } else {
                         continue;
                     }
-    
+                    
                     if (!ignoreInterface(ifc.getDisplayName())) {
                         for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
                             InetAddress address = addrs.nextElement();
@@ -220,18 +222,16 @@ public class InetUtils {
     }
     
     /**
-     * juege str is right domain.
+     * juege str is right domain.（Check only rule）
      *
      * @param str nacosIP
      * @return nacosIP is domain
      */
     public static boolean isDomain(String str) {
-        InetSocketAddress address = new InetSocketAddress(str, 0);
-        boolean unResolved = address.isUnresolved();
-        if (unResolved) {
-            LOG.warn("the domain: '" + str + "' can not be resolved");
+        if (StringUtils.isBlank(str)) {
+            return false;
         }
-        return !unResolved;
+        return domainPattern.matcher(str).matches();
     }
     
     /**
