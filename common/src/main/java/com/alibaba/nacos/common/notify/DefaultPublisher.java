@@ -85,6 +85,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         }
     }
     
+    @Override
     public long currentEventSize() {
         return queue.size();
     }
@@ -118,7 +119,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 UPDATER.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
             }
         } catch (Throwable ex) {
-            LOGGER.error("Event listener exception : {}", ex);
+            LOGGER.error("Event listener exception : ", ex);
         }
     }
     
@@ -207,7 +208,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             try {
                 job.run();
             } catch (Throwable e) {
-                LOGGER.error("Event callback exception : {}", e);
+                LOGGER.error("Event callback exception : ", e);
             }
         }
     }
