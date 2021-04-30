@@ -535,6 +535,7 @@ const I18N_CONF = {
     rollbackDelete: '删除',
     update: '更新',
     insert: '插入',
+    additionalRollbackMessage: '此操作将删除以下配置！',
   },
   UserManagement: {
     userManagement: '用户管理',
