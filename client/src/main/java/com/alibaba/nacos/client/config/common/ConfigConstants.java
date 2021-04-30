@@ -17,6 +17,8 @@
 package com.alibaba.nacos.client.config.common;
 
 /**
+ * config common constants.
+ *
  * @author Nacos
  */
 public class ConfigConstants {
