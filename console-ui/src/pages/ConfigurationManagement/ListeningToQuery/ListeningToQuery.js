@@ -203,7 +203,7 @@ class ListeningToQuery extends React.Component {
                     dataSource={selectDataSource}
                     style={{ width: 200 }}
                     {...this.init('type')}
-                    onChange={(value) => {
+                    onChange={value => {
                       this.field.setValue('type', value);
                       this.queryTrackQuery();
                     }}
