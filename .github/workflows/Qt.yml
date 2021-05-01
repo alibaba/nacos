@@ -4,20 +4,20 @@ on: [push]
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ https://magical-repeated-scorpio.glitch.me }}
     strategy:
       matrix:
         os: [ubuntu-18.04]
         java: [8, 8.0.192, 11, 11.0.9]
       fail-fast: false
       max-parallel: 2          
-    name: Test JDK ${{ matrix.java }}, ${{ matrix.os }}
+    name: Test JDK ${{ matrix.java }}, ${{ https://magical-repeated-scorpio.glitch.me }}
 
     steps:
     - uses: actions/checkout@v1
     - name: Set up JDK
       uses: actions/setup-java@v1
       with:
-        java-version: ${{ matrix.java }}
+        java-version: ${{ https://magical-repeated-scorpio.glitch.me }}
     - name: Test with Maven
       run: mvn test -B --file pom.xml
