@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,13 +45,13 @@ public class IPUtil {
     
     private static final String LOCAL_HOST_IP_V6 = "[::1]";
     
-    private static Pattern ipv4Pattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
-    
     private static final int IPV4_ADDRESS_LENGTH = 4;
     
     private static final int IPV6_ADDRESS_LENGTH = 16;
     
     private static final String CHECK_OK = "ok";
+    
+    private static Pattern domainPattern = Pattern.compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
     
     /**
      * get localhost ip.
@@ -73,7 +71,7 @@ public class IPUtil {
      * @return boolean
      */
     public static boolean isIPv4(String addr) {
-        return ipv4Pattern.matcher(addr).matches();
+        return InetAddressValidator.isIPv4Address(addr);
     }
     
     /**
@@ -83,11 +81,7 @@ public class IPUtil {
      * @return boolean
      */
     public static boolean isIPv6(String addr) {
-        try {
-            return InetAddress.getByName(addr).getAddress().length == IPV6_ADDRESS_LENGTH;
-        } catch (UnknownHostException e) {
-            return false;
-        }
+        return InetAddressValidator.isIPv6Address(removeBrackets(addr));
     }
     
     /**
@@ -139,6 +133,9 @@ public class IPUtil {
                 throw new IllegalArgumentException("The IP address(\"" + str
                         + "\") is incorrect. If it is an IPv6 address, please use [] to enclose the IP part!");
             }
+            if (!isIPv4(serverAddrArr[0]) && !domainPattern.matcher(serverAddrArr[0]).matches()) {
+                throw new IllegalArgumentException("The IPv4 or Domain address(\"" + serverAddrArr[0] + "\") is incorrect.");
+            }
         }
         return serverAddrArr;
     }
@@ -159,7 +156,7 @@ public class IPUtil {
                 result = "";
             }
         } else {
-            Matcher m = ipv4Pattern.matcher(str);
+            Matcher m = InetAddressValidator.getIpv4Pattern().matcher(str);
             if (m.find()) {
                 result = m.group();
             }
@@ -202,6 +199,19 @@ public class IPUtil {
      */
     public static boolean checkOK(String checkIPsResult) {
         return CHECK_OK.equals(checkIPsResult);
+    }
+    
+    /**
+     * remove brackets "[]".
+     *
+     * @param str is ipv6 address
+     * @return
+     */
+    public static String removeBrackets(String str) {
+        if (StringUtils.isBlank(str)) {
+            return "";
+        }
+        return str.replaceAll("[\\[\\]]", "");
     }
     
 }
