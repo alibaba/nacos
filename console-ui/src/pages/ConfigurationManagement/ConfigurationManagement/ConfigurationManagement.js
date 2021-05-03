@@ -515,7 +515,7 @@ class ConfigurationManagement extends React.Component {
 
   exportData() {
     const { group, appName, dataId, openUri } = this;
-    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
     openUri('v1/cs/configs', {
       export: 'true',
       tenant: getParams('namespace'),
@@ -524,12 +524,13 @@ class ConfigurationManagement extends React.Component {
       dataId,
       ids: '',
       accessToken,
+      username,
     });
   }
 
   exportDataNew() {
     const { group, appName, dataId, openUri } = this;
-    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
     openUri('v1/cs/configs', {
       exportV2: 'true',
       tenant: getParams('namespace'),
@@ -538,13 +539,14 @@ class ConfigurationManagement extends React.Component {
       dataId,
       ids: '',
       accessToken,
+      username,
     });
   }
 
   exportSelectedData(newVersion) {
     const ids = [];
     const { locale = {} } = this.props;
-    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
     if (!configsTableSelected.size) {
       Dialog.alert({
         title: locale.exportSelectedAlertTitle,
@@ -561,6 +563,7 @@ class ConfigurationManagement extends React.Component {
         appName: '',
         ids: ids.join(','),
         accessToken,
+        username,
       });
     } else {
       this.openUri('v1/cs/configs', {
@@ -570,6 +573,7 @@ class ConfigurationManagement extends React.Component {
         appName: '',
         ids: ids.join(','),
         accessToken,
+        username,
       });
     }
   }
@@ -956,12 +960,12 @@ class ConfigurationManagement extends React.Component {
       console.log(e);
       goLogin();
     }
-    const { accessToken = '' } = token;
+    const { accessToken = '', username = '' } = token;
     const uploadProps = {
       accept: 'application/zip',
       action: `v1/cs/configs?import=true&namespace=${getParams(
         'namespace'
-      )}&accessToken=${accessToken}`,
+      )}&accessToken=${accessToken}&username=${username}`,
       headers: Object.assign({}, {}, { accessToken }),
       data: {
         policy: self.field.getValue('sameConfigPolicy'),
