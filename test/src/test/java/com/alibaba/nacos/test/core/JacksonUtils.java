@@ -20,11 +20,16 @@ import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.core.Version;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +42,11 @@ public class JacksonUtils {
 
 	static {
 		mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+		SimpleModule simpleModule = new SimpleModule("JsonMapSerializer", Version.unknownVersion());
+		simpleModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(formatter));
+		simpleModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(formatter));
+		mapper.registerModule(simpleModule);
 	}
 
 	public static String serializeObject(Object o) throws IOException {

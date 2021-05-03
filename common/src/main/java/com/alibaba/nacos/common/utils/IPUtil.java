@@ -51,7 +51,9 @@ public class IPUtil {
     
     private static final String CHECK_OK = "ok";
     
-    private static Pattern domainPattern = Pattern.compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
+    private static final Pattern IPV4_FORMAT_PATTERN = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+    
+    private static final Pattern DOMAIN_PATTERN = Pattern.compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
     
     /**
      * get localhost ip.
@@ -133,7 +135,7 @@ public class IPUtil {
                 throw new IllegalArgumentException("The IP address(\"" + str
                         + "\") is incorrect. If it is an IPv6 address, please use [] to enclose the IP part!");
             }
-            if (!isIPv4(serverAddrArr[0]) && !domainPattern.matcher(serverAddrArr[0]).matches()) {
+            if (!isIPv4(serverAddrArr[0]) && !DOMAIN_PATTERN.matcher(serverAddrArr[0]).matches()) {
                 throw new IllegalArgumentException("The IPv4 or Domain address(\"" + serverAddrArr[0] + "\") is incorrect.");
             }
         }
@@ -156,9 +158,12 @@ public class IPUtil {
                 result = "";
             }
         } else {
-            Matcher m = InetAddressValidator.getIpv4Pattern().matcher(str);
+            Matcher m = IPV4_FORMAT_PATTERN.matcher(str);
             if (m.find()) {
                 result = m.group();
+            }
+            if (!isIPv4(result)) {
+                result = "";
             }
         }
         return result;
