@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.utils.Constants;
 import org.codehaus.jackson.Version;
 import org.codehaus.jackson.util.VersionUtil;
 
@@ -27,9 +28,9 @@ import org.codehaus.jackson.util.VersionUtil;
  */
 public class ClientInfo {
 
-    public Version version;
+    public Version version = Version.unknownVersion();
 
-    public ClientType type;
+    public ClientType type = ClientType.UNKNOWN;
 
     public ClientInfo(String userAgent) {
         String versionStr = StringUtils.isEmpty(userAgent) ? StringUtils.EMPTY : userAgent;
@@ -93,7 +94,7 @@ public class ClientInfo {
 
         public static ClientType getDes(String ver) {
             for (ClientType clientType : ClientType.values()) {
-                for (String key : clientType.des.split(",")) {
+                for (String key : clientType.des.split(Constants.COMMA)) {
                     if (ver.startsWith(key)) {
                         return clientType;
                     }

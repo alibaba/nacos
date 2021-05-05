@@ -32,4 +32,6 @@ public final class Constants {
     
     public static final String NACOS_NAMING_USE_NEW_RAFT_FIRST = "nacos.naming.use-new-raft.first";
     
+    public static final String COMMA = ",";
+    
 }
