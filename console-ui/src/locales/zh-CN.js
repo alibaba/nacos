@@ -244,7 +244,7 @@ const I18N_CONF = {
     actionType: '操作类型:',
     configureContent: '配置内容:',
     operator: '操作人:',
-    sourceIp: '源 IP:',
+    sourceIp: '来源 IP:',
     back: '返回',
   },
   DashboardCard: {
