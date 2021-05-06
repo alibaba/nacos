@@ -515,16 +515,28 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                             Loggers.CLUSTER
                                                     .warn("{} version is too low, it is recommended to upgrade the version : {}",
                                                             target, VersionUtils.version);
-                                            Member memberNew = target.copy();
-                                            if (memberNew.getAbilities() != null
-                                                    && memberNew.getAbilities().getRemoteAbility() != null && memberNew
+                                            Member memberNew = null;
+                                            if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
+                                                memberNew = target.copy();
+                                                // Clean up remote version info.
+                                                // This value may still stay in extend info when remote server has been downgraded to old version.
+                                                memberNew.delExtendVal(MemberMetaDataConstants.VERSION);
+                                                Loggers.CLUSTER.warn("{} : Clean up version info,"
+                                                        + " target has been downgrade to old version.", memberNew);
+                                            }
+                                            if (target.getAbilities() != null
+                                                    && target.getAbilities().getRemoteAbility() != null && target
                                                     .getAbilities().getRemoteAbility().isSupportRemoteConnection()) {
+                                                if (memberNew == null) {
+                                                    memberNew = target.copy();
+                                                }
                                                 memberNew.getAbilities().getRemoteAbility()
                                                         .setSupportRemoteConnection(false);
                                                 Loggers.CLUSTER
                                                         .warn("{} : Clear support remote connection flag,target may rollback version ",
                                                                 memberNew);
-                                                
+                                            }
+                                            if (memberNew != null) {
                                                 update(memberNew);
                                             }
                                             return;
