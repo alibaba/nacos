@@ -57,7 +57,7 @@ public class DomainsManagerTest extends BaseTest {
         service.setNamespaceId(TEST_NAMESPACE);
         manager.putService(service);
         
-        List<Service> list = manager.searchServices(TEST_NAMESPACE, "test.*");
+        List<Service> list = manager.searchServices(TEST_NAMESPACE, ".*test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals(TEST_SERVICE_NAME, list.get(0).getName());

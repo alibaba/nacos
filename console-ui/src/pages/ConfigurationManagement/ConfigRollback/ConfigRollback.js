@@ -111,15 +111,17 @@ class ConfigRollback extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     let type = 'post';
+    let additionalMsg = '';
     if (this.opType.trim() === 'I') {
       type = 'delete';
+      additionalMsg = locale.additionalRollbackMessage;
     }
     Dialog.confirm({
       title: locale.rollBack,
       content: (
-        <div style={{ marginTop: '-20px' }}>
+        <div style={{ marginTop: '-20px', maxWidth: '500px' }}>
           <h3>
-            {locale.determine} {locale.followingConfiguration}
+            {locale.determine} {locale.followingConfiguration} {additionalMsg}
           </h3>
           <p>
             <span style={{ color: '#999', marginRight: 5 }}>Data ID:</span>
