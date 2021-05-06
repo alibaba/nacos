@@ -25,7 +25,9 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -113,11 +115,12 @@ public class NotifySingleService {
      */
     private void setupNotifyExecutors() {
         Collection<Member> clusterIps = memberManager.allMembers();
+        List<String> addresses = new ArrayList<>();
         
         for (Member member : clusterIps) {
             
             final String address = member.getAddress();
-            
+            addresses.add(address);
             /*
              * Fixed number of threads, unbounded queue
              * (based on assumption: thread pool throughput is good,
@@ -136,7 +139,7 @@ public class NotifySingleService {
             String target = entry.getKey();
             
             // The cluster node goes offline
-            if (!clusterIps.contains(target)) {
+            if (!addresses.contains(target)) {
                 ThreadPoolExecutor executor = (ThreadPoolExecutor) entry.getValue();
                 executor.shutdown();
                 executors.remove(target);
