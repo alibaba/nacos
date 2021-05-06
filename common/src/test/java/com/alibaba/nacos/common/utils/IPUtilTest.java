@@ -68,7 +68,7 @@ public class IPUtilTest {
         Assert.assertEquals("", IPUtil.getIPFromString(
                 "jdbc:mysql://[127.0.0.1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("", IPUtil.getIPFromString(
+        Assert.assertEquals("666.288.333.444", IPUtil.getIPFromString(
                 "jdbc:mysql://666.288.333.444:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
     }
