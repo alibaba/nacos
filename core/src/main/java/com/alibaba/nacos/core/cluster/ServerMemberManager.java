@@ -521,6 +521,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                                 // Clean up remote version info.
                                                 // This value may still stay in extend info when remote server has been downgraded to old version.
                                                 memberNew.delExtendVal(MemberMetaDataConstants.VERSION);
+                                                memberNew.delExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE);
                                                 Loggers.CLUSTER.warn("{} : Clean up version info,"
                                                         + " target has been downgrade to old version.", memberNew);
                                             }
