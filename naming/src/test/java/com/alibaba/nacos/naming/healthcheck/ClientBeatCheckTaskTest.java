@@ -21,6 +21,7 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Assert;
 import org.junit.Before;
@@ -60,6 +61,8 @@ public class ClientBeatCheckTaskTest {
     @Before
     public void init() {
         ReflectionTestUtils.setField(clientBeatCheckTask, "service", serviceSpy);
+        SwitchDomain switchDomain = new SwitchDomain();
+        Mockito.doReturn(switchDomain).when(clientBeatCheckTask).getSwitchDomain();
         Mockito.doReturn(distroMapperSpy).when(clientBeatCheckTask).getDistroMapper();
         Mockito.doReturn(globalConfig).when(clientBeatCheckTask).getGlobalConfig();
         Mockito.doReturn(pushService).when(clientBeatCheckTask).getPushService();
