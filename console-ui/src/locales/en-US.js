@@ -539,6 +539,7 @@ const I18N_CONF = {
     rollbackDelete: 'Delete',
     update: 'Update',
     insert: 'Insert',
+    additionalRollbackMessage: 'This operation will delete the below config!',
   },
   UserManagement: {
     userManagement: 'User Management',
