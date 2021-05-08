@@ -33,14 +33,14 @@ public class MetadataOperationTest {
     }
     
     @Test
-    public void getNamespace() {
+    public void testGetNamespace() {
         String namespace = metadataOperation.getNamespace();
         
         Assert.assertNull(namespace);
     }
     
     @Test
-    public void setNamespace() {
+    public void testSetNamespace() {
         String namespace = "2398479283749823984";
         metadataOperation.setNamespace(namespace);
         
@@ -48,14 +48,14 @@ public class MetadataOperationTest {
     }
     
     @Test
-    public void getGroup() {
+    public void testGetGroup() {
         String group = metadataOperation.getGroup();
         
         Assert.assertNull(group);
     }
     
     @Test
-    public void setGroup() {
+    public void testSetGroup() {
         String group = "default";
         metadataOperation.setGroup(group);
         
@@ -63,14 +63,14 @@ public class MetadataOperationTest {
     }
     
     @Test
-    public void getServiceName() {
+    public void testGetServiceName() {
         String serviceName = metadataOperation.getServiceName();
         
         Assert.assertNull(serviceName);
     }
     
     @Test
-    public void setServiceName() {
+    public void testSetServiceName() {
         String serviceName = "nacos";
         metadataOperation.setServiceName(serviceName);
         
@@ -78,14 +78,14 @@ public class MetadataOperationTest {
     }
     
     @Test
-    public void getTag() {
+    public void testGetTag() {
         String tag = metadataOperation.getTag();
         
         Assert.assertNull(tag);
     }
     
     @Test
-    public void setTag() {
+    public void testSetTag() {
         String tag = "tag";
         metadataOperation.setTag(tag);
         
@@ -93,14 +93,14 @@ public class MetadataOperationTest {
     }
     
     @Test
-    public void getMetadata() {
+    public void testGetMetadata() {
         Object metadata = metadataOperation.getMetadata();
         
         Assert.assertNull(metadata);
     }
     
     @Test
-    public void setMetadata() {
+    public void testSetMetadata() {
         String metadata = "metadata";
         metadataOperation.setMetadata(metadata);
         
