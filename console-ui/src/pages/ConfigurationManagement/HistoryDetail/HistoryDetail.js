@@ -60,11 +60,6 @@ class HistoryDetail extends React.Component {
   getDataDetail() {
     const { locale = {} } = this.props;
     const self = this;
-    const typeMap = {
-      U: locale.update,
-      I: locale.insert,
-      D: locale.deleteAction,
-    };
     request({
       url: `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
       success(result) {
