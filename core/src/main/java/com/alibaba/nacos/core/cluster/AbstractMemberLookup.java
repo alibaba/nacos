@@ -56,6 +56,7 @@ public abstract class AbstractMemberLookup implements MemberLookup {
     
     /**
      * subclass can override this method if need.
+     * @throws NacosException NacosException
      */
     protected abstract void doStart() throws NacosException;
 }
