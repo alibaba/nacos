@@ -244,6 +244,7 @@ const I18N_CONF = {
     home: 'Application:',
     actionType: 'Action Type:',
     operator: 'Operator:',
+    sourceIp: 'Source IP',
     configureContent: 'Configuration Content:',
     back: 'Back',
   },

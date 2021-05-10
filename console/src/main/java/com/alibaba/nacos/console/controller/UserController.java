@@ -213,6 +213,7 @@ public class UserController {
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
             result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
+            result.put(Constants.USERNAME, user.getUserName());
             return result;
         }
         
