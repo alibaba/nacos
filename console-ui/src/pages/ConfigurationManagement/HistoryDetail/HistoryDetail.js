@@ -75,7 +75,7 @@ class HistoryDetail extends React.Component {
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
           self.field.setValue('envs', self.serverId);
           self.field.setValue('srcUser', self.srcUser);
-          self.field.setValue('opType', typeMap[data.opType.trim()]);
+          self.field.setValue('opType', data.opType.trim());
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
         }
@@ -89,6 +89,18 @@ class HistoryDetail extends React.Component {
     );
   }
 
+  getOpType(type, locale) {
+    if (type) {
+      const typeMap = {
+        U: locale.update,
+        I: locale.insert,
+        D: locale.deleteAction,
+      };
+      return typeMap[type];
+    }
+    return '';
+  }
+
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
@@ -100,6 +112,7 @@ class HistoryDetail extends React.Component {
         span: 18,
       },
     };
+    const { getOpType } = this;
     return (
       <div style={{ padding: 10 }}>
         <h1>{locale.historyDetails}</h1>
@@ -124,7 +137,7 @@ class HistoryDetail extends React.Component {
             <Input htmlType="text" readOnly {...init('srcUser')} />
           </Form.Item>
           <Form.Item label={locale.actionType} required {...formItemLayout}>
-            <Input htmlType="text" readOnly {...init('opType')} />
+            <Input htmlType="text" readOnly value={getOpType(init('opType').value, locale)} />
           </Form.Item>
           <Form.Item label="MD5:" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('md5')} />

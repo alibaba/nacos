@@ -86,7 +86,7 @@ class ConfigRollback extends React.Component {
           self.field.setValue('dataId', data.dataId);
           self.field.setValue('content', data.content);
           self.field.setValue('appName', data.appName);
-          self.field.setValue('opType', self.typeMapName[data.opType.trim()]);
+          self.field.setValue('opType', data.opType.trim());
           self.opType = data.opType; // 当前回滚类型I:插入,D:删除,U:'更新'
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
@@ -168,6 +168,18 @@ class ConfigRollback extends React.Component {
     });
   }
 
+  getOpType(type, locale) {
+    if (type) {
+      const typeMap = {
+        U: locale.update,
+        I: locale.insert,
+        D: locale.deleteAction,
+      };
+      return typeMap[type];
+    }
+    return '';
+  }
+
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
@@ -179,6 +191,7 @@ class ConfigRollback extends React.Component {
         span: 18,
       },
     };
+    const { getOpType } = this;
     return (
       <div style={{ padding: 10 }}>
         <h1>{locale.configurationRollback}</h1>
@@ -200,7 +213,7 @@ class ConfigRollback extends React.Component {
             </FormItem>
           </div>
           <FormItem label={locale.actionType} required {...formItemLayout}>
-            <Input htmlType="text" readOnly {...init('opType')} />
+            <Input htmlType="text" readOnly value={getOpType(init('opType').value, locale)} />
           </FormItem>
           <FormItem label="MD5:" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('md5')} />
