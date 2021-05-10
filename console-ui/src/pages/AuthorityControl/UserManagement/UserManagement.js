@@ -74,7 +74,11 @@ class UserManagement extends React.Component {
       <>
         <RegionGroup left={locale.userManagement} />
         <div className="filter-panel">
-          <Button type="primary" onClick={() => this.setState({ createUserVisible: true })}>
+          <Button
+            type="primary"
+            onClick={() => this.setState({ createUserVisible: true })}
+            style={{ marginRight: 20 }}
+          >
             {locale.createUser}
           </Button>
           <Button type="secondary" onClick={() => this.getUsers()}>
