@@ -424,7 +424,7 @@ public class LongPollingService {
                                 sendResponse(null);
                             }
                         } else {
-                            LogUtil.CLIENT_LOG.warn("client subsciber's relations delete fail.");
+                            LogUtil.DEFAULT_LOG.warn("client subsciber's relations delete fail.");
                         }
                     } catch (Throwable t) {
                         LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
