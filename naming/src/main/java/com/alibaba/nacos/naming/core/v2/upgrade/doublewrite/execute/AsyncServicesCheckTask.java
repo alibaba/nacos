@@ -71,7 +71,7 @@ public class AsyncServicesCheckTask extends AbstractExecuteTask {
         if (upgradeJudgement.isUseGrpcFeatures()) {
             return;
         }
-        String groupName = serviceV1.getGroupName();
+        String groupName = NamingUtils.getGroupName(serviceV1.getName());
         String serviceName = NamingUtils.getServiceName(fullServiceName);
         com.alibaba.nacos.naming.core.v2.pojo.Service serviceV2 = com.alibaba.nacos.naming.core.v2.pojo.Service
                 .newService(namespace, groupName, serviceName);

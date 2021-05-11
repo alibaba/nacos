@@ -151,7 +151,7 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
         
         private com.alibaba.nacos.naming.core.v2.pojo.Service transfer(Service service, boolean ephemeral) {
             return com.alibaba.nacos.naming.core.v2.pojo.Service
-                    .newService(service.getNamespaceId(), service.getGroupName(),
+                    .newService(service.getNamespaceId(), NamingUtils.getGroupName(service.getName()),
                             NamingUtils.getServiceName(service.getName()), ephemeral);
         }
         
