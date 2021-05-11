@@ -61,6 +61,7 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
         service.setMetadata(metadata.getExtendData());
         service.setSelector(metadata.getSelector());
         service.setNamespaceId(namespaceId);
+        service.setGroupName(NamingUtils.getGroupName(serviceName));
         
         // now valid the service. if failed, exception will be thrown
         service.setLastModifiedMillis(System.currentTimeMillis());
