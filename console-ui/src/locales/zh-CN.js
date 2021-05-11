@@ -252,6 +252,7 @@ const I18N_CONF = {
     viewDetails1: '查看详情',
   },
   ConfigurationManagement: {
+    exportBtn: '导出',
     questionnaire2: '问卷调查',
     ad: '答 ACM 前端监控调查问卷，限时领取阿里云代金券\t            详情猛戳：',
     noLongerDisplay4: '不再显示：',
