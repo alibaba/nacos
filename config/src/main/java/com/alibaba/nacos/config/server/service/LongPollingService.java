@@ -400,27 +400,31 @@ public class LongPollingService {
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
                         
                         // Delete subsciber's relations.
-                        allSubs.remove(ClientLongPolling.this);
+                        boolean removeFlag = allSubs.remove(ClientLongPolling.this);
                         
-                        if (isFixedPolling()) {
-                            LogUtil.CLIENT_LOG
-                                    .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
-                                            RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
-                                            "polling", clientMd5Map.size(), probeRequestSize);
-                            List<String> changedGroups = MD5Util
-                                    .compareMd5((HttpServletRequest) asyncContext.getRequest(),
-                                            (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
-                            if (changedGroups.size() > 0) {
-                                sendResponse(changedGroups);
+                        if (removeFlag) {
+                            if (isFixedPolling()) {
+                                LogUtil.CLIENT_LOG
+                                        .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
+                                                RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+                                                "polling", clientMd5Map.size(), probeRequestSize);
+                                List<String> changedGroups = MD5Util
+                                        .compareMd5((HttpServletRequest) asyncContext.getRequest(),
+                                                (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
+                                if (changedGroups.size() > 0) {
+                                    sendResponse(changedGroups);
+                                } else {
+                                    sendResponse(null);
+                                }
                             } else {
+                                LogUtil.CLIENT_LOG
+                                        .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
+                                                RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+                                                "polling", clientMd5Map.size(), probeRequestSize);
                                 sendResponse(null);
                             }
                         } else {
-                            LogUtil.CLIENT_LOG
-                                    .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
-                                            RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
-                                            "polling", clientMd5Map.size(), probeRequestSize);
-                            sendResponse(null);
+                            LogUtil.DEFAULT_LOG.warn("client subsciber's relations delete fail.");
                         }
                     } catch (Throwable t) {
                         LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());

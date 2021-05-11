@@ -33,6 +33,8 @@ import {
   Table,
   Upload,
   Message,
+  MenuButton,
+  Box,
 } from '@alifd/next';
 import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
@@ -46,6 +48,7 @@ import { getConfigs } from '../../../reducers/configuration';
 import './index.scss';
 import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
 
+const { Item } = MenuButton;
 const { Panel } = Collapse;
 const configsTableSelected = new Map();
 @connect(
@@ -1167,42 +1170,24 @@ class ConfigurationManagement extends React.Component {
                   style={
                     this.inApp
                       ? { display: 'none' }
-                      : { verticalAlign: 'middle', marginTop: 0, marginLeft: 10 }
+                      : { verticalAlign: 'middle', marginTop: 0, marginLeft: 0 }
                   }
                 >
-                  <div
-                    style={{ color: '#33cde5', fontSize: 12, cursor: 'pointer' }}
-                    onClick={this.changeAdvancedQuery}
-                  >
-                    <span style={{ marginRight: 5, lineHeight: '28px' }}>
-                      {locale.advancedQuery9}
-                    </span>
-                    <Icon
-                      type={this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'}
-                      size={'xs'}
-                    />
-                  </div>
-                </Form.Item>
-                <Form.Item label={''}>
-                  <Button
-                    type={'primary'}
-                    style={{ marginRight: 10 }}
-                    onClick={this.exportData.bind(this)}
-                    data-spm-click={'gostr=/aliyun;locaid=configsExport'}
-                  >
-                    {locale.export}
+                  <Button onClick={this.changeAdvancedQuery}>
+                    {this.state.isAdvancedQuery ? (
+                      <>
+                        {locale.advancedQuery9}
+                        <Icon type="arrow-up" size="xs" style={{ marginLeft: '5px' }} />
+                      </>
+                    ) : (
+                      <>
+                        {locale.advancedQuery9}
+                        <Icon type="arrow-down" size="xs" style={{ marginLeft: '5px' }} />
+                      </>
+                    )}
                   </Button>
                 </Form.Item>
-                <Form.Item label={''}>
-                  <Button
-                    type={'primary'}
-                    style={{ marginRight: 10 }}
-                    onClick={this.exportDataNew.bind(this)}
-                    data-spm-click={'gostr=/aliyun;locaid=configsExport'}
-                  >
-                    {locale.newExport}
-                  </Button>
-                </Form.Item>
+
                 <Form.Item label={''}>
                   <Button
                     type={'primary'}
@@ -1291,16 +1276,7 @@ class ConfigurationManagement extends React.Component {
                       locaid: 'configsDelete',
                       onClick: () => this.multipleSelectionDeletion(),
                     },
-                    {
-                      text: locale.exportSelected,
-                      locaid: 'configsExport',
-                      onClick: () => this.exportSelectedData(false),
-                    },
-                    {
-                      text: locale.newExportSelected,
-                      locaid: 'configsExport',
-                      onClick: () => this.exportSelectedData(true),
-                    },
+
                     {
                       text: locale.clone,
                       locaid: 'configsDelete',
@@ -1317,6 +1293,38 @@ class ConfigurationManagement extends React.Component {
                       {item.text}
                     </Button>
                   ))}
+                  <MenuButton
+                    type="primary"
+                    label={locale.exportBtn}
+                    popupStyle={{ minWidth: 150 }}
+                  >
+                    {[
+                      {
+                        text: locale.export,
+                        locaid: 'exportData',
+                        onClick: () => this.exportData(this),
+                      },
+                      {
+                        text: locale.newExport,
+                        locaid: 'exportDataNew',
+                        onClick: () => this.exportDataNew(this),
+                      },
+                      {
+                        text: locale.exportSelected,
+                        locaid: 'configsExport',
+                        onClick: () => this.exportSelectedData(false),
+                      },
+                      {
+                        text: locale.newExportSelected,
+                        locaid: 'configsExport',
+                        onClick: () => this.exportSelectedData(true),
+                      },
+                    ].map((item, index) => (
+                      <Item key={item.text} style={{ minWidth: 150 }} onClick={item.onClick}>
+                        {item.text}
+                      </Item>
+                    ))}
+                  </MenuButton>
                 </div>
                 <Pagination
                   style={{ float: 'right' }}
