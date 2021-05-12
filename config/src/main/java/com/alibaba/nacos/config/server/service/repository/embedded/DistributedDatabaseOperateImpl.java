@@ -450,7 +450,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             LogUtil.FATAL_LOG.error("An timeout exception occurred during the update operation");
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         } catch (Throwable e) {
-            LogUtil.FATAL_LOG.error("An exception occurred during the update operation : {}", e);
+            LogUtil.FATAL_LOG.error("An exception occurred during the update operation : ", e);
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
@@ -539,8 +539,6 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
         } catch (DataAccessException e) {
             throw new ConsistencyException(e.toString());
-        } catch (Throwable t) {
-            throw t;
         } finally {
             lock.unlock();
         }

@@ -104,7 +104,7 @@ public enum FileTypeEnum {
      * Get the corresponding FileTypeEnum by file extension or fileType. If not found FileTypeEnum.TEXT is returned
      *
      * @param extOrFileType file extension or fileType
-     * @return
+     * @return FileTypeEnum
      */
     public static FileTypeEnum getFileTypeEnumByFileExtensionOrFileType(String extOrFileType) {
         if (StringUtils.isNotBlank(extOrFileType)) {

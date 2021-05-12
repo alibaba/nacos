@@ -543,7 +543,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result.intValue();
+        return result;
     }
     
     @Override
@@ -1125,7 +1125,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
     
     @Override
@@ -1135,7 +1135,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
     
     @Override
@@ -1145,7 +1145,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result.intValue();
+        return result;
     }
     
     @Override
@@ -1155,7 +1155,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result.intValue();
+        return result;
     }
     
     @Override
@@ -1180,7 +1180,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
     
     @Override
@@ -1210,7 +1210,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
     
     @Override
@@ -1307,9 +1307,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 + " FROM ( SELECT id FROM config_info   ORDER BY id LIMIT ?,?  )"
                 + " g, config_info t WHERE g.id = t.id ";
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
-        
+
         List<String> params = new ArrayList<String>();
-        
+
         try {
             return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize,
                     CONFIG_INFO_WRAPPER_ROW_MAPPER);
@@ -1470,7 +1470,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
         StringBuilder where = new StringBuilder(" 1=1 ");
         // Whitelist, please leave the synchronization condition empty, there is no configuration that meets the conditions
-        if (configKeys.length == 0 && blacklist == false) {
+        if (configKeys.length == 0 && !blacklist) {
             Page<ConfigInfo> page = new Page<ConfigInfo>();
             page.setTotalCount(0);
             return page;
@@ -1490,11 +1490,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             if (blacklist) {
                 if (isFirst) {
                     isFirst = false;
-                    where.append(" and ");
-                } else {
-                    where.append(" and ");
                 }
-                
+                where.append(" and ");
+
                 where.append("(");
                 boolean isFirstSub = true;
                 if (!StringUtils.isBlank(dataId)) {
@@ -1821,10 +1819,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
         
         try {
-            Page<ConfigInfoAggr> result = helper
+            return helper
                     .fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
                             pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
-            return result;
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -1854,8 +1851,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         
         try {
             return this.jt.queryForList(sql, new Object[] {dataId, groupId, content}, String.class);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
@@ -2045,8 +2040,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String sql = "SELECT tag_name FROM config_tags_relation WHERE data_id=? AND group_id=? AND tenant_id = ? ";
         try {
             return jt.queryForList(sql, new Object[] {dataId, group, tenant}, String.class);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
@@ -2243,7 +2236,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 "select nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified from his_config_info "
                         + "where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
         
-        Page<ConfigHistoryInfo> page = null;
+        Page<ConfigHistoryInfo> page;
         try {
             page = helper
                     .fetchPage(sqlCountRows, sqlFetchRows, new Object[] {dataId, group, tenantTmp}, pageNo, pageSize,
@@ -2510,9 +2503,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                                 updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5,
                                         new Timestamp(cf.getLastModified()));
                             } catch (Exception e) {
-                                LogUtil.DEFAULT_LOG.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
-                                        new Object[] {cf.getDataId(), cf.getGroup(),
-                                                new Timestamp(cf.getLastModified())});
+                                LogUtil.DEFAULT_LOG.error("[completeMd5-error] datId:{} group:{} lastModified:{}", cf.getDataId(), cf.getGroup(),
+                                                new Timestamp(cf.getLastModified()));
                             }
                         }
                     }
@@ -2655,7 +2647,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             return 0;
         }
-        return result.intValue();
+        return result;
     }
     
 }

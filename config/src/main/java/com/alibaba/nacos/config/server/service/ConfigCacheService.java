@@ -28,23 +28,14 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.HashMap;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Map;
-import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.*;
 
 /**
  * Config service.
@@ -52,10 +43,23 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  * @author Nacos
  */
 public class ConfigCacheService {
+
+    private static final String NO_SPACE_CN = "设备上没有空间";
+
+    private static final String NO_SPACE_EN = "No space left on device";
+
+    private static final String DISK_QUATA_CN = "超出磁盘限额";
+
+    private static final String DISK_QUATA_EN = "Disk quota exceeded";
+
+    /**
+     * groupKey -> cacheItem.
+     */
+    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<String, CacheItem>();
     
     @Autowired
     private static PersistService persistService;
-    
+
     public static int groupCount() {
         return CACHE.size();
     }
@@ -666,20 +670,5 @@ public class ConfigCacheService {
         item = CACHE.putIfAbsent(groupKey, tmp);
         return (null == item) ? tmp : item;
     }
-    
-    private static final String NO_SPACE_CN = "设备上没有空间";
-    
-    private static final String NO_SPACE_EN = "No space left on device";
-    
-    private static final String DISK_QUATA_CN = "超出磁盘限额";
-    
-    private static final String DISK_QUATA_EN = "Disk quota exceeded";
-    
-    static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheService.class);
-    
-    /**
-     * groupKey -> cacheItem.
-     */
-    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<String, CacheItem>();
 }
 

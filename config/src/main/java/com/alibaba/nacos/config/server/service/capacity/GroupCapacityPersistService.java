@@ -154,7 +154,7 @@ public class GroupCapacityPersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
     
     /**
@@ -236,7 +236,7 @@ public class GroupCapacityPersistService {
      * @param maxSize maxSize int value.
      * @param maxAggrCount maxAggrCount int value.
      * @param maxAggrSize maxAggrSize int value.
-     * @return
+     * @return result
      */
     public boolean updateGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {

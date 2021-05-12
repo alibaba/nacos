@@ -46,7 +46,7 @@ public class AppNameUtils {
     private static final String SERVER_UNKNOWN = "unknown server";
     
     public static String getAppName() {
-        String appName = null;
+        String appName;
         
         appName = getAppNameByProjectName();
         if (appName != null) {

@@ -238,7 +238,7 @@ public abstract class DumpService {
     
     private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor) throws IOException {
         int timeStep = 6;
-        Boolean isAllDump = true;
+        boolean isAllDump = true;
         // initial dump all
         FileInputStream fis = null;
         Timestamp heartheatLastStamp = null;
@@ -305,7 +305,7 @@ public abstract class DumpService {
     
     private Boolean isQuickStart() {
         try {
-            String val = null;
+            String val;
             val = EnvUtil.getProperty("isQuickStart");
             if (val != null && TRUE_STR.equals(val)) {
                 isQuickStart = true;

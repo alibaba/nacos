@@ -54,15 +54,15 @@ public class RegexParser {
                     ch = regex.charAt(i + j);
                 }
                 if (j == regex.length() - i) {
-                    result.append(".{" + j + "}");
+                    result.append(".{").append(j).append("}");
                     break;
                 } else {
                     j -= 1;
-                    result.append(".{" + (j) + "}");
+                    result.append(".{").append(j).append("}");
                     i += j - 1;
                 }
             } else {
-                result.append("\\" + ch);
+                result.append("\\").append(ch);
             }
         }
         result.append("$");

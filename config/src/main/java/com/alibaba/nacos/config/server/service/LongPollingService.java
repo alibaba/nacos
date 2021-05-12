@@ -186,9 +186,8 @@ public class LongPollingService {
                 }
             }
         }
-        
-        SampleResult sampleResult = mergeSampleResult(sampleResultLst);
-        return sampleResult;
+
+        return mergeSampleResult(sampleResultLst);
     }
     
     public SampleResult getCollectSubscribleInfoByIp(String ip) {

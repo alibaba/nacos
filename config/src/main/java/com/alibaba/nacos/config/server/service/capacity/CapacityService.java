@@ -400,7 +400,7 @@ public class CapacityService {
             groupCapacity.setGmtModified(now);
             return groupCapacityPersistService.insertGroupCapacity(groupCapacity);
         } catch (DuplicateKeyException e) {
-            // 并发情况下同时insert会出现，ignore
+            // this exception will meet when concurrent insert，ignore it
             LogUtil.DEFAULT_LOG.warn("group: {}, message: {}", group, e.getMessage());
         }
         return false;
@@ -502,7 +502,7 @@ public class CapacityService {
             tenantCapacity.setGmtModified(now);
             return tenantCapacityPersistService.insertTenantCapacity(tenantCapacity);
         } catch (DuplicateKeyException e) {
-            // 并发情况下同时insert会出现，ignore
+            // this exception will meet when concurrent insert，ignore it
             LogUtil.DEFAULT_LOG.warn("tenant: {}, message: {}", tenant, e.getMessage());
         }
         return false;

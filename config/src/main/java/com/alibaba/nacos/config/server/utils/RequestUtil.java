@@ -78,9 +78,8 @@ public class RequestUtil {
         if (userObj == null) {
             return null;
         }
-        
-        User user = (User) userObj;
-        return user;
+
+        return (User) userObj;
     }
     
     /**

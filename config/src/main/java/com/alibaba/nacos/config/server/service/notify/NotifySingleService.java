@@ -39,6 +39,16 @@ import java.util.concurrent.TimeUnit;
  * @author Nacos
  */
 public class NotifySingleService {
+
+    private static final Logger LOGGER = LogUtil.FATAL_LOG;
+
+    private ServerMemberManager memberManager;
+
+    private ConcurrentHashMap<String, Executor> executors = new ConcurrentHashMap<String, Executor>();
+
+    public ConcurrentHashMap<String, Executor> getExecutors() {
+        return executors;
+    }
     
     static class NotifyTaskProcessorWrapper extends NotifyTaskProcessor {
         
@@ -83,8 +93,8 @@ public class NotifySingleService {
                 LogUtil.NOTIFY_LOG
                         .error("[notify-exception] target:{} dataid:{} group:{} ts:{}", target, getDataId(), getGroup(),
                                 getLastModified());
-                LogUtil.NOTIFY_LOG.debug("[notify-exception] target:{} dataid:{} group:{} ts:{}",
-                        new Object[] {target, getDataId(), getGroup(), getLastModified()}, e);
+                LogUtil.NOTIFY_LOG.debug("[notify-exception] target:{} dataid:{} group:{} ts:{}", target, getDataId(), getGroup(),
+                        getLastModified(), e);
             }
             
             if (!this.isSuccess) {
@@ -94,8 +104,7 @@ public class NotifySingleService {
                 try {
                     ((ScheduledThreadPoolExecutor) executor).schedule(this, 500L, TimeUnit.MILLISECONDS);
                 } catch (Exception e) { // The notification failed, but at the same time, the node was offline
-                    LOGGER.warn("[notify-thread-pool] cluster remove node {}, current thread was tear down.", target,
-                            e);
+                    LOGGER.warn("[notify-thread-pool] cluster remove node {}, current thread was tear down.", target, e);
                 }
             }
         }
@@ -143,16 +152,5 @@ public class NotifySingleService {
                 LOGGER.warn("[notify-thread-pool] tear down thread target ip {} ok.", target);
             }
         }
-        
-    }
-    
-    private static final Logger LOGGER = LogUtil.FATAL_LOG;
-    
-    private ServerMemberManager memberManager;
-    
-    private ConcurrentHashMap<String, Executor> executors = new ConcurrentHashMap<String, Executor>();
-    
-    public ConcurrentHashMap<String, Executor> getExecutors() {
-        return executors;
     }
 }

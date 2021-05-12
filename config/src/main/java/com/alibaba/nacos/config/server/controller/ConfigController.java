@@ -27,15 +27,7 @@ import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigMetadata;
-import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.model.SameConfigPolicy;
-import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
@@ -43,13 +35,7 @@ import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.GroupKey;
-import com.alibaba.nacos.config.server.utils.MD5Util;
-import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.config.server.utils.YamlParserUtil;
-import com.alibaba.nacos.config.server.utils.ZipUtils;
+import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -60,13 +46,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletException;
@@ -75,14 +55,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -239,8 +212,7 @@ public class ConfigController {
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("dataId") String dataId, //
-            @RequestParam("group") String group, //
+            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
         // check tenant
@@ -278,15 +250,16 @@ public class ConfigController {
         String clientIp = RequestUtil.getRemoteIp(request);
         final Timestamp time = TimeUtils.getCurrentTime();
         List<ConfigInfo> configInfoList = persistService.removeConfigInfoByIds(ids, clientIp, null);
-        if (!CollectionUtils.isEmpty(configInfoList)) {
-            for (ConfigInfo configInfo : configInfoList) {
-                ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                                configInfo.getTenant(), time.getTime()));
-                ConfigTraceService
-                        .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                                null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-            }
+        if (CollectionUtils.isEmpty(configInfoList)) {
+            return RestResultUtils.success(true);
+        }
+        for (ConfigInfo configInfo : configInfoList) {
+            ConfigChangePublisher.notifyConfigChange(
+                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                            configInfo.getTenant(), time.getTime()));
+            ConfigTraceService
+                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
         }
         return RestResultUtils.success(true);
     }
@@ -296,11 +269,8 @@ public class ConfigController {
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-        RestResult<ConfigAdvanceInfo> rr = new RestResult<ConfigAdvanceInfo>();
         ConfigAdvanceInfo configInfo = persistService.findConfigAdvanceInfo(dataId, group, tenant);
-        rr.setCode(200);
-        rr.setData(configInfo);
-        return rr;
+        return RestResultUtils.success(configInfo);
     }
     
     /**
@@ -413,22 +383,15 @@ public class ConfigController {
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-        RestResult<Boolean> rr = new RestResult<Boolean>();
         try {
             persistService.removeConfigInfo4Beta(dataId, group, tenant);
         } catch (Exception e) {
             LOGGER.error("remove beta data error", e);
-            rr.setCode(500);
-            rr.setData(false);
-            rr.setMessage("remove beta data error");
-            return rr;
+            return RestResultUtils.failed(500, false, "remove beta data error");
         }
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
-        rr.setCode(200);
-        rr.setData(true);
-        rr.setMessage("stop beta ok");
-        return rr;
+        return RestResultUtils.success("stop beta ok", true);
     }
     
     /**
@@ -444,18 +407,12 @@ public class ConfigController {
     public RestResult<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-        RestResult<ConfigInfo4Beta> rr = new RestResult<ConfigInfo4Beta>();
         try {
             ConfigInfo4Beta ci = persistService.findConfigInfo4Beta(dataId, group, tenant);
-            rr.setCode(200);
-            rr.setData(ci);
-            rr.setMessage("stop beta ok");
-            return rr;
+            return RestResultUtils.success("stop beta ok", ci);
         } catch (Exception e) {
             LOGGER.error("remove beta data error", e);
-            rr.setCode(500);
-            rr.setMessage("remove beta data error");
-            return rr;
+            return RestResultUtils.failed("remove beta data error");
         }
     }
     

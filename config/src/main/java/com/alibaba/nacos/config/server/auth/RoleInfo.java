@@ -27,9 +27,14 @@ import java.io.Serializable;
 public class RoleInfo implements Serializable {
     
     private static final long serialVersionUID = 5946986388047856568L;
-    
+    /**
+     * rule name
+     */
     private String role;
-    
+
+    /**
+     * username
+     */
     private String username;
     
     public String getRole() {

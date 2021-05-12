@@ -219,7 +219,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     masterIndex = index;
                     break;
                 } catch (DataAccessException e) { // read only
-                    e.printStackTrace(); // TODO remove
+                    FATAL_LOG.error("[master-db] data access error", e);
                 }
             }
             

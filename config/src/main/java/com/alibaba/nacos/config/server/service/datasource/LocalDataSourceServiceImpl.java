@@ -50,17 +50,17 @@ import java.util.concurrent.Callable;
  * @author Nacos
  */
 public class LocalDataSourceServiceImpl implements DataSourceService {
-    
+
     private final String jdbcDriverName = "org.apache.derby.jdbc.EmbeddedDriver";
-    
+
     private final String userName = "nacos";
-    
+
     private final String password = "nacos";
-    
+
     private final String derbyBaseDir = "data" + File.separator + "derby-data";
-    
+
     private final String derbyShutdownErrMsg = "Derby system shutdown.";
-    
+
     private volatile JdbcTemplate jt;
     
     private volatile TransactionTemplate tjt;
@@ -226,8 +226,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             }
             
             String[] sqlArr = sqlSb.toString().split(";");
-            for (int i = 0; i < sqlArr.length; i++) {
-                String sql = sqlArr[i].replaceAll("--.*", "").trim();
+            for (String s : sqlArr) {
+                String sql = s.replaceAll("--.*", "").trim();
                 if (StringUtils.isNotEmpty(sql)) {
                     sqlList.add(sql);
                 }
