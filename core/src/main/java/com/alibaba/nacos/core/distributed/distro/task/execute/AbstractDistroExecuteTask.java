@@ -23,6 +23,8 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroComponentHolder
 import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandler;
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
 import com.alibaba.nacos.core.utils.Loggers;
 
 /**
@@ -116,11 +118,15 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
         
         @Override
         public void onSuccess() {
+            DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
+            distroRecord.syncSuccess();
             Loggers.DISTRO.info("[DISTRO-END] {} result: true", getDistroKey().toString());
         }
         
         @Override
         public void onFailed(Throwable throwable) {
+            DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
+            distroRecord.syncFail();
             if (null == throwable) {
                 Loggers.DISTRO.info("[DISTRO-END] {} result: false", getDistroKey().toString());
             } else {

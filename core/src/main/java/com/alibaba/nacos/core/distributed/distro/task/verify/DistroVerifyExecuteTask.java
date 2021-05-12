@@ -20,6 +20,8 @@ import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
 import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.List;
@@ -71,9 +73,6 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
         transportAgent.syncVerifyData(data, targetServer);
     }
     
-    /**
-     * TODO add verify monitor.
-     */
     private class DistroVerifyCallback implements DistroCallback {
         
         @Override
@@ -85,6 +84,8 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
         
         @Override
         public void onFailed(Throwable throwable) {
+            DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(resourceType);
+            distroRecord.verifyFail();
             if (Loggers.DISTRO.isDebugEnabled()) {
                 Loggers.DISTRO
                         .debug("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType, targetServer,
