@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
@@ -28,6 +32,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -105,6 +110,7 @@ public class PerformanceLoggerThread {
                 if (logCount == 0) {
                     Loggers.PERFORMANCE_LOG
                             .info("PERFORMANCE:|serviceCount|ipCount|subscribeCount|maxPushCost|avgPushCost|totalPushCount|failPushCount");
+                    Loggers.PERFORMANCE_LOG.info("DISTRO:|V1SyncDone|V1SyncFail|V2SyncDone|V2SyncFail|V2VerifyFail|");
                 }
                 int serviceCount = com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size();
                 int ipCount = MetricsMonitor.getIpCountMonitor().get();
@@ -118,6 +124,7 @@ public class PerformanceLoggerThread {
                                 avgPushCost, totalPushCount, failPushCount);
                 Loggers.PERFORMANCE_LOG
                         .info("Task worker status: \n" + NamingExecuteTaskDispatcher.getInstance().workersStatus());
+                printDistroMonitor();
                 logCount++;
                 MetricsMonitor.getTotalPushCountForAvg().set(0);
                 MetricsMonitor.getTotalPushCostForAvg().set(0);
@@ -126,6 +133,29 @@ public class PerformanceLoggerThread {
                 Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
             }
             
+        }
+        
+        private void printDistroMonitor() {
+            Optional<DistroRecord> v1Record = DistroRecordsHolder.getInstance()
+                    .getRecordIfExist(KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
+            long v1SyncDone = 0;
+            long v1SyncFail = 0;
+            if (v1Record.isPresent()) {
+                v1SyncDone = v1Record.get().getSuccessfulSyncCount();
+                v1SyncFail = v1Record.get().getFailedSyncCount();
+            }
+            Optional<DistroRecord> v2Record = DistroRecordsHolder.getInstance()
+                    .getRecordIfExist(DistroClientDataProcessor.TYPE);
+            long v2SyncDone = 0;
+            long v2SyncFail = 0;
+            int v2VerifyFail = 0;
+            if (v2Record.isPresent()) {
+                v2SyncDone = v2Record.get().getSuccessfulSyncCount();
+                v2SyncFail = v2Record.get().getFailedSyncCount();
+                v2VerifyFail = v2Record.get().getFailedVerifyCount();
+            }
+            Loggers.PERFORMANCE_LOG
+                    .info("DISTRO:|{}}|{}}|{}}|{}}|{}}|", v1SyncDone, v1SyncFail, v2SyncDone, v2SyncFail, v2VerifyFail);
         }
     }
     
