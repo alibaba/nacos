@@ -44,10 +44,15 @@ import java.util.function.Function;
 public class WebUtils {
     
     private static final String ENCODING_KEY = "encoding";
+    
     private static final String ACCEPT_CHARSET_KEY = "Accept-Charset";
+    
     private static final String COMMA = ",";
+    
     private static final String SEMI = ";";
+    
     private static final String JSON_AND_UTF8_CONTENT_TYPE = "application/json;charset=UTF-8";
+    
     private static final String TMP_SUFFIX = ".tmp";
     
     /**
