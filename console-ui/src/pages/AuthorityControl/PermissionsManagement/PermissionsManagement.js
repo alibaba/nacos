@@ -92,7 +92,11 @@ class PermissionsManagement extends React.Component {
       <>
         <RegionGroup left={locale.privilegeManagement} />
         <div className="filter-panel">
-          <Button type="primary" onClick={() => this.setState({ createPermissionVisible: true })}>
+          <Button
+            type="primary"
+            onClick={() => this.setState({ createPermissionVisible: true })}
+            style={{ marginRight: 20 }}
+          >
             {locale.addPermission}
           </Button>
           <Button type="secondary" onClick={() => this.getPermissions()}>

@@ -94,6 +94,15 @@ public class IPUtilTest {
         checkSplitIPPortStr("[127.0.0.1]:88", true);
     }
     
+    @Test
+    public void testCheckIPs() {
+        String[] ips = {"127.0.0.1"};
+        Assert.assertEquals("ok", IPUtil.checkIPs(ips));
+        
+        String[] illegalIps = {"127.100.19", "127.0.0.1"};
+        Assert.assertEquals("illegal ip: 127.100.19", IPUtil.checkIPs(illegalIps));
+    }
+    
     /**
      * checkSplitIpPortStr.
      * 2020/9/4 14:12

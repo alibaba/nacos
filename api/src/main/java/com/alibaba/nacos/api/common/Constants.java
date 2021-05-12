@@ -65,6 +65,8 @@ public class Constants {
     
     public static final String CONFIG_TYPE = "Config-Type";
     
+    public static final String ENCRYPTED_DATA_KEY = "Encrypted-Data-Key";
+    
     public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
     
     public static final String SPACING_INTERVAL = "client-spacing-interval";
@@ -80,6 +82,8 @@ public class Constants {
     public static final String TOKEN_TTL = "tokenTtl";
     
     public static final String GLOBAL_ADMIN = "globalAdmin";
+    
+    public static final String USERNAME = "username";
     
     public static final String TOKEN_REFRESH_WINDOW = "tokenRefreshWindow";
     

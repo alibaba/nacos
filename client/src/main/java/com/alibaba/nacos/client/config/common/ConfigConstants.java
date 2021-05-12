@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.address;
+package com.alibaba.nacos.client.config.common;
 
-import com.alibaba.nacos.common.utils.IPUtil;
-import org.junit.Test;
-
-public class ParamCheckUtilTests {
+/**
+ * config common constants.
+ *
+ * @author Nacos
+ */
+public class ConfigConstants {
     
-    @Test
-    public void checkIPs() {
-        String[] ips = {"127.0.0.1"};
-        System.out.println(IPUtil.checkIPs(ips));
-        
-        String[] illlegalIps = {"127.100.19", "127.0.0.1"};
-        System.err.println(IPUtil.checkIPs(illlegalIps));
-    }
+    public static final String TENANT = "tenant";
+    
+    public static final String DATA_ID = "dataId";
+    
+    public static final String GROUP = "group";
+    
+    public static final String CONTENT = "content";
+    
+    public static final String CONFIG_TYPE = "configType";
+    
+    public static final String ENCRYPTED_DATA_KEY = "encryptedDataKey";
 }
