@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos;
 
+import com.alibaba.nacos.sys.env.Constants;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
@@ -30,8 +31,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ServletComponentScan
 @EnableScheduling
 public class Nacos {
-    
+
     public static void main(String[] args) {
+        //通过环境变量设置启动方式为单机启动
+        /*System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME,"true");
+        System.setProperty("nacos.core.auth.enabled","false");*/
         SpringApplication.run(Nacos.class, args);
     }
 }
