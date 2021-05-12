@@ -52,13 +52,13 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
      */
     @Override
     public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
-                             final int pageNo, final int pageSize, final RowMapper rowMapper) {
+            final int pageNo, final int pageSize, final RowMapper rowMapper) {
         return fetchPage(sqlCountRows, sqlFetchRows, args, pageNo, pageSize, null, rowMapper);
     }
     
     @Override
     public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
-                             final int pageNo, final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
+            final int pageNo, final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
@@ -97,7 +97,7 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
     
     @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
-                                  final int pageNo, final int pageSize, final RowMapper rowMapper) {
+            final int pageNo, final int pageSize, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
@@ -133,7 +133,7 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
     
     @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final Object[] args1, final String sqlFetchRows,
-                                  final Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
+            final Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
@@ -170,7 +170,7 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
     
     @Override
     public Page<E> fetchPageLimit(final String sqlFetchRows, final Object[] args, final int pageNo, final int pageSize,
-                                  final RowMapper rowMapper) {
+            final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
