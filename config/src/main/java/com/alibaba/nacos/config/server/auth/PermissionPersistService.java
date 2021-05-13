@@ -28,7 +28,7 @@ import com.alibaba.nacos.config.server.model.Page;
 public interface PermissionPersistService {
 
     /**
-     * get the permissions of role by page
+     * get the permissions of role by page.
      * @param role role
      * @param pageNo pageNo
      * @param pageSize pageSize
@@ -37,7 +37,7 @@ public interface PermissionPersistService {
     Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize);
 
     /**
-     * assign permission to role
+     * assign permission to role.
      * @param role role
      * @param resource resource
      * @param action action
@@ -45,7 +45,7 @@ public interface PermissionPersistService {
     void addPermission(String role, String resource, String action);
 
     /**
-     * delete the role's permission
+     * delete the role's permission.
      * @param role role
      * @param resource resource
      * @param action action

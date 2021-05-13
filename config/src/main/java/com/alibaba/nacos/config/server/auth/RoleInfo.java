@@ -28,12 +28,12 @@ public class RoleInfo implements Serializable {
     
     private static final long serialVersionUID = 5946986388047856568L;
     /**
-     * rule name
+     * rule name.
      */
     private String role;
 
     /**
-     * username
+     * username.
      */
     private String username;
     

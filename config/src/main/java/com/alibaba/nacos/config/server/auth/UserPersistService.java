@@ -31,34 +31,34 @@ import java.util.List;
 public interface UserPersistService {
 
     /**
-     * create user
+     * create user.
      * @param username username
      * @param password password
      */
     void createUser(String username, String password);
 
     /**
-     * delete user by username
+     * delete user by username.
      * @param username username
      */
     void deleteUser(String username);
 
     /**
-     * update password of the user
+     * update password of the user.
      * @param username username
      * @param password password
      */
     void updateUserPassword(String username, String password);
 
     /**
-     * query user by username
+     * query user by username.
      * @param username username
      * @return user
      */
     User findUserByUsername(String username);
 
     /**
-     * get users by page
+     * get users by page.
      * @param pageNo pageNo
      * @param pageSize pageSize
      * @return user page info
@@ -66,7 +66,7 @@ public interface UserPersistService {
     Page<User> getUsers(int pageNo, int pageSize);
 
     /**
-     * fuzzy query user by username
+     * fuzzy query user by username.
      * @param username username
      * @return usernames
      */

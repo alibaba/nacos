@@ -30,7 +30,7 @@ import java.util.List;
 public interface RolePersistService {
 
     /**
-     * get roles by page
+     * get roles by page.
      * @param pageNo pageNo
      * @param pageSize pageSize
      * @return roles page info
@@ -38,7 +38,7 @@ public interface RolePersistService {
     Page<RoleInfo> getRoles(int pageNo, int pageSize);
 
     /**
-     * query the user's roles by username
+     * query the user's roles by username.
      * @param username username
      * @param pageNo pageNo
      * @param pageSize pageSize
@@ -47,27 +47,27 @@ public interface RolePersistService {
     Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize);
 
     /**
-     * assign role to user
+     * assign role to user.
      * @param role role
      * @param userName username
      */
     void addRole(String role, String userName);
 
     /**
-     * delete role
+     * delete role.
      * @param role role
      */
     void deleteRole(String role);
 
     /**
-     * delete user's role
+     * delete user's role.
      * @param role role
      * @param username username
      */
     void deleteRole(String role, String username);
 
     /**
-     * fuzzy query roles by role name
+     * fuzzy query roles by role name.
      * @param role role
      * @return roles
      */
