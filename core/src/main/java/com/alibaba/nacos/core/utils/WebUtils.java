@@ -36,6 +36,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.alibaba.nacos.common.constant.HttpHeaderConsts.ACCEPT_ENCODING;
+import static com.alibaba.nacos.common.http.param.MediaType.APPLICATION_JSON;
+
 /**
  * web utils.
  *
@@ -45,13 +48,9 @@ public class WebUtils {
     
     private static final String ENCODING_KEY = "encoding";
     
-    private static final String ACCEPT_CHARSET_KEY = "Accept-Charset";
-    
     private static final String COMMA = ",";
     
     private static final String SEMI = ";";
-    
-    private static final String JSON_AND_UTF8_CONTENT_TYPE = "application/json;charset=UTF-8";
     
     private static final String TMP_SUFFIX = ".tmp";
     
@@ -143,7 +142,7 @@ public class WebUtils {
      * @return accept encode
      */
     public static String getAcceptEncoding(HttpServletRequest req) {
-        String encode = StringUtils.defaultIfEmpty(req.getHeader(ACCEPT_CHARSET_KEY), StandardCharsets.UTF_8.name());
+        String encode = StringUtils.defaultIfEmpty(req.getHeader(ACCEPT_ENCODING), StandardCharsets.UTF_8.name());
         encode = encode.contains(COMMA) ? encode.substring(0, encode.indexOf(COMMA)) : encode;
         return encode.contains(SEMI) ? encode.substring(0, encode.indexOf(SEMI)) : encode;
     }
@@ -174,7 +173,7 @@ public class WebUtils {
      */
     public static void response(HttpServletResponse response, String body, int code) throws IOException {
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType(JSON_AND_UTF8_CONTENT_TYPE);
+        response.setContentType(APPLICATION_JSON);
         response.getWriter().write(body);
         response.setStatus(code);
     }
