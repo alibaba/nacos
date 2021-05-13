@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.naming.selector;
 
+import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -36,14 +38,26 @@ import java.util.List;
  * @date 2021-05-13 14:03
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class MultiSelector implements Selector {
+public class MultiSelector extends AbstractSelector implements Selector {
     
     /**
      * the combine of selectors.
      */
     private List<Selector> selectors;
     
-    public MultiSelector(List<Selector> selectors) {
+    public MultiSelector() {
+        super(SelectorType.multi.name());
+    }
+    
+    static {
+        JacksonUtils.registerSubtype(MultiSelector.class, SelectorType.multi.name());
+    }
+    
+    public List<Selector> getSelectors() {
+        return selectors;
+    }
+    
+    public void setSelectors(List<Selector> selectors) {
         this.selectors = selectors;
     }
     

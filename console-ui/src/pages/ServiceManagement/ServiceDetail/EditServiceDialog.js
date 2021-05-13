@@ -17,7 +17,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
-import { Dialog, Form, Input, Select, Message, ConfigProvider } from '@alifd/next';
+import {
+  Dialog,
+  Form,
+  Input,
+  Select,
+  Message,
+  ConfigProvider,
+  Icon,
+  Button,
+  Balloon,
+} from '@alifd/next';
 import { DIALOG_FORM_LAYOUT, METADATA_SEPARATOR, METADATA_ENTER } from './constant';
 import MonacoEditor from 'components/MonacoEditor';
 
@@ -38,6 +48,7 @@ class EditServiceDialog extends React.Component {
       editService: {},
       editServiceDialogVisible: false,
       errors: { name: {}, protectThreshold: {} },
+      selectors: [],
     };
     this.show = this.show.bind(this);
   }
@@ -48,7 +59,16 @@ class EditServiceDialog extends React.Component {
     if (Object.keys(metadata).length) {
       editService.metadataText = JSON.stringify(metadata, null, '\t');
     }
-    this.setState({ editService, editServiceDialogVisible: true, isCreate: !name });
+    let selectors = [];
+    let type = editService.selector ? editService.selector.type : 'none';
+    if (type === 'none') {
+      selectors.push({ type: 'none' });
+    } else if (type === 'label') {
+      selectors.push(editService.selector);
+    } else {
+      selectors = editService.selector.selectors;
+    }
+    this.setState({ editService, editServiceDialogVisible: true, isCreate: !name, selectors });
   }
 
   hide() {
@@ -76,9 +96,10 @@ class EditServiceDialog extends React.Component {
   }
 
   onConfirm() {
-    const { isCreate } = this.state;
+    const { isCreate, selectors } = this.state;
     const editService = Object.assign({}, this.state.editService);
-    const { name, protectThreshold, groupName, metadataText = '', selector } = editService;
+    const { name, protectThreshold, groupName, metadataText = '' } = editService;
+    const json = { type: 'multi', selectors };
     if (!this.validator({ name, protectThreshold })) return;
     request({
       method: isCreate ? 'POST' : 'PUT',
@@ -88,7 +109,7 @@ class EditServiceDialog extends React.Component {
         groupName: groupName || 'DEFAULT_GROUP',
         protectThreshold,
         metadata: metadataText,
-        selector: JSON.stringify(selector),
+        selector: JSON.stringify(json),
       },
       dataType: 'text',
       beforeSend: () => this.setState({ loading: true }),
@@ -129,21 +150,78 @@ class EditServiceDialog extends React.Component {
     wrapperCol: { span: 14 },
   });
 
+  changeSelector(index, type, expression) {
+    let { selectors } = this.state;
+    selectors = selectors.map((selector, i) => {
+      if (index === i) {
+        selector.type = type;
+        selector.expression = expression;
+      }
+      return selector;
+    });
+    this.setState(selectors);
+  }
+
+  addSelector() {
+    let { selectors } = this.state;
+    selectors.push({ type: 'none' });
+    selectors = selectors.map(s => s);
+    this.setState(selectors);
+  }
+
+  removeSelector(index) {
+    let { selectors } = this.state;
+    let newSelectors = [];
+    selectors.forEach((s, i) => {
+      if (i !== index) {
+        newSelectors.push(s);
+      }
+    });
+    this.setState({ selectors: newSelectors });
+  }
+
   render() {
     const { locale = {} } = this.props;
-    const { isCreate, editService, editServiceDialogVisible, errors } = this.state;
-    const {
-      name,
-      protectThreshold,
-      groupName,
-      metadataText,
-      selector = { type: 'none' },
-    } = editService;
+    const { isCreate, editService, editServiceDialogVisible, errors, selectors } = this.state;
+    const { name, protectThreshold, groupName, metadataText } = editService;
     const formItemLayout = this.getFormItemLayout();
+    const selectorElement = selectors.map((selector, index) => (
+      <div>
+        <Form.Item label={`${locale.type + '-' + (index + 1)}:`} {...formItemLayout}>
+          <Select
+            className="full-width"
+            defaultValue={selector.type}
+            value={selector.type}
+            onChange={type => this.changeSelector(index, type, '')}
+          >
+            <Select.Option value="label">{locale.typeLabel}</Select.Option>
+            <Select.Option value="none">{locale.typeNone}</Select.Option>
+          </Select>
+          {index !== 0 && (
+            <Icon
+              type="error"
+              style={{ color: '#FF3333', marginLeft: '10px', cursor: 'pointer' }}
+              onClick={() => this.removeSelector(index)}
+            />
+          )}
+        </Form.Item>
+
+        {selector.type === 'label' && (
+          <Form.Item label={`${locale.selector}:`} {...formItemLayout}>
+            <Input.TextArea
+              value={
+                selector.expression ? selector.expression : 'CONSUMER.label.key=PROVIDER.label.key'
+              }
+              onChange={expression => this.changeSelector(index, selector.type, expression)}
+            />
+          </Form.Item>
+        )}
+      </div>
+    ));
     return (
       <Dialog
         className="service-detail-edit-dialog"
-        title={isCreate ? locale.createService : locale.updateService}
+        title={this.getDialogTitle(locale)}
         visible={editServiceDialogVisible}
         onOk={() => this.onConfirm()}
         onCancel={() => this.hide()}
@@ -190,28 +268,37 @@ class EditServiceDialog extends React.Component {
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.type}:`} {...formItemLayout}>
-            <Select
-              className="full-width"
-              defaultValue={selector.type}
-              onChange={type => this.onChangeCluster({ selector: { ...selector, type } })}
+          {selectorElement}
+          <Form.Item label={' '} {...formItemLayout}>
+            <Button
+              type="normal"
+              style={{ width: '100%', borderStyle: 'dashed' }}
+              onClick={() => this.addSelector()}
             >
-              <Select.Option value="label">{locale.typeLabel}</Select.Option>
-              <Select.Option value="none">{locale.typeNone}</Select.Option>
-            </Select>
+              {' '}
+              <Icon type="add" />
+              &nbsp;&nbsp;{locale.addNewSelector}
+            </Button>
           </Form.Item>
-          {selector.type === 'label' && (
-            <Form.Item label={`${locale.selector}:`} {...formItemLayout}>
-              <Input.TextArea
-                value={selector.expression}
-                onChange={expression =>
-                  this.onChangeCluster({ selector: { ...selector, expression } })
-                }
-              />
-            </Form.Item>
-          )}
         </Form>
       </Dialog>
+    );
+  }
+
+  getDialogTitle(locale) {
+    const { isCreate } = this.state;
+    return (
+      <div>
+        {isCreate ? locale.createService : locale.updateService}
+        <Balloon
+          triggerType="hover"
+          trigger={
+            <Icon type="help" size={'small'} style={{ color: '#FFA003', marginLeft: '8px' }} />
+          }
+        >
+          {locale.selectorMessage}
+        </Balloon>
+      </div>
     );
   }
 }

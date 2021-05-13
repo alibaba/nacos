@@ -62,8 +62,10 @@
 
 .service-detail-edit-dialog {
   width: 600px;
+  max-height: 600px;
+  overflow-y: auto;
 }
 
 .full-width {
-  width: 100%;
+  width:90%;
 }

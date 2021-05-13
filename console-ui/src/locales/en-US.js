@@ -178,6 +178,9 @@ const I18N_CONF = {
     protectThreshold: 'Protect Threshold',
     serviceNameRequired: 'Please enter a service name',
     protectThresholdRequired: 'Please enter a protect threshold',
+    addNewSelector: 'Add a new Type',
+    selectorMessage:
+      'When Type is more than 1, it will return the instances immediately which matches the expression.',
   },
   InstanceFilter: {
     title: 'Metadata Filter',

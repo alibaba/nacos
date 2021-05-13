@@ -177,6 +177,8 @@ const I18N_CONF = {
     protectThreshold: '保护阈值',
     serviceNameRequired: '请输入服务名',
     protectThresholdRequired: '请输入保护阈值',
+    addNewSelector: '新增服务路由',
+    selectorMessage: '当服务路由大于1时，将按排列顺序进行匹配，匹配到符合条件实例后即刻返回。',
   },
   InstanceFilter: {
     title: '元数据过滤',

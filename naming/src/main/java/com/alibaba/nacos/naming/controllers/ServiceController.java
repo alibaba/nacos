@@ -539,15 +539,17 @@ public class ServiceController {
                 labelSelector.setLabels(labels);
                 return labelSelector;
             case multi:
-                List<String> selectorStrs = selectorJson.findValuesAsText("selectors");
-                if (selectorStrs == null || selectorStrs.size() == 0) {
+                JsonNode selectorNodes = selectorJson.findPath("selectors");
+                if (selectorNodes == null || selectorNodes.size() == 0) {
                     throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
                 }
                 List<Selector> selectors = new ArrayList<>();
-                for (String selectorStr : selectorStrs) {
-                    selectors.add(parseSelector(selectorStr));
+                for (JsonNode selectorNode : selectorNodes) {
+                    selectors.add(parseSelector(selectorNode.toString()));
                 }
-                return new MultiSelector(selectors);
+                MultiSelector multiSelector = new MultiSelector();
+                multiSelector.setSelectors(selectors);
+                return multiSelector;
             default:
                 throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }
