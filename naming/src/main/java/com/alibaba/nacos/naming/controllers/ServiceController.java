@@ -37,6 +37,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.LabelSelector;
+import com.alibaba.nacos.naming.selector.MultiSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
@@ -537,6 +538,16 @@ public class ServiceController {
                 labelSelector.setExpression(expression);
                 labelSelector.setLabels(labels);
                 return labelSelector;
+            case multi:
+                List<String> selectorStrs = selectorJson.findValuesAsText("selectors");
+                if (selectorStrs == null || selectorStrs.size() == 0) {
+                    throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
+                }
+                List<Selector> selectors = new ArrayList<>();
+                for (String selectorStr : selectorStrs) {
+                    selectors.add(parseSelector(selectorStr));
+                }
+                return new MultiSelector(selectors);
             default:
                 throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }

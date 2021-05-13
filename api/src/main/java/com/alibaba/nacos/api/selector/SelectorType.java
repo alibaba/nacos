@@ -34,5 +34,9 @@ public enum SelectorType {
     /**
      * select by label.
      */
-    label
+    label,
+    /**
+     * multi select.
+     */
+    multi
 }
