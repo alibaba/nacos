@@ -30,6 +30,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteAction.REMOVE;
+import static com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteAction.UPDATE;
+import static com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteContent.METADATA;
+
 /**
  * Event listener for double write.
  *
@@ -78,8 +82,9 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      * Double write service metadata from v2 to v1.
      *
      * @param service service for v2
+     * @param remove  is removing service for v2
      */
-    public void doubleWriteMetadataToV1(com.alibaba.nacos.naming.core.v2.pojo.Service service) {
+    public void doubleWriteMetadataToV1(com.alibaba.nacos.naming.core.v2.pojo.Service service, boolean remove) {
         if (stopDoubleWrite) {
             return;
         }
@@ -87,7 +92,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
             return;
         }
         doubleWriteDelayTaskEngine.addTask(ServiceChangeV2Task.getKey(service),
-                new ServiceChangeV2Task(service, DoubleWriteContent.METADATA));
+                new ServiceChangeV2Task(service, METADATA, remove ? REMOVE : UPDATE));
     }
     
     /**
