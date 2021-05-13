@@ -20,6 +20,7 @@ import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ public class JacksonUtils {
 
 	static {
 		mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+		mapper.registerModule(new JavaTimeModule());
 	}
 
 	public static String serializeObject(Object o) throws IOException {
