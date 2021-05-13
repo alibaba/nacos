@@ -65,7 +65,7 @@ public class DoubleWriteMetadataChangeToV2Task extends AbstractExecuteTask {
             }
         } catch (Exception e) {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("Double write task for {} metadata from 2 to 1 failed", service, e);
+                Loggers.SRV_LOG.debug("Double write task for {} metadata from 1 to 2 failed", service, e);
             }
             ServiceChangeV1Task retryTask = new ServiceChangeV1Task(service.getNamespace(),
                     service.getGroupedServiceName(), service.isEphemeral(), DoubleWriteContent.METADATA);

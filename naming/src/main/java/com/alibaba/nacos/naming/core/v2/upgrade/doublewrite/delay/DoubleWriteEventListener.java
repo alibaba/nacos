@@ -119,8 +119,9 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
      *
      * @param service   service for v1
      * @param ephemeral ephemeral of service
+     * @param remove    is removing service for v1
      */
-    public void doubleWriteMetadataToV2(Service service, boolean ephemeral) {
+    public void doubleWriteMetadataToV2(Service service, boolean ephemeral, boolean remove) {
         if (stopDoubleWrite) {
             return;
         }
@@ -130,7 +131,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
         String namespace = service.getNamespaceId();
         String serviceName = service.getName();
         doubleWriteDelayTaskEngine.addTask(ServiceChangeV1Task.getKey(namespace, serviceName, ephemeral),
-                new ServiceChangeV1Task(namespace, serviceName, ephemeral, DoubleWriteContent.METADATA));
+                new ServiceChangeV1Task(namespace, serviceName, ephemeral, METADATA, remove ? REMOVE : UPDATE));
     }
     
     private class DoubleWriteEnabledChecker extends Thread {
