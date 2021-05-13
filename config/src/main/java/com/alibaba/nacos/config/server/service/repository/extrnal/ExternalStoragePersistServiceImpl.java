@@ -543,7 +543,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result;
+        return result.intValue();
     }
     
     @Override
@@ -1125,7 +1125,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result;
+        return result.intValue();
     }
     
     @Override
@@ -1135,7 +1135,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result;
+        return result.intValue();
     }
     
     @Override
@@ -1145,7 +1145,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result;
+        return result.intValue();
     }
     
     @Override
@@ -1155,7 +1155,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result;
+        return result.intValue();
     }
     
     @Override
@@ -1180,7 +1180,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
-        return result;
+        return result.intValue();
     }
     
     @Override
@@ -1210,7 +1210,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
-        return result;
+        return result.intValue();
     }
     
     @Override
@@ -2647,7 +2647,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (result == null) {
             return 0;
         }
-        return result;
+        return result.intValue();
     }
     
 }

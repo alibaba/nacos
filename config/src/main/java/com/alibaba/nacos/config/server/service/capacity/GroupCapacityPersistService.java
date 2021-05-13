@@ -154,7 +154,7 @@ public class GroupCapacityPersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result;
+        return result.intValue();
     }
     
     /**
