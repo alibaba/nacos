@@ -211,26 +211,26 @@ public class UserController {
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
-            //            JSONObject result = new JSONObject();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
             result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
+            result.put(Constants.USERNAME, user.getUserName());
             return result;
         }
         
-        // 通过用户名和密码创建一个 Authentication 认证对象，实现类为 UsernamePasswordAuthenticationToken
+        // create Authentication class through username and password, the implement class is UsernamePasswordAuthenticationToken
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
                 password);
         
         RestResult<String> rr = new RestResult<String>();
         try {
-            //通过 AuthenticationManager（默认实现为ProviderManager）的authenticate方法验证 Authentication 对象
+            // use the method authenticate of AuthenticationManager(default implement is ProviderManager) to valid Authentication
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
-            //将 Authentication 绑定到 SecurityContext
+            // bind SecurityContext to Authentication
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            //生成Token
+            // generate Token
             String token = jwtTokenManager.createToken(authentication);
-            //将Token写入到Http头部
+            // write Token to Http header
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, "Bearer " + token);
             rr.setCode(200);
             rr.setData("Bearer " + token);

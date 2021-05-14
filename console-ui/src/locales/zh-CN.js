@@ -244,6 +244,7 @@ const I18N_CONF = {
     actionType: '操作类型:',
     configureContent: '配置内容:',
     operator: '操作人:',
+    sourceIp: '来源 IP:',
     back: '返回',
   },
   DashboardCard: {
@@ -251,6 +252,7 @@ const I18N_CONF = {
     viewDetails1: '查看详情',
   },
   ConfigurationManagement: {
+    exportBtn: '导出',
     questionnaire2: '问卷调查',
     ad: '答 ACM 前端监控调查问卷，限时领取阿里云代金券\t            详情猛戳：',
     noLongerDisplay4: '不再显示：',
@@ -535,6 +537,7 @@ const I18N_CONF = {
     rollbackDelete: '删除',
     update: '更新',
     insert: '插入',
+    additionalRollbackMessage: '此操作将删除以下配置！',
   },
   UserManagement: {
     userManagement: '用户管理',

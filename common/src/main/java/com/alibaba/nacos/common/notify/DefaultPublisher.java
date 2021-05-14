@@ -119,7 +119,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 UPDATER.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
             }
         } catch (Throwable ex) {
-            LOGGER.error("Event listener exception : {}", ex);
+            LOGGER.error("Event listener exception : ", ex);
         }
     }
     

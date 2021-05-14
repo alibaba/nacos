@@ -244,6 +244,7 @@ const I18N_CONF = {
     home: 'Application:',
     actionType: 'Action Type:',
     operator: 'Operator:',
+    sourceIp: 'Source IP',
     configureContent: 'Configuration Content:',
     back: 'Back',
   },
@@ -252,6 +253,7 @@ const I18N_CONF = {
     viewDetails1: 'view details',
   },
   ConfigurationManagement: {
+    exportBtn: 'Export',
     questionnaire2: 'questionnaire',
     ad:
       'a ACM front-end monitoring questionnaire, the time limit to receive Ali cloud voucher details shoved stamp: the',
@@ -539,6 +541,7 @@ const I18N_CONF = {
     rollbackDelete: 'Delete',
     update: 'Update',
     insert: 'Insert',
+    additionalRollbackMessage: 'This operation will delete the below config!',
   },
   UserManagement: {
     userManagement: 'User Management',

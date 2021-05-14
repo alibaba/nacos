@@ -51,17 +51,15 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
     };
     
     @Override
-    public void start() throws NacosException {
-        if (start.compareAndSet(false, true)) {
-            readClusterConfFromDisk();
-            
-            // Use the inotify mechanism to monitor file changes and automatically
-            // trigger the reading of cluster.conf
-            try {
-                WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), watcher);
-            } catch (Throwable e) {
-                Loggers.CLUSTER.error("An exception occurred in the launch file monitor : {}", e.getMessage());
-            }
+    public void doStart() throws NacosException {
+        readClusterConfFromDisk();
+        
+        // Use the inotify mechanism to monitor file changes and automatically
+        // trigger the reading of cluster.conf
+        try {
+            WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), watcher);
+        } catch (Throwable e) {
+            Loggers.CLUSTER.error("An exception occurred in the launch file monitor : {}", e.getMessage());
         }
     }
     
