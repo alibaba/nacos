@@ -143,7 +143,7 @@ public class InternetAddressUtilTest {
         } catch (Exception ex) {
             if (!isEx) {
                 // No exception is expected here, but an exception has occurred
-                Assert.assertTrue("Unexpected exception", false);
+                Assert.fail("Unexpected exception");
             }
         }
     }
