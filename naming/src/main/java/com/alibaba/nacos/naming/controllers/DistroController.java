@@ -101,7 +101,7 @@ public class DistroController {
     @PutMapping("/checksum")
     public ResponseEntity syncChecksum(@RequestParam String source, @RequestBody Map<String, String> dataMap) {
         DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(source), dataMap);
-        distroProtocol.onVerify(distroHttpData);
+        distroProtocol.onVerify(distroHttpData, source);
         return ResponseEntity.ok("ok");
     }
     

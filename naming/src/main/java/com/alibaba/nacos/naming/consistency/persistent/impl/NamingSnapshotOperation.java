@@ -19,27 +19,23 @@ package com.alibaba.nacos.naming.consistency.persistent.impl;
 import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
-import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
-import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.util.CRC64;
 
 import java.nio.file.Paths;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiConsumer;
 import java.util.zip.Checksum;
 
 /**
  * Snapshot processing of persistent service data for accelerated Raft protocol recovery and data synchronization.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author xiweng.yy
  */
-public class NamingSnapshotOperation implements SnapshotOperation {
+public class NamingSnapshotOperation extends AbstractSnapshotOperation {
     
     private static final String NAMING_SNAPSHOT_SAVE = NamingSnapshotOperation.class.getSimpleName() + ".SAVE";
     
@@ -49,81 +45,57 @@ public class NamingSnapshotOperation implements SnapshotOperation {
     
     private final String snapshotArchive = "naming_persistent.zip";
     
-    private final String checkSumKey = "checkSum";
-    
     private final KvStorage storage;
     
-    private final ReentrantReadWriteLock.WriteLock writeLock;
-    
     public NamingSnapshotOperation(KvStorage storage, ReentrantReadWriteLock lock) {
+        super(lock);
         this.storage = storage;
-        this.writeLock = lock.writeLock();
     }
     
     @Override
-    public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
-        RaftExecutor.doSnapshot(() -> {
-            TimerContext.start(NAMING_SNAPSHOT_SAVE);
-            
-            final Lock lock = writeLock;
-            lock.lock();
-            try {
-                final String writePath = writer.getPath();
-                final String parentPath = Paths.get(writePath, snapshotDir).toString();
-                DiskUtils.deleteDirectory(parentPath);
-                DiskUtils.forceMkdir(parentPath);
-                
-                storage.doSnapshot(parentPath);
-                final String outputFile = Paths.get(writePath, snapshotArchive).toString();
-                final Checksum checksum = new CRC64();
-                DiskUtils.compress(writePath, snapshotDir, outputFile, checksum);
-                DiskUtils.deleteDirectory(parentPath);
-                
-                final LocalFileMeta meta = new LocalFileMeta();
-                meta.append(checkSumKey, Long.toHexString(checksum.getValue()));
-                
-                callFinally.accept(writer.addFile(snapshotArchive, meta), null);
-            } catch (Throwable t) {
-                Loggers.RAFT.error("Fail to compress snapshot, path={}, file list={}, {}.", writer.getPath(),
-                        writer.listFiles(), t);
-                callFinally.accept(false, t);
-            } finally {
-                lock.unlock();
-                TimerContext.end(NAMING_SNAPSHOT_SAVE, Loggers.RAFT);
-            }
-        });
+    protected boolean writeSnapshot(Writer writer) throws Exception {
+        final String writePath = writer.getPath();
+        final String parentPath = Paths.get(writePath, snapshotDir).toString();
+        DiskUtils.deleteDirectory(parentPath);
+        DiskUtils.forceMkdir(parentPath);
+        
+        storage.doSnapshot(parentPath);
+        final String outputFile = Paths.get(writePath, snapshotArchive).toString();
+        final Checksum checksum = new CRC64();
+        DiskUtils.compress(writePath, snapshotDir, outputFile, checksum);
+        DiskUtils.deleteDirectory(parentPath);
+        
+        final LocalFileMeta meta = new LocalFileMeta();
+        meta.append(CHECK_SUM_KEY, Long.toHexString(checksum.getValue()));
+        return writer.addFile(snapshotArchive, meta);
     }
     
     @Override
-    public boolean onSnapshotLoad(Reader reader) {
+    protected boolean readSnapshot(Reader reader) throws Exception {
         final String readerPath = reader.getPath();
         final String sourceFile = Paths.get(readerPath, snapshotArchive).toString();
-        
-        TimerContext.start(NAMING_SNAPSHOT_LOAD);
-        final Lock lock = writeLock;
-        lock.lock();
-        try {
-            final Checksum checksum = new CRC64();
-            DiskUtils.decompress(sourceFile, readerPath, checksum);
-            LocalFileMeta fileMeta = reader.getFileMeta(snapshotArchive);
-            if (fileMeta.getFileMeta().containsKey(checkSumKey)) {
-                if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(checkSumKey))) {
-                    throw new IllegalArgumentException("Snapshot checksum failed");
-                }
+        final Checksum checksum = new CRC64();
+        DiskUtils.decompress(sourceFile, readerPath, checksum);
+        LocalFileMeta fileMeta = reader.getFileMeta(snapshotArchive);
+        if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY)) {
+            if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
+                throw new IllegalArgumentException("Snapshot checksum failed");
             }
-            
-            final String loadPath = Paths.get(readerPath, snapshotDir).toString();
-            storage.snapshotLoad(loadPath);
-            Loggers.RAFT.info("snapshot load from : {}", loadPath);
-            DiskUtils.deleteDirectory(loadPath);
-            return true;
-        } catch (final Throwable t) {
-            Loggers.RAFT.error("Fail to load snapshot, path={}, file list={}, {}.",
-                    Paths.get(readerPath, snapshotDir).toString(), reader.listFiles(), t);
-            return false;
-        } finally {
-            lock.unlock();
-            TimerContext.end(NAMING_SNAPSHOT_LOAD, Loggers.RAFT);
         }
+        final String loadPath = Paths.get(readerPath, snapshotDir).toString();
+        storage.snapshotLoad(loadPath);
+        Loggers.RAFT.info("snapshot load from : {}", loadPath);
+        DiskUtils.deleteDirectory(loadPath);
+        return true;
+    }
+    
+    @Override
+    protected String getSnapshotSaveTag() {
+        return NAMING_SNAPSHOT_SAVE;
+    }
+    
+    @Override
+    protected String getSnapshotLoadTag() {
+        return NAMING_SNAPSHOT_LOAD;
     }
 }

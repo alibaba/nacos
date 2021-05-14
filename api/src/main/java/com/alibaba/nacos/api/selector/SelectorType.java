@@ -34,5 +34,17 @@ public enum SelectorType {
     /**
      * select by label.
      */
-    label
+    label,
+    /**
+     * select by cluster.
+     */
+    cluster,
+    /**
+     * select by health state.
+     */
+    health,
+    /**
+     * select by enable state.
+     */
+    enable
 }

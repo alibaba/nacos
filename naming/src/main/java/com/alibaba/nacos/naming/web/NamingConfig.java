@@ -39,6 +39,16 @@ public class NamingConfig {
     }
     
     @Bean
+    public FilterRegistrationBean serviceNameFilterRegistration() {
+        FilterRegistrationBean<ServiceNameFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(serviceNameFilter());
+        registration.addUrlPatterns("/v1/ns/*");
+        registration.setName("serviceNameFilter");
+        registration.setOrder(5);
+        return registration;
+    }
+    
+    @Bean
     public FilterRegistrationBean trafficReviseFilterRegistration() {
         FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(trafficReviseFilter());
@@ -56,6 +66,11 @@ public class NamingConfig {
     @Bean
     public TrafficReviseFilter trafficReviseFilter() {
         return new TrafficReviseFilter();
+    }
+    
+    @Bean
+    public ServiceNameFilter serviceNameFilter() {
+        return new ServiceNameFilter();
     }
     
 }

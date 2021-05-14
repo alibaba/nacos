@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -137,10 +137,10 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
                     
                     // Leader information needs to be selectively updated. If it is valid data,
                     // the information in the protocol metadata is updated.
-                    MapUtils.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
-                    MapUtils.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
-                    MapUtils.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
-                    MapUtils.putIfValNoEmpty(properties, MetadataKey.ERR_MSG, errMsg);
+                    MapUtil.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
+                    MapUtil.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
+                    MapUtil.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
+                    MapUtil.putIfValNoEmpty(properties, MetadataKey.ERR_MSG, errMsg);
                     
                     value.put(groupId, properties);
                     metaData.load(value);

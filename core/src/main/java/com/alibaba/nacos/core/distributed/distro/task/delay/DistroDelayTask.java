@@ -62,11 +62,11 @@ public class DistroDelayTask extends AbstractDelayTask {
         if (!(task instanceof DistroDelayTask)) {
             return;
         }
-        DistroDelayTask newTask = (DistroDelayTask) task;
-        if (!action.equals(newTask.getAction()) && createTime < newTask.getCreateTime()) {
-            action = newTask.getAction();
-            createTime = newTask.getCreateTime();
+        DistroDelayTask oldTask = (DistroDelayTask) task;
+        if (!action.equals(oldTask.getAction()) && createTime < oldTask.getCreateTime()) {
+            action = oldTask.getAction();
+            createTime = oldTask.getCreateTime();
         }
-        setLastProcessTime(newTask.getLastProcessTime());
+        setLastProcessTime(oldTask.getLastProcessTime());
     }
 }

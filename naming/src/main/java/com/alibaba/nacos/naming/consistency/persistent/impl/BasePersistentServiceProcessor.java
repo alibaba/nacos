@@ -40,7 +40,7 @@ import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.naming.utils.Constants;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.reflect.TypeUtils;
 
