@@ -53,6 +53,11 @@ public class IPUtil {
     
     private static Pattern domainPattern = Pattern.compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
     
+    private static final String IPV4_TUPLE = "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])";
+    
+    private static final Pattern IPV4_PATTERN = Pattern
+            .compile("(?<!\\d)" + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "(?!\\d)");
+    
     /**
      * get localhost ip.
      * @return java.lang.String
@@ -156,7 +161,7 @@ public class IPUtil {
                 result = "";
             }
         } else {
-            Matcher m = InetAddressValidator.getIpv4Pattern().matcher(str);
+            Matcher m = IPV4_PATTERN.matcher(str);
             if (m.find()) {
                 result = m.group();
             }
