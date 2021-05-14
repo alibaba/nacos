@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.DoubleWriteInstanceChangeToV1Task;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.DoubleWriteMetadataChangeToV1Task;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.DoubleWriteServiceRemovalToV1Task;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 
@@ -35,10 +36,17 @@ public class ServiceChangeV2Task extends AbstractDelayTask {
     private final Service changedService;
     
     private DoubleWriteContent content;
+
+    private DoubleWriteAction action;
     
     public ServiceChangeV2Task(Service service, DoubleWriteContent content) {
-        changedService = service;
-        this.content = content;
+        this(service, content, DoubleWriteAction.UPDATE);
+    }
+    
+    public ServiceChangeV2Task(Service service, DoubleWriteContent content, DoubleWriteAction action) {
+        this.changedService = service;
+        this.content = action == DoubleWriteAction.REMOVE ? DoubleWriteContent.BOTH : content;
+        this.action = action;
         setTaskInterval(1000L);
         setLastProcessTime(System.currentTimeMillis());
     }
@@ -51,12 +59,21 @@ public class ServiceChangeV2Task extends AbstractDelayTask {
         return content;
     }
     
+    public DoubleWriteAction getAction() {
+        return action;
+    }
+
     @Override
     public void merge(AbstractDelayTask task) {
         if (!(task instanceof ServiceChangeV2Task)) {
             return;
         }
         ServiceChangeV2Task oldTask = (ServiceChangeV2Task) task;
+        if (!action.equals(oldTask.getAction())) {
+            action = DoubleWriteAction.REMOVE;
+            content = DoubleWriteContent.BOTH;
+            return;
+        }
         if (!content.equals(oldTask.getContent())) {
             content = DoubleWriteContent.BOTH;
         }
@@ -72,6 +89,11 @@ public class ServiceChangeV2Task extends AbstractDelayTask {
         public boolean process(NacosTask task) {
             ServiceChangeV2Task serviceTask = (ServiceChangeV2Task) task;
             Service changedService = serviceTask.getChangedService();
+            if (serviceTask.getAction() == DoubleWriteAction.REMOVE) {
+                Loggers.SRV_LOG.info("double write removal of service {}", changedService);
+                dispatchRemoveServiceTask(changedService);
+                return true;
+            }
             Loggers.SRV_LOG.info("double write for service {}, content {}", changedService, serviceTask.getContent());
             switch (serviceTask.getContent()) {
                 case INSTANCE:
@@ -86,6 +108,12 @@ public class ServiceChangeV2Task extends AbstractDelayTask {
             return true;
         }
         
+        private void dispatchRemoveServiceTask(Service changedService) {
+            DoubleWriteServiceRemovalToV1Task serviceRemovalTask = new DoubleWriteServiceRemovalToV1Task(changedService);
+            NamingExecuteTaskDispatcher.getInstance()
+                    .dispatchAndExecuteTask(changedService.getGroupedServiceName(), serviceRemovalTask);
+        }
+
         private void dispatchInstanceChangeTask(Service changedService) {
             DoubleWriteInstanceChangeToV1Task instanceTask = new DoubleWriteInstanceChangeToV1Task(changedService);
             NamingExecuteTaskDispatcher.getInstance()

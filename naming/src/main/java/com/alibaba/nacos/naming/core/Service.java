@@ -312,6 +312,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             entry.getValue().destroy();
         }
         HealthCheckReactor.cancelCheck(clientBeatCheckTask);
+        ApplicationUtils.getBean(DoubleWriteEventListener.class)
+                .doubleWriteMetadataToV2(this, this.allIPs(false).isEmpty(), true);
     }
     
     /**
@@ -525,7 +527,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         
         recalculateChecksum();
         ApplicationUtils.getBean(DoubleWriteEventListener.class)
-                .doubleWriteMetadataToV2(this, vDom.allIPs(false).isEmpty());
+                .doubleWriteMetadataToV2(this, vDom.allIPs(false).isEmpty(), false);
     }
     
     @Override
