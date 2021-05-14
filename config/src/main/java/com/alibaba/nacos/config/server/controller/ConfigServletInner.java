@@ -72,7 +72,7 @@ public class ConfigServletInner {
     private static final int START_LONG_POLLING_VERSION_NUM = 204;
     
     /**
-     * 轮询接口.
+     * long polling the config.
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
             Map<String, String> clientMd5Map, int probeRequestSize) throws IOException {
