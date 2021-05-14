@@ -121,7 +121,7 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             namingMetadataManager.updateServiceMetadata(singleton, op.getMetadata());
         }
-        doubleWriteMetadata(service);
+        doubleWriteMetadata(service, false);
     }
     
     private void updateServiceMetadata(MetadataOperation<ServiceMetadata> op) {
@@ -136,17 +136,18 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             namingMetadataManager.updateServiceMetadata(singleton, op.getMetadata());
         }
-        doubleWriteMetadata(service);
+        doubleWriteMetadata(service, false);
     }
     
     /**
      * Only for downgrade to v1.x.
      *
      * @param service double write service
+     * @param remove  is removing service of v2
      * @deprecated will remove in v2.1.x
      */
-    private void doubleWriteMetadata(Service service) {
-        ApplicationUtils.getBean(DoubleWriteEventListener.class).doubleWriteMetadataToV1(service);
+    private void doubleWriteMetadata(Service service, boolean remove) {
+        ApplicationUtils.getBean(DoubleWriteEventListener.class).doubleWriteMetadataToV1(service, remove);
     }
     
     /**
@@ -173,6 +174,7 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
         namingMetadataManager.removeServiceMetadata(service);
         ServiceManager.getInstance().removeSingleton(service);
         serviceStorage.removeData(service);
+        doubleWriteMetadata(service, true);
     }
     
     @Override

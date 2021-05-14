@@ -31,6 +31,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.DoubleWriteInstanceChangeToV2Task;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.DoubleWriteMetadataChangeToV2Task;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.DoubleWriteServiceRemovalToV2Task;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -55,11 +56,19 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
     
     private DoubleWriteContent content;
     
+    private DoubleWriteAction action;
+
     public ServiceChangeV1Task(String namespace, String serviceName, boolean ephemeral, DoubleWriteContent content) {
+        this(namespace, serviceName, ephemeral, content, DoubleWriteAction.UPDATE);
+    }
+    
+    public ServiceChangeV1Task(String namespace, String serviceName, boolean ephemeral,
+                               DoubleWriteContent content, DoubleWriteAction action) {
         this.namespace = namespace;
         this.serviceName = serviceName;
         this.ephemeral = ephemeral;
-        this.content = content;
+        this.content = action == DoubleWriteAction.REMOVE ? DoubleWriteContent.BOTH : content;
+        this.action = action;
         setLastProcessTime(System.currentTimeMillis());
         setTaskInterval(1000L);
     }
@@ -70,6 +79,11 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
             return;
         }
         ServiceChangeV1Task oldTask = (ServiceChangeV1Task) task;
+        if (!action.equals(oldTask.getAction())) {
+            action = DoubleWriteAction.REMOVE;
+            content = DoubleWriteContent.BOTH;
+            return;
+        }
         if (!content.equals(oldTask.getContent())) {
             content = DoubleWriteContent.BOTH;
         }
@@ -91,6 +105,10 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
         return content;
     }
     
+    public DoubleWriteAction getAction() {
+        return action;
+    }
+
     public static String getKey(String namespace, String serviceName, boolean ephemeral) {
         return "v1:" + namespace + "_" + serviceName + "_" + ephemeral;
     }
@@ -100,6 +118,11 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
         @Override
         public boolean process(NacosTask task) {
             ServiceChangeV1Task serviceTask = (ServiceChangeV1Task) task;
+            if (serviceTask.getAction() == DoubleWriteAction.REMOVE) {
+                Loggers.SRV_LOG.info("double write removal of service {}", serviceTask.getServiceName());
+                dispatchRemoveAllTask(serviceTask);
+                return true;
+            }
             Loggers.SRV_LOG.info("double write for service {}, content {}", serviceTask.getServiceName(),
                     serviceTask.getContent());
             ServiceManager serviceManager = ApplicationUtils.getBean(ServiceManager.class);
@@ -119,6 +142,17 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
             return true;
         }
         
+        private void dispatchRemoveAllTask(ServiceChangeV1Task serviceTask) {
+            com.alibaba.nacos.naming.core.v2.pojo.Service serviceV2 = com.alibaba.nacos.naming.core.v2.pojo.Service.newService(
+                    serviceTask.getNamespace(),
+                    NamingUtils.getGroupName(serviceTask.getServiceName()),
+                    NamingUtils.getServiceName(serviceTask.getServiceName()),
+                    serviceTask.isEphemeral()
+            );
+            DoubleWriteServiceRemovalToV2Task serviceRemovalTask = new DoubleWriteServiceRemovalToV2Task(serviceV2);
+            NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(serviceV2.getName(), serviceRemovalTask);
+        }
+
         private void dispatchAllTask(Service service, boolean ephemeral) {
             dispatchMetadataTask(service, ephemeral);
             dispatchInstanceTask(service, ephemeral);
