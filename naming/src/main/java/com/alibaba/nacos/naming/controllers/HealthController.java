@@ -98,7 +98,7 @@ public class HealthController {
     @PutMapping(value = {"", "/instance"})
     @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
     public ResponseEntity update(HttpServletRequest request) throws NacosException {
-        String healthyString = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
+        String healthyString = WebUtils.optional(request, HEALTHY_KEY, StringUtils.EMPTY);
         if (StringUtils.isBlank(healthyString)) {
             healthyString = WebUtils.optional(request, VALID_KEY, StringUtils.EMPTY);
         }
@@ -110,8 +110,8 @@ public class HealthController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String clusterName = WebUtils
                 .optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        String ip = WebUtils.required(request, "ip");
-        int port = Integer.parseInt(WebUtils.required(request, "port"));
+        String ip = WebUtils.required(request, IP_KEY);
+        int port = Integer.parseInt(WebUtils.required(request, PORT_KEY));
         getHealthOperator()
                 .updateHealthStatusForPersistentInstance(namespaceId, serviceName, clusterName, ip, port, health);
         return ResponseEntity.ok("ok");
