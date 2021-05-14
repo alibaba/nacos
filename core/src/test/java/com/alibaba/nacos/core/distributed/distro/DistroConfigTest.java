@@ -34,7 +34,7 @@ public class DistroConfigTest extends TestCase {
     
     @Before
     public void setUp() {
-        distroConfig = new DistroConfig();
+        distroConfig = DistroConfig.getInstance();
     }
     
     @Test
