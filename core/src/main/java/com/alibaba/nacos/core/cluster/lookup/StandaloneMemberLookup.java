@@ -35,4 +35,9 @@ public class StandaloneMemberLookup extends AbstractMemberLookup {
         String url = InetUtils.getSelfIP() + ":" + EnvUtil.getPort();
         afterLookup(MemberUtil.readServerConf(Collections.singletonList(url)));
     }
+    
+    @Override
+    public boolean useAddressServer() {
+        return false;
+    }
 }

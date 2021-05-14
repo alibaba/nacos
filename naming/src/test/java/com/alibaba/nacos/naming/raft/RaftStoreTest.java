@@ -19,14 +19,18 @@ package com.alibaba.nacos.naming.raft;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Spy;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class RaftStoreTest extends BaseTest {
     
@@ -36,6 +40,14 @@ public class RaftStoreTest extends BaseTest {
     
     @Spy
     public RaftStore raftStore;
+    
+    @Mock
+    private ClusterVersionJudgement versionJudgement;
+    
+    @Before
+    public void setUp() {
+        ReflectionTestUtils.setField(raftCore, "versionJudgement", versionJudgement);
+    }
     
     @Test
     public void wrietDatum() throws Exception {

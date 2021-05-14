@@ -63,4 +63,6 @@ public interface Constants {
     String NACOS_SERVER_HEADER = "Nacos-Server";
     
     String REQUEST_PATH_SEPARATOR = "-->";
+    
+    String AVAILABLE_PROCESSORS_BASIC = "nacos.core.sys.basic.processors";
 }

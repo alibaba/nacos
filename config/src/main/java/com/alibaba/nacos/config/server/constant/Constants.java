@@ -127,6 +127,8 @@ public class Constants {
     
     public static final String NAMESPACE_CONTROLLER_PATH = BASE_PATH + "/namespaces";
     
+    public static final String METRICS_CONTROLLER_PATH = BASE_PATH + "/metrics";
+    
     public static final String ENCODE = "UTF-8";
     
     public static final String MAP_FILE = "map-file.js";

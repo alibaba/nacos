@@ -244,7 +244,7 @@ public class ServiceManagerTest extends BaseTest {
     
     @Test
     public void testEasyRemoveServiceFailed() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expect(NacosException.class);
         expectedException.expectMessage("specified service not exist, serviceName : " + TEST_SERVICE_NAME);
         serviceManager.easyRemoveService(TEST_NAMESPACE, TEST_SERVICE_NAME);
     }

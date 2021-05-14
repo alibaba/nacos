@@ -75,12 +75,12 @@ public class DistroMapper extends MemberChangeListener {
     }
     
     /**
-     * Judge whether current server is responsible for input service.
+     * Judge whether current server is responsible for input tag.
      *
-     * @param serviceName service name
+     * @param responsibleTag responsible tag, serviceName for v1 and ip:port for v2
      * @return true if input service is response, otherwise false
      */
-    public boolean responsible(String serviceName) {
+    public boolean responsible(String responsibleTag) {
         final List<String> servers = healthyList;
         
         if (!switchDomain.isDistroEnabled() || EnvUtil.getStandaloneMode()) {
@@ -98,17 +98,17 @@ public class DistroMapper extends MemberChangeListener {
             return true;
         }
         
-        int target = distroHash(serviceName) % servers.size();
+        int target = distroHash(responsibleTag) % servers.size();
         return target >= index && target <= lastIndex;
     }
     
     /**
-     * Calculate which other server response input service.
+     * Calculate which other server response input tag.
      *
-     * @param serviceName service name
+     * @param responsibleTag responsible tag, serviceName for v1 and ip:port for v2
      * @return server which response input service
      */
-    public String mapSrv(String serviceName) {
+    public String mapSrv(String responsibleTag) {
         final List<String> servers = healthyList;
         
         if (CollectionUtils.isEmpty(servers) || !switchDomain.isDistroEnabled()) {
@@ -116,7 +116,7 @@ public class DistroMapper extends MemberChangeListener {
         }
         
         try {
-            int index = distroHash(serviceName) % servers.size();
+            int index = distroHash(responsibleTag) % servers.size();
             return servers.get(index);
         } catch (Throwable e) {
             Loggers.SRV_LOG
@@ -125,8 +125,8 @@ public class DistroMapper extends MemberChangeListener {
         }
     }
     
-    private int distroHash(String serviceName) {
-        return Math.abs(serviceName.hashCode() % Integer.MAX_VALUE);
+    private int distroHash(String responsibleTag) {
+        return Math.abs(responsibleTag.hashCode() % Integer.MAX_VALUE);
     }
     
     @Override

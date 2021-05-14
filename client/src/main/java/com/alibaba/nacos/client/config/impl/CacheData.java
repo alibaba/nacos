@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import org.slf4j.Logger;
 
@@ -32,6 +33,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Listener Management.
@@ -39,6 +45,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Nacos
  */
 public class CacheData {
+    
+    static final int CONCURRENCY = 5;
+    
+    static ThreadFactory internalNotifierFactory = r -> {
+        Thread t = new Thread(r);
+        t.setName("nacos.client.cachedata.internal.notifier");
+        t.setDaemon(true);
+        return t;
+    };
+    
+    static final ThreadPoolExecutor INTERNAL_NOTIFIER = new ThreadPoolExecutor(0, CONCURRENCY, 60L, TimeUnit.SECONDS,
+            new SynchronousQueue<>(), internalNotifierFactory);
     
     private static final Logger LOGGER = LogUtils.logger(CacheData.class);
     
@@ -65,6 +83,24 @@ public class CacheData {
     public void setContent(String content) {
         this.content = content;
         this.md5 = getMd5String(this.content);
+    }
+    
+    /**
+     * Getter method for property <tt>lastModifiedTs</tt>.
+     *
+     * @return property value of lastModifiedTs
+     */
+    public long getLastModifiedTs() {
+        return lastModifiedTs;
+    }
+    
+    /**
+     * Setter method for property <tt>lastModifiedTs</tt>.
+     *
+     * @param lastModifiedTs value to be assigned to property lastModifiedTs
+     */
+    public void setLastModifiedTs(long lastModifiedTs) {
+        this.lastModifiedTs = lastModifiedTs;
     }
     
     public String getType() {
@@ -182,13 +218,31 @@ public class CacheData {
         }
     }
     
+    /**
+     * check if all listeners md5 is equal with cache data.
+     */
+    public boolean checkListenersMd5Consistent() {
+        for (ManagerListenerWrap wrap : listeners) {
+            if (!md5.equals(wrap.lastCallMd5)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
             final String md5, final String encryptedDataKey, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
-        
+        if (listenerWrap.inNotifying) {
+            LOGGER.warn(
+                    "[{}] [notify-currentSkip] dataId={}, group={}, md5={}, listener={}, listener is not finish yet,will try next time.",
+                    name, dataId, group, md5, listener);
+            return;
+        }
         Runnable job = new Runnable() {
             @Override
             public void run() {
+                long start = System.currentTimeMillis();
                 ClassLoader myClassLoader = Thread.currentThread().getContextClassLoader();
                 ClassLoader appClassLoader = listener.getClass().getClassLoader();
                 try {
@@ -207,8 +261,8 @@ public class CacheData {
                     cr.setEncryptedDataKey(encryptedDataKey);
                     configFilterChainManager.doFilter(null, cr);
                     String contentTmp = cr.getContent();
+                    listenerWrap.inNotifying = true;
                     listener.receiveConfigInfo(contentTmp);
-                    
                     // compare lastContent and content
                     if (listener instanceof AbstractConfigChangeListener) {
                         Map data = ConfigChangeHandler.getInstance()
@@ -219,8 +273,8 @@ public class CacheData {
                     }
                     
                     listenerWrap.lastCallMd5 = md5;
-                    LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
-                            listener);
+                    LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ,cost={} millis.", name,
+                            dataId, group, md5, listener, (System.currentTimeMillis() - start));
                 } catch (NacosException ex) {
                     LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}",
                             name, dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
@@ -228,6 +282,7 @@ public class CacheData {
                     LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId,
                             group, md5, listener, t.getCause());
                 } finally {
+                    listenerWrap.inNotifying = false;
                     Thread.currentThread().setContextClassLoader(myClassLoader);
                 }
             }
@@ -238,7 +293,19 @@ public class CacheData {
             if (null != listener.getExecutor()) {
                 listener.getExecutor().execute(job);
             } else {
-                job.run();
+                try {
+                    INTERNAL_NOTIFIER.submit(job);
+                } catch (RejectedExecutionException rejectedExecutionException) {
+                    LOGGER.warn(
+                            "[{}] [notify-blocked] dataId={}, group={}, md5={}, listener={}, no available internal notifier,will sync notifier ",
+                            name, dataId, group, md5, listener);
+                    job.run();
+                } catch (Throwable throwable) {
+                    LOGGER.error(
+                            "[{}] [notify-blocked] dataId={}, group={}, md5={}, listener={}, submit internal async task fail,throwable= ",
+                            name, dataId, group, md5, listener, throwable);
+                    job.run();
+                }
             }
         } catch (Throwable t) {
             LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} throwable={}", name, dataId,
@@ -259,6 +326,36 @@ public class CacheData {
         return content;
     }
     
+    /**
+     * 1.first add listener.default is false;need to check. 2.receive config change notify,set false;need to check.
+     * 3.last listener is remove,set to false;need to check
+     *
+     * @return
+     */
+    public boolean isSyncWithServer() {
+        return isSyncWithServer;
+    }
+    
+    public void setSyncWithServer(boolean syncWithServer) {
+        isSyncWithServer = syncWithServer;
+    }
+    
+    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {
+        if (null == dataId || null == group) {
+            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
+        }
+        this.name = name;
+        this.configFilterChainManager = configFilterChainManager;
+        this.dataId = dataId;
+        this.group = group;
+        this.tenant = TenantUtil.getUserTenantForAcm();
+        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
+        this.isInitializing = true;
+        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
+        this.md5 = getMd5String(content);
+        this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
+    }
+    
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group,
             String tenant) {
         if (null == dataId || null == group) {
@@ -273,7 +370,6 @@ public class CacheData {
         this.isInitializing = true;
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
         this.md5 = getMd5String(content);
-        this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
     }
     
     // ==================
@@ -306,9 +402,16 @@ public class CacheData {
     
     private volatile String encryptedDataKey;
     
+    private volatile long lastModifiedTs;
+    
     private int taskId;
     
     private volatile boolean isInitializing = true;
+    
+    /**
+     * if is cache data md5 sync with the server.
+     */
+    private volatile boolean isSyncWithServer = false;
     
     private String type;
     
@@ -331,6 +434,8 @@ public class CacheData {
     }
     
     private static class ManagerListenerWrap {
+        
+        boolean inNotifying = false;
         
         final Listener listener;
         
