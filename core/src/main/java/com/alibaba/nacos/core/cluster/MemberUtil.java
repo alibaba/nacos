@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class MemberUtil {
     
     protected static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
-
+    
     /**
      * Information copy.
      *
@@ -56,6 +56,7 @@ public class MemberUtil {
         oldMember.setState(newMember.getState());
         oldMember.setExtendInfo(newMember.getExtendInfo());
         oldMember.setAddress(newMember.getAddress());
+        oldMember.setAbilities(newMember.getAbilities());
     }
     
     /**
@@ -67,7 +68,7 @@ public class MemberUtil {
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static Member singleParse(String member) {
         // Nacos default port is 8848
-        int defaultPort = 8848;
+        int defaultPort = EnvUtil.getProperty("server.port", Integer.class, 8848);
         // Set the default Raft port information for securit
         
         String address = member;
@@ -85,6 +86,19 @@ public class MemberUtil {
         extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
         target.setExtendInfo(extendInfo);
         return target;
+    }
+    
+    /**
+     * check whether the member support long connection or not.
+     *
+     * @param member member instance of server.
+     * @return support long connection or not.
+     */
+    public static boolean isSupportedLongCon(Member member) {
+        if (member.getAbilities() == null || member.getAbilities().getRemoteAbility() == null) {
+            return false;
+        }
+        return member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
     }
     
     public static int calculateRaftPort(Member member) {
@@ -255,6 +269,11 @@ public class MemberUtil {
         if (!expected.getState().equals(actual.getState())) {
             return true;
         }
+        
+        if (!expected.getAbilities().equals(actual.getAbilities())) {
+            return true;
+        }
+        
         return isBasicInfoChangedInExtendInfo(expected, actual);
     }
     

@@ -89,6 +89,7 @@ public class DistroKey {
     
     @Override
     public String toString() {
-        return "DistroKey{" + "resourceKey='" + resourceKey + '\'' + ", resourceType='" + resourceType + '\'' + '}';
+        return "DistroKey{" + "resourceKey='" + resourceKey + '\'' + ", resourceType='" + resourceType + '\''
+                + ", targetServer='" + targetServer + '\'' + '}';
     }
 }

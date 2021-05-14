@@ -272,7 +272,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDefaultMaxAggrSize(getInt("defaultMaxAggrSize", defaultMaxAggrSize));
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
-            
             // External data sources are used by default in cluster mode
             setUseExternalDB("mysql".equalsIgnoreCase(getString("spring.datasource.platform", "")));
             

@@ -17,9 +17,12 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,13 +39,28 @@ public class NamingResourceParser implements ResourceParser {
     private static final String AUTH_NAMING_PREFIX = "naming/";
     
     @Override
-    public String parseName(Object request) {
+    public String parseName(Object requestObj) {
+    
+        String namespaceId = null;
+        String serviceName = null;
+        String groupName = null;
+        if (requestObj instanceof HttpServletRequest) {
+            HttpServletRequest req = (HttpServletRequest) requestObj;
+            namespaceId = NamespaceUtil.processNamespaceParameter(req.getParameter(CommonParams.NAMESPACE_ID));
+            serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+            groupName = req.getParameter(CommonParams.GROUP_NAME);
+        } else if (requestObj instanceof AbstractNamingRequest) {
+            AbstractNamingRequest request = (AbstractNamingRequest) requestObj;
+            namespaceId = request.getNamespace();
+            groupName = request.getGroupName();
+            serviceName = request.getServiceName();
+        } else if (requestObj instanceof Request) {
+            Request request = (Request) requestObj;
+            namespaceId = (String) ReflectUtils.getFieldValue(request, "namespace", "");
+            groupName = (String) ReflectUtils.getFieldValue(request, "groupName", "");
+            serviceName = (String) ReflectUtils.getFieldValue(request, "serviceName", "");
+        }
         
-        HttpServletRequest req = (HttpServletRequest) request;
-        
-        String namespaceId = NamespaceUtil.processNamespaceParameter(req.getParameter(CommonParams.NAMESPACE_ID));
-        String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
-        String groupName = req.getParameter(CommonParams.GROUP_NAME);
         if (StringUtils.isBlank(groupName)) {
             groupName = NamingUtils.getGroupName(serviceName);
         }

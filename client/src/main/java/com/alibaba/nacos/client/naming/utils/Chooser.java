@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Chooser.

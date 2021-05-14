@@ -40,7 +40,7 @@ import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.naming.utils.Constants;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.reflect.TypeUtils;
 
@@ -110,6 +110,10 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     
     protected final PersistentNotifier notifier;
     
+    protected final int queueMaxSize = 16384;
+    
+    protected final int priority = 10;
+    
     public BasePersistentServiceProcessor(final ClusterVersionJudgement judgement) throws Exception {
         this.versionJudgement = judgement;
         this.kvStorage = new NamingKvStorage(Paths.get(UtilsAndCommons.DATA_BASE_DIR, "data").toString());
@@ -127,7 +131,7 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     
     @SuppressWarnings("unchecked")
     public void afterConstruct() {
-        NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
+        NotifyCenter.registerToPublisher(ValueChangeEvent.class, queueMaxSize);
         listenOldRaftClose();
     }
     
@@ -137,7 +141,7 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
                 NotifyCenter.registerSubscriber(notifier);
                 startNotify = true;
             }
-        }, 10);
+        }, priority);
     }
     
     @Override

@@ -288,6 +288,10 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 switchDomain.setAutoChangeHealthCheckEnabled(BooleanUtils.toBoolean(value));
             }
             
+            if (entry.equals(SwitchEntry.DOUBLE_WRITE_ENABLED)) {
+                switchDomain.setDoubleWriteEnabled(BooleanUtils.toBoolean(value));
+            }
+            
             if (debug) {
                 update(switchDomain);
             } else {
@@ -338,6 +342,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setOverriddenServerStatus(newSwitchDomain.getOverriddenServerStatus());
         switchDomain.setDefaultInstanceEphemeral(newSwitchDomain.isDefaultInstanceEphemeral());
         switchDomain.setLightBeatEnabled(newSwitchDomain.isLightBeatEnabled());
+        switchDomain.setDoubleWriteEnabled(newSwitchDomain.isDoubleWriteEnabled());
     }
     
     public SwitchDomain getSwitchDomain() {
