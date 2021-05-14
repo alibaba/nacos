@@ -18,7 +18,7 @@ package com.alibaba.nacos.common.http.param;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.utils.MapUtils;
+import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -130,7 +130,7 @@ public class Header {
      * @param params parameters
      */
     public void addAll(Map<String, String> params) {
-        if (MapUtils.isNotEmpty(params)) {
+        if (MapUtil.isNotEmpty(params)) {
             for (Map.Entry<String, String> entry : params.entrySet()) {
                 addParam(entry.getKey(), entry.getValue());
             }

@@ -17,23 +17,25 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
+import com.alibaba.nacos.naming.core.HealthOperator;
+import com.alibaba.nacos.naming.core.HealthOperatorV1Impl;
+import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.web.CanDistro;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,10 +62,13 @@ import java.util.Map;
 public class HealthController {
     
     @Autowired
-    private ServiceManager serviceManager;
+    private HealthOperatorV1Impl healthOperatorV1;
     
     @Autowired
-    private PushService pushService;
+    private HealthOperatorV2Impl healthOperatorV2;
+    
+    @Autowired
+    private UpgradeJudgement upgradeJudgement;
     
     /**
      * Just a health check.
@@ -71,12 +76,11 @@ public class HealthController {
      * @return hello message
      */
     @RequestMapping("/server")
-    public ObjectNode server() {
+    public ResponseEntity server() {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put("msg",
-                "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getServiceCount()
-                        + ", local port:" + EnvUtil.getPort());
-        return result;
+        result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: " + MetricsMonitor.getDomCountMonitor()
+                + ", local port:" + EnvUtil.getPort());
+        return ResponseEntity.ok(result);
     }
     
     /**
@@ -87,8 +91,8 @@ public class HealthController {
      */
     @CanDistro
     @PutMapping(value = {"", "/instance"})
-    @Secured(action = ActionTypes.WRITE)
-    public String update(HttpServletRequest request) {
+    @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
+    public ResponseEntity update(HttpServletRequest request) throws NacosException {
         String healthyString = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
         if (StringUtils.isBlank(healthyString)) {
             healthyString = WebUtils.optional(request, "valid", StringUtils.EMPTY);
@@ -96,34 +100,16 @@ public class HealthController {
         if (StringUtils.isBlank(healthyString)) {
             throw new IllegalArgumentException("Param 'healthy' is required.");
         }
-        
-        boolean valid = BooleanUtils.toBoolean(healthyString);
-        
+        boolean health = BooleanUtils.toBoolean(healthyString);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String clusterName = WebUtils
                 .optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
-        
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        // Only health check "none" need update health status with api
-        if (HealthCheckType.NONE.name().equals(service.getClusterMap().get(clusterName).getHealthChecker().getType())) {
-            for (Instance instance : service.allIPs(Lists.newArrayList(clusterName))) {
-                if (instance.getIp().equals(ip) && instance.getPort() == port) {
-                    instance.setHealthy(valid);
-                    Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: " + instance.getIp() + ":"
-                            + instance.getPort() + "@" + instance.getClusterName() + ", service: " + serviceName
-                            + ", msg: update thought HealthController api");
-                    pushService.serviceChanged(service);
-                    break;
-                }
-            }
-        } else {
-            throw new IllegalArgumentException("health check is still working, service: " + serviceName);
-        }
-        
-        return "ok";
+        getHealthOperator()
+                .updateHealthStatusForPersistentInstance(namespaceId, serviceName, clusterName, ip, port, health);
+        return ResponseEntity.ok("ok");
     }
     
     /**
@@ -131,7 +117,7 @@ public class HealthController {
      *
      * @return health checkers map
      */
-    @GetMapping("checkers")
+    @GetMapping("/checkers")
     public ResponseEntity checkers() {
         List<Class<? extends AbstractHealthChecker>> classes = HealthCheckType.getLoadedHealthCheckerClasses();
         Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);
@@ -144,5 +130,9 @@ public class HealthController {
             }
         }
         return ResponseEntity.ok(checkerMap);
+    }
+    
+    private HealthOperator getHealthOperator() {
+        return upgradeJudgement.isUseGrpcFeatures() ? healthOperatorV2 : healthOperatorV1;
     }
 }

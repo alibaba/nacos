@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.cache;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,7 +40,7 @@ public class DiskCacheTest {
     private Instance instance;
     
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         System.out.println(CACHE_DIR);
         serviceInfo = new ServiceInfo("G@@testName", "testClusters");
         instance = new Instance();
@@ -93,5 +94,11 @@ public class DiskCacheTest {
         assertEquals(actual.getIp(), expected.getIp());
         assertEquals(actual.getPort(), expected.getPort());
         assertEquals(actual.getMetadata(), expected.getMetadata());
+    }
+    
+    @Test
+    public void testGetLineSeparator() {
+        String lineSeparator = DiskCache.getLineSeparator();
+        Assert.assertTrue(lineSeparator.length() > 0);
     }
 }

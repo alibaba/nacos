@@ -19,26 +19,29 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.Objects;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
-import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
-import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
-import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
 import org.springframework.context.annotation.DependsOn;
@@ -47,6 +50,7 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -105,8 +109,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         onPut(key, value);
+        // If upgrade to 2.0.X, do not sync for v1.
+        if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
+            return;
+        }
         distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE,
-                globalConfig.getTaskDispatchPeriod() / 2);
+                DistroConfig.getInstance().getSyncDelayMillis());
     }
     
     @Override
@@ -302,11 +310,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
     
     @Override
-    public boolean processVerifyData(DistroData distroData) {
+    public boolean processVerifyData(DistroData distroData, String sourceAddress) {
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
-        String sourceServer = distroData.getDistroKey().getResourceKey();
         Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
-        onReceiveChecksums(verifyData, sourceServer);
+        onReceiveChecksums(verifyData, sourceAddress);
         return true;
     }
     
@@ -348,6 +355,17 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public boolean isAvailable() {
         return isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
+    }
+    
+    @Override
+    public Optional<String> getErrorMsg() {
+        String errorMsg;
+        if (!isInitialized() && !ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus())) {
+            errorMsg = "Distro protocol is not initialized";
+        } else {
+            errorMsg = null;
+        }
+        return Optional.ofNullable(errorMsg);
     }
     
     public boolean isInitialized() {

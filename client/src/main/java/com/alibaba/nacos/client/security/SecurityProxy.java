@@ -114,7 +114,8 @@ public class SecurityProxy {
                     return true;
                 }
             }
-        } catch (Throwable ignore) {
+        } catch (Throwable throwable) {
+            SECURITY_LOGGER.warn("[SecurityProxy] login failed, error: ", throwable);
         }
         
         return false;
@@ -162,5 +163,9 @@ public class SecurityProxy {
     
     public String getAccessToken() {
         return accessToken;
+    }
+    
+    public boolean isEnabled() {
+        return StringUtils.isNotBlank(this.username);
     }
 }

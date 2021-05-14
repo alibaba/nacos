@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
@@ -28,7 +29,7 @@ import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -106,8 +107,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
     
     @JsonIgnore
-    public PushService getPushService() {
-        return ApplicationUtils.getBean(PushService.class);
+    public UdpPushService getPushService() {
+        return ApplicationUtils.getBean(UdpPushService.class);
     }
     
     public long getIpDeleteTimeout() {
@@ -278,6 +279,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         
         setLastModifiedMillis(System.currentTimeMillis());
         getPushService().serviceChanged(this);
+        ApplicationUtils.getBean(DoubleWriteEventListener.class).doubleWriteToV2(this, ephemeral);
         StringBuilder stringBuilder = new StringBuilder();
         
         for (Instance instance : allIPs()) {
@@ -310,6 +312,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             entry.getValue().destroy();
         }
         HealthCheckReactor.cancelCheck(clientBeatCheckTask);
+        ApplicationUtils.getBean(DoubleWriteEventListener.class)
+                .doubleWriteMetadataToV2(this, this.allIPs(false).isEmpty(), true);
     }
     
     /**
@@ -522,6 +526,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         Loggers.SRV_LOG.info("cluster size, new: {}, old: {}", getClusterMap().size(), vDom.getClusterMap().size());
         
         recalculateChecksum();
+        ApplicationUtils.getBean(DoubleWriteEventListener.class)
+                .doubleWriteMetadataToV2(this, vDom.allIPs(false).isEmpty(), false);
     }
     
     @Override

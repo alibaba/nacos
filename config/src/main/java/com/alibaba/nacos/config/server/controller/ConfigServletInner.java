@@ -23,18 +23,17 @@ import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -97,15 +96,13 @@ public class ConfigServletInner {
         }
         int versionNum = Protocol.getVersionNumber(version);
         
-        // Befor 2.0.4 version, return value is put into header.
+        // Before 2.0.4 version, return value is put into header.
         if (versionNum < START_LONG_POLLING_VERSION_NUM) {
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE, oldResult);
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE_NEW, newResult);
         } else {
             request.setAttribute("content", newResult);
         }
-        
-        Loggers.AUTH.info("new content:" + newResult);
         
         // Disable cache.
         response.setHeader("Pragma", "no-cache");
@@ -119,14 +116,22 @@ public class ConfigServletInner {
      * Execute to get config API.
      */
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
-            String tenant, String tag, String clientIp) throws IOException, ServletException {
+            String tenant, String tag, String isNotify, String clientIp) throws IOException, ServletException {
+        
+        boolean notify = false;
+        if (StringUtils.isNotBlank(isNotify)) {
+            notify = Boolean.valueOf(isNotify);
+        }
+        
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String autoTag = request.getHeader("Vipserver-Tag");
+        
         String requestIpApp = RequestUtil.getAppName(request);
         int lockResult = tryConfigReadLock(groupKey);
         
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
+        boolean isSli = false;
         if (lockResult > 0) {
             // LockResult > 0 means cacheItem is not null and other thread can`t delete this cacheItem
             FileInputStream fis = null;
@@ -137,14 +142,14 @@ public class ConfigServletInner {
                 if (cacheItem.isBeta() && cacheItem.getIps4Beta().contains(clientIp)) {
                     isBeta = true;
                 }
-
+                
                 final String configType =
                         (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
                 response.setHeader("Config-Type", configType);
                 FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
                 String contentTypeHeader = fileTypeEnum.getContentType();
                 response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
-
+                
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
                 PrintWriter out = null;
@@ -172,7 +177,7 @@ public class ConfigServletInner {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
                             
-                            response.setHeader("Vipserver-Tag",
+                            response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
                                     URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
                         } else {
                             md5 = cacheItem.getMd5();
@@ -186,16 +191,15 @@ public class ConfigServletInner {
                                 // FIXME CacheItem
                                 // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify);
                                 
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
                                 // new Object[]{clientIp, groupKey});
                                 
-                                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                                response.getWriter().println("config data not exist");
-                                return HttpServletResponse.SC_NOT_FOUND + "";
+                                return get404Result(response);
                             }
+                            isSli = true;
                         }
                     } else {
                         if (cacheItem.tagMd5 != null) {
@@ -216,7 +220,7 @@ public class ConfigServletInner {
                             // FIXME CacheItem
                             // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify && isSli);
                             
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
@@ -262,7 +266,7 @@ public class ConfigServletInner {
                  because the delayed value of active get requests is very large.
                  */
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                        ConfigTraceService.PULL_EVENT_OK, delayed, requestIp);
+                        ConfigTraceService.PULL_EVENT_OK, delayed, requestIp, notify && isSli);
                 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -273,11 +277,9 @@ public class ConfigServletInner {
             // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
             ConfigTraceService
                     .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
-                            requestIp);
+                            requestIp, notify && isSli);
             
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            response.getWriter().println("config data not exist");
-            return HttpServletResponse.SC_NOT_FOUND + "";
+            return get404Result(response);
             
         } else {
             
@@ -295,9 +297,16 @@ public class ConfigServletInner {
     private static void releaseConfigReadLock(String groupKey) {
         ConfigCacheService.releaseReadLock(groupKey);
     }
-
+    
+    private String get404Result(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        response.getWriter().println("config data not exist");
+        return HttpServletResponse.SC_NOT_FOUND + "";
+    }
+    
     /**
      * Try to add read lock.
+     *
      * @param groupKey groupKey string value.
      * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed。
      */

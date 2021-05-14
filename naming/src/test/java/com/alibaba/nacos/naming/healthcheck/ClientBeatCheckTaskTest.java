@@ -20,8 +20,11 @@ import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.push.UdpPushService;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +33,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
@@ -38,7 +42,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class ClientBeatCheckTaskTest {
     
     @InjectMocks
@@ -55,7 +61,16 @@ public class ClientBeatCheckTaskTest {
     private GlobalConfig globalConfig;
     
     @Mock
-    private PushService pushService;
+    private UdpPushService pushService;
+    
+    @Mock
+    private SwitchDomain switchDomain;
+    
+    @Mock
+    private UpgradeJudgement upgradeJudgement;
+    
+    @Mock
+    private ConfigurableApplicationContext context;
     
     @Before
     public void init() {
@@ -63,6 +78,9 @@ public class ClientBeatCheckTaskTest {
         Mockito.doReturn(distroMapperSpy).when(clientBeatCheckTask).getDistroMapper();
         Mockito.doReturn(globalConfig).when(clientBeatCheckTask).getGlobalConfig();
         Mockito.doReturn(pushService).when(clientBeatCheckTask).getPushService();
+        Mockito.doReturn(switchDomain).when(clientBeatCheckTask).getSwitchDomain();
+        ApplicationUtils.injectContext(context);
+        when(context.getBean(UpgradeJudgement.class)).thenReturn(upgradeJudgement);
     }
     
     @Test
@@ -74,9 +92,6 @@ public class ClientBeatCheckTaskTest {
         Map<String, String> metadata = new HashMap<>();
         metadata.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "1000000000");
         instance.setMetadata(metadata);
-        List<Instance> instances = new ArrayList<>();
-        instances.add(instance);
-        Mockito.when(serviceSpy.allIPs(true)).thenReturn(instances);
         
         Mockito.doReturn("test").when(serviceSpy).getName();
         Mockito.doReturn(true).when(distroMapperSpy).responsible(Mockito.anyString());
@@ -97,8 +112,9 @@ public class ClientBeatCheckTaskTest {
         instances.add(instance);
         Mockito.doReturn("test").when(serviceSpy).getName();
         Mockito.doReturn(true).when(distroMapperSpy).responsible(Mockito.anyString());
+        Mockito.doReturn(true).when(switchDomain).isHealthCheckEnabled();
         
-        Mockito.when(serviceSpy.allIPs(true)).thenReturn(instances);
+        when(serviceSpy.allIPs(true)).thenReturn(instances);
         
         clientBeatCheckTask.run();
         Assert.assertFalse(instance.isHealthy());
@@ -113,11 +129,7 @@ public class ClientBeatCheckTaskTest {
         Map<String, String> metadata = new HashMap<>();
         metadata.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "10");
         instance.setMetadata(metadata);
-        List<Instance> instances = new ArrayList<>();
-        instances.add(instance);
         Mockito.doReturn(true).when(distroMapperSpy).responsible(null);
-        Mockito.doReturn(true).when(globalConfig).isExpireInstance();
-        Mockito.when(serviceSpy.allIPs(true)).thenReturn(instances);
         
         clientBeatCheckTask.run();
     }
@@ -131,12 +143,8 @@ public class ClientBeatCheckTaskTest {
         Map<String, String> metadata = new HashMap<>();
         metadata.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "10000");
         instance.setMetadata(metadata);
-        List<Instance> instances = new ArrayList<>();
-        instances.add(instance);
         
         Mockito.doReturn(true).when(distroMapperSpy).responsible(null);
-        Mockito.doReturn(true).when(globalConfig).isExpireInstance();
-        Mockito.when(serviceSpy.allIPs(true)).thenReturn(instances);
         
         clientBeatCheckTask.run();
     }

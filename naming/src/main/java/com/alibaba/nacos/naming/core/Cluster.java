@@ -386,6 +386,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     
     public void setDefCkport(int defCkport) {
         this.defCkport = defCkport;
+        super.setDefaultCheckPort(defCkport);
     }
     
     /**

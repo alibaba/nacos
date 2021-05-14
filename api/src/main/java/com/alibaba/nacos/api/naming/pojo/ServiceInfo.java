@@ -57,6 +57,8 @@ public class ServiceInfo {
     
     private volatile boolean allIPs = false;
     
+    private volatile boolean reachProtectionThreshold = false;
+    
     public ServiceInfo() {
     }
     
@@ -109,6 +111,18 @@ public class ServiceInfo {
         this.hosts = hosts;
     }
     
+    public void addHost(Instance host) {
+        hosts.add(host);
+    }
+    
+    public void addAllHosts(List<? extends Instance> hosts) {
+        this.hosts.addAll(hosts);
+    }
+    
+    public List<Instance> getHosts() {
+        return new ArrayList<Instance>(hosts);
+    }
+    
     public boolean isValid() {
         return hosts != null;
     }
@@ -151,10 +165,6 @@ public class ServiceInfo {
     
     public void setCacheMillis(long cacheMillis) {
         this.cacheMillis = cacheMillis;
-    }
-    
-    public List<Instance> getHosts() {
-        return new ArrayList<Instance>(hosts);
     }
     
     /**
@@ -275,6 +285,14 @@ public class ServiceInfo {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
     
+    public boolean isReachProtectionThreshold() {
+        return reachProtectionThreshold;
+    }
+
+    public void setReachProtectionThreshold(boolean reachProtectionThreshold) {
+        this.reachProtectionThreshold = reachProtectionThreshold;
+    }
+
     private static final String EMPTY = "";
     
     private static final String ALL_IPS = "000--00-ALL_IPS--00--000";

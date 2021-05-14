@@ -118,6 +118,7 @@ const I18N_CONF = {
     prompt: '提示',
     promptDelete: '确定要删除当前服务吗？',
     create: '创建服务',
+    subscriber: '订阅者',
   },
   SubscriberList: {
     subscriberList: '订阅者列表',
@@ -243,6 +244,7 @@ const I18N_CONF = {
     actionType: '操作类型:',
     configureContent: '配置内容:',
     operator: '操作人:',
+    sourceIp: '来源 IP:',
     back: '返回',
   },
   DashboardCard: {
@@ -250,6 +252,7 @@ const I18N_CONF = {
     viewDetails1: '查看详情',
   },
   ConfigurationManagement: {
+    exportBtn: '导出',
     questionnaire2: '问卷调查',
     ad: '答 ACM 前端监控调查问卷，限时领取阿里云代金券\t            详情猛戳：',
     noLongerDisplay4: '不再显示：',
@@ -282,6 +285,7 @@ const I18N_CONF = {
     application: '归属应用:',
     operation: '操作',
     export: '导出查询结果',
+    newExport: '新版导出查询结果',
     import: '导入配置',
     uploadBtn: '上传文件',
     importSucc: '导入成功',
@@ -306,6 +310,7 @@ const I18N_CONF = {
     unrecognizedEntries: '未识别的条目',
     skippedEntries: '跳过的条目',
     exportSelected: '导出选中的配置',
+    newExportSelected: '新版导出选中的配置',
     clone: '克隆',
     exportSelectedAlertTitle: '配置导出',
     exportSelectedAlertContent: '请选择要导出的配置',
@@ -532,6 +537,7 @@ const I18N_CONF = {
     rollbackDelete: '删除',
     update: '更新',
     insert: '插入',
+    additionalRollbackMessage: '此操作将删除以下配置！',
   },
   UserManagement: {
     userManagement: '用户管理',

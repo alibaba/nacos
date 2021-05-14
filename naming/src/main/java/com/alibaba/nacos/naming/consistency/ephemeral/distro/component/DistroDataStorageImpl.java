@@ -16,18 +16,21 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.component;
 
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
-import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,9 +44,21 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     
     private final DistroMapper distroMapper;
     
+    private volatile boolean isFinishInitial;
+    
     public DistroDataStorageImpl(DataStore dataStore, DistroMapper distroMapper) {
         this.dataStore = dataStore;
         this.distroMapper = distroMapper;
+    }
+    
+    @Override
+    public void finishInitial() {
+        isFinishInitial = true;
+    }
+    
+    @Override
+    public boolean isFinishInitial() {
+        return isFinishInitial;
     }
     
     @Override
@@ -68,7 +83,7 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     }
     
     @Override
-    public DistroData getVerifyData() {
+    public List<DistroData> getVerifyData() {
         Map<String, String> keyChecksums = new HashMap<>(64);
         for (String key : dataStore.keys()) {
             if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
@@ -81,9 +96,11 @@ public class DistroDataStorageImpl implements DistroDataStorage {
             keyChecksums.put(key, datum.value.getChecksum());
         }
         if (keyChecksums.isEmpty()) {
-            return null;
+            return Collections.emptyList();
         }
         DistroKey distroKey = new DistroKey("checksum", KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
-        return new DistroData(distroKey, ApplicationUtils.getBean(Serializer.class).serialize(keyChecksums));
+        DistroData data = new DistroData(distroKey, ApplicationUtils.getBean(Serializer.class).serialize(keyChecksums));
+        data.setType(DataOperation.VERIFY);
+        return Collections.singletonList(data);
     }
 }

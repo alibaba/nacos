@@ -102,7 +102,7 @@ public class JRaftUtils {
             DiskUtils.forceMkdir(new File(snapshotUri));
             DiskUtils.forceMkdir(new File(metaDataUri));
         } catch (Exception e) {
-            Loggers.RAFT.error("Init Raft-File dir have some error : {}", e);
+            Loggers.RAFT.error("Init Raft-File dir have some error, cause: ", e);
             throw new RuntimeException(e);
         }
         

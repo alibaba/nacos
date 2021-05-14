@@ -16,25 +16,16 @@
 
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.naming.misc.HttpClient;
-import com.alibaba.nacos.naming.misc.NetUtils;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.pojo.Subscribers;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingSubscriberServiceAggregationImpl;
+import com.alibaba.nacos.naming.push.NamingSubscriberServiceLocalImpl;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,26 +37,17 @@ import java.util.stream.Collectors;
  * Subscribe manager.
  *
  * @author Nicholas
+ * @author xiweng.yy
  * @since 1.0.1
  */
 @Service
 public class SubscribeManager {
     
-    private static final String SUBSCRIBER_ON_SYNC_URL = "/service/subscribers";
+    @Autowired
+    private NamingSubscriberServiceLocalImpl localService;
     
     @Autowired
-    private PushService pushService;
-    
-    @Autowired
-    private ServerMemberManager memberManager;
-    
-    private List<Subscriber> getSubscribersFuzzy(String serviceName, String namespaceId) {
-        return pushService.getClientsFuzzy(serviceName, namespaceId);
-    }
-    
-    private List<Subscriber> getSubscribers(String serviceName, String namespaceId) {
-        return pushService.getClients(serviceName, namespaceId);
-    }
+    private NamingSubscriberServiceAggregationImpl aggregationService;
     
     /**
      * Get subscribers.
@@ -74,44 +56,14 @@ public class SubscribeManager {
      * @param namespaceId namespace id
      * @param aggregation aggregation
      * @return list of subscriber
-     * @throws InterruptedException interrupted exception
      */
-    public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation)
-            throws InterruptedException {
+    public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation) {
         if (aggregation) {
-            // size = 1 means only myself in the list, we need at least one another server alive:
-            if (memberManager.getServerList().size() <= 1) {
-                return getSubscribersFuzzy(serviceName, namespaceId);
-            }
-            
-            List<Subscriber> subscriberList = new ArrayList<Subscriber>();
-            // try sync data from remote server:
-            for (Member server : memberManager.allMembers()) {
-                
-                Map<String, String> paramValues = new HashMap<>(128);
-                paramValues.put(CommonParams.SERVICE_NAME, serviceName);
-                paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
-                paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
-                if (NetUtils.localServer().equals(server.getAddress())) {
-                    subscriberList.addAll(getSubscribersFuzzy(serviceName, namespaceId));
-                    continue;
-                }
-                
-                RestResult<String> result = HttpClient.httpGet(
-                        "http://" + server.getAddress() + EnvUtil.getContextPath()
-                                + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(),
-                        paramValues);
-                
-                if (result.ok()) {
-                    Subscribers subscribers = JacksonUtils.toObj(result.getData(), Subscribers.class);
-                    subscriberList.addAll(subscribers.getSubscribers());
-                }
-            }
-            return CollectionUtils.isNotEmpty(subscriberList) ? subscriberList.stream()
-                    .filter(distinctByKey(Subscriber::toString)).collect(Collectors.toList()) : Collections.EMPTY_LIST;
+            Collection<Subscriber> result = aggregationService.getFuzzySubscribers(namespaceId, serviceName);
+            return CollectionUtils.isNotEmpty(result) ? result.stream().filter(distinctByKey(Subscriber::toString))
+                    .collect(Collectors.toList()) : Collections.EMPTY_LIST;
         } else {
-            // local server
-            return getSubscribersFuzzy(serviceName, namespaceId);
+            return new LinkedList<>(localService.getFuzzySubscribers(namespaceId, serviceName));
         }
     }
     

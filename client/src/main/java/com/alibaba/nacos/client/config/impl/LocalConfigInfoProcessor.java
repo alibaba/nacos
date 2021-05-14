@@ -73,7 +73,7 @@ public class LocalConfigInfoProcessor {
         }
     }
     
-    private static String readFile(File file) throws IOException {
+    protected static String readFile(File file) throws IOException {
         if (!file.exists() || !file.isFile()) {
             return null;
         }
