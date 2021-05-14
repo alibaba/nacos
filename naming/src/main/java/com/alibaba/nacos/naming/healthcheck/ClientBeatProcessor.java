@@ -81,15 +81,13 @@ public class ClientBeatProcessor implements Runnable {
                     Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
                 }
                 instance.setLastBeat(System.currentTimeMillis());
-                if (!instance.isMarked()) {
-                    if (!instance.isHealthy()) {
-                        instance.setHealthy(true);
-                        Loggers.EVT_LOG
-                                .info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
-                                        cluster.getService().getName(), ip, port, cluster.getName(),
-                                        UtilsAndCommons.LOCALHOST_SITE);
-                        getPushService().serviceChanged(service);
-                    }
+                if (!instance.isMarked() && !instance.isHealthy()) {
+                    instance.setHealthy(true);
+                    Loggers.EVT_LOG
+                            .info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
+                                    cluster.getService().getName(), ip, port, cluster.getName(),
+                                    UtilsAndCommons.LOCALHOST_SITE);
+                    getPushService().serviceChanged(service);
                 }
             }
         }
