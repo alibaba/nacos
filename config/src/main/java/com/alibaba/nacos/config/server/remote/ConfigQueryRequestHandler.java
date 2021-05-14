@@ -74,12 +74,10 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
         
         try {
-            ConfigQueryResponse context = getContext(request, meta, request.isNotify());
-            return context;
+            return getContext(request, meta, request.isNotify());
         } catch (Exception e) {
-            ConfigQueryResponse contextFail = ConfigQueryResponse
+            return ConfigQueryResponse
                     .buildFailResponse(ResponseCode.FAIL.getCode(), e.getMessage());
-            return contextFail;
         }
         
     }

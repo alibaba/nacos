@@ -95,19 +95,18 @@ public class InternalConfigChangeNotifier extends Subscriber<LocalDataChangeEven
         RequestMeta meta = new RequestMeta();
         meta.setClientIp(NetUtils.localIP());
         ConfigQueryResponse handle = configQueryRequestHandler.handle(queryRequest, meta);
-        if (handle != null) {
-            if (handle.isSuccess()) {
-                return handle.getContent();
-            } else if (handle.getErrorCode() == ConfigQueryResponse.CONFIG_NOT_FOUND) {
-                return null;
-            } else {
-                Loggers.REMOTE.error("connection limit rule load fail,errorCode={}", handle.getErrorCode());
-                throw new NacosException(NacosException.SERVER_ERROR,
-                        "load local config fail,error code=" + handle.getErrorCode());
-            }
+        if (handle == null) {
+            throw new NacosException(NacosException.SERVER_ERROR, "load local config fail,response is null");
         }
-        throw new NacosException(NacosException.SERVER_ERROR, "load local config fail,response  is null");
-        
+        if (handle.isSuccess()) {
+            return handle.getContent();
+        } else if (handle.getErrorCode() == ConfigQueryResponse.CONFIG_NOT_FOUND) {
+            return null;
+        } else {
+            Loggers.REMOTE.error("connection limit rule load fail,errorCode={}", handle.getErrorCode());
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "load local config fail,error code=" + handle.getErrorCode());
+        }
     }
     
     @Override
