@@ -143,6 +143,8 @@ public class UpgradeOpsController {
                     sb.append(String.format("%5d", value.longValue()));
                 } else if (value.isFloatingPointNumber()) {
                     sb.append(String.format("%.3f", value.doubleValue()));
+                } else if (value.isTextual()) {
+                    sb.append(value.textValue());
                 } else {
                     sb.append(value.toString());
                 }
