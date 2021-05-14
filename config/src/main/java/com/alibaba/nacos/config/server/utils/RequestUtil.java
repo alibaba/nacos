@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.model.User;
 import org.apache.commons.lang3.StringUtils;
 
@@ -90,7 +91,8 @@ public class RequestUtil {
      */
     public static String getSrcUserName(HttpServletRequest request) {
         User user = getUser(request);
-        return user == null ? null : user.getUserName();
+        // If auth is disabled, get username from parameters by agreed key
+        return user == null ? request.getParameter(Constants.USERNAME) : user.getUserName();
     }
     
 }

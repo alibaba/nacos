@@ -83,6 +83,8 @@ public class Constants {
     
     public static final String GLOBAL_ADMIN = "globalAdmin";
     
+    public static final String USERNAME = "username";
+    
     public static final String TOKEN_REFRESH_WINDOW = "tokenRefreshWindow";
     
     /**
