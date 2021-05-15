@@ -55,7 +55,7 @@ public class DumpAllProcessor implements NacosTaskProcessor {
             if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
                 for (ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
-                    lastMaxId = id > lastMaxId ? id : lastMaxId;
+                    lastMaxId = Math.max(id, lastMaxId);
                     if (cf.getDataId().equals(AggrWhitelist.AGGRIDS_METADATA)) {
                         AggrWhitelist.load(cf.getContent());
                     }
