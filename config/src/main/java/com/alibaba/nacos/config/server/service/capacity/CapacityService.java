@@ -295,12 +295,12 @@ public class CapacityService {
             int finalQuota = (int) (usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
             if (tenant != null) {
                 tenantCapacityPersistService.updateQuota(tenant, finalQuota);
-                LogUtil.DEFAULT_LOG.warn("[capacityManagement] The usage({}) already reach the upper limit({}) when init the tenant({}), " +
-                                "automatic upgrade to ({})", usage, defaultQuota, tenant, finalQuota);
+                LogUtil.DEFAULT_LOG.warn("[capacityManagement] The usage({}) already reach the upper limit({}) when init the tenant({}), "
+                        + "automatic upgrade to ({})", usage, defaultQuota, tenant, finalQuota);
             } else {
                 groupCapacityPersistService.updateQuota(group, finalQuota);
-                LogUtil.DEFAULT_LOG.warn("[capacityManagement] The usage({}) already reach the upper limit({}) when init the group({}), " +
-                                "automatic upgrade to ({})", usage, defaultQuota, group, finalQuota);
+                LogUtil.DEFAULT_LOG.warn("[capacityManagement] The usage({}) already reach the upper limit({}) when init the group({}), "
+                        + "automatic upgrade to ({})", usage, defaultQuota, group, finalQuota);
             }
         }
     }
