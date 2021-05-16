@@ -139,14 +139,10 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
             long currentTime = System.currentTimeMillis();
             for (String each : clientManager.allClientId()) {
                 ConnectionBasedClient client = (ConnectionBasedClient) clientManager.getClient(each);
-                if (null != client && isExpireClient(currentTime, client)) {
+                if (null != client && client.isExpire(currentTime)) {
                     clientManager.clientDisconnected(each);
                 }
             }
-        }
-        
-        private boolean isExpireClient(long currentTime, ConnectionBasedClient client) {
-            return !client.isNative() && currentTime - client.getLastRenewTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
         }
     }
 }
