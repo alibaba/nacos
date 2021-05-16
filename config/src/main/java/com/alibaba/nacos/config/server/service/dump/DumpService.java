@@ -92,7 +92,6 @@ public abstract class DumpService {
     
     protected final ServerMemberManager memberManager;
 
-
     /**
      * full dump interval.
      */
