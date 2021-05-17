@@ -494,7 +494,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         ids.removeAll(Collections.singleton(null));
         return tjt.execute(new TransactionCallback<List<ConfigInfo>>() {
             final Timestamp time = new Timestamp(System.currentTimeMillis());
-
+            
             @Override
             public List<ConfigInfo> doInTransaction(TransactionStatus status) {
                 try {
