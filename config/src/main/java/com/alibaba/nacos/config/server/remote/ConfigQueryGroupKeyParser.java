@@ -33,8 +33,9 @@ public class ConfigQueryGroupKeyParser extends MonitorKeyParser {
      * parse group key.
      *
      * @param args parameters.
-     * @return
+     * @return MonitorKey.
      */
+    @Override
     public MonitorKey parse(Object... args) {
         if (args != null && args.length != 0 && args[0] instanceof ConfigQueryRequest) {
             
