@@ -40,12 +40,12 @@ import java.util.concurrent.TimeUnit;
  * @author Nacos
  */
 public class NotifyTaskProcessor implements NacosTaskProcessor {
-
+    
     static final Logger LOGGER = LoggerFactory.getLogger(NotifyTaskProcessor.class);
-
+    
     static final String URL_PATTERN =
             "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
-
+    
     final ServerMemberManager memberManager;
     
     public NotifyTaskProcessor(ServerMemberManager memberManager) {

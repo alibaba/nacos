@@ -77,7 +77,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class DumpService {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(DumpService.class);
     
     protected DumpProcessor processor;
@@ -91,35 +91,35 @@ public abstract class DumpService {
     protected final PersistService persistService;
     
     protected final ServerMemberManager memberManager;
-
+    
     /**
      * full dump interval.
      */
     static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
-
+    
     /**
      * full dump delay.
      */
     static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
-
+    
     private TaskManager dumpTaskMgr;
-
+    
     private TaskManager dumpAllTaskMgr;
-
+    
     static final AtomicInteger FINISHED = new AtomicInteger();
-
+    
     static final int INIT_THREAD_COUNT = 10;
-
+    
     int total = 0;
-
+    
     private static final String TRUE_STR = "true";
-
+    
     private static final String BETA_TABLE_NAME = "config_info_beta";
-
+    
     private static final String TAG_TABLE_NAME = "config_info_tag";
-
+    
     Boolean isQuickStart = false;
-
+    
     private int retentionDays = 30;
     
     /**

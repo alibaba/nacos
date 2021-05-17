@@ -38,9 +38,9 @@ import java.util.Objects;
  * @date 2020/7/5 12:19 PM
  */
 public class DumpProcessor implements NacosTaskProcessor {
-
+    
     final DumpService dumpService;
-
+    
     public DumpProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
     }
@@ -68,7 +68,7 @@ public class DumpProcessor implements NacosTaskProcessor {
             build.remove(Objects.isNull(cf));
             build.betaIps(Objects.isNull(cf) ? null : cf.getBetaIps());
             build.content(Objects.isNull(cf) ? null : cf.getContent());
-
+            
             return DumpConfigHandler.configDump(build.build());
         }
         if (StringUtils.isBlank(tag)) {
