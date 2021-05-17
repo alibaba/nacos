@@ -46,7 +46,7 @@ public class RequestUtil {
      * {@link HttpServletRequest#getRemoteAddr()}
      *
      * @param request {@link HttpServletRequest}
-     * @return
+     * @return remote ip address.
      */
     public static String getRemoteIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
@@ -78,9 +78,8 @@ public class RequestUtil {
         if (userObj == null) {
             return null;
         }
-        
-        User user = (User) userObj;
-        return user;
+    
+        return (User) userObj;
     }
     
     /**

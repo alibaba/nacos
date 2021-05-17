@@ -36,7 +36,7 @@ public class AccumulateStatCount {
     /**
      * accumulate stat.
      *
-     * @return
+     * @return stat.
      */
     public long stat() {
         long tmp = total.get() - lastStatValue;
