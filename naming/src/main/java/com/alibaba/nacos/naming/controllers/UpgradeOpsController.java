@@ -230,6 +230,7 @@ public class UpgradeOpsController {
     @PostMapping("/{ver:v2}/service")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String createService(@PathVariable String ver,
+                                HttpServletRequest request,
                                 @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                                 @RequestParam String serviceName,
                                 @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
@@ -239,7 +240,9 @@ public class UpgradeOpsController {
         serviceMetadata.setProtectThreshold(protectThreshold);
         serviceMetadata.setSelector(parseSelector(selector));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
-        serviceMetadata.setEphemeral(false);
+        boolean ephemeral = BooleanUtils.toBoolean(
+                WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
+        serviceMetadata.setEphemeral(ephemeral);
         getServiceOperator(ver).create(namespaceId, serviceName, serviceMetadata);
         return "ok";
     }
