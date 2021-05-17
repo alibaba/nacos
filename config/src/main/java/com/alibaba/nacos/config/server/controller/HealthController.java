@@ -40,11 +40,11 @@ public class HealthController {
     
     private DataSourceService dataSourceService;
     
-    private String heathUpStr = "UP";
+    private static final String HEALTH_UP = "UP";
     
-    private String heathDownStr = "DOWN";
+    private static final String HEALTH_DOWN = "DOWN";
     
-    private String heathWarnStr = "WARN";
+    private static final String HEALTH_WARN = "WARN";
     
     @Autowired
     private ServerMemberManager memberManager;
@@ -60,21 +60,21 @@ public class HealthController {
         StringBuilder sb = new StringBuilder();
         String dbStatus = dataSourceService.getHealth();
         boolean addressServerHealthy = isAddressServerHealthy();
-        if (dbStatus.contains(heathUpStr) && addressServerHealthy && memberManager.isInIpList()) {
-            sb.append(heathUpStr);
-        } else if (dbStatus.contains(heathWarnStr) && addressServerHealthy && memberManager.isInIpList()) {
+        if (dbStatus.contains(HEALTH_UP) && addressServerHealthy && ServerMemberManager.isInIpList()) {
+            sb.append(HEALTH_UP);
+        } else if (dbStatus.contains(HEALTH_WARN) && addressServerHealthy && ServerMemberManager.isInIpList()) {
             sb.append("WARN:");
             sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
         } else {
             sb.append("DOWN:");
-            if (dbStatus.contains(heathDownStr)) {
+            if (dbStatus.contains(HEALTH_DOWN)) {
                 sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
             }
         
             if (!addressServerHealthy) {
                 sb.append("address server down. ");
             }
-            if (!memberManager.isInIpList()) {
+            if (!ServerMemberManager.isInIpList()) {
                 sb.append("server ip ").append(InetUtils.getSelfIP())
                         .append(" is not in the serverList of address server. ");
             }
@@ -86,7 +86,7 @@ public class HealthController {
     private boolean isAddressServerHealthy() {
         Map<String, Object> info = memberManager.getLookup().info();
         return info != null && info.get("addressServerHealth") != null && Boolean
-                .valueOf(info.get("addressServerHealth").toString());
+                .parseBoolean(info.get("addressServerHealth").toString());
     }
     
 }
