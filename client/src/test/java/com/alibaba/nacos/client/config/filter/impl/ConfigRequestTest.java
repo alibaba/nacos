@@ -41,8 +41,7 @@ public class ConfigRequestTest {
         Assert.assertEquals(group, configRequest.getGroup());
         Assert.assertEquals(tenant, configRequest.getTenant());
         Assert.assertEquals(content, configRequest.getContent());
-        //TODO fix getType
-        //Assert.assertEquals(type, configRequest.getType());
+        Assert.assertEquals(type, configRequest.getType());
         
     }
     
