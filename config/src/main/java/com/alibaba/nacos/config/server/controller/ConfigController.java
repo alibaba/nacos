@@ -235,8 +235,7 @@ public class ConfigController {
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("dataId") String dataId, //
-            @RequestParam("group") String group, //
+            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
         // check tenant
@@ -274,15 +273,16 @@ public class ConfigController {
         String clientIp = RequestUtil.getRemoteIp(request);
         final Timestamp time = TimeUtils.getCurrentTime();
         List<ConfigInfo> configInfoList = persistService.removeConfigInfoByIds(ids, clientIp, null);
-        if (!CollectionUtils.isEmpty(configInfoList)) {
-            for (ConfigInfo configInfo : configInfoList) {
-                ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                                configInfo.getTenant(), time.getTime()));
-                ConfigTraceService
-                        .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                                null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-            }
+        if (CollectionUtils.isEmpty(configInfoList)) {
+            return RestResultUtils.success(true);
+        }
+        for (ConfigInfo configInfo : configInfoList) {
+            ConfigChangePublisher.notifyConfigChange(
+                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                            configInfo.getTenant(), time.getTime()));
+            ConfigTraceService
+                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+                            null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
         }
         return RestResultUtils.success(true);
     }
@@ -292,11 +292,8 @@ public class ConfigController {
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-        RestResult<ConfigAdvanceInfo> rr = new RestResult<ConfigAdvanceInfo>();
         ConfigAdvanceInfo configInfo = persistService.findConfigAdvanceInfo(dataId, group, tenant);
-        rr.setCode(200);
-        rr.setData(configInfo);
-        return rr;
+        return RestResultUtils.success(configInfo);
     }
     
     /**
@@ -411,22 +408,15 @@ public class ConfigController {
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-        RestResult<Boolean> rr = new RestResult<Boolean>();
         try {
             persistService.removeConfigInfo4Beta(dataId, group, tenant);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
-            rr.setCode(500);
-            rr.setData(false);
-            rr.setMessage("remove beta data error");
-            return rr;
+            return RestResultUtils.failed(500, false, "remove beta data error");
         }
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
-        rr.setCode(200);
-        rr.setData(true);
-        rr.setMessage("stop beta ok");
-        return rr;
+        return RestResultUtils.success("stop beta ok", true);
     }
     
     /**
@@ -442,18 +432,12 @@ public class ConfigController {
     public RestResult<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-        RestResult<ConfigInfo4Beta> rr = new RestResult<ConfigInfo4Beta>();
         try {
             ConfigInfo4Beta ci = persistService.findConfigInfo4Beta(dataId, group, tenant);
-            rr.setCode(200);
-            rr.setData(ci);
-            rr.setMessage("stop beta ok");
-            return rr;
+            return RestResultUtils.success("stop beta ok", ci);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
-            rr.setCode(500);
-            rr.setMessage("remove beta data error");
-            return rr;
+            return RestResultUtils.failed("remove beta data error");
         }
     }
     
@@ -589,19 +573,17 @@ public class ConfigController {
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
             ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
+            RestResult<Map<String, Object>> errorResult;
             if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
-                RestResult<Map<String, Object>> errorResult = parseImportDataV2(unziped, configInfoList,
+                errorResult = parseImportDataV2(unziped, configInfoList,
                         unrecognizedList, namespace);
-                if (errorResult != null) {
-                    return errorResult;
-                }
             } else {
-                RestResult<Map<String, Object>> errorResult = parseImportData(unziped, configInfoList, unrecognizedList,
+                errorResult = parseImportData(unziped, configInfoList, unrecognizedList,
                         namespace);
-                if (errorResult != null) {
-                    return errorResult;
-                }
+            }
+            if (errorResult != null) {
+                return errorResult;
             }
         } catch (IOException e) {
             failedData.put("succCount", 0);

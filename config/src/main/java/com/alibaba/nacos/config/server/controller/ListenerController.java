@@ -61,28 +61,26 @@ public class ListenerController {
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
         Map<String, String> configMd5Status = new HashMap<String, String>(100);
-        if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-            Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
-            for (Map.Entry<String, String> config : status.entrySet()) {
-                if (!StringUtils.isBlank(tenant)) {
-                    if (config.getKey().contains(tenant)) {
-                        configMd5Status.put(config.getKey(), config.getValue());
-                    }
-                } else {
-                    // Get common config default value, if want to get all config, you need to add "all".
-                    if (all) {
-                        configMd5Status.put(config.getKey(), config.getValue());
-                    } else {
-                        String[] configKeys = GroupKey2.parseKey(config.getKey());
-                        if (StringUtils.isBlank(configKeys[2])) {
-                            configMd5Status.put(config.getKey(), config.getValue());
-                        }
-                    }
+        if (collectSampleResult.getLisentersGroupkeyStatus() == null) {
+            return gls;
+        }
+        Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
+        for (Map.Entry<String, String> config : status.entrySet()) {
+            if (!StringUtils.isBlank(tenant) && config.getKey().contains(tenant)) {
+                configMd5Status.put(config.getKey(), config.getValue());
+                continue;
+            }
+            // Get common config default value, if want to get all config, you need to add "all".
+            if (all) {
+                configMd5Status.put(config.getKey(), config.getValue());
+            } else {
+                String[] configKeys = GroupKey2.parseKey(config.getKey());
+                if (StringUtils.isBlank(configKeys[2])) {
+                    configMd5Status.put(config.getKey(), config.getValue());
                 }
             }
-            gls.setLisentersGroupkeyStatus(configMd5Status);
         }
-        
+        gls.setLisentersGroupkeyStatus(configMd5Status);
         return gls;
     }
     
