@@ -539,8 +539,6 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
         } catch (DataAccessException e) {
             throw new ConsistencyException(e.toString());
-        } catch (Throwable t) {
-            throw t;
         } finally {
             lock.unlock();
         }
