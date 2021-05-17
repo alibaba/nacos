@@ -48,6 +48,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     @Autowired
     private EmbeddedStoragePersistServiceImpl persistService;
     
+    @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
         PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
         
@@ -81,6 +82,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
      * @param resource resource info string value.
      * @param action action info string value.
      */
+    @Override
     public void addPermission(String role, String resource, String action) {
         String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
         EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
@@ -94,6 +96,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
      * @param resource resource info string value.
      * @param action action info string value.
      */
+    @Override
     public void deletePermission(String role, String resource, String action) {
         String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
         EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
