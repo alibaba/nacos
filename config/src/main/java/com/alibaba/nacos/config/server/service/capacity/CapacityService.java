@@ -58,7 +58,7 @@ public class CapacityService {
     
     @Autowired
     private TenantCapacityPersistService tenantCapacityPersistService;
-
+    
     @Autowired
     private PersistService persistService;
     
