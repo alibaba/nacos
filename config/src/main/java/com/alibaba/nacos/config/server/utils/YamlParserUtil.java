@@ -51,7 +51,7 @@ public class YamlParserUtil {
             
             @Override
             protected NodeTuple representJavaBeanProperty(Object javaBean, Property property, Object propertyValue,
-                                                          Tag customTag) {
+                    Tag customTag) {
                 if (propertyValue == null) {
                     return null;
                 } else {
