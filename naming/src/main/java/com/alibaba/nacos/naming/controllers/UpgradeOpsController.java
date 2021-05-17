@@ -53,7 +53,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -227,9 +226,9 @@ public class UpgradeOpsController {
      * @return 'ok' if success
      * @throws Exception exception
      */
-    @PostMapping("/{ver:v2}/service")
+    @PostMapping("/service")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String createService(@PathVariable String ver,
+    public String createService(@RequestParam(defaultValue = "v2", required = false) String ver,
                                 HttpServletRequest request,
                                 @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                                 @RequestParam String serviceName,
@@ -255,9 +254,9 @@ public class UpgradeOpsController {
      * @return 'ok' if success
      * @throws Exception exception
      */
-    @DeleteMapping("/{ver:v2}/service")
+    @DeleteMapping("/service")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String removeService(@PathVariable String ver,
+    public String removeService(@RequestParam(defaultValue = "v2", required = false) String ver,
                                 @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                                 @RequestParam String serviceName) throws Exception {
         getServiceOperator(ver).delete(namespaceId, serviceName);
@@ -276,9 +275,9 @@ public class UpgradeOpsController {
      * @return detail information of service
      * @throws NacosException nacos exception
      */
-    @GetMapping("/{ver:v2}/service")
+    @GetMapping("/service")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public ObjectNode detailService(@PathVariable String ver,
+    public ObjectNode detailService(@RequestParam(defaultValue = "v2", required = false) String ver,
                                     @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                                     @RequestParam String serviceName) throws NacosException {
         return getServiceOperator(ver).queryService(namespaceId, serviceName);
@@ -291,9 +290,10 @@ public class UpgradeOpsController {
      * @return all service names
      * @throws Exception exception
      */
-    @GetMapping("/{ver:v2}/service/list")
+    @GetMapping("/service/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public ObjectNode listService(@PathVariable String ver, HttpServletRequest request) throws Exception {
+    public ObjectNode listService(@RequestParam(defaultValue = "v2", required = false) String ver,
+                                  HttpServletRequest request) throws Exception {
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -314,9 +314,10 @@ public class UpgradeOpsController {
      * @return 'ok' if success
      * @throws Exception exception
      */
-    @PutMapping("/{ver:v2}/service")
+    @PutMapping("/service")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String updateService(@PathVariable String ver, HttpServletRequest request) throws Exception {
+    public String updateService(@RequestParam(defaultValue = "v2", required = false) String ver,
+                                HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         ServiceMetadata serviceMetadata = new ServiceMetadata();
@@ -339,9 +340,9 @@ public class UpgradeOpsController {
      * @param responsibleOnly whether only search responsible service
      * @return search result
      */
-    @RequestMapping("/{ver:v2}/service/names")
+    @RequestMapping("/service/names")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public ObjectNode searchService(@PathVariable String ver,
+    public ObjectNode searchService(@RequestParam(defaultValue = "v2", required = false) String ver,
                                     @RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
                                     @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
                                     @RequestParam(required = false) boolean responsibleOnly) throws NacosException {
@@ -396,9 +397,10 @@ public class UpgradeOpsController {
      * @throws Exception any error during register
      */
     @CanDistro
-    @PostMapping("/{ver:v2}/instance")
+    @PostMapping("/instance")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String registerInstance(@PathVariable String ver, HttpServletRequest request) throws Exception {
+    public String registerInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
+                                   HttpServletRequest request) throws Exception {
 
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -419,9 +421,10 @@ public class UpgradeOpsController {
      * @throws Exception any error during deregister
      */
     @CanDistro
-    @DeleteMapping("/{ver:v2}/instance")
+    @DeleteMapping("/instance")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String deregisterInstance(@PathVariable String ver, HttpServletRequest request) throws Exception {
+    public String deregisterInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
+                                     HttpServletRequest request) throws Exception {
         Instance instance = getIpAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -439,9 +442,10 @@ public class UpgradeOpsController {
      * @throws Exception any error during update
      */
     @CanDistro
-    @PutMapping("/{ver:v2}/instance")
+    @PutMapping("/instance")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-    public String updateInstance(@PathVariable String ver, HttpServletRequest request) throws Exception {
+    public String updateInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
+                                 HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
@@ -457,9 +461,10 @@ public class UpgradeOpsController {
      * @return list of instance
      * @throws Exception any error during list
      */
-    @GetMapping("/{ver:v2}/instance/list")
+    @GetMapping("/instance/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public Object listInstance(@PathVariable String ver, HttpServletRequest request) throws Exception {
+    public Object listInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
+                               HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -489,9 +494,10 @@ public class UpgradeOpsController {
      * @return detail information of instance
      * @throws Exception any error during get
      */
-    @GetMapping("/{ver:v2}/instance")
+    @GetMapping("/instance")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public ObjectNode detailInstance(@PathVariable String ver, HttpServletRequest request) throws Exception {
+    public ObjectNode detailInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
+                                     HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
