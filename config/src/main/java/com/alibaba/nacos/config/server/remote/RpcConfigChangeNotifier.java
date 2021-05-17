@@ -89,34 +89,35 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             List<String> betaIps, String tag) {
         
         Set<String> listeners = configChangeListenContext.getListeners(groupKey);
-        if (!CollectionUtils.isEmpty(listeners)) {
-            int notifyClientCount = 0;
-            for (final String client : listeners) {
-                Connection connection = connectionManager.getConnection(client);
-                if (connection == null) {
-                    continue;
-                }
-                
-                //beta ips check.
-                String clientIp = connection.getMetaInfo().getClientIp();
-                String clientTag = connection.getMetaInfo().getTag();
-                if (isBeta && betaIps != null && !betaIps.contains(clientIp)) {
-                    continue;
-                }
-                //tag check
-                if (StringUtils.isNotBlank(tag) && !tag.equals(clientTag)) {
-                    continue;
-                }
-                
-                ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
-                
-                RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client, clientIp,
-                        connection.getMetaInfo().getAppName());
-                push(rpcPushRetryTask);
-                notifyClientCount++;
-            }
-            Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", notifyClientCount, groupKey);
+        if (CollectionUtils.isEmpty(listeners)) {
+            return;
         }
+        int notifyClientCount = 0;
+        for (final String client : listeners) {
+            Connection connection = connectionManager.getConnection(client);
+            if (connection == null) {
+                continue;
+            }
+
+            //beta ips check.
+            String clientIp = connection.getMetaInfo().getClientIp();
+            String clientTag = connection.getMetaInfo().getTag();
+            if (isBeta && betaIps != null && !betaIps.contains(clientIp)) {
+                continue;
+            }
+            //tag check
+            if (StringUtils.isNotBlank(tag) && !tag.equals(clientTag)) {
+                continue;
+            }
+
+            ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
+
+            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client, clientIp,
+                    connection.getMetaInfo().getAppName());
+            push(rpcPushRetryTask);
+            notifyClientCount++;
+        }
+        Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", notifyClientCount, groupKey);
     }
     
     @Override
@@ -200,7 +201,6 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                             notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
                             retryTask.connectionId);
             connectionManager.unregister(retryTask.connectionId);
-            return;
         } else if (connectionManager.getConnection(retryTask.connectionId) != null) {
             // first time :delay 0s; sencond time:delay 2s  ;third time :delay 4s
             ConfigExecutor.getClientConfigNotifierServiceExecutor()

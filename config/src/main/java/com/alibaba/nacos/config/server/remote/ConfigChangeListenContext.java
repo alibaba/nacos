@@ -134,19 +134,20 @@ public class ConfigChangeListenContext {
         
         Map<String, String> listenKeys = getListenKeys(connectionId);
         
-        if (listenKeys != null) {
-            for (Map.Entry<String, String> groupKey : listenKeys.entrySet()) {
-                
-                Set<String> connectionIds = groupKeyContext.get(groupKey.getKey());
-                if (CollectionUtils.isNotEmpty(connectionIds)) {
-                    connectionIds.remove(connectionId);
-                } else {
-                    groupKeyContext.remove(groupKey.getKey());
-                }
-                
-            }
+        if (listenKeys == null) {
+            connectionIdContext.remove(connectionId);
+            return;
         }
-        
+        for (Map.Entry<String, String> groupKey : listenKeys.entrySet()) {
+
+            Set<String> connectionIds = groupKeyContext.get(groupKey.getKey());
+            if (CollectionUtils.isNotEmpty(connectionIds)) {
+                connectionIds.remove(connectionId);
+            } else {
+                groupKeyContext.remove(groupKey.getKey());
+            }
+
+        }
         connectionIdContext.remove(connectionId);
     }
     

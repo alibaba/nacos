@@ -31,8 +31,9 @@ public class ConfigQueryGroupParser extends MonitorKeyParser {
      * parse group.
      *
      * @param args parameters.
-     * @return
+     * @return MonitorKey.
      */
+    @Override
     public MonitorKey parse(Object... args) {
         if (args != null && args.length != 0 && args[0] instanceof ConfigQueryRequest) {
             return new ConfigGroupKey(((ConfigQueryRequest) args[0]).getGroup());
