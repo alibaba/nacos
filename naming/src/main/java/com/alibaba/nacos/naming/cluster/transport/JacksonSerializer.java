@@ -35,6 +35,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 @Component
 public class JacksonSerializer implements Serializer {
     
+    private static final String TIMESTAMP_KEY = "timestamp";
+    
+    private static final String KEY = "key";
+    
+    private static final String VALUE = "value";
+    
     @Override
     public <T> byte[] serialize(T data) {
         return JacksonUtils.toJsonBytes(data);
@@ -57,9 +63,9 @@ public class JacksonSerializer implements Serializer {
             resultMap = new HashMap<>(dataMap.size());
             for (Map.Entry<String, JsonNode> entry : dataMap.entrySet()) {
                 Datum<T> datum = new Datum<>();
-                datum.timestamp.set(entry.getValue().get("timestamp").asLong());
-                datum.key = entry.getValue().get("key").asText();
-                datum.value = JacksonUtils.toObj(entry.getValue().get("value").toString(), clazz);
+                datum.timestamp.set(entry.getValue().get(TIMESTAMP_KEY).asLong());
+                datum.key = entry.getValue().get(KEY).asText();
+                datum.value = JacksonUtils.toObj(entry.getValue().get(VALUE).toString(), clazz);
                 resultMap.put(entry.getKey(), datum);
             }
         }
