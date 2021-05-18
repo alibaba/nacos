@@ -34,6 +34,18 @@ public class ParamUtils {
     
     private static final int TANANT_MAX_LEN = 128;
     
+    private static final String CONFIG_TAGS = "config_tags";
+    
+    private static final String DESC = "desc";
+    
+    private static final String USE = "use";
+    
+    private static final String EFFECT = "effect";
+    
+    private static final String TYPE = "type";
+    
+    private static final String SCHEMA = "schema";
+    
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
      * cannot be empty.
@@ -98,7 +110,7 @@ public class ParamUtils {
      */
     public static void checkParam(Map<String, Object> configAdvanceInfo) throws NacosException {
         for (Map.Entry<String, Object> configAdvanceInfoTmp : configAdvanceInfo.entrySet()) {
-            if ("config_tags".equals(configAdvanceInfoTmp.getKey())) {
+            if (CONFIG_TAGS.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null) {
                     String[] tagArr = ((String) configAdvanceInfoTmp.getValue()).split(",");
                     if (tagArr.length > 5) {
@@ -110,27 +122,27 @@ public class ParamUtils {
                         }
                     }
                 }
-            } else if ("desc".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (DESC.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 128) {
                     throw new NacosException(NacosException.INVALID_PARAM, "too long desc, over 128");
                 }
-            } else if ("use".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (USE.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32) {
                     throw new NacosException(NacosException.INVALID_PARAM, "too long use, over 32");
                 }
-            } else if ("effect".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (EFFECT.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32) {
                     throw new NacosException(NacosException.INVALID_PARAM, "too long effect, over 32");
                 }
-            } else if ("type".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (TYPE.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32) {
                     throw new NacosException(NacosException.INVALID_PARAM, "too long type, over 32");
                 }
-            } else if ("schema".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (SCHEMA.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32768) {
                     throw new NacosException(NacosException.INVALID_PARAM, "too long schema, over 32768");

@@ -88,16 +88,13 @@ public class GroupKey {
         
         if (StringUtils.isBlank(group)) {
             group = sb.toString();
-            if (group.length() == 0) {
-                throw new IllegalArgumentException("invalid groupkey:" + groupKey);
-            }
         } else {
             tenant = sb.toString();
-            if (group.length() == 0) {
-                throw new IllegalArgumentException("invalid groupkey:" + groupKey);
-            }
         }
-        
+        if (group.length() == 0) {
+            throw new IllegalArgumentException("invalid groupkey:" + groupKey);
+        }
+    
         return new String[] {dataId, group, tenant};
     }
     

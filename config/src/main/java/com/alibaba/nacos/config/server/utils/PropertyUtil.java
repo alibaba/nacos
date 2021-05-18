@@ -261,7 +261,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             LOGGER.info("maxHealthCheckFailCount:{}", maxHealthCheckFailCount);
             setMaxContent(Integer.parseInt(EnvUtil.getProperty("maxContent", String.valueOf(maxContent))));
             LOGGER.info("maxContent:{}", maxContent);
-            // 容量管理
+            // capacity management
             setManageCapacity(getBoolean("isManageCapacity", isManageCapacity));
             setCapacityLimitCheck(getBoolean("isCapacityLimitCheck", isCapacityLimitCheck));
             setDefaultClusterQuota(getInt("defaultClusterQuota", defaultClusterQuota));
