@@ -43,8 +43,14 @@ import java.util.List;
  * @author Nacos
  */
 public class MergeTaskProcessor implements NacosTaskProcessor {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MergeTaskProcessor.class);
     
     private static final int PAGE_SIZE = 10000;
+
+    private PersistService persistService;
+
+    private MergeDatumService mergeService;
     
     MergeTaskProcessor(PersistService persistService, MergeDatumService mergeService) {
         this.persistService = persistService;
@@ -133,10 +139,4 @@ public class MergeTaskProcessor implements NacosTaskProcessor {
         String content = sb.substring(0, sb.lastIndexOf(Constants.NACOS_LINE_SEPARATOR));
         return new ConfigInfo(dataId, group, tenant, appName, content);
     }
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(MergeTaskProcessor.class);
-    
-    private PersistService persistService;
-    
-    private MergeDatumService mergeService;
 }

@@ -86,8 +86,7 @@ public class NotifySingleService {
                 try {
                     ((ScheduledThreadPoolExecutor) executor).schedule(this, 500L, TimeUnit.MILLISECONDS);
                 } catch (Exception e) { // The notification failed, but at the same time, the node was offline
-                    LOGGER.warn("[notify-thread-pool] cluster remove node {}, current thread was tear down.", target,
-                            e);
+                    LOGGER.warn("[notify-thread-pool] cluster remove node {}, current thread was tear down.", target, e);
                 }
             }
         }
