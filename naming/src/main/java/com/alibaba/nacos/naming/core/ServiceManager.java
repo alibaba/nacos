@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -235,17 +236,7 @@ public class ServiceManager implements RecordListener<Service> {
         Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}", key);
         
         if (service != null) {
-            service.destroy();
-            String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
-            String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
-            consistencyService.remove(ephemeralInstanceListKey);
-            consistencyService.remove(persistInstanceListKey);
-            
-            // remove listeners of key to avoid mem leak
-            consistencyService.unListen(ephemeralInstanceListKey, service);
-            consistencyService.unListen(persistInstanceListKey, service);
-            consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
-            Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
+            cleanupService(namespace, name, service);
         }
         
         chooseServiceMap(namespace).remove(name);
@@ -1010,28 +1001,48 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public void shutdown() throws NacosException {
         try {
-            for (Map.Entry<String, Map<String, Service>> entry : serviceMap.entrySet()) {
+            long start = System.nanoTime();
+            Loggers.SRV_LOG.info("Start to destroy ALL services. namespaces: {}, services: {}",
+                    serviceMap.keySet().size(), getServiceCount());
+            for (Iterator<Map.Entry<String, Map<String, Service>>> iterator = serviceMap.entrySet().iterator();
+                    iterator.hasNext(); ) {
+                Map.Entry<String, Map<String, Service>> entry = iterator.next();
                 destroyAllService(entry.getKey(), entry.getValue());
+                iterator.remove();
             }
+            Loggers.SRV_LOG.info(String.format("Successfully destroy ALL services. costs %.2fms",
+                    ((float) (System.nanoTime() - start)) * 1e-6));
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, "shutdown serviceManager failed", e);
         }
     }
     
     private void destroyAllService(String namespace, Map<String, Service> serviceMap) throws Exception {
-        for (Map.Entry<String, Service> entry : serviceMap.entrySet()) {
+        for (Iterator<Map.Entry<String, Service>> iterator = serviceMap.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<String, Service> entry = iterator.next();
             Service service = entry.getValue();
             String name = service.getName();
-            service.destroy();
-            String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
-            String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
-            consistencyService.unListen(ephemeralInstanceListKey, service);
-            consistencyService.unListen(persistInstanceListKey, service);
-            consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
-            Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
+            cleanupService(namespace, name, service);
+            iterator.remove();
         }
     }
-    
+
+    private void cleanupService(String namespace, String name, Service service) throws Exception {
+        service.destroy();
+        String ephemeralInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, true);
+        String persistInstanceListKey = KeyBuilder.buildInstanceListKey(namespace, name, false);
+        String serviceMetaKey = KeyBuilder.buildServiceMetaKey(namespace, name);
+        consistencyService.remove(ephemeralInstanceListKey);
+        consistencyService.remove(persistInstanceListKey);
+        consistencyService.remove(serviceMetaKey);
+
+        // remove listeners of key to avoid mem leak
+        consistencyService.unListen(ephemeralInstanceListKey, service);
+        consistencyService.unListen(persistInstanceListKey, service);
+        consistencyService.unListen(serviceMetaKey, service);
+        Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
+    }
+
     public static class ServiceChecksum {
         
         public String namespaceId;
