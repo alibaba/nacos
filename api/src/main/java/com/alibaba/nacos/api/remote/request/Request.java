@@ -64,7 +64,7 @@ public abstract class Request {
     }
     
     /**
-     * get a header value of defaut value.
+     * get a header value of default value.
      *
      * @param key          key of value.
      * @param defaultValue default value if key is not exist.
