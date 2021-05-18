@@ -183,7 +183,7 @@ public class CapacityService {
      *
      * @param counterMode      increase or decrease mode.
      * @param ignoreQuotaLimit ignoreQuotaLimit flag.
-     * @return
+     * @return the result of update cluster usage.
      */
     public boolean insertAndUpdateClusterUsage(CounterMode counterMode, boolean ignoreQuotaLimit) {
         Capacity capacity = groupCapacityPersistService.getClusterCapacity();
@@ -295,13 +295,12 @@ public class CapacityService {
             int finalQuota = (int) (usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
             if (tenant != null) {
                 tenantCapacityPersistService.updateQuota(tenant, finalQuota);
-                LogUtil.DEFAULT_LOG
-                        .warn("[capacityManagement] 初始化的时候该租户（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", tenant, usage, defaultQuota,
-                                finalQuota);
+                LogUtil.DEFAULT_LOG.warn("[capacityManagement] The usage({}) already reach the upper limit({}) when init the tenant({}), "
+                        + "automatic upgrade to ({})", usage, defaultQuota, tenant, finalQuota);
             } else {
                 groupCapacityPersistService.updateQuota(group, finalQuota);
-                LogUtil.DEFAULT_LOG.warn("[capacityManagement] 初始化的时候该Group（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", group, usage,
-                        defaultQuota, finalQuota);
+                LogUtil.DEFAULT_LOG.warn("[capacityManagement] The usage({}) already reach the upper limit({}) when init the group({}), "
+                        + "automatic upgrade to ({})", usage, defaultQuota, group, finalQuota);
             }
         }
     }
@@ -400,7 +399,7 @@ public class CapacityService {
             groupCapacity.setGmtModified(now);
             return groupCapacityPersistService.insertGroupCapacity(groupCapacity);
         } catch (DuplicateKeyException e) {
-            // 并发情况下同时insert会出现，ignore
+            // this exception will meet when concurrent insert，ignore it
             LogUtil.DEFAULT_LOG.warn("group: {}, message: {}", group, e.getMessage());
         }
         return false;
@@ -502,7 +501,7 @@ public class CapacityService {
             tenantCapacity.setGmtModified(now);
             return tenantCapacityPersistService.insertTenantCapacity(tenantCapacity);
         } catch (DuplicateKeyException e) {
-            // 并发情况下同时insert会出现，ignore
+            // this exception will meet when concurrent insert，ignore it
             LogUtil.DEFAULT_LOG.warn("tenant: {}, message: {}", tenant, e.getMessage());
         }
         return false;
