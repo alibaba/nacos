@@ -70,8 +70,8 @@ public class ConfigRequest implements IConfigRequest {
         param.put(CONTENT, content);
     }
     
-    public void getType() {
-        param.get("type");
+    public String getType() {
+        return (String) param.get("type");
     }
     
     public void setType(String type) {
