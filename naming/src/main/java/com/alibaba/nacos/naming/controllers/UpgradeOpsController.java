@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -33,6 +34,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.ServiceOperator;
 import com.alibaba.nacos.naming.core.ServiceOperatorV1Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
@@ -99,6 +101,8 @@ public class UpgradeOpsController {
 
     private final InstanceOperatorClientImpl instanceServiceV2;
 
+    private final ServiceStorage serviceStorage;
+    
     private final DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine;
 
     private final UpgradeJudgement upgradeJudgement;
@@ -109,6 +113,7 @@ public class UpgradeOpsController {
                                 ServiceOperatorV2Impl serviceOperatorV2,
                                 InstanceOperatorServiceImpl instanceServiceV1,
                                 InstanceOperatorClientImpl instanceServiceV2,
+                                ServiceStorage serviceStorage,
                                 DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine,
                                 UpgradeJudgement upgradeJudgement) {
         this.switchDomain = switchDomain;
@@ -117,6 +122,7 @@ public class UpgradeOpsController {
         this.serviceOperatorV2 = serviceOperatorV2;
         this.instanceServiceV1 = instanceServiceV1;
         this.instanceServiceV2 = instanceServiceV2;
+        this.serviceStorage = serviceStorage;
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
         this.upgradeJudgement = upgradeJudgement;
     }
@@ -173,9 +179,8 @@ public class UpgradeOpsController {
                 } else {
                     persistentServiceNamesV2.add(nameWithNs);
                 }
-                List<? extends com.alibaba.nacos.api.naming.pojo.Instance> instancesV2 =
-                        instanceServiceV2.listAllInstances(service.getNamespace(), service.getGroupedServiceName());
-                for (com.alibaba.nacos.api.naming.pojo.Instance instance : instancesV2) {
+                ServiceInfo data = serviceStorage.getPushData(service);
+                for (com.alibaba.nacos.api.naming.pojo.Instance instance : data.getHosts()) {
                     if (instance.isEphemeral()) {
                         ephemeralInstanceCountV2 += 1;
                     } else {

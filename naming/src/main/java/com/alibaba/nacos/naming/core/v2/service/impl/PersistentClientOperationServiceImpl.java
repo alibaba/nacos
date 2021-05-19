@@ -287,10 +287,25 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             ConcurrentHashMap<String, IpPortBasedClient> snapshot = new ConcurrentHashMap<>(newData.size());
             for (Map.Entry<String, ClientSyncData> entry : newData.entrySet()) {
                 IpPortBasedClient snapshotClient = new IpPortBasedClient(entry.getKey(), false);
-                snapshotClient.loadClientSyncData(entry.getValue());
+                loadSyncDataToClient(entry, snapshotClient);
                 snapshot.put(entry.getKey(), snapshotClient);
             }
             clientManager.loadFromSnapshot(snapshot);
+        }
+        
+        private void loadSyncDataToClient(Map.Entry<String, ClientSyncData> entry, IpPortBasedClient client) {
+            ClientSyncData data = entry.getValue();
+            List<String> namespaces = data.getNamespaces();
+            List<String> groupNames = data.getGroupNames();
+            List<String> serviceNames = data.getServiceNames();
+            List<InstancePublishInfo> instances = data.getInstancePublishInfos();
+            for (int i = 0; i < namespaces.size(); i++) {
+                Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), false);
+                Service singleton = ServiceManager.getInstance().getSingleton(service);
+                client.putServiceInstance(singleton, instances.get(i));
+                NotifyCenter.publishEvent(
+                        new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+            }
         }
         
         @Override
