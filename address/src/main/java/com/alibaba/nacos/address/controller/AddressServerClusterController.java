@@ -132,7 +132,7 @@ public class AddressServerClusterController {
             String serviceName = addressServerGeneratorManager.generateNacosServiceName(productName);
             Service service = serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, serviceName);
             
-            if (service != null) {
+            if (service == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("product=" + rawProductName + " not found.");
             }
             if (StringUtils.isBlank(ips)) {
