@@ -29,7 +29,6 @@ import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
 import com.alibaba.nacos.naming.core.InstancePatchObject;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
