@@ -49,7 +49,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_PARTITION_CONTEXT)
 public class DistroController {
     
     @Autowired
