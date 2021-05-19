@@ -78,7 +78,7 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     public DistroData getDatumSnapshot() {
         Map<String, Datum> result = dataStore.getDataMap();
         byte[] dataContent = ApplicationUtils.getBean(Serializer.class).serialize(result);
-        DistroKey distroKey = new DistroKey("snapshot", KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
+        DistroKey distroKey = new DistroKey(KeyBuilder.RESOURCE_KEY_SNAPSHOT, KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
         return new DistroData(distroKey, dataContent);
     }
     
@@ -98,7 +98,7 @@ public class DistroDataStorageImpl implements DistroDataStorage {
         if (keyChecksums.isEmpty()) {
             return Collections.emptyList();
         }
-        DistroKey distroKey = new DistroKey("checksum", KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
+        DistroKey distroKey = new DistroKey(KeyBuilder.RESOURCE_KEY_CHECKSUM, KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
         DistroData data = new DistroData(distroKey, ApplicationUtils.getBean(Serializer.class).serialize(keyChecksums));
         data.setType(DataOperation.VERIFY);
         return Collections.singletonList(data);

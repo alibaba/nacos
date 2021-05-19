@@ -96,7 +96,7 @@ public class DistroHttpAgent implements DistroTransportAgent {
     public DistroData getDatumSnapshot(String targetServer) {
         try {
             byte[] allDatum = NamingProxy.getAllData(targetServer);
-            return new DistroData(new DistroKey("snapshot", KeyBuilder.INSTANCE_LIST_KEY_PREFIX), allDatum);
+            return new DistroData(new DistroKey(KeyBuilder.RESOURCE_KEY_SNAPSHOT, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), allDatum);
         } catch (Exception e) {
             throw new DistroException(String.format("Get snapshot from %s failed.", targetServer), e);
         }
