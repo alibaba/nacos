@@ -17,9 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -29,7 +27,6 @@ import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Nacos naming client based ip and port.
@@ -131,21 +128,10 @@ public class IpPortBasedClient extends AbstractClient {
     }
     
     /**
-     * Load {@code ClientSyncData} and update current client.
-     *
-     * @param client client sync data
+     * Purely put instance into service without publish events.
      */
-    public void loadClientSyncData(ClientSyncData client) {
-        List<String> namespaces = client.getNamespaces();
-        List<String> groupNames = client.getGroupNames();
-        List<String> serviceNames = client.getServiceNames();
-        List<InstancePublishInfo> instances = client.getInstancePublishInfos();
-        for (int i = 0; i < namespaces.size(); i++) {
-            Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), ephemeral);
-            Service singleton = ServiceManager.getInstance().getSingleton(service);
-            HealthCheckInstancePublishInfo instance = parseToHealthCheckInstance(instances.get(i));
-            instance.initHealthCheck();
-            publishers.put(singleton, instance);
+    public void putServiceInstance(Service service, InstancePublishInfo instance) {
+        if (null == publishers.put(service, parseToHealthCheckInstance(instance))) {
             MetricsMonitor.incrementInstanceCount();
         }
     }

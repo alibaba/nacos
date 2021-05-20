@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
@@ -32,7 +33,6 @@ import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.ServiceChangeV
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -56,9 +56,9 @@ public class DoubleWriteServiceRemovalToV2Task extends AbstractExecuteTask {
         try {
             InstanceOperatorClientImpl instanceOperator = ApplicationUtils.getBean(InstanceOperatorClientImpl.class);
             ClientServiceIndexesManager clientServiceIndexesManager = ApplicationUtils.getBean(ClientServiceIndexesManager.class);
-            List<? extends Instance> instances = instanceOperator.listAllInstances(service.getNamespace(),
-                    service.getGroupedServiceName());
-            for (Instance instance : instances) {
+            ServiceStorage serviceStorage = ApplicationUtils.getBean(ServiceStorage.class);
+            ServiceInfo serviceInfo = serviceStorage.getPushData(service);
+            for (Instance instance : serviceInfo.getHosts()) {
                 instanceOperator.removeInstance(service.getNamespace(), service.getName(), instance);
             }
             int count = 0;
@@ -69,7 +69,7 @@ public class DoubleWriteServiceRemovalToV2Task extends AbstractExecuteTask {
             }
             clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
             ServiceManager.getInstance().removeSingleton(service);
-            ApplicationUtils.getBean(ServiceStorage.class).removeData(service);
+            serviceStorage.removeData(service);
             NotifyCenter.publishEvent(new MetadataEvent.ServiceMetadataEvent(service, true));
         } catch (Exception e) {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
