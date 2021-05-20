@@ -103,7 +103,7 @@ public class AddressServerGeneratorManager {
         
         StringBuilder ips = new StringBuilder();
         instanceList.forEach(instance -> {
-            ips.append(instance.getIp() + ":" + instance.getPort());
+            ips.append(instance.getIp()).append(":").append(instance.getPort());
             ips.append("\n");
         });
         
@@ -118,7 +118,7 @@ public class AddressServerGeneratorManager {
      */
     public String generateNacosServiceName(String rawServiceName) {
         
-        if (rawServiceName.indexOf(Constants.DEFAULT_GROUP) != -1) {
+        if (rawServiceName.contains(Constants.DEFAULT_GROUP)) {
             return rawServiceName;
         }
         
