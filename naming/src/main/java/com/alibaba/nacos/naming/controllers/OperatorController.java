@@ -57,7 +57,8 @@ import java.util.List;
  * @author nkorange
  */
 @RestController
-@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator", UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
+@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
+        UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 public class OperatorController {
     
     private final SwitchManager switchManager;
