@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -72,6 +73,9 @@ public class UpgradeJudgementTest {
     @Mock
     private DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine;
     
+    @Mock
+    private UpgradeStates upgradeStates;
+    
     private UpgradeJudgement upgradeJudgement;
     
     @Before
@@ -79,6 +83,7 @@ public class UpgradeJudgementTest {
         EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(false);
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
+                upgradeStates,
                 doubleWriteDelayTaskEngine);
     }
     
@@ -160,9 +165,31 @@ public class UpgradeJudgementTest {
     }
     
     @Test
+    public void testAlreadyUpgradedAndCheckSelfFail() throws Exception {
+        Collection<Member> members = mockMember("2.0.0", "2.0.0", "2.0.0");
+        Iterator<Member> iterator = members.iterator();
+        when(doubleWriteDelayTaskEngine.isEmpty()).thenReturn(false);
+        iterator.next();
+        while (iterator.hasNext()) {
+            iterator.next().setExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE, true);
+        }
+        when(upgradeStates.isUpgraded()).thenReturn(true);
+        upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
+                upgradeStates, doubleWriteDelayTaskEngine);
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        verify(raftPeerSet, never()).init();
+        verify(raftCore, never()).init();
+        verify(versionJudgement, never()).reset();
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
+        assertTrue(upgradeJudgement.isUseGrpcFeatures());
+        assertTrue(upgradeJudgement.isUseJraftFeatures());
+    }
+    
+    @Test
     public void testUpgradeCheckOthersFail() throws Exception {
         Collection<Member> members = mockMember("2.0.0", "2.0.0", "2.0.0");
         when(doubleWriteDelayTaskEngine.isEmpty()).thenReturn(true);
+        members.iterator().next().setExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE, true);
         upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
@@ -170,6 +197,23 @@ public class UpgradeJudgementTest {
         TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertFalse(upgradeJudgement.isUseJraftFeatures());
+    }
+    
+    @Test
+    public void testAlreadyUpgradedAndCheckOthersFail() throws Exception {
+        Collection<Member> members = mockMember("2.0.0", "2.0.0", "2.0.0");
+        members.iterator().next().setExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE, true);
+        when(doubleWriteDelayTaskEngine.isEmpty()).thenReturn(true);
+        when(upgradeStates.isUpgraded()).thenReturn(true);
+        upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
+                upgradeStates, doubleWriteDelayTaskEngine);
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        verify(raftPeerSet, never()).init();
+        verify(raftCore, never()).init();
+        verify(versionJudgement, never()).reset();
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
+        assertTrue(upgradeJudgement.isUseGrpcFeatures());
+        assertTrue(upgradeJudgement.isUseJraftFeatures());
     }
     
     @Test
@@ -185,6 +229,21 @@ public class UpgradeJudgementTest {
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertTrue(upgradeJudgement.isUseJraftFeatures());
     }
+
+    @Test
+    public void testAlreadyUpgradedAndDowngradeOneFor14XNode() throws Exception {
+        Collection<Member> members = mockMember("1.4.0", "2.0.0", "2.0.0");
+        when(upgradeStates.isUpgraded()).thenReturn(true);
+        upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
+                upgradeStates, doubleWriteDelayTaskEngine);
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        verify(raftPeerSet, never()).init();
+        verify(raftCore, never()).init();
+        verify(versionJudgement, never()).reset();
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
+        assertFalse(upgradeJudgement.isUseGrpcFeatures());
+        assertTrue(upgradeJudgement.isUseJraftFeatures());
+    }
     
     @Test
     public void testDowngradeTwoNode() throws Exception {
@@ -192,9 +251,24 @@ public class UpgradeJudgementTest {
         upgradeJudgement.setUseJraftFeatures(true);
         Collection<Member> members = mockMember("", "", "2.0.0");
         upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
-        verify(raftPeerSet).init();
-        verify(raftCore).init();
-        verify(versionJudgement).reset();
+        verify(raftPeerSet, atMostOnce()).init();
+        verify(raftCore, atMostOnce()).init();
+        verify(versionJudgement, atMostOnce()).reset();
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
+        assertFalse(upgradeJudgement.isUseGrpcFeatures());
+        assertFalse(upgradeJudgement.isUseJraftFeatures());
+    }
+    
+    @Test
+    public void testAlreadyUpgradedAndDowngradeTwoNode() throws Exception {
+        Collection<Member> members = mockMember("", "", "2.0.0");
+        when(upgradeStates.isUpgraded()).thenReturn(true);
+        upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
+                upgradeStates, doubleWriteDelayTaskEngine);
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        verify(raftPeerSet, atMostOnce()).init();
+        verify(raftCore, atMostOnce()).init();
+        verify(versionJudgement, atMostOnce()).reset();
         TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertFalse(upgradeJudgement.isUseJraftFeatures());
@@ -206,9 +280,24 @@ public class UpgradeJudgementTest {
         upgradeJudgement.setUseJraftFeatures(true);
         Collection<Member> members = mockMember("1.3.2", "2.0.0", "2.0.0");
         upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
-        verify(raftPeerSet).init();
-        verify(raftCore).init();
-        verify(versionJudgement).reset();
+        verify(raftPeerSet, atMostOnce()).init();
+        verify(raftCore, atMostOnce()).init();
+        verify(versionJudgement, atMostOnce()).reset();
+        TimeUnit.MILLISECONDS.sleep(sleepForCheck);
+        assertFalse(upgradeJudgement.isUseGrpcFeatures());
+        assertFalse(upgradeJudgement.isUseJraftFeatures());
+    }
+    
+    @Test
+    public void testAlreadyUpgradedAndDowngradeOneNode() throws Exception {
+        Collection<Member> members = mockMember("1.3.2", "2.0.0", "2.0.0");
+        when(upgradeStates.isUpgraded()).thenReturn(true);
+        upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
+                upgradeStates, doubleWriteDelayTaskEngine);
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        verify(raftPeerSet, atMostOnce()).init();
+        verify(raftCore, atMostOnce()).init();
+        verify(versionJudgement, atMostOnce()).reset();
         TimeUnit.MILLISECONDS.sleep(sleepForCheck);
         assertFalse(upgradeJudgement.isUseGrpcFeatures());
         assertFalse(upgradeJudgement.isUseJraftFeatures());
