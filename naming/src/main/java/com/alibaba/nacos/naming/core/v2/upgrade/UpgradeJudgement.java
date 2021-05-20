@@ -93,12 +93,14 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
         Boolean upgraded = upgradeStates.isUpgraded();
         upgraded = upgraded != null && upgraded;
-        if (!EnvUtil.getStandaloneMode() && !upgraded) {
-            initUpgradeChecker();
-        } else {
+        boolean isStandaloneMode = EnvUtil.getStandaloneMode();
+        if (isStandaloneMode || upgraded) {
             useGrpcFeatures.set(true);
             useJraftFeatures.set(true);
             all20XVersion.set(true);
+        }
+        if (!isStandaloneMode) {
+            initUpgradeChecker();
         }
         NotifyCenter.registerSubscriber(this);
     }
