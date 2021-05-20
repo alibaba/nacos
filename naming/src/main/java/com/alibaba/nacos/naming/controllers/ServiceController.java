@@ -71,25 +71,25 @@ import java.util.Set;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)
 public class ServiceController {
-    
+
     @Autowired
     protected ServiceManager serviceManager;
-    
+
     @Autowired
     private ServerMemberManager memberManager;
-    
+
     @Autowired
     private SubscribeManager subscribeManager;
-    
+
     @Autowired
     private ServiceOperatorV1Impl serviceOperatorV1;
-    
+
     @Autowired
     private ServiceOperatorV2Impl serviceOperatorV2;
-    
+
     @Autowired
     private UpgradeJudgement upgradeJudgement;
-    
+
     /**
      * Create a new service. This API will create a persistence service.
      *
@@ -104,10 +104,10 @@ public class ServiceController {
     @PostMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName,
-            @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
+                         @RequestParam String serviceName,
+                         @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
+                         @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
+                         @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(protectThreshold);
         serviceMetadata.setSelector(parseSelector(selector));
@@ -116,7 +116,7 @@ public class ServiceController {
         getServiceOperator().create(namespaceId, serviceName, serviceMetadata);
         return "ok";
     }
-    
+
     /**
      * Remove service.
      *
@@ -128,12 +128,12 @@ public class ServiceController {
     @DeleteMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName) throws Exception {
-        
+                         @RequestParam String serviceName) throws Exception {
+
         getServiceOperator().delete(namespaceId, serviceName);
         return "ok";
     }
-    
+
     /**
      * Get detail of service.
      *
@@ -145,10 +145,10 @@ public class ServiceController {
     @GetMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName) throws NacosException {
+                             @RequestParam String serviceName) throws NacosException {
         return getServiceOperator().queryService(namespaceId, serviceName);
     }
-    
+
     /**
      * List all service names.
      *
@@ -159,7 +159,7 @@ public class ServiceController {
     @GetMapping("/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode list(HttpServletRequest request) throws Exception {
-        
+
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -171,9 +171,9 @@ public class ServiceController {
         result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
         result.put("count", serviceNameList.size());
         return result;
-        
+
     }
-    
+
     /**
      * Update service.
      *
@@ -197,7 +197,7 @@ public class ServiceController {
         getServiceOperator().update(service, serviceMetadata);
         return "ok";
     }
-    
+
     /**
      * Search service names.
      *
@@ -209,8 +209,8 @@ public class ServiceController {
     @RequestMapping("/names")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
-            @RequestParam(required = false) boolean responsibleOnly) throws NacosException {
+                                    @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
+                                    @RequestParam(required = false) boolean responsibleOnly) throws NacosException {
         Map<String, Collection<String>> serviceNameMap = new HashMap<>(16);
         int totalCount = 0;
         if (StringUtils.isNotBlank(namespaceId)) {
@@ -229,7 +229,7 @@ public class ServiceController {
         result.put("count", totalCount);
         return result;
     }
-    
+
     /**
      * Check service status whether latest.
      *
@@ -241,19 +241,19 @@ public class ServiceController {
     @PostMapping("/status")
     @Deprecated
     public String serviceStatus(HttpServletRequest request) throws Exception {
-        
+
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
         JsonNode json = JacksonUtils.toObj(value);
-        
+
         //format: service1@@checksum@@@service2@@checksum
         String statuses = json.get("statuses").asText();
         String serverIp = json.get("clientIP").asText();
-        
+
         if (!memberManager.hasMember(serverIp)) {
             throw new NacosException(NacosException.INVALID_PARAM, "ip: " + serverIp + " is not in serverlist");
         }
-        
+
         try {
             ServiceManager.ServiceChecksum checksums = JacksonUtils
                     .toObj(statuses, ServiceManager.ServiceChecksum.class);
@@ -261,7 +261,7 @@ public class ServiceController {
                 Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: null");
                 return "fail";
             }
-            
+
             for (Map.Entry<String, String> entry : checksums.serviceName2Checksum.entrySet()) {
                 if (entry == null || StringUtils.isEmpty(entry.getKey()) || StringUtils.isEmpty(entry.getValue())) {
                     continue;
@@ -269,13 +269,13 @@ public class ServiceController {
                 String serviceName = entry.getKey();
                 String checksum = entry.getValue();
                 Service service = serviceManager.getService(checksums.namespaceId, serviceName);
-                
+
                 if (service == null) {
                     continue;
                 }
-                
+
                 service.recalculateChecksum();
-                
+
                 if (!checksum.equals(service.getChecksum())) {
                     if (Loggers.SRV_LOG.isDebugEnabled()) {
                         Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
@@ -287,10 +287,10 @@ public class ServiceController {
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: " + statuses, e);
         }
-        
+
         return "ok";
     }
-    
+
     /**
      * Get checksum of one service.
      *
@@ -302,24 +302,24 @@ public class ServiceController {
     @PutMapping("/checksum")
     @Deprecated
     public ObjectNode checksum(HttpServletRequest request) throws Exception {
-        
+
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         Service service = serviceManager.getService(namespaceId, serviceName);
-        
+
         if (service == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serviceName not found: " + serviceName);
         }
-        
+
         service.recalculateChecksum();
-        
+
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
+
         result.put("checksum", service.getChecksum());
-        
+
         return result;
     }
-    
+
     /**
      * get subscriber list.
      *
@@ -329,34 +329,34 @@ public class ServiceController {
     @GetMapping("/subscribers")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode subscribers(HttpServletRequest request) {
-        
+
         int pageNo = NumberUtils.toInt(WebUtils.optional(request, "pageNo", "1"));
         int pageSize = NumberUtils.toInt(WebUtils.optional(request, "pageSize", "1000"));
-        
+
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         boolean aggregation = Boolean
                 .parseBoolean(WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
-        
+
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
+
         try {
             List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
-            
+
             int start = (pageNo - 1) * pageSize;
             if (start < 0) {
                 start = 0;
             }
-            
+
             int end = start + pageSize;
             int count = subscribers.size();
             if (end > count) {
                 end = count;
             }
-            
+
             result.replace("subscribers", JacksonUtils.transferToJsonNode(subscribers.subList(start, end)));
             result.put("count", count);
-            
+
             return result;
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("query subscribers failed!", e);
@@ -365,13 +365,13 @@ public class ServiceController {
             return result;
         }
     }
-    
+
     private Selector parseSelector(String selectorJsonString) throws Exception {
-        
+
         if (StringUtils.isBlank(selectorJsonString)) {
             return new NoneSelector();
         }
-        
+
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
         switch (SelectorType.valueOf(selectorJson.get("type").asText())) {
             case none:
@@ -387,7 +387,7 @@ public class ServiceController {
                 throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }
     }
-    
+
     private ServiceOperator getServiceOperator() {
         return upgradeJudgement.isUseGrpcFeatures() ? serviceOperatorV2 : serviceOperatorV1;
     }
