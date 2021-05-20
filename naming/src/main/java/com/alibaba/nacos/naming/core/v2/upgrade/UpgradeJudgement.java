@@ -83,6 +83,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     public UpgradeJudgement(RaftPeerSet raftPeerSet, RaftCore raftCore, ClusterVersionJudgement versionJudgement,
             ServerMemberManager memberManager, ServiceManager serviceManager,
+            UpgradeStates upgradeStates,
             DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine) {
         this.raftPeerSet = raftPeerSet;
         this.raftCore = raftCore;
@@ -90,10 +91,14 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         this.memberManager = memberManager;
         this.serviceManager = serviceManager;
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
-        if (!EnvUtil.getStandaloneMode()) {
+        Boolean upgraded = upgradeStates.isUpgraded();
+        upgraded = upgraded != null && upgraded;
+        if (!EnvUtil.getStandaloneMode() && !upgraded) {
             initUpgradeChecker();
         } else {
             useGrpcFeatures.set(true);
+            useJraftFeatures.set(true);
+            all20XVersion.set(true);
         }
         NotifyCenter.registerSubscriber(this);
     }
@@ -158,6 +163,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     private void checkAndDowngrade(boolean jraftFeature) {
         boolean isDowngradeGrpc = useGrpcFeatures.compareAndSet(true, false);
+        NotifyCenter.publishEvent(new UpgradeStates.UpgradeStateChangedEvent(false));
         boolean isDowngradeJraft = useJraftFeatures.getAndSet(jraftFeature);
         if (isDowngradeGrpc && isDowngradeJraft && !jraftFeature) {
             Loggers.SRV_LOG.info("Downgrade to 1.X");
@@ -203,6 +209,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     private void doUpgrade() {
         Loggers.SRV_LOG.info("Upgrade to 2.0.X");
         useGrpcFeatures.compareAndSet(false, true);
+        NotifyCenter.publishEvent(new UpgradeStates.UpgradeStateChangedEvent(true));
         useJraftFeatures.set(true);
         refreshPersistentServices();
     }
@@ -237,6 +244,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         try {
             Loggers.SRV_LOG.info("Disable Double write, stop and clean v1.x cache and features");
             useGrpcFeatures.set(true);
+            NotifyCenter.publishEvent(new UpgradeStates.UpgradeStateChangedEvent(true));
             useJraftFeatures.set(true);
             NotifyCenter.deregisterSubscriber(this);
             doubleWriteDelayTaskEngine.shutdown();
