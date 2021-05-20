@@ -45,7 +45,7 @@ import javax.servlet.http.HttpServletRequest;
  * @author nkorange
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)
 public class ClusterController {
     
     private final UpgradeJudgement upgradeJudgement;
@@ -88,7 +88,7 @@ public class ClusterController {
         judgeClusterOperator().updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
         return "ok";
     }
- 
+    
     private ClusterOperator judgeClusterOperator() {
         return upgradeJudgement.isUseGrpcFeatures() ? clusterOperatorV2 : clusterOperatorV1;
     }
