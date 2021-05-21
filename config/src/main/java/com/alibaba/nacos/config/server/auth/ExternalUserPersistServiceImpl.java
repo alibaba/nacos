@@ -60,6 +60,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      * @param username username string value.
      * @param password password string value.
      */
+    @Override
     public void createUser(String username, String password) {
         String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
         
@@ -76,6 +77,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      *
      * @param username username string value.
      */
+    @Override
     public void deleteUser(String username) {
         String sql = "DELETE from users WHERE username=?";
         try {
@@ -92,6 +94,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      * @param username username string value.
      * @param password password string value.
      */
+    @Override
     public void updateUserPassword(String username, String password) {
         try {
             jt.update("UPDATE users SET password = ? WHERE username=?", password, username);
@@ -107,6 +110,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      * @param username username string value.
      * @return User model.
      */
+    @Override
     public User findUserByUsername(String username) {
         String sql = "SELECT username,password FROM users WHERE username=? ";
         try {
@@ -122,6 +126,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         }
     }
     
+    @Override
     public Page<User> getUsers(int pageNo, int pageSize) {
         
         PaginationHelper<User> helper = persistService.createPaginationHelper();

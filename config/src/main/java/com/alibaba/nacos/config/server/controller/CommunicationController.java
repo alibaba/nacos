@@ -16,11 +16,16 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
@@ -31,6 +36,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Controller for other node notification.
@@ -49,6 +58,12 @@ public class CommunicationController {
     private String trueStr = "true";
     
     @Autowired
+    private ConfigChangeListenContext configChangeListenContext;
+    
+    @Autowired
+    private ConnectionManager connectionManager;
+    
+    @Autowired
     public CommunicationController(DumpService dumpService, LongPollingService longPollingService) {
         this.dumpService = dumpService;
         this.longPollingService = longPollingService;
@@ -56,7 +71,6 @@ public class CommunicationController {
     
     /**
      * Notify the change of config information.
-     *
      */
     @GetMapping("/dataChange")
     public Boolean notifyConfigInfo(HttpServletRequest request, @RequestParam("dataId") String dataId,
@@ -79,22 +93,51 @@ public class CommunicationController {
     
     /**
      * Get client config information of subscriber in local machine.
-     *
      */
     @GetMapping("/configWatchers")
     public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false) String tenant, ModelMap modelMap) {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
-        return longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
+        // long polling listners.
+        SampleResult result = longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
+        // rpc listeners.
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        Set<String> listenersClients = configChangeListenContext.getListeners(groupKey);
+        if (CollectionUtils.isEmpty(listenersClients)) {
+            return result;
+        }
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenersClients.size(), 1);
+        for (String connectionId : listenersClients) {
+            Connection client = connectionManager.getConnection(connectionId);
+            if (client != null) {
+                String md5 = configChangeListenContext.getListenKeyMd5(connectionId, groupKey);
+                if (md5 != null) {
+                    lisentersGroupkeyStatus.put(client.getMetaInfo().getClientIp(), md5);
+                }
+            }
+        }
+        result.getLisentersGroupkeyStatus().putAll(lisentersGroupkeyStatus);
+        return result;
     }
     
     /**
      * Get client config listener lists of subscriber in local machine.
-     *
      */
     @GetMapping("/watcherConfigs")
     public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("ip") String ip, ModelMap modelMap) {
-        return longPollingService.getCollectSubscribleInfoByIp(ip);
+        
+        SampleResult result = longPollingService.getCollectSubscribleInfoByIp(ip);
+        List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
+        for (Connection connectionByIp : connectionsByIp) {
+            Map<String, String> listenKeys = configChangeListenContext
+                    .getListenKeys(connectionByIp.getMetaInfo().getConnectionId());
+            if (listenKeys != null) {
+                result.getLisentersGroupkeyStatus().putAll(listenKeys);
+            }
+        }
+        return result;
+        
     }
+    
 }

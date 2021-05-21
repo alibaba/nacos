@@ -74,15 +74,16 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     @PostConstruct
     @Override
     public synchronized void init() throws Exception {
-        if (!PropertyUtil.isUseExternalDB()) {
-            if (!initialize) {
-                LogUtil.DEFAULT_LOG.info("use local db service for init");
-                final String jdbcUrl =
-                        "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
-                                + ";create=true";
-                initialize(jdbcUrl);
-                initialize = true;
-            }
+        if (PropertyUtil.isUseExternalDB()) {
+            return;
+        }
+        if (!initialize) {
+            LogUtil.DEFAULT_LOG.info("use local db service for init");
+            final String jdbcUrl =
+                    "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
+                            + ";create=true";
+            initialize(jdbcUrl);
+            initialize = true;
         }
     }
     

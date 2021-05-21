@@ -19,12 +19,28 @@ package com.alibaba.nacos.core.distributed.distro.component;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 
+import java.util.List;
+
 /**
  * Distro data storage.
  *
  * @author xiweng.yy
  */
 public interface DistroDataStorage {
+    
+    /**
+     * Set this distro data storage has finished initial step.
+     */
+    void finishInitial();
+    
+    /**
+     * Whether this distro data is finished initial.
+     *
+     * <p>If not finished, this data storage should not send verify data to other node.
+     *
+     * @return {@code true} if finished, otherwise false
+     */
+    boolean isFinishInitial();
     
     /**
      * Get distro datum.
@@ -46,5 +62,5 @@ public interface DistroDataStorage {
      *
      * @return verify datum
      */
-    DistroData getVerifyData();
+    List<DistroData> getVerifyData();
 }

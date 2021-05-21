@@ -35,6 +35,8 @@ public class Http extends AbstractHealthChecker {
     
     public static final String TYPE = "HTTP";
     
+    private static final long serialVersionUID = 551826315222362349L;
+    
     private String path = "";
     
     private String headers = "";

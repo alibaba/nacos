@@ -106,6 +106,7 @@ public class DistroLoadDataTask implements Runnable {
                         .info("[DISTRO-INIT] load snapshot {} from {} result: {}", resourceType, each.getAddress(),
                                 result);
                 if (result) {
+                    distroComponentHolder.findDataStorage(resourceType).finishInitial();
                     return true;
                 }
             } catch (Exception e) {

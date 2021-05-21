@@ -54,6 +54,7 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         jt = persistService.getJdbcTemplate();
     }
     
+    @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
         PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
         
@@ -94,6 +95,7 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
      * @param resource resource string value.
      * @param action action string value.
      */
+    @Override
     public void addPermission(String role, String resource, String action) {
         
         String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
@@ -113,6 +115,7 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
      * @param resource resource string value.
      * @param action action string value.
      */
+    @Override
     public void deletePermission(String role, String resource, String action) {
         
         String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";

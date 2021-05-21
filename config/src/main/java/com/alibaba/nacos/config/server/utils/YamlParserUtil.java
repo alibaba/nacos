@@ -49,6 +49,7 @@ public class YamlParserUtil {
     static {
         Representer representer = new Representer() {
             
+            @Override
             protected NodeTuple representJavaBeanProperty(Object javaBean, Property property, Object propertyValue,
                     Tag customTag) {
                 if (propertyValue == null) {

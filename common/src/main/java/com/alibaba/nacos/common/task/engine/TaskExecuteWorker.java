@@ -116,10 +116,10 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
                     task.run();
                     long duration = System.currentTimeMillis() - begin;
                     if (duration > 1000L) {
-                        log.warn("distro task {} takes {}ms", task, duration);
+                        log.warn("task {} takes {}ms", task, duration);
                     }
                 } catch (Throwable e) {
-                    log.error("[DISTRO-FAILED] " + e.toString(), e);
+                    log.error("[TASK-FAILED] " + e.toString(), e);
                 }
             }
         }

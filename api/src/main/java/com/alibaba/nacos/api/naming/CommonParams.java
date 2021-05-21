@@ -35,4 +35,6 @@ public class CommonParams {
     public static final String GROUP_NAME = "groupName";
     
     public static final String LIGHT_BEAT_ENABLED = "lightBeatEnabled";
+    
+    public static final String NAMING_REQUEST_TIMEOUT = "namingRequestTimeout";
 }

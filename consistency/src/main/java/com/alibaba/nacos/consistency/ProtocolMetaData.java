@@ -78,8 +78,9 @@ public final class ProtocolMetaData {
         }
     }
     
-    // If MetaData does not exist, actively create a MetaData
-    
+    /**
+     * If MetaData does not exist, actively create a MetaData.
+     */
     public void subscribe(final String group, final String key, final Observer observer) {
         metaDataMap.computeIfAbsent(group, s -> new MetaData(group));
         metaDataMap.get(group).subscribe(key, observer);

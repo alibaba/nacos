@@ -50,16 +50,15 @@ public class HistoryController {
      * @param pageNo   pageNo integer value.
      * @param pageSize pageSize integer value.
      * @param modelMap modelMap.
-     * @return
+     * @return the page of history config.
      */
     @GetMapping(params = "search=accurate")
-    public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId, //
-            @RequestParam("group") String group, //
+    public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "pageNo", required = false) Integer pageNo,
-            //
-            @RequestParam(value = "pageSize", required = false) Integer pageSize, //
+            @RequestParam(value = "pageSize", required = false) Integer pageSize,
             ModelMap modelMap) {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;

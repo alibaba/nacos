@@ -71,6 +71,18 @@ public class IPUtilTest {
         Assert.assertEquals("", IPUtil.getIPFromString(
                 "jdbc:mysql://666.288.333.444:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        Assert.assertEquals("", IPUtil.getIPFromString(
+                "jdbc:mysql://292.168.1.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        Assert.assertEquals("", IPUtil.getIPFromString(
+                "jdbc:mysql://29.168.1.288:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        Assert.assertEquals("", IPUtil.getIPFromString(
+                "jdbc:mysql://29.168.288.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        Assert.assertEquals("", IPUtil.getIPFromString(
+                "jdbc:mysql://29.288.28.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                        + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
     }
     
     @Test

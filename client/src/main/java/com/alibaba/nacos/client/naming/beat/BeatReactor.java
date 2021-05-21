@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.beat;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
@@ -23,14 +24,16 @@ import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
-import com.alibaba.nacos.client.naming.net.NamingProxy;
+import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -48,18 +51,19 @@ public class BeatReactor implements Closeable {
     
     private final ScheduledExecutorService executorService;
     
-    private final NamingProxy serverProxy;
+    private final NamingHttpClientProxy serverProxy;
     
     private boolean lightBeatEnabled = false;
     
     public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
     
-    public BeatReactor(NamingProxy serverProxy) {
-        this(serverProxy, UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
+    public BeatReactor(NamingHttpClientProxy serverProxy) {
+        this(serverProxy, null);
     }
     
-    public BeatReactor(NamingProxy serverProxy, int threadCount) {
+    public BeatReactor(NamingHttpClientProxy serverProxy, Properties properties) {
         this.serverProxy = serverProxy;
+        int threadCount = initClientBeatThreadCount(properties);
         this.executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -69,6 +73,15 @@ public class BeatReactor implements Closeable {
                 return thread;
             }
         });
+    }
+    
+    private int initClientBeatThreadCount(Properties properties) {
+        if (properties == null) {
+            return UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT;
+        }
+        
+        return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
+                UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
     }
     
     /**

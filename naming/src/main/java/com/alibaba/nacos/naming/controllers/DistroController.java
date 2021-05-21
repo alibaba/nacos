@@ -49,7 +49,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_PARTITION_CONTEXT)
 public class DistroController {
     
     @Autowired
@@ -101,7 +101,7 @@ public class DistroController {
     @PutMapping("/checksum")
     public ResponseEntity syncChecksum(@RequestParam String source, @RequestBody Map<String, String> dataMap) {
         DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(source), dataMap);
-        distroProtocol.onVerify(distroHttpData);
+        distroProtocol.onVerify(distroHttpData, source);
         return ResponseEntity.ok("ok");
     }
     

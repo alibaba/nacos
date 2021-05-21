@@ -33,6 +33,8 @@ import {
   Table,
   Upload,
   Message,
+  MenuButton,
+  Box,
 } from '@alifd/next';
 import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
@@ -46,6 +48,7 @@ import { getConfigs } from '../../../reducers/configuration';
 import './index.scss';
 import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
 
+const { Item } = MenuButton;
 const { Panel } = Collapse;
 const configsTableSelected = new Map();
 @connect(
@@ -515,7 +518,7 @@ class ConfigurationManagement extends React.Component {
 
   exportData() {
     const { group, appName, dataId, openUri } = this;
-    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
     openUri('v1/cs/configs', {
       export: 'true',
       tenant: getParams('namespace'),
@@ -524,12 +527,13 @@ class ConfigurationManagement extends React.Component {
       dataId,
       ids: '',
       accessToken,
+      username,
     });
   }
 
   exportDataNew() {
     const { group, appName, dataId, openUri } = this;
-    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
     openUri('v1/cs/configs', {
       exportV2: 'true',
       tenant: getParams('namespace'),
@@ -538,13 +542,14 @@ class ConfigurationManagement extends React.Component {
       dataId,
       ids: '',
       accessToken,
+      username,
     });
   }
 
   exportSelectedData(newVersion) {
     const ids = [];
     const { locale = {} } = this.props;
-    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    const { accessToken = '', username = '' } = JSON.parse(localStorage.token || '{}');
     if (!configsTableSelected.size) {
       Dialog.alert({
         title: locale.exportSelectedAlertTitle,
@@ -561,6 +566,7 @@ class ConfigurationManagement extends React.Component {
         appName: '',
         ids: ids.join(','),
         accessToken,
+        username,
       });
     } else {
       this.openUri('v1/cs/configs', {
@@ -570,6 +576,7 @@ class ConfigurationManagement extends React.Component {
         appName: '',
         ids: ids.join(','),
         accessToken,
+        username,
       });
     }
   }
@@ -956,12 +963,12 @@ class ConfigurationManagement extends React.Component {
       console.log(e);
       goLogin();
     }
-    const { accessToken = '' } = token;
+    const { accessToken = '', username = '' } = token;
     const uploadProps = {
       accept: 'application/zip',
       action: `v1/cs/configs?import=true&namespace=${getParams(
         'namespace'
-      )}&accessToken=${accessToken}`,
+      )}&accessToken=${accessToken}&username=${username}`,
       headers: Object.assign({}, {}, { accessToken }),
       data: {
         policy: self.field.getValue('sameConfigPolicy'),
@@ -1133,7 +1140,7 @@ class ConfigurationManagement extends React.Component {
                       this.dataId = dataId;
                       this.setState({ dataId });
                     }}
-                    onPressEnter={() => this.getData()}
+                    onPressEnter={() => this.selectAll()}
                   />
                 </Form.Item>
 
@@ -1145,7 +1152,7 @@ class ConfigurationManagement extends React.Component {
                     dataSource={this.state.groups}
                     value={this.state.group}
                     onChange={this.setGroup.bind(this)}
-                    onPressEnter={() => this.getData()}
+                    onPressEnter={() => this.selectAll()}
                     hasClear
                   />
                 </Form.Item>
@@ -1163,42 +1170,24 @@ class ConfigurationManagement extends React.Component {
                   style={
                     this.inApp
                       ? { display: 'none' }
-                      : { verticalAlign: 'middle', marginTop: 0, marginLeft: 10 }
+                      : { verticalAlign: 'middle', marginTop: 0, marginLeft: 0 }
                   }
                 >
-                  <div
-                    style={{ color: '#33cde5', fontSize: 12, cursor: 'pointer' }}
-                    onClick={this.changeAdvancedQuery}
-                  >
-                    <span style={{ marginRight: 5, lineHeight: '28px' }}>
-                      {locale.advancedQuery9}
-                    </span>
-                    <Icon
-                      type={this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'}
-                      size={'xs'}
-                    />
-                  </div>
-                </Form.Item>
-                <Form.Item label={''}>
-                  <Button
-                    type={'primary'}
-                    style={{ marginRight: 10 }}
-                    onClick={this.exportData.bind(this)}
-                    data-spm-click={'gostr=/aliyun;locaid=configsExport'}
-                  >
-                    {locale.export}
+                  <Button onClick={this.changeAdvancedQuery}>
+                    {this.state.isAdvancedQuery ? (
+                      <>
+                        {locale.advancedQuery9}
+                        <Icon type="arrow-up" size="xs" style={{ marginLeft: '5px' }} />
+                      </>
+                    ) : (
+                      <>
+                        {locale.advancedQuery9}
+                        <Icon type="arrow-down" size="xs" style={{ marginLeft: '5px' }} />
+                      </>
+                    )}
                   </Button>
                 </Form.Item>
-                <Form.Item label={''}>
-                  <Button
-                    type={'primary'}
-                    style={{ marginRight: 10 }}
-                    onClick={this.exportDataNew.bind(this)}
-                    data-spm-click={'gostr=/aliyun;locaid=configsExport'}
-                  >
-                    {locale.newExport}
-                  </Button>
-                </Form.Item>
+
                 <Form.Item label={''}>
                   <Button
                     type={'primary'}
@@ -1287,16 +1276,7 @@ class ConfigurationManagement extends React.Component {
                       locaid: 'configsDelete',
                       onClick: () => this.multipleSelectionDeletion(),
                     },
-                    {
-                      text: locale.exportSelected,
-                      locaid: 'configsExport',
-                      onClick: () => this.exportSelectedData(false),
-                    },
-                    {
-                      text: locale.newExportSelected,
-                      locaid: 'configsExport',
-                      onClick: () => this.exportSelectedData(true),
-                    },
+
                     {
                       text: locale.clone,
                       locaid: 'configsDelete',
@@ -1313,6 +1293,38 @@ class ConfigurationManagement extends React.Component {
                       {item.text}
                     </Button>
                   ))}
+                  <MenuButton
+                    type="primary"
+                    label={locale.exportBtn}
+                    popupStyle={{ minWidth: 150 }}
+                  >
+                    {[
+                      {
+                        text: locale.export,
+                        locaid: 'exportData',
+                        onClick: () => this.exportData(this),
+                      },
+                      {
+                        text: locale.newExport,
+                        locaid: 'exportDataNew',
+                        onClick: () => this.exportDataNew(this),
+                      },
+                      {
+                        text: locale.exportSelected,
+                        locaid: 'configsExport',
+                        onClick: () => this.exportSelectedData(false),
+                      },
+                      {
+                        text: locale.newExportSelected,
+                        locaid: 'configsExport',
+                        onClick: () => this.exportSelectedData(true),
+                      },
+                    ].map((item, index) => (
+                      <Item key={item.text} style={{ minWidth: 150 }} onClick={item.onClick}>
+                        {item.text}
+                      </Item>
+                    ))}
+                  </MenuButton>
                 </div>
                 <Pagination
                   style={{ float: 'right' }}

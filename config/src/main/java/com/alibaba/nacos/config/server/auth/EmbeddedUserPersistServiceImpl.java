@@ -53,6 +53,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      * @param username username string value.
      * @param password password string value.
      */
+    @Override
     public void createUser(String username, String password) {
         String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
         
@@ -69,6 +70,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      *
      * @param username username string value.
      */
+    @Override
     public void deleteUser(String username) {
         String sql = "DELETE from users WHERE username=?";
         try {
@@ -85,6 +87,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      * @param username username string value.
      * @param password password string value.
      */
+    @Override
     public void updateUserPassword(String username, String password) {
         try {
             EmbeddedStorageContextUtils
@@ -95,11 +98,13 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         }
     }
     
+    @Override
     public User findUserByUsername(String username) {
         String sql = "SELECT username,password FROM users WHERE username=? ";
         return databaseOperate.queryOne(sql, new Object[] {username}, USER_ROW_MAPPER);
     }
     
+    @Override
     public Page<User> getUsers(int pageNo, int pageSize) {
         
         PaginationHelper<User> helper = persistService.createPaginationHelper();
@@ -122,7 +127,6 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Override
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username like ? ";
-        List<String> users = databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
-        return users;
+        return databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
     }
 }
