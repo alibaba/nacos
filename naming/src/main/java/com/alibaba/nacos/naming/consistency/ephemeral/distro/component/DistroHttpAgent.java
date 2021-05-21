@@ -43,6 +43,11 @@ public class DistroHttpAgent implements DistroTransportAgent {
     }
     
     @Override
+    public boolean supportCallbackTransport() {
+        return false;
+    }
+    
+    @Override
     public boolean syncData(DistroData data, String targetServer) {
         if (!memberManager.hasMember(targetServer)) {
             return true;
@@ -53,7 +58,7 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public void syncData(DistroData data, String targetServer, DistroCallback callback) {
-    
+        throw new UnsupportedOperationException("Http distro agent do not support this method");
     }
     
     @Override
@@ -67,7 +72,7 @@ public class DistroHttpAgent implements DistroTransportAgent {
     
     @Override
     public void syncVerifyData(DistroData verifyData, String targetServer, DistroCallback callback) {
-    
+        throw new UnsupportedOperationException("Http distro agent do not support this method");
     }
     
     @Override
@@ -91,7 +96,7 @@ public class DistroHttpAgent implements DistroTransportAgent {
     public DistroData getDatumSnapshot(String targetServer) {
         try {
             byte[] allDatum = NamingProxy.getAllData(targetServer);
-            return new DistroData(new DistroKey("snapshot", KeyBuilder.INSTANCE_LIST_KEY_PREFIX), allDatum);
+            return new DistroData(new DistroKey(KeyBuilder.RESOURCE_KEY_SNAPSHOT, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), allDatum);
         } catch (Exception e) {
             throw new DistroException(String.format("Get snapshot from %s failed.", targetServer), e);
         }

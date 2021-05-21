@@ -105,7 +105,7 @@ public class DiskUtil {
      * Returns the path of the server cache file.
      */
     public static File targetFile(String dataId, String group, String tenant) {
-        File file = null;
+        File file;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), BASE_DIR);
         } else {
@@ -121,7 +121,7 @@ public class DiskUtil {
      * Returns the path of cache file in server.
      */
     public static File targetBetaFile(String dataId, String group, String tenant) {
-        File file = null;
+        File file;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), BETA_DIR);
         } else {
@@ -137,7 +137,7 @@ public class DiskUtil {
      * Returns the path of the tag cache file in server.
      */
     public static File targetTagFile(String dataId, String group, String tenant, String tag) {
-        File file = null;
+        File file;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), TAG_DIR);
         } else {

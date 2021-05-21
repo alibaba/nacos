@@ -18,12 +18,12 @@ package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.cmdb.pojo.PreservedEntityTypes;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.core.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
@@ -58,6 +58,8 @@ import java.util.Set;
  */
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class LabelSelector extends ExpressionSelector implements Selector {
+    
+    private static final long serialVersionUID = -7381912003505096093L;
     
     /**
      * The labels relevant to this the selector.
@@ -105,21 +107,20 @@ public class LabelSelector extends ExpressionSelector implements Selector {
     }
     
     @Override
-    public List<Instance> select(String consumer, List<Instance> providers) {
-        
+    public <T extends Instance> List<T> select(String consumer, List<T> providers) {
         if (labels.isEmpty()) {
             return providers;
         }
+    
+        List<T> instanceList = new ArrayList<>();
+        for (T instance : providers) {
         
-        List<Instance> instanceList = new ArrayList<>();
-        for (Instance instance : providers) {
-            
             boolean matched = true;
             for (String labelName : getLabels()) {
-                
+            
                 String consumerLabelValue = getCmdbReader()
                         .queryLabel(consumer, PreservedEntityTypes.ip.name(), labelName);
-                
+            
                 if (StringUtils.isNotBlank(consumerLabelValue) && !StringUtils.equals(consumerLabelValue,
                         getCmdbReader().queryLabel(instance.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
                     matched = false;
@@ -130,11 +131,11 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                 instanceList.add(instance);
             }
         }
-        
+    
         if (instanceList.isEmpty()) {
             return providers;
         }
-        
+    
         return instanceList;
     }
     

@@ -36,7 +36,7 @@ import java.util.Map;
  * @author nacos
  * @author jifengnan
  */
-@SuppressWarnings("PMD.ThreadPoolCreationRule")
+@SuppressWarnings("PMD.ThreadPoolCreationle")
 public class UtilsAndCommons {
     
     // ********************** Nacos HTTP Context ************************ \\
@@ -125,6 +125,10 @@ public class UtilsAndCommons {
     public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos.naming";
     
     public static final String NUMBER_PATTERN = "^\\d+$";
+    
+    public static final String ENABLE_HEALTH_CHECK = "enableHealthCheck";
+    
+    public static final String ENABLE_CLIENT_BEAT = "enableClientBeat";
     
     static {
 

@@ -67,12 +67,15 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     private volatile boolean shutdown = false;
     
     @Override
-    public void start() throws NacosException {
-        if (start.compareAndSet(false, true)) {
-            this.maxFailCount = Integer.parseInt(EnvUtil.getProperty("maxHealthCheckFailCount", "12"));
-            initAddressSys();
-            run();
-        }
+    public void doStart() throws NacosException {
+        this.maxFailCount = Integer.parseInt(EnvUtil.getProperty("maxHealthCheckFailCount", "12"));
+        initAddressSys();
+        run();
+    }
+    
+    @Override
+    public boolean useAddressServer() {
+        return true;
     }
     
     private void initAddressSys() {

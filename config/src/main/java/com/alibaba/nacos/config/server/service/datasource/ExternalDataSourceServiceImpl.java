@@ -105,7 +105,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             try {
                 reload();
             } catch (IOException e) {
-                e.printStackTrace();
+                FATAL_LOG.error("[ExternalDataSourceService] dats source reload error", e);
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
 
@@ -219,7 +219,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     masterIndex = index;
                     break;
                 } catch (DataAccessException e) { // read only
-                    e.printStackTrace(); // TODO remove
+                    FATAL_LOG.warn("[master-db] master db access error", e);
                 }
             }
             

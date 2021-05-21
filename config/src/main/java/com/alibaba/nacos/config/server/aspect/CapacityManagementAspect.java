@@ -193,10 +193,10 @@ public class CapacityManagementAspect {
     private void correctUsage(String group, String tenant, boolean hasTenant) {
         try {
             if (hasTenant) {
-                LOGGER.info("主动修正usage, tenant: {}", tenant);
+                LOGGER.info("[capacityManagement] correct usage, tenant: {}", tenant);
                 capacityService.correctTenantUsage(tenant);
             } else {
-                LOGGER.info("主动修正usage, group: {}", group);
+                LOGGER.info("[capacityManagement] correct usage, group: {}", group);
                 capacityService.correctGroupUsage(group);
             }
         } catch (Exception e) {

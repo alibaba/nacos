@@ -31,11 +31,6 @@
     
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-api</artifactId>
         </dependency>
@@ -87,11 +82,25 @@
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
-            <artifactId>netty-common</artifactId>
+            <artifactId>netty-all</artifactId>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/io.envoyproxy.controlplane/api -->
+        <dependency>
+            <groupId>io.envoyproxy.controlplane</groupId>
+            <artifactId>api</artifactId>
+            <version>0.1.27</version>
         </dependency>
     </dependencies>
     
+
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.5.0.Final</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
@@ -117,6 +126,28 @@
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.xolstice.maven.plugins</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
+                <version>0.6.1</version>
+                <configuration>
+                    <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <pluginId>grpc-java</pluginId>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${protoc-gen-grpc-java.version}:exe:${os.detected.classifier}</pluginArtifact>
+
+                    <useArgumentFile>true</useArgumentFile>
+                    <checkStaleness>true</checkStaleness>
+                    <staleMillis>10000</staleMillis>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>compile-custom</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <resources>

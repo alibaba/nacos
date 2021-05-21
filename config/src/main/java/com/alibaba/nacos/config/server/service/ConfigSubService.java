@@ -212,9 +212,7 @@ public class ConfigSubService {
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
             List<SampleResult> sampleResults = runCollectionJob(url, params, completionService, resultList);
-            if (sampleResults != null) {
-                sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
-            }
+            sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
         }
         return sampleCollectResult;
     }
@@ -232,9 +230,7 @@ public class ConfigSubService {
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
             List<SampleResult> sampleResults = runCollectionJob(url, params, completionService, resultList);
-            if (sampleResults != null) {
-                sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
-            }
+            sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
         }
         return sampleCollectResult;
     }

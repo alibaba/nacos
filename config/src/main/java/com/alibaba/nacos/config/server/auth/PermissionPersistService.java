@@ -26,11 +26,32 @@ import com.alibaba.nacos.config.server.model.Page;
  */
 @SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface PermissionPersistService {
-    
+
+    /**
+     * get the permissions of role by page.
+     *
+     * @param role role
+     * @param pageNo pageNo
+     * @param pageSize pageSize
+     * @return permissions page info
+     */
     Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize);
-    
+
+    /**
+     * assign permission to role.
+     *
+     * @param role role
+     * @param resource resource
+     * @param action action
+     */
     void addPermission(String role, String resource, String action);
-    
+
+    /**
+     * delete the role's permission.
+     *
+     * @param role role
+     * @param resource resource
+     * @param action action
+     */
     void deletePermission(String role, String resource, String action);
-    
 }

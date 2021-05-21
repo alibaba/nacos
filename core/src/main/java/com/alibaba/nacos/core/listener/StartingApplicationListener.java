@@ -26,6 +26,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -102,6 +103,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
         
         closeExecutor();
         
+        ApplicationUtils.setStarted(true);
         judgeStorageMode(context.getEnvironment());
     }
     

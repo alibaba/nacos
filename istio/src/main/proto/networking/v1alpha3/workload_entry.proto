@@ -1,0 +1,325 @@
+// Copyright 2020 Istio Authors
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
+syntax = "proto3";
+
+import "google/api/field_behavior.proto";
+
+// $schema: istio.networking.v1alpha3.WorkloadEntry
+// $title: Workload Entry
+// $description: Configuration affecting VMs onboarded into the mesh.
+// $location: https://istio.io/docs/reference/config/networking/workload-entry.html
+// $aliases: [/docs/reference/config/networking/v1alpha3/workload-entry]
+
+// `WorkloadEntry` enables operators to describe the properties of a
+// single non-Kubernetes workload such as a VM or a bare metal server
+// as it is onboarded into the mesh. A `WorkloadEntry` must be
+// accompanied by an Istio `ServiceEntry` that selects the workload
+// through the appropriate labels and provides the service definition
+// for a `MESH_INTERNAL` service (hostnames, port properties, etc.). A
+// `ServiceEntry` object can select multiple workload entries as well
+// as Kubernetes pods based on the label selector specified in the
+// service entry.
+//
+// When a workload connects to `istiod`, the status field in the
+// custom resource will be updated to indicate the health of the
+// workload along with other details, similar to how Kubernetes
+// updates the status of a pod.
+//
+// The following example declares a workload entry representing a VM
+// for the `details.bookinfo.com` service. This VM has sidecar
+// installed and bootstrapped using the `details-legacy` service
+// account. The service is exposed on port 80 to applications in the
+// mesh. The HTTP traffic to this service is wrapped in Istio mutual
+// TLS and sent to sidecars on VMs on target port 8080, that in turn
+// forward it to the application on localhost on the same port.
+//
+// {{<tabset category-name="example">}}
+// {{<tab name="v1alpha3" category-value="v1alpha3">}}
+// ```yaml
+// apiVersion: networking.istio.io/v1alpha3
+// kind: WorkloadEntry
+// metadata:
+//   name: details-svc
+// spec:
+//   # use of the service account indicates that the workload has a
+//   # sidecar proxy bootstrapped with this service account. Pods with
+//   # sidecars will automatically communicate with the workload using
+//   # istio mutual TLS.
+//   serviceAccount: details-legacy
+//   address: 2.2.2.2
+//   labels:
+//     app: details-legacy
+//     instance-id: vm1
+// ```
+// {{</tab>}}
+//
+// {{<tab name="v1beta1" category-value="v1beta1">}}
+// ```yaml
+// apiVersion: networking.istio.io/v1beta1
+// kind: WorkloadEntry
+// metadata:
+//   name: details-svc
+// spec:
+//   # use of the service account indicates that the workload has a
+//   # sidecar proxy bootstrapped with this service account. Pods with
+//   # sidecars will automatically communicate with the workload using
+//   # istio mutual TLS.
+//   serviceAccount: details-legacy
+//   address: 2.2.2.2
+//   labels:
+//     app: details-legacy
+//     instance-id: vm1
+// ```
+// {{</tab>}}
+// {{</tabset>}}
+//
+// and the associated service entry
+//
+// {{<tabset category-name="example">}}
+// {{<tab name="v1alpha3" category-value="v1alpha3">}}
+// ```yaml
+// apiVersion: networking.istio.io/v1alpha3
+// kind: ServiceEntry
+// metadata:
+//   name: details-svc
+// spec:
+//   hosts:
+//   - details.bookinfo.com
+//   location: MESH_INTERNAL
+//   ports:
+//   - number: 80
+//     name: http
+//     protocol: HTTP
+//     targetPort: 8080
+//   resolution: STATIC
+//   workloadSelector:
+//     labels:
+//       app: details-legacy
+// ```
+// {{</tab>}}
+//
+// {{<tab name="v1beta1" category-value="v1beta1">}}
+// ```yaml
+// apiVersion: networking.istio.io/v1beta1
+// kind: ServiceEntry
+// metadata:
+//   name: details-svc
+// spec:
+//   hosts:
+//   - details.bookinfo.com
+//   location: MESH_INTERNAL
+//   ports:
+//   - number: 80
+//     name: http
+//     protocol: HTTP
+//     targetPort: 8080
+//   resolution: STATIC
+//   workloadSelector:
+//     labels:
+//       app: details-legacy
+// ```
+// {{</tab>}}
+// {{</tabset>}}
+//
+//
+// The following example declares the same VM workload using
+// its fully qualified DNS name. The service entry's resolution
+// mode should be changed to DNS to indicate that the client-side
+// sidecars should dynamically resolve the DNS name at runtime before
+// forwarding the request.
+//
+// {{<tabset category-name="example">}}
+// {{<tab name="v1alpha3" category-value="v1alpha3">}}
+// ```yaml
+// apiVersion: networking.istio.io/v1alpha3
+// kind: WorkloadEntry
+// metadata:
+//   name: details-svc
+// spec:
+//   # use of the service account indicates that the workload has a
+//   # sidecar proxy bootstrapped with this service account. Pods with
+//   # sidecars will automatically communicate with the workload using
+//   # istio mutual TLS.
+//   serviceAccount: details-legacy
+//   address: vm1.vpc01.corp.net
+//   labels:
+//     app: details-legacy
+//     instance-id: vm1
+// ```
+// {{</tab>}}
+//
+// {{<tab name="v1beta1" category-value="v1beta1">}}
+// ```yaml
+// apiVersion: networking.istio.io/v1beta1
+// kind: WorkloadEntry
+// metadata:
+//   name: details-svc
+// spec:
+//   # use of the service account indicates that the workload has a
+//   # sidecar proxy bootstrapped with this service account. Pods with
+//   # sidecars will automatically communicate with the workload using
+//   # istio mutual TLS.
+//   serviceAccount: details-legacy
+//   address: vm1.vpc01.corp.net
+//   labels:
+//     app: details-legacy
+//     instance-id: vm1
+// ```
+// {{</tab>}}
+// {{</tabset>}}
+//
+// and the associated service entry
+//
+// {{<tabset category-name="example">}}
+// {{<tab name="v1alpha3" category-value="v1alpha3">}}
+// ```yaml
+// apiVersion: networking.istio.io/v1alpha3
+// kind: ServiceEntry
+// metadata:
+//   name: details-svc
+// spec:
+//   hosts:
+//   - details.bookinfo.com
+//   location: MESH_INTERNAL
+//   ports:
+//   - number: 80
+//     name: http
+//     protocol: HTTP
+//     targetPort: 8080
+//   resolution: DNS
+//   workloadSelector:
+//     labels:
+//       app: details-legacy
+// ```
+// {{</tab>}}
+//
+// {{<tab name="v1beta1" category-value="v1beta1">}}
+// ```yaml
+// apiVersion: networking.istio.io/v1beta1
+// kind: ServiceEntry
+// metadata:
+//   name: details-svc
+// spec:
+//   hosts:
+//   - details.bookinfo.com
+//   location: MESH_INTERNAL
+//   ports:
+//   - number: 80
+//     name: http
+//     protocol: HTTP
+//     targetPort: 8080
+//   resolution: DNS
+//   workloadSelector:
+//     labels:
+//       app: details-legacy
+// ```
+// {{</tab>}}
+// {{</tabset>}}
+//
+package istio.networking.v1alpha3;
+
+option go_package = "istio.io/api/networking/v1alpha3";
+
+// WorkloadEntry enables specifying the properties of a single non-Kubernetes workload such a VM or a bare metal services that can be referred to by service entries.
+//
+// <!-- crd generation tags
+// +cue-gen:WorkloadEntry:groupName:networking.istio.io
+// +cue-gen:WorkloadEntry:version:v1alpha3
+// +cue-gen:WorkloadEntry:storageVersion
+// +cue-gen:WorkloadEntry:annotations:helm.sh/resource-policy=keep
+// +cue-gen:WorkloadEntry:labels:app=istio-pilot,chart=istio,heritage=Tiller,release=istio
+// +cue-gen:WorkloadEntry:subresource:status
+// +cue-gen:WorkloadEntry:scope:Namespaced
+// +cue-gen:WorkloadEntry:resource:categories=istio-io,networking-istio-io,shortNames=we,plural=workloadentries
+// +cue-gen:WorkloadEntry:printerColumn:name=Age,type=date,JSONPath=.metadata.creationTimestamp,description="CreationTimestamp is a timestamp
+// representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations.
+// Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+// Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata"
+// +cue-gen:WorkloadEntry:printerColumn:name=Address,type=string,JSONPath=.spec.address,description="Address associated with the network endpoint."
+// +cue-gen:WorkloadEntry:preserveUnknownFields:false
+// -->
+//
+// <!-- go code generation tags
+// +kubetype-gen
+// +kubetype-gen:groupVersion=networking.istio.io/v1alpha3
+// +genclient
+// +k8s:deepcopy-gen=true
+// -->
+message WorkloadEntry {
+  // Address associated with the network endpoint without the
+  // port.  Domain names can be used if and only if the resolution is set
+  // to DNS, and must be fully-qualified without wildcards. Use the form
+  // unix:///absolute/path/to/socket for Unix domain socket endpoints.
+  string address = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Set of ports associated with the endpoint. If the port map is
+  // specified, it must be a map of servicePortName to this endpoint's
+  // port, such that traffic to the service port will be forwarded to
+  // the endpoint port that maps to the service's portName. If
+  // omitted, and the targetPort is specified as part of the service's
+  // port specification, traffic to the service port will be forwarded
+  // to one of the endpoints on the specified `targetPort`. If both
+  // the targetPort and endpoint's port map are not specified, traffic
+  // to a service port will be forwarded to one of the endpoints on
+  // the same port.
+  //
+  // **NOTE 1:** Do not use for `unix://` addresses.
+  //
+  // **NOTE 2:** endpoint port map takes precedence over targetPort.
+  map<string, uint32> ports = 2;
+
+  // One or more labels associated with the endpoint.
+  map<string, string> labels = 3;
+
+  // Network enables Istio to group endpoints resident in the same L3
+  // domain/network. All endpoints in the same network are assumed to be
+  // directly reachable from one another. When endpoints in different
+  // networks cannot reach each other directly, an Istio Gateway can be
+  // used to establish connectivity (usually using the
+  // `AUTO_PASSTHROUGH` mode in a Gateway Server). This is
+  // an advanced configuration used typically for spanning an Istio mesh
+  // over multiple clusters.
+  string network = 4;
+
+  // The locality associated with the endpoint. A locality corresponds
+  // to a failure domain (e.g., country/region/zone). Arbitrary failure
+  // domain hierarchies can be represented by separating each
+  // encapsulating failure domain by /. For example, the locality of an
+  // an endpoint in US, in US-East-1 region, within availability zone
+  // az-1, in data center rack r11 can be represented as
+  // us/us-east-1/az-1/r11. Istio will configure the sidecar to route to
+  // endpoints within the same locality as the sidecar. If none of the
+  // endpoints in the locality are available, endpoints parent locality
+  // (but within the same network ID) will be chosen. For example, if
+  // there are two endpoints in same network (networkID "n1"), say e1
+  // with locality us/us-east-1/az-1/r11 and e2 with locality
+  // us/us-east-1/az-2/r12, a sidecar from us/us-east-1/az-1/r11 locality
+  // will prefer e1 from the same locality over e2 from a different
+  // locality. Endpoint e2 could be the IP associated with a gateway
+  // (that bridges networks n1 and n2), or the IP associated with a
+  // standard service endpoint.
+  string locality = 5;
+
+  // The load balancing weight associated with the endpoint. Endpoints
+  // with higher weights will receive proportionally higher traffic.
+  uint32 weight = 6;
+
+  // The service account associated with the workload if a sidecar
+  // is present in the workload. The service account must be present
+  // in the same namespace as the configuration ( WorkloadEntry or a
+  // ServiceEntry)
+  string service_account = 7;
+};
+
