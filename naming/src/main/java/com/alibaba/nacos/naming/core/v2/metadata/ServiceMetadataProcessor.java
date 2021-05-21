@@ -172,7 +172,10 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     private void deleteServiceMetadata(MetadataOperation<ServiceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         namingMetadataManager.removeServiceMetadata(service);
-        service = ServiceManager.getInstance().removeSingleton(service);
+        Service removed = ServiceManager.getInstance().removeSingleton(service);
+        if (removed != null) {
+            service = removed;
+        }
         serviceStorage.removeData(service);
         doubleWriteMetadata(service, true);
     }
