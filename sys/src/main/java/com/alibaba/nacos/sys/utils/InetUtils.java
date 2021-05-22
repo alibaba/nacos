@@ -102,7 +102,7 @@ public class InetUtils {
                         InetAddress inetAddress;
                         try {
                             inetAddress = InetAddress.getLocalHost();
-                            if (inetAddress.getHostName().equals(inetAddress.getCanonicalHostName())) {
+                            if (StringUtils.isNotBlank(inetAddress.getHostName())) {
                                 tmpSelfIP = inetAddress.getHostName();
                             } else {
                                 tmpSelfIP = inetAddress.getCanonicalHostName();
