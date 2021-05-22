@@ -123,7 +123,6 @@ public class MapUtil {
             if (isNotEmpty((Dictionary) value)) {
                 target.put(key, value);
             }
-            return;
         }
     }
     

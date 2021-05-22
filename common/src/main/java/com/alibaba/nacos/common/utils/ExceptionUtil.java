@@ -61,6 +61,6 @@ public class ExceptionUtil {
         final PrintStream ps = new PrintStream(out);
         t.printStackTrace(ps);
         ps.flush();
-        return new String(out.toByteArray());
+        return out.toString();
     }
 }
