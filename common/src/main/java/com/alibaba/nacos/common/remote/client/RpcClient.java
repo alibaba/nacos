@@ -447,7 +447,7 @@ public abstract class RpcClient implements Closeable {
         try {
             Response response = this.currentConnection.request(healthCheckRequest, 3000L);
             //not only check server is ok ,also check connection is register.
-            return response == null ? false : response.isSuccess();
+            return response != null && response.isSuccess();
         } catch (NacosException e) {
             //ignore
         }
@@ -748,8 +748,7 @@ public abstract class RpcClient implements Closeable {
                     waitReconnect = true;
                     throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
                 }
-                RequestFuture requestFuture = this.currentConnection.requestFuture(request);
-                return requestFuture;
+                return this.currentConnection.requestFuture(request);
             } catch (Exception e) {
                 if (waitReconnect) {
                     try {
@@ -888,20 +887,20 @@ public abstract class RpcClient implements Closeable {
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private ServerInfo resolveServerInfo(String serverAddress) {
         String property = System.getProperty("nacos.server.port", "8848");
-        int serverPort = Integer.valueOf(property);
+        int serverPort = Integer.parseInt(property);
         ServerInfo serverInfo = null;
         if (serverAddress.contains(Constants.HTTP_PREFIX)) {
             String[] split = serverAddress.split(Constants.COLON);
             String serverIp = split[1].replaceAll("//", "");
             if (split.length > 2 && StringUtils.isNotBlank(split[2])) {
-                serverPort = Integer.valueOf(split[2]);
+                serverPort = Integer.parseInt(split[2]);
             }
             serverInfo = new ServerInfo(serverIp, serverPort);
         } else {
             String[] split = serverAddress.split(Constants.COLON);
             String serverIp = split[0];
             if (split.length > 1 && StringUtils.isNotBlank(split[1])) {
-                serverPort = Integer.valueOf(split[1]);
+                serverPort = Integer.parseInt(split[1]);
             }
             serverInfo = new ServerInfo(serverIp, serverPort);
         }
@@ -926,7 +925,7 @@ public abstract class RpcClient implements Closeable {
         /**
          * get address, ip:port.
          *
-         * @return
+         * @return address.
          */
         public String getAddress() {
             return serverIp + Constants.COLON + serverPort;
