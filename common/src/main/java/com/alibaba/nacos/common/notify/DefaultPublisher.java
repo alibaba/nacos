@@ -175,6 +175,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         
         if (!hasSubscriber()) {
             LOGGER.warn("[NotifyCenter] the {} is lost, because there is no subscriber.");
+            return;
         }
         
         // Notification single event listener
