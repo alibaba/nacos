@@ -41,8 +41,7 @@ public class RpcClientFactory {
      * @return client collection.
      */
     public static Set<Map.Entry<String, RpcClient>> getAllClientEntries() {
-        Set<Map.Entry<String, RpcClient>> entries = clientMap.entrySet();
-        return entries;
+        return clientMap.entrySet();
     }
     
     /**

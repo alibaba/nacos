@@ -60,6 +60,10 @@ public abstract class GrpcClient extends RpcClient {
     
     private ThreadPoolExecutor grpcExecutor = null;
     
+    private static final long DEFAULT_MAX_INBOUND_MESSAGE_SIZE = 10 * 1024 * 1024L;
+    
+    private static final long DEFAULT_KEEP_ALIVE_TIME = 6 * 60 * 1000;
+    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
@@ -103,14 +107,14 @@ public abstract class GrpcClient extends RpcClient {
     
     private int getInboundMessageSize() {
         String messageSize = System
-                .getProperty("nacos.remote.client.grpc.maxinbound.message.size", String.valueOf(10 * 1024 * 1024));
-        return Integer.valueOf(messageSize);
+                .getProperty("nacos.remote.client.grpc.maxinbound.message.size", String.valueOf(DEFAULT_MAX_INBOUND_MESSAGE_SIZE));
+        return Integer.parseInt(messageSize);
     }
     
     private int keepAliveTimeMillis() {
         String keepAliveTimeMillis = System
-                .getProperty("nacos.remote.grpc.keep.alive.millis", String.valueOf(6 * 60 * 1000));
-        return Integer.valueOf(keepAliveTimeMillis);
+                .getProperty("nacos.remote.grpc.keep.alive.millis", String.valueOf(DEFAULT_KEEP_ALIVE_TIME));
+        return Integer.parseInt(keepAliveTimeMillis);
     }
     
     /**
