@@ -40,12 +40,16 @@ public class Header {
     
     private final Map<String, List<String>> originalResponseHeader;
     
+    private static final String DEFAULT_CHARSET = "UTF-8";
+    
+    private static final String DEFAULT_ENCODING = "gzip";
+    
     private Header() {
         header = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
         originalResponseHeader = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
-        addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip");
+        addParam(HttpHeaderConsts.ACCEPT_CHARSET, DEFAULT_CHARSET);
+        addParam(HttpHeaderConsts.ACCEPT_ENCODING, DEFAULT_ENCODING);
     }
     
     public static Header newInstance() {
