@@ -31,7 +31,7 @@ public class ReflectUtils {
      *
      * @param obj       obj.
      * @param fieldName file name to get value.
-     * @return
+     * @return field value.
      */
     public static Object getFieldValue(Object obj, String fieldName) {
         try {
@@ -48,7 +48,7 @@ public class ReflectUtils {
      *
      * @param obj       obj.
      * @param fieldName file name to get value.
-     * @return
+     * @return field value.
      */
     public static Object getFieldValue(Object obj, String fieldName, Object defaultValue) {
         try {
