@@ -309,7 +309,6 @@ public class ClientWorker implements Closeable {
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
-                // The task list is no order.So it maybe has issues when changing.
                 executorService.execute(new LongPollingRunnable(i));
             }
             currentLongingTaskCount = longingTaskCount;
