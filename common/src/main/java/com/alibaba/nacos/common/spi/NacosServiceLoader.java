@@ -83,9 +83,7 @@ public class NacosServiceLoader {
     private static Object newServiceInstance(final Class<?> clazz) {
         try {
             return clazz.newInstance();
-        } catch (IllegalAccessException e) {
-            throw new ServiceLoaderException(clazz, e);
-        } catch (InstantiationException e) {
+        } catch (IllegalAccessException | InstantiationException e) {
             throw new ServiceLoaderException(clazz, e);
         }
     }
