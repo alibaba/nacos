@@ -8,8 +8,20 @@ package com.alibaba.nacos.console.enums;
  * @date 2021-05-25 17:01
  */
 public enum NamespaceTypeEnum {
+    
+    /**
+     * Global configuration.
+     */
     GLOBAL(0, "Global configuration"),
+    
+    /**
+     * Default private namespace.
+     */
     PRIVATE(1, "Default private namespace"),
+    
+    /**
+     * Custom namespace.
+     */
     CUSTOM(2, "Custom namespace");
     
     /**
