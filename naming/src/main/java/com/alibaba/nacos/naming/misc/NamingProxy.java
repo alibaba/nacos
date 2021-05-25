@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -202,8 +202,8 @@ public class NamingProxy {
             
             RestResult<String> result;
             
-            if (!IPUtil.containsPort(curServer)) {
-                curServer = curServer + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            if (!InternetAddressUtil.containsPort(curServer)) {
+                curServer = curServer + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
             }
             
             result = HttpClient.httpGet("http://" + curServer + api, headers, params);
@@ -244,8 +244,8 @@ public class NamingProxy {
             
             RestResult<String> result;
             
-            if (!IPUtil.containsPort(curServer)) {
-                curServer = curServer + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            if (!InternetAddressUtil.containsPort(curServer)) {
+                curServer = curServer + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
             }
             
             if (isPost) {
@@ -294,8 +294,8 @@ public class NamingProxy {
             
             RestResult<String> result;
             
-            if (!IPUtil.containsPort(curServer)) {
-                curServer = curServer + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            if (!InternetAddressUtil.containsPort(curServer)) {
+                curServer = curServer + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
             }
             
             if (isPost) {

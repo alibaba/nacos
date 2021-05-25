@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  * @author Nacos
  */
 @SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
-public class IPUtil {
+public class InternetAddressUtil {
     
     public static final boolean PREFER_IPV6_ADDRESSES = Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"));
     
@@ -180,7 +180,7 @@ public class IPUtil {
         // illegal response
         StringBuilder illegalResponse = new StringBuilder();
         for (String ip : ips) {
-            if (IPUtil.isIP(ip)) {
+            if (InternetAddressUtil.isIP(ip)) {
                 continue;
             }
             illegalResponse.append(ip + ",");
