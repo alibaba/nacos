@@ -137,7 +137,7 @@ public class InternetAddressUtil {
                 throw new IllegalArgumentException("The IP address(\"" + str
                         + "\") is incorrect. If it is an IPv6 address, please use [] to enclose the IP part!");
             }
-            if (!isIPv4(serverAddrArr[0]) && !DOMAIN_PATTERN.matcher(serverAddrArr[0]).matches()) {
+            if (!isIPv4(serverAddrArr[0]) && !isDomain(serverAddrArr[0])) {
                 throw new IllegalArgumentException("The IPv4 or Domain address(\"" + serverAddrArr[0] + "\") is incorrect.");
             }
         }
