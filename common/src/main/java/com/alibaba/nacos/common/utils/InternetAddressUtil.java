@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +41,8 @@ public class InternetAddressUtil {
     public static final int SPLIT_IP_PORT_RESULT_LENGTH = 2;
     
     public static final String PERCENT_SIGN_IN_IPV6 = "%";
+    
+    public static final String LOCAL_HOST = "localhost";
     
     private static final String LOCAL_HOST_IP_V4 = "127.0.0.1";
     
@@ -213,6 +216,22 @@ public class InternetAddressUtil {
             return "";
         }
         return str.replaceAll("[\\[\\]]", "");
+    }
+    
+    /**
+     * juege str is right domain.（Check only rule）
+     *
+     * @param str nacosIP
+     * @return nacosIP is domain
+     */
+    public static boolean isDomain(String str) {
+        if (StringUtils.isBlank(str)) {
+            return false;
+        }
+        if (Objects.equals(str, LOCAL_HOST)) {
+            return true;
+        }
+        return DOMAIN_PATTERN.matcher(str).matches();
     }
     
 }

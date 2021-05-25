@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.sys.env.Constants.IP_ADDRESS;
 import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
@@ -62,11 +61,6 @@ public class InetUtils {
     
     private static final List<String> IGNORED_INTERFACES = new ArrayList<String>();
     
-    private static Pattern domainPattern = Pattern
-            .compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
-    
-    public static final String LOCAL_HOST = "localhost";
-    
     static {
         NotifyCenter.registerToSharePublisher(IPChangeEvent.class);
         
@@ -88,7 +82,7 @@ public class InetUtils {
                     nacosIP = EnvUtil.getProperty(IP_ADDRESS);
                 }
                 if (!StringUtils.isBlank(nacosIP)) {
-                    if (!(InternetAddressUtil.isIP(nacosIP) || isDomain(nacosIP))) {
+                    if (!(InternetAddressUtil.isIP(nacosIP) || InternetAddressUtil.isDomain(nacosIP))) {
                         throw new RuntimeException("nacos address " + nacosIP + " is not ip");
                     }
                 }
@@ -221,22 +215,6 @@ public class InetUtils {
             }
         }
         return false;
-    }
-    
-    /**
-     * juege str is right domain.（Check only rule）
-     *
-     * @param str nacosIP
-     * @return nacosIP is domain
-     */
-    public static boolean isDomain(String str) {
-        if (StringUtils.isBlank(str)) {
-            return false;
-        }
-        if (Objects.equals(str, LOCAL_HOST)) {
-            return true;
-        }
-        return domainPattern.matcher(str).matches();
     }
     
     /**

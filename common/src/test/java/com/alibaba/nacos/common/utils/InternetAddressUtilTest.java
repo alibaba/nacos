@@ -115,6 +115,11 @@ public class InternetAddressUtilTest {
         Assert.assertEquals("illegal ip: 127.100.19", InternetAddressUtil.checkIPs(illegalIps));
     }
     
+    @Test
+    public void testIsDomain() {
+        Assert.assertTrue(InternetAddressUtil.isDomain("localhost"));
+    }
+    
     /**
      * checkSplitIpPortStr.
      * 2020/9/4 14:12
