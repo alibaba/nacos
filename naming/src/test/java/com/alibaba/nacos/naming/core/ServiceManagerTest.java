@@ -457,4 +457,12 @@ public class ServiceManagerTest extends BaseTest {
         assertTrue(actual.contains("\"namespaceId\":\"public\""));
         assertTrue(actual.contains("\"serviceName2Checksum\":{\"test\":\"1234567890\"}"));
     }
+    
+    @Test
+    public void testCheckServiceIsNull() throws NacosException {
+        serviceManager.createEmptyService(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
+        String serviceName = "order-service";
+        Service service = serviceManager.getService(TEST_NAMESPACE, serviceName);
+        serviceManager.checkServiceIsNull(service, TEST_NAMESPACE, serviceName);
+    }
 }
