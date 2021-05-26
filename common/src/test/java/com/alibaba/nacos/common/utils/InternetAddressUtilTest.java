@@ -99,12 +99,17 @@ public class InternetAddressUtilTest {
         checkSplitIPPortStr("[2001:db8:0:0:1::1]:88", false, "[2001:db8:0:0:1::1]", "88");
         checkSplitIPPortStr("[2001:db8:0000:0:1::1]:88", false, "[2001:db8:0000:0:1::1]", "88");
         checkSplitIPPortStr("[2001:DB8:0:0:1::1]:88", false, "[2001:DB8:0:0:1::1]", "88");
-        checkSplitIPPortStr("[fe80::3ce6:7132:808e:707a%19]:88", false, "[fe80::3ce6:7132:808e:707a%19]", "88");
         checkSplitIPPortStr("localhost:8848", false, "localhost", "8848");
+        checkSplitIPPortStr("[dead::beef]:88", false, "[dead::beef]", "88");
     
-        checkSplitIPPortStr("::1:88", true);
-        checkSplitIPPortStr("[::1:88", true);
-        checkSplitIPPortStr("[127.0.0.1]:88", true);
+        // illegal ip will get abnormal results
+        checkSplitIPPortStr("::1:88", false, "", "", "1", "88");
+        checkSplitIPPortStr("[::1:88", false, "[", "", "1", "88");
+        checkSplitIPPortStr("[127.0.0.1]:88", false, "[127.0.0.1]", "88");
+        checkSplitIPPortStr("[dead:beef]:88", false, "[dead:beef]", "88");
+        checkSplitIPPortStr("[fe80::3ce6:7132:808e:707a%19]:88", false, "[fe80::3ce6:7132:808e:707a%19]", "88");
+        checkSplitIPPortStr("[fe80::3]e6]:88", false, "[fe80::3]", "6]:88");
+        checkSplitIPPortStr("", true);
     }
     
     @Test
@@ -132,11 +137,8 @@ public class InternetAddressUtilTest {
         try {
             String[] array = InternetAddressUtil.splitIPPortStr(addr);
             Assert.assertTrue(array.length == equalsStrs.length);
-            if (array.length > 1) {
-                Assert.assertTrue(array[0].equals(equalsStrs[0]));
-                Assert.assertTrue(array[1].equals(equalsStrs[1]));
-            } else {
-                Assert.assertTrue(array[0].equals(equalsStrs[0]));
+            for (int i = 0; i < array.length; i++) {
+                Assert.assertEquals(array[i], equalsStrs[i]);
             }
         } catch (Exception ex) {
             if (!isEx) {

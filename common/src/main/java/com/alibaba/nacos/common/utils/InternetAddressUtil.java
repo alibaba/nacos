@@ -110,6 +110,7 @@ public class InternetAddressUtil {
     
     /**
      * Split IP and port strings, support IPv4 and IPv6, IP in IPv6 must be enclosed with [].
+     * Illegal IP will get abnormal results.
      *
      * @param str ip and port string
      * @return java.lang.String[]
@@ -128,18 +129,8 @@ public class InternetAddressUtil {
                 serverAddrArr[0] = str.substring(0, (str.indexOf(IPV6_END_MARK) + 1));
                 serverAddrArr[1] = str.substring((str.indexOf(IPV6_END_MARK) + 2));
             }
-            if (!isIPv6(serverAddrArr[0])) {
-                throw new IllegalArgumentException("The IPv6 address(\"" + serverAddrArr[0] + "\") is incorrect.");
-            }
         } else {
             serverAddrArr = str.split(":");
-            if (serverAddrArr.length > SPLIT_IP_PORT_RESULT_LENGTH) {
-                throw new IllegalArgumentException("The IP address(\"" + str
-                        + "\") is incorrect. If it is an IPv6 address, please use [] to enclose the IP part!");
-            }
-            if (!isIPv4(serverAddrArr[0]) && !isDomain(serverAddrArr[0])) {
-                throw new IllegalArgumentException("The IPv4 or Domain address(\"" + serverAddrArr[0] + "\") is incorrect.");
-            }
         }
         return serverAddrArr;
     }
