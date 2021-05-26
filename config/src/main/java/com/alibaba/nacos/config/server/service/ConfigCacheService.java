@@ -52,17 +52,17 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  * @author Nacos
  */
 public class ConfigCacheService {
-
+    
     static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheService.class);
-
+    
     private static final String NO_SPACE_CN = "设备上没有空间";
-
+    
     private static final String NO_SPACE_EN = "No space left on device";
-
+    
     private static final String DISK_QUATA_CN = "超出磁盘限额";
-
+    
     private static final String DISK_QUATA_EN = "Disk quota exceeded";
-
+    
     /**
      * groupKey -> cacheItem.
      */
@@ -481,7 +481,10 @@ public class ConfigCacheService {
         CacheItem cache = makeSure(groupKey);
         if (cache.md5 == null || !cache.md5.equals(md5)) {
             cache.md5 = md5;
-            cache.lastModifiedTs = lastModifiedTs;
+            // get the latest time
+            if (cache.lastModifiedTs < lastModifiedTs) {
+                cache.lastModifiedTs = lastModifiedTs;
+            }
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
         }
     }
