@@ -219,7 +219,7 @@ public class InternetAddressUtil {
     }
     
     /**
-     * juege str is right domain.（Check only rule）
+     * judge str is right domain.（Check only rule）
      *
      * @param str nacosIP
      * @return nacosIP is domain
