@@ -166,8 +166,12 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
             Set<String> instances = new HashSet<>();
             for (Instance each : newInstance) {
                 instances.add(each.toIpAddr());
+                com.alibaba.nacos.api.naming.pojo.Instance instance = instanceUpgradeHelper.toV2(each);
+                // Ephemeral value in v1 data may not be right.
+                // The ephemeral come from parameter which is reference to data key matching
+                instance.setEphemeral(ephemeral);
                 DoubleWriteInstanceChangeToV2Task instanceTask = new DoubleWriteInstanceChangeToV2Task(
-                        service.getNamespaceId(), service.getName(), each, true);
+                        service.getNamespaceId(), service.getName(), instance, true);
                 NamingExecuteTaskDispatcher.getInstance()
                         .dispatchAndExecuteTask(IpPortBasedClient.getClientId(each.toIpAddr(), ephemeral),
                                 instanceTask);
