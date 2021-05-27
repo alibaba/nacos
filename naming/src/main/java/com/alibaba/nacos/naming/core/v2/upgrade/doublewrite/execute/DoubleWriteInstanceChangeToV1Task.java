@@ -73,18 +73,10 @@ public class DoubleWriteInstanceChangeToV1Task extends AbstractExecuteTask {
     private Instances getNewInstances() {
         Instances result = new Instances();
         ServiceStorage serviceStorage = ApplicationUtils.getBean(ServiceStorage.class);
+        InstanceUpgradeHelper instanceUpgradeHelper = ApplicationUtils.getBean(InstanceUpgradeHelper.class);
         long currentTimeStamp = System.currentTimeMillis();
         for (Instance each : serviceStorage.getData(service).getHosts()) {
-            com.alibaba.nacos.naming.core.Instance instance = new com.alibaba.nacos.naming.core.Instance();
-            instance.setIp(each.getIp());
-            instance.setPort(each.getPort());
-            instance.setClusterName(each.getClusterName());
-            instance.setHealthy(each.isHealthy());
-            instance.setEphemeral(each.isEphemeral());
-            instance.setWeight(each.getWeight());
-            instance.setMetadata(each.getMetadata());
-            instance.setEnabled(each.isEnabled());
-            instance.setServiceName(each.getServiceName());
+            com.alibaba.nacos.naming.core.Instance instance = instanceUpgradeHelper.toV1(each);
             instance.setLastBeat(currentTimeStamp);
             result.getInstanceList().add(instance);
         }
