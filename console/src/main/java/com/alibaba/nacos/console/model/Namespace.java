@@ -32,7 +32,7 @@ public class Namespace {
     private int configCount;
     
     /**
-     * 0 : Global configuration， 1 : Default private namespace ，2 : Custom namespace.
+     * see {@link com.alibaba.nacos.console.enums.NamespaceTypeEnum}.
      */
     private int type;
     
