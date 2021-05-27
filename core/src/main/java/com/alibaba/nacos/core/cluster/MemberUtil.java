@@ -131,7 +131,7 @@ public class MemberUtil {
         member.setState(NodeState.UP);
         member.setFailAccessCnt(0);
         if (!Objects.equals(old, member.getState())) {
-            manager.notifyMemberChange();
+            manager.notifyMemberChange(member);
         }
     }
     
@@ -160,7 +160,7 @@ public class MemberUtil {
             member.setState(NodeState.DOWN);
         }
         if (!Objects.equals(old, member.getState())) {
-            manager.notifyMemberChange();
+            manager.notifyMemberChange(member);
         }
     }
     
