@@ -38,9 +38,9 @@ public class ClusterOperatorV1Impl implements ClusterOperator {
     public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
             ClusterMetadata clusterMetadata) throws NacosException {
         Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "service not found:" + serviceName);
-        }
+        
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
+        
         Cluster cluster = service.getClusterMap().get(clusterName);
         if (cluster == null) {
             Loggers.SRV_LOG.warn("[UPDATE-CLUSTER] cluster not exist, will create it: {}, service: {}", clusterName,

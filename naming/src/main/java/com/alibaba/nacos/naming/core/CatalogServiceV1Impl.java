@@ -41,7 +41,7 @@ import java.util.Map;
  *
  * @author xiweng.yy
  */
-@Component()
+@Component
 public class CatalogServiceV1Impl implements CatalogService {
     
     private final ServiceManager serviceManager;
@@ -52,12 +52,11 @@ public class CatalogServiceV1Impl implements CatalogService {
     
     @Override
     public Object getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException {
-        Service detailedService = serviceManager.getService(namespaceId, NamingUtils.getGroupedName(serviceName, groupName));
+        Service detailedService = serviceManager
+                .getService(namespaceId, NamingUtils.getGroupedName(serviceName, groupName));
         
-        if (detailedService == null) {
-            throw new NacosException(NacosException.NOT_FOUND,
-                    String.format("service %s@@%s is not found!", groupName, serviceName));
-        }
+        serviceManager.checkServiceIsNull(detailedService, namespaceId, serviceName);
+        
         ObjectNode serviceObject = JacksonUtils.createEmptyJsonNode();
         serviceObject.put("name", serviceName);
         serviceObject.put("protectThreshold", detailedService.getProtectThreshold());
@@ -75,10 +74,9 @@ public class CatalogServiceV1Impl implements CatalogService {
     public List<? extends Instance> listInstances(String namespaceId, String groupName, String serviceName,
             String clusterName) throws NacosException {
         Service service = serviceManager.getService(namespaceId, NamingUtils.getGroupedName(serviceName, groupName));
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND,
-                    String.format("service %s@@%s is not found!", groupName, serviceName));
-        }
+        
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
+        
         if (!service.getClusterMap().containsKey(clusterName)) {
             throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
         }

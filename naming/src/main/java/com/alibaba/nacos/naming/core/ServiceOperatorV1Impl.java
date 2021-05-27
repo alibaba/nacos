@@ -73,12 +73,12 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
     
     @Override
     public void update(Service service, ServiceMetadata metadata) throws NacosException {
+        String namespaceId = service.getNamespace();
         String serviceName = service.getGroupedServiceName();
-        com.alibaba.nacos.naming.core.Service serviceV1 = serviceManager
-                .getService(service.getNamespace(), serviceName);
-        if (serviceV1 == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "service " + serviceName + " not found!");
-        }
+        com.alibaba.nacos.naming.core.Service serviceV1 = serviceManager.getService(namespaceId, serviceName);
+        
+        serviceManager.checkServiceIsNull(serviceV1, namespaceId, serviceName);
+        
         serviceV1.setProtectThreshold(metadata.getProtectThreshold());
         serviceV1.setSelector(metadata.getSelector());
         serviceV1.setMetadata(metadata.getExtendData());
@@ -96,9 +96,9 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
     @Override
     public ObjectNode queryService(String namespaceId, String serviceName) throws NacosException {
         com.alibaba.nacos.naming.core.Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
-        }
+        
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
+        
         ObjectNode res = JacksonUtils.createEmptyJsonNode();
         res.put("name", NamingUtils.getServiceName(serviceName));
         res.put("namespaceId", service.getNamespaceId());

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.IPUtil;
@@ -184,11 +185,11 @@ public class OperatorController {
     @GetMapping("/distro/server")
     public ObjectNode getResponsibleServer4Service(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName) {
+            @RequestParam String serviceName) throws NacosException {
         Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new IllegalArgumentException("service not found");
-        }
+        
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
+        
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("responsibleServer", distroMapper.mapSrv(serviceName));
         return result;
