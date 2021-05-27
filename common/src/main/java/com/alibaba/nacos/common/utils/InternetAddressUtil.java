@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +26,7 @@ import java.util.regex.Pattern;
  * @author Nacos
  */
 @SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
-public class IPUtil {
+public class InternetAddressUtil {
     
     public static final boolean PREFER_IPV6_ADDRESSES = Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"));
     
@@ -40,6 +41,8 @@ public class IPUtil {
     public static final int SPLIT_IP_PORT_RESULT_LENGTH = 2;
     
     public static final String PERCENT_SIGN_IN_IPV6 = "%";
+    
+    public static final String LOCAL_HOST = "localhost";
     
     private static final String LOCAL_HOST_IP_V4 = "127.0.0.1";
     
@@ -107,6 +110,7 @@ public class IPUtil {
     
     /**
      * Split IP and port strings, support IPv4 and IPv6, IP in IPv6 must be enclosed with [].
+     * Illegal IP will get abnormal results.
      *
      * @param str ip and port string
      * @return java.lang.String[]
@@ -125,18 +129,8 @@ public class IPUtil {
                 serverAddrArr[0] = str.substring(0, (str.indexOf(IPV6_END_MARK) + 1));
                 serverAddrArr[1] = str.substring((str.indexOf(IPV6_END_MARK) + 2));
             }
-            if (!isIPv6(serverAddrArr[0])) {
-                throw new IllegalArgumentException("The IPv6 address(\"" + serverAddrArr[0] + "\") is incorrect.");
-            }
         } else {
             serverAddrArr = str.split(":");
-            if (serverAddrArr.length > SPLIT_IP_PORT_RESULT_LENGTH) {
-                throw new IllegalArgumentException("The IP address(\"" + str
-                        + "\") is incorrect. If it is an IPv6 address, please use [] to enclose the IP part!");
-            }
-            if (!isIPv4(serverAddrArr[0]) && !DOMAIN_PATTERN.matcher(serverAddrArr[0]).matches()) {
-                throw new IllegalArgumentException("The IPv4 or Domain address(\"" + serverAddrArr[0] + "\") is incorrect.");
-            }
         }
         return serverAddrArr;
     }
@@ -180,7 +174,7 @@ public class IPUtil {
         // illegal response
         StringBuilder illegalResponse = new StringBuilder();
         for (String ip : ips) {
-            if (IPUtil.isIP(ip)) {
+            if (InternetAddressUtil.isIP(ip)) {
                 continue;
             }
             illegalResponse.append(ip + ",");
@@ -213,6 +207,22 @@ public class IPUtil {
             return "";
         }
         return str.replaceAll("[\\[\\]]", "");
+    }
+    
+    /**
+     * judge str is right domain.（Check only rule）
+     *
+     * @param str nacosIP
+     * @return nacosIP is domain
+     */
+    public static boolean isDomain(String str) {
+        if (StringUtils.isBlank(str)) {
+            return false;
+        }
+        if (Objects.equals(str, LOCAL_HOST)) {
+            return true;
+        }
+        return DOMAIN_PATTERN.matcher(str).matches();
     }
     
 }

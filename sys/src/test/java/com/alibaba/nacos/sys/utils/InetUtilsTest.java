@@ -17,17 +17,10 @@
 package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 import org.springframework.core.env.StandardEnvironment;
 
 public class InetUtilsTest {
-    
-    @Test
-    public void testIsDomain() {
-        Assert.assertTrue(InetUtils.isDomain("localhost"));
-    }
     
     @Before
     public void setUp() {

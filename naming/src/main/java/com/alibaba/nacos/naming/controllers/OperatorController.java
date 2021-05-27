@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
@@ -198,7 +198,7 @@ public class OperatorController {
     @GetMapping("/distro/client")
     public ObjectNode getResponsibleServer4Client(@RequestParam String ip, @RequestParam String port) {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        String tag = ip + IPUtil.IP_PORT_SPLITER + port;
+        String tag = ip + InternetAddressUtil.IP_PORT_SPLITER + port;
         result.put("responsibleServer", distroMapper.mapSrv(tag));
         return result;
     }

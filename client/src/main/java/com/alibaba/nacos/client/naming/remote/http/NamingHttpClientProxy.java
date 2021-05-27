@@ -47,7 +47,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -429,8 +429,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
             url = curServer + api;
         } else {
-            if (!IPUtil.containsPort(curServer)) {
-                curServer = curServer + IPUtil.IP_PORT_SPLITER + serverPort;
+            if (!InternetAddressUtil.containsPort(curServer)) {
+                curServer = curServer + InternetAddressUtil.IP_PORT_SPLITER + serverPort;
             }
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
