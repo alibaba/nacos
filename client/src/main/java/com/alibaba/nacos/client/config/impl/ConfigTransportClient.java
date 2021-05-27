@@ -86,7 +86,7 @@ public abstract class ConfigTransportClient {
         this.serverListManager = serverListManager;
         this.securityProxy = new SecurityProxy(properties,
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
-        
+        initAkSk(properties);
     }
     
     /**
@@ -105,11 +105,9 @@ public abstract class ConfigTransportClient {
             accessKey = stsCredential.accessKeyId;
             secretKey = stsCredential.accessKeySecret;
             spasHeaders.put("Spas-SecurityToken", stsCredential.securityToken);
-        } else {
-            accessKey = SpasAdapter.getAk();
-            secretKey = SpasAdapter.getSk();
         }
-        if (StringUtils.isNotEmpty(accessKey)) {
+        
+        if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
             spasHeaders.put("Spas-AccessKey", accessKey);
         }
         return spasHeaders;

@@ -267,7 +267,7 @@ public abstract class RpcClient implements Closeable {
         clientEventExecutor.submit(new Runnable() {
             @Override
             public void run() {
-                while (true) {
+                while (!clientEventExecutor.isTerminated() && !clientEventExecutor.isShutdown()) {
                     ConnectionEvent take = null;
                     try {
                         take = eventLinkedBlockingQueue.take();
@@ -288,6 +288,9 @@ public abstract class RpcClient implements Closeable {
             public void run() {
                 while (true) {
                     try {
+                        if (isShutdown()) {
+                            break;
+                        }
                         ReconnectContext reconnectContext = reconnectionSignal
                                 .poll(keepAliveTime, TimeUnit.MILLISECONDS);
                         if (reconnectContext == null) {
@@ -301,8 +304,19 @@ public abstract class RpcClient implements Closeable {
                                     LoggerUtils.printIfInfoEnabled(LOGGER,
                                             "[{}]Server healthy check fail,currentConnection={}", name,
                                             currentConnection.getConnectionId());
-                                    rpcClientStatus.set(RpcClientStatus.UNHEALTHY);
-                                    reconnectContext = new ReconnectContext(null, false);
+                                    
+                                    RpcClientStatus rpcClientStatus = RpcClient.this.rpcClientStatus.get();
+                                    if (RpcClientStatus.SHUTDOWN.equals(rpcClientStatus)) {
+                                        break;
+                                    }
+                                    
+                                    boolean success = RpcClient.this.rpcClientStatus
+                                            .compareAndSet(rpcClientStatus, RpcClientStatus.UNHEALTHY);
+                                    if (success) {
+                                        reconnectContext = new ReconnectContext(null, false);
+                                    } else {
+                                        continue;
+                                    }
                                     
                                 } else {
                                     lastActiveTimeStamp = System.currentTimeMillis();
@@ -434,8 +448,11 @@ public abstract class RpcClient implements Closeable {
     
     @Override
     public void shutdown() throws NacosException {
-        clientEventExecutor.shutdown();
+        LOGGER.info("Shutdown rpc client ,set status to shutdown");
         rpcClientStatus.set(RpcClientStatus.SHUTDOWN);
+        LOGGER.info("Shutdown  client event executor " + clientEventExecutor);
+        clientEventExecutor.shutdownNow();
+        LOGGER.info("Close current connection " + currentConnection.getConnectionId());
         closeConnection(currentConnection);
     }
     

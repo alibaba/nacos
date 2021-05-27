@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +34,8 @@ import java.util.Set;
  * @version $Id: RpcClientFactory.java, v 0.1 2020年07月14日 3:41 PM liuzunfei Exp $
  */
 public class RpcClientFactory {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
     
     static Map<String, RpcClient> clientMap = new HashMap<String, RpcClient>();
     
@@ -72,6 +76,8 @@ public class RpcClientFactory {
         String clientNameInner = clientName;
         synchronized (clientMap) {
             if (clientMap.get(clientNameInner) == null) {
+                LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
+    
                 RpcClient moduleClient = null;
                 if (ConnectionType.GRPC.equals(connectionType)) {
                     moduleClient = new GrpcSdkClient(clientNameInner);

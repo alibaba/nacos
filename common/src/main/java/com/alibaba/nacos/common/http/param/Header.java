@@ -49,7 +49,7 @@ public class Header {
         originalResponseHeader = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam(HttpHeaderConsts.ACCEPT_CHARSET, DEFAULT_CHARSET);
-        addParam(HttpHeaderConsts.ACCEPT_ENCODING, DEFAULT_ENCODING);
+        //addParam(HttpHeaderConsts.ACCEPT_ENCODING, DEFAULT_ENCODING);
     }
     
     public static Header newInstance() {
