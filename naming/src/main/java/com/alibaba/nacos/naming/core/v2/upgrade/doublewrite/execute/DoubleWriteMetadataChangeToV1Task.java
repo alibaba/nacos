@@ -17,9 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute;
 
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
-import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -29,7 +27,6 @@ import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.ServiceChangeV
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -71,38 +68,10 @@ public class DoubleWriteMetadataChangeToV1Task extends AbstractExecuteTask {
             ServiceMetadata serviceMetadata) {
         com.alibaba.nacos.naming.core.Service result = serviceManager
                 .getService(service.getNamespace(), service.getGroupedServiceName());
-        if (null == result) {
-            result = new com.alibaba.nacos.naming.core.Service(service.getGroupedServiceName());
-            result.setGroupName(service.getGroup());
-            result.setNamespaceId(service.getNamespace());
-        }
-        result.setSelector(serviceMetadata.getSelector());
-        result.setProtectThreshold(serviceMetadata.getProtectThreshold());
-        result.setMetadata(serviceMetadata.getExtendData());
-        for (Map.Entry<String, ClusterMetadata> entry : serviceMetadata.getClusters().entrySet()) {
-            if (!result.getClusterMap().containsKey(entry.getKey())) {
-                result.addCluster(newClusterV1(entry.getValue()));
-            } else {
-                updateCluster(result.getClusterMap().get(entry.getKey()), entry.getValue());
-            }
-        }
+        ServiceMetadataUpgradeHelper upgradeHelper = ApplicationUtils.getBean(ServiceMetadataUpgradeHelper.class);
+        result = upgradeHelper.toV1Service(result, service, serviceMetadata);
         result.init();
         return result;
     }
     
-    private Cluster newClusterV1(ClusterMetadata metadata) {
-        Cluster result = new Cluster();
-        result.setDefCkport(metadata.getHealthyCheckPort());
-        result.setUseIPPort4Check(metadata.isUseInstancePortForCheck());
-        result.setHealthChecker(metadata.getHealthChecker());
-        result.setMetadata(metadata.getExtendData());
-        return result;
-    }
-    
-    private void updateCluster(Cluster cluster, ClusterMetadata metadata) {
-        cluster.setDefCkport(metadata.getHealthyCheckPort());
-        cluster.setUseIPPort4Check(metadata.isUseInstancePortForCheck());
-        cluster.setHealthChecker(metadata.getHealthChecker());
-        cluster.setMetadata(metadata.getExtendData());
-    }
 }

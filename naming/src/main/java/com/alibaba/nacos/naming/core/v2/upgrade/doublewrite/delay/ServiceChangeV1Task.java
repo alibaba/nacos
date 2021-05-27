@@ -21,24 +21,23 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
-import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.DoubleWriteInstanceChangeToV2Task;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.DoubleWriteMetadataChangeToV2Task;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.DoubleWriteServiceRemovalToV2Task;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.InstanceUpgradeHelper;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.ServiceMetadataUpgradeHelper;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -119,12 +118,13 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
         public boolean process(NacosTask task) {
             ServiceChangeV1Task serviceTask = (ServiceChangeV1Task) task;
             if (serviceTask.getAction() == DoubleWriteAction.REMOVE) {
-                Loggers.SRV_LOG.info("double write removal of service {}", serviceTask.getServiceName());
+                Loggers.SRV_LOG.info("double write removal of service {}, ephemeral: {}",
+                        serviceTask.getServiceName(), serviceTask.isEphemeral());
                 dispatchRemoveAllTask(serviceTask);
                 return true;
             }
-            Loggers.SRV_LOG.info("double write for service {}, content {}", serviceTask.getServiceName(),
-                    serviceTask.getContent());
+            Loggers.SRV_LOG.info("double write for service {}, ephemeral: {}, content {}",
+                    serviceTask.getServiceName(), serviceTask.isEphemeral(), serviceTask.getContent());
             ServiceManager serviceManager = ApplicationUtils.getBean(ServiceManager.class);
             Service service = serviceManager.getService(serviceTask.getNamespace(), serviceTask.getServiceName());
             if (null != service) {
@@ -160,6 +160,7 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
         
         private void dispatchInstanceTask(Service service, boolean ephemeral) {
             ServiceStorage serviceStorage = ApplicationUtils.getBean(ServiceStorage.class);
+            InstanceUpgradeHelper instanceUpgradeHelper = ApplicationUtils.getBean(InstanceUpgradeHelper.class);
             ServiceInfo serviceInfo = serviceStorage.getPushData(transfer(service, ephemeral));
             List<Instance> newInstance = service.allIPs(ephemeral);
             Set<String> instances = new HashSet<>();
@@ -190,32 +191,12 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
         }
         
         private void dispatchMetadataTask(Service service, boolean ephemeral) {
-            ServiceMetadata serviceMetadata = parseServiceMetadata(service, ephemeral);
+            ServiceMetadataUpgradeHelper upgradeHelper = ApplicationUtils.getBean(ServiceMetadataUpgradeHelper.class);
+            ServiceMetadata serviceMetadata = upgradeHelper.toV2ServiceMetadata(service, ephemeral);
             DoubleWriteMetadataChangeToV2Task metadataTask = new DoubleWriteMetadataChangeToV2Task(
                     service.getNamespaceId(), service.getName(), ephemeral, serviceMetadata);
             NamingExecuteTaskDispatcher.getInstance().dispatchAndExecuteTask(service.getName(), metadataTask);
         }
         
-        private ServiceMetadata parseServiceMetadata(Service service, boolean ephemeral) {
-            ServiceMetadata result = new ServiceMetadata();
-            result.setEphemeral(ephemeral);
-            result.setProtectThreshold(service.getProtectThreshold());
-            result.setSelector(service.getSelector());
-            result.setExtendData(service.getMetadata());
-            for (Map.Entry<String, Cluster> entry : service.getClusterMap().entrySet()) {
-                result.getClusters().put(entry.getKey(), parseClusterMetadata(entry.getValue()));
-            }
-            return result;
-        }
-        
-        private ClusterMetadata parseClusterMetadata(Cluster cluster) {
-            ClusterMetadata result = new ClusterMetadata();
-            result.setHealthyCheckPort(cluster.getDefCkport());
-            result.setUseInstancePortForCheck(cluster.isUseIPPort4Check());
-            result.setExtendData(cluster.getMetadata());
-            result.setHealthChecker(cluster.getHealthChecker());
-            result.setHealthyCheckType(cluster.getHealthChecker().getType());
-            return result;
-        }
     }
 }
