@@ -34,14 +34,14 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ClusterOperatorV2ImplTest extends TestCase {
-
+    
     private ClusterOperatorV2Impl clusterOperatorV2Impl;
-
+    
     @Mock
     private NamingMetadataOperateService metadataOperateServiceMock;
-
+    
     private ClusterMetadata clusterMetadata;
-
+    
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -50,10 +50,12 @@ public class ClusterOperatorV2ImplTest extends TestCase {
         clusterOperatorV2Impl = new ClusterOperatorV2Impl(metadataOperateServiceMock);
         clusterMetadata = new ClusterMetadata();
     }
-
+    
     @Test
     public void testUpdateClusterMetadata() throws NacosException {
-        clusterOperatorV2Impl.updateClusterMetadata("namespace_test", "group_test@@name_test", "clusterName_test", clusterMetadata);
-        verify(metadataOperateServiceMock).addClusterMetadata(any(Service.class), anyString(), any(ClusterMetadata.class));
+        clusterOperatorV2Impl
+                .updateClusterMetadata("namespace_test", "group_test@@name_test", "clusterName_test", clusterMetadata);
+        verify(metadataOperateServiceMock)
+                .addClusterMetadata(any(Service.class), anyString(), any(ClusterMetadata.class));
     }
 }

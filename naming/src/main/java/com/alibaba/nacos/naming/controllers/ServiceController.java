@@ -301,15 +301,13 @@ public class ServiceController {
      */
     @PutMapping("/checksum")
     @Deprecated
-    public ObjectNode checksum(HttpServletRequest request) throws Exception {
+    public ObjectNode checksum(HttpServletRequest request) throws NacosException {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         Service service = serviceManager.getService(namespaceId, serviceName);
         
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "serviceName not found: " + serviceName);
-        }
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
         
         service.recalculateChecksum();
         
