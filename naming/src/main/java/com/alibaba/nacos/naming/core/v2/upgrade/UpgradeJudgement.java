@@ -43,6 +43,7 @@ import org.codehaus.jackson.Version;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PreDestroy;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -117,7 +118,6 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
                 doUpgrade();
             }
         }, 100L, 5000L, TimeUnit.MILLISECONDS);
-        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
     
     @JustForTest
@@ -144,8 +144,14 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     @Override
     public void onEvent(MembersChangeEvent event) {
-        Loggers.SRV_LOG.info("member change, new members {}", event.getMembers());
-        for (Member each : event.getMembers()) {
+        if (!event.hasTriggers()) {
+            Loggers.SRV_LOG.info("Member change without no trigger. "
+                    + "It may be triggered by member lookup on startup. "
+                    + "Skip.");
+            return;
+        }
+        Loggers.SRV_LOG.info("member change, event: {}", event);
+        for (Member each : event.getTriggers()) {
             Object versionStr = each.getExtendVal(MemberMetaDataConstants.VERSION);
             // come from below 1.3.0
             if (null == versionStr) {
@@ -165,10 +171,10 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     private void checkAndDowngrade(boolean jraftFeature) {
         boolean isDowngradeGrpc = useGrpcFeatures.compareAndSet(true, false);
-        NotifyCenter.publishEvent(new UpgradeStates.UpgradeStateChangedEvent(false));
         boolean isDowngradeJraft = useJraftFeatures.getAndSet(jraftFeature);
         if (isDowngradeGrpc && isDowngradeJraft && !jraftFeature) {
             Loggers.SRV_LOG.info("Downgrade to 1.X");
+            NotifyCenter.publishEvent(new UpgradeStates.UpgradeStateChangedEvent(false));
             try {
                 raftPeerSet.init();
                 raftCore.init();
@@ -233,6 +239,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     /**
      * Shut down.
      */
+    @PreDestroy
     public void shutdown() {
         if (null != upgradeChecker) {
             upgradeChecker.shutdownNow();
