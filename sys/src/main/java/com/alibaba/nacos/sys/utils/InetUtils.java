@@ -18,7 +18,7 @@ package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.sys.env.Constants.IP_ADDRESS;
 import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
@@ -62,11 +61,6 @@ public class InetUtils {
     
     private static final List<String> IGNORED_INTERFACES = new ArrayList<String>();
     
-    private static Pattern domainPattern = Pattern
-            .compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
-    
-    public static final String LOCAL_HOST = "localhost";
-    
     static {
         NotifyCenter.registerToSharePublisher(IPChangeEvent.class);
         
@@ -88,7 +82,7 @@ public class InetUtils {
                     nacosIP = EnvUtil.getProperty(IP_ADDRESS);
                 }
                 if (!StringUtils.isBlank(nacosIP)) {
-                    if (!(IPUtil.isIP(nacosIP) || isDomain(nacosIP))) {
+                    if (!(InternetAddressUtil.isIP(nacosIP) || InternetAddressUtil.isDomain(nacosIP))) {
                         throw new RuntimeException("nacos address " + nacosIP + " is not ip");
                     }
                 }
@@ -116,12 +110,12 @@ public class InetUtils {
                         tmpSelfIP = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
                     }
                 }
-                if (IPUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIP.startsWith(IPUtil.IPV6_START_MARK) && !tmpSelfIP
-                        .endsWith(IPUtil.IPV6_END_MARK)) {
-                    tmpSelfIP = IPUtil.IPV6_START_MARK + tmpSelfIP + IPUtil.IPV6_END_MARK;
-                    if (StringUtils.contains(tmpSelfIP, IPUtil.PERCENT_SIGN_IN_IPV6)) {
-                        tmpSelfIP = tmpSelfIP.substring(0, tmpSelfIP.indexOf(IPUtil.PERCENT_SIGN_IN_IPV6))
-                                + IPUtil.IPV6_END_MARK;
+                if (InternetAddressUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIP.startsWith(InternetAddressUtil.IPV6_START_MARK) && !tmpSelfIP
+                        .endsWith(InternetAddressUtil.IPV6_END_MARK)) {
+                    tmpSelfIP = InternetAddressUtil.IPV6_START_MARK + tmpSelfIP + InternetAddressUtil.IPV6_END_MARK;
+                    if (StringUtils.contains(tmpSelfIP, InternetAddressUtil.PERCENT_SIGN_IN_IPV6)) {
+                        tmpSelfIP = tmpSelfIP.substring(0, tmpSelfIP.indexOf(InternetAddressUtil.PERCENT_SIGN_IN_IPV6))
+                                + InternetAddressUtil.IPV6_END_MARK;
                     }
                 }
                 if (!Objects.equals(selfIP, tmpSelfIP) && Objects.nonNull(selfIP)) {
@@ -165,7 +159,7 @@ public class InetUtils {
                     if (!ignoreInterface(ifc.getDisplayName())) {
                         for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
                             InetAddress address = addrs.nextElement();
-                            boolean isLegalIpVersion = IPUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
+                            boolean isLegalIpVersion = InternetAddressUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
                                     : address instanceof Inet4Address;
                             if (isLegalIpVersion && !address.isLoopbackAddress() && isPreferredAddress(address)) {
                                 LOG.debug("Found non-loopback interface: " + ifc.getDisplayName());
@@ -221,22 +215,6 @@ public class InetUtils {
             }
         }
         return false;
-    }
-    
-    /**
-     * juege str is right domain.（Check only rule）
-     *
-     * @param str nacosIP
-     * @return nacosIP is domain
-     */
-    public static boolean isDomain(String str) {
-        if (StringUtils.isBlank(str)) {
-            return false;
-        }
-        if (Objects.equals(str, LOCAL_HOST)) {
-            return true;
-        }
-        return domainPattern.matcher(str).matches();
     }
     
     /**
