@@ -156,7 +156,7 @@ public class ServerListManager implements Closeable {
             this.isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
             StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
-            while (serverAddrsTokens.hasMoreTokens()){
+            while (serverAddrsTokens.hasMoreTokens()) {
                 String serverAddr = serverAddrsTokens.nextToken().trim();
                 if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
