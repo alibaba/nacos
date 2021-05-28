@@ -13,57 +13,70 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * 用于其他节点通知的控制器
+ * Controller for other node notification.
  *
  * @author boyan
  * @date 2010-5-7
  */
-@Controller
+@RestController
 @RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
 public class CommunicationController {
-
+    
     private final DumpService dumpService;
-
+    
     private final LongPollingService longPollingService;
-
+    
     private String trueStr = "true";
-
+    
+    @Autowired
+    private ConfigChangeListenContext configChangeListenContext;
+    
+    @Autowired
+    private ConnectionManager connectionManager;
+    
     @Autowired
     public CommunicationController(DumpService dumpService, LongPollingService longPollingService) {
         this.dumpService = dumpService;
         this.longPollingService = longPollingService;
     }
-
+    
     /**
-     * 通知配置信息改变
+     * Notify the change of config information.
      */
-    @RequestMapping(value = "/dataChange", method = RequestMethod.GET)
-    @ResponseBody
-    public Boolean notifyConfigInfo(HttpServletRequest request, HttpServletResponse response,
-                                    @RequestParam("dataId") String dataId, @RequestParam("group") String group,
-                                    @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
-                                        String tenant,
-                                    @RequestParam(value = "tag", required = false) String tag) {
+    @GetMapping("/dataChange")
+    public Boolean notifyConfigInfo(HttpServletRequest request, @RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "tag", required = false) String tag) {
         dataId = dataId.trim();
         group = group.trim();
         String lastModified = request.getHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED);
@@ -77,30 +90,54 @@ public class CommunicationController {
         }
         return true;
     }
-
+    
     /**
-     * 在本台机器上获得订阅改配置的客户端信息
+     * Get client config information of subscriber in local machine.
      */
-    @RequestMapping(value = "/configWatchers", method = RequestMethod.GET)
-    @ResponseBody
-    public SampleResult getSubClientConfig(HttpServletRequest request,
-                                           HttpServletResponse response,
-                                           @RequestParam("dataId") String dataId,
-                                           @RequestParam("group") String group,
-                                           @RequestParam(value = "tenant", required = false) String tenant,
-                                           ModelMap modelMap) {
+    @GetMapping("/configWatchers")
+    public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+            @RequestParam(value = "tenant", required = false) String tenant, ModelMap modelMap) {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
-        return longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
+        // long polling listners.
+        SampleResult result = longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
+        // rpc listeners.
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        Set<String> listenersClients = configChangeListenContext.getListeners(groupKey);
+        if (CollectionUtils.isEmpty(listenersClients)) {
+            return result;
+        }
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenersClients.size(), 1);
+        for (String connectionId : listenersClients) {
+            Connection client = connectionManager.getConnection(connectionId);
+            if (client != null) {
+                String md5 = configChangeListenContext.getListenKeyMd5(connectionId, groupKey);
+                if (md5 != null) {
+                    lisentersGroupkeyStatus.put(client.getMetaInfo().getClientIp(), md5);
+                }
+            }
+        }
+        result.getLisentersGroupkeyStatus().putAll(lisentersGroupkeyStatus);
+        return result;
     }
-
+    
     /**
-     * 在本台机器上获得客户端监听的配置列表
+     * Get client config listener lists of subscriber in local machine.
      */
-    @RequestMapping(value = "/watcherConfigs", method = RequestMethod.GET)
-    @ResponseBody
-    public SampleResult getSubClientConfigByIp(HttpServletRequest request,
-                                               HttpServletResponse response, @RequestParam("ip") String ip,
-                                               ModelMap modelMap) {
-        return longPollingService.getCollectSubscribleInfoByIp(ip);
+    @GetMapping("/watcherConfigs")
+    public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
+            @RequestParam("ip") String ip, ModelMap modelMap) {
+        
+        SampleResult result = longPollingService.getCollectSubscribleInfoByIp(ip);
+        List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
+        for (Connection connectionByIp : connectionsByIp) {
+            Map<String, String> listenKeys = configChangeListenContext
+                    .getListenKeys(connectionByIp.getMetaInfo().getConnectionId());
+            if (listenKeys != null) {
+                result.getLisentersGroupkeyStatus().putAll(listenKeys);
+            }
+        }
+        return result;
+        
     }
+    
 }

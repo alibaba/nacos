@@ -1,5 +1,5 @@
 
-<img src="doc/Nacos_Logo.png" width="50%" height="50%" />
+<img src="doc/Nacos_Logo.png" width="50%" syt height="50%" />
 
 # Nacos: Dynamic  *Na*ming and *Co*nfiguration *S*ervice
 
@@ -10,27 +10,27 @@
 
 ## What does it do
 
-Nacos (official site: [http://nacos.io](http://nacos.io)) is an easy-to-use platform designed for dynamic service discovery and configuration and service management. It helps you to build cloud native applications and microservices platform easily.
+Nacos (official site: [nacos.io](https://nacos.io)) is an easy-to-use platform designed for dynamic service discovery and configuration and service management. It helps you to build cloud native applications and microservices platform easily.
 
-Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html)、[Spring Cloud RESTFul service](https://nacos.io/en-us/docs/use-nacos-with-springcloud.html) or [Kubernetes service](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html).
+Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html), [Spring Cloud RESTFul service](https://nacos.io/en-us/docs/use-nacos-with-springcloud.html) or [Kubernetes service](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html).
 
 Nacos provides four major functions.
 
 * **Service Discovery and Service Health Check** 
     
-    Nacos makes it simple for services to register themselves and to discover other services via a DNS or HTTP interface. Nacos also provides real-time healthchecks of services to prevent sending requests to unhealthy hosts or service instance.
+    Nacos makes it simple for services to register themselves and to discover other services via a DNS or HTTP interface. Nacos also provides real-time health checks of services to prevent sending requests to unhealthy hosts or service instances.
 
 * **Dynamic Configuration Management**
   
-  Dynamic Configuration Service allows you to manage configurations of all services in a centralized and dynamic manner across all environments. Nacos eliminates the need to redeploy applications and services when configurations are updated，which makes configuration changes more efficient and agile.
+    Dynamic Configuration Service allows you to manage configurations of all services in a centralized and dynamic manner across all environments. Nacos eliminates the need to redeploy applications and services when configurations are updated, which makes configuration changes more efficient and agile.
 
 * **Dynamic DNS Service**
-
-   Nacos supports weighted routing, making it easier for you to implement mid-tier load balancing, flexible routing policies, flow control, and simple DNS resolution services in the production environment within your data center. It helps you to implement DNS-based service discovery easily and prevent applications from coupling to vendor-specific service discovery APIs.
+    
+    Nacos supports weighted routing, making it easier for you to implement mid-tier load balancing, flexible routing policies, flow control, and simple DNS resolution services in the production environment within your data center. It helps you to implement DNS-based service discovery easily and prevent applications from coupling to vendor-specific service discovery APIs.
 
 * **Service and MetaData Management**
 	
-	Nacos provides an easy-to-use service dashboard to help you manage your services metadata, configuration, kubernetes DNS, service health and metrics statistics.
+    Nacos provides an easy-to-use service dashboard to help you manage your services metadata, configuration, kubernetes DNS, service health and metrics statistics.
  
 
 ## Quick Start
@@ -38,10 +38,10 @@ It is super easy to get started with your first project.
 
 #### Step 1: Download the binary package 
 
-You can download the package from the  [latest stable release](https://github.com/alibaba/nacos/releases).  
+You can download the package from the [latest stable release](https://github.com/alibaba/nacos/releases).  
 
-Take release nacos-server-1.0.0.zip for example.
-```
+Take release `nacos-server-1.0.0.zip` for example:
+```sh
 unzip nacos-server-1.0.0.zip
 cd nacos/bin 
 ``` 
@@ -49,13 +49,13 @@ cd nacos/bin
 #### Step 2: Start Server
 
 On the **Linux/Unix/Mac** platform, run the following command to start server with standalone mode: 
-```
+```sh
 sh startup.sh -m standalone
 ```
 
-On the **Windows** platform, run the following command to start server with standalone mode.  Alternatively, you can also double-click the startup.cmd to run NacosServer.
+On the **Windows** platform, run the following command to start server with standalone mode.  Alternatively, you can also double-click the `startup.cmd` to run NacosServer.
 ```
-cmd startup.cmd -m standalone
+startup.cmd -m standalone
 ```
 
 For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.html)
@@ -74,7 +74,7 @@ For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.htm
 
 You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
 
-All the latest and long-term notice can also be found here from [Github notice issue](https://github.com/alibaba/nacos/labels/notice)
+All the latest and long-term notice can also be found here from [Github notice issue](https://github.com/alibaba/nacos/labels/notice).
 
 
 ## Contributing
@@ -84,7 +84,7 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
 ## Other Related Project Repositories
 
 * [nacos-spring-project](https://github.com/nacos-group/nacos-spring-project) provides the integration functionality for Spring.
-* [nacos-group](https://github.com/nacos-group) is the reposity that hosts the eco tools for Nacos, such as SDK, synchronization tool, etc.
+* [nacos-group](https://github.com/nacos-group) is the repository that hosts the eco tools for Nacos, such as SDK, synchronization tool, etc.
 * [spring-cloud-alibaba](https://github.com/spring-cloud-incubator/spring-cloud-alibaba) provides the one-stop solution for application development over Alibaba middleware which includes Nacos.
 
 ## Contact
@@ -97,9 +97,14 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
      * users-nacos@googlegroups.com: Nacos usage general discussion.
      * dev-nacos@googlegroups.com: Nacos developer discussion (APIs, feature design, etc).
      * commits-nacos@googlegroups.com: Commits notice, very high frequency.
-* Join us from DingDing. 
+* Join us from DingDing(Group 1: 21708933(full), Group 2: 30438813). 
 
-![cwex](https://img.alicdn.com/tfs/TB1bpBlQmrqK1RjSZK9XXXyypXa-830-972.png_288x480q80.jpg)
+ ![Nacos](https://img.alicdn.com/tfs/TB1TBKEzpP7gK0jSZFjXXc5aXXa-199-220.png)
+
+## Download
+
+- [Github Release](https://github.com/alibaba/nacos/releases)
+- [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`
 
 
 ## Who is using
@@ -108,8 +113,8 @@ These are only part of the companies using Nacos, for reference only. If you are
 
 ![Alibaba Group](https://docs.alibabagroup.com/assets2/images/en/global/logo_header.png)
 ![虎牙直播](https://a.msstatic.com/huya/main/img/logo.png)
-![ICBC](http://v.icbc.com.cn/userfiles/Resources/ICBC/shouye/images/2017/logo.png)
-![爱奇艺](http://www.iqiyipic.com/common/fix/site-v4/sprite-headLogo-index.png)
+![ICBC](https://v.icbc.com.cn/userfiles/Resources/ICBC/shouye/images/2017/logo.png)
+![爱奇艺](https://www.iqiyipic.com/common/fix/site-v4/sprite-headLogo-index.png)
 ![平安科技](https://img.alicdn.com/tfs/TB1pwi9EwHqK1RjSZJnXXbNLpXa-479-59.png) 
 ![华夏信财](https://img.alicdn.com/tfs/TB1MZWSEzDpK1RjSZFrXXa78VXa-269-69.png)
 ![优客工场](https://www.urwork.cn/public/images/ui/logo.png)
@@ -125,7 +130,7 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![集萃智能](http://www.iimt.org.cn/pic/logosy.png)
 ![Acmedcare+](https://img.alicdn.com/tfs/TB1DZWSEzDpK1RjSZFrXXa78VXa-240-62.png)
 ![吾享](https://w.wuuxiang.com/theme/images/common/logo1.png)
-![北京天合互联信息有限公司](http://14605854.s21i.faiusr.com/4/ABUIABAEGAAg4OvkzwUo8b-qlwUwxQ449gM!300x300.png)
+![北京天合互联信息有限公司](https://14605854.s21i.faiusr.com/4/ABUIABAEGAAg4OvkzwUo8b-qlwUwxQ449gM!300x300.png)
 ![上海密尔克卫化工](http://www.mwclg.com/static-resource/front/images/home/img_logo_nav.png)
 ![大连新唯](https://www.synwe.com/logo-full.png)
 ![立思辰](https://user-images.githubusercontent.com/10215557/51593180-7563af00-1f2c-11e9-95b1-ec2c645d6a0b.png)
@@ -163,7 +168,6 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![时代光华](https://img.alicdn.com/tfs/TB1UzuyNhTpK1RjSZR0XXbEwXXa-201-86.jpg)
 ![康美](https://img.alicdn.com/tfs/TB19RCANgHqK1RjSZFPXXcwapXa-180-180.jpg)
 ![环球易购](https://img.alicdn.com/tfs/TB1iCGyNb2pK1RjSZFsXXaNlXXa-143-143.jpg)
-![海格管家](https://img.alicdn.com/tfs/TB1FNq4EwHqK1RjSZFgXXa7JXXa-232-232.jpg)
 ![Nepxion](https://avatars0.githubusercontent.com/u/16344119?s=200&v=4)
 ![东莞最佳拍档](https://img.alicdn.com/tfs/TB11ugsDzTpK1RjSZKPXXa3UpXa-300-300.png)
 ![chigua](https://img.alicdn.com/tfs/TB1aUe5EpzqK1RjSZSgXXcpAVXa-248-124.png)

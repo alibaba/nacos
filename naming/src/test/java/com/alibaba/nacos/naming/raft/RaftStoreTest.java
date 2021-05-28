@@ -13,33 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.raft;
 
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Spy;
+import org.springframework.test.util.ReflectionTestUtils;
 
-/**
- * @author nkorange
- * @author jifengnan 2019-05-18
- */
 public class RaftStoreTest extends BaseTest {
-
+    
     @InjectMocks
     @Spy
     public RaftCore raftCore;
-
+    
     @Spy
     public RaftStore raftStore;
-
+    
+    @Mock
+    private ClusterVersionJudgement versionJudgement;
+    
+    @Before
+    public void setUp() {
+        ReflectionTestUtils.setField(raftCore, "versionJudgement", versionJudgement);
+    }
+    
     @Test
     public void wrietDatum() throws Exception {
         Datum<Instances> datum = new Datum<>();
@@ -51,11 +60,11 @@ public class RaftStoreTest extends BaseTest {
         datum.value.getInstanceList().add(instance);
         instance = new Instance("2.2.2.2", 2, TEST_CLUSTER_NAME);
         datum.value.getInstanceList().add(instance);
-
+        
         raftStore.write(datum);
         raftCore.init();
         Datum result = raftCore.getDatum(key);
-
+        
         Assert.assertEquals(key, result.key);
         Assert.assertEquals(1, result.timestamp.intValue());
         Assert.assertEquals(datum.value.toString(), result.value.toString());

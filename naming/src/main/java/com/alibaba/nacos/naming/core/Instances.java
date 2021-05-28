@@ -13,89 +13,84 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.lang3.RandomStringUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Package of instance list
+ * Package of instance list.
  *
  * @author nkorange
  * @since 1.0.0
  */
 public class Instances implements Record {
-
-    private String cachedChecksum;
-
-    private long lastCalculateTime = 0L;
-
+    
+    private static final long serialVersionUID = 5500823673993740145L;
+    
     private List<Instance> instanceList = new ArrayList<>();
-
+    
     public List<Instance> getInstanceList() {
         return instanceList;
     }
-
+    
     public void setInstanceList(List<Instance> instanceList) {
         this.instanceList = instanceList;
     }
-
+    
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        try {
+            return JacksonUtils.toJson(this);
+        } catch (Exception e) {
+            throw new RuntimeException("Instances toJSON failed", e);
+        }
     }
-
+    
     @Override
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getChecksum() {
-        recalculateChecksum();
-        return cachedChecksum;
+        
+        return recalculateChecksum();
     }
-
-    public String getCachedChecksum() {
-        return cachedChecksum;
-    }
-
-    private void recalculateChecksum() {
+    
+    private String recalculateChecksum() {
         StringBuilder sb = new StringBuilder();
         Collections.sort(instanceList);
         for (Instance ip : instanceList) {
-            String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
-                + ip.isHealthy() + "_" + ip.isEnabled() + "_" + ip.getClusterName() + "_" + convertMap2String(ip.getMetadata());
+            String string =
+                    ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_" + ip.isHealthy() + "_" + ip.isEnabled()
+                            + "_" + ip.getClusterName() + "_" + convertMap2String(ip.getMetadata());
             sb.append(string);
             sb.append(",");
         }
-        MessageDigest md5;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-            cachedChecksum =
-                new BigInteger(1, md5.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
-        } catch (NoSuchAlgorithmException e) {
-            Loggers.SRV_LOG.error("error while calculating checksum(md5) for instances", e);
-            cachedChecksum = RandomStringUtils.randomAscii(32);
-        }
-        lastCalculateTime = System.currentTimeMillis();
+        
+        return MD5Utils.md5Hex(sb.toString(), Constants.ENCODE);
     }
-
+    
+    /**
+     * Convert Map to KV string with ':'.
+     *
+     * @param map map need to be converted
+     * @return KV string with ':'
+     */
     public String convertMap2String(Map<String, String> map) {
-
+        
         if (map == null || map.isEmpty()) {
             return StringUtils.EMPTY;
         }
-
+        
         StringBuilder sb = new StringBuilder();
         List<String> keys = new ArrayList<>(map.keySet());
         Collections.sort(keys);

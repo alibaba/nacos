@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import org.junit.Assert;
@@ -26,19 +28,15 @@ import org.mockito.Spy;
 
 import java.util.List;
 
-/**
- * @author nkorange
- * @author jifengnan 2019-05-18
- */
 public class DomainsManagerTest extends BaseTest {
-
+    
     @Spy
     @InjectMocks
     private ServiceManager manager;
-
+    
     @Mock
     private DistroConsistencyServiceImpl consistencyService;
-
+    
     @Test
     public void easyRemoveDom() throws Exception {
         Service service = new Service(TEST_SERVICE_NAME);
@@ -46,21 +44,21 @@ public class DomainsManagerTest extends BaseTest {
         manager.putService(service);
         manager.easyRemoveService(TEST_NAMESPACE, TEST_SERVICE_NAME);
     }
-
+    
     @Test
     public void easyRemoveDomNotExist() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expect(NacosException.class);
         expectedException.expectMessage("specified service not exist, serviceName : " + TEST_SERVICE_NAME);
         manager.easyRemoveService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME);
     }
-
+    
     @Test
     public void searchDom() {
         Service service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(TEST_NAMESPACE);
         manager.putService(service);
-
-        List<Service> list = manager.searchServices(TEST_NAMESPACE, "test.*");
+        
+        List<Service> list = manager.searchServices(TEST_NAMESPACE, "(.*)test(.*)");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals(TEST_SERVICE_NAME, list.get(0).getName());

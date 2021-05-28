@@ -13,65 +13,84 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.filter.impl;
 
-import java.util.HashMap;
-import java.util.Map;
+package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.config.filter.IConfigContext;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.alibaba.nacos.client.config.common.ConfigConstants.CONTENT;
+import static com.alibaba.nacos.client.config.common.ConfigConstants.DATA_ID;
+import static com.alibaba.nacos.client.config.common.ConfigConstants.GROUP;
+import static com.alibaba.nacos.client.config.common.ConfigConstants.TENANT;
+
 /**
- * Config Request
+ * Config Request.
  *
  * @author Nacos
  */
 public class ConfigRequest implements IConfigRequest {
-
-    private Map<String, Object> param = new HashMap<String, Object>();
-
-    private IConfigContext configContext = new ConfigContext();
-
+    
+    private final Map<String, Object> param = new HashMap<String, Object>();
+    
+    private final IConfigContext configContext = new ConfigContext();
+    
     public String getTenant() {
-        return (String)param.get("tenant");
+        return (String) param.get(TENANT);
     }
-
+    
     public void setTenant(String tenant) {
-        param.put("tenant", tenant);
+        param.put(TENANT, tenant);
     }
-
+    
     public String getDataId() {
-        return (String)param.get("dataId");
+        return (String) param.get(DATA_ID);
     }
-
+    
     public void setDataId(String dataId) {
-        param.put("dataId", dataId);
+        param.put(DATA_ID, dataId);
     }
-
+    
     public String getGroup() {
-        return (String)param.get("group");
+        return (String) param.get(GROUP);
     }
-
+    
     public void setGroup(String group) {
-        param.put("group", group);
+        param.put(GROUP, group);
     }
-
+    
     public String getContent() {
-        return (String)param.get("content");
+        return (String) param.get(CONTENT);
     }
-
+    
     public void setContent(String content) {
-        param.put("content", content);
+        param.put(CONTENT, content);
     }
-
+    
+    public String getType() {
+        return (String) param.get("type");
+    }
+    
+    public void setType(String type) {
+        param.put("type", type);
+    }
+    
     @Override
     public Object getParameter(String key) {
         return param.get(key);
     }
-
+    
+    @Override
+    public void putParameter(String key, Object value) {
+        param.put(key, value);
+    }
+    
     @Override
     public IConfigContext getConfigContext() {
         return configContext;
     }
-
+    
 }

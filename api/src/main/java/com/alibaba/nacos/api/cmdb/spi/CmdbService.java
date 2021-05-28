@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.cmdb.spi;
 
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
@@ -24,75 +25,75 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Service to visit CMDB store
+ * Service to visit CMDB store.
  *
  * @author nkorange
  * @since 0.7.0
  */
 public interface CmdbService {
-
+    
     /**
-     * Get all label names stored in CMDB
+     * Get all label names stored in CMDB.
      *
      * @return label name set
      */
     Set<String> getLabelNames();
-
+    
     /**
-     * Get all possible entity types in CMDB
+     * Get all possible entity types in CMDB.
      *
      * @return all entity types
      */
     Set<String> getEntityTypes();
-
+    
     /**
-     * Get label info
+     * Get label info.
      *
      * @param labelName label name
      * @return label info
      */
     Label getLabel(String labelName);
-
+    
     /**
-     * Get label value of label name of ip
+     * Get label value of label name of ip.
      *
      * @param entityName entity name
-     * @param entityType  entity type
-     * @param labelName   target label name
+     * @param entityType entity type
+     * @param labelName  target label name
      * @return label value
      */
     String getLabelValue(String entityName, String entityType, String labelName);
-
+    
     /**
-     * Get all label value of ip
+     * Get all label value of ip.
      *
      * @param entityName entity name
-     * @param entityType  entity type
+     * @param entityType entity type
      * @return all label values
      */
     Map<String, String> getLabelValues(String entityName, String entityType);
-
+    
     /**
-     * Dump all entities in CMDB
+     * Dump all entities in CMDB.
      *
      * @return all entities
      */
     Map<String, Map<String, Entity>> getAllEntities();
-
+    
     /**
-     * get label change events
+     * get label change events.
      *
      * @param timestamp start time of generated events
      * @return label events
      */
     List<EntityEvent> getEntityEvents(long timestamp);
-
+    
     /**
-     * Get single entity
+     * Get single entity.
      *
      * @param entityName name of entity
      * @param entityType type of entity
-     * @return
+     * @return entity.
      */
     Entity getEntity(String entityName, String entityType);
 }

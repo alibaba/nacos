@@ -13,25 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.filter;
 
 import com.alibaba.nacos.api.exception.NacosException;
 
+import java.util.Properties;
+
 /**
- * Config Filter Interface
+ * Config Filter Interface.
+ *
+ * <p>DO NOT implement this interface directly, you should extend <code>AbstractConfigFilter</code>.
  *
  * @author Nacos
+ * @see AbstractConfigFilter
  */
 public interface IConfigFilter {
+    
     /**
-     * Init
+     * Init.
      *
      * @param filterConfig Filter Config
      */
+    @Deprecated
     void init(IFilterConfig filterConfig);
-
+    
     /**
-     * do filter
+     * Init.
+     *
+     * @param properties Filter Config
+     */
+    void init(Properties properties);
+    
+    /**
+     * do filter.
      *
      * @param request     request
      * @param response    response
@@ -40,24 +55,19 @@ public interface IConfigFilter {
      */
     void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
             throws NacosException;
-
+    
     /**
-     * deploy
-     */
-    void deploy();
-
-    /**
-     * Get order
+     * Get order.
      *
      * @return order number
      */
     int getOrder();
-
+    
     /**
-     * Get filterName
+     * Get filterName.
      *
      * @return filter name
      */
     String getFilterName();
-
+    
 }

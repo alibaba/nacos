@@ -13,25 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.selector;
 
 /**
- * The types of selector accepted by Nacos
+ * The types of selector accepted by Nacos.
  *
  * @author nkorange
  * @since 0.7.0
  */
 public enum SelectorType {
     /**
-     * not match any type
+     * not match any type.
      */
     unknown,
     /**
-     * not filter out any entity
+     * not filter out any entity.
      */
     none,
     /**
-     * select by label
+     * select by label.
      */
-    label
+    label,
+    /**
+     * select by cluster.
+     */
+    cluster,
+    /**
+     * select by health state.
+     */
+    health,
+    /**
+     * select by enable state.
+     */
+    enable
 }
