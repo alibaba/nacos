@@ -203,9 +203,8 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during publish
      */
     public void signalPublish(String key, Record value) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
+        checkIsStopWork();
+        
         if (!isLeader()) {
             ObjectNode params = JacksonUtils.createEmptyJsonNode();
             params.put("key", key);
@@ -291,9 +290,8 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during delete
      */
     public void signalDelete(final String key) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
+        checkIsStopWork();
+        
         OPERATE_LOCK.lock();
         try {
             
@@ -354,9 +352,8 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during publish
      */
     public void onPublish(Datum datum, RaftPeer source) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
+        checkIsStopWork();
+        
         RaftPeer local = peers.local();
         if (datum.value == null) {
             Loggers.RAFT.warn("received empty datum");
@@ -410,9 +407,8 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during delete
      */
     public void onDelete(String datumKey, RaftPeer source) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
+        checkIsStopWork();
+        
         RaftPeer local = peers.local();
         
         if (!peers.isLeader(source.ip)) {
@@ -555,9 +551,8 @@ public class RaftCore implements Closeable {
      * @return self-peer information
      */
     public synchronized RaftPeer receivedVote(RaftPeer remote) {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
+        checkIsStopWork();
+        
         if (!peers.contains(remote)) {
             throw new IllegalStateException("can not find peer: " + remote.ip);
         }
@@ -719,9 +714,8 @@ public class RaftCore implements Closeable {
      * @throws Exception any exception during handle
      */
     public RaftPeer receivedBeat(JsonNode beat) throws Exception {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
-        }
+        checkIsStopWork();
+        
         final RaftPeer local = peers.local();
         final RaftPeer remote = new RaftPeer();
         JsonNode peer = beat.get("peer");
@@ -1086,4 +1080,12 @@ public class RaftCore implements Closeable {
         return (int) publisher.currentEventSize();
     }
     
+    /**
+     * Check that the 'Raft' protocol has stopped working.
+     */
+    public void checkIsStopWork() {
+        if (stopWork) {
+            throw new IllegalStateException("old raft protocol already stop work");
+        }
+    }
 }

@@ -83,7 +83,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @Override
     public void put(String key, Record value) throws NacosException {
-        checkIsStopWork();
+        raftCore.checkIsStopWork();
         try {
             raftCore.signalPublish(key, value);
         } catch (Exception e) {
@@ -95,7 +95,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @Override
     public void remove(String key) throws NacosException {
-        checkIsStopWork();
+        raftCore.checkIsStopWork();
         try {
             if (KeyBuilder.matchInstanceListKey(key) && !raftCore.isLeader()) {
                 raftCore.onDelete(key, peers.getLeader());
@@ -111,7 +111,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     
     @Override
     public Datum get(String key) throws NacosException {
-        checkIsStopWork();
+        raftCore.checkIsStopWork();
         return raftCore.getDatum(key);
     }
     
@@ -172,12 +172,6 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
             Loggers.RAFT.error("Raft onRemove failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR,
                     "Raft onRemove failed, datum:" + datum + ", source: " + source, e);
-        }
-    }
-    
-    private void checkIsStopWork() {
-        if (stopWork) {
-            throw new IllegalStateException("old raft protocol already stop work");
         }
     }
 }
