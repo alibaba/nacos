@@ -94,7 +94,7 @@ public class NotifyCenter {
                     publisher.init(cls, buffer);
                     return publisher;
                 } catch (Throwable ex) {
-                    LOGGER.error("Service class newInstance has error : {}", ex);
+                    LOGGER.error("Service class newInstance has error : ", ex);
                     throw new NacosRuntimeException(SERVER_ERROR, ex);
                 }
             }
@@ -107,7 +107,7 @@ public class NotifyCenter {
             INSTANCE.sharePublisher.init(SlowEvent.class, shareBufferSize);
             
         } catch (Throwable ex) {
-            LOGGER.error("Service class newInstance has error : {}", ex);
+            LOGGER.error("Service class newInstance has error : ", ex);
         }
         
         ThreadUtils.addShutdownHook(new Runnable() {
@@ -150,14 +150,14 @@ public class NotifyCenter {
                 EventPublisher eventPublisher = entry.getValue();
                 eventPublisher.shutdown();
             } catch (Throwable e) {
-                LOGGER.error("[EventPublisher] shutdown has error : {}", e);
+                LOGGER.error("[EventPublisher] shutdown has error : ", e);
             }
         }
         
         try {
             INSTANCE.sharePublisher.shutdown();
         } catch (Throwable e) {
-            LOGGER.error("[SharePublisher] shutdown has error : {}", e);
+            LOGGER.error("[SharePublisher] shutdown has error : ", e);
         }
         
         LOGGER.warn("[NotifyCenter] Destruction of the end");
@@ -269,7 +269,7 @@ public class NotifyCenter {
         try {
             return publishEvent(event.getClass(), event);
         } catch (Throwable ex) {
-            LOGGER.error("There was an exception to the message publishing : {}", ex);
+            LOGGER.error("There was an exception to the message publishing : ", ex);
             return false;
         }
     }
@@ -335,7 +335,7 @@ public class NotifyCenter {
         try {
             publisher.shutdown();
         } catch (Throwable ex) {
-            LOGGER.error("There was an exception when publisher shutdown : {}", ex);
+            LOGGER.error("There was an exception when publisher shutdown : ", ex);
         }
     }
     

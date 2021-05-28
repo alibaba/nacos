@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -73,7 +73,7 @@ public class MemberUtil {
         
         String address = member;
         int port = defaultPort;
-        String[] info = IPUtil.splitIPPortStr(address);
+        String[] info = InternetAddressUtil.splitIPPortStr(address);
         if (info.length > 1) {
             address = info[0];
             port = Integer.parseInt(info[1]);
@@ -131,7 +131,7 @@ public class MemberUtil {
         member.setState(NodeState.UP);
         member.setFailAccessCnt(0);
         if (!Objects.equals(old, member.getState())) {
-            manager.notifyMemberChange();
+            manager.notifyMemberChange(member);
         }
     }
     
@@ -160,7 +160,7 @@ public class MemberUtil {
             member.setState(NodeState.DOWN);
         }
         if (!Objects.equals(old, member.getState())) {
-            manager.notifyMemberChange();
+            manager.notifyMemberChange(member);
         }
     }
     

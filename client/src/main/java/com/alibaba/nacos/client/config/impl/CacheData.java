@@ -147,7 +147,7 @@ public class CacheData {
     }
     
     /**
-     * 返回监听器列表上的迭代器，只读。保证不返回NULL.
+     * Returns the iterator on the listener list, read-only. It is guaranteed not to return NULL.
      */
     public List<Listener> getListeners() {
         List<Listener> result = new ArrayList<Listener>();
@@ -251,7 +251,9 @@ public class CacheData {
                         adapter.fillContext(dataId, group);
                         LOGGER.info("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
                     }
-                    // 执行回调之前先将线程classloader设置为具体webapp的classloader，以免回调方法中调用spi接口是出现异常或错用（多应用部署才会有该问题）。
+                    // Before executing the callback, set the thread classloader to the classloader of
+                    // the specific webapp to avoid exceptions or misuses when calling the spi interface in
+                    // the callback method (this problem occurs only in multi-application deployment).
                     Thread.currentThread().setContextClassLoader(appClassLoader);
                     
                     ConfigResponse cr = new ConfigResponse();

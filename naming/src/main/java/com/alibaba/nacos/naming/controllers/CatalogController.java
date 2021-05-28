@@ -164,16 +164,15 @@ public class CatalogController {
      * @return response time information
      */
     @RequestMapping("/rt/service")
-    public ObjectNode rt4Service(HttpServletRequest request) {
+    public ObjectNode rt4Service(HttpServletRequest request) throws NacosException {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         
         Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new IllegalArgumentException("request service doesn't exist");
-        }
+        
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         

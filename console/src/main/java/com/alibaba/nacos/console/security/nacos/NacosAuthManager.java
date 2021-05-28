@@ -51,6 +51,10 @@ public class NacosAuthManager implements AuthManager {
     
     private static final String TOKEN_PREFIX = "Bearer ";
     
+    private static final String PARAM_USERNAME = "username";
+    
+    private static final String PARAM_PASSWORD = "password";
+    
     @Autowired
     private JwtTokenManager tokenManager;
     
@@ -152,8 +156,8 @@ public class NacosAuthManager implements AuthManager {
         }
         bearerToken = request.getParameter(Constants.ACCESS_TOKEN);
         if (StringUtils.isBlank(bearerToken)) {
-            String userName = request.getParameter("username");
-            String password = request.getParameter("password");
+            String userName = request.getParameter(PARAM_USERNAME);
+            String password = request.getParameter(PARAM_PASSWORD);
             bearerToken = resolveTokenFromUser(userName, password);
         }
         
@@ -170,8 +174,8 @@ public class NacosAuthManager implements AuthManager {
         }
         bearerToken = request.getHeader(Constants.ACCESS_TOKEN);
         if (StringUtils.isBlank(bearerToken)) {
-            String userName = request.getHeader("username");
-            String password = request.getHeader("password");
+            String userName = request.getHeader(PARAM_USERNAME);
+            String password = request.getHeader(PARAM_PASSWORD);
             bearerToken = resolveTokenFromUser(userName, password);
         }
         

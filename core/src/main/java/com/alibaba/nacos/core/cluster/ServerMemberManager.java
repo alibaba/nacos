@@ -242,7 +242,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             MemberUtil.copy(newMember, member);
             if (isPublishChangeEvent) {
                 // member basic data changes and all listeners need to be notified
-                notifyMemberChange();
+                notifyMemberChange(member);
             }
             return member;
         });
@@ -250,8 +250,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return true;
     }
     
-    void notifyMemberChange() {
-        NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
+    void notifyMemberChange(Member member) {
+        NotifyCenter.publishEvent(MembersChangeEvent.builder()
+                .trigger(member)
+                .members(allMembers())
+                .build());
     }
     
     /**

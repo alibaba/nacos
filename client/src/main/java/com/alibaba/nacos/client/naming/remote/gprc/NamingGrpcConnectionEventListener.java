@@ -42,7 +42,7 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     
     private final NamingGrpcClientProxy clientProxy;
     
-    private final ConcurrentMap<String, Set<Instance>> registeredInstanceCached = new ConcurrentHashMap<String, Set<Instance>>();
+    private final ConcurrentMap<String, Instance> registeredInstanceCached = new ConcurrentHashMap<>();
     
     private final Set<String> subscribes = new ConcurrentHashSet<String>();
     
@@ -70,21 +70,19 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     
     private void redoRegisterEachService() {
         LogUtils.NAMING_LOGGER.info("Grpc re-connect, redo register services");
-        for (Map.Entry<String, Set<Instance>> each : registeredInstanceCached.entrySet()) {
+        for (Map.Entry<String, Instance> each : registeredInstanceCached.entrySet()) {
             String serviceName = NamingUtils.getServiceName(each.getKey());
             String groupName = NamingUtils.getGroupName(each.getKey());
             redoRegisterEachInstance(serviceName, groupName, each.getValue());
         }
     }
     
-    private void redoRegisterEachInstance(String serviceName, String groupName, Set<Instance> instances) {
-        for (Instance each : instances) {
-            try {
-                clientProxy.registerService(serviceName, groupName, each);
-            } catch (NacosException e) {
-                LogUtils.NAMING_LOGGER
-                        .warn(String.format("redo register for service %s@@%s failed", groupName, serviceName), e);
-            }
+    private void redoRegisterEachInstance(String serviceName, String groupName, Instance instance) {
+        try {
+            clientProxy.registerService(serviceName, groupName, instance);
+        } catch (NacosException e) {
+            LogUtils.NAMING_LOGGER.warn(String
+                    .format("redo register for service %s@@%s, %s failed", groupName, serviceName, instance.toString()), e);
         }
     }
     
@@ -102,8 +100,7 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
      */
     public void cacheInstanceForRedo(String serviceName, String groupName, Instance instance) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
-        registeredInstanceCached.putIfAbsent(key, new ConcurrentHashSet<Instance>());
-        registeredInstanceCached.get(key).add(instance);
+        registeredInstanceCached.put(key, instance);
     }
     
     /**
@@ -115,10 +112,7 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
      */
     public void removeInstanceForRedo(String serviceName, String groupName, Instance instance) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
-        Set<Instance> instances = registeredInstanceCached.get(key);
-        if (null != instances) {
-            instances.remove(instance);
-        }
+        registeredInstanceCached.remove(key);
     }
     
     public void cacheSubscriberForRedo(String fullServiceName, String cluster) {

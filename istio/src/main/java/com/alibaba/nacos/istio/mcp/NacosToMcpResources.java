@@ -17,10 +17,13 @@
 package com.alibaba.nacos.istio.mcp;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.google.protobuf.Any;
 import com.google.protobuf.Timestamp;
@@ -36,6 +39,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -66,7 +71,10 @@ public class NacosToMcpResources {
     private NacosMcpService nacosMcpService;
     
     @Autowired
-    private ServiceManager serviceManager;
+    private ServiceStorage serviceStorage;
+    
+    @Autowired
+    private NamingMetadataManager namingMetadataManager;
     
     public void start() {
         GlobalExecutor
@@ -78,6 +86,8 @@ public class NacosToMcpResources {
         @Override
         public void run() {
             
+            ServiceManager serviceManager = ServiceManager.getInstance();
+            
             boolean changed = false;
             
             // Query all services to see if any of them have changes:
@@ -85,31 +95,32 @@ public class NacosToMcpResources {
             Set<String> allServices = new HashSet<>();
             for (String namespace : namespaces) {
                 
-                Map<String, Service> services = serviceManager.chooseServiceMap(namespace);
+                Set<Service> services = serviceManager.getSingletons(namespace);
                 
                 if (services.isEmpty()) {
                     continue;
                 }
                 
-                for (Service service : services.values()) {
+                for (Service service : services) {
+                    ServiceInfo serviceInfo = serviceStorage.getData(service);
                     
                     String convertedName = convertName(service);
                     allServices.add(convertedName);
                     // Service not changed:
                     if (checksumMap.containsKey(convertedName) && checksumMap.get(convertedName)
-                            .equals(service.getChecksum())) {
+                            .equals(serviceInfo.getChecksum())) {
                         continue;
                     }
                     // Update the resource:
                     changed = true;
-                    if (service.allIPs().isEmpty()) {
+                    if (!serviceInfo.validate()) {
                         resourceMap.remove(convertedName);
                         checksumMap.remove(convertedName);
                         continue;
                     }
                     
                     resourceMap.put(convertedName, convertService(service));
-                    checksumMap.put(convertedName, service.getChecksum());
+                    checksumMap.put(convertedName, serviceInfo.getChecksum());
                 }
             }
             
@@ -132,36 +143,33 @@ public class NacosToMcpResources {
     }
     
     private String convertName(Service service) {
-        if (!Constants.DEFAULT_GROUP.equals(NamingUtils.getGroupName(service.getName()))) {
-            return NamingUtils.getServiceName(service.getName()) + "." + NamingUtils.getGroupName(service.getName())
-                    + "." + service.getNamespaceId();
+        if (!Constants.DEFAULT_GROUP.equals(service.getGroup())) {
+            return service.getName() + "." + service.getGroup() + "." + service.getNamespace();
         }
         //DEFAULT_GROUP is invalid for istio,because the istio host only supports: [0-9],[A-Z],[a-z],-,*
-        return NamingUtils.getServiceName(service.getName()) + ".DEFAULT-GROUP" + "." + service.getNamespaceId();
+        return service.getName() + ".DEFAULT-GROUP" + "." + service.getNamespace();
     }
     
     private ResourceOuterClass.Resource convertService(Service service) {
-        
         String serviceName = convertName(service);
         ServiceEntryOuterClass.ServiceEntry.Builder serviceEntryBuilder = ServiceEntryOuterClass.ServiceEntry
                 .newBuilder().setResolution(ServiceEntryOuterClass.ServiceEntry.Resolution.STATIC)
                 .setLocation(ServiceEntryOuterClass.ServiceEntry.Location.MESH_INTERNAL)
                 .addHosts(serviceName + "." + SERVICE_NAME_SPLITTER);
+        
+        ServiceInfo serviceInfo = serviceStorage.getData(service);
+        
+        List<Instance> hosts = serviceInfo.getHosts();
+        
         int port = 0;
-        for (Instance instance : service.allIPs()) {
+        for (Instance instance : hosts) {
             if (port == 0) {
                 port = instance.getPort();
             }
             if (!instance.isHealthy() || !instance.isEnabled()) {
                 continue;
             }
-            Map<String, String> metadata = new HashMap<>(instance.getMetadata());
-            if (StringUtils.isNotEmpty(instance.getApp())) {
-                metadata.put("app", instance.getApp());
-            }
-            if (StringUtils.isNotEmpty(instance.getTenant())) {
-                metadata.put("tenant", instance.getTenant());
-            }
+            Map<String, String> metadata = instance.getMetadata();
             if (StringUtils.isNotEmpty(instance.getClusterName())) {
                 metadata.put("cluster", instance.getClusterName());
             }
@@ -177,14 +185,16 @@ public class NacosToMcpResources {
         
         ServiceEntryOuterClass.ServiceEntry serviceEntry = serviceEntryBuilder.build();
         
+        Optional<ServiceMetadata> serviceMetadata = namingMetadataManager.getServiceMetadata(service);
+        ServiceMetadata serviceMetadataGetter = serviceMetadata.orElseGet(ServiceMetadata::new);
+        
         Any any = Any.newBuilder().setValue(serviceEntry.toByteString()).setTypeUrl(MESSAGE_TYPE_URL).build();
         MetadataOuterClass.Metadata metadata = MetadataOuterClass.Metadata.newBuilder()
-                .setName(SERVICE_NAME_SPLITTER + "/" + serviceName).putAllAnnotations(service.getMetadata())
-                .putAnnotations("virtual", "1")
+                .setName(SERVICE_NAME_SPLITTER + "/" + serviceName)
+                .putAllAnnotations(serviceMetadataGetter.getExtendData()).putAnnotations("virtual", "1")
                 .setCreateTime(Timestamp.newBuilder().setSeconds(System.currentTimeMillis() / 1000).build())
-                .setVersion(service.getChecksum()).build();
+                .setVersion(serviceInfo.getChecksum()).build();
         
         return ResourceOuterClass.Resource.newBuilder().setBody(any).setMetadata(metadata).build();
-        
     }
 }

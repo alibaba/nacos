@@ -63,6 +63,8 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     
     private static final String LDAP_PREFIX = "LDAP_";
     
+    private static final String DEFAULT_SECURITY_AUTH = "simple";
+    
     @Autowired
     private NacosUserDetailsServiceImpl userDetailsService;
     
@@ -112,11 +114,12 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     
     private boolean isAdmin(String username) {
         List<RoleInfo> roleInfos = nacosRoleService.getRoles(username);
-        if (CollectionUtils.isNotEmpty(roleInfos)) {
-            for (RoleInfo roleinfo : roleInfos) {
-                if (GLOBAL_ADMIN_ROLE.equals(roleinfo.getRole())) {
-                    return true;
-                }
+        if (CollectionUtils.isEmpty(roleInfos)) {
+            return false;
+        }
+        for (RoleInfo roleinfo : roleInfos) {
+            if (GLOBAL_ADMIN_ROLE.equals(roleinfo.getRole())) {
+                return true;
             }
         }
         return false;
@@ -126,7 +129,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, FACTORY);
         env.put(Context.PROVIDER_URL, ldapUrl);
-        env.put(Context.SECURITY_AUTHENTICATION, "simple");
+        env.put(Context.SECURITY_AUTHENTICATION, DEFAULT_SECURITY_AUTH);
         
         env.put(Context.SECURITY_PRINCIPAL, userNamePattern.replace("{0}", username));
         env.put(Context.SECURITY_CREDENTIALS, password);

@@ -248,9 +248,9 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
             throws NacosException {
         Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "no service " + serviceName + " found!");
-        }
+        
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
+        
         List<String> clusters = new ArrayList<>();
         clusters.add(cluster);
         List<com.alibaba.nacos.naming.core.Instance> ips = service.allIPs(clusters);
@@ -301,10 +301,8 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         
         Service service = serviceManager.getService(namespaceId, serviceName);
         
-        if (service == null) {
-            throw new NacosException(NacosException.SERVER_ERROR,
-                    "service not found: " + serviceName + "@" + namespaceId);
-        }
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
+        
         if (clientBeat == null) {
             clientBeat = new RsInfo();
             clientBeat.setIp(ip);
@@ -328,9 +326,9 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     @Override
     public List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException {
         Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service: " + serviceName + " not found.");
-        }
+        
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
+        
         return service.allIPs();
     }
     

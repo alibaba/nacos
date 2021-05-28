@@ -105,10 +105,9 @@ public class GrpcUtils {
         // request body .
         request.clearHeaders();
         String jsonString = toJson(request);
-        Payload payload = payloadBuilder
+        return payloadBuilder
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .build();
-        return payload;
         
     }
     
@@ -126,11 +125,10 @@ public class GrpcUtils {
         String jsonString = toJson(request);
         
         Payload.Builder builder = Payload.newBuilder();
-        
-        Payload payload = builder
+    
+        return builder
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .setMetadata(newMeta).build();
-        return payload;
         
     }
     
@@ -144,10 +142,9 @@ public class GrpcUtils {
         String jsonString = toJson(response);
         
         Metadata.Builder metaBuilder = Metadata.newBuilder().setType(response.getClass().getSimpleName());
-        Payload payload = Payload.newBuilder()
+        return Payload.newBuilder()
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .setMetadata(metaBuilder.build()).build();
-        return payload;
     }
     
     /**
