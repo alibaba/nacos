@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.Page;
@@ -53,6 +56,7 @@ public class HistoryController {
      * @return the page of history config.
      */
     @GetMapping(params = "search=accurate")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -74,7 +78,11 @@ public class HistoryController {
      * @return history config info
      */
     @GetMapping
-    public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("nid") Long nid) {
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("dataId") String dataId, // for @Secured
+            @RequestParam("group") String group, // for @Secured
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant, // for @Secured
+            @RequestParam("nid") Long nid) {
         return persistService.detailConfigHistory(nid);
     }
     
@@ -86,7 +94,11 @@ public class HistoryController {
      * @since 1.4.0
      */
     @GetMapping(value = "/previous")
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("id") Long id) {
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId, // for @Secured
+            @RequestParam("group") String group, // for @Secured
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant, // for @Secured,
+            @RequestParam("id") Long id) {
         return persistService.detailPreviousConfigHistory(id);
     }
     
