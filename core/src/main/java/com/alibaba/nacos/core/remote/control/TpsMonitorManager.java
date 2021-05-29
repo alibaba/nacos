@@ -173,7 +173,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                 
             }
         } catch (Exception e) {
-            Loggers.TPS_CONTROL.warn("Tps control rule apply error ,error={} ", e);
+            Loggers.TPS_CONTROL.warn("Tps control rule apply error ,error= ", e);
         }
         
     }
@@ -302,8 +302,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     
     private File getRuleFile(String pointName) {
         File baseDir = checkBaseDir();
-        File pointFile = new File(baseDir, pointName);
-        return pointFile;
+        return new File(baseDir, pointName);
     }
     
     private File checkBaseDir() {

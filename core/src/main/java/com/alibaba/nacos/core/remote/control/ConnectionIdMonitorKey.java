@@ -24,6 +24,8 @@ package com.alibaba.nacos.core.remote.control;
  */
 public class ConnectionIdMonitorKey extends MonitorKey {
     
+    private static final String TYPE = "connectionId";
+    
     String key;
     
     public ConnectionIdMonitorKey() {
@@ -36,7 +38,7 @@ public class ConnectionIdMonitorKey extends MonitorKey {
     
     @Override
     public String getType() {
-        return "connectionId";
+        return TYPE;
     }
     
 }

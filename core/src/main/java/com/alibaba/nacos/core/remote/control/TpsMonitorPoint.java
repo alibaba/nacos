@@ -38,6 +38,8 @@ public class TpsMonitorPoint {
     
     public static final int DEFAULT_RECORD_SIZE = 10;
     
+    private static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+    
     private long startTime;
     
     private String pointName;
@@ -64,12 +66,12 @@ public class TpsMonitorPoint {
      * get trim mills of second.
      *
      * @param timeStamp timestamp milliseconds.
-     * @return
+     * @return mills of second.
      */
     public static long getTrimMillsOfSecond(long timeStamp) {
         String millString = String.valueOf(timeStamp);
         String substring = millString.substring(0, millString.length() - 3);
-        return Long.valueOf(substring + "000");
+        return Long.parseLong(substring + "000");
         
     }
     
@@ -77,35 +79,34 @@ public class TpsMonitorPoint {
      * get trim mills of second.
      *
      * @param timeStamp timestamp milliseconds.
-     * @return
+     * @return minis of minute.
      */
     public static long getTrimMillsOfMinute(long timeStamp) {
         String millString = String.valueOf(timeStamp);
         String substring = millString.substring(0, millString.length() - 3);
-        return Long.valueOf(Long.valueOf(substring) / 60 * 60 + "000");
+        return Long.parseLong(Long.parseLong(substring) / 60 * 60 + "000");
     }
     
     /**
      * get trim mills of second.
      *
      * @param timeStamp timestamp milliseconds.
-     * @return
+     * @return mills of hour.
      */
     public static long getTrimMillsOfHour(long timeStamp) {
         String millString = String.valueOf(timeStamp);
         String substring = millString.substring(0, millString.length() - 3);
-        return Long.valueOf(Long.valueOf(substring) / (60 * 60) * (60 * 60) + "000");
+        return Long.parseLong(Long.parseLong(substring) / (60 * 60) * (60 * 60) + "000");
     }
     
     /**
      * get format string "2021-01-16 17:20:21" of timestamp.
      *
      * @param timeStamp timestamp milliseconds.
-     * @return
+     * @return datetime string.
      */
     public static String getTimeFormatOfSecond(long timeStamp) {
-        String format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timeStamp));
-        return format;
+        return new SimpleDateFormat(DATETIME_PATTERN).format(new Date(timeStamp));
     }
     
     private void stopAllMonitorClient() {
@@ -283,7 +284,7 @@ public class TpsMonitorPoint {
             Iterator<Map.Entry<String, TpsRecorder>> iteratorCurrent = monitorKeysRecorderCurrent.entrySet().iterator();
             while (iteratorCurrent.hasNext()) {
                 Map.Entry<String, TpsRecorder> next1 = iteratorCurrent.next();
-                if (!newMonitorKeyRules.containsKey(next1.getKey().toString())) {
+                if (!newMonitorKeyRules.containsKey(next1.getKey())) {
                     Loggers.TPS_CONTROL.info("Delete  point  control rule for pointName=[{}] ,monitorKey=[{}]",
                             this.getPointName(), next1.getKey());
                     iteratorCurrent.remove();
