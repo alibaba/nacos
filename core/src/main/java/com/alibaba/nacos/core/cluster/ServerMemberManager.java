@@ -495,7 +495,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     class MemberInfoReportTask extends Task {
         
-        private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() {};
+        private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() { };
         
         private int cursor = 0;
         
