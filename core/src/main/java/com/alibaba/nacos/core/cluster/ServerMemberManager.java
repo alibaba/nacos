@@ -83,7 +83,17 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder
             .getNacosAsyncRestTemplate(Loggers.CORE);
     
+    private static final int DEFAULT_SERVER_PORT = 8848;
+    
+    private static final String SERVER_PORT_PROPERTY = "server.port";
+    
+    private static final String MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY = "nacos.member-change-event.queue.size";
+    
+    private static final int DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE = 128;
+    
     private static boolean isUseAddressServer = false;
+    
+    private static final long DEFAULT_TASK_DELAY_TIME = 5_000L;
     
     /**
      * Cluster node list.
@@ -134,7 +144,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     protected void init() throws NacosException {
         Loggers.CORE.info("Nacos-related cluster resource initialization");
-        this.port = EnvUtil.getProperty("server.port", Integer.class, 8848);
+        this.port = EnvUtil.getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
@@ -186,7 +196,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private void registerClusterEvent() {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
-                EnvUtil.getProperty("nacos.member-change-event.queue.size", Integer.class, 128));
+                EnvUtil.getProperty(MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY, Integer.class, DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE));
         
         // The address information of this node needs to be dynamically modified
         // when registering the IP change of this node
@@ -265,13 +275,15 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      */
     public boolean hasMember(String address) {
         boolean result = serverList.containsKey(address);
-        if (!result) {
-            // If only IP information is passed in, a fuzzy match is required
-            for (Map.Entry<String, Member> entry : serverList.entrySet()) {
-                if (StringUtils.contains(entry.getKey(), address)) {
-                    result = true;
-                    break;
-                }
+        if (result) {
+            return true;
+        }
+        
+        // If only IP information is passed in, a fuzzy match is required
+        for (Map.Entry<String, Member> entry : serverList.entrySet()) {
+            if (StringUtils.contains(entry.getKey(), address)) {
+                result = true;
+                break;
             }
         }
         return result;
@@ -431,7 +443,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     public void onApplicationEvent(WebServerInitializedEvent event) {
         getSelf().setState(NodeState.UP);
         if (!EnvUtil.getStandaloneMode()) {
-            GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
+            GlobalExecutor.scheduleByCommon(this.infoReportTask, DEFAULT_TASK_DELAY_TIME);
         }
         EnvUtil.setPort(event.getWebServer().getPort());
         EnvUtil.setLocalAddress(this.localAddress);
@@ -483,8 +495,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     class MemberInfoReportTask extends Task {
         
-        private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() {
-        };
+        private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() {};
         
         private int cursor = 0;
         
