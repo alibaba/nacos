@@ -93,13 +93,12 @@ public class DistroMapper extends MemberChangeListener {
         }
         
         int index = servers.indexOf(EnvUtil.getLocalAddress());
-        int lastIndex = servers.lastIndexOf(EnvUtil.getLocalAddress());
-        if (lastIndex < 0 || index < 0) {
+        if (index < 0) {
             return true;
         }
         
         int target = distroHash(responsibleTag) % servers.size();
-        return target >= index && target <= lastIndex;
+        return index == target;
     }
     
     /**
