@@ -73,6 +73,32 @@ public class ServerListManagerTest {
             Assert.assertTrue(mgr3.contain("http://1.1.1.1:8848"));
             Assert.assertEquals("ServerManager-fixed-1.1.1.1_8848-[http://1.1.1.1:8848]", mgr3.toString());
         }
+
+        {
+            Properties properties3 = new Properties();
+            properties3.put(PropertyKeyConst.CONTEXT_PATH, "aaa");
+            properties3.put(PropertyKeyConst.SERVER_ADDR, "1.1.1.1:8848,2.2.2.2:8848");
+
+            final ServerListManager mgr4 = new ServerListManager(properties3);
+            Assert.assertEquals(2, mgr4.getServerUrls().size());
+            Assert.assertEquals("http://1.1.1.1:8848", mgr4.getServerUrls().get(0));
+            Assert.assertEquals("http://2.2.2.2:8848", mgr4.getServerUrls().get(1));
+            Assert.assertTrue(mgr4.contain("http://1.1.1.1:8848"));
+            Assert.assertEquals("ServerManager-fixed-1.1.1.1_8848-2.2.2.2_8848-[http://1.1.1.1:8848, http://2.2.2.2:8848]", mgr4.toString());
+        }
+
+        {
+            Properties properties4 = new Properties();
+            properties4.put(PropertyKeyConst.CONTEXT_PATH, "aaa");
+            properties4.put(PropertyKeyConst.SERVER_ADDR, "1.1.1.1:8848;2.2.2.2:8848");
+
+            final ServerListManager mgr5 = new ServerListManager(properties4);
+            Assert.assertEquals(2, mgr5.getServerUrls().size());
+            Assert.assertEquals("http://1.1.1.1:8848", mgr5.getServerUrls().get(0));
+            Assert.assertEquals("http://2.2.2.2:8848", mgr5.getServerUrls().get(1));
+            Assert.assertTrue(mgr5.contain("http://1.1.1.1:8848"));
+            Assert.assertEquals("ServerManager-fixed-1.1.1.1_8848-2.2.2.2_8848-[http://1.1.1.1:8848, http://2.2.2.2:8848]", mgr5.toString());
+        }
         
     }
     
