@@ -78,6 +78,22 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
      */
     private static final long KEEP_ALIVE_TIME = 20000L;
     
+    /**
+     * connection limit rule.
+     */
+    private ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
+    
+    /**
+     * current loader adjust count,only effective once,use to re balance.
+     */
+    private int loadClient = -1;
+    
+    String redirectAddress = null;
+    
+    private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<String, AtomicInteger>(16);
+    
+    Map<String, Connection> connections = new ConcurrentHashMap<String, Connection>();
+    
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
@@ -103,25 +119,9 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
             loadRuleFromLocal();
             registerFileWatch();
         } catch (Exception e) {
-            Loggers.REMOTE.warn("Fail to init limit rue from local ,error={} ", e);
+            Loggers.REMOTE.warn("Fail to init limit rue from local ,error= ", e);
         }
     }
-    
-    /**
-     * connection limit rule.
-     */
-    private ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-    
-    /**
-     * current loader adjust count,only effective once,use to re balance.
-     */
-    private int loadClient = -1;
-    
-    String redirectAddress = null;
-    
-    private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<String, AtomicInteger>(16);
-    
-    Map<String, Connection> connections = new ConcurrentHashMap<String, Connection>();
     
     /**
      * check connection id is valid.
@@ -188,8 +188,8 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
             // 1.check rule of specific client ip limit.
             if (connectionLimitRule.getCountLimitPerClientIp().containsKey(clientIp)) {
                 Integer integer = connectionLimitRule.getCountLimitPerClientIp().get(clientIp);
-                if (integer != null && integer.intValue() >= 0) {
-                    return currentCount.get() < integer.intValue();
+                if (integer != null && integer >= 0) {
+                    return currentCount.get() < integer;
                 }
             }
             // 2.check rule of specific client app limit.
@@ -197,8 +197,8 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
             if (StringUtils.isNotBlank(appName) && connectionLimitRule.getCountLimitPerClientApp()
                     .containsKey(appName)) {
                 Integer integerApp = connectionLimitRule.getCountLimitPerClientApp().get(appName);
-                if (integerApp != null && integerApp.intValue() >= 0) {
-                    return currentCount.get() < integerApp.intValue();
+                if (integerApp != null && integerApp >= 0) {
+                    return currentCount.get() < integerApp;
                 }
             }
             
@@ -342,7 +342,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                             .info("Check over limit for ip limit rule, over limit ip count={}", expelForIp.size());
                     
                     if (expelForIp.size() > 0) {
-                        Loggers.REMOTE_DIGEST.info("Over limit ip expel info,", expelForIp);
+                        Loggers.REMOTE_DIGEST.info("Over limit ip expel info, {}", expelForIp);
                     }
                     
                     Set<String> outDatedConnections = new HashSet<>();
@@ -400,7 +400,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                         } catch (ConnectionAlreadyClosedException e) {
                             unregister(expelledClientId);
                         } catch (Exception e) {
-                            Loggers.REMOTE_DIGEST.error("Error occurs when expel connection :", expelledClientId, e);
+                            Loggers.REMOTE_DIGEST.error("Error occurs when expel connection, expelledClientId:{}", expelledClientId, e);
                         }
                     }
                     
@@ -520,7 +520,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                 } catch (ConnectionAlreadyClosedException e) {
                     unregister(connectionId);
                 } catch (Exception e) {
-                    Loggers.REMOTE.error("error occurs when expel connection :", connectionId, e);
+                    Loggers.REMOTE.error("error occurs when expel connection, connectionId: {} ", connectionId, e);
                 }
             }
         }
@@ -563,7 +563,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     /**
      * get client count from sdk.
      *
-     * @return
+     * @return sdk client count.
      */
     public int currentSdkClientCount() {
         Map<String, String> filter = new HashMap<String, String>(2);
@@ -597,7 +597,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                 try {
                     saveRuleToLocal(this.connectionLimitRule);
                 } catch (Exception e) {
-                    Loggers.REMOTE.warn("Fail to save rule to local error is {}", e);
+                    Loggers.REMOTE.warn("Fail to save rule to local error is ", e);
                 }
             } else {
                 Loggers.REMOTE.info("Parse rule is null,Ignore illegal rule  :{}", limitRule);
@@ -644,8 +644,8 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         public int getCountLimitOfIp(String clientIp) {
             if (countLimitPerClientIp.containsKey(clientIp)) {
                 Integer integer = countLimitPerClientIp.get(clientIp);
-                if (integer != null && integer.intValue() >= 0) {
-                    return integer.intValue();
+                if (integer != null && integer >= 0) {
+                    return integer;
                 }
             }
             return -1;
@@ -654,8 +654,8 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         public int getCountLimitOfApp(String appName) {
             if (countLimitPerClientApp.containsKey(appName)) {
                 Integer integer = countLimitPerClientApp.get(appName);
-                if (integer != null && integer.intValue() >= 0) {
-                    return integer.intValue();
+                if (integer != null && integer >= 0) {
+                    return integer;
                 }
             }
             return -1;
@@ -731,8 +731,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
         if (!baseDir.exists()) {
             baseDir.mkdir();
         }
-        File pointFile = new File(baseDir, RULE_FILE_NAME);
-        return pointFile;
+        return new File(baseDir, RULE_FILE_NAME);
     }
     
     private void registerFileWatch() {
