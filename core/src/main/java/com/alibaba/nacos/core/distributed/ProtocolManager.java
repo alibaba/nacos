@@ -100,6 +100,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     }
     
     @PreDestroy
+    @Override
     public void destroy() {
         if (Objects.nonNull(apProtocol)) {
             apProtocol.shutdown();
