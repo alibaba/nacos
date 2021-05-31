@@ -46,7 +46,7 @@ public class RemoteUtils {
     public static int getRemoteExecutorTimesOfProcessors() {
         String timesString = System.getProperty("remote.executor.times.of.processors");
         if (NumberUtil.isDigits(timesString)) {
-            Integer times = Integer.valueOf(timesString);
+            int times = Integer.parseInt(timesString);
             return times > 0 ? times : REMOTE_EXECUTOR_TIMES_OF_PROCESSORS;
         } else {
             return REMOTE_EXECUTOR_TIMES_OF_PROCESSORS;
@@ -56,7 +56,7 @@ public class RemoteUtils {
     public static int getRemoteExecutorQueueSize() {
         String queueSizeString = System.getProperty("remote.executor.queue.size");
         if (NumberUtil.isDigits(queueSizeString)) {
-            Integer size = Integer.valueOf(queueSizeString);
+            int size = Integer.parseInt(queueSizeString);
             return size > 0 ? size : REMOTE_EXECUTOR_QUEUE_SIZE;
         } else {
             return REMOTE_EXECUTOR_QUEUE_SIZE;
