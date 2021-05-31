@@ -40,7 +40,7 @@ public abstract class MonitorKey {
     /**
      * get monitor key type.
      *
-     * @return
+     * @return type.
      */
     public abstract String getType();
     

@@ -34,7 +34,7 @@ public class MonitorKeyMatcher {
      * if provided monitor key match this monitor ,with monitor type.
      *
      * @param monitorKey monitorKey.
-     * @return
+     * @return type matched result.
      */
     public static boolean matchWithType(String pattern, String monitorKey) {
         String[] typeInPattern = pattern.split(Constants.COLON);
@@ -50,7 +50,7 @@ public class MonitorKeyMatcher {
      * if provided monitor key match this monitor.
      *
      * @param monitorKey monitorKey.
-     * @return
+     * @return matched result.
      */
     public static boolean match(String pattern, String monitorKey) {
         pattern = pattern.trim();

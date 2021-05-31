@@ -82,7 +82,7 @@ public class TpsRecorder {
      * get slot of the timestamp second,create if not exist.
      *
      * @param timeStamp the timestamp second.
-     * @return
+     * @return tps slot.
      */
     public TpsSlot createSlotIfAbsent(long timeStamp) {
         long distance = timeStamp - startTime;
@@ -100,7 +100,7 @@ public class TpsRecorder {
      * get slot of the timestamp second,read only ,return nul if not exist.
      *
      * @param timeStamp the timestamp second.
-     * @return
+     * @return tps slot.
      */
     public TpsSlot getPoint(long timeStamp) {
         long distance = timeStamp - startTime;

@@ -24,6 +24,8 @@ package com.alibaba.nacos.core.remote.control;
  */
 public class ClientIpMonitorKey extends MonitorKey {
     
+    private static final String TYPE =  "clientIp";
+    
     public ClientIpMonitorKey() {
     
     }
@@ -34,7 +36,7 @@ public class ClientIpMonitorKey extends MonitorKey {
     
     @Override
     public String getType() {
-        return "clientIp";
+        return TYPE;
     }
     
 }
