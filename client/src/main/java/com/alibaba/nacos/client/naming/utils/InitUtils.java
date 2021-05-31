@@ -61,15 +61,6 @@ public class InitUtils {
             tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
                 @Override
                 public String call() {
-                    String namespace = System.getProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
-                    LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
-                    return namespace;
-                }
-            });
-            
-            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-                @Override
-                public String call() {
                     String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
                     LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
                     return namespace;
