@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.api.ability.ServerAbilities;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -177,7 +178,7 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
     /**
      * get a copy.
      *
-     * @return
+     * @return member.
      */
     public Member copy() {
         Member copy = null;
@@ -185,14 +186,12 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(baos);
             oos.writeObject(this);
-            //将流序列化成对象
+            // convert the input stream to member object
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
             ObjectInputStream ois = new ObjectInputStream(bais);
             copy = (Member) ois.readObject();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        } catch (IOException | ClassNotFoundException e) {
+            Loggers.CORE.warn("[Member copy] copy failed", e);
         }
         return copy;
     }

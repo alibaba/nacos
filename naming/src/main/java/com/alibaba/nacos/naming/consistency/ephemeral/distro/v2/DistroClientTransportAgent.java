@@ -87,6 +87,7 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
     public void syncData(DistroData data, String targetServer, DistroCallback callback) {
         if (isNoExistTarget(targetServer)) {
             callback.onSuccess();
+            return;
         }
         DistroDataRequest request = new DistroDataRequest(data, data.getType());
         Member member = memberManager.find(targetServer);
@@ -123,6 +124,7 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
     public void syncVerifyData(DistroData verifyData, String targetServer, DistroCallback callback) {
         if (isNoExistTarget(targetServer)) {
             callback.onSuccess();
+            return;
         }
         DistroDataRequest request = new DistroDataRequest(verifyData, DataOperation.VERIFY);
         Member member = memberManager.find(targetServer);

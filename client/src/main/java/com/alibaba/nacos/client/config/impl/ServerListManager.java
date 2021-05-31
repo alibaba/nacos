@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -154,8 +155,9 @@ public class ServerListManager implements Closeable {
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
             this.isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
-            String[] serverAddrsArr = this.serverAddrsStr.split(",");
-            for (String serverAddr : serverAddrsArr) {
+            StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
+            while (serverAddrsTokens.hasMoreTokens()) {
+                String serverAddr = serverAddrsTokens.nextToken().trim();
                 if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
                 } else {
