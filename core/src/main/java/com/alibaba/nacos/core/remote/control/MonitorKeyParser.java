@@ -29,7 +29,7 @@ public abstract class MonitorKeyParser {
      * parse monitor key.
      *
      * @param arg0 parameters.
-     * @return
+     * @return monitor key.
      */
     public abstract MonitorKey parse(Object... arg0);
     

@@ -77,7 +77,7 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
             boolean pass = tpsMonitorManager.applyTps(pointName, meta.getConnectionId(), monitorKeys);
             
             if (!pass) {
-                Response response = null;
+                Response response;
                 try {
                     response = super.getDefaultResponseInstance(handlerClazz);
                     response.setErrorInfo(NacosException.OVER_THRESHOLD, "Tps Flow restricted");
