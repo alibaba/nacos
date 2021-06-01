@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.Properties;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -33,42 +34,44 @@ public class SecurityProxyTest {
     
     @Test
     public void testLoginSuccess() throws Exception {
-        Properties properties = new Properties();
+        //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
         result.setCode(200);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any())).thenReturn(result);
+        Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
         SecurityProxy securityProxy = new SecurityProxy(properties, nacosRestTemplate);
-        
+        //when
         boolean ret = securityProxy.login("localhost");
+        //then
         Assert.assertTrue(ret);
         
     }
     
     @Test
     public void testTestLoginFailCode() throws Exception {
-        Properties properties = new Properties();
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setCode(400);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any())).thenReturn(result);
-        
+        Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
         SecurityProxy securityProxy = new SecurityProxy(properties, nacosRestTemplate);
         
         boolean ret = securityProxy.login("localhost");
+        
         Assert.assertFalse(ret);
     }
     
     @Test
     public void testTestLoginFailHttp() throws Exception {
-        Properties properties = new Properties();
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any())).thenThrow(new Exception());
+        Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
         SecurityProxy securityProxy = new SecurityProxy(properties, nacosRestTemplate);
@@ -78,10 +81,69 @@ public class SecurityProxyTest {
     }
     
     @Test
-    public void testGetAccessToken() {
+    public void testTestLoginServerListSuccess() throws Exception {
+        //given
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+        HttpRestResult<Object> result = new HttpRestResult<>();
+        result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
+        result.setCode(200);
+        when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any())).thenReturn(result);
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
+        SecurityProxy securityProxy = new SecurityProxy(properties, nacosRestTemplate);
+        //when
+        boolean ret = securityProxy.login(Collections.singletonList("localhost"));
+        //then
+        Assert.assertTrue(ret);
     }
     
     @Test
-    public void testIsEnabled() {
+    public void testTestLoginServerListLoginInWindow() throws Exception {
+        //given
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+        HttpRestResult<Object> result = new HttpRestResult<>();
+        result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
+        result.setCode(200);
+        when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any())).thenReturn(result);
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
+        SecurityProxy securityProxy = new SecurityProxy(properties, nacosRestTemplate);
+        //when
+        securityProxy.login(Collections.singletonList("localhost"));
+        //then
+        boolean ret = securityProxy.login(Collections.singletonList("localhost"));
+        //then
+        Assert.assertTrue(ret);
+        
     }
+    
+    @Test
+    public void testGetAccessToken() throws Exception {
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+        HttpRestResult<Object> result = new HttpRestResult<>();
+        result.setData("{\"accessToken\":\"abc\",\"tokenTtl\":1000}");
+        result.setCode(200);
+        when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any())).thenReturn(result);
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
+        SecurityProxy securityProxy = new SecurityProxy(properties, nacosRestTemplate);
+        securityProxy.login("localhost");
+        
+        String accessToken = securityProxy.getAccessToken();
+        Assert.assertEquals("abc", accessToken);
+    }
+    
+    @Test
+    public void testIsEnabled() throws Exception {
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
+        SecurityProxy securityProxy = new SecurityProxy(properties, nacosRestTemplate);
+        Assert.assertTrue(securityProxy.isEnabled());
+    }
+    
 }
