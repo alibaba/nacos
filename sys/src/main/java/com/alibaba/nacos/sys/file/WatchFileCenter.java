@@ -133,7 +133,7 @@ public class WatchFileCenter {
             try {
                 entry.getValue().shutdown();
             } catch (Throwable e) {
-                LOGGER.error("[WatchFileCenter] shutdown has error : {}", e);
+                LOGGER.error("[WatchFileCenter] shutdown has error : ", e);
             }
         }
         MANAGER.clear();
@@ -230,7 +230,7 @@ public class WatchFileCenter {
                 } catch (InterruptedException ignore) {
                     Thread.interrupted();
                 } catch (Throwable ex) {
-                    LOGGER.error("An exception occurred during file listening : {}", ex);
+                    LOGGER.error("An exception occurred during file listening : ", ex);
                 }
             }
         }
@@ -251,7 +251,7 @@ public class WatchFileCenter {
                         try {
                             job.run();
                         } catch (Throwable ex) {
-                            LOGGER.error("File change event callback error : {}", ex);
+                            LOGGER.error("File change event callback error : ", ex);
                         }
                     } else {
                         executor.execute(job);
