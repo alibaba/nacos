@@ -45,6 +45,8 @@ public class DefaultSharePublisher extends DefaultPublisher {
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
         // Actually, do a classification based on the slowEvent type.
         Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;
+        // For stop waiting subscriber, see {@link DefaultPublisher#openEventHandler}.
+        subscribers.add(subscriber);
         
         lock.lock();
         try {
@@ -70,6 +72,8 @@ public class DefaultSharePublisher extends DefaultPublisher {
     public void removeSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
         // Actually, do a classification based on the slowEvent type.
         Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;
+        // For removing to parent class attributes synchronization.
+        subscribers.remove(subscriber);
         
         lock.lock();
         try {
