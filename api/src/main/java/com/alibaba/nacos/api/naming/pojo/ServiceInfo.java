@@ -39,7 +39,13 @@ public class ServiceInfo {
     @JsonIgnore
     private String jsonFromServer = EMPTY;
     
+    private static final String EMPTY = "";
+    
+    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
+    
     public static final String SPLITER = "@@";
+    
+    private static final String DEFAULT_CHARSET = "UTF-8";
     
     private String name;
     
@@ -224,7 +230,7 @@ public class ServiceInfo {
     public String getKeyEncoded() {
         String serviceName = getGroupedServiceName();
         try {
-            serviceName = URLEncoder.encode(serviceName, "UTF-8");
+            serviceName = URLEncoder.encode(serviceName, DEFAULT_CHARSET);
         } catch (UnsupportedEncodingException e) {
             //do nothing
         }
@@ -233,7 +239,7 @@ public class ServiceInfo {
     
     private String getGroupedServiceName() {
         String serviceName = this.name;
-        if (!isEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+        if (!isEmpty(groupName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
             serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         }
         return serviceName;
@@ -292,8 +298,4 @@ public class ServiceInfo {
     public void setReachProtectionThreshold(boolean reachProtectionThreshold) {
         this.reachProtectionThreshold = reachProtectionThreshold;
     }
-
-    private static final String EMPTY = "";
-    
-    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
 }
