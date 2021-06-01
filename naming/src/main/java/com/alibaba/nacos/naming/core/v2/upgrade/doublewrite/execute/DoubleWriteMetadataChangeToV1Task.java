@@ -58,7 +58,7 @@ public class DoubleWriteMetadataChangeToV1Task extends AbstractExecuteTask {
                 Loggers.SRV_LOG.debug("Double write task for {} metadata from 2 to 1 failed", service, e);
             }
             ServiceChangeV2Task retryTask = new ServiceChangeV2Task(service, DoubleWriteContent.METADATA);
-            retryTask.setTaskInterval(3000L);
+            retryTask.setTaskInterval(INTERVAL);
             String taskKey = ServiceChangeV2Task.getKey(service);
             ApplicationUtils.getBean(DoubleWriteDelayTaskEngine.class).addTask(taskKey, retryTask);
         }

@@ -82,6 +82,10 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     private ScheduledExecutorService upgradeChecker;
     
+    private static final int MAJOR_VERSION = 2;
+    
+    private static final int MINOR_VERSION = 4;
+    
     public UpgradeJudgement(RaftPeerSet raftPeerSet, RaftCore raftCore, ClusterVersionJudgement versionJudgement,
             ServerMemberManager memberManager, ServiceManager serviceManager,
             UpgradeStates upgradeStates,
@@ -160,8 +164,8 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
                 return;
             }
             Version version = VersionUtil.parseVersion(versionStr.toString());
-            if (version.getMajorVersion() < 2) {
-                checkAndDowngrade(version.getMinorVersion() >= 4);
+            if (version.getMajorVersion() < MAJOR_VERSION) {
+                checkAndDowngrade(version.getMinorVersion() >= MINOR_VERSION);
                 all20XVersion.set(false);
                 return;
             }
