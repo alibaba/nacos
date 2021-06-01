@@ -91,8 +91,6 @@ public class ServiceManager implements RecordListener<Service> {
     
     private final Synchronizer synchronizer = new ServiceStatusSynchronizer();
     
-    private final Lock lock = new ReentrantLock();
-    
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
     
@@ -105,8 +103,6 @@ public class ServiceManager implements RecordListener<Service> {
     private final UdpPushService pushService;
     
     private final RaftPeerSet raftPeerSet;
-    
-    private final Object putServiceLock = new Object();
     
     @Value("${nacos.naming.empty-service.auto-clean:false}")
     private boolean emptyServiceAutoClean;
@@ -171,8 +167,7 @@ public class ServiceManager implements RecordListener<Service> {
      * @param serverIP    target server ip
      * @param checksum    checksum of service
      */
-    public void addUpdatedServiceToQueue(String namespaceId, String serviceName, String serverIP, String checksum) {
-        lock.lock();
+    public synchronized void addUpdatedServiceToQueue(String namespaceId, String serviceName, String serverIP, String checksum) {
         try {
             toBeUpdatedServicesQueue
                     .offer(new ServiceKey(namespaceId, serviceName, serverIP, checksum), 5, TimeUnit.MILLISECONDS);
@@ -180,8 +175,6 @@ public class ServiceManager implements RecordListener<Service> {
             toBeUpdatedServicesQueue.poll();
             toBeUpdatedServicesQueue.add(new ServiceKey(namespaceId, serviceName, serverIP, checksum));
             Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add service to be updated to queue.", e);
-        } finally {
-            lock.unlock();
         }
     }
     
@@ -868,14 +861,8 @@ public class ServiceManager implements RecordListener<Service> {
      * @param service service
      */
     public void putService(Service service) {
-        if (!serviceMap.containsKey(service.getNamespaceId())) {
-            synchronized (putServiceLock) {
-                if (!serviceMap.containsKey(service.getNamespaceId())) {
-                    serviceMap.put(service.getNamespaceId(), new ConcurrentSkipListMap<>());
-                }
-            }
-        }
-        serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
+        serviceMap.putIfAbsent(service.getNamespaceId(), new ConcurrentSkipListMap<>())
+                .putIfAbsent(service.getName(), service);
     }
     
     private void putServiceAndInit(Service service) throws NacosException {
