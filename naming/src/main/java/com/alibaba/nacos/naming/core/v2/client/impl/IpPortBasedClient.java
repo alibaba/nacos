@@ -112,15 +112,17 @@ public class IpPortBasedClient extends AbstractClient {
     }
     
     private HealthCheckInstancePublishInfo parseToHealthCheckInstance(InstancePublishInfo instancePublishInfo) {
+        HealthCheckInstancePublishInfo result;
         if (instancePublishInfo instanceof HealthCheckInstancePublishInfo) {
-            return (HealthCheckInstancePublishInfo) instancePublishInfo;
+            result = (HealthCheckInstancePublishInfo) instancePublishInfo;
+        } else {
+            result = new HealthCheckInstancePublishInfo();
+            result.setIp(instancePublishInfo.getIp());
+            result.setPort(instancePublishInfo.getPort());
+            result.setHealthy(instancePublishInfo.isHealthy());
+            result.setCluster(instancePublishInfo.getCluster());
+            result.setExtendDatum(instancePublishInfo.getExtendDatum());
         }
-        HealthCheckInstancePublishInfo result = new HealthCheckInstancePublishInfo();
-        result.setIp(instancePublishInfo.getIp());
-        result.setPort(instancePublishInfo.getPort());
-        result.setHealthy(instancePublishInfo.isHealthy());
-        result.setCluster(instancePublishInfo.getCluster());
-        result.setExtendDatum(instancePublishInfo.getExtendDatum());
         if (!ephemeral) {
             result.initHealthCheck();
         }
