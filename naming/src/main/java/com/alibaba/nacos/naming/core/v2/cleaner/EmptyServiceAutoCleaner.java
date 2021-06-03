@@ -51,7 +51,7 @@ public class EmptyServiceAutoCleaner extends AbstractNamingCleaner {
         for (String each : serviceManager.getAllNamespaces()) {
             Map<String, Service> serviceMap = serviceManager.chooseServiceMap(each);
             
-            Stream<Map.Entry<String, Service>> stream = null;
+            Stream<Map.Entry<String, Service>> stream;
             if (serviceMap.size() > parallelSize) {
                 stream = serviceMap.entrySet().parallelStream();
             } else {

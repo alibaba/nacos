@@ -48,6 +48,8 @@ public class NamingMetadataManager extends SmartSubscriber {
     
     private ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataMap;
     
+    private static final int INITIAL_CAPACITY = 1;
+    
     public NamingMetadataManager() {
         serviceMetadataMap = new ConcurrentHashMap<>(1 << 10);
         instanceMetadataMap = new ConcurrentHashMap<>(1 << 10);
@@ -125,7 +127,7 @@ public class NamingMetadataManager extends SmartSubscriber {
      */
     public void updateInstanceMetadata(Service service, String metadataId, InstanceMetadata instanceMetadata) {
         if (!instanceMetadataMap.containsKey(service)) {
-            instanceMetadataMap.putIfAbsent(service, new ConcurrentHashMap<>(1));
+            instanceMetadataMap.putIfAbsent(service, new ConcurrentHashMap<>(INITIAL_CAPACITY));
         }
         instanceMetadataMap.get(service).put(metadataId, instanceMetadata);
     }

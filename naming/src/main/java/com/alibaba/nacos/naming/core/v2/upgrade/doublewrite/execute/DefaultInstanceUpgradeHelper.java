@@ -30,6 +30,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConditionalOnMissingBean(InstanceUpgradeHelper.class)
 public class DefaultInstanceUpgradeHelper implements InstanceUpgradeHelper {
+    
+    private static final String IGNORE_PROPERTIES = "metadata";
 
     @Override
     public Instance toV1(com.alibaba.nacos.api.naming.pojo.Instance v2) {
@@ -50,7 +52,7 @@ public class DefaultInstanceUpgradeHelper implements InstanceUpgradeHelper {
     @Override
     public com.alibaba.nacos.api.naming.pojo.Instance toV2(Instance v1) {
         com.alibaba.nacos.api.naming.pojo.Instance v2 = new com.alibaba.nacos.api.naming.pojo.Instance();
-        BeanUtils.copyProperties(v1, v2, "metadata");
+        BeanUtils.copyProperties(v1, v2, IGNORE_PROPERTIES);
         v2.getMetadata().putAll(v1.getMetadata());
         return v2;
     }
