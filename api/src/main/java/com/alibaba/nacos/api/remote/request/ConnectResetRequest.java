@@ -24,13 +24,15 @@ package com.alibaba.nacos.api.remote.request;
  */
 public class ConnectResetRequest extends ServerRequest {
     
+    private static final String MODULE = "internal";
+    
     String serverIp;
     
     String serverPort;
     
     @Override
     public String getModule() {
-        return "internal";
+        return MODULE;
     }
     
     /**

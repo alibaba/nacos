@@ -33,27 +33,27 @@ public interface RequestCallBack<T extends Response> {
      *
      * @return executor.
      */
-    public Executor getExecutor();
+    Executor getExecutor();
     
     /**
      * get timeout mills.
      *
      * @return timeouts.
      */
-    public long getTimeout();
+    long getTimeout();
     
     /**
      * called on success.
      *
      * @param response response received.
      */
-    public void onResponse(T response);
+    void onResponse(T response);
     
     /**
      * called on failed.
      *
      * @param e exception throwed.
      */
-    public void onException(Throwable e);
+    void onException(Throwable e);
     
 }
