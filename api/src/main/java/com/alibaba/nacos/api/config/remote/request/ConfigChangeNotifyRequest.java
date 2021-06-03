@@ -26,6 +26,8 @@ import com.alibaba.nacos.api.remote.request.ServerRequest;
  */
 public class ConfigChangeNotifyRequest extends ServerRequest {
     
+    private static final String MODULE = "config";
+    
     String dataId;
     
     String group;
@@ -74,6 +76,6 @@ public class ConfigChangeNotifyRequest extends ServerRequest {
     
     @Override
     public String getModule() {
-        return "config";
+        return MODULE;
     }
 }
