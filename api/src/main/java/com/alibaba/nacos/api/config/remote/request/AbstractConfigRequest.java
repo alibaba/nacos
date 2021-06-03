@@ -24,9 +24,11 @@ import com.alibaba.nacos.api.remote.request.Request;
  * @version $Id: ConfigCommonRequest.java, v 0.1 2020年07月13日 9:05 PM liuzunfei Exp $
  */
 public abstract class AbstractConfigRequest extends Request {
+    
+    private static final String MODULE = "config";
 
     @Override
     public String getModule() {
-        return "config";
+        return MODULE;
     }
 }
