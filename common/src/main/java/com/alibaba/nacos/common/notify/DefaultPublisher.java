@@ -48,7 +48,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     private Class<? extends Event> eventType;
     
-    protected final ConcurrentHashSet<Subscriber> subscribers = new ConcurrentHashSet<Subscriber>();
+    protected final ConcurrentHashSet<Subscriber> subscribers = new ConcurrentHashSet<>();
     
     private int queueMaxSize = -1;
     
@@ -65,7 +65,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         setName("nacos.publisher-" + type.getName());
         this.eventType = type;
         this.queueMaxSize = bufferSize;
-        this.queue = new ArrayBlockingQueue<Event>(bufferSize);
+        this.queue = new ArrayBlockingQueue<>(bufferSize);
         start();
     }
     
