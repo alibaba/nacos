@@ -25,6 +25,8 @@ import com.alibaba.nacos.api.remote.request.Request;
  */
 public abstract class AbstractNamingRequest extends Request {
     
+    private static final String MODULE = "naming";
+    
     private String namespace;
     
     private String serviceName;
@@ -42,7 +44,7 @@ public abstract class AbstractNamingRequest extends Request {
     
     @Override
     public String getModule() {
-        return "naming";
+        return MODULE;
     }
     
     public String getNamespace() {
