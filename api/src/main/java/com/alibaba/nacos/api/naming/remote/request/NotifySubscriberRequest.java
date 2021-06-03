@@ -26,6 +26,8 @@ import com.alibaba.nacos.api.remote.request.ServerRequest;
  */
 public class NotifySubscriberRequest extends ServerRequest {
     
+    private static final String MODULE = "naming";
+    
     private String namespace;
     
     private String serviceName;
@@ -39,7 +41,7 @@ public class NotifySubscriberRequest extends ServerRequest {
     
     @Override
     public String getModule() {
-        return "naming";
+        return MODULE;
     }
     
     private NotifySubscriberRequest(ServiceInfo serviceInfo, String message) {
@@ -57,8 +59,7 @@ public class NotifySubscriberRequest extends ServerRequest {
      * @return fail response
      */
     public static NotifySubscriberRequest buildFailResponse(String message) {
-        NotifySubscriberRequest result = new NotifySubscriberRequest();
-        return result;
+        return new NotifySubscriberRequest();
     }
     
     public ServiceInfo getServiceInfo() {
