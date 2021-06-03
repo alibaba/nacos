@@ -24,9 +24,11 @@ package com.alibaba.nacos.api.remote.request;
  */
 public class ClientDetectionRequest extends ServerRequest {
     
+    private static final String MODULE = "internal";
+    
     @Override
     public String getModule() {
-        return "internal";
+        return MODULE;
     }
     
 }

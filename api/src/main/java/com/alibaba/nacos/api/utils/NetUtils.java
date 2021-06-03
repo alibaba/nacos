@@ -31,6 +31,12 @@ import java.util.Enumeration;
  */
 public class NetUtils {
     
+    private static final String CLIENT_NAMING_LOCAL_IP_PROPERTY = "com.alibaba.nacos.client.naming.local.ip";
+    
+    private static final String LEGAL_LOCAL_IP_PROPERTY = "java.net.preferIPv6Addresses";
+    
+    private static final String DEFAULT_SOLVE_FAILED_RETURN = "resolve_failed";
+    
     private static String localIp;
     
     /**
@@ -43,7 +49,7 @@ public class NetUtils {
             return localIp;
         }
         
-        String ip = System.getProperty("com.alibaba.nacos.client.naming.local.ip", findFirstNonLoopbackAddress());
+        String ip = System.getProperty(CLIENT_NAMING_LOCAL_IP_PROPERTY, findFirstNonLoopbackAddress());
         
         return localIp = ip;
         
@@ -67,7 +73,7 @@ public class NetUtils {
                     for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
                         InetAddress address = addrs.nextElement();
                         boolean isLegalIpVersion =
-                                Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"))
+                                Boolean.parseBoolean(System.getProperty(LEGAL_LOCAL_IP_PROPERTY))
                                         ? address instanceof Inet6Address : address instanceof Inet4Address;
                         if (isLegalIpVersion && !address.isLoopbackAddress()) {
                             result = address;
@@ -90,7 +96,7 @@ public class NetUtils {
             //ignore
         }
         
-        return "resolve_failed";
+        return DEFAULT_SOLVE_FAILED_RETURN;
         
     }
 }

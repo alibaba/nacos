@@ -40,7 +40,8 @@ public class ClientFactoryHolder {
         Collection<ClientFactory> clientFactories = NacosServiceLoader.load(ClientFactory.class);
         for (ClientFactory each : clientFactories) {
             if (this.clientFactories.containsKey(each.getType())) {
-                Loggers.SRV_LOG.warn("Client type {} found multiple factory, use {} default", each.getType(), each.getClass().getCanonicalName());
+                Loggers.SRV_LOG.warn("Client type {} found multiple factory, use {} default", each.getType(),
+                        each.getClass().getCanonicalName());
             }
             this.clientFactories.put(each.getType(), each);
         }

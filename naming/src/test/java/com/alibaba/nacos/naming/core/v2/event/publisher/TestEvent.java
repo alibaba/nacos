@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.task;
+package com.alibaba.nacos.naming.core.v2.event.publisher;
 
-/**
- * Abstract task which should be executed immediately.
- *
- * @author xiweng.yy
- */
-public abstract class AbstractExecuteTask implements NacosTask, Runnable {
+import com.alibaba.nacos.common.notify.Event;
+
+class TestEvent extends Event {
     
-    protected static final long INTERVAL = 3000L;
+    private static final long serialVersionUID = 882465625511504010L;
     
-    @Override
-    public boolean shouldProcess() {
-        return true;
+    static class TestEvent1 extends TestEvent {
+        
+        private static final long serialVersionUID = 4188906203345433816L;
+    }
+    
+    static class TestEvent2 extends TestEvent {
+        
+        private static final long serialVersionUID = -3956191439344777407L;
     }
 }

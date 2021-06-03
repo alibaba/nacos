@@ -68,7 +68,7 @@ public class DoubleWriteServiceRemovalToV1Task extends AbstractExecuteTask {
             }
             ServiceChangeV2Task retryTask = new ServiceChangeV2Task(service,
                     DoubleWriteContent.BOTH, DoubleWriteAction.REMOVE);
-            retryTask.setTaskInterval(3000L);
+            retryTask.setTaskInterval(INTERVAL);
             String taskKey = ServiceChangeV2Task.getKey(service);
             ApplicationUtils.getBean(DoubleWriteDelayTaskEngine.class).addTask(taskKey, retryTask);
         }

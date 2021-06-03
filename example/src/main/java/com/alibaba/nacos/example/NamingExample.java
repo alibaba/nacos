@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class NamingExample {
     
-    public static void main(String[] args) throws NacosException {
+    public static void main(String[] args) throws NacosException, InterruptedException {
         
         Properties properties = new Properties();
         properties.setProperty("serverAddr", System.getProperty("serverAddr"));
@@ -49,13 +49,7 @@ public class NamingExample {
         
         naming.registerInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
         
-        naming.registerInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
-        
-        System.out.println(naming.getAllInstances("nacos.test.3"));
-        
-        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
-        
-        System.out.println(naming.getAllInstances("nacos.test.3"));
+        System.out.println("instances after register: " + naming.getAllInstances("nacos.test.3"));
         
         Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
                 new ThreadFactory() {
@@ -78,9 +72,17 @@ public class NamingExample {
             
             @Override
             public void onEvent(Event event) {
-                System.out.println(((NamingEvent) event).getServiceName());
-                System.out.println(((NamingEvent) event).getInstances());
+                System.out.println("serviceName: " + ((NamingEvent) event).getServiceName());
+                System.out.println("instances from event: " + ((NamingEvent) event).getInstances());
             }
         });
+    
+        naming.deregisterInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
+        
+        Thread.sleep(1000);
+    
+        System.out.println("instances after deregister: " + naming.getAllInstances("nacos.test.3"));
+        
+        Thread.sleep(1000);
     }
 }

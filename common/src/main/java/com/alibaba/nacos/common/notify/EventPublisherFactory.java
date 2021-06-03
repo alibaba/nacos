@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.task;
+package com.alibaba.nacos.common.notify;
+
+import com.alibaba.nacos.common.utils.BiFunction;
 
 /**
- * Abstract task which should be executed immediately.
+ * Event publisher factory.
  *
  * @author xiweng.yy
  */
-public abstract class AbstractExecuteTask implements NacosTask, Runnable {
+public interface EventPublisherFactory extends BiFunction<Class<? extends Event>, Integer, EventPublisher> {
     
-    protected static final long INTERVAL = 3000L;
-    
+    /**
+     * Build an new {@link EventPublisher}.
+     *
+     * @param eventType    eventType for {@link EventPublisher}
+     * @param maxQueueSize max queue size for {@link EventPublisher}
+     * @return new {@link EventPublisher}
+     */
     @Override
-    public boolean shouldProcess() {
-        return true;
-    }
+    EventPublisher apply(Class<? extends Event> eventType, Integer maxQueueSize);
 }

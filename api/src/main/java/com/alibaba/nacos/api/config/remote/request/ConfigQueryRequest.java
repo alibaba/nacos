@@ -24,6 +24,8 @@ package com.alibaba.nacos.api.config.remote.request;
  */
 public class ConfigQueryRequest extends AbstractConfigRequest {
     
+    private static final String NOTIFY_HEADER = "notify";
+    
     private String dataId;
     
     private String group;
@@ -121,7 +123,7 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     }
     
     public boolean isNotify() {
-        String notify = getHeader("notify", "false");
-        return Boolean.valueOf(notify);
+        String notify = getHeader(NOTIFY_HEADER, Boolean.FALSE.toString());
+        return Boolean.parseBoolean(notify);
     }
 }

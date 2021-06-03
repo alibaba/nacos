@@ -36,6 +36,8 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
     
     private static final String EXPIRED_METADATA = "expiredMetadata";
     
+    private static final int INITIAL_DELAY = 5000;
+    
     private final NamingMetadataManager metadataManager;
     
     private final NamingMetadataOperateService metadataOperateService;
@@ -44,7 +46,7 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
             NamingMetadataOperateService metadataOperateService) {
         this.metadataManager = metadataManager;
         this.metadataOperateService = metadataOperateService;
-        GlobalExecutor.scheduleExpiredClientCleaner(this, 5000, GlobalConfig.getExpiredMetadataCleanInterval(),
+        GlobalExecutor.scheduleExpiredClientCleaner(this, INITIAL_DELAY, GlobalConfig.getExpiredMetadataCleanInterval(),
                 TimeUnit.MILLISECONDS);
     }
     

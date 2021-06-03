@@ -185,15 +185,15 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         
         checkIfDisabled(service);
         
-        List<com.alibaba.nacos.naming.core.Instance> srvedIPs = service
+        List<com.alibaba.nacos.naming.core.Instance> srvedIps = service
                 .srvIPs(Arrays.asList(StringUtils.split(cluster, ",")));
         
         // filter ips using selector:
         if (service.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
-            srvedIPs = service.getSelector().select(clientIP, srvedIPs);
+            srvedIps = service.getSelector().select(clientIP, srvedIps);
         }
         
-        if (CollectionUtils.isEmpty(srvedIPs)) {
+        if (CollectionUtils.isEmpty(srvedIps)) {
             
             if (Loggers.SRV_LOG.isDebugEnabled()) {
                 Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
@@ -210,7 +210,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         ipMap.put(Boolean.TRUE, new ArrayList<>());
         ipMap.put(Boolean.FALSE, new ArrayList<>());
         
-        for (com.alibaba.nacos.naming.core.Instance ip : srvedIPs) {
+        for (com.alibaba.nacos.naming.core.Instance ip : srvedIps) {
             // remove disabled instance:
             if (!ip.isEnabled()) {
                 continue;
@@ -334,7 +334,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     
     @Override
     public List<String> batchUpdateMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
-            Map<String, String> metadata) throws NacosException {
+            Map<String, String> metadata) {
         return batchOperate(namespaceId, instanceOperationInfo, metadata, UPDATE_INSTANCE_METADATA_ACTION_UPDATE);
     }
     
