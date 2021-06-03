@@ -39,6 +39,8 @@ public class DoubleWriteInstanceChangeToV1Task extends AbstractExecuteTask {
     
     private final Service service;
     
+    private static final String NAME = "consistencyDelegate";
+    
     public DoubleWriteInstanceChangeToV1Task(Service service) {
         this.service = service;
     }
@@ -57,14 +59,14 @@ public class DoubleWriteInstanceChangeToV1Task extends AbstractExecuteTask {
             String key = KeyBuilder.buildInstanceListKey(service.getNamespace(), service.getGroupedServiceName(),
                     service.isEphemeral());
             ConsistencyService consistencyService = ApplicationUtils
-                    .getBean("consistencyDelegate", ConsistencyService.class);
+                    .getBean(NAME, ConsistencyService.class);
             consistencyService.put(key, newInstances);
         } catch (Exception e) {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
                 Loggers.SRV_LOG.debug("Double write task for {} instance from 2 to 1 failed", service, e);
             }
             ServiceChangeV2Task retryTask = new ServiceChangeV2Task(service, DoubleWriteContent.INSTANCE);
-            retryTask.setTaskInterval(3000L);
+            retryTask.setTaskInterval(INTERVAL);
             String taskKey = ServiceChangeV2Task.getKey(service);
             ApplicationUtils.getBean(DoubleWriteDelayTaskEngine.class).addTask(taskKey, retryTask);
         }

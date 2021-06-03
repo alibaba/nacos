@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
@@ -54,6 +55,8 @@ public class CatalogServiceV2Impl implements CatalogService {
     
     private final NamingMetadataManager metadataManager;
     
+    private static final int DEFAULT_PORT = 80;
+    
     public CatalogServiceV2Impl(ServiceStorage serviceStorage, NamingMetadataManager metadataManager) {
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
@@ -71,14 +74,15 @@ public class CatalogServiceV2Impl implements CatalogService {
         ServiceMetadata detailedService = metadata.orElseGet(ServiceMetadata::new);
         
         ObjectNode serviceObject = JacksonUtils.createEmptyJsonNode();
-        serviceObject.put("name", serviceName);
-        serviceObject.put("groupName", groupName);
-        serviceObject.put("protectThreshold", detailedService.getProtectThreshold());
-        serviceObject.replace("selector", JacksonUtils.transferToJsonNode(detailedService.getSelector()));
-        serviceObject.replace("metadata", JacksonUtils.transferToJsonNode(detailedService.getExtendData()));
+        serviceObject.put(FieldsConstants.NAME, serviceName);
+        serviceObject.put(FieldsConstants.GROUP_NAME, groupName);
+        serviceObject.put(FieldsConstants.PROTECT_THRESHOLD, detailedService.getProtectThreshold());
+        serviceObject.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(detailedService.getSelector()));
+        serviceObject
+                .replace(FieldsConstants.METADATA, JacksonUtils.transferToJsonNode(detailedService.getExtendData()));
         
         ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
-        detailView.replace("service", serviceObject);
+        detailView.replace(FieldsConstants.SERVICE, serviceObject);
         
         List<com.alibaba.nacos.api.naming.pojo.Cluster> clusters = new ArrayList<>();
         
@@ -91,13 +95,13 @@ public class CatalogServiceV2Impl implements CatalogService {
             clusterView.setHealthChecker(clusterMetadata.getHealthChecker());
             clusterView.setMetadata(clusterMetadata.getExtendData());
             clusterView.setUseIPPort4Check(clusterMetadata.isUseInstancePortForCheck());
-            clusterView.setDefaultPort(80);
+            clusterView.setDefaultPort(DEFAULT_PORT);
             clusterView.setDefaultCheckPort(clusterMetadata.getHealthyCheckPort());
             clusterView.setServiceName(service.getGroupedServiceName());
             clusters.add(clusterView);
         }
         
-        detailView.replace("clusters", JacksonUtils.transferToJsonNode(clusters));
+        detailView.replace(FieldsConstants.CLUSTERS, JacksonUtils.transferToJsonNode(clusters));
         
         return detailView;
     }
@@ -128,7 +132,7 @@ public class CatalogServiceV2Impl implements CatalogService {
             services = services.stream().filter(each -> 0 != serviceStorage.getData(each).ipCount())
                     .collect(Collectors.toList());
         }
-        result.put("count", services.size());
+        result.put(FieldsConstants.COUNT, services.size());
         services = doPage(services, pageNo - 1, pageSize);
         for (Service each : services) {
             ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(each).orElseGet(ServiceMetadata::new);
@@ -141,7 +145,7 @@ public class CatalogServiceV2Impl implements CatalogService {
             serviceView.setTriggerFlag(isProtectThreshold(serviceView, serviceMetadata) ? "true" : "false");
             serviceViews.add(serviceView);
         }
-        result.set("serviceList", JacksonUtils.transferToJsonNode(serviceViews));
+        result.set(FieldsConstants.SERVICE_LIST, JacksonUtils.transferToJsonNode(serviceViews));
         return result;
     }
     

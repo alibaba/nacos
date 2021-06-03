@@ -78,7 +78,7 @@ public class DoubleWriteServiceRemovalToV2Task extends AbstractExecuteTask {
             ServiceChangeV1Task retryTask = new ServiceChangeV1Task(service.getNamespace(),
                     service.getGroupedServiceName(), service.isEphemeral(),
                     DoubleWriteContent.BOTH, DoubleWriteAction.REMOVE);
-            retryTask.setTaskInterval(3000L);
+            retryTask.setTaskInterval(INTERVAL);
             String taskKey = ServiceChangeV1Task
                     .getKey(service.getNamespace(), service.getGroupedServiceName(), service.isEphemeral());
             ApplicationUtils.getBean(DoubleWriteDelayTaskEngine.class).addTask(taskKey, retryTask);

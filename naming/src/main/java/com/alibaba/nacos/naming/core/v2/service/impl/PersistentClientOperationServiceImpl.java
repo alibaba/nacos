@@ -86,6 +86,8 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     
+    private static final int INITIAL_CAPACITY = 128;
+    
     public PersistentClientOperationServiceImpl(final PersistentIpPortClientManager clientManager) {
         this.clientManager = clientManager;
         this.protocol = ApplicationUtils.getBean(ProtocolManager.class).getCpProtocol();
@@ -275,7 +277,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         protected InputStream dumpSnapshot() {
             Map<String, IpPortBasedClient> clientMap = clientManager.showClients();
-            ConcurrentHashMap<String, ClientSyncData> clone = new ConcurrentHashMap<>(128);
+            ConcurrentHashMap<String, ClientSyncData> clone = new ConcurrentHashMap<>(INITIAL_CAPACITY);
             clientMap.forEach((clientId, client) -> {
                 clone.put(clientId, client.generateSyncData());
             });
