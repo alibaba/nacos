@@ -45,4 +45,14 @@ public class FieldsConstants {
     
     public static final String HEALTH_CHECKER = "healthChecker";
     
+    public static final String IP = "ip";
+    
+    public static final String PORT = "port";
+    
+    public static final String CLUSTER_NAME = "clusterName";
+    
+    public static final String SERVICE_NAME = "serviceName";
+    
+    public static final String EPHEMERAL = "ephemeral";
+    
 }
