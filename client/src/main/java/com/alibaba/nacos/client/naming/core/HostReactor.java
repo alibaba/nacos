@@ -248,7 +248,7 @@ public class HostReactor implements Closeable {
             
             serviceInfo.setJsonFromServer(json);
             
-            if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
+            if (changed) {
                 NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
                         serviceInfo.getClusters(), serviceInfo.getHosts()));
                 DiskCache.write(serviceInfo, cacheDir);
