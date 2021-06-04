@@ -67,12 +67,7 @@ public class HttpClientManager {
         PROCESSOR_NACOS_ASYNC_REST_TEMPLATE = HttpClientBeanHolder
                 .getNacosAsyncRestTemplate(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY);
         
-        ThreadUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        });
+        ThreadUtils.addShutdownHook(HttpClientManager::shutdown);
     }
     
     public static NacosRestTemplate getNacosRestTemplate() {

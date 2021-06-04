@@ -26,17 +26,17 @@ public interface Synchronizer {
     /**
      * Send message to server.
      *
-     * @param serverIP target server address
+     * @param serverIp target server address
      * @param msg      message to send
      */
-    void send(String serverIP, Message msg);
+    void send(String serverIp, Message msg);
     
     /**
      * Get message from server using message key.
      *
-     * @param serverIP source server address
+     * @param serverIp source server address
      * @param key      message key
      * @return message
      */
-    Message get(String serverIP, String key);
+    Message get(String serverIp, String key);
 }
