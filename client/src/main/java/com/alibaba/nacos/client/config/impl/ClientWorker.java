@@ -909,8 +909,14 @@ public class ClientWorker implements Closeable {
                 throws NacosException {
             ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
             request.putHeader("notify", String.valueOf(notify));
-            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(getOneRunningClient(), request,
-                    readTimeouts);
+            RpcClient rpcClient = getOneRunningClient();
+            if (notify) {
+                CacheData cacheData = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
+                if (cacheData != null) {
+                    rpcClient = ensureRpcClient(String.valueOf(cacheData.getTaskId()));
+                }
+            }
+            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(rpcClient, request, readTimeouts);
             
             ConfigResponse configResponse = new ConfigResponse();
             if (response.isSuccess()) {
