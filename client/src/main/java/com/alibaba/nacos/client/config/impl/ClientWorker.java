@@ -49,6 +49,9 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
@@ -697,6 +700,18 @@ public class ClientWorker implements Closeable {
                 public List<String> getServerList() {
                     return ConfigRpcTransportClient.super.serverListManager.serverUrls;
                     
+                }
+            });
+            
+            NotifyCenter.registerSubscriber(new Subscriber() {
+                @Override
+                public void onEvent(Event event) {
+                    rpcClientInner.onServerListChange();
+                }
+                
+                @Override
+                public Class<? extends Event> subscribeType() {
+                    return ServerlistChangeEvent.class;
                 }
             });
         }
