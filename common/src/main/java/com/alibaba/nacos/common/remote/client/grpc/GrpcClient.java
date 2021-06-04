@@ -135,7 +135,7 @@ public abstract class GrpcClient extends RpcClient {
      * @param requestBlockingStub requestBlockingStub used to check server.
      * @return success or not
      */
-    private Response serverCheck(RequestGrpc.RequestFutureStub requestBlockingStub) {
+    private Response serverCheck(String ip, int port, RequestGrpc.RequestFutureStub requestBlockingStub) {
         try {
             if (requestBlockingStub == null) {
                 return null;
@@ -147,6 +147,9 @@ public abstract class GrpcClient extends RpcClient {
             //receive connection unregister response here,not check response is success.
             return (Response) GrpcUtils.parse(response);
         } catch (Exception e) {
+            LoggerUtils
+                    .printIfErrorEnabled(LOGGER, "Server check fail, please check server {} ,port {} is available ", ip,
+                            port);
             return null;
         }
     }
@@ -259,11 +262,11 @@ public abstract class GrpcClient extends RpcClient {
                 grpcExecutor.allowCoreThreadTimeOut(true);
                 
             }
-            RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(),
-                    serverInfo.getServerPort() + rpcPortOffset());
+            int port = serverInfo.getServerPort() + rpcPortOffset();
+            RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(), port);
             if (newChannelStubTemp != null) {
                 
-                Response response = serverCheck(newChannelStubTemp);
+                Response response = serverCheck(serverInfo.getServerIp(), port, newChannelStubTemp);
                 if (response == null || !(response instanceof ServerCheckResponse)) {
                     shuntDownChannel((ManagedChannel) newChannelStubTemp.getChannel());
                     return null;
