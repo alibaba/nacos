@@ -147,9 +147,8 @@ public abstract class GrpcClient extends RpcClient {
             //receive connection unregister response here,not check response is success.
             return (Response) GrpcUtils.parse(response);
         } catch (Exception e) {
-            LoggerUtils
-                    .printIfErrorEnabled(LOGGER, "Server check fail, please check server {} ,port {} is available ", ip,
-                            port);
+            LoggerUtils.printIfErrorEnabled(LOGGER,
+                    "Server check fail, please check server {} ,port {} is available , error ={}", ip, port, e);
             return null;
         }
     }
