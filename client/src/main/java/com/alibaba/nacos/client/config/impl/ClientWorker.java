@@ -68,6 +68,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -519,7 +520,9 @@ public class ClientWorker implements Closeable {
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(agent.executor, LOGGER);
+        if (agent != null) {
+            agent.shutdown();
+        }
         LOGGER.info("{} do shutdown stop", className);
     }
     
@@ -570,6 +573,37 @@ public class ClientWorker implements Closeable {
         
         private ConnectionType getConnectionType() {
             return ConnectionType.GRPC;
+            
+        }
+        
+        @Override
+        public void shutdown() {
+            synchronized (RpcClientFactory.getAllClientEntries()) {
+                LOGGER.info("Trying to shutdown transport client " + this);
+                Set<Map.Entry<String, RpcClient>> allClientEntries = RpcClientFactory.getAllClientEntries();
+                Iterator<Map.Entry<String, RpcClient>> iterator = allClientEntries.iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<String, RpcClient> entry = iterator.next();
+                    if (entry.getKey().startsWith(uuid)) {
+                        LOGGER.info("Trying to shutdown rpc client " + entry.getKey());
+                        
+                        try {
+                            entry.getValue().shutdown();
+                        } catch (NacosException nacosException) {
+                            nacosException.printStackTrace();
+                        }
+                        LOGGER.info("Remove rpc client " + entry.getKey());
+                        iterator.remove();
+                    }
+                }
+                
+                LOGGER.info("Shutdown executor " + executor);
+                executor.shutdown();
+                Map<String, CacheData> stringCacheDataMap = cacheMap.get();
+                for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
+                    entry.getValue().setSyncWithServer(false);
+                }
+            }
             
         }
         
@@ -845,21 +879,25 @@ public class ClientWorker implements Closeable {
             }
         }
         
-        private synchronized RpcClient ensureRpcClient(String taskId) throws NacosException {
-            Map<String, String> labels = getLabels();
-            Map<String, String> newLabels = new HashMap<String, String>(labels);
-            newLabels.put("taskId", taskId);
-            
-            RpcClient rpcClient = RpcClientFactory
-                    .createClient("config-" + taskId + "-" + uuid, getConnectionType(), newLabels);
-            if (rpcClient.isWaitInitiated()) {
-                initRpcClientHandler(rpcClient);
-                rpcClient.setTenant(getTenant());
-                rpcClient.clientAbilities(initAbilities());
-                rpcClient.start();
+        private RpcClient ensureRpcClient(String taskId) throws NacosException {
+            synchronized (ClientWorker.this) {
+                
+                Map<String, String> labels = getLabels();
+                Map<String, String> newLabels = new HashMap<String, String>(labels);
+                newLabels.put("taskId", taskId);
+                
+                RpcClient rpcClient = RpcClientFactory
+                        .createClient(uuid + "_config-" + taskId, getConnectionType(), newLabels);
+                if (rpcClient.isWaitInitiated()) {
+                    initRpcClientHandler(rpcClient);
+                    rpcClient.setTenant(getTenant());
+                    rpcClient.clientAbilities(initAbilities());
+                    rpcClient.start();
+                }
+                
+                return rpcClient;
             }
             
-            return rpcClient;
         }
         
         private ClientAbilities initAbilities() {
