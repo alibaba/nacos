@@ -401,18 +401,6 @@ public abstract class RpcClient implements Closeable {
                 return null;
             }
         });
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                try {
-                    RpcClient.this.shutdown();
-                } catch (NacosException e) {
-                    LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]RpcClient shutdown exception, errorMessage ={}", name,
-                            e.getMessage());
-                }
-                
-            }
-        });
         
     }
     
