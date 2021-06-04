@@ -56,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class GrpcClient extends RpcClient {
     
-    static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
+    static final Logger LOGGER = LoggerFactory.getLogger(GrpcClient.class);
     
     private ThreadPoolExecutor grpcExecutor = null;
     
@@ -80,6 +80,7 @@ public abstract class GrpcClient extends RpcClient {
     public void shutdown() throws NacosException {
         super.shutdown();
         if (grpcExecutor != null) {
+            LOGGER.info("Shutdown grpc executor " + grpcExecutor);
             grpcExecutor.shutdown();
         }
     }
@@ -106,8 +107,8 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     private int getInboundMessageSize() {
-        String messageSize = System
-                .getProperty("nacos.remote.client.grpc.maxinbound.message.size", String.valueOf(DEFAULT_MAX_INBOUND_MESSAGE_SIZE));
+        String messageSize = System.getProperty("nacos.remote.client.grpc.maxinbound.message.size",
+                String.valueOf(DEFAULT_MAX_INBOUND_MESSAGE_SIZE));
         return Integer.parseInt(messageSize);
     }
     

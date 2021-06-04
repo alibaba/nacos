@@ -45,10 +45,11 @@ public class ConfigPublishResponse extends Response {
      *
      * @return response.
      */
-    public static ConfigPublishResponse buildFailResponse(String errorMsg) {
+    public static ConfigPublishResponse buildFailResponse(int errorCode, String errorMsg) {
         ConfigPublishResponse configPublishResponse = new ConfigPublishResponse();
         configPublishResponse.setResultCode(ResponseCode.FAIL.getCode());
         configPublishResponse.setMessage(errorMsg);
+        configPublishResponse.setErrorCode(errorCode);
         return configPublishResponse;
     }
 }
