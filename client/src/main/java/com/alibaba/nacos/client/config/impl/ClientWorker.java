@@ -86,7 +86,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.ENCODE;
-import static com.alibaba.nacos.api.common.Constants.ENCRYPTED_DATA_KEY;
 
 /**
  * Long polling.
