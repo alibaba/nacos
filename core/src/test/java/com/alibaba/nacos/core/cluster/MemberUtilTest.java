@@ -139,14 +139,14 @@ public class MemberUtilTest {
         MemberUtil.onFail(memberManager, remote);
         
         final Member search1 = memberManager.find(remote.getAddress());
-        Assert.assertEquals(3, search1.getFailAccessCnt());
-        Assert.assertEquals(NodeState.SUSPICIOUS, search1.getState());
+        Assert.assertEquals(0, search1.getFailAccessCnt());
+        Assert.assertEquals(NodeState.UP, search1.getState());
         
         MemberUtil.onFail(memberManager, remote);
         
         final Member search2 = memberManager.find(remote.getAddress());
-        Assert.assertEquals(4, search2.getFailAccessCnt());
-        Assert.assertEquals(NodeState.DOWN, search2.getState());
+        Assert.assertEquals(0, search2.getFailAccessCnt());
+        Assert.assertEquals(NodeState.UP, search2.getState());
         
         MemberUtil.onSuccess(memberManager, remote);
         final Member search3 = memberManager.find(remote.getAddress());
@@ -163,8 +163,8 @@ public class MemberUtilTest {
         MemberUtil.onFail(memberManager, remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
         
         final Member search1 = memberManager.find(remote.getAddress());
-        Assert.assertEquals(2, search1.getFailAccessCnt());
-        Assert.assertEquals(NodeState.DOWN, search1.getState());
+        Assert.assertEquals(0, search1.getFailAccessCnt());
+        Assert.assertEquals(NodeState.UP, search1.getState());
         
         MemberUtil.onSuccess(memberManager, remote);
         final Member search2 = memberManager.find(remote.getAddress());

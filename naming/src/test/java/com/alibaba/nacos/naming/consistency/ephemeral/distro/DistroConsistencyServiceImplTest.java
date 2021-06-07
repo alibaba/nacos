@@ -71,7 +71,6 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     
     @Before
     public void setUp() throws Exception {
-        when(globalConfig.getTaskDispatchPeriod()).thenReturn(2000);
         distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, serializer, switchDomain,
                 globalConfig, distroProtocol);
         ReflectionTestUtils.setField(distroConsistencyService, "notifier", notifier);

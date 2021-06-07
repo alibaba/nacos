@@ -37,8 +37,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.ReflectionUtils;
 
 import static org.hamcrest.CoreMatchers.isA;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -60,6 +65,7 @@ public class ClusterControllerTest extends BaseTest {
         mockInjectSwitchDomain();
         mockInjectDistroMapper();
         mockmvc = MockMvcBuilders.standaloneSetup(clusterController).build();
+        when(upgradeJudgement.isUseGrpcFeatures()).thenReturn(false);
         ReflectionTestUtils.setField(clusterController, "upgradeJudgement", upgradeJudgement);
         ReflectionTestUtils.setField(clusterController, "clusterOperatorV1", clusterOperatorV1);
     }
@@ -86,8 +92,8 @@ public class ClusterControllerTest extends BaseTest {
     
     @Test
     public void testUpdateNoService() throws Exception {
+        doThrow(NacosException.class).when(serviceManager).checkServiceIsNull(eq(null), any(String.class), any(String.class));
         expectedException.expectCause(isA(NacosException.class));
-        expectedException.expectMessage("service not found:test-service-not-found");
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
                 .param("serviceName", "test-service-not-found").param("healthChecker", "{\"type\":\"HTTP\"}")

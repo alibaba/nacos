@@ -45,7 +45,7 @@ public class TpsMonitorManagerTester {
     
     @Test
     public void test() {
-        for (int i = 0; i < 10000000; i++) {
+        for (int i = 0; i < 1000; i++) {
             String value = "atg" + (new Random().nextInt(100) + 2) + "efb";
             boolean pass = tpsMonitorManager
                     .applyTps("configPublish", "testconnectionId", Lists.list(new TestKey(value)));

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.spi;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collection;

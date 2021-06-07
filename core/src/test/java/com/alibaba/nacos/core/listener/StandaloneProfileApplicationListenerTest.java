@@ -20,6 +20,7 @@ import com.alibaba.nacos.core.code.StandaloneProfileApplicationListener;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,7 @@ import static com.alibaba.nacos.sys.env.Constants.STANDALONE_SPRING_PROFILE;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = StandaloneProfileApplicationListenerTest.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@Ignore
 public class StandaloneProfileApplicationListenerTest {
     
     @Autowired

@@ -41,7 +41,6 @@ public class ProtocolMetaDataTest {
         
         metaData.load(map);
         
-        String json = JacksonUtils.toJson(metaData);
         AtomicInteger count = new AtomicInteger(0);
         
         CountDownLatch latch = new CountDownLatch(2);
@@ -53,8 +52,6 @@ public class ProtocolMetaDataTest {
             latch.countDown();
         });
         
-        System.out.println(json);
-        
         map = new HashMap<>();
         data = new HashMap<>();
         data.put("test-1", LocalDateTime.now());
@@ -62,9 +59,6 @@ public class ProtocolMetaDataTest {
         map.put("global", data);
         
         metaData.load(map);
-        
-        json = JacksonUtils.toJson(metaData);
-        System.out.println(json);
         
         latch.await(10_000L, TimeUnit.MILLISECONDS);
         
