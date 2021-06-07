@@ -164,7 +164,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     
     private void syncFromAddressUrl() throws Exception {
         RestResult<String> result = restTemplate
-                .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
+                .get(addressServerUrl, Header.EMPTY, Query.EMPTY, String.class);
         if (result.ok()) {
             isAddressServerHealth = true;
             Reader reader = new StringReader(result.getData());
