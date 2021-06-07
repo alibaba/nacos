@@ -188,7 +188,7 @@ public class CatalogServiceV2Impl implements CatalogService {
     }
     
     private Map<String, ClusterInfo> getClusterMap(Service service) {
-        Map<String, ClusterInfo> result = new HashMap<>();
+        Map<String, ClusterInfo> result = new HashMap<>(1);
         for (Instance each : serviceStorage.getData(service).getHosts()) {
             final IpAddressInfo info = transferToIpAddressInfo(each);
             if (!result.containsKey(each.getClusterName())) {
