@@ -55,4 +55,14 @@ public class FieldsConstants {
     
     public static final String EPHEMERAL = "ephemeral";
     
+    public static final String STATUSES = "statuses";
+    
+    public static final String CLIENT_IP = "clientIP";
+    
+    public static final String SERVICE_STATUS = "serverStatus";
+    
+    public static final String ENCODING = "encoding";
+    
+    public static final String NOFIX = "nofix";
+    
 }
