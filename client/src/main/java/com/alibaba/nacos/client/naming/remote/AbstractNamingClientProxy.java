@@ -19,10 +19,12 @@ package com.alibaba.nacos.client.naming.remote;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
+import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.HashMap;
@@ -36,7 +38,8 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractNamingClientProxy implements NamingClientProxy {
+public abstract class AbstractNamingClientProxy extends Subscriber<ServerListChangedEvent>
+        implements NamingClientProxy {
     
     private final SecurityProxy securityProxy;
     
