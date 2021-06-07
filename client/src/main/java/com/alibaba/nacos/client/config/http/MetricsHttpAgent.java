@@ -21,7 +21,6 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import io.prometheus.client.Histogram;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
