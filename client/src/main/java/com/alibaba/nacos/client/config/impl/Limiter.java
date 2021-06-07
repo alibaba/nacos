@@ -42,6 +42,8 @@ public class Limiter {
     private static final Cache<String, RateLimiter> CACHE = CacheBuilder.newBuilder().initialCapacity(CAPACITY_SIZE)
             .expireAfterAccess(1, TimeUnit.MINUTES).build();
     
+    private static final String LIMIT_TIME_PROPERTY = "limitTime";
+    
     /**
      * qps 5.
      */
@@ -49,7 +51,7 @@ public class Limiter {
     
     static {
         try {
-            String limitTimeStr = System.getProperty("limitTime", String.valueOf(limit));
+            String limitTimeStr = System.getProperty(LIMIT_TIME_PROPERTY, String.valueOf(limit));
             limit = Double.parseDouble(limitTimeStr);
             LOGGER.info("limitTime:{}", limit);
         } catch (Exception e) {
