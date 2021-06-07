@@ -25,7 +25,6 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.MemberUtil;
-import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -42,8 +41,6 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class AddressServerMemberLookup extends AbstractMemberLookup {
-    
-    private final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() { };
     
     public String domainName;
     
