@@ -73,6 +73,10 @@ public abstract class ConfigTransportClient {
     
     private volatile StsCredential stsCredential;
     
+    public void shutdown() {
+    
+    }
+    
     public ConfigTransportClient(Properties properties, ServerListManager serverListManager) {
         
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);

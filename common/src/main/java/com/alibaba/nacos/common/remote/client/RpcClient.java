@@ -244,6 +244,29 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
+     * check if current connected server is in serverlist ,if not switch server.
+     */
+    public void onServerListChange() {
+        if (currentConnection != null && currentConnection.serverInfo != null) {
+            ServerInfo serverInfo = currentConnection.serverInfo;
+            boolean found = false;
+            for (String serverAddress : serverListFactory.getServerList()) {
+                if (resolveServerInfo(serverAddress).getAddress().equalsIgnoreCase(serverInfo.getAddress())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                LoggerUtils.printIfInfoEnabled(LOGGER,
+                        "Current connected server {}  is not in latest server list,switch switchServerAsync",
+                        serverInfo.getAddress());
+                switchServerAsync();
+            }
+            
+        }
+    }
+    
+    /**
      * Start this client.
      */
     public final void start() throws NacosException {
@@ -399,18 +422,6 @@ public abstract class RpcClient implements Closeable {
                 }
                 
                 return null;
-            }
-        });
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                try {
-                    RpcClient.this.shutdown();
-                } catch (NacosException e) {
-                    LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]RpcClient shutdown exception, errorMessage ={}", name,
-                            e.getMessage());
-                }
-                
             }
         });
         
