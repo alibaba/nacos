@@ -36,6 +36,7 @@ import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.PushReceiver;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
+import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
@@ -45,6 +46,7 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
@@ -97,6 +99,16 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         this.pushReceiver = new PushReceiver(serviceInfoHolder);
         this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
                 String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
+    }
+    
+    @Override
+    public void onEvent(ServerListChangedEvent event) {
+        // do nothing in http client
+    }
+    
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return ServerListChangedEvent.class;
     }
     
     @Override

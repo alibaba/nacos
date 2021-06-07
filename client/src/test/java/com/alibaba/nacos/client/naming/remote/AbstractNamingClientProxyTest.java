@@ -26,9 +26,11 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.common.notify.Event;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -44,6 +46,15 @@ public class AbstractNamingClientProxyTest {
         SecurityProxy sc = Mockito.mock(SecurityProxy.class);
         Properties props = new Properties();
         AbstractNamingClientProxy proxy = new AbstractNamingClientProxy(sc, props) {
+            @Override
+            public void onEvent(ServerListChangedEvent event) {
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return ServerListChangedEvent.class;
+            }
+            
             @Override
             public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
             
@@ -134,6 +145,15 @@ public class AbstractNamingClientProxyTest {
         props.put(PropertyKeyConst.ACCESS_KEY, ak);
         props.put(PropertyKeyConst.SECRET_KEY, sk);
         AbstractNamingClientProxy proxy = new AbstractNamingClientProxy(sc, props) {
+            @Override
+            public void onEvent(ServerListChangedEvent event) {
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return ServerListChangedEvent.class;
+            }
+            
             @Override
             public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
             
