@@ -24,6 +24,7 @@ import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -56,9 +57,9 @@ public class NamingResourceParser implements ResourceParser {
             serviceName = request.getServiceName();
         } else if (requestObj instanceof Request) {
             Request request = (Request) requestObj;
-            namespaceId = (String) ReflectUtils.getFieldValue(request, "namespace", "");
-            groupName = (String) ReflectUtils.getFieldValue(request, "groupName", "");
-            serviceName = (String) ReflectUtils.getFieldValue(request, "serviceName", "");
+            namespaceId = (String) ReflectUtils.getFieldValue(request, FieldsConstants.NAME_SPACE, "");
+            groupName = (String) ReflectUtils.getFieldValue(request, FieldsConstants.GROUP_NAME, "");
+            serviceName = (String) ReflectUtils.getFieldValue(request, FieldsConstants.SERVICE_NAME, "");
         }
         
         if (StringUtils.isBlank(groupName)) {
