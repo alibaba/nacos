@@ -38,6 +38,14 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class ConcurrentDiskUtil {
     
+    private static final String READ_ONLY = "r";
+    
+    private static final String READ_WRITE = "rw";
+    
+    private static final int RETRY_COUNT = 10;
+    
+    private static final int SLEEP_BASETIME = 10;
+    
     /**
      * get file content.
      *
@@ -63,7 +71,7 @@ public class ConcurrentDiskUtil {
         RandomAccessFile fis = null;
         FileLock rlock = null;
         try {
-            fis = new RandomAccessFile(file, "r");
+            fis = new RandomAccessFile(file, READ_ONLY);
             FileChannel fcin = fis.getChannel();
             int i = 0;
             do {
@@ -128,7 +136,7 @@ public class ConcurrentDiskUtil {
         FileLock lock = null;
         RandomAccessFile raf = null;
         try {
-            raf = new RandomAccessFile(file, "rw");
+            raf = new RandomAccessFile(file, READ_WRITE);
             channel = raf.getChannel();
             int i = 0;
             do {
@@ -192,12 +200,9 @@ public class ConcurrentDiskUtil {
      * @throws IOException IOException
      */
     public static String byteBufferToString(ByteBuffer buffer, String charsetName) throws IOException {
-        Charset charset = null;
-        CharsetDecoder decoder = null;
-        CharBuffer charBuffer = null;
-        charset = Charset.forName(charsetName);
-        decoder = charset.newDecoder();
-        charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
+        Charset charset = Charset.forName(charsetName);
+        CharsetDecoder decoder = charset.newDecoder();
+        CharBuffer charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
         return charBuffer.toString();
     }
     
@@ -209,7 +214,4 @@ public class ConcurrentDiskUtil {
         }
     }
     
-    private static final int RETRY_COUNT = 10;
-    
-    private static final int SLEEP_BASETIME = 10;
 }
