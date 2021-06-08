@@ -34,4 +34,6 @@ public class ConfigConstants {
     public static final String CONFIG_TYPE = "configType";
     
     public static final String ENCRYPTED_DATA_KEY = "encryptedDataKey";
+    
+    public static final String TYPE = "type";
 }

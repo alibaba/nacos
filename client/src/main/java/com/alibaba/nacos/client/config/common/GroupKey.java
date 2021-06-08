@@ -25,6 +25,16 @@ import com.alibaba.nacos.common.utils.StringUtils;
  */
 public class GroupKey {
     
+    private static final char PLUS = '+';
+    
+    private static final char PERCENT = '%';
+    
+    private static final char TWO = '2';
+    
+    private static final char B = 'B';
+    
+    private static final char FIVE = '5';
+    
     public static String getKey(String dataId, String group) {
         return getKey(dataId, group, "");
     }
@@ -46,10 +56,10 @@ public class GroupKey {
         }
         StringBuilder sb = new StringBuilder();
         urlEncode(dataId, sb);
-        sb.append('+');
+        sb.append(PLUS);
         urlEncode(group, sb);
         if (StringUtils.isNotEmpty(datumStr)) {
-            sb.append('+');
+            sb.append(PLUS);
             urlEncode(datumStr, sb);
         }
         
@@ -70,7 +80,7 @@ public class GroupKey {
         
         for (int i = 0; i < groupKey.length(); ++i) {
             char c = groupKey.charAt(i);
-            if ('+' == c) {
+            if (PLUS == c) {
                 if (null == dataId) {
                     dataId = sb.toString();
                     sb.setLength(0);
@@ -80,13 +90,13 @@ public class GroupKey {
                 } else {
                     throw new IllegalArgumentException("invalid groupkey:" + groupKey);
                 }
-            } else if ('%' == c) {
+            } else if (PERCENT == c) {
                 char next = groupKey.charAt(++i);
                 char nextnext = groupKey.charAt(++i);
-                if ('2' == next && 'B' == nextnext) {
-                    sb.append('+');
-                } else if ('2' == next && '5' == nextnext) {
-                    sb.append('%');
+                if (TWO == next && B == nextnext) {
+                    sb.append(PLUS);
+                } else if (TWO == next && FIVE == nextnext) {
+                    sb.append(PERCENT);
                 } else {
                     throw new IllegalArgumentException("invalid groupkey:" + groupKey);
                 }
@@ -116,9 +126,9 @@ public class GroupKey {
     static void urlEncode(String str, StringBuilder sb) {
         for (int idx = 0; idx < str.length(); ++idx) {
             char c = str.charAt(idx);
-            if ('+' == c) {
+            if (PLUS == c) {
                 sb.append("%2B");
-            } else if ('%' == c) {
+            } else if (PERCENT == c) {
                 sb.append("%25");
             } else {
                 sb.append(c);
