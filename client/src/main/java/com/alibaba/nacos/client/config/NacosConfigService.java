@@ -51,6 +51,10 @@ public class NacosConfigService implements ConfigService {
     
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
     
+    private static final String UP = "UP";
+    
+    private static final String DOWN = "DOWN";
+    
     /**
      * will be deleted in 2.0 later versions
      */
@@ -144,7 +148,7 @@ public class NacosConfigService implements ConfigService {
         cr.setTenant(tenant);
         cr.setGroup(group);
         
-        // 优先使用本地配置
+        // use local config first
         String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}",
@@ -218,9 +222,9 @@ public class NacosConfigService implements ConfigService {
     @Override
     public String getServerStatus() {
         if (worker.isHealthServer()) {
-            return "UP";
+            return UP;
         } else {
-            return "DOWN";
+            return DOWN;
         }
     }
     
