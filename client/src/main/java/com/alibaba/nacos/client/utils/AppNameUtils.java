@@ -45,8 +45,10 @@ public class AppNameUtils {
     
     private static final String SERVER_UNKNOWN = "unknown server";
     
+    private static final String DEFAULT_APP_NAME = "unknown";
+    
     public static String getAppName() {
-        String appName = null;
+        String appName;
         
         appName = getAppNameByProjectName();
         if (appName != null) {
@@ -58,7 +60,7 @@ public class AppNameUtils {
             return appName;
         }
         
-        return "unknown";
+        return DEFAULT_APP_NAME;
     }
     
     private static String getAppNameByProjectName() {
@@ -83,7 +85,7 @@ public class AppNameUtils {
     }
     
     private static String getServerType() {
-        String serverType = null;
+        String serverType;
         if (System.getProperty(PARAM_MARKING_JBOSS) != null) {
             serverType = SERVER_JBOSS;
         } else if (System.getProperty(PARAM_MARKING_JETTY) != null) {

@@ -27,6 +27,10 @@ public class TenantUtil {
     
     private static final String USER_TENANT;
     
+    private static final String ACM_NAMESPACE_PROPERTY = "acm.namespace";
+    
+    private static final String DEFAULT_ACM_NAMESPACE = "";
+    
     static {
         USER_TENANT = System.getProperty("tenant.id", "");
     }
@@ -44,7 +48,7 @@ public class TenantUtil {
         String tmp = USER_TENANT;
         
         if (StringUtils.isBlank(USER_TENANT)) {
-            tmp = System.getProperty("acm.namespace", "");
+            tmp = System.getProperty(ACM_NAMESPACE_PROPERTY, DEFAULT_ACM_NAMESPACE);
         }
         
         return tmp;
@@ -59,7 +63,7 @@ public class TenantUtil {
         String tmp = USER_TENANT;
         
         if (StringUtils.isBlank(USER_TENANT)) {
-            tmp = System.getProperty("ans.namespace");
+            tmp = System.getProperty(ACM_NAMESPACE_PROPERTY);
         }
         return tmp;
     }
