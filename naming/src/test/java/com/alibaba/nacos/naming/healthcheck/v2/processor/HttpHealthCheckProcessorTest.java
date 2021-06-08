@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -143,7 +145,7 @@ public class HttpHealthCheckProcessorTest {
                 break;
             case HttpURLConnection.HTTP_UNAVAILABLE:
                 verify(healthCheckCommon).checkFail(healthCheckTaskV2, service, "http:" + restResult.getCode());
-                verify(healthCheckCommon)
+                verify(healthCheckCommon, atLeastOnce())
                         .reEvaluateCheckRT(healthCheckTaskV2.getCheckRtNormalized() * 2, healthCheckTaskV2,
                                 switchDomain.getHttpHealthParams());
                 break;

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;

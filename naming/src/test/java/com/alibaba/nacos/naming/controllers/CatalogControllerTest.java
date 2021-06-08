@@ -35,6 +35,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Collections;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -95,6 +98,7 @@ public class CatalogControllerTest {
     
     @Test(expected = NacosException.class)
     public void testServiceDetailNotFound() throws Exception {
+        doThrow(NacosException.class).when(serviceManager).checkServiceIsNull(eq(null), any(String.class), any(String.class));
         catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME);
     }
     

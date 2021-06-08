@@ -47,7 +47,7 @@ public class ServiceOperatorV1ImplTest extends BaseTest {
         serviceOperatorV1Impl = new ServiceOperatorV1Impl(serviceManager, distroMapper);
     }
     
-    @Test
+    @Test(expected = NacosException.class)
     public void testUpdate() throws NacosException {
         serviceManager.createEmptyService(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         String serviceName = "order-service";

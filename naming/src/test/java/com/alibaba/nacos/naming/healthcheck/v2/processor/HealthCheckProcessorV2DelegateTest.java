@@ -22,12 +22,14 @@ import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.core.env.StandardEnvironment;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

@@ -28,6 +28,7 @@ import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.StandardEnvironment;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -84,6 +86,7 @@ public class HealthCheckTaskInterceptWrapperTest {
     
     @Before
     public void setUp() throws Exception {
+        EnvUtil.setEnvironment(new StandardEnvironment());
         when(applicationContext.getBean(NamingMetadataManager.class)).thenReturn(namingMetadataManager);
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
         when(applicationContext.getBean(SwitchDomain.class)).thenReturn(switchDomain);

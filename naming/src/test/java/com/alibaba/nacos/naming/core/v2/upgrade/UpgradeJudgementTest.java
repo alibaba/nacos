@@ -107,7 +107,7 @@ public class UpgradeJudgementTest {
     @Test
     public void testUpgradeOneFor14XNode() throws Exception {
         Collection<Member> members = mockMember("1.4.0", "2.0.0", "2.0.0");
-        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).triggers(members).build());
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
@@ -221,7 +221,7 @@ public class UpgradeJudgementTest {
         upgradeJudgement.setUseGrpcFeatures(true);
         upgradeJudgement.setUseJraftFeatures(true);
         Collection<Member> members = mockMember("1.4.0", "2.0.0", "2.0.0");
-        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).triggers(members).build());
         verify(raftPeerSet, never()).init();
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
@@ -241,7 +241,7 @@ public class UpgradeJudgementTest {
         verify(raftCore, never()).init();
         verify(versionJudgement, never()).reset();
         TimeUnit.MILLISECONDS.sleep(sleepForCheck);
-        assertFalse(upgradeJudgement.isUseGrpcFeatures());
+        assertTrue(upgradeJudgement.isUseGrpcFeatures());
         assertTrue(upgradeJudgement.isUseJraftFeatures());
     }
     
@@ -250,7 +250,7 @@ public class UpgradeJudgementTest {
         upgradeJudgement.setUseGrpcFeatures(true);
         upgradeJudgement.setUseJraftFeatures(true);
         Collection<Member> members = mockMember("", "", "2.0.0");
-        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).triggers(members).build());
         verify(raftPeerSet, atMostOnce()).init();
         verify(raftCore, atMostOnce()).init();
         verify(versionJudgement, atMostOnce()).reset();
@@ -265,7 +265,7 @@ public class UpgradeJudgementTest {
         when(upgradeStates.isUpgraded()).thenReturn(true);
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
                 upgradeStates, doubleWriteDelayTaskEngine);
-        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).triggers(members).build());
         verify(raftPeerSet, atMostOnce()).init();
         verify(raftCore, atMostOnce()).init();
         verify(versionJudgement, atMostOnce()).reset();
@@ -279,7 +279,7 @@ public class UpgradeJudgementTest {
         upgradeJudgement.setUseGrpcFeatures(true);
         upgradeJudgement.setUseJraftFeatures(true);
         Collection<Member> members = mockMember("1.3.2", "2.0.0", "2.0.0");
-        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        upgradeJudgement .onEvent(MembersChangeEvent.builder().members(members).triggers(members).build());
         verify(raftPeerSet, atMostOnce()).init();
         verify(raftCore, atMostOnce()).init();
         verify(versionJudgement, atMostOnce()).reset();
@@ -294,7 +294,7 @@ public class UpgradeJudgementTest {
         when(upgradeStates.isUpgraded()).thenReturn(true);
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
                 upgradeStates, doubleWriteDelayTaskEngine);
-        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).build());
+        upgradeJudgement.onEvent(MembersChangeEvent.builder().members(members).triggers(members).build());
         verify(raftPeerSet, atMostOnce()).init();
         verify(raftCore, atMostOnce()).init();
         verify(versionJudgement, atMostOnce()).reset();
