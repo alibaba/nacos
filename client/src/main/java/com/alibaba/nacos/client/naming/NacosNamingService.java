@@ -52,6 +52,12 @@ import java.util.Properties;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
     
+    private static final String DEFAULT_NAMING_LOG_FILE_PATH =  "naming.log";
+    
+    private static final String UP = "UP";
+    
+    private static final String DOWN = "DOWN";
+    
     /**
      * Each Naming service should have different namespace.
      */
@@ -97,7 +103,7 @@ public class NacosNamingService implements NamingService {
                     .isNotEmpty(properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME))) {
                 logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
             } else {
-                logName = "naming.log";
+                logName = DEFAULT_NAMING_LOG_FILE_PATH;
             }
         }
     }
@@ -441,7 +447,7 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public String getServerStatus() {
-        return clientProxy.serverHealthy() ? "UP" : "DOWN";
+        return clientProxy.serverHealthy() ? UP : DOWN;
     }
     
     @Override
