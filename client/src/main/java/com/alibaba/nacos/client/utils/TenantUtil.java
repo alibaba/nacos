@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
@@ -63,7 +64,7 @@ public class TenantUtil {
         String tmp = USER_TENANT;
         
         if (StringUtils.isBlank(USER_TENANT)) {
-            tmp = System.getProperty(ACM_NAMESPACE_PROPERTY);
+            tmp = System.getProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
         }
         return tmp;
     }
