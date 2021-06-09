@@ -165,7 +165,10 @@ public class NamingProxy implements Closeable {
         try {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
             Header header = builderHeader();
-            HttpRestResult<String> restResult = nacosRestTemplate.get(urlString, header, Query.EMPTY, String.class);
+            Query query = StringUtils.isNotBlank(namespaceId)
+                    ? Query.newInstance().addParam("namespace", namespaceId)
+                    : Query.EMPTY;
+            HttpRestResult<String> restResult = nacosRestTemplate.get(urlString, header, query, String.class);
             if (!restResult.ok()) {
                 throw new IOException(
                         "Error while requesting: " + urlString + "'. Server returned: " + restResult.getCode());
