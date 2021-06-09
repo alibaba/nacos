@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.http.client.response.DefaultClientHttpResponse;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 
@@ -46,8 +47,8 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
     }
     
     @Override
-    public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final ResponseHandler<T> responseHandler,
-            final Callback<T> callback) throws Exception {
+    public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity,
+            final ResponseHandler<T> responseHandler, final Callback<T> callback) throws Exception {
         HttpRequestBase httpRequestBase = DefaultHttpClientRequest.build(uri, httpMethod, requestHttpEntity);
         asyncClient.execute(httpRequestBase, new FutureCallback<HttpResponse>() {
             @Override
@@ -58,6 +59,8 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
                     callback.onReceive(httpRestResult);
                 } catch (Exception e) {
                     callback.onError(e);
+                } finally {
+                    HttpClientUtils.closeQuietly(result);
                 }
             }
             

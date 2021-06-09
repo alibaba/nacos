@@ -49,6 +49,16 @@ public class ServerHttpAgent implements HttpAgent {
     private static final NacosRestTemplate NACOS_RESTTEMPLATE = ConfigHttpClientManager.getInstance()
             .getNacosRestTemplate();
     
+    private String accessKey;
+    
+    private String secretKey;
+    
+    private String encode;
+    
+    private int maxRetry = 3;
+    
+    final ServerListManager serverListMgr;
+    
     @Override
     public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
@@ -272,15 +282,4 @@ public class ServerHttpAgent implements HttpAgent {
         SpasAdapter.freeCredentialInstance();
         LOGGER.info("{} do shutdown stop", className);
     }
-    
-    private String accessKey;
-    
-    private String secretKey;
-    
-    private String encode;
-    
-    private int maxRetry = 3;
-    
-    final ServerListManager serverListMgr;
-    
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright (c) 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.misc;
+package com.alibaba.nacos.client.naming.event;
+
+import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
- * Synchronizer.
- *
- * @author nacos
+ * Event of server list changed for naming.
+ * 
+ * @author gengtuo.ygt
+ * on 2021/6/7
  */
-public interface Synchronizer {
-    
-    /**
-     * Send message to server.
-     *
-     * @param serverIp target server address
-     * @param msg      message to send
-     */
-    void send(String serverIp, Message msg);
-    
-    /**
-     * Get message from server using message key.
-     *
-     * @param serverIp source server address
-     * @param key      message key
-     * @return message
-     */
-    Message get(String serverIp, String key);
+public class ServerListChangedEvent extends SlowEvent {
 }

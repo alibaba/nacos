@@ -73,6 +73,10 @@ public abstract class ConfigTransportClient {
     
     private volatile StsCredential stsCredential;
     
+    public void shutdown() {
+    
+    }
+    
     public ConfigTransportClient(Properties properties, ServerListManager serverListManager) {
         
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
@@ -86,7 +90,7 @@ public abstract class ConfigTransportClient {
         this.serverListManager = serverListManager;
         this.securityProxy = new SecurityProxy(properties,
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
-        
+        initAkSk(properties);
     }
     
     /**
@@ -106,7 +110,8 @@ public abstract class ConfigTransportClient {
             secretKey = stsCredential.accessKeySecret;
             spasHeaders.put("Spas-SecurityToken", stsCredential.securityToken);
         }
-        if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotEmpty(secretKey)) {
+        
+        if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
             spasHeaders.put("Spas-AccessKey", accessKey);
         }
         return spasHeaders;
@@ -304,22 +309,22 @@ public abstract class ConfigTransportClient {
      * @return content.
      * @throws NacosException throw where query fail .
      */
-    public abstract ConfigResponse queryConfig(String dataId, String group, String tenat, long readTimeous, boolean notify)
-            throws NacosException;
+    public abstract ConfigResponse queryConfig(String dataId, String group, String tenat, long readTimeous,
+            boolean notify) throws NacosException;
     
     /**
      * publish config.
      *
-     * @param dataId  dataId.
-     * @param group   group.
-     * @param tenant  tenant.
-     * @param appName appName.
-     * @param tag     tag.
-     * @param betaIps betaIps.
-     * @param content content.
+     * @param dataId           dataId.
+     * @param group            group.
+     * @param tenant           tenant.
+     * @param appName          appName.
+     * @param tag              tag.
+     * @param betaIps          betaIps.
+     * @param content          content.
      * @param encryptedDataKey encryptedDataKey
-     * @param casMd5  casMd5.
-     * @param type    type.
+     * @param casMd5           casMd5.
+     * @param type             type.
      * @return success or not.
      * @throws NacosException throw where publish fail.
      */

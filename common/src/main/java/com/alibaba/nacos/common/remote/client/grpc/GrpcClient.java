@@ -56,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class GrpcClient extends RpcClient {
     
-    static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
+    static final Logger LOGGER = LoggerFactory.getLogger(GrpcClient.class);
     
     private ThreadPoolExecutor grpcExecutor = null;
     
@@ -80,6 +80,7 @@ public abstract class GrpcClient extends RpcClient {
     public void shutdown() throws NacosException {
         super.shutdown();
         if (grpcExecutor != null) {
+            LOGGER.info("Shutdown grpc executor " + grpcExecutor);
             grpcExecutor.shutdown();
         }
     }
@@ -106,8 +107,8 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     private int getInboundMessageSize() {
-        String messageSize = System
-                .getProperty("nacos.remote.client.grpc.maxinbound.message.size", String.valueOf(DEFAULT_MAX_INBOUND_MESSAGE_SIZE));
+        String messageSize = System.getProperty("nacos.remote.client.grpc.maxinbound.message.size",
+                String.valueOf(DEFAULT_MAX_INBOUND_MESSAGE_SIZE));
         return Integer.parseInt(messageSize);
     }
     
@@ -134,7 +135,7 @@ public abstract class GrpcClient extends RpcClient {
      * @param requestBlockingStub requestBlockingStub used to check server.
      * @return success or not
      */
-    private Response serverCheck(RequestGrpc.RequestFutureStub requestBlockingStub) {
+    private Response serverCheck(String ip, int port, RequestGrpc.RequestFutureStub requestBlockingStub) {
         try {
             if (requestBlockingStub == null) {
                 return null;
@@ -146,6 +147,8 @@ public abstract class GrpcClient extends RpcClient {
             //receive connection unregister response here,not check response is success.
             return (Response) GrpcUtils.parse(response);
         } catch (Exception e) {
+            LoggerUtils.printIfErrorEnabled(LOGGER,
+                    "Server check fail, please check server {} ,port {} is available , error ={}", ip, port, e);
             return null;
         }
     }
@@ -258,11 +261,11 @@ public abstract class GrpcClient extends RpcClient {
                 grpcExecutor.allowCoreThreadTimeOut(true);
                 
             }
-            RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(),
-                    serverInfo.getServerPort() + rpcPortOffset());
+            int port = serverInfo.getServerPort() + rpcPortOffset();
+            RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(), port);
             if (newChannelStubTemp != null) {
                 
-                Response response = serverCheck(newChannelStubTemp);
+                Response response = serverCheck(serverInfo.getServerIp(), port, newChannelStubTemp);
                 if (response == null || !(response instanceof ServerCheckResponse)) {
                     shuntDownChannel((ManagedChannel) newChannelStubTemp.getChannel());
                     return null;

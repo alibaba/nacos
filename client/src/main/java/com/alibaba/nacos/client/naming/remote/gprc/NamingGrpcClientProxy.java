@@ -38,8 +38,11 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
@@ -90,6 +93,17 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         rpcClient.start();
         rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
         rpcClient.registerConnectionListener(namingGrpcConnectionEventListener);
+        NotifyCenter.registerSubscriber(this);
+    }
+    
+    @Override
+    public void onEvent(ServerListChangedEvent event) {
+        rpcClient.onServerListChange();
+    }
+    
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return ServerListChangedEvent.class;
     }
     
     @Override

@@ -26,6 +26,7 @@ import static com.alibaba.nacos.client.config.common.ConfigConstants.CONTENT;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.DATA_ID;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.GROUP;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.TENANT;
+import static com.alibaba.nacos.client.config.common.ConfigConstants.TYPE;
 
 /**
  * Config Request.
@@ -71,11 +72,11 @@ public class ConfigRequest implements IConfigRequest {
     }
     
     public String getType() {
-        return (String) param.get("type");
+        return (String) param.get(TYPE);
     }
     
     public void setType(String type) {
-        param.put("type", type);
+        param.put(TYPE, type);
     }
     
     @Override
