@@ -96,6 +96,40 @@ public class ClientWorker implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
+    private static final String NOTIFY_HEADER = "notify";
+    
+    private static final String TAG_PARAM = "tag";
+    
+    private static final String APP_NAME_PARAM = "appName";
+    
+    private static final String BETAIPS_PARAM = "betaIps";
+    
+    private static final String TYPE_PARAM = "type";
+    
+    private static final String ENCRYPTED_DATA_KEY_PARAM = "encryptedDataKey";
+    
+    private static final String DEFAULT_RESOURCE = "";
+    
+    /**
+     * groupKey -> cacheData.
+     */
+    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
+            new HashMap<String, CacheData>());
+    
+    private final ConfigFilterChainManager configFilterChainManager;
+    
+    private boolean isHealthServer = true;
+    
+    private String uuid = UUID.randomUUID().toString();
+    
+    private long timeout;
+    
+    private ConfigTransportClient agent;
+    
+    private int taskPenaltyTime;
+    
+    private boolean enableRemoteSyncConfig = false;
+    
     /**
      * Add listeners for data.
      *
@@ -537,26 +571,6 @@ public class ClientWorker implements Closeable {
         this.isHealthServer = isHealthServer;
     }
     
-    /**
-     * groupKey -> cacheData.
-     */
-    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
-            new HashMap<String, CacheData>());
-    
-    private final ConfigFilterChainManager configFilterChainManager;
-    
-    private boolean isHealthServer = true;
-    
-    private String uuid = UUID.randomUUID().toString();
-    
-    private long timeout;
-    
-    private ConfigTransportClient agent;
-    
-    private int taskPenaltyTime;
-    
-    private boolean enableRemoteSyncConfig = false;
-    
     public class ConfigRpcTransportClient extends ConfigTransportClient {
         
         private final BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<Object>(1);
@@ -961,7 +975,7 @@ public class ClientWorker implements Closeable {
         public ConfigResponse queryConfig(String dataId, String group, String tenant, long readTimeouts, boolean notify)
                 throws NacosException {
             ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
-            request.putHeader("notify", String.valueOf(notify));
+            request.putHeader(NOTIFY_HEADER, String.valueOf(notify));
             RpcClient rpcClient = getOneRunningClient();
             if (notify) {
                 CacheData cacheData = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
@@ -1053,7 +1067,7 @@ public class ClientWorker implements Closeable {
                 String group = ((ConfigRemoveRequest) request).getGroup();
                 return getResource(tenant, group);
             }
-            return "";
+            return DEFAULT_RESOURCE;
         }
         
         private String getResource(String tenant, String group) {
@@ -1066,7 +1080,7 @@ public class ClientWorker implements Closeable {
             if (StringUtils.isNotBlank(tenant)) {
                 return tenant;
             }
-            return "";
+            return DEFAULT_RESOURCE;
         }
         
         RpcClient getOneRunningClient() throws NacosException {
@@ -1080,11 +1094,11 @@ public class ClientWorker implements Closeable {
             try {
                 ConfigPublishRequest request = new ConfigPublishRequest(dataId, group, tenant, content);
                 request.setCasMd5(casMd5);
-                request.putAdditionalParam("tag", tag);
-                request.putAdditionalParam("appName", appName);
-                request.putAdditionalParam("betaIps", betaIps);
-                request.putAdditionalParam("type", type);
-                request.putAdditionalParam("encryptedDataKey", encryptedDataKey);
+                request.putAdditionalParam(TAG_PARAM, tag);
+                request.putAdditionalParam(APP_NAME_PARAM, appName);
+                request.putAdditionalParam(BETAIPS_PARAM, betaIps);
+                request.putAdditionalParam(TYPE_PARAM, type);
+                request.putAdditionalParam(ENCRYPTED_DATA_KEY_PARAM, encryptedDataKey);
                 ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
                 if (!response.isSuccess()) {
                     LOGGER.warn("[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
