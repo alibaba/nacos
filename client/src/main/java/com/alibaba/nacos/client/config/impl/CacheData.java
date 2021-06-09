@@ -60,6 +60,47 @@ public class CacheData {
     
     private static final Logger LOGGER = LogUtils.logger(CacheData.class);
     
+    private final String name;
+    
+    private final ConfigFilterChainManager configFilterChainManager;
+    
+    public final String dataId;
+    
+    public final String group;
+    
+    public final String tenant;
+    
+    private final CopyOnWriteArrayList<ManagerListenerWrap> listeners;
+    
+    private volatile String md5;
+    
+    /**
+     * whether use local config.
+     */
+    private volatile boolean isUseLocalConfig = false;
+    
+    /**
+     * last modify time.
+     */
+    private volatile long localConfigLastModified;
+    
+    private volatile String content;
+    
+    private volatile String encryptedDataKey;
+    
+    private volatile long lastModifiedTs;
+    
+    private int taskId;
+    
+    private volatile boolean isInitializing = true;
+    
+    /**
+     * if is cache data md5 sync with the server.
+     */
+    private volatile boolean isSyncWithServer = false;
+    
+    private String type;
+    
     public boolean isInitializing() {
         return isInitializing;
     }
@@ -332,7 +373,7 @@ public class CacheData {
      * 1.first add listener.default is false;need to check. 2.receive config change notify,set false;need to check.
      * 3.last listener is remove,set to false;need to check
      *
-     * @return
+     * @return the flag if sync with server
      */
     public boolean isSyncWithServer() {
         return isSyncWithServer;
@@ -373,49 +414,6 @@ public class CacheData {
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
         this.md5 = getMd5String(content);
     }
-    
-    // ==================
-    
-    private final String name;
-    
-    private final ConfigFilterChainManager configFilterChainManager;
-    
-    public final String dataId;
-    
-    public final String group;
-    
-    public final String tenant;
-    
-    private final CopyOnWriteArrayList<ManagerListenerWrap> listeners;
-    
-    private volatile String md5;
-    
-    /**
-     * whether use local config.
-     */
-    private volatile boolean isUseLocalConfig = false;
-    
-    /**
-     * last modify time.
-     */
-    private volatile long localConfigLastModified;
-    
-    private volatile String content;
-    
-    private volatile String encryptedDataKey;
-    
-    private volatile long lastModifiedTs;
-    
-    private int taskId;
-    
-    private volatile boolean isInitializing = true;
-    
-    /**
-     * if is cache data md5 sync with the server.
-     */
-    private volatile boolean isSyncWithServer = false;
-    
-    private String type;
     
     public String getEncryptedDataKey() {
         return encryptedDataKey;
