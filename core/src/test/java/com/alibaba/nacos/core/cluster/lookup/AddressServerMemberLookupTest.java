@@ -21,7 +21,9 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import junit.framework.TestCase;
@@ -69,16 +71,17 @@ public class AddressServerMemberLookupTest extends TestCase {
     
     @Mock
     private ConfigurableEnvironment environment;
+
+    private final GenericType<String> genericType = new GenericType<String>() { };
     
     @Before
     public void setUp() throws Exception {
         EnvUtil.setEnvironment(environment);
         when(environment.getProperty("maxHealthCheckFailCount", "12")).thenReturn("12");
         when(environment.getProperty("nacos.core.address-server.retry", Integer.class, 5)).thenReturn(5);
-        when(environment.getProperty("address.server.domain", "jmenv.tbsite.net")).thenReturn("jmenv.tbsite.net");
-        when(environment.getProperty("address.server.port", "8080")).thenReturn("8080");
-        when(environment.getProperty("address.server.domain", "jmenv.tbsite.net")).thenReturn("jmenv.tbsite.net");
-        when(environment.getProperty(eq("address.server.url"), any(String.class))).thenReturn("/nacos/serverlist");
+        when(environment.getProperty("address_server_domain", "jmenv.tbsite.net")).thenReturn("jmenv.tbsite.net");
+        when(environment.getProperty("address_server_port", "8080")).thenReturn("8080");
+        when(environment.getProperty(eq("address_server_url"), any(String.class))).thenReturn("/nacos/serverlist");
         initAddressSys();
         when(restTemplate.<String>get(eq(addressServerUrl), any(Header.EMPTY.getClass()), any(Query.EMPTY.getClass()), any(Type.class)))
                 .thenReturn(result);
@@ -112,23 +115,30 @@ public class AddressServerMemberLookupTest extends TestCase {
         assertEquals(addressServerUrl, infos.get("addressServerUrl"));
         assertEquals(envIdUrl, infos.get("envIdUrl"));
     }
+
+    @Test
+    public void testSyncFromAddressUrl() throws Exception {
+        RestResult<String> result = restTemplate
+                .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
+        assertEquals("1.1.1.1:8848", result.getData());
+    }
     
     private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {
-            domainName = EnvUtil.getProperty("address.server.domain", "jmenv.tbsite.net");
+            domainName = EnvUtil.getProperty("address_server_domain", "jmenv.tbsite.net");
         } else {
             domainName = envDomainName;
         }
         String envAddressPort = System.getenv("address_server_port");
         if (StringUtils.isBlank(envAddressPort)) {
-            addressPort = EnvUtil.getProperty("address.server.port", "8080");
+            addressPort = EnvUtil.getProperty("address_server_port", "8080");
         } else {
             addressPort = envAddressPort;
         }
         String envAddressUrl = System.getenv("address_server_url");
         if (StringUtils.isBlank(envAddressUrl)) {
-            addressUrl = EnvUtil.getProperty("address.server.url", EnvUtil.getContextPath() + "/" + "serverlist");
+            addressUrl = EnvUtil.getProperty("address_server_url", EnvUtil.getContextPath() + "/" + "serverlist");
         } else {
             addressUrl = envAddressUrl;
         }
