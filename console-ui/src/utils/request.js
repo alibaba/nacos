@@ -49,7 +49,10 @@ const request = () => {
         }
         const { accessToken = '', username = '' } = token;
         config.params.accessToken = accessToken;
-        config.params.username = username;
+        // support #3548 and fix #5835
+        if (!url.includes('auth')) {
+          config.params.username = username;
+        }
         config.headers = Object.assign({}, headers, { accessToken });
       }
       if (data && isPlainObject(data) && ['post', 'put'].includes(method)) {
