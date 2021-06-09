@@ -859,8 +859,10 @@ public class ServiceManager implements RecordListener<Service> {
      * @param service service
      */
     public void putService(Service service) {
-        serviceMap.putIfAbsent(service.getNamespaceId(), new ConcurrentSkipListMap<>())
-                .putIfAbsent(service.getName(), service);
+        if (!serviceMap.containsKey(service.getNamespaceId())) {
+            serviceMap.putIfAbsent(service.getNamespaceId(), new ConcurrentSkipListMap<>());
+        }
+        serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }
     
     private void putServiceAndInit(Service service) throws NacosException {
