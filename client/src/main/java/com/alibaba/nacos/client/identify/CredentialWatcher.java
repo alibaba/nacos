@@ -106,7 +106,6 @@ public class CredentialWatcher {
     }
     
     private void loadCredential(boolean init) {
-        boolean logWarn = init;
         if (propertyPath == null) {
             URL url = ClassLoader.getSystemResource(IdentifyConstants.PROPERTIES_FILENAME);
             if (url != null) {
@@ -123,12 +122,12 @@ public class CredentialWatcher {
                             IdentifyConstants.CREDENTIAL_PATH + (appName == null ? IdentifyConstants.CREDENTIAL_DEFAULT
                                     : appName);
                 } else {
-                    if (logWarn) {
+                    if (init) {
                         SPAS_LOGGER.info("[{}] Defined credential file: -Dspas.identity={}", appName, propertyPath);
                     }
                 }
             } else {
-                if (logWarn) {
+                if (init) {
                     SPAS_LOGGER.info("[{}] Load credential file from classpath: {}", appName,
                             IdentifyConstants.PROPERTIES_FILENAME);
                 }
@@ -161,7 +160,7 @@ public class CredentialWatcher {
             accessKey = System.getenv(IdentifyConstants.ENV_ACCESS_KEY);
             secretKey = System.getenv(IdentifyConstants.ENV_SECRET_KEY);
             if (accessKey == null && secretKey == null) {
-                if (logWarn) {
+                if (init) {
                     SPAS_LOGGER.info("{} No credential found", appName);
                 }
                 return;
@@ -184,7 +183,7 @@ public class CredentialWatcher {
                 }
             }
             
-            if (logWarn) {
+            if (init) {
                 SPAS_LOGGER.info("[{}] Load credential file {}", appName, propertyPath);
             }
             
