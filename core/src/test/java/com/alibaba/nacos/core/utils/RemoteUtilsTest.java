@@ -20,7 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * RemoteUtils unit tests.
+ * {@link RemoteUtils} unit tests.
  *
  * @author chenglu
  * @date 2021-06-10 13:17
@@ -32,9 +32,11 @@ public class RemoteUtilsTest {
         int defaultExpectVal = 1 << 4;
         int defaultVal = RemoteUtils.getRemoteExecutorTimesOfProcessors();
         Assert.assertEquals(defaultExpectVal, defaultVal);
+        
         System.setProperty("remote.executor.times.of.processors", "10");
         int val1 = RemoteUtils.getRemoteExecutorTimesOfProcessors();
         Assert.assertEquals(10, val1);
+        
         System.setProperty("remote.executor.times.of.processors", "-1");
         int val2 = RemoteUtils.getRemoteExecutorTimesOfProcessors();
         Assert.assertEquals(defaultExpectVal, val2);
@@ -45,9 +47,11 @@ public class RemoteUtilsTest {
         int defaultExpectVal = 1 << 14;
         int defaultVal = RemoteUtils.getRemoteExecutorQueueSize();
         Assert.assertEquals(defaultExpectVal, defaultVal);
+        
         System.setProperty("remote.executor.queue.size", "10");
         int val1 = RemoteUtils.getRemoteExecutorQueueSize();
         Assert.assertEquals(10, val1);
+        
         System.setProperty("remote.executor.queue.size", "-1");
         int val2 = RemoteUtils.getRemoteExecutorQueueSize();
         Assert.assertEquals(defaultExpectVal, val2);
