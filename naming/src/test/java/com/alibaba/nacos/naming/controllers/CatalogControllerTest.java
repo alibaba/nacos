@@ -35,6 +35,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Collections;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -55,7 +58,7 @@ public class CatalogControllerTest {
     private Cluster cluster;
     
     @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+    public void setUp() throws NoSuchFieldException, IllegalAccessException, NacosException {
         catalogController = new CatalogController();
         catalogServiceV1 = new CatalogServiceV1Impl(serviceManager);
         ReflectionTestUtils.setField(catalogController, "serviceManager", serviceManager);
@@ -70,6 +73,7 @@ public class CatalogControllerTest {
         service.addCluster(cluster);
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID,
                 TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME)).thenReturn(service);
+        doCallRealMethod().when(serviceManager).checkServiceIsNull(eq(null), anyString(), anyString());
     }
     
     @Test
