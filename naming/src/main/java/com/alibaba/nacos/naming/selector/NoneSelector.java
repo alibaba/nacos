@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.naming.selector;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.core.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
@@ -33,12 +33,14 @@ import java.util.List;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class NoneSelector extends com.alibaba.nacos.api.selector.NoneSelector implements Selector {
     
+    private static final long serialVersionUID = -3752116616221930677L;
+    
     static {
         JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
     }
     
     @Override
-    public List<Instance> select(String consumer, List<Instance> providers) {
+    public <T extends Instance> List<T> select(String consumer, List<T> providers) {
         return providers;
     }
 }

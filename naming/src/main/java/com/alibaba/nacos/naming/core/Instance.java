@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -26,7 +26,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Set;
@@ -119,13 +118,13 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         String provider = ipAddressAttributes[0];
         String[] providerAddr;
         try {
-            providerAddr = IPUtil.splitIPPortStr(provider);
+            providerAddr = InternetAddressUtil.splitIPPortStr(provider);
         } catch (Exception ex) {
             return null;
         }
         
         int port = 0;
-        if (providerAddr.length == IPUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils.isNumber(providerAddr[1])) {
+        if (providerAddr.length == InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils.isNumber(providerAddr[1])) {
             port = Integer.parseInt(providerAddr[1]);
         }
         
@@ -358,7 +357,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
      */
     public void validate() throws NacosException {
         if (onlyContainsDigitAndDot()) {
-            if (!IPUtil.containsPort(getIp() + IPUtil.IP_PORT_SPLITER + getPort())) {
+            if (!InternetAddressUtil.containsPort(getIp() + InternetAddressUtil.IP_PORT_SPLITER + getPort())) {
                 throw new NacosException(NacosException.INVALID_PARAM,
                         "instance format invalid: Your IP address is spelled incorrectly");
             }

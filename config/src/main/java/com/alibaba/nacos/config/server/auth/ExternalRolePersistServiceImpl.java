@@ -57,6 +57,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         jt = persistService.getJdbcTemplate();
     }
     
+    @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
@@ -82,6 +83,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         }
     }
     
+    @Override
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
@@ -112,6 +114,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      * @param role     role string value.
      * @param userName username string value.
      */
+    @Override
     public void addRole(String role, String userName) {
         
         String sql = "INSERT into roles (role, username) VALUES (?, ?)";
@@ -129,6 +132,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      *
      * @param role role string value.
      */
+    @Override
     public void deleteRole(String role) {
         String sql = "DELETE from roles WHERE role=?";
         try {
@@ -145,6 +149,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      * @param role     role string value.
      * @param username username string value.
      */
+    @Override
     public void deleteRole(String role, String username) {
         String sql = "DELETE from roles WHERE role=? and username=?";
         try {

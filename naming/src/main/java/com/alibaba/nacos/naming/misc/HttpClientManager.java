@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 
 import java.util.concurrent.TimeUnit;
@@ -66,12 +67,7 @@ public class HttpClientManager {
         PROCESSOR_NACOS_ASYNC_REST_TEMPLATE = HttpClientBeanHolder
                 .getNacosAsyncRestTemplate(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY);
         
-        ThreadUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        });
+        ThreadUtils.addShutdownHook(HttpClientManager::shutdown);
     }
     
     public static NacosRestTemplate getNacosRestTemplate() {
@@ -149,8 +145,8 @@ public class HttpClientManager {
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
-                    .setMaxConnTotal(Runtime.getRuntime().availableProcessors() * 2)
-                    .setMaxConnPerRoute(Runtime.getRuntime().availableProcessors()).setMaxRedirects(0).build();
+                    .setMaxConnTotal(EnvUtil.getAvailableProcessors(2))
+                    .setMaxConnPerRoute(EnvUtil.getAvailableProcessors()).setMaxRedirects(0).build();
         }
         
         @Override

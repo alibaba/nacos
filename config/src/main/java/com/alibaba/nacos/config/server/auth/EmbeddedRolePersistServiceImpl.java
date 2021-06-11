@@ -48,6 +48,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     @Autowired
     private EmbeddedStoragePersistServiceImpl persistService;
     
+    @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
@@ -69,6 +70,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         
     }
     
+    @Override
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
@@ -95,6 +97,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
      * @param role role string value.
      * @param userName username string value.
      */
+    @Override
     public void addRole(String role, String userName) {
         
         String sql = "INSERT into roles (role, username) VALUES (?, ?)";
@@ -112,6 +115,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
      *
      * @param role role string value.
      */
+    @Override
     public void deleteRole(String role) {
         String sql = "DELETE from roles WHERE role=?";
         try {
@@ -128,6 +132,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
      * @param role role string value.
      * @param username user string value.
      */
+    @Override
     public void deleteRole(String role, String username) {
         String sql = "DELETE from roles WHERE role=? and username=?";
         try {
@@ -141,8 +146,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     @Override
     public List<String> findRolesLikeRoleName(String role) {
         String sql = "SELECT role FROM roles WHERE role like ? ";
-        List<String> users = databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
-        return users;
+        return databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
     }
     
 }

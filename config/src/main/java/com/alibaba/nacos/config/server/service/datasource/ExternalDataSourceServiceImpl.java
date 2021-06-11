@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -105,7 +105,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             try {
                 reload();
             } catch (IOException e) {
-                e.printStackTrace();
+                FATAL_LOG.error("[ExternalDataSourceService] dats source reload error", e);
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
 
@@ -183,10 +183,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
                     // The master is unhealthy.
-                    return "DOWN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "DOWN:" + InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     // The slave  is unhealthy.
-                    return "WARN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "WARN:" + InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
@@ -219,7 +219,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     masterIndex = index;
                     break;
                 } catch (DataAccessException e) { // read only
-                    e.printStackTrace(); // TODO remove
+                    FATAL_LOG.warn("[master-db] master db access error", e);
                 }
             }
             
@@ -248,10 +248,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         FATAL_LOG.error("[db-error] master db {} down.",
-                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         FATAL_LOG.error("[db-error] slave db {} down.",
-                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     

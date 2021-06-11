@@ -42,6 +42,7 @@ public class GroupKeyTest {
     public void testParseKey() {
         Assert.assertArrayEquals(new String[] {"a", "f+oo", null}, GroupKey.parseKey("a+f%2Boo"));
         Assert.assertArrayEquals(new String[] {"b", "f%oo", null}, GroupKey.parseKey("b+f%25oo"));
+        Assert.assertArrayEquals(new String[] {"a", "b", "c"}, GroupKey.parseKey("a+b+c"));
     }
     
     @Test

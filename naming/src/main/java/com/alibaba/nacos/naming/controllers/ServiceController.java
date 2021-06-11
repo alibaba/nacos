@@ -27,12 +27,14 @@ import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.ServiceOperator;
+import com.alibaba.nacos.naming.core.ServiceOperatorV1Impl;
+import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -41,7 +43,6 @@ import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -56,10 +57,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,14 +69,11 @@ import java.util.Set;
  * @author nkorange
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service")
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)
 public class ServiceController {
     
     @Autowired
     protected ServiceManager serviceManager;
-    
-    @Autowired
-    private DistroMapper distroMapper;
     
     @Autowired
     private ServerMemberManager memberManager;
@@ -85,8 +81,17 @@ public class ServiceController {
     @Autowired
     private SubscribeManager subscribeManager;
     
+    @Autowired
+    private ServiceOperatorV1Impl serviceOperatorV1;
+    
+    @Autowired
+    private ServiceOperatorV2Impl serviceOperatorV2;
+    
+    @Autowired
+    private UpgradeJudgement upgradeJudgement;
+    
     /**
-     * Create a new service.
+     * Create a new service. This API will create a persistence service.
      *
      * @param namespaceId      namespace id
      * @param serviceName      service name
@@ -99,33 +104,16 @@ public class ServiceController {
     @PostMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
+            @RequestParam String serviceName,
+            @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
             @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
             @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
-        
-        if (serviceManager.getService(namespaceId, serviceName) != null) {
-            throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
-        }
-        
-        Map<String, String> metadataMap = new HashMap<>(16);
-        if (StringUtils.isNotBlank(metadata)) {
-            metadataMap = UtilsAndCommons.parseMetadata(metadata);
-        }
-        
-        Service service = new Service(serviceName);
-        service.setProtectThreshold(protectThreshold);
-        service.setEnabled(true);
-        service.setMetadata(metadataMap);
-        service.setSelector(parseSelector(selector));
-        service.setNamespaceId(namespaceId);
-        
-        // now valid the service. if failed, exception will be thrown
-        service.setLastModifiedMillis(System.currentTimeMillis());
-        service.recalculateChecksum();
-        service.validate();
-        
-        serviceManager.addOrReplaceService(service);
-        
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.setProtectThreshold(protectThreshold);
+        serviceMetadata.setSelector(parseSelector(selector));
+        serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
+        serviceMetadata.setEphemeral(false);
+        getServiceOperator().create(namespaceId, serviceName, serviceMetadata);
         return "ok";
     }
     
@@ -142,8 +130,7 @@ public class ServiceController {
     public String remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws Exception {
         
-        serviceManager.easyRemoveService(namespaceId, serviceName);
-        
+        getServiceOperator().delete(namespaceId, serviceName);
         return "ok";
     }
     
@@ -159,32 +146,7 @@ public class ServiceController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws NacosException {
-        
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
-        }
-        
-        ObjectNode res = JacksonUtils.createEmptyJsonNode();
-        res.put("name", NamingUtils.getServiceName(serviceName));
-        res.put("namespaceId", service.getNamespaceId());
-        res.put("protectThreshold", service.getProtectThreshold());
-        res.replace("metadata", JacksonUtils.transferToJsonNode(service.getMetadata()));
-        res.replace("selector", JacksonUtils.transferToJsonNode(service.getSelector()));
-        res.put("groupName", NamingUtils.getGroupName(serviceName));
-        
-        ArrayNode clusters = JacksonUtils.createEmptyArrayNode();
-        for (Cluster cluster : service.getClusterMap().values()) {
-            ObjectNode clusterJson = JacksonUtils.createEmptyJsonNode();
-            clusterJson.put("name", cluster.getName());
-            clusterJson.replace("healthChecker", JacksonUtils.transferToJsonNode(cluster.getHealthChecker()));
-            clusterJson.replace("metadata", JacksonUtils.transferToJsonNode(cluster.getMetadata()));
-            clusters.add(clusterJson);
-        }
-        
-        res.replace("clusters", clusters);
-        
-        return res;
+        return getServiceOperator().queryService(namespaceId, serviceName);
     }
     
     /**
@@ -203,73 +165,11 @@ public class ServiceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
-        
-        List<String> serviceNameList = serviceManager.getAllServiceNameList(namespaceId);
-        
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
-        if (serviceNameList == null || serviceNameList.isEmpty()) {
-            result.replace("doms", JacksonUtils.transferToJsonNode(Collections.emptyList()));
-            result.put("count", 0);
-            return result;
-        }
-        
-        if (!Constants.ALL_PATTERN.equals(groupName)) {
-            serviceNameList
-                    .removeIf(serviceName -> !serviceName.startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
-        }
-        
-        if (StringUtils.isNotBlank(selectorString)) {
-            
-            JsonNode selectorJson = JacksonUtils.toObj(selectorString);
-            
-            SelectorType selectorType = SelectorType.valueOf(selectorJson.get("type").asText());
-            String expression = selectorJson.get("expression").asText();
-            
-            if (SelectorType.label.equals(selectorType) && StringUtils.isNotBlank(expression)) {
-                expression = StringUtils.deleteWhitespace(expression);
-                // Now we only support the following expression:
-                // INSTANCE.metadata.xxx = 'yyy' or
-                // SERVICE.metadata.xxx = 'yyy'
-                String[] terms = expression.split("=");
-                String[] factors = terms[0].split("\\.");
-                switch (factors[0]) {
-                    case "INSTANCE":
-                        serviceNameList = filterInstanceMetadata(namespaceId, serviceNameList,
-                                factors[factors.length - 1], terms[1].replace("'", ""));
-                        break;
-                    case "SERVICE":
-                        serviceNameList = filterServiceMetadata(namespaceId, serviceNameList,
-                                factors[factors.length - 1], terms[1].replace("'", ""));
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-        
-        int start = (pageNo - 1) * pageSize;
-        if (start < 0) {
-            start = 0;
-        }
-        if (start >= serviceNameList.size()) {
-            result.replace("doms", JacksonUtils.transferToJsonNode(Collections.emptyList()));
-            result.put("count", serviceNameList.size());
-            return result;
-        }
-        
-        int end = start + pageSize;
-        if (end > serviceNameList.size()) {
-            end = serviceNameList.size();
-        }
-        
-        for (int i = start; i < end; i++) {
-            serviceNameList.set(i, serviceNameList.get(i).replace(groupName + Constants.SERVICE_INFO_SPLITER, ""));
-        }
-        
-        result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList.subList(start, end)));
+        List<String> serviceNameList = getServiceOperator()
+                .listService(namespaceId, groupName, selectorString, pageSize, pageNo);
+        result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
         result.put("count", serviceNameList.size());
-        
         return result;
         
     }
@@ -284,33 +184,22 @@ public class ServiceController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
-        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "service " + serviceName + " not found!");
-        }
-        
-        service.setProtectThreshold(protectThreshold);
-        
-        Map<String, String> metadataMap = UtilsAndCommons.parseMetadata(metadata);
-        service.setMetadata(metadataMap);
-        service.setSelector(parseSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
-        service.setLastModifiedMillis(System.currentTimeMillis());
-        service.recalculateChecksum();
-        service.validate();
-        
-        serviceManager.addOrReplaceService(service);
-        
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.setProtectThreshold(NumberUtils.toFloat(WebUtils.required(request, "protectThreshold")));
+        serviceMetadata.setExtendData(
+                UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
+        serviceMetadata.setSelector(parseSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
+        com.alibaba.nacos.naming.core.v2.pojo.Service service = com.alibaba.nacos.naming.core.v2.pojo.Service
+                .newService(namespaceId, NamingUtils.getGroupName(serviceName),
+                        NamingUtils.getServiceName(serviceName));
+        getServiceOperator().update(service, serviceMetadata);
         return "ok";
     }
     
     /**
-     * Search service.
+     * Search service names.
      *
      * @param namespaceId     namespace
      * @param expr            search pattern
@@ -321,34 +210,23 @@ public class ServiceController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
-            @RequestParam(required = false) boolean responsibleOnly) {
-        
-        Map<String, List<Service>> services = new HashMap<>(16);
+            @RequestParam(required = false) boolean responsibleOnly) throws NacosException {
+        Map<String, Collection<String>> serviceNameMap = new HashMap<>(16);
+        int totalCount = 0;
         if (StringUtils.isNotBlank(namespaceId)) {
-            services.put(namespaceId,
-                    serviceManager.searchServices(namespaceId, Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN));
+            Collection<String> names = getServiceOperator().searchServiceName(namespaceId, expr, responsibleOnly);
+            serviceNameMap.put(namespaceId, names);
+            totalCount = names.size();
         } else {
-            for (String namespace : serviceManager.getAllNamespaces()) {
-                services.put(namespace,
-                        serviceManager.searchServices(namespace, Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN));
+            for (String each : getServiceOperator().listAllNamespace()) {
+                Collection<String> names = getServiceOperator().searchServiceName(each, expr, responsibleOnly);
+                serviceNameMap.put(each, names);
+                totalCount += names.size();
             }
         }
-        
-        Map<String, Set<String>> serviceNameMap = new HashMap<>(16);
-        for (String namespace : services.keySet()) {
-            serviceNameMap.put(namespace, new HashSet<>());
-            for (Service service : services.get(namespace)) {
-                if (distroMapper.responsible(service.getName()) || !responsibleOnly) {
-                    serviceNameMap.get(namespace).add(NamingUtils.getServiceName(service.getName()));
-                }
-            }
-        }
-        
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
         result.replace("services", JacksonUtils.transferToJsonNode(serviceNameMap));
-        result.put("count", services.size());
-        
+        result.put("count", totalCount);
         return result;
     }
     
@@ -358,8 +236,10 @@ public class ServiceController {
      * @param request http request
      * @return 'ok' if service status if latest, otherwise 'fail' or exception
      * @throws Exception exception
+     * @deprecated will removed after v2.1
      */
     @PostMapping("/status")
+    @Deprecated
     public String serviceStatus(HttpServletRequest request) throws Exception {
         
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
@@ -417,17 +297,17 @@ public class ServiceController {
      * @param request http request
      * @return checksum of one service
      * @throws Exception exception
+     * @deprecated will removed after v2.1
      */
     @PutMapping("/checksum")
-    public ObjectNode checksum(HttpServletRequest request) throws Exception {
+    @Deprecated
+    public ObjectNode checksum(HttpServletRequest request) throws NacosException {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         Service service = serviceManager.getService(namespaceId, serviceName);
         
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "serviceName not found: " + serviceName);
-        }
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
         
         service.recalculateChecksum();
         
@@ -459,7 +339,7 @@ public class ServiceController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
         try {
-            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation, pageNo, pageSize);
+            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             
             int start = (pageNo - 1) * pageSize;
             if (start < 0) {
@@ -484,42 +364,6 @@ public class ServiceController {
         }
     }
     
-    private List<String> filterInstanceMetadata(String namespaceId, List<String> serviceNames, String key,
-            String value) {
-        
-        List<String> filteredServiceNames = new ArrayList<>();
-        for (String serviceName : serviceNames) {
-            Service service = serviceManager.getService(namespaceId, serviceName);
-            if (service == null) {
-                continue;
-            }
-            for (Instance address : service.allIPs()) {
-                if (address.getMetadata() != null && value.equals(address.getMetadata().get(key))) {
-                    filteredServiceNames.add(serviceName);
-                    break;
-                }
-            }
-        }
-        return filteredServiceNames;
-    }
-    
-    private List<String> filterServiceMetadata(String namespaceId, List<String> serviceNames, String key,
-            String value) {
-        
-        List<String> filteredServices = new ArrayList<>();
-        for (String serviceName : serviceNames) {
-            Service service = serviceManager.getService(namespaceId, serviceName);
-            if (service == null) {
-                continue;
-            }
-            if (value.equals(service.getMetadata().get(key))) {
-                filteredServices.add(serviceName);
-            }
-            
-        }
-        return filteredServices;
-    }
-    
     private Selector parseSelector(String selectorJsonString) throws Exception {
         
         if (StringUtils.isBlank(selectorJsonString)) {
@@ -540,5 +384,9 @@ public class ServiceController {
             default:
                 throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }
+    }
+    
+    private ServiceOperator getServiceOperator() {
+        return upgradeJudgement.isUseGrpcFeatures() ? serviceOperatorV2 : serviceOperatorV1;
     }
 }

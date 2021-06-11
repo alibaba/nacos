@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.Cluster;
+import com.alibaba.nacos.naming.core.ClusterOperatorV1Impl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
@@ -31,6 +32,7 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -47,6 +49,9 @@ public class ClusterControllerTest extends BaseTest {
     @InjectMocks
     private ClusterController clusterController;
     
+    @InjectMocks
+    private ClusterOperatorV1Impl clusterOperatorV1;
+    
     private MockMvc mockmvc;
     
     @Before
@@ -55,6 +60,8 @@ public class ClusterControllerTest extends BaseTest {
         mockInjectSwitchDomain();
         mockInjectDistroMapper();
         mockmvc = MockMvcBuilders.standaloneSetup(clusterController).build();
+        ReflectionTestUtils.setField(clusterController, "upgradeJudgement", upgradeJudgement);
+        ReflectionTestUtils.setField(clusterController, "clusterOperatorV1", clusterOperatorV1);
     }
     
     @Test
@@ -118,13 +125,13 @@ public class ClusterControllerTest extends BaseTest {
         mockmvc.perform(builder3);
         
         Assert.assertEquals("HTTP", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
-    
+        
         MockHttpServletRequestBuilder builder4 = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
                 .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"MYSQL\"}")
                 .param("checkPort", "1").param("useInstancePort4Check", "true");
         mockmvc.perform(builder4);
-    
+        
         Assert.assertEquals("MYSQL", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
         
     }

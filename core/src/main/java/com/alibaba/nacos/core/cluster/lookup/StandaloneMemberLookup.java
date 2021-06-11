@@ -31,10 +31,13 @@ import java.util.Collections;
 public class StandaloneMemberLookup extends AbstractMemberLookup {
     
     @Override
-    public void start() {
-        if (start.compareAndSet(false, true)) {
-            String url = InetUtils.getSelfIP() + ":" + EnvUtil.getPort();
-            afterLookup(MemberUtil.readServerConf(Collections.singletonList(url)));
-        }
+    public void doStart() {
+        String url = InetUtils.getSelfIP() + ":" + EnvUtil.getPort();
+        afterLookup(MemberUtil.readServerConf(Collections.singletonList(url)));
+    }
+    
+    @Override
+    public boolean useAddressServer() {
+        return false;
     }
 }

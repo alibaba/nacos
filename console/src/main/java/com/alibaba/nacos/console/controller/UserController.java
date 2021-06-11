@@ -23,6 +23,7 @@ import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
@@ -37,6 +38,7 @@ import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImp
 import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -102,7 +104,7 @@ public class UserController {
             throw new IllegalArgumentException("user '" + username + "' already exist!");
         }
         userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
-        return new RestResult<>(200, "create user ok!");
+        return RestResultUtils.success("create user ok!");
     }
     
     /**
@@ -124,7 +126,7 @@ public class UserController {
             }
         }
         userDetailsService.deleteUser(username);
-        return new RestResult<>(200, "delete user ok!");
+        return RestResultUtils.success("delete user ok!");
     }
     
     /**
@@ -154,7 +156,7 @@ public class UserController {
         
         userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
         
-        return new RestResult<>(200, "update user ok!");
+        return RestResultUtils.success("update user ok!");
     }
 
     private boolean hasPermission(String username, HttpServletRequest request) {
@@ -204,40 +206,36 @@ public class UserController {
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
             HttpServletRequest request) throws AccessException {
         
-        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.LDAP
+                .name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             NacosUser user = (NacosUser) authManager.login(request);
             
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
-            //            JSONObject result = new JSONObject();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
             result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
+            result.put(Constants.USERNAME, user.getUserName());
             return result;
         }
         
-        // 通过用户名和密码创建一个 Authentication 认证对象，实现类为 UsernamePasswordAuthenticationToken
+        // create Authentication class through username and password, the implement class is UsernamePasswordAuthenticationToken
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
                 password);
         
-        RestResult<String> rr = new RestResult<String>();
         try {
-            //通过 AuthenticationManager（默认实现为ProviderManager）的authenticate方法验证 Authentication 对象
+            // use the method authenticate of AuthenticationManager(default implement is ProviderManager) to valid Authentication
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
-            //将 Authentication 绑定到 SecurityContext
+            // bind SecurityContext to Authentication
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            //生成Token
+            // generate Token
             String token = jwtTokenManager.createToken(authentication);
-            //将Token写入到Http头部
+            // write Token to Http header
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, "Bearer " + token);
-            rr.setCode(200);
-            rr.setData("Bearer " + token);
-            return rr;
+            return RestResultUtils.success("Bearer " + token);
         } catch (BadCredentialsException authentication) {
-            rr.setCode(401);
-            rr.setMessage("Login failed");
-            return rr;
+            return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), null, "Login failed");
         }
     }
     
@@ -252,8 +250,6 @@ public class UserController {
     @Deprecated
     public RestResult<String> updatePassword(@RequestParam(value = "oldPassword") String oldPassword,
             @RequestParam(value = "newPassword") String newPassword) {
-        
-        RestResult<String> rr = new RestResult<String>();
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = ((UserDetails) principal).getUsername();
         User user = userDetailsService.getUserFromDatabase(username);
@@ -263,17 +259,12 @@ public class UserController {
         try {
             if (PasswordEncoderUtil.matches(oldPassword, password)) {
                 userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
-                rr.setCode(200);
-                rr.setMessage("Update password success");
-            } else {
-                rr.setCode(401);
-                rr.setMessage("Old password is invalid");
+                return RestResultUtils.success("Update password success");
             }
+            return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), "Old password is invalid");
         } catch (Exception e) {
-            rr.setCode(500);
-            rr.setMessage("Update userpassword failed");
+            return RestResultUtils.failed(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Update userpassword failed");
         }
-        return rr;
     }
 
 

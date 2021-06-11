@@ -38,6 +38,8 @@ import java.util.List;
  */
 public class FileConfigMemberLookup extends AbstractMemberLookup {
     
+    private static final String DEFAULT_SEARCH_SEQ = "cluster.conf";
+    
     private FileWatcher watcher = new FileWatcher() {
         @Override
         public void onChange(FileChangeEvent event) {
@@ -46,23 +48,26 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
         
         @Override
         public boolean interest(String context) {
-            return StringUtils.contains(context, "cluster.conf");
+            return StringUtils.contains(context, DEFAULT_SEARCH_SEQ);
         }
     };
     
     @Override
-    public void start() throws NacosException {
-        if (start.compareAndSet(false, true)) {
-            readClusterConfFromDisk();
-            
-            // Use the inotify mechanism to monitor file changes and automatically
-            // trigger the reading of cluster.conf
-            try {
-                WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), watcher);
-            } catch (Throwable e) {
-                Loggers.CLUSTER.error("An exception occurred in the launch file monitor : {}", e.getMessage());
-            }
+    public void doStart() throws NacosException {
+        readClusterConfFromDisk();
+        
+        // Use the inotify mechanism to monitor file changes and automatically
+        // trigger the reading of cluster.conf
+        try {
+            WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), watcher);
+        } catch (Throwable e) {
+            Loggers.CLUSTER.error("An exception occurred in the launch file monitor : {}", e.getMessage());
         }
+    }
+    
+    @Override
+    public boolean useAddressServer() {
+        return false;
     }
     
     @Override

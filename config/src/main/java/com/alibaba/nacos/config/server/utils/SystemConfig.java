@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,7 @@ public class SystemConfig {
         if (StringUtils.isNotEmpty(address)) {
             return address;
         } else {
-            address = IPUtil.localHostIP();
+            address = InternetAddressUtil.localHostIP();
         }
         try {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();

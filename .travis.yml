@@ -31,9 +31,9 @@ script:
   - mvn clean -Premove-test-data
   - mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
   - mvn clean -Premove-test-data
-  - mvn clean install -Pcit-test
+  - mvn clean package -Pcit-test
   - mvn clean -Premove-test-data
-  - mvn clean package -Pit-test
+  - mvn clean package -Pnit-test
   - mvn clean -Premove-test-data
 after_success:
   - mvn clean package -Pit-test

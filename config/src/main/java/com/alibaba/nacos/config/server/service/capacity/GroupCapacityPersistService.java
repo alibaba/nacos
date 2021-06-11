@@ -215,6 +215,7 @@ public class GroupCapacityPersistService {
     
     /**
      * Decrement Usage.
+     *
      * @param groupCapacity groupCapacity object instance.
      * @return operate result.
      */
@@ -231,11 +232,11 @@ public class GroupCapacityPersistService {
     /**
      * Update GroupCapacity.
      *
-     * @param group group string value.
-     * @param quota quota int value.
-     * @param maxSize maxSize int value.
+     * @param group        group string value.
+     * @param quota        quota int value.
+     * @param maxSize      maxSize int value.
      * @param maxAggrCount maxAggrCount int value.
-     * @param maxAggrSize maxAggrSize int value.
+     * @param maxAggrSize  maxAggrSize int value.
      * @return
      */
     public boolean updateGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
@@ -282,7 +283,7 @@ public class GroupCapacityPersistService {
     /**
      * Correct Usage.
      *
-     * @param group group string value.
+     * @param group       group string value.
      * @param gmtModified gmtModified.
      * @return operate result.
      */
@@ -313,7 +314,7 @@ public class GroupCapacityPersistService {
     /**
      * Get group capacity list, noly has id and groupId value.
      *
-     * @param lastId lastId long value.
+     * @param lastId   lastId long value.
      * @param pageSize pageSize long value.
      * @return GroupCapacity list.
      */

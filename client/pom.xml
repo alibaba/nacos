@@ -54,7 +54,7 @@
             <artifactId>log4j-api</artifactId>
             <optional>true</optional>
         </dependency>
-
+        
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
@@ -64,13 +64,14 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-common</artifactId>
+            <optional>true</optional>
         </dependency>
         
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-api</artifactId>
+            <optional>true</optional>
         </dependency>
-        
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -81,11 +82,6 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
             <optional>true</optional>
-        </dependency>
-        
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
         </dependency>
         
         <dependency>
@@ -104,15 +100,17 @@
         </dependency>
         
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpasyncclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+        </dependency>
+        <dependency>
             <groupId>net.jcip</groupId>
             <artifactId>jcip-annotations</artifactId>
             <optional>true</optional>
-        </dependency>
-        
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
         
         <dependency>
@@ -120,15 +118,9 @@
             <artifactId>simpleclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
-    
     </dependencies>
     
     <build>
@@ -137,10 +129,223 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>6</source>
-                    <target>6</target>
+                    <source>8</source>
+                    <target>8</target>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+    
+    <profiles>
+        <profile>
+            <id>release-sign-artifacts</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <version>3.2.1</version>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
+                                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                                    <minimizeJar>false</minimizeJar>
+                                    <createSourcesJar>true</createSourcesJar>
+                                    <shadeSourcesContent>true</shadeSourcesContent>
+                    
+                                    <artifactSet>
+                                        <includes>
+                                            <include>io.grpc:*</include>
+                                            <include>io.opencensus:*</include>
+                                            <include>io.perfmark:*</include>
+                                            <include>com.google.guava:guava</include>
+                                            <include>com.google.guava:failureaccess</include>
+                                            <include>com.google.errorprone:error_prone_annotations</include>
+                                            <include>com.google.j2objc:j2objc-annotations</include>
+                                            <include>com.google.code.gson:gson</include>
+                                            <include>com.google.protobuf:protobuf-java</include>
+                                            <include>com.alibaba.nacos:nacos-api</include>
+                                            <include>com.alibaba.nacos:nacos-common</include>
+                                            <include>org.checkerframework:checker-qual</include>
+                                        </includes>
+                                    </artifactSet>
+                    
+                                    <relocations>
+                        
+                                        <relocation>
+                                            <pattern>io.grpc</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.io.grpc</shadedPattern>
+                                            <excludes>
+                                                <exclude>io.grpc.netty.shaded.io.grpc.netty.*</exclude>
+                                            </excludes>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>io.grpc.netty.shaded.io.grpc.netty</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty
+                                            </shadedPattern>
+                                            <includes>
+                                                <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
+                                            </includes>
+                                        </relocation>
+                        
+                                        <relocation>
+                                            <pattern>com.google</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>io.perfmark</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>io.opencensus</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.io.opencensus</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>org.codehaus</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.org.codehaus</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>org.checkerframework</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.org.checkerframework</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>android.annotation</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.android.annotation</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>org.example</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
+                                        </relocation>
+                    
+                    
+                                    </relocations>
+                                    <transformers>
+                                        <transformer
+                                            implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                                        <transformer
+                                            implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    
+                                    </transformers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>release-nacos</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <version>3.2.1</version>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
+                                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                                    <minimizeJar>false</minimizeJar>
+                                    <createSourcesJar>true</createSourcesJar>
+                                    <shadeSourcesContent>true</shadeSourcesContent>
+                                
+                                    <artifactSet>
+                                        <includes>
+                                            <include>io.grpc:*</include>
+                                            <include>io.opencensus:*</include>
+                                            <include>io.perfmark:*</include>
+                                            <include>com.google.guava:guava</include>
+                                            <include>com.google.guava:failureaccess</include>
+                                            <include>com.google.errorprone:error_prone_annotations</include>
+                                            <include>com.google.j2objc:j2objc-annotations</include>
+                                            <include>com.google.code.gson:gson</include>
+                                            <include>com.google.protobuf:protobuf-java</include>
+                                            <include>com.alibaba.nacos:nacos-api</include>
+                                            <include>com.alibaba.nacos:nacos-common</include>
+                                            <include>org.checkerframework:checker-qual</include>
+                                        </includes>
+                                    </artifactSet>
+                                
+                                    <relocations>
+                                    
+                                        <relocation>
+                                            <pattern>io.grpc</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.io.grpc</shadedPattern>
+                                            <excludes>
+                                                <exclude>io.grpc.netty.shaded.io.grpc.netty.*</exclude>
+                                            </excludes>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>io.grpc.netty.shaded.io.grpc.netty</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty
+                                            </shadedPattern>
+                                            <includes>
+                                                <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
+                                            </includes>
+                                        </relocation>
+                                    
+                                        <relocation>
+                                            <pattern>com.google</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>io.perfmark</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>io.opencensus</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.io.opencensus</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>org.codehaus</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.org.codehaus</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>org.checkerframework</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.org.checkerframework</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>android.annotation</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.android.annotation</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>org.example</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
+                                        </relocation>
+                                
+                                
+                                    </relocations>
+                                    <transformers>
+                                        <transformer
+                                            implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                                        <transformer
+                                            implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                
+                                    </transformers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

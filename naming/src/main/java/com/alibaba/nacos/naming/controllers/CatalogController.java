@@ -19,25 +19,23 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.CatalogService;
+import com.alibaba.nacos.naming.core.CatalogServiceV1Impl;
+import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.ClusterInfo;
-import com.alibaba.nacos.naming.pojo.IpAddressInfo;
-import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
-import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,10 +44,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -59,11 +53,20 @@ import java.util.Map;
  * @author nkorange
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/catalog")
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)
 public class CatalogController {
     
     @Autowired
     protected ServiceManager serviceManager;
+    
+    @Autowired
+    private CatalogServiceV1Impl catalogServiceV1;
+    
+    @Autowired
+    private CatalogServiceV2Impl catalogServiceV2;
+    
+    @Autowired
+    private UpgradeJudgement upgradeJudgement;
     
     /**
      * Get service detail.
@@ -75,26 +78,11 @@ public class CatalogController {
      */
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     @GetMapping("/service")
-    public ObjectNode serviceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+    public Object serviceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             String serviceName) throws NacosException {
-        
-        Service detailedService = serviceManager.getService(namespaceId, serviceName);
-        
-        if (detailedService == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
-        }
-        ObjectNode serviceObject = JacksonUtils.createEmptyJsonNode();
-        serviceObject.put("name", NamingUtils.getServiceName(serviceName));
-        serviceObject.put("protectThreshold", detailedService.getProtectThreshold());
-        serviceObject.put("groupName", NamingUtils.getGroupName(serviceName));
-        serviceObject.replace("selector", JacksonUtils.transferToJsonNode(detailedService.getSelector()));
-        serviceObject.replace("metadata", JacksonUtils.transferToJsonNode(detailedService.getMetadata()));
-        
-        ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
-        detailView.replace("service", serviceObject);
-        detailView.replace("clusters", JacksonUtils.transferToJsonNode(detailedService.getClusterMap().values()));
-        
-        return detailView;
+        String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
+        String groupName = NamingUtils.getGroupName(serviceName);
+        return judgeCatalogService().getServiceDetail(namespaceId, groupName, serviceNameWithoutGroup);
     }
     
     /**
@@ -113,18 +101,10 @@ public class CatalogController {
     public ObjectNode instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String clusterName, @RequestParam(name = "pageNo") int page,
             @RequestParam int pageSize) throws NacosException {
-        
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
-        }
-        
-        if (!service.getClusterMap().containsKey(clusterName)) {
-            throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
-        }
-        
-        List<Instance> instances = service.getClusterMap().get(clusterName).allIPs();
-        
+        String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
+        String groupName = NamingUtils.getGroupName(serviceName);
+        List<? extends Instance> instances = judgeCatalogService()
+                .listInstances(namespaceId, groupName, serviceNameWithoutGroup, clusterName);
         int start = (page - 1) * pageSize;
         int end = page * pageSize;
         
@@ -168,59 +148,13 @@ public class CatalogController {
             @RequestParam(name = "serviceNameParam", defaultValue = StringUtils.EMPTY) String serviceName,
             @RequestParam(name = "groupNameParam", defaultValue = StringUtils.EMPTY) String groupName,
             @RequestParam(name = "instance", defaultValue = StringUtils.EMPTY) String containedInstance,
-            @RequestParam(required = false) boolean hasIpCount) {
-        
-        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ? StringUtils.EMPTY
-                : NamingUtils.getGroupedNameOptional(serviceName, groupName);
+            @RequestParam(required = false) boolean hasIpCount) throws NacosException {
         
         if (withInstances) {
-            List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
-            
-            List<Service> services = new ArrayList<>(8);
-            serviceManager.getPagedService(namespaceId, pageNo, pageSize, param, StringUtils.EMPTY, services, false);
-            
-            for (Service service : services) {
-                ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
-                serviceDetailInfo.setServiceName(NamingUtils.getServiceName(service.getName()));
-                serviceDetailInfo.setGroupName(NamingUtils.getGroupName(service.getName()));
-                serviceDetailInfo.setMetadata(service.getMetadata());
-                
-                Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
-                serviceDetailInfo.setClusterMap(clusterInfoMap);
-                
-                serviceDetailInfoList.add(serviceDetailInfo);
-            }
-            
-            return serviceDetailInfoList;
+            return judgeCatalogService().pageListServiceDetail(namespaceId, groupName, serviceName, pageNo, pageSize);
         }
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
-        List<Service> services = new ArrayList<>();
-        final int total = serviceManager
-                .getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
-        if (CollectionUtils.isEmpty(services)) {
-            result.replace("serviceList", JacksonUtils.transferToJsonNode(Collections.emptyList()));
-            result.put("count", 0);
-            return result;
-        }
-        
-        List<ServiceView> serviceViews = new LinkedList<>();
-        for (Service service : services) {
-            ServiceView serviceView = new ServiceView();
-            serviceView.setName(NamingUtils.getServiceName(service.getName()));
-            serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
-            serviceView.setClusterCount(service.getClusterMap().size());
-            serviceView.setIpCount(service.allIPs().size());
-            serviceView.setHealthyInstanceCount(service.healthyInstanceCount());
-            serviceView.setTriggerFlag(service.triggerFlag() ? "true" : "false");
-            serviceViews.add(serviceView);
-        }
-        
-        result.replace("serviceList", JacksonUtils.transferToJsonNode(serviceViews));
-        result.put("count", total);
-        
-        return result;
+        return judgeCatalogService()
+                .pageListService(namespaceId, groupName, serviceName, pageNo, pageSize, containedInstance, hasIpCount);
     }
     
     /**
@@ -230,16 +164,15 @@ public class CatalogController {
      * @return response time information
      */
     @RequestMapping("/rt/service")
-    public ObjectNode rt4Service(HttpServletRequest request) {
+    public ObjectNode rt4Service(HttpServletRequest request) throws NacosException {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         
         Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new IllegalArgumentException("request service doesn't exist");
-        }
+        
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
@@ -259,36 +192,7 @@ public class CatalogController {
         return result;
     }
     
-    private Map<String, ClusterInfo> getStringClusterInfoMap(Service service) {
-        Map<String, ClusterInfo> clusterInfoMap = new HashMap<>(8);
-        
-        service.getClusterMap().forEach((clusterName, cluster) -> {
-            
-            ClusterInfo clusterInfo = new ClusterInfo();
-            List<IpAddressInfo> ipAddressInfos = getIpAddressInfos(cluster.allIPs());
-            clusterInfo.setHosts(ipAddressInfos);
-            clusterInfoMap.put(clusterName, clusterInfo);
-            
-        });
-        return clusterInfoMap;
+    private CatalogService judgeCatalogService() {
+        return upgradeJudgement.isUseGrpcFeatures() ? catalogServiceV2 : catalogServiceV1;
     }
-    
-    private List<IpAddressInfo> getIpAddressInfos(List<Instance> instances) {
-        List<IpAddressInfo> ipAddressInfos = new ArrayList<>();
-        
-        instances.forEach((ipAddress) -> {
-            
-            IpAddressInfo ipAddressInfo = new IpAddressInfo();
-            ipAddressInfo.setIp(ipAddress.getIp());
-            ipAddressInfo.setPort(ipAddress.getPort());
-            ipAddressInfo.setMetadata(ipAddress.getMetadata());
-            ipAddressInfo.setValid(ipAddress.isHealthy());
-            ipAddressInfo.setWeight(ipAddress.getWeight());
-            ipAddressInfo.setEnabled(ipAddress.isEnabled());
-            ipAddressInfos.add(ipAddressInfo);
-            
-        });
-        return ipAddressInfos;
-    }
-    
 }

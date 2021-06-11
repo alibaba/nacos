@@ -22,7 +22,7 @@ import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.address.misc.Loggers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -66,7 +66,7 @@ public class AddressServerClusterController {
      * @return result of create new cluster
      */
     @RequestMapping(value = "", method = RequestMethod.POST)
-    public ResponseEntity postCluster(@RequestParam(required = false) String product,
+    public ResponseEntity<String> postCluster(@RequestParam(required = false) String product,
             @RequestParam(required = false) String cluster, @RequestParam(name = "ips") String ips) {
         
         //1. prepare the storage name for product and cluster
@@ -78,7 +78,7 @@ public class AddressServerClusterController {
         String rawClusterName = addressServerManager.getRawClusterName(cluster);
         Loggers.ADDRESS_LOGGER.info("put cluster node,the cluster name is " + cluster + "; the product name=" + product
                 + "; the ip list=" + ips);
-        ResponseEntity responseEntity;
+        ResponseEntity<String> responseEntity;
         try {
             String serviceName = addressServerGeneratorManager.generateNacosServiceName(productName);
             
@@ -87,8 +87,8 @@ public class AddressServerClusterController {
             clusterObj.setHealthChecker(new AbstractHealthChecker.None());
             serviceManager.createServiceIfAbsent(Constants.DEFAULT_NAMESPACE_ID, serviceName, false, clusterObj);
             String[] ipArray = addressServerManager.splitIps(ips);
-            String checkResult = IPUtil.checkIPs(ipArray);
-            if (IPUtil.checkOK(checkResult)) {
+            String checkResult = InternetAddressUtil.checkIPs(ipArray);
+            if (InternetAddressUtil.checkOK(checkResult)) {
                 List<Instance> instanceList = addressServerGeneratorManager
                         .generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
                 for (Instance instance : instanceList) {
@@ -133,26 +133,22 @@ public class AddressServerClusterController {
             Service service = serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, serviceName);
             
             if (service == null) {
-                responseEntity = ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("product=" + rawProductName + " not found.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("product=" + rawProductName + " not found.");
+            }
+            if (StringUtils.isBlank(ips)) {
+                // delete all ips from the cluster
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ips must not be empty.");
+            }
+            // delete specified ip list
+            String[] ipArray = addressServerManager.splitIps(ips);
+            String checkResult = InternetAddressUtil.checkIPs(ipArray);
+            if (InternetAddressUtil.checkOK(checkResult)) {
+                List<Instance> instanceList = addressServerGeneratorManager
+                        .generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
+                serviceManager.removeInstance(Constants.DEFAULT_NAMESPACE_ID, serviceName, false,
+                        instanceList.toArray(new Instance[instanceList.size()]));
             } else {
-                
-                if (StringUtils.isBlank(ips)) {
-                    // delete all ips from the cluster
-                    responseEntity = ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ips must not be empty.");
-                } else {
-                    // delete specified ip list
-                    String[] ipArray = addressServerManager.splitIps(ips);
-                    String checkResult = IPUtil.checkIPs(ipArray);
-                    if (IPUtil.checkOK(checkResult)) {
-                        List<Instance> instanceList = addressServerGeneratorManager
-                                .generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
-                        serviceManager.removeInstance(Constants.DEFAULT_NAMESPACE_ID, serviceName, false,
-                                instanceList.toArray(new Instance[instanceList.size()]));
-                    } else {
-                        responseEntity = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(checkResult);
-                    }
-                }
+                responseEntity = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(checkResult);
             }
         } catch (Exception e) {
             

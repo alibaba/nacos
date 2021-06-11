@@ -52,6 +52,21 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  * @author Nacos
  */
 public class ConfigCacheService {
+
+    static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheService.class);
+
+    private static final String NO_SPACE_CN = "设备上没有空间";
+
+    private static final String NO_SPACE_EN = "No space left on device";
+
+    private static final String DISK_QUATA_CN = "超出磁盘限额";
+
+    private static final String DISK_QUATA_EN = "Disk quota exceeded";
+
+    /**
+     * groupKey -> cacheItem.
+     */
+    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<String, CacheItem>();
     
     @Autowired
     private static PersistService persistService;
@@ -666,20 +681,5 @@ public class ConfigCacheService {
         item = CACHE.putIfAbsent(groupKey, tmp);
         return (null == item) ? tmp : item;
     }
-    
-    private static final String NO_SPACE_CN = "设备上没有空间";
-    
-    private static final String NO_SPACE_EN = "No space left on device";
-    
-    private static final String DISK_QUATA_CN = "超出磁盘限额";
-    
-    private static final String DISK_QUATA_EN = "Disk quota exceeded";
-    
-    static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheService.class);
-    
-    /**
-     * groupKey -> cacheItem.
-     */
-    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<String, CacheItem>();
 }
 

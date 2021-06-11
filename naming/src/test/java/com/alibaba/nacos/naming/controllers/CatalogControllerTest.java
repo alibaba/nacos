@@ -18,19 +18,20 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.core.CatalogServiceV1Impl;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.lang.reflect.Field;
 import java.util.Collections;
 
 import static org.junit.Assert.assertTrue;
@@ -42,6 +43,11 @@ public class CatalogControllerTest {
     @Mock
     private ServiceManager serviceManager;
     
+    @Mock
+    protected UpgradeJudgement upgradeJudgement;
+    
+    private CatalogServiceV1Impl catalogServiceV1;
+    
     private CatalogController catalogController;
     
     private Service service;
@@ -51,9 +57,10 @@ public class CatalogControllerTest {
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         catalogController = new CatalogController();
-        Field field = catalogController.getClass().getDeclaredField("serviceManager");
-        field.setAccessible(true);
-        field.set(catalogController, serviceManager);
+        catalogServiceV1 = new CatalogServiceV1Impl(serviceManager);
+        ReflectionTestUtils.setField(catalogController, "serviceManager", serviceManager);
+        ReflectionTestUtils.setField(catalogController, "upgradeJudgement", upgradeJudgement);
+        ReflectionTestUtils.setField(catalogController, "catalogServiceV1", catalogServiceV1);
         service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         service.setProtectThreshold(12.34f);
@@ -67,7 +74,7 @@ public class CatalogControllerTest {
     
     @Test
     public void testServiceDetail() throws Exception {
-        ObjectNode result = catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID,
+        Object result = catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID,
                 TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME);
         String actual = result.toString();
         assertTrue(actual.contains("\"service\":{"));

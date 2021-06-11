@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.common.utils.ThreadUtils;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -164,7 +166,7 @@ public class HttpClientConfig {
         
         private boolean contentCompressionEnabled = true;
         
-        private int ioThreadCount = Runtime.getRuntime().availableProcessors();
+        private int ioThreadCount = ThreadUtils.getSuitableThreadCount(1);
         
         private String userAgent;
         

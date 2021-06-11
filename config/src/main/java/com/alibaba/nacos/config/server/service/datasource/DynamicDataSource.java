@@ -17,12 +17,14 @@
 package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import org.springframework.stereotype.Component;
 
 /**
  * Datasource adapter.
  *
  * @author Nacos
  */
+@Component
 public class DynamicDataSource {
     
     private DataSourceService localDataSourceService = null;

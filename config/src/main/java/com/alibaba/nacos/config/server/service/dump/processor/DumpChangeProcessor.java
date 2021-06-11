@@ -17,9 +17,9 @@
 package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.common.task.NacosTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -38,6 +38,14 @@ import java.util.List;
  * @date 2020/7/5 12:19 PM
  */
 public class DumpChangeProcessor implements NacosTaskProcessor {
+
+    final DumpService dumpService;
+
+    final PersistService persistService;
+
+    final Timestamp startTime;
+
+    final Timestamp endTime;
     
     public DumpChangeProcessor(DumpService dumpService, Timestamp startTime, Timestamp endTime) {
         this.dumpService = dumpService;
@@ -82,23 +90,12 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
                     .dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(), cf.getLastModified());
             final String content = cf.getContent();
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-            LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={}",
-                    new Object[] {GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
-                            content.length(), md5});
+            LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={}", GroupKey2.getKey(cf.getDataId(), cf.getGroup()),
+                    cf.getLastModified(), content.length(), md5);
         }
         ConfigCacheService.reloadConfig();
         long endChangeConfigTime = System.currentTimeMillis();
         LogUtil.DEFAULT_LOG.warn("changeConfig done,cost:{}", endChangeConfigTime - startChangeConfigTime);
         return true;
     }
-    
-    // =====================
-    
-    final DumpService dumpService;
-    
-    final PersistService persistService;
-    
-    final Timestamp startTime;
-    
-    final Timestamp endTime;
 }

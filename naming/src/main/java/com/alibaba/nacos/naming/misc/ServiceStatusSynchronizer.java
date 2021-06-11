@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -34,21 +35,21 @@ import java.util.Map;
 public class ServiceStatusSynchronizer implements Synchronizer {
     
     @Override
-    public void send(final String serverIP, Message msg) {
-        if (serverIP == null) {
+    public void send(final String serverIp, Message msg) {
+        if (serverIp == null) {
             return;
         }
         
         Map<String, String> params = new HashMap<String, String>(10);
+    
+        params.put(FieldsConstants.STATUSES, msg.getData());
+        params.put(FieldsConstants.CLIENT_IP, NetUtils.localServer());
         
-        params.put("statuses", msg.getData());
-        params.put("clientIP", NetUtils.localServer());
-        
-        String url = "http://" + serverIP + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
+        String url = "http://" + serverIp + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service/status";
         
-        if (IPUtil.containsPort(serverIP)) {
-            url = "http://" + serverIP + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+        if (InternetAddressUtil.containsPort(serverIp)) {
+            url = "http://" + serverIp + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/service/status";
         }
         
@@ -58,14 +59,14 @@ public class ServiceStatusSynchronizer implements Synchronizer {
                 public void onReceive(RestResult<String> result) {
                     if (!result.ok()) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: {}",
-                                serverIP);
+                                serverIp);
         
                     }
                 }
     
                 @Override
                 public void onError(Throwable throwable) {
-                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: " + serverIP, throwable);
+                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: " + serverIp, throwable);
                 }
     
                 @Override
@@ -74,31 +75,31 @@ public class ServiceStatusSynchronizer implements Synchronizer {
                 }
             });
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: " + serverIP, e);
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serviceStatus, remote server: " + serverIp, e);
         }
         
     }
     
     @Override
-    public Message get(String serverIP, String key) {
-        if (serverIP == null) {
+    public Message get(String serverIp, String key) {
+        if (serverIp == null) {
             return null;
         }
         
         Map<String, String> params = new HashMap<>(1);
-        
-        params.put("key", key);
+        String keyStr = "key";
+        params.put(keyStr, key);
         
         String result;
         try {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("[STATUS-SYNCHRONIZE] sync service status from: {}, service: {}", serverIP, key);
+                Loggers.SRV_LOG.debug("[STATUS-SYNCHRONIZE] sync service status from: {}, service: {}", serverIp, key);
             }
             result = NamingProxy
                     .reqApi(EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/"
-                            + "statuses", params, serverIP);
+                            + "statuses", params, serverIp);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get service status from " + serverIP, e);
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get service status from " + serverIp, e);
             return null;
         }
         

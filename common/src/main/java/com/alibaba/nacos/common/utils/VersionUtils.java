@@ -29,20 +29,25 @@ public class VersionUtils {
     
     public static String version;
     
+    private static String clientVersion;
+    
     /**
-     * 获取当前version.
+     * current version.
      */
     public static final String VERSION_PLACEHOLDER = "${project.version}";
+    
+    private static final String NACOS_VERSION_FILE = "nacos-version.txt";
     
     static {
         InputStream in = null;
         try {
-            in = VersionUtils.class.getClassLoader().getResourceAsStream("nacos-version.txt");
+            in = VersionUtils.class.getClassLoader().getResourceAsStream(NACOS_VERSION_FILE);
             Properties props = new Properties();
             props.load(in);
             String val = props.getProperty("version");
             if (val != null && !VERSION_PLACEHOLDER.equals(val)) {
                 version = val;
+                clientVersion = "Nacos-Java-Client:v" + VersionUtils.version;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -87,5 +92,9 @@ public class VersionUtils {
             return second;
         }
         return Objects.compare(sA[2].split("-")[0], sB[2].split("-")[0], STRING_COMPARATOR);
+    }
+    
+    public static String getFullClientVersion() {
+        return clientVersion;
     }
 }

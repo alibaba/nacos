@@ -65,10 +65,10 @@ public class AuthConfigs {
     @Value("${nacos.core.auth.server.identity.key:}")
     private String serverIdentityKey;
     
-    @Value(("${nacos.core.auth.server.identity.value:}"))
+    @Value("${nacos.core.auth.server.identity.value:}")
     private String serverIdentityValue;
     
-    @Value(("${nacos.core.auth.enable.userAgentAuthWhite:true}"))
+    @Value("${nacos.core.auth.enable.userAgentAuthWhite:true}")
     private boolean enableUserAgentAuthWhite;
     
     public byte[] getSecretKeyBytes() {

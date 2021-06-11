@@ -17,7 +17,14 @@
 package com.alibaba.nacos.core.monitor;
 
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The Metrics center.
@@ -34,12 +41,24 @@ public final class MetricsMonitor {
     
     private static final Timer RAFT_APPLY_READ_TIMER;
     
+    private static AtomicInteger longConnection = new AtomicInteger();
+    
     static {
         RAFT_READ_INDEX_FAILED = NacosMeterRegistry.summary("protocol", "raft_read_index_failed");
         RAFT_FROM_LEADER = NacosMeterRegistry.summary("protocol", "raft_read_from_leader");
         
         RAFT_APPLY_LOG_TIMER = NacosMeterRegistry.timer("protocol", "raft_apply_log_timer");
         RAFT_APPLY_READ_TIMER = NacosMeterRegistry.timer("protocol", "raft_apply_read_timer");
+        
+        List<Tag> tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "longConnection"));
+        Metrics.gauge("nacos_monitor", tags, longConnection);
+        
+    }
+    
+    public static AtomicInteger getLongConnectionMonitor() {
+        return longConnection;
     }
     
     public static void raftReadIndexFailed() {

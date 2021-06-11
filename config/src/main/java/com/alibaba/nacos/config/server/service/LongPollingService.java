@@ -29,7 +29,6 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -186,9 +185,8 @@ public class LongPollingService {
                 }
             }
         }
-        
-        SampleResult sampleResult = mergeSampleResult(sampleResultLst);
-        return sampleResult;
+
+        return mergeSampleResult(sampleResultLst);
     }
     
     public SampleResult getCollectSubscribleInfoByIp(String ip) {
@@ -353,6 +351,7 @@ public class LongPollingService {
                         clientSub.sendResponse(Arrays.asList(groupKey));
                     }
                 }
+                
             } catch (Throwable t) {
                 LogUtil.DEFAULT_LOG.error("data change error: {}", ExceptionUtil.getStackTrace(t));
             }
@@ -399,28 +398,32 @@ public class LongPollingService {
                     try {
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
                         
-                        // Delete subsciber's relations.
-                        allSubs.remove(ClientLongPolling.this);
+                        // Delete subscriber's relations.
+                        boolean removeFlag = allSubs.remove(ClientLongPolling.this);
                         
-                        if (isFixedPolling()) {
-                            LogUtil.CLIENT_LOG
-                                    .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
-                                            RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
-                                            "polling", clientMd5Map.size(), probeRequestSize);
-                            List<String> changedGroups = MD5Util
-                                    .compareMd5((HttpServletRequest) asyncContext.getRequest(),
-                                            (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
-                            if (changedGroups.size() > 0) {
-                                sendResponse(changedGroups);
+                        if (removeFlag) {
+                            if (isFixedPolling()) {
+                                LogUtil.CLIENT_LOG
+                                        .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
+                                                RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+                                                "polling", clientMd5Map.size(), probeRequestSize);
+                                List<String> changedGroups = MD5Util
+                                        .compareMd5((HttpServletRequest) asyncContext.getRequest(),
+                                                (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
+                                if (changedGroups.size() > 0) {
+                                    sendResponse(changedGroups);
+                                } else {
+                                    sendResponse(null);
+                                }
                             } else {
+                                LogUtil.CLIENT_LOG
+                                        .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
+                                                RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+                                                "polling", clientMd5Map.size(), probeRequestSize);
                                 sendResponse(null);
                             }
                         } else {
-                            LogUtil.CLIENT_LOG
-                                    .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
-                                            RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
-                                            "polling", clientMd5Map.size(), probeRequestSize);
-                            sendResponse(null);
+                            LogUtil.DEFAULT_LOG.warn("client subsciber's relations delete fail.");
                         }
                     } catch (Throwable t) {
                         LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());

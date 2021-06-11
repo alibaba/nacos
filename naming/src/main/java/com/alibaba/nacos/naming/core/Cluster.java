@@ -245,9 +245,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             oldIpMap.put(ip.getDatumKey(), ip);
         }
         
-        List<Instance> updatedIPs = updatedIps(ips, oldIpMap.values());
-        if (updatedIPs.size() > 0) {
-            for (Instance ip : updatedIPs) {
+        List<Instance> updatedIps = updatedIps(ips, oldIpMap.values());
+        if (updatedIps.size() > 0) {
+            for (Instance ip : updatedIps) {
                 Instance oldIP = oldIpMap.get(ip.getDatumKey());
                 
                 // do not update the ip validation status of updated ips
@@ -265,8 +265,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 
                 if (ip.getWeight() != oldIP.getWeight()) {
                     // ip validation status updated
-                    Loggers.EVT_LOG.info("{} {SYNC} {IP-UPDATED} {}->{}", getService().getName(), oldIP.toString(),
-                            ip.toString());
+                    Loggers.EVT_LOG.info("{} {SYNC} {IP-UPDATED} {}->{}", getService().getName(), oldIP, ip);
                 }
             }
         }
@@ -275,7 +274,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         if (newIPs.size() > 0) {
             Loggers.EVT_LOG
                     .info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}", getService().getName(),
-                            getName(), newIPs.size(), newIPs.toString());
+                            getName(), newIPs.size(), newIPs);
             
             for (Instance ip : newIPs) {
                 HealthCheckStatus.reset(ip);
@@ -287,7 +286,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         if (deadIPs.size() > 0) {
             Loggers.EVT_LOG
                     .info("{} {SYNC} {IP-DEAD} cluster: {}, dead ips size: {}, content: {}", getService().getName(),
-                            getName(), deadIPs.size(), deadIPs.toString());
+                            getName(), deadIPs.size(), deadIPs);
             
             for (Instance ip : deadIPs) {
                 HealthCheckStatus.remv(ip);
@@ -386,6 +385,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     
     public void setDefCkport(int defCkport) {
         this.defCkport = defCkport;
+        super.setDefaultCheckPort(defCkport);
     }
     
     /**

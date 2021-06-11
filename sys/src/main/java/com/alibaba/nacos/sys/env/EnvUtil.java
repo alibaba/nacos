@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.sun.management.OperatingSystemMXBean;
@@ -71,6 +72,34 @@ public class EnvUtil {
     private static String functionModeType = null;
     
     private static String contextPath = null;
+    
+    private static final String FILE_PREFIX = "file:";
+    
+    private static final String SERVER_PORT_PROPERTY = "server.port";
+    
+    private static final int DEFAULT_SERVER_PORT = 8848;
+    
+    private static final String DEFAULT_WEB_CONTEXT_PATH = "/nacos";
+    
+    private static final String MEMBER_LIST_PROPERTY = "nacos.member.list";
+    
+    private static final String NACOS_HOME_PROPERTY = "user.home";
+    
+    private static final String CUSTOM_CONFIG_LOCATION_PROPERTY = "spring.config.additional-location";
+    
+    private static final String DEFAULT_CONFIG_LOCATION  = "application.properties";
+    
+    private static final String DEFAULT_RESOURCE_PATH = "/application.properties";
+    
+    private static final String DEFAULT_ADDITIONAL_PATH = "conf";
+    
+    private static final String DEFAULT_ADDITIONAL_FILE = "cluster.conf";
+    
+    private static final String NACOS_HOME_ADDITIONAL_FILEPATH = "nacos";
+    
+    private static final String NACOS_TEMP_DIR_1 = "data";
+    
+    private static final String NACOS_TEMP_DIR_2 = "tmp";
     
     @JustForTest
     private static String confPath = "";
@@ -155,7 +184,7 @@ public class EnvUtil {
     
     public static int getPort() {
         if (port == -1) {
-            port = getProperty("server.port", Integer.class, 8848);
+            port = getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
         }
         return port;
     }
@@ -166,7 +195,7 @@ public class EnvUtil {
     
     public static String getContextPath() {
         if (Objects.isNull(contextPath)) {
-            contextPath = getProperty(Constants.WEB_CONTEXT_PATH, "/nacos");
+            contextPath = getProperty(Constants.WEB_CONTEXT_PATH, DEFAULT_WEB_CONTEXT_PATH);
             if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
                 contextPath = StringUtils.EMPTY;
             }
@@ -207,7 +236,7 @@ public class EnvUtil {
     
     public static String getNacosTmpDir() {
         if (StringUtils.isBlank(nacosTmpDir)) {
-            nacosTmpDir = Paths.get(getNacosHome(), "data", "tmp").toString();
+            nacosTmpDir = Paths.get(getNacosHome(), NACOS_TEMP_DIR_1, NACOS_TEMP_DIR_2).toString();
         }
         return nacosTmpDir;
     }
@@ -216,7 +245,7 @@ public class EnvUtil {
         if (StringUtils.isBlank(nacosHomePath)) {
             String nacosHome = System.getProperty(NACOS_HOME_KEY);
             if (StringUtils.isBlank(nacosHome)) {
-                nacosHome = Paths.get(System.getProperty("user.home"), "nacos").toString();
+                nacosHome = Paths.get(System.getProperty(NACOS_HOME_PROPERTY), NACOS_HOME_ADDITIONAL_FILEPATH).toString();
             }
             return nacosHome;
         }
@@ -261,7 +290,7 @@ public class EnvUtil {
         if (StringUtils.isNotBlank(EnvUtil.confPath)) {
             return EnvUtil.confPath;
         }
-        EnvUtil.confPath = Paths.get(getNacosHome(), "conf").toString();
+        EnvUtil.confPath = Paths.get(getNacosHome(), DEFAULT_ADDITIONAL_PATH).toString();
         return confPath;
     }
     
@@ -270,7 +299,7 @@ public class EnvUtil {
     }
     
     public static String getClusterConfFilePath() {
-        return Paths.get(getNacosHome(), "conf", "cluster.conf").toString();
+        return Paths.get(getNacosHome(), DEFAULT_ADDITIONAL_PATH, DEFAULT_ADDITIONAL_FILE).toString();
     }
     
     /**
@@ -335,14 +364,14 @@ public class EnvUtil {
     }
     
     public static String getMemberList() {
-        String val = null;
+        String val;
         if (environment == null) {
-            val = System.getenv("nacos.member.list");
+            val = System.getenv(MEMBER_LIST_PROPERTY);
             if (StringUtils.isBlank(val)) {
-                val = System.getProperty("nacos.member.list");
+                val = System.getProperty(MEMBER_LIST_PROPERTY);
             }
         } else {
-            val = getProperty("nacos.member.list");
+            val = getProperty(MEMBER_LIST_PROPERTY);
         }
         return val;
     }
@@ -358,20 +387,17 @@ public class EnvUtil {
         return new OriginTrackedPropertiesLoader(resource).load();
     }
     
-    private static final String FILE_PREFIX = "file:";
-    
     public static Resource getApplicationConfFileResource() {
         Resource customResource = getCustomFileResource();
         return customResource == null ? getDefaultResource() : customResource;
     }
     
     private static Resource getCustomFileResource() {
-        String path = getProperty("spring.config.additional-location");
-        InputStream inputStream = null;
+        String path = getProperty(CUSTOM_CONFIG_LOCATION_PROPERTY);
         if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
             String[] paths = path.split(",", -1);
             path = paths[paths.length - 1].substring(FILE_PREFIX.length());
-            return getRelativePathResource(path, "application.properties");
+            return getRelativePathResource(path, DEFAULT_CONFIG_LOCATION);
         }
         return null;
     }
@@ -386,8 +412,52 @@ public class EnvUtil {
     }
     
     private static Resource getDefaultResource() {
-        InputStream inputStream = EnvUtil.class.getResourceAsStream("/application.properties");
+        InputStream inputStream = EnvUtil.class.getResourceAsStream(DEFAULT_RESOURCE_PATH);
         return new InputStreamResource(inputStream);
     }
     
+    /**
+     * Get available processor numbers from environment.
+     *
+     * <p>
+     *     If there are setting of {@code nacos.core.sys.basic.processors} in config/JVM/system, use it.
+     *     If no setting, use the one time {@code ThreadUtils.getSuitableThreadCount()}.
+     * </p>
+     *
+     * @return available processor numbers from environment, will not lower than 1.
+     */
+    public static int getAvailableProcessors() {
+        int result = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class,
+                ThreadUtils.getSuitableThreadCount(1));
+        return result > 0 ? result : 1;
+    }
+    
+    /**
+     * Get a multiple time of available processor numbers from environment.
+     *
+     * @param multiple multiple of available processor numbers
+     * @return available processor numbers from environment, will not lower than 1.
+     */
+    public static int getAvailableProcessors(int multiple) {
+        if (multiple < 1) {
+            throw new IllegalArgumentException("processors multiple must upper than 1");
+        }
+        Integer processor = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, Integer.class);
+        return null != processor && processor > 0 ? processor * multiple : ThreadUtils.getSuitableThreadCount(multiple);
+    }
+    
+    /**
+     * Get a scale of available processor numbers from environment.
+     *
+     * @param scale scale from 0 to 1.
+     * @return available processor numbers from environment, will not lower than 1.
+     */
+    public static int getAvailableProcessors(double scale) {
+        if (scale < 0 || scale > 1) {
+            throw new IllegalArgumentException("processors scale must between 0 and 1");
+        }
+        double result = getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class,
+                ThreadUtils.getSuitableThreadCount(1)) * scale;
+        return result > 1 ? (int) result : 1;
+    }
 }

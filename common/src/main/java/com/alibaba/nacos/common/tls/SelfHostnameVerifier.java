@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.tls;
 
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
     
     private static ConcurrentHashMap<String, Boolean> hosts = new ConcurrentHashMap<String, Boolean>();
     
-    private static final String[] LOCALHOST_HOSTNAME = new String[] {"localhost", IPUtil.localHostIP()};
+    private static final String[] LOCALHOST_HOSTNAME = new String[] {"localhost", InternetAddressUtil.localHostIP()};
     
     public SelfHostnameVerifier(HostnameVerifier hv) {
         this.hv = hv;
@@ -64,7 +64,7 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
         if (cacheHostVerify != null) {
             return cacheHostVerify;
         }
-        boolean isIp = IPUtil.isIP(host);
+        boolean isIp = InternetAddressUtil.isIP(host);
         hosts.putIfAbsent(host, isIp);
         return isIp;
     }

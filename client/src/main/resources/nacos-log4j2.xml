@@ -30,6 +30,20 @@
             
             <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
         </RollingFile>
+    
+        <RollingFile name="REMOTE_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/remote.log"
+            filePattern="${sys:JM.LOG.PATH}/nacos/remote.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+    
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
+            </Policies>
+    
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+        </RollingFile>
         
         <RollingFile name="NAMING_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/naming.log"
             filePattern="${sys:JM.LOG.PATH}/nacos/naming.log.%d{yyyy-MM-dd}.%i">
@@ -50,6 +64,11 @@
         <Logger name="com.alibaba.nacos.client" level="${sys:com.alibaba.nacos.config.log.level:-info}"
             additivity="false">
             <AppenderRef ref="CONFIG_LOG_FILE"/>
+        </Logger>
+    
+        <Logger name="com.alibaba.nacos.common.remote.client" level="${sys:com.alibaba.nacos.config.log.level:-info}"
+            additivity="false">
+            <AppenderRef ref="REMOTE_LOG_FILE"/>
         </Logger>
         
         <Logger name="com.alibaba.nacos.client.config" level="${sys:com.alibaba.nacos.config.log.level:-info}"

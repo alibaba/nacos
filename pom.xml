@@ -15,30 +15,30 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    
     <modelVersion>4.0.0</modelVersion>
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
-
+    
     <name>Alibaba NACOS ${project.version}</name>
     <description>Top Nacos project pom.xml file</description>
     <url>http://nacos.io</url>
     <prerequisites>
         <maven>3.2.5</maven>
     </prerequisites>
-
+    
     <scm>
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
         <tag>nacos-all-${revision}</tag>
     </scm>
-
+    
     <mailingLists>
         <mailingList>
             <name>Development List</name>
@@ -59,7 +59,7 @@
             <post>commits-nacos@googlegroups.com</post>
         </mailingList>
     </mailingLists>
-
+    
     <developers>
         <developer>
             <id>Alibaba Nacos</id>
@@ -68,7 +68,7 @@
             <email>nacos_dev@linux.alibaba.com</email>
         </developer>
     </developers>
-
+    
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -76,19 +76,19 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-
+    
     <organization>
         <name>Alibaba Group</name>
         <url>https://github.com/alibaba</url>
     </organization>
-
+    
     <issueManagement>
         <system>github</system>
         <url>https://github.com/alibaba/nacos/issues</url>
     </issueManagement>
-
+    
     <properties>
-        <revision>1.4.2</revision>
+        <revision>2.0.2</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -101,7 +101,7 @@
         <!-- Exclude all generated code -->
         <sonar.jacoco.itReportPath>${project.basedir}/../test/target/jacoco-it.exec</sonar.jacoco.itReportPath>
         <sonar.exclusions>file:**/generated-sources/**,**/test/**</sonar.exclusions>
-
+        
         <!-- plugin version -->
         <versions-maven-plugin.version>2.2</versions-maven-plugin.version>
         <dependency-mediator-maven-plugin.version>1.0.2</dependency-mediator-maven-plugin.version>
@@ -126,7 +126,7 @@
         <!-- dependency version related to plugin -->
         <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
         <p3c-pmd.version>1.3.0</p3c-pmd.version>
-
+        
         <!-- dependency version -->
         <spring-boot-dependencies.version>2.1.17.RELEASE</spring-boot-dependencies.version>
         <servlet-api.version>3.0</servlet-api.version>
@@ -139,8 +139,7 @@
         <slf4j-api.version>1.7.7</slf4j-api.version>
         <logback.version>1.2.3</logback.version>
         <log4j.version>2.13.3</log4j.version>
-        <httpcore.version>4.4.1</httpcore.version>
-        <httpclient.version>4.5</httpclient.version>
+        
         <httpasyncclient.version>4.1.3</httpasyncclient.version>
         <mysql-connector-java.version>8.0.21</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
@@ -152,7 +151,6 @@
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
         <netty-all.version>4.1.59.Final</netty-all.version>
-        <netty-common.version>4.1.59.Final</netty-common.version>
         <mina-core.version>2.0.0-RC1</mina-core.version>
         <guava.version>30.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
@@ -164,6 +162,7 @@
         <hessian.version>4.0.63</hessian.version>
         <reflections.version>0.9.11</reflections.version>
         <mockito-all.version>1.10.19</mockito-all.version>
+        <mockito-core.version>3.8.0</mockito-core.version>
         <hamcrest-all.version>1.3</hamcrest-all.version>
         <prometheus-simpleclient.version>0.5.0</prometheus-simpleclient.version>
         <tomcat-embed-jasper.version>9.0.40</tomcat-embed-jasper.version>
@@ -278,6 +277,10 @@
                         <exclude>**/istio/model/mcp/*.java</exclude>
                         <exclude>**/istio/model/naming/*.java</exclude>
                         <exclude>**/istio/model/*.java</exclude>
+                        <exclude>**/api/grpc/auto/*.java</exclude>
+                        <exclude>**/istio/mcp/**</exclude>
+                        <exclude>**/istio/networking/**</exclude>
+                        <exclude>**/google/protobuf/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -305,7 +308,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <excludes>**/istio/model/**,**/consistency/entity/**,**/nacos/test/**</excludes>
+                    <excludes>**/consistency/entity/**,**/nacos/test/**,**/api/grpc/auto/**,**/istio/**,**/protobuf/**</excludes>
                 </configuration>
                 <executions>
                     <execution>
@@ -341,6 +344,8 @@
                         <exclude>**/*.txt</exclude>
                         <exclude>**/*.factories</exclude>
                         <exclude>/console-ui/**</exclude>
+                        <exclude>**/gogo.proto</exclude>
+                        <exclude>**/any.proto</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -458,7 +463,7 @@
             </plugin>
         </plugins>
     </build>
-
+    
     <profiles>
         <profile>
             <id>jdk8</id>
@@ -497,11 +502,11 @@
                     <value>true</value>
                 </property>
             </activation>
-
+            
             <properties>
                 <maven.javadoc.skip>false</maven.javadoc.skip>
             </properties>
-
+            
             <build>
                 <plugins>
                     <plugin>
@@ -526,50 +531,34 @@
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven-failsafe-plugin.version}</version>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
                         <configuration>
-                            <argLine>@{failsafeArgLine}</argLine>
-                            <argLine>-Dnacos.standalone=true</argLine>
+                            <testFailureIgnore>false</testFailureIgnore>
                             <includes>
                                 <include>**/*CITCase.java</include>
                             </includes>
                         </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
         </profile>
         <profile>
             <!--  Run integration tests for all modules separately  -->
-            <id>it-test</id>
+            <id>nit-test</id>
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven-failsafe-plugin.version}</version>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
                         <configuration>
-                            <argLine>@{failsafeArgLine}</argLine>
-                            <argLine>-Dnacos.standalone=true</argLine>
+                            <testFailureIgnore>false</testFailureIgnore>
                             <includes>
-                                <include>**/*ITCase.java</include>
+                                <include>**/naming/*ITCase.java</include>
                             </includes>
                         </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
@@ -610,7 +599,7 @@
             </plugin>
         </plugins>
     </reporting>
-
+    
     <!-- 子模块管理 -->
     <modules>
         <module>config</module>
@@ -630,10 +619,10 @@
         <module>auth</module>
         <module>sys</module>
     </modules>
-
+    
     <!-- 所有的子项目默认依赖 -->
     <dependencies>
-
+        
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -644,9 +633,9 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
-
+    
     </dependencies>
-
+    
     <!-- 管理依赖版本号,子项目不会默认依赖 -->
     <dependencyManagement>
         <dependencies>
@@ -658,7 +647,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+            
             <!-- Internal libs -->
             <dependency>
                 <groupId>${project.groupId}</groupId>
@@ -720,7 +709,7 @@
                 <artifactId>nacos-address</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-istio</artifactId>
@@ -741,141 +730,123 @@
                 <artifactId>nacos-sys</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>javax.servlet</groupId>
                 <artifactId>servlet-api</artifactId>
                 <version>${servlet-api.version}</version>
                 <scope>provided</scope>
             </dependency>
-
+            
             <!-- HikariCP -->
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${HikariCP.version}</version>
             </dependency>
-
+            
             <!-- hessian -->
-
+            
             <dependency>
                 <groupId>com.caucho</groupId>
                 <artifactId>hessian</artifactId>
                 <version>${hessian.version}</version>
             </dependency>
-
+            
             <!-- Apache commons -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>${commons-collections.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>${commons-logging.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>commons-dbcp</groupId>
                 <artifactId>commons-dbcp</artifactId>
                 <version>${commons-dbcp.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>commons-cli</groupId>
                 <artifactId>commons-cli</artifactId>
                 <version>${commons-cli.version}</version>
             </dependency>
-
+            
             <!-- Logging libs -->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j-api.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>${logback.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
                 <version>${logback.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-slf4j-impl</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
-
+            
             <!-- HTTP client libs -->
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>${httpcore.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${httpclient.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>commons-logging</artifactId>
-                        <groupId>commons-logging</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpasyncclient</artifactId>
                 <version>${httpasyncclient.version}</version>
             </dependency>
-
+            
             <!-- JDBC libs -->
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql-connector-java.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
                 <version>${derby.version}</version>
             </dependency>
-
+            
             <!-- JRaft -->
             <dependency>
                 <groupId>com.alipay.sofa</groupId>
@@ -904,32 +875,32 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-
+            
             <dependency>
                 <groupId>com.alipay.sofa</groupId>
                 <artifactId>rpc-grpc-impl</artifactId>
                 <version>${rpc-grpc-impl.version}</version>
             </dependency>
-
+            
             <!-- Third-party libs -->
             <dependency>
                 <groupId>cglib</groupId>
                 <artifactId>cglib-nodep</artifactId>
                 <version>${cglib-nodep.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>net.jcip</groupId>
                 <artifactId>jcip-annotations</artifactId>
                 <version>${jcip-annotations.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
                 <version>${jackson-core.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
@@ -945,7 +916,7 @@
                 <artifactId>jackson-core-asl</artifactId>
                 <version>${jackson-core-asl.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
@@ -963,46 +934,45 @@
                 <version>${jjwt.version}</version>
                 <scope>runtime</scope>
             </dependency>
-
+            
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>${netty-all.version}</version>
             </dependency>
-
+            
             <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>${netty-common.version}</version>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>1.3.2</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-core</artifactId>
                 <version>${mina-core.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.javatuples</groupId>
                 <artifactId>javatuples</artifactId>
                 <version>${javatuples.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>com.github.keran213539</groupId>
                 <artifactId>commonOkHttp</artifactId>
                 <version>${commonOkHttp.version}</version>
                 <scope>test</scope>
             </dependency>
-
+            
             <!-- gRPC dependency start -->
-
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-netty-shaded</artifactId>
@@ -1029,45 +999,50 @@
                 <artifactId>proto-google-common-protos</artifactId>
                 <version>${proto-google-common-protos.version}</version>
             </dependency>
-
             <!-- gRPC dependency end -->
-
+            
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${protobuf-java.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.reflections</groupId>
                 <artifactId>reflections</artifactId>
                 <version>${reflections.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
                 <version>${mockito-all.version}</version>
             </dependency>
-
+            
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito-core.version}</version>
+            </dependency>
+            
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>${hamcrest-all.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>io.prometheus</groupId>
                 <artifactId>simpleclient</artifactId>
                 <version>${prometheus-simpleclient.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-jasper</artifactId>
                 <version>${tomcat-embed-jasper.version}</version>
             </dependency>
-
+            
             <dependency>
                 <groupId>com.google.truth</groupId>
                 <artifactId>truth</artifactId>
@@ -1075,7 +1050,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    
     <distributionManagement>
         <snapshotRepository>
             <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->
@@ -1087,5 +1062,7 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
+
+
 </project>
 

@@ -16,12 +16,16 @@
 
 package com.alibaba.nacos.config.server.auth;
 
-import javax.servlet.http.HttpServletRequest;
-
+import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import org.apache.commons.lang3.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * Config resource parser.
@@ -34,11 +38,31 @@ public class ConfigResourceParser implements ResourceParser {
     private static final String AUTH_CONFIG_PREFIX = "config/";
     
     @Override
-    public String parseName(Object request) {
-        HttpServletRequest req = (HttpServletRequest) request;
-        String namespaceId = NamespaceUtil.processNamespaceParameter(req.getParameter("tenant"));
-        String groupName = req.getParameter("group");
-        String dataId = req.getParameter("dataId");
+    public String parseName(Object requestObj) {
+        
+        String namespaceId = null;
+        String groupName = null;
+        String dataId = null;
+        if (requestObj instanceof HttpServletRequest) {
+            HttpServletRequest req = (HttpServletRequest) requestObj;
+            namespaceId = NamespaceUtil.processNamespaceParameter(req.getParameter("tenant"));
+            groupName = req.getParameter("group");
+            dataId = req.getParameter("dataId");
+        } else if (requestObj instanceof Request) {
+            Request request = (Request) requestObj;
+            if (request instanceof ConfigBatchListenRequest) {
+                List<ConfigBatchListenRequest.ConfigListenContext> configListenContexts = ((ConfigBatchListenRequest) request)
+                        .getConfigListenContexts();
+                if (!configListenContexts.isEmpty()) {
+                    namespaceId = ((ConfigBatchListenRequest) request).getConfigListenContexts().get(0).getTenant();
+                }
+            } else {
+                namespaceId = (String) ReflectUtils.getFieldValue(request, "tenant", "");
+                
+            }
+            groupName = (String) ReflectUtils.getFieldValue(request, "group", "");
+            dataId = (String) ReflectUtils.getFieldValue(request, "dataId", "");
+        }
         
         StringBuilder sb = new StringBuilder();
         
@@ -46,12 +70,16 @@ public class ConfigResourceParser implements ResourceParser {
             sb.append(namespaceId);
         }
         
-        sb.append(Resource.SPLITTER);
+        if (StringUtils.isBlank(groupName)) {
+            sb.append(Resource.SPLITTER).append("*");
+        } else {
+            sb.append(Resource.SPLITTER).append(groupName);
+        }
         
         if (StringUtils.isBlank(dataId)) {
-            sb.append("*").append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append("*");
+            sb.append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append("*");
         } else {
-            sb.append(groupName).append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append(dataId);
+            sb.append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append(dataId);
         }
         
         return sb.toString();

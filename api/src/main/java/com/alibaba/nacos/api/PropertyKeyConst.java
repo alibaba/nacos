@@ -61,6 +61,8 @@ public class PropertyKeyConst {
     
     public static final String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
     
+    public static final String NAMING_CACHE_REGISTRY_DIR = "namingCacheRegistryDir";
+    
     public static final String NAMING_CLIENT_BEAT_THREAD_COUNT = "namingClientBeatThreadCount";
     
     public static final String NAMING_POLLING_THREAD_COUNT = "namingPollingThreadCount";

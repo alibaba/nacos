@@ -24,9 +24,9 @@ import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.sys.env.Constants;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -134,13 +134,10 @@ public class AuthFilter implements Filter {
                         e.getErrMsg());
             }
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getErrMsg());
-            return;
         } catch (IllegalArgumentException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, ExceptionUtil.getAllExceptionMsg(e));
-            return;
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.getMessage());
-            return;
         }
     }
     

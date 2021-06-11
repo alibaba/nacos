@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -77,6 +78,10 @@ public class HealthCheckTask implements Runnable {
     public void run() {
         
         try {
+            // If upgrade to 2.0.X stop health check with v1
+            if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
+                return;
+            }
             if (distroMapper.responsible(cluster.getService().getName()) && switchDomain
                     .isHealthCheckEnabled(cluster.getService().getName())) {
                 healthCheckProcessor.process(this);

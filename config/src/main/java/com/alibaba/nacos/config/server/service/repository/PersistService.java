@@ -126,6 +126,20 @@ public interface PersistService {
             final Map<String, Object> configAdvanceInfo, final boolean notify);
     
     /**
+     * Update common configuration information.
+     *
+     * @param configInfo        config info
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @param notify            whether to push
+     * @return success or not.
+     */
+    boolean updateConfigInfoCas(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+            final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify);
+    
+    /**
      * Update beta configuration information.
      *
      * @param configInfo config info
@@ -139,6 +153,20 @@ public interface PersistService {
             boolean notify);
     
     /**
+     * Update beta configuration information.
+     *
+     * @param configInfo config info
+     * @param betaIps    ip for push
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     * @return success or not.
+     */
+    boolean updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
+            Timestamp time, boolean notify);
+    
+    /**
      * Update tag configuration information.
      *
      * @param configInfo config info
@@ -149,6 +177,20 @@ public interface PersistService {
      * @param notify     whether to push
      */
     void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+            boolean notify);
+    
+    /**
+     * Update tag configuration information.
+     *
+     * @param configInfo config info
+     * @param tag        tag
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     * @return success or not.
+     */
+    boolean updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
     /**
@@ -165,6 +207,20 @@ public interface PersistService {
             final Timestamp time, final boolean notify);
     
     /**
+     * insert or update beta config cas.
+     *
+     * @param configInfo config info
+     * @param betaIps    ip for push
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     * @return success or not.
+     */
+    boolean insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps, final String srcIp,
+            final String srcUser, final Timestamp time, final boolean notify);
+    
+    /**
      * insert or update tag config.
      *
      * @param configInfo config info
@@ -176,6 +232,20 @@ public interface PersistService {
      */
     void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp, final String srcUser,
             final Timestamp time, final boolean notify);
+    
+    /**
+     * insert or update tag config cas.
+     *
+     * @param configInfo config info
+     * @param tag        tag
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     * @return success or not.
+     */
+    boolean insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
+            final String srcUser, final Timestamp time, final boolean notify);
     
     /**
      * update md5.
@@ -211,6 +281,33 @@ public interface PersistService {
      * @param notify            whether to push
      */
     void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+            Map<String, Object> configAdvanceInfo, boolean notify);
+    
+    /**
+     * insert or update cas..
+     *
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param configInfo        config info
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @return success or not.
+     */
+    boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+            Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * Write to the main table, insert or update cas.
+     *
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param configInfo        config info
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @param notify            whether to push
+     * @return success or not.
+     */
+    boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo, boolean notify);
     
     // ----------------------- config_aggr_info table insert update delete
@@ -365,7 +462,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return {@link ConfigInfo4Beta}
      */
-    ConfigInfo4Beta findConfigInfo4Beta(final String dataId, final String group, final String tenant);
+    ConfigInfoBetaWrapper findConfigInfo4Beta(final String dataId, final String group, final String tenant);
     
     /**
      * Query tag configuration information based on dataId and group.
@@ -376,7 +473,7 @@ public interface PersistService {
      * @param tag    tag
      * @return {@link ConfigInfo4Tag}
      */
-    ConfigInfo4Tag findConfigInfo4Tag(final String dataId, final String group, final String tenant, final String tag);
+    ConfigInfoTagWrapper findConfigInfo4Tag(final String dataId, final String group, final String tenant, final String tag);
     
     /**
      * Query common configuration information based on dataId and group.
@@ -426,7 +523,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return config info
      */
-    ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant);
+    ConfigInfoWrapper findConfigInfo(final String dataId, final String group, final String tenant);
     
     /**
      * Query configuration information based on dataId.

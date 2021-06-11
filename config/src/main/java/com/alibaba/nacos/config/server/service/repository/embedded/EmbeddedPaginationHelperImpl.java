@@ -50,11 +50,13 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
      * @param rowMapper    Entity mapping
      * @return Paging data
      */
+    @Override
     public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
             final int pageNo, final int pageSize, final RowMapper rowMapper) {
         return fetchPage(sqlCountRows, sqlFetchRows, args, pageNo, pageSize, null, rowMapper);
     }
-    
+
+    @Override
     public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
             final int pageNo, final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
@@ -92,7 +94,8 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
         return page;
     }
-    
+
+    @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
             final int pageNo, final int pageSize, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
@@ -127,7 +130,8 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
         return page;
     }
-    
+
+    @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final Object[] args1, final String sqlFetchRows,
             final Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
@@ -163,7 +167,8 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
         return page;
     }
-    
+
+    @Override
     public Page<E> fetchPageLimit(final String sqlFetchRows, final Object[] args, final int pageNo, final int pageSize,
             final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
@@ -180,7 +185,8 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
         return page;
     }
-    
+
+    @Override
     public void updateLimit(final String sql, final Object[] args) {
         String sqlUpdate = sql.replaceAll("limit \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         

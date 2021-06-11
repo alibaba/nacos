@@ -123,9 +123,7 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         }
         try {
             return TlsHelper.buildSslContext(true);
-        } catch (NoSuchAlgorithmException e) {
-            assignLogger().error("Failed to create SSLContext", e);
-        } catch (KeyManagementException e) {
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
             assignLogger().error("Failed to create SSLContext", e);
         }
         return null;

@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
-import com.alibaba.nacos.client.naming.core.HostReactor;
+import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -52,15 +52,29 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class FailoverReactor implements Closeable {
     
+    private static final String FAILOVER_DIR = "/failover";
+    
+    private static final String IS_FAILOVER_MODE = "1";
+    
+    private static final String NO_FAILOVER_MODE = "0";
+    
+    private static final String FAILOVER_MODE_PARAM = "failover-mode";
+    
+    private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
+    
+    private final Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
+    
+    private static final long DAY_PERIOD_MINUTES = 24 * 60;
+    
     private final String failoverDir;
     
-    private final HostReactor hostReactor;
+    private final ServiceInfoHolder serviceInfoHolder;
     
     private final ScheduledExecutorService executorService;
     
-    public FailoverReactor(HostReactor hostReactor, String cacheDir) {
-        this.hostReactor = hostReactor;
-        this.failoverDir = cacheDir + "/failover";
+    public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String cacheDir) {
+        this.serviceInfoHolder = serviceInfoHolder;
+        this.failoverDir = cacheDir + FAILOVER_DIR;
         // init executorService
         this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
@@ -73,12 +87,6 @@ public class FailoverReactor implements Closeable {
         });
         this.init();
     }
-    
-    private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
-    
-    private final Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
-    
-    private static final long DAY_PERIOD_MINUTES = 24 * 60;
     
     /**
      * Init.
@@ -159,17 +167,17 @@ public class FailoverReactor implements Closeable {
                         
                         for (String line : lines) {
                             String line1 = line.trim();
-                            if ("1".equals(line1)) {
-                                switchParams.put("failover-mode", "true");
+                            if (IS_FAILOVER_MODE.equals(line1)) {
+                                switchParams.put(FAILOVER_MODE_PARAM, Boolean.TRUE.toString());
                                 NAMING_LOGGER.info("failover-mode is on");
                                 new FailoverFileReader().run();
-                            } else if ("0".equals(line1)) {
-                                switchParams.put("failover-mode", "false");
+                            } else if (NO_FAILOVER_MODE.equals(line1)) {
+                                switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
                                 NAMING_LOGGER.info("failover-mode is off");
                             }
                         }
                     } else {
-                        switchParams.put("failover-mode", "false");
+                        switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
                     }
                 }
                 
@@ -252,14 +260,14 @@ public class FailoverReactor implements Closeable {
         
         @Override
         public void run() {
-            Map<String, ServiceInfo> map = hostReactor.getServiceInfoMap();
+            Map<String, ServiceInfo> map = serviceInfoHolder.getServiceInfoMap();
             for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
                 ServiceInfo serviceInfo = entry.getValue();
                 if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils
                         .equals(serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY) || StringUtils
-                        .equals(serviceInfo.getName(), "00-00---000-ENV_CONFIGS-000---00-00") || StringUtils
-                        .equals(serviceInfo.getName(), "vipclient.properties") || StringUtils
-                        .equals(serviceInfo.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
+                        .equals(serviceInfo.getName(), UtilAndComs.ENV_CONFIGS) || StringUtils
+                        .equals(serviceInfo.getName(), UtilAndComs.VIP_CLIENT_FILE) || StringUtils
+                        .equals(serviceInfo.getName(), UtilAndComs.ALL_HOSTS)) {
                     continue;
                 }
                 
@@ -269,7 +277,7 @@ public class FailoverReactor implements Closeable {
     }
     
     public boolean isFailoverSwitch() {
-        return Boolean.parseBoolean(switchParams.get("failover-mode"));
+        return Boolean.parseBoolean(switchParams.get(FAILOVER_MODE_PARAM));
     }
     
     public ServiceInfo getService(String key) {

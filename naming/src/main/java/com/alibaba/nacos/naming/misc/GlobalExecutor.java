@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.Collection;
 import java.util.List;
@@ -48,33 +49,52 @@ public class GlobalExecutor {
     
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
     
-    public static final int DEFAULT_THREAD_COUNT =
-            Runtime.getRuntime().availableProcessors() <= 1 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
+    public static final int DEFAULT_THREAD_COUNT = EnvUtil.getAvailableProcessors(0.5);
     
     private static final ScheduledExecutorService NAMING_TIMER_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    Runtime.getRuntime().availableProcessors() * 2,
-                    new NameThreadFactory("com.alibaba.nacos.naming.timer"));
+                    EnvUtil.getAvailableProcessors(2), new NameThreadFactory("com.alibaba.nacos.naming.timer"));
     
     private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.status.worker"));
     
+    /**
+     * Service synchronization executor.
+     *
+     * @deprecated will remove in v2.1.x.
+     */
+    @Deprecated
     private static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.service.worker"));
     
+    /**
+     * Service update manager executor.
+     *
+     * @deprecated will remove in v2.1.x.
+     */
+    @Deprecated
     public static final ScheduledExecutorService SERVICE_UPDATE_MANAGER_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.service.update.processor"));
     
     /**
      * thread pool that processes getting service detail from other server asynchronously.
+     *
+     * @deprecated will remove in v2.1.x.
      */
+    @Deprecated
     private static final ExecutorService SERVICE_UPDATE_EXECUTOR = ExecutorFactory.Managed
             .newFixedExecutorService(ClassUtils.getCanonicalName(NamingApp.class), 2,
                     new NameThreadFactory("com.alibaba.nacos.naming.service.update.http.handler"));
     
+    /**
+     * Empty service auto clean executor.
+     *
+     * @deprecated will remove in v2.1.x.
+     */
+    @Deprecated
     private static final ScheduledExecutorService EMPTY_SERVICE_AUTO_CLEAN_EXECUTOR = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.service.empty.auto-clean"));
@@ -95,8 +115,8 @@ public class GlobalExecutor {
             .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class), DEFAULT_THREAD_COUNT,
                     new NameThreadFactory("com.alibaba.nacos.naming.supersense.checker"));
     
-    private static final ScheduledExecutorService TCP_CHECK_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+    private static final ExecutorService TCP_CHECK_EXECUTOR = ExecutorFactory.Managed
+            .newFixedExecutorService(ClassUtils.getCanonicalName(NamingApp.class), 2,
                     new NameThreadFactory("com.alibaba.nacos.naming.tcp.check.worker"));
     
     private static final ScheduledExecutorService NAMING_HEALTH_EXECUTOR = ExecutorFactory.Managed
@@ -116,6 +136,21 @@ public class GlobalExecutor {
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.nacos-server-performance"));
     
+    private static final ScheduledExecutorService EXPIRED_CLIENT_CLEANER_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.remote-connection-manager"));
+    
+    private static final ExecutorService PUSH_CALLBACK_EXECUTOR = ExecutorFactory.Managed
+            .newSingleExecutorService("Push", new NameThreadFactory("com.alibaba.nacos.naming.push.callback"));
+    
+    /**
+     * Register raft leader election executor.
+     *
+     * @param runnable leader election executor
+     * @return future
+     * @deprecated will removed with old raft
+     */
+    @Deprecated
     public static ScheduledFuture registerMasterElection(Runnable runnable) {
         return NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
@@ -132,6 +167,14 @@ public class GlobalExecutor {
         NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, SERVER_STATUS_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
     }
     
+    /**
+     * Register raft heart beat executor.
+     *
+     * @param runnable heart beat executor
+     * @return future
+     * @deprecated will removed with old raft
+     */
+    @Deprecated
     public static ScheduledFuture registerHeartbeat(Runnable runnable) {
         return NAMING_TIMER_EXECUTOR.scheduleWithFixedDelay(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
@@ -148,18 +191,50 @@ public class GlobalExecutor {
         DISTRO_NOTIFY_EXECUTOR.submit(runnable);
     }
     
+    /**
+     * Submit service update for v1.x.
+     *
+     * @param runnable runnable
+     * @deprecated will remove in v2.1.x.
+     */
+    @Deprecated
     public static void submitServiceUpdate(Runnable runnable) {
         SERVICE_UPDATE_EXECUTOR.execute(runnable);
     }
     
+    /**
+     * Schedule empty service auto clean for v1.x.
+     *
+     * @param runnable     runnable
+     * @param initialDelay initial delay milliseconds
+     * @param period       period between twice clean
+     * @deprecated will remove in v2.1.x.
+     */
+    @Deprecated
     public static void scheduleServiceAutoClean(Runnable runnable, long initialDelay, long period) {
         EMPTY_SERVICE_AUTO_CLEAN_EXECUTOR.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
     }
     
+    /**
+     * submitServiceUpdateManager.
+     *
+     * @param runnable runnable
+     * @deprecated will remove in v2.1.x.
+     */
+    @Deprecated
     public static void submitServiceUpdateManager(Runnable runnable) {
         SERVICE_UPDATE_MANAGER_EXECUTOR.submit(runnable);
     }
     
+    /**
+     * scheduleServiceReporter.
+     *
+     * @param command command
+     * @param delay   delay
+     * @param unit    time unit
+     * @deprecated will remove in v2.1.x.
+     */
+    @Deprecated
     public static void scheduleServiceReporter(Runnable command, long delay, TimeUnit unit) {
         SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(command, delay, unit);
     }
@@ -210,7 +285,19 @@ public class GlobalExecutor {
         return UDP_SENDER_EXECUTOR.schedule(runnable, delay, unit);
     }
     
+    public static void scheduleUdpReceiver(Runnable runnable) {
+        NAMING_TIMER_EXECUTOR.submit(runnable);
+    }
+    
     public static void schedulePerformanceLogger(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
         SERVER_PERFORMANCE_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
+    }
+    
+    public static void scheduleExpiredClientCleaner(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
+        EXPIRED_CLIENT_CLEANER_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
+    }
+    
+    public static ExecutorService getCallbackExecutor() {
+        return PUSH_CALLBACK_EXECUTOR;
     }
 }

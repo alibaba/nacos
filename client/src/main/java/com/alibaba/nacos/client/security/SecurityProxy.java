@@ -35,6 +35,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.client.naming.utils.UtilAndComs.HTTP;
+import static com.alibaba.nacos.client.naming.utils.UtilAndComs.webContext;
+
 /**
  * Security proxy to update security information.
  *
@@ -90,7 +93,7 @@ public class SecurityProxy {
         username = properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY);
         password = properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY);
         contextPath = ContextPathUtil
-                .normalizeContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos"));
+                .normalizeContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH, webContext));
         this.nacosRestTemplate = nacosRestTemplate;
     }
     
@@ -132,9 +135,9 @@ public class SecurityProxy {
         if (StringUtils.isNotBlank(username)) {
             Map<String, String> params = new HashMap<String, String>(2);
             Map<String, String> bodyMap = new HashMap<String, String>(2);
-            params.put("username", username);
-            bodyMap.put("password", password);
-            String url = "http://" + server + contextPath + LOGIN_URL;
+            params.put(PropertyKeyConst.USERNAME, username);
+            bodyMap.put(PropertyKeyConst.PASSWORD, password);
+            String url = HTTP + server + contextPath + LOGIN_URL;
             
             if (server.contains(Constants.HTTP_PREFIX)) {
                 url = server + contextPath + LOGIN_URL;
@@ -163,5 +166,9 @@ public class SecurityProxy {
     
     public String getAccessToken() {
         return accessToken;
+    }
+    
+    public boolean isEnabled() {
+        return StringUtils.isNotBlank(this.username);
     }
 }

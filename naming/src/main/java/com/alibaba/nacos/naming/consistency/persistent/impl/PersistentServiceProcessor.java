@@ -33,7 +33,7 @@ import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.naming.utils.Constants;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.protobuf.ByteString;
 

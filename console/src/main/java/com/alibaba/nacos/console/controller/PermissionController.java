@@ -18,7 +18,7 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
-import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import org.apache.commons.lang3.StringUtils;
@@ -70,7 +70,7 @@ public class PermissionController {
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
     public Object addPermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
         nacosRoleService.addPermission(role, resource, action);
-        return new RestResult<>(200, "add permission ok!");
+        return RestResultUtils.success("add permission ok!");
     }
     
     /**
@@ -86,6 +86,6 @@ public class PermissionController {
     public Object deletePermission(@RequestParam String role, @RequestParam String resource,
             @RequestParam String action) {
         nacosRoleService.deletePermission(role, resource, action);
-        return new RestResult<>(200, "delete permission ok!");
+        return RestResultUtils.success("delete permission ok!");
     }
 }

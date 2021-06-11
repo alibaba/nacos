@@ -63,8 +63,9 @@ import java.util.Map;
  */
 @Deprecated
 @RestController
-@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft",
-        UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft"})
+@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT,
+        UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                + UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT})
 public class RaftController {
     
     private final RaftConsistencyServiceImpl raftConsistencyService;

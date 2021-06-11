@@ -59,6 +59,20 @@ public final class ConvertUtils {
     }
     
     /**
+     * Convert Object value to long value if parameter value is legal.
+     * And it automatically defaults to 0 if parameter value is null or other object.
+     *
+     * @param val object value
+     * @return Converted long value and its default value is 0.
+     */
+    public static long toLong(Object val) {
+        if (val instanceof Long) {
+            return (Long) val;
+        }
+        return toLong(val.toString());
+    }
+    
+    /**
      * Convert String value to long value if parameter value is legal. And it automatically defaults to 0 if parameter
      * value is null or blank str.
      *

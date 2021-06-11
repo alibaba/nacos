@@ -120,7 +120,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
                 return RestResult.<String>builder()
                         .withCode(BooleanUtils.and(results.toArray(new Boolean[0])) ? 200 : 500).withData("").build();
             } catch (Throwable ex) {
-                LogUtil.DEFAULT_LOG.error("An exception occurred when external data was imported into Derby : {}", ex);
+                LogUtil.DEFAULT_LOG.error("An exception occurred when external data was imported into Derby : ", ex);
                 return RestResultUtils.failed(ex.getMessage());
             }
         });

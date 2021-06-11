@@ -18,8 +18,12 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,8 +40,19 @@ public class GlobalExecutor {
     
     private static final ScheduledExecutorService DISTRO_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(GlobalExecutor.class),
-                    Runtime.getRuntime().availableProcessors() * 2,
-                    new NameThreadFactory("com.alibaba.nacos.core.protocal.distro"));
+                    EnvUtil.getAvailableProcessors(2), new NameThreadFactory("com.alibaba.nacos.core.protocal.distro"));
+    
+    public static final ThreadPoolExecutor sdkRpcExecutor = new ThreadPoolExecutor(
+            EnvUtil.getAvailableProcessors(RemoteUtils.getRemoteExecutorTimesOfProcessors()),
+            EnvUtil.getAvailableProcessors(RemoteUtils.getRemoteExecutorTimesOfProcessors()), 60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(RemoteUtils.getRemoteExecutorQueueSize()),
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-executor-%d").build());
+    
+    public static final ThreadPoolExecutor clusterRpcExecutor = new ThreadPoolExecutor(
+            EnvUtil.getAvailableProcessors(RemoteUtils.getRemoteExecutorTimesOfProcessors()),
+            EnvUtil.getAvailableProcessors(RemoteUtils.getRemoteExecutorTimesOfProcessors()), 60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(RemoteUtils.getRemoteExecutorQueueSize()),
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-cluster-grpc-executor-%d").build());
     
     public static void runWithoutThread(Runnable runnable) {
         runnable.run();

@@ -28,8 +28,6 @@ import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
@@ -76,8 +74,6 @@ import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4TAG_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_AGGR_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BASE_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
@@ -88,8 +84,8 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_KEY_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_LIST_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.TENANT_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.MAP_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.TENANT_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
@@ -312,6 +308,44 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public boolean updateConfigInfoCas(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+            final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
+        try {
+            ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant());
+            
+            final String tenantTmp =
+                    StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+            
+            oldConfigInfo.setTenant(tenantTmp);
+            
+            String appNameTmp = oldConfigInfo.getAppName();
+            // If the appName passed by the user is not empty, the appName of the user is persisted;
+            // otherwise, the appName of db is used. Empty string is required to clear appName
+            if (configInfo.getAppName() == null) {
+                configInfo.setAppName(appNameTmp);
+            }
+            
+            updateConfigInfoAtomicCas(configInfo, srcIp, srcUser, time, configAdvanceInfo);
+            
+            String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+            if (configTags != null) {
+                // Delete all tags and recreate them
+                removeTagByIdAtomic(oldConfigInfo.getId());
+                addConfigTagsRelation(oldConfigInfo.getId(), configTags, configInfo.getDataId(), configInfo.getGroup(),
+                        configInfo.getTenant());
+            }
+            
+            insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
+            
+            EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
+            return databaseOperate.blockUpdate();
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+    
+    @Override
     public void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
             Timestamp time, boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
@@ -330,6 +364,30 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             EmbeddedStorageContextUtils.addSqlContext(sql, args);
             
             databaseOperate.blockUpdate();
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+    
+    @Override
+    public boolean updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
+            Timestamp time, boolean notify) {
+        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
+        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        
+        configInfo.setTenant(tenantTmp);
+        try {
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+            
+            final String sql = "UPDATE config_info_beta SET content=?,md5=?,src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? or md5 is null or md5='')";
+            
+            final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
+                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, configInfo.getMd5()};
+            
+            EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
+            EmbeddedStorageContextUtils.addSqlContext(sql, args);
+            
+            return databaseOperate.blockUpdate();
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
@@ -361,6 +419,31 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public boolean updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp, String srcUser,
+            Timestamp time, boolean notify) {
+        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
+        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
+        
+        configInfo.setTenant(tenantTmp);
+        
+        try {
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+            
+            final String sql = "UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=? AND (md5=? or md5 is null or md5='')";
+            final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
+                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp, configInfo.getMd5()};
+            
+            EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
+            EmbeddedStorageContextUtils.addSqlContext(sql, args);
+            
+            return databaseOperate.blockUpdate();
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+    
+    @Override
     public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
@@ -371,12 +454,35 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public boolean insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps, final String srcIp,
+            final String srcUser, final Timestamp time, final boolean notify) {
+        if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
+            addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
+            return true;
+        } else {
+            return updateConfigInfo4BetaCas(configInfo, betaIps, srcIp, null, time, notify);
+        }
+        
+    }
+    
+    @Override
     public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
             addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
         } else {
             updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+        }
+    }
+    
+    @Override
+    public boolean insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
+            final String srcUser, final Timestamp time, final boolean notify) {
+        if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
+            addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+            return true;
+        } else {
+            return updateConfigInfo4TagCas(configInfo, tag, srcIp, null, time, notify);
         }
     }
     
@@ -412,6 +518,23 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
         } else {
             updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
+        }
+    }
+    
+    @Override
+    public boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+            Map<String, Object> configAdvanceInfo) {
+        return insertOrUpdateCas(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
+    }
+    
+    @Override
+    public boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+            Map<String, Object> configAdvanceInfo, boolean notify) {
+        if (Objects.isNull(findConfigInfo(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
+            addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
+            return true;
+        } else {
+            return updateConfigInfoCas(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
         }
     }
     
@@ -686,16 +809,16 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public ConfigInfo4Beta findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
+    public ConfigInfoBetaWrapper findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content,beta_ips FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=?";
         
-        return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO4BETA_ROW_MAPPER);
+        return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
         
     }
     
     @Override
-    public ConfigInfo4Tag findConfigInfo4Tag(final String dataId, final String group, final String tenant,
+    public ConfigInfoTagWrapper findConfigInfo4Tag(final String dataId, final String group, final String tenant,
             final String tag) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
@@ -703,7 +826,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String sql = "SELECT ID,data_id,group_id,tenant_id,tag_id,app_name,content FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?";
         
         return databaseOperate
-                .queryOne(sql, new Object[] {dataId, group, tenantTmp, tagTmp}, CONFIG_INFO4TAG_ROW_MAPPER);
+                .queryOne(sql, new Object[] {dataId, group, tenantTmp, tagTmp}, CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
     }
     
     @Override
@@ -773,12 +896,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant) {
+    public ConfigInfoWrapper findConfigInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info "
                 + " WHERE data_id=? AND group_id=? AND tenant_id=?";
         final Object[] args = new Object[] {dataId, group, tenantTmp};
-        return databaseOperate.queryOne(sql, args, CONFIG_INFO_ROW_MAPPER);
+        return databaseOperate.queryOne(sql, args, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
     }
     
@@ -1936,6 +2059,29 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
     
+    private void updateConfigInfoAtomicCas(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+            final Timestamp time, Map<String, Object> configAdvanceInfo) {
+        final String appNameTmp =
+                StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
+        final String tenantTmp =
+                StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+        final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
+        final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
+        final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
+        final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
+        final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
+        
+        final String sql = "UPDATE config_info SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=?,"
+                + "c_desc=?,c_use=?,effect=?,type=?,c_schema=? WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? or md5 is null or md5='')";
+        
+        final Object[] args = new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, time, appNameTmp, desc,
+                use, effect, type, schema, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                configInfo.getMd5()};
+        
+        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+    }
+    
     @Override
     public List<ConfigInfo> findConfigInfosByIds(final String ids) {
         if (StringUtils.isBlank(ids)) {
@@ -2345,6 +2491,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1);
                     FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(extName);
                     type = fileTypeEnum.getFileType();
+                } else {
+                    type = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(null).getFileType();
                 }
             }
             if (configAdvanceInfo == null) {
@@ -2353,11 +2501,15 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             configAdvanceInfo.put("type", type);
             configAdvanceInfo.put("desc", configInfo.getDesc());
             try {
+                ConfigInfo foundCfg = findConfigInfo(configInfo2Save.getDataId(), configInfo2Save.getGroup(), configInfo2Save.getTenant());
+                if (foundCfg != null) {
+                    throw new Throwable("DuplicateKeyException: config already exists, should be overridden");
+                }
                 addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify, callFinally);
                 succCount++;
             } catch (Throwable e) {
                 if (!StringUtils.contains(e.toString(), "DuplicateKeyException")) {
-                    throw e;
+                    throw new NacosException(NacosException.SERVER_ERROR, e);
                 }
                 // uniqueness constraint conflict
                 if (SameConfigPolicy.ABORT.equals(policy)) {

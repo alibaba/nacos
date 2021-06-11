@@ -18,7 +18,7 @@ package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.naming.core.Instance;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -86,8 +86,8 @@ public class AddressServerGeneratorManager {
     }
     
     private String[] generateIpAndPort(String ip) {
-        String[] result = IPUtil.splitIPPortStr(ip);
-        if (result.length != IPUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
+        String[] result = InternetAddressUtil.splitIPPortStr(ip);
+        if (result.length != InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
             return new String[] {result[0], String.valueOf(AddressServerConstants.DEFAULT_SERVER_PORT)};
         }
         return result;
@@ -103,7 +103,7 @@ public class AddressServerGeneratorManager {
         
         StringBuilder ips = new StringBuilder();
         instanceList.forEach(instance -> {
-            ips.append(instance.getIp() + ":" + instance.getPort());
+            ips.append(instance.getIp()).append(":").append(instance.getPort());
             ips.append("\n");
         });
         
@@ -118,7 +118,7 @@ public class AddressServerGeneratorManager {
      */
     public String generateNacosServiceName(String rawServiceName) {
         
-        if (rawServiceName.indexOf(Constants.DEFAULT_GROUP) != -1) {
+        if (rawServiceName.contains(Constants.DEFAULT_GROUP)) {
             return rawServiceName;
         }
         

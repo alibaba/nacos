@@ -50,7 +50,7 @@ public class SwitchService {
     private static volatile Map<String, String> switches = new HashMap<String, String>();
     
     public static boolean getSwitchBoolean(String key, boolean defaultValue) {
-        boolean rtn = defaultValue;
+        boolean rtn;
         try {
             String value = switches.get(key);
             rtn = value != null ? Boolean.parseBoolean(value) : defaultValue;
@@ -62,7 +62,7 @@ public class SwitchService {
     }
     
     public static int getSwitchInteger(String key, int defaultValue) {
-        int rtn = defaultValue;
+        int rtn;
         try {
             String status = switches.get(key);
             rtn = status != null ? Integer.parseInt(status) : defaultValue;

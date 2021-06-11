@@ -72,7 +72,11 @@ class RolesManagement extends React.Component {
       <>
         <RegionGroup left={locale.roleManagement} />
         <div className="filter-panel">
-          <Button type="primary" onClick={() => this.setState({ createRoleVisible: true })}>
+          <Button
+            type="primary"
+            onClick={() => this.setState({ createRoleVisible: true })}
+            style={{ marginRight: 20 }}
+          >
             {locale.bindingRoles}
           </Button>
           <Button type="secondary" onClick={() => this.getRoles()}>

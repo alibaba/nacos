@@ -34,7 +34,7 @@ public class RegexParser {
      * or numeric are preceded by '\'.
      *
      * @param regex  The expression to be formatted
-     * @return
+     * @return format content.
      */
     public static String regexFormat(String regex) {
         if (regex == null) {

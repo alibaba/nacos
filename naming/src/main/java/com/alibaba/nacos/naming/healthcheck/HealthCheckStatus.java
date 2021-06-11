@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.misc.Loggers;
 
+import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,7 +30,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author nacos
  */
-public class HealthCheckStatus {
+public class HealthCheckStatus implements Serializable {
+    
+    private static final long serialVersionUID = -5791320072773064978L;
     
     public AtomicBoolean isBeingChecked = new AtomicBoolean(false);
     

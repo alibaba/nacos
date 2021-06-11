@@ -26,6 +26,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +62,22 @@ public class StartingApplicationListener implements NacosApplicationListener {
     private static final String LOCAL_IP_PROPERTY_KEY = "nacos.local.ip";
     
     private static final String NACOS_APPLICATION_CONF = "nacos_application_conf";
+    
+    private static final String NACOS_MODE_STAND_ALONE = "stand alone";
+    
+    private static final String NACOS_MODE_CLUSTER = "cluster";
+    
+    private static final String DEFAULT_FUNCTION_MODE = "All";
+    
+    private static final String DEFAULT_DATABASE = "mysql";
+    
+    private static final String DATASOURCE_PLATFORM_PROPERTY = "spring.datasource.platform";
+    
+    private static final String DEFAULT_DATASOURCE_PLATFORM = "";
+    
+    private static final String DATASOURCE_MODE_EXTERNAL = "external";
+    
+    private static final String DATASOURCE_MODE_EMBEDDED = "embedded";
     
     private static final Map<String, Object> SOURCES = new ConcurrentHashMap<>();
     
@@ -102,6 +119,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
         
         closeExecutor();
         
+        ApplicationUtils.setStarted(true);
         judgeStorageMode(context.getEnvironment());
     }
     
@@ -115,7 +133,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
         
         makeWorkDir();
         
-        LOGGER.error("Startup errors : {}", exception);
+        LOGGER.error("Startup errors : ", exception);
         ThreadPoolManager.shutdown();
         WatchFileCenter.shutdown();
         NotifyCenter.shutdown();
@@ -152,7 +170,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
                     Map<String, ?> tmp = EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource());
                     SOURCES.putAll(tmp);
                 } catch (IOException ignore) {
-                    LOGGER.warn("Failed to monitor file {}", ignore);
+                    LOGGER.warn("Failed to monitor file ", ignore);
                 }
             }
             
@@ -166,12 +184,12 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private void initSystemProperty() {
         if (EnvUtil.getStandaloneMode()) {
-            System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "stand alone");
+            System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, NACOS_MODE_STAND_ALONE);
         } else {
-            System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "cluster");
+            System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, NACOS_MODE_CLUSTER);
         }
         if (EnvUtil.getFunctionMode() == null) {
-            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, "All");
+            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, DEFAULT_FUNCTION_MODE);
         } else if (EnvUtil.FUNCTION_MODE_CONFIG.equals(EnvUtil.getFunctionMode())) {
             System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, EnvUtil.FUNCTION_MODE_CONFIG);
         } else if (EnvUtil.FUNCTION_MODE_NAMING.equals(EnvUtil.getFunctionMode())) {
@@ -227,7 +245,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
     private void judgeStorageMode(ConfigurableEnvironment env) {
         
         // External data sources are used by default in cluster mode
-        boolean useExternalStorage = ("mysql".equalsIgnoreCase(env.getProperty("spring.datasource.platform", "")));
+        boolean useExternalStorage = (DEFAULT_DATABASE.equalsIgnoreCase(env.getProperty(DATASOURCE_PLATFORM_PROPERTY, DEFAULT_DATASOURCE_PLATFORM)));
         
         // must initialize after setUseExternalDB
         // This value is true in stand-alone mode and false in cluster mode
@@ -244,6 +262,6 @@ public class StartingApplicationListener implements NacosApplicationListener {
         }
         
         LOGGER.info("Nacos started successfully in {} mode. use {} storage",
-                System.getProperty(MODE_PROPERTY_KEY_STAND_MODE), useExternalStorage ? "external" : "embedded");
+                System.getProperty(MODE_PROPERTY_KEY_STAND_MODE), useExternalStorage ? DATASOURCE_MODE_EXTERNAL : DATASOURCE_MODE_EMBEDDED);
     }
 }

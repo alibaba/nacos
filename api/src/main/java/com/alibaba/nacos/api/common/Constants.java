@@ -83,6 +83,8 @@ public class Constants {
     
     public static final String GLOBAL_ADMIN = "globalAdmin";
     
+    public static final String USERNAME = "username";
+    
     public static final String TOKEN_REFRESH_WINDOW = "tokenRefreshWindow";
     
     /**
@@ -194,4 +196,17 @@ public class Constants {
     
     public static final String ALL_PATTERN = "*";
     
+    public static final String COLON = ":";
+    
+    public static final String LINE_BREAK = "\n";
+    
+    public static final String POUND = "#";
+    
+    public static final String VIPSERVER_TAG = "Vipserver-Tag";
+    
+    public static final String AMORY_TAG = "Amory-Tag";
+    
+    public static final String LOCATION_TAG = "Location-Tag";
+    
+    public static final String CHARSET_KEY = "charset";
 }
