@@ -110,10 +110,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance {}", namespaceId, serviceName,
                 instance);
+        namingGrpcConnectionEventListener.cacheInstanceForRedo(serviceName, groupName, instance);
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
         requestToServer(request, Response.class);
-        namingGrpcConnectionEventListener.cacheInstanceForRedo(serviceName, groupName, instance);
     }
     
     @Override
@@ -121,10 +121,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         NAMING_LOGGER
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
                         instance);
+        namingGrpcConnectionEventListener.removeInstanceForRedo(serviceName, groupName, instance);
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.DE_REGISTER_INSTANCE, instance);
         requestToServer(request, Response.class);
-        namingGrpcConnectionEventListener.removeInstanceForRedo(serviceName, groupName, instance);
     }
     
     @Override

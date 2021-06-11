@@ -75,7 +75,7 @@ public class NacosMcpOverXdsService extends AggregatedDiscoveryServiceGrpc.Aggre
      * generate response by resource.
      *
      * @param resourceMap all mcp resource
-     * @return
+     * @return discovery response.
      */
     private DiscoveryResponse generateResponse(Map<String, ResourceOuterClass.Resource> resourceMap) {
         List<Any> anies = new ArrayList<>();

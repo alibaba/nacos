@@ -29,6 +29,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -42,9 +43,15 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class PushReceiver implements Runnable, Closeable {
     
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
+    private static final Charset UTF_8 = StandardCharsets.UTF_8;
     
     private static final int UDP_MSS = 64 * 1024;
+    
+    private static final String PUSH_PACKAGE_TYPE_DOM = "dom";
+    
+    private static final String PUSH_PACKAGE_TYPE_SERVICE = "service";
+    
+    private static final String PUSH_PACKAGE_TYPE_DUMP = "dump";
     
     private ScheduledExecutorService executorService;
     
@@ -99,13 +106,13 @@ public class PushReceiver implements Runnable, Closeable {
                 
                 PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
                 String ack;
-                if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
+                if (PUSH_PACKAGE_TYPE_DOM.equals(pushPacket.type) || PUSH_PACKAGE_TYPE_SERVICE.equals(pushPacket.type)) {
                     serviceInfoHolder.processServiceInfo(pushPacket.data);
                     
                     // send ack to server
                     ack = "{\"type\": \"push-ack\"" + ", \"lastRefTime\":\"" + pushPacket.lastRefTime + "\", \"data\":"
                             + "\"\"}";
-                } else if ("dump".equals(pushPacket.type)) {
+                } else if (PUSH_PACKAGE_TYPE_DUMP.equals(pushPacket.type)) {
                     // dump data to server
                     ack = "{\"type\": \"dump-ack\"" + ", \"lastRefTime\": \"" + pushPacket.lastRefTime + "\", \"data\":"
                             + "\"" + StringUtils.escapeJavaScript(JacksonUtils.toJson(serviceInfoHolder.getServiceInfoMap()))
