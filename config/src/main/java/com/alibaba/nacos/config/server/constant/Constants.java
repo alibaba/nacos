@@ -69,7 +69,7 @@ public class Constants {
     
     public static final String PROBE_MODIFY_RESPONSE_NEW = "Probe-Modify-Response-New";
     
-    public static final String USE_ZIP = Boolean.TRUE.toString();
+    public static final String USE_ZIP = String.valueOf(Boolean.TRUE);
     
     public static final String CONTENT_MD5 = "Content-MD5";
     
