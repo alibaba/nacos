@@ -144,8 +144,8 @@ public class Constants {
     public static final String WORD_SEPARATOR = Character.toString((char) 2);
     
     /**
-    * \r represents return, \n represents new line
-    */
+     * back slash r represents return, back slash n represents new line
+     */
     public static final String NACOS_LINE_SEPARATOR = "\r\n";
     
     /**
