@@ -69,7 +69,7 @@ public class Constants {
     
     public static final String PROBE_MODIFY_RESPONSE_NEW = "Probe-Modify-Response-New";
     
-    public static final String USE_ZIP = "true";
+    public static final String USE_ZIP = Boolean.TRUE.toString();
     
     public static final String CONTENT_MD5 = "Content-MD5";
     
@@ -142,7 +142,9 @@ public class Constants {
     public static final String LINE_SEPARATOR = Character.toString((char) 1);
     
     public static final String WORD_SEPARATOR = Character.toString((char) 2);
-    
+    /**
+    * \r represents return, \n represents new line
+    */
     public static final String NACOS_LINE_SEPARATOR = "\r\n";
     
     /**
