@@ -142,6 +142,7 @@ public class Constants {
     public static final String LINE_SEPARATOR = Character.toString((char) 1);
     
     public static final String WORD_SEPARATOR = Character.toString((char) 2);
+    
     /**
     * \r represents return, \n represents new line
     */
