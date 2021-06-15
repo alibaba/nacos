@@ -138,7 +138,11 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         try {
             ctx = new InitialLdapContext(env, null);
         } catch (CommunicationException e) {
+            LOG.error("LDAP Service connect timeout:{}", e.getMessage());
             throw new RuntimeException("LDAP Service connect timeout");
+        } catch (javax.naming.AuthenticationException e) {
+            LOG.error("login error:{}", e.getMessage());
+            throw new RuntimeException("login error!");
         } catch (Exception e) {
             LOG.warn("Exception cause by:{}", e.getMessage());
             return false;
