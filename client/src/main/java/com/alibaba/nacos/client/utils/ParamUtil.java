@@ -102,7 +102,7 @@ public class ParamUtil {
         
         try {
             perTaskConfigSize = Double
-                    .valueOf(System.getProperty(PER_TASK_CONFIG_SIZE_KEY, DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
+                    .parseDouble(System.getProperty(PER_TASK_CONFIG_SIZE_KEY, DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
             LOGGER.info("PER_TASK_CONFIG_SIZE: {}", perTaskConfigSize);
         } catch (Throwable t) {
             LOGGER.error("[PER_TASK_CONFIG_SIZE] PER_TASK_CONFIG_SIZE invalid", t);
