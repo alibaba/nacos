@@ -18,21 +18,31 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
+import com.alibaba.nacos.core.cluster.MemberLookup;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import javax.servlet.ServletContext;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
@@ -47,15 +57,31 @@ public class HealthControllerUnitTest {
     
     private MockMvc mockmvc;
     
+    @Mock
+    private ServerMemberManager memberManager;
+    
+    @Mock
+    private ServletContext servletContext;
+    
+    @Mock
+    private MemberLookup memberLookup;
+    
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
+        EnvUtil.setEnvironment(new StandardEnvironment());
+        Map<String, Object> infos = new HashMap<>();
+        infos.put("addressServerHealth", true);
+        when(memberLookup.info()).thenReturn(infos);
+        when(memberManager.getLookup()).thenReturn(memberLookup);
+        when(servletContext.getContextPath()).thenReturn("/nacos");
+        ReflectionTestUtils.setField(healthController, "memberManager", memberManager);
         mockmvc = MockMvcBuilders.standaloneSetup(healthController).build();
     }
     
     @Test
     public void testGetHealth() throws Exception {
         
-        Mockito.when(dataSourceService.getHealth()).thenReturn("UP");
+        when(dataSourceService.getHealth()).thenReturn("UP");
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HEALTH_CONTROLLER_PATH);
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         Assert.assertEquals("UP", actualValue);
