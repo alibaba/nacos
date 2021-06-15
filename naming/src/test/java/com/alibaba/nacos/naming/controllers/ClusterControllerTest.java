@@ -39,6 +39,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.hamcrest.CoreMatchers.isA;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -62,6 +65,11 @@ public class ClusterControllerTest extends BaseTest {
         mockmvc = MockMvcBuilders.standaloneSetup(clusterController).build();
         ReflectionTestUtils.setField(clusterController, "upgradeJudgement", upgradeJudgement);
         ReflectionTestUtils.setField(clusterController, "clusterOperatorV1", clusterOperatorV1);
+        try {
+            doCallRealMethod().when(serviceManager).checkServiceIsNull(eq(null), anyString(), anyString());
+        } catch (NacosException e) {
+            e.printStackTrace();
+        }
     }
     
     @Test
@@ -87,7 +95,7 @@ public class ClusterControllerTest extends BaseTest {
     @Test
     public void testUpdateNoService() throws Exception {
         expectedException.expectCause(isA(NacosException.class));
-        expectedException.expectMessage("service not found:test-service-not-found");
+        expectedException.expectMessage("service not found, namespace: public, serviceName: test-service-not-found");
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
                 .param("serviceName", "test-service-not-found").param("healthChecker", "{\"type\":\"HTTP\"}")
