@@ -79,11 +79,11 @@ public class HistoryController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("dataId") String dataId, // for @Secured
-            @RequestParam("group") String group, // for @Secured
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant, // for @Secured
+    public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("nid") Long nid) {
-        return persistService.detailConfigHistory(nid);
+        return persistService.detailConfigHistory(nid, dataId, group, tenant);
     }
     
     /**
@@ -95,11 +95,11 @@ public class HistoryController {
      */
     @GetMapping(value = "/previous")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId, // for @Secured
-            @RequestParam("group") String group, // for @Secured
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant, // for @Secured,
+    public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("id") Long id) {
-        return persistService.detailPreviousConfigHistory(id);
+        return persistService.detailPreviousConfigHistory(id, dataId, group, tenant);
     }
     
 }

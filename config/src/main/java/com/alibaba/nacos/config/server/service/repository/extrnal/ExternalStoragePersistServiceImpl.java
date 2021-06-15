@@ -2414,11 +2414,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public ConfigHistoryInfo detailConfigHistory(Long nid) {
-        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = ?";
+    public ConfigHistoryInfo detailConfigHistory(Long nid, String dataId, String group, String tenant) {
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = ? AND data_id=? AND group_id=? AND tenant_id=?";
         try {
             ConfigHistoryInfo historyInfo = jt
-                    .queryForObject(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
+                    .queryForObject(sqlFetchRows, new Object[] {nid, dataId, group, tenant}, HISTORY_DETAIL_ROW_MAPPER);
             return historyInfo;
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[detail-config-history] error, nid:{}", new Object[] {nid}, e);
@@ -2427,11 +2427,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
-        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (select max(nid) from his_config_info where id = ?) ";
+    public ConfigHistoryInfo detailPreviousConfigHistory(Long id, String dataId, String group, String tenant) {
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (select max(nid) from his_config_info where id = ? AND data_id=? AND group_id=? AND tenant_id=?) ";
         try {
             ConfigHistoryInfo historyInfo = jt
-                    .queryForObject(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
+                    .queryForObject(sqlFetchRows, new Object[] {id, dataId, group, tenant}, HISTORY_DETAIL_ROW_MAPPER);
             return historyInfo;
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[detail-previous-config-history] error, id:{}", new Object[] {id}, e);

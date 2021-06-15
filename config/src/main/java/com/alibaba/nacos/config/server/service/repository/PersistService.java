@@ -1170,17 +1170,23 @@ public interface PersistService {
      * Get history config detail.
      *
      * @param nid nid
+     * @param dataId dataId
+     * @param group group
+     * @param tenant tenant
      * @return {@link ConfigHistoryInfo}
      */
-    ConfigHistoryInfo detailConfigHistory(Long nid);
+    ConfigHistoryInfo detailConfigHistory(Long nid, String dataId, String group, String tenant);
     
     /**
      * Get previous config detail.
      *
      * @param id id
+     * @param dataId dataId
+     * @param group group
+     * @param tenant tenant
      * @return {@link ConfigHistoryInfo}
      */
-    ConfigHistoryInfo detailPreviousConfigHistory(Long id);
+    ConfigHistoryInfo detailPreviousConfigHistory(Long id, String dataId, String group, String tenant);
     
     
     /**
