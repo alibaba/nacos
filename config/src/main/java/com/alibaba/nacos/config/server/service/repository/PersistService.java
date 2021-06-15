@@ -574,7 +574,7 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      * @return {@link Page} with {@link ConfigInfo} generation
      */
-    Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId, final String group,
+    Page<ConfigInfo> findConfigInfoExcludeContent4Page(final int pageNo, final int pageSize, final String dataId, final String group,
             final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
@@ -869,7 +869,7 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      * @return {@link Page} with {@link ConfigInfo} generation
      */
-    Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
+    Page<ConfigInfo> findConfigInfoExcludeContentLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**

@@ -971,20 +971,20 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId,
+    public Page<ConfigInfo> findConfigInfoExcludeContent4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         String sqlCount = "select count(*) from config_info";
-        String sql = "select ID,data_id,group_id,tenant_id,app_name,content,type from config_info";
+        String sql = "select ID,data_id,group_id,tenant_id,app_name,type from config_info";
         StringBuilder where = new StringBuilder(" where ");
         List<String> paramList = new ArrayList<String>();
         paramList.add(tenantTmp);
         if (StringUtils.isNotBlank(configTags)) {
             sqlCount = "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id";
-            sql = "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
+            sql = "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name from config_info  a left join "
                     + "config_tags_relation b on a.id=b.id";
             
             where.append(" a.tenant_id=? ");
@@ -1669,7 +1669,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
+    public Page<ConfigInfo> findConfigInfoExcludeContentLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
@@ -1677,13 +1677,13 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         String sqlCountRows = "select count(*) from config_info";
-        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info";
+        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name from config_info";
         StringBuilder where = new StringBuilder(" where ");
         List<String> params = new ArrayList<String>();
         params.add(generateLikeArgument(tenantTmp));
         if (StringUtils.isNotBlank(configTags)) {
             sqlCountRows = "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id ";
-            sqlFetchRows = "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info a left join config_tags_relation b on a.id=b.id ";
+            sqlFetchRows = "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name from config_info a left join config_tags_relation b on a.id=b.id ";
             
             where.append(" a.tenant_id like ? ");
             if (!StringUtils.isBlank(dataId)) {
