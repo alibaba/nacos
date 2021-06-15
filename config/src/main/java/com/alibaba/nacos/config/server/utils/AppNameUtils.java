@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.utils;
+package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 
