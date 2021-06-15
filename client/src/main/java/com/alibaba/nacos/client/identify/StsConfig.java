@@ -30,22 +30,23 @@ public class StsConfig {
     private String ramRoleName;
     
     /**
-     * STS 临时凭证有效期剩余多少时开始刷新（允许本地时间比 STS 服务时间最多慢多久）.
+     * The STS temporary certificate will be refreshed when the validity period of
+     * the temporary certificate is left (allow the local time to be at most slower than the STS service time).
      */
     private int timeToRefreshInMillisecond = 3 * 60 * 1000;
     
     /**
-     * 获取 STS 临时凭证的元数据接口（包含角色名称）.
+     * Metadata interface for obtaining STS temporary credentials (including role name).
      */
     private String securityCredentialsUrl;
     
     /**
-     * 设定 STS 临时凭证，不再通过元数据接口获取.
+     * Set the STS temporary certificate and no longer obtain it through the metadata interface.
      */
     private String securityCredentials;
     
     /**
-     * 是否缓存.
+     * Whether to cache.
      */
     private boolean cacheSecurityCredentials = true;
     
@@ -55,27 +56,27 @@ public class StsConfig {
     }
     
     private StsConfig() {
-        String ramRoleName = System.getProperty("ram.role.name");
+        String ramRoleName = System.getProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY);
         if (!StringUtils.isBlank(ramRoleName)) {
             setRamRoleName(ramRoleName);
         }
         
-        String timeToRefreshInMillisecond = System.getProperty("time.to.refresh.in.millisecond");
+        String timeToRefreshInMillisecond = System.getProperty(IdentifyConstants.REFRESH_TIME_PROPERTY);
         if (!StringUtils.isBlank(timeToRefreshInMillisecond)) {
             setTimeToRefreshInMillisecond(Integer.parseInt(timeToRefreshInMillisecond));
         }
         
-        String securityCredentials = System.getProperty("security.credentials");
+        String securityCredentials = System.getProperty(IdentifyConstants.SECURITY_PROPERTY);
         if (!StringUtils.isBlank(securityCredentials)) {
             setSecurityCredentials(securityCredentials);
         }
         
-        String securityCredentialsUrl = System.getProperty("security.credentials.url");
+        String securityCredentialsUrl = System.getProperty(IdentifyConstants.SECURITY_URL_PROPERTY);
         if (!StringUtils.isBlank(securityCredentialsUrl)) {
             setSecurityCredentialsUrl(securityCredentialsUrl);
         }
         
-        String cacheSecurityCredentials = System.getProperty("cache.security.credentials");
+        String cacheSecurityCredentials = System.getProperty(IdentifyConstants.SECURITY_CACHE_PROPERTY);
         if (!StringUtils.isBlank(cacheSecurityCredentials)) {
             setCacheSecurityCredentials(Boolean.parseBoolean(cacheSecurityCredentials));
         }

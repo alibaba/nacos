@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -47,6 +48,8 @@ import java.util.List;
 public class ClientBeatCheckTask implements BeatCheckTask {
     
     private Service service;
+    
+    public static final String EPHEMERAL = "true";
     
     public ClientBeatCheckTask(Service service) {
         this.service = service;
@@ -138,12 +141,16 @@ public class ClientBeatCheckTask implements BeatCheckTask {
         
         try {
             NamingProxy.Request request = NamingProxy.Request.newRequest();
-            request.appendParam("ip", instance.getIp()).appendParam("port", String.valueOf(instance.getPort()))
-                    .appendParam("ephemeral", "true").appendParam("clusterName", instance.getClusterName())
-                    .appendParam("serviceName", service.getName()).appendParam("namespaceId", service.getNamespaceId());
+            request.appendParam(FieldsConstants.IP, instance.getIp())
+                    .appendParam(FieldsConstants.PORT, String.valueOf(instance.getPort()))
+                    .appendParam(FieldsConstants.EPHEMERAL, EPHEMERAL)
+                    .appendParam(FieldsConstants.CLUSTER_NAME, instance.getClusterName())
+                    .appendParam(FieldsConstants.SERVICE_NAME, service.getName())
+                    .appendParam(FieldsConstants.NAME_SPACE_ID, service.getNamespaceId());
             
-            String url = "http://" + InternetAddressUtil.localHostIP() + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort() + EnvUtil
-                    .getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
+            String url = "http://" + InternetAddressUtil.localHostIP() + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil
+                    .getPort() + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                    + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "?" + request.toUrl();
             
             // delete instance asynchronously:
             HttpClient.asyncHttpDelete(url, null, null, new Callback<String>() {

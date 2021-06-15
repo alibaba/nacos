@@ -30,12 +30,19 @@ import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
+import com.alibaba.nacos.api.remote.DefaultRequestFuture;
+import com.alibaba.nacos.api.remote.RequestCallBack;
+import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import org.junit.Assert;
@@ -49,6 +56,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -494,5 +504,96 @@ public class NamingGrpcClientProxyTest {
         Assert.assertTrue(client.isEnable());
         
         verify(rpc, times(1)).isRunning();
+    }
+    
+    @Test
+    public void testServerListChanged() throws Exception {
+        // given
+        String namespaceId = "ns1";
+        SecurityProxy proxy = mock(SecurityProxy.class);
+        ServerListFactory factory = mock(ServerListFactory.class);
+        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
+        Properties prop = new Properties();
+    
+        String originServer = "www.google.com";
+        when(factory.getServerList()).thenReturn(Stream.of(originServer, "anotherServer").collect(Collectors.toList()));
+        // inject rpcClient;
+        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
+        when(factory.genNextServer()).thenReturn(originServer);
+    
+        RpcClient rpc = new RpcClient("testServerListHasChanged", factory) {
+            @Override
+            public ConnectionType getConnectionType() {
+                return ConnectionType.GRPC;
+            }
+        
+            @Override
+            public int rpcPortOffset() {
+                return 0;
+            }
+        
+            @Override
+            public Connection connectToServer(ServerInfo serverInfo) throws Exception {
+                return new Connection(serverInfo) {
+                
+                    @Override
+                    public Response request(Request request, long timeoutMills) throws NacosException {
+                        Response response = new Response() {
+                        };
+                        response.setRequestId(request.getRequestId());
+                        return response;
+                    }
+                
+                    @Override
+                    public RequestFuture requestFuture(Request request) throws NacosException {
+                        return new DefaultRequestFuture("test", request.getRequestId());
+                    }
+                
+                    @Override
+                    public void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException {
+                    
+                    }
+                
+                    @Override
+                    public void close() {
+                    }
+                };
+            }
+        };
+        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
+        rpcClient.setAccessible(true);
+        rpcClient.set(client, rpc);
+    
+        rpc.serverListFactory(factory);
+        rpc.registerServerRequestHandler(new NamingPushRequestHandler(holder));
+        Field listenerField = NamingGrpcClientProxy.class.getDeclaredField("namingGrpcConnectionEventListener");
+        listenerField.setAccessible(true);
+        NamingGrpcConnectionEventListener listener = (NamingGrpcConnectionEventListener) listenerField.get(client);
+        rpc.registerConnectionListener(listener);
+        rpc.start();
+        int retry = 10;
+        while (!rpc.isRunning()) {
+            TimeUnit.SECONDS.sleep(1);
+            if (--retry < 0) {
+                Assert.fail("rpc is not running");
+            }
+        }
+    
+        Assert.assertEquals(originServer, rpc.getCurrentServer().getServerIp());
+    
+        String newServer = "www.aliyun.com";
+        when(factory.genNextServer()).thenReturn(newServer);
+        when(factory.getServerList()).thenReturn(Stream.of(newServer, "anotherServer").collect(Collectors.toList()));
+        NotifyCenter.publishEvent(new ServerListChangedEvent());
+    
+        retry = 10;
+        while (originServer.equals(rpc.getCurrentServer().getServerIp())) {
+            TimeUnit.SECONDS.sleep(1);
+            if (--retry < 0) {
+                Assert.fail("failed to auth switch server");
+            }
+        }
+
+        Assert.assertEquals(newServer, rpc.getCurrentServer().getServerIp());
     }
 }

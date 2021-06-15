@@ -38,6 +38,8 @@ import java.util.List;
  */
 public class FileConfigMemberLookup extends AbstractMemberLookup {
     
+    private static final String DEFAULT_SEARCH_SEQ = "cluster.conf";
+    
     private FileWatcher watcher = new FileWatcher() {
         @Override
         public void onChange(FileChangeEvent event) {
@@ -46,7 +48,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
         
         @Override
         public boolean interest(String context) {
-            return StringUtils.contains(context, "cluster.conf");
+            return StringUtils.contains(context, DEFAULT_SEARCH_SEQ);
         }
     };
     

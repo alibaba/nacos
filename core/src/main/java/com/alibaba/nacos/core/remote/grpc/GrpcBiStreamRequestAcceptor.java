@@ -92,7 +92,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                 clientIp = payload.getMetadata().getClientIp();
                 traceDetailIfNecessary(payload);
                 
-                Object parseObj = null;
+                Object parseObj;
                 try {
                     parseObj = GrpcUtils.parse(payload);
                 } catch (Throwable throwable) {
@@ -137,10 +137,9 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                                         .warn("[{}]Send connect reset request error,error={}", connectionId, e);
                             }
                         }
-                        return;
                     }
                     
-                } else if (parseObj != null && parseObj instanceof Response) {
+                } else if (parseObj instanceof Response) {
                     Response response = (Response) parseObj;
                     if (connectionManager.traced(clientIp)) {
                         Loggers.REMOTE_DIGEST
@@ -152,7 +151,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     Loggers.REMOTE_DIGEST
                             .warn("[{}]Grpc request bi stream,unknown payload receive ,parseObj={}", connectionId,
                                     parseObj);
-                    return;
                 }
                 
             }
@@ -167,7 +165,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) responseObserver);
                     if (serverCallStreamObserver.isCancelled()) {
                         //client close the stream.
-                        return;
                     } else {
                         try {
                             serverCallStreamObserver.onCompleted();
@@ -188,7 +185,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) responseObserver);
                     if (serverCallStreamObserver.isCancelled()) {
                         //client close the stream.
-                        return;
                     } else {
                         try {
                             serverCallStreamObserver.onCompleted();

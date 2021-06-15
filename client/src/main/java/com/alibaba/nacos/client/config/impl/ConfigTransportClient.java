@@ -53,6 +53,14 @@ public abstract class ConfigTransportClient {
     
     private static final Logger LOGGER = LogUtils.logger(ConfigTransportClient.class);
     
+    private static final String SECURITY_TOKEN_HEADER =  "Spas-SecurityToken";
+    
+    private static final String ACCESS_KEY_HEADER = "Spas-AccessKey";
+    
+    private static final String CONFIG_INFO_HEADER = "exConfigInfo";
+    
+    private static final String DEFAULT_CONFIG_INFO = "true";
+    
     String encode;
     
     String tenant;
@@ -73,6 +81,10 @@ public abstract class ConfigTransportClient {
     
     private volatile StsCredential stsCredential;
     
+    public void shutdown() {
+    
+    }
+    
     public ConfigTransportClient(Properties properties, ServerListManager serverListManager) {
         
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
@@ -86,7 +98,7 @@ public abstract class ConfigTransportClient {
         this.serverListManager = serverListManager;
         this.securityProxy = new SecurityProxy(properties,
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
-        
+        initAkSk(properties);
     }
     
     /**
@@ -104,10 +116,11 @@ public abstract class ConfigTransportClient {
             StsCredential stsCredential = getStsCredential();
             accessKey = stsCredential.accessKeyId;
             secretKey = stsCredential.accessKeySecret;
-            spasHeaders.put("Spas-SecurityToken", stsCredential.securityToken);
+            spasHeaders.put(SECURITY_TOKEN_HEADER, stsCredential.securityToken);
         }
-        if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotEmpty(secretKey)) {
-            spasHeaders.put("Spas-AccessKey", accessKey);
+        
+        if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
+            spasHeaders.put(ACCESS_KEY_HEADER, accessKey);
         }
         return spasHeaders;
     }
@@ -140,7 +153,7 @@ public abstract class ConfigTransportClient {
         headers.put(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
         headers.put(Constants.CLIENT_REQUEST_TS_HEADER, ts);
         headers.put(Constants.CLIENT_REQUEST_TOKEN_HEADER, token);
-        headers.put("exConfigInfo", "true");
+        headers.put(CONFIG_INFO_HEADER, DEFAULT_CONFIG_INFO);
         headers.put(Constants.CHARSET_KEY, encode);
         return headers;
     }
@@ -160,9 +173,8 @@ public abstract class ConfigTransportClient {
             }
         }
         String stsResponse = getStsResponse();
-        StsCredential stsCredentialTmp = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
+        stsCredential = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
         });
-        stsCredential = stsCredentialTmp;
         LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
                 stsCredential.getCode(), stsCredential.getAccessKeyId(), stsCredential.getLastUpdated(),
                 stsCredential.getExpiration());
@@ -304,22 +316,22 @@ public abstract class ConfigTransportClient {
      * @return content.
      * @throws NacosException throw where query fail .
      */
-    public abstract ConfigResponse queryConfig(String dataId, String group, String tenat, long readTimeous, boolean notify)
-            throws NacosException;
+    public abstract ConfigResponse queryConfig(String dataId, String group, String tenat, long readTimeous,
+            boolean notify) throws NacosException;
     
     /**
      * publish config.
      *
-     * @param dataId  dataId.
-     * @param group   group.
-     * @param tenant  tenant.
-     * @param appName appName.
-     * @param tag     tag.
-     * @param betaIps betaIps.
-     * @param content content.
+     * @param dataId           dataId.
+     * @param group            group.
+     * @param tenant           tenant.
+     * @param appName          appName.
+     * @param tag              tag.
+     * @param betaIps          betaIps.
+     * @param content          content.
      * @param encryptedDataKey encryptedDataKey
-     * @param casMd5  casMd5.
-     * @param type    type.
+     * @param casMd5           casMd5.
+     * @param type             type.
      * @return success or not.
      * @throws NacosException throw where publish fail.
      */

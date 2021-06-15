@@ -28,6 +28,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -48,11 +49,13 @@ public class HttpClient {
     
     private static final int CON_TIME_OUT_MILLIS = 5000;
     
-    private static final NacosRestTemplate SYNC_NACOS_REST_TEMPLATE = HttpClientManager.getNacosRestTemplate();
-    
     private static final NacosRestTemplate APACHE_SYNC_NACOS_REST_TEMPLATE = HttpClientManager.getApacheRestTemplate();
     
     private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE = HttpClientManager.getAsyncRestTemplate();
+    
+    private static final String ENCODING = "UTF-8";
+    
+    private static final String NOFIX = "1";
     
     /**
      * Request http delete method.
@@ -109,8 +112,8 @@ public class HttpClient {
         HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)
                 .setReadTimeOutMillis(readTimeout).build();
         Query query = Query.newInstance().initParams(paramValues);
-        query.addParam("encoding", "UTF-8");
-        query.addParam("nofix", "1");
+        query.addParam(FieldsConstants.ENCODING, ENCODING);
+        query.addParam(FieldsConstants.NOFIX, NOFIX);
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE
                     .exchange(url, httpClientConfig, header, query, body, method, String.class);
@@ -170,10 +173,10 @@ public class HttpClient {
      */
     public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues,
             Callback<String> callback, String method) throws Exception {
-        
+    
         Query query = Query.newInstance().initParams(paramValues);
-        query.addParam("encoding", "UTF-8");
-        query.addParam("nofix", "1");
+        query.addParam(FieldsConstants.ENCODING, ENCODING);
+        query.addParam(FieldsConstants.NOFIX, NOFIX);
         
         Header header = Header.newInstance();
         if (CollectionUtils.isNotEmpty(headers)) {
@@ -270,8 +273,8 @@ public class HttpClient {
             }
             header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
             AuthHeaderUtil.addIdentityToHeader(header);
-            HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000).setReadTimeOutMillis(5000)
-                    .setConnectionRequestTimeout(5000).setMaxRedirects(5).build();
+            HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000)
+                    .setReadTimeOutMillis(5000).setConnectionRequestTimeout(5000).setMaxRedirects(5).build();
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postForm(url, httpClientConfig, header, paramValues, String.class);
         } catch (Throwable e) {
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();

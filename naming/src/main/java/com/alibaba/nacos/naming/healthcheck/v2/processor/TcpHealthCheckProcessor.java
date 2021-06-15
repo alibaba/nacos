@@ -101,7 +101,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
         }
         // TODO handle marked(white list) logic like v1.x.
         if (!instance.tryStartCheck()) {
-            SRV_LOG.warn("tcp check started before last one finished, service: {} : {} : {}:{}",
+            SRV_LOG.warn("[HEALTH-CHECK-V2] tcp check started before last one finished, service: {} : {} : {}:{}",
                     service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
             healthCheckCommon
                     .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getTcpHealthParams());
@@ -151,7 +151,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                     GlobalExecutor.executeTcpSuperSense(new PostProcessor(key));
                 }
             } catch (Throwable e) {
-                SRV_LOG.error("[HEALTH-CHECK] error while processing NIO task", e);
+                SRV_LOG.error("[HEALTH-CHECK-V2] error while processing NIO task", e);
             }
         }
     }

@@ -97,7 +97,7 @@ public class GrpcConnection extends Connection {
     
     @Override
     public Response request(Request request, long timeoutMills) throws NacosException {
-        DefaultRequestFuture pushFuture = (DefaultRequestFuture) sendRequestInner(request, null);
+        DefaultRequestFuture pushFuture = sendRequestInner(request, null);
         try {
             return pushFuture.get(timeoutMills);
         } catch (Exception e) {

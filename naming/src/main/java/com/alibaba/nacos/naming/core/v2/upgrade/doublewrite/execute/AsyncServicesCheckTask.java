@@ -44,6 +44,8 @@ public class AsyncServicesCheckTask extends AbstractExecuteTask {
     
     private final UpgradeJudgement upgradeJudgement;
     
+    private static final int INITIALCAPACITY = 64;
+    
     public AsyncServicesCheckTask(DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine,
             UpgradeJudgement upgradeJudgement) {
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
@@ -58,14 +60,14 @@ public class AsyncServicesCheckTask extends AbstractExecuteTask {
         try {
             ServiceManager serviceManager = ApplicationUtils.getBean(ServiceManager.class);
             ServiceStorage serviceStorage = ApplicationUtils.getBean(ServiceStorage.class);
-            Map<String, Service> v1Services = new HashMap<>(64);
+            Map<String, Service> v1Services = new HashMap<>(INITIALCAPACITY);
             for (String each : serviceManager.getAllNamespaces()) {
                 for (Map.Entry<String, Service> entry : serviceManager.chooseServiceMap(each).entrySet()) {
                     v1Services.put(buildServiceKey(each, entry.getKey()), entry.getValue());
                     checkService(each, entry.getKey(), entry.getValue(), serviceStorage);
                 }
             }
-            Map<String, com.alibaba.nacos.naming.core.v2.pojo.Service> v2Services = new HashMap<>(64);
+            Map<String, com.alibaba.nacos.naming.core.v2.pojo.Service> v2Services = new HashMap<>(INITIALCAPACITY);
             for (String each : com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().getAllNamespaces()) {
                 for (com.alibaba.nacos.naming.core.v2.pojo.Service serviceV2
                         : com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().getSingletons(each)) {

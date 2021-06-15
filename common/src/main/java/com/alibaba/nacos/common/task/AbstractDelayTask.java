@@ -35,6 +35,11 @@ public abstract class AbstractDelayTask implements NacosTask {
     private long lastProcessTime;
     
     /**
+     * The default time interval, in milliseconds, between tasks.
+     */
+    protected static final long INTERVAL = 1000L;
+    
+    /**
      * merge task.
      *
      * @param task task

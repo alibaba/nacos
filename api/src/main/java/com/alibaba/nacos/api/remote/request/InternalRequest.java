@@ -25,8 +25,10 @@ package com.alibaba.nacos.api.remote.request;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class InternalRequest extends Request {
     
+    private static final String MODULE = "internal";
+    
     @Override
     public String getModule() {
-        return "internal";
+        return MODULE;
     }
 }

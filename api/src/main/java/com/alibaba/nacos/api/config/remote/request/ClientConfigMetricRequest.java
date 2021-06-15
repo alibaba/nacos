@@ -31,11 +31,13 @@ import java.util.Objects;
  */
 public class ClientConfigMetricRequest extends ServerRequest {
     
+    private static final String MODULE = "config";
+    
     private List<MetricsKey> metricsKeys = new ArrayList<MetricsKey>();
     
     @Override
     public String getModule() {
-        return "config";
+        return MODULE;
     }
     
     public List<MetricsKey> getMetricsKeys() {

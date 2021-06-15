@@ -33,6 +33,7 @@ import com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
@@ -67,7 +68,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         this.clientManager = clientManager;
         this.distroProtocol = distroProtocol;
         this.upgradeJudgement = upgradeJudgement;
-        NotifyCenter.registerSubscriber(this);
+        NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
     }
     
     @Override

@@ -64,7 +64,7 @@ public class DoubleWriteInstanceChangeToV2Task extends AbstractExecuteTask {
             }
             ServiceChangeV1Task retryTask = new ServiceChangeV1Task(namespace, serviceName, instance.isEphemeral(),
                     DoubleWriteContent.INSTANCE);
-            retryTask.setTaskInterval(3000L);
+            retryTask.setTaskInterval(INTERVAL);
             String taskKey = ServiceChangeV1Task.getKey(namespace, serviceName, instance.isEphemeral());
             ApplicationUtils.getBean(DoubleWriteDelayTaskEngine.class).addTask(taskKey, retryTask);
         }

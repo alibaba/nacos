@@ -64,4 +64,10 @@ public class UtilAndComs {
     
     public static final String HTTPS = "https://";
     
+    public static final String ENV_CONFIGS = "00-00---000-ENV_CONFIGS-000---00-00";
+    
+    public static final String VIP_CLIENT_FILE = "vipclient.properties";
+    
+    public static final String ALL_HOSTS = "00-00---000-ALL_HOSTS-000---00-00";
+    
 }
