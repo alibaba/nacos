@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class AddressServerMemberLookup extends AbstractMemberLookup {
     
-    private final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() { };
+    private final GenericType<String> genericType = new GenericType<String>() { };
     
     public String domainName;
     
