@@ -62,7 +62,7 @@ public final class MetricsMonitor {
     }
     
     public static void raftReadIndexFailed() {
-        RAFT_READ_INDEX_FAILED.record(1D);
+        RAFT_READ_INDEX_FAILED.record(1);
     }
     
     public static void raftReadFromLeader() {
