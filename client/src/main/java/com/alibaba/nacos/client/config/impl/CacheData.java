@@ -38,6 +38,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Listener Management.
@@ -59,47 +60,6 @@ public class CacheData {
             new SynchronousQueue<>(), internalNotifierFactory);
     
     private static final Logger LOGGER = LogUtils.logger(CacheData.class);
-    
-    private final String name;
-    
-    private final ConfigFilterChainManager configFilterChainManager;
-    
-    public final String dataId;
-    
-    public final String group;
-    
-    public final String tenant;
-    
-    private final CopyOnWriteArrayList<ManagerListenerWrap> listeners;
-    
-    private volatile String md5;
-    
-    /**
-     * whether use local config.
-     */
-    private volatile boolean isUseLocalConfig = false;
-    
-    /**
-     * last modify time.
-     */
-    private volatile long localConfigLastModified;
-    
-    private volatile String content;
-    
-    private volatile String encryptedDataKey;
-    
-    private volatile long lastModifiedTs;
-    
-    private int taskId;
-    
-    private volatile boolean isInitializing = true;
-    
-    /**
-     * if is cache data md5 sync with the server.
-     */
-    private volatile boolean isSyncWithServer = false;
-    
-    private String type;
     
     public boolean isInitializing() {
         return isInitializing;
@@ -131,7 +91,7 @@ public class CacheData {
      *
      * @return property value of lastModifiedTs
      */
-    public long getLastModifiedTs() {
+    public AtomicLong getLastModifiedTs() {
         return lastModifiedTs;
     }
     
@@ -141,7 +101,7 @@ public class CacheData {
      * @param lastModifiedTs value to be assigned to property lastModifiedTs
      */
     public void setLastModifiedTs(long lastModifiedTs) {
-        this.lastModifiedTs = lastModifiedTs;
+        this.lastModifiedTs.set(lastModifiedTs);
     }
     
     public String getType() {
@@ -414,6 +374,52 @@ public class CacheData {
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
         this.md5 = getMd5String(content);
     }
+    
+    // ==================
+    
+    private final String name;
+    
+    private final ConfigFilterChainManager configFilterChainManager;
+    
+    public final String dataId;
+    
+    public final String group;
+    
+    public final String tenant;
+    
+    private final CopyOnWriteArrayList<ManagerListenerWrap> listeners;
+    
+    private volatile String md5;
+    
+    /**
+     * whether use local config.
+     */
+    private volatile boolean isUseLocalConfig = false;
+    
+    /**
+     * last modify time.
+     */
+    private volatile long localConfigLastModified;
+    
+    private volatile String content;
+    
+    private volatile String encryptedDataKey;
+    
+    /**
+     * local cache change timestamp,for concurrent control.
+     */
+    private volatile AtomicLong lastModifiedTs = new AtomicLong(0);
+    
+    private int taskId;
+    
+    private volatile boolean isInitializing = true;
+    
+    /**
+     * if is cache data md5 sync with the server.
+     */
+    private volatile boolean isSyncWithServer = false;
+    
+    private String type;
     
     public String getEncryptedDataKey() {
         return encryptedDataKey;
