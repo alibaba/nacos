@@ -152,6 +152,7 @@ public class MemberUtilTest {
         final Member search3 = memberManager.find(remote.getAddress());
         Assert.assertEquals(0, search3.getFailAccessCnt());
         Assert.assertEquals(NodeState.UP, search3.getState());
+        memberManager.memberLeave(Collections.singletonList(remote));
     }
     
     @Test
@@ -170,6 +171,7 @@ public class MemberUtilTest {
         final Member search2 = memberManager.find(remote.getAddress());
         Assert.assertEquals(0, search2.getFailAccessCnt());
         Assert.assertEquals(NodeState.UP, search2.getState());
+        memberManager.memberLeave(Collections.singletonList(remote));
     }
     
     @Test
@@ -208,6 +210,7 @@ public class MemberUtilTest {
                 .findFirst().orElseThrow(() -> new AssertionError("member is null"));
         Assert.assertEquals(0, member2.getFailAccessCnt());
         Assert.assertEquals(NodeState.UP, member2.getState());
+        memberManager.memberLeave(Collections.singletonList(remote));
     }
     
     @Test
