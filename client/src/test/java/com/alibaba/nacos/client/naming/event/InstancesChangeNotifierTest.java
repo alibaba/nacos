@@ -59,7 +59,7 @@ public class InstancesChangeNotifierTest {
         instancesChangeNotifier.deregisterListener(group, name, clusters, listener);
         
         List<ServiceInfo> subscribeServices2 = instancesChangeNotifier.getSubscribeServices();
-        Assert.assertEquals(1, subscribeServices2.size());
+        Assert.assertEquals(0, subscribeServices2.size());
     }
     
     @Test

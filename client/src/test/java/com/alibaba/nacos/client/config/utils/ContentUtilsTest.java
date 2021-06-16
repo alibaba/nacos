@@ -41,7 +41,7 @@ public class ContentUtilsTest {
     @Test
     public void testVerifyIncrementPubContentFail1() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("发布/删除内容不能为空");
+        exceptionRule.expectMessage("publish/delete content can not be null");
         String content = null;
         ContentUtils.verifyIncrementPubContent(content);
     }
@@ -49,7 +49,7 @@ public class ContentUtilsTest {
     @Test
     public void testVerifyIncrementPubContentFail2() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("发布/删除内容不能包含回车和换行");
+        exceptionRule.expectMessage("publish/delete content can not contain return and linefeed");
         String content = "aa\rbbb";
         ContentUtils.verifyIncrementPubContent(content);
     }
@@ -57,7 +57,7 @@ public class ContentUtilsTest {
     @Test
     public void testVerifyIncrementPubContentFail3() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("发布/删除内容不能为空");
+        exceptionRule.expectMessage("publish/delete content can not be null");
         String content = "";
         ContentUtils.verifyIncrementPubContent(content);
     }
@@ -65,7 +65,7 @@ public class ContentUtilsTest {
     @Test
     public void testVerifyIncrementPubContentFail4() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("发布/删除内容不能包含(char)2");
+        exceptionRule.expectMessage("publish/delete content can not contain(char)2");
         String content = "aa" + WORD_SEPARATOR + "bbb";
         ContentUtils.verifyIncrementPubContent(content);
     }
