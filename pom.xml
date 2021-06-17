@@ -413,8 +413,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
-                    <forkCount>0</forkCount>
-                    <reuseForks>true</reuseForks>
                     <testFailureIgnore>true</testFailureIgnore>
                 </configuration>
             </plugin>
