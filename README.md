@@ -175,5 +175,6 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![天阙](https://img.alicdn.com/tfs/TB1rNq4EwHqK1RjSZFgXXa7JXXa-200-200.jpg)
 ![联合永道](https://img.alicdn.com/tfs/TB1CRAxDxYaK1RjSZFnXXa80pXa-190-190.jpg)
 ![明源云](https://img.alicdn.com/tfs/TB1.q14ErrpK1RjSZTEXXcWAVXa-219-219.jpg)
+![三诺生物](http://www.sinocare.com/public/static/images/logored6000321.png)
 
 
