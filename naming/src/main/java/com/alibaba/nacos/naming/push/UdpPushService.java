@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.push;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -89,9 +90,19 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
     
     private static ConcurrentMap<String, Future> futureMap = new ConcurrentHashMap<>();
     
+    private static String getPushServiceUdpPort() {
+        return System.getenv(PropertyKeyConst.PUSH_SERVICE_UDP_PORT);
+    }
+    
     static {
         try {
-            udpSocket = new DatagramSocket();
+            String udpPort = getPushServiceUdpPort();
+            if (com.alibaba.nacos.common.utils.StringUtils.isEmpty(udpPort)) {
+                udpSocket = new DatagramSocket();
+            } else {
+                InetSocketAddress inetSocketAddress = new InetSocketAddress(Integer.parseInt(udpPort));
+                udpSocket = new DatagramSocket(inetSocketAddress);
+            }
             
             Receiver receiver = new Receiver();
             
