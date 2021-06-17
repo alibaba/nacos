@@ -31,13 +31,13 @@ public class PropertiesChangeParserTest {
     
     @Test
     public void testType() {
-        Assert.assertEquals(true, parser.isResponsibleFor(type));
+        Assert.assertTrue(parser.isResponsibleFor(type));
     }
     
     @Test
     public void testAddKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("", "app.name = nacos", type);
-        Assert.assertEquals(null, map.get("app.name").getOldValue());
+        Assert.assertNull(map.get("app.name").getOldValue());
         Assert.assertEquals("nacos", map.get("app.name").getNewValue());
     }
     
@@ -45,7 +45,7 @@ public class PropertiesChangeParserTest {
     public void testRemoveKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("app.name = nacos", "", type);
         Assert.assertEquals("nacos", map.get("app.name").getOldValue());
-        Assert.assertEquals(null, map.get("app.name").getNewValue());
+        Assert.assertNull(map.get("app.name").getNewValue());
     }
     
     @Test

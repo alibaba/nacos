@@ -88,7 +88,7 @@ public class ConfigLongPollReturnChanges_CITCase {
             public void receiveConfigChange(ConfigChangeEvent event) {
                 try {
                     ConfigChangeItem cci = event.getChangeItem("content");
-                    Assert.assertEquals(null, cci.getOldValue());
+                    Assert.assertNull(cci.getOldValue());
                     Assert.assertEquals(content, cci.getNewValue());
                     Assert.assertEquals(PropertyChangeType.ADDED, cci.getType());
                     System.out.println(cci);
@@ -155,7 +155,7 @@ public class ConfigLongPollReturnChanges_CITCase {
                 try {
                     ConfigChangeItem cci = event.getChangeItem("content");
                     Assert.assertEquals(oldData, cci.getOldValue());
-                    Assert.assertEquals(null, cci.getNewValue());
+                    Assert.assertNull(cci.getNewValue());
                     Assert.assertEquals(PropertyChangeType.DELETED, cci.getType());
                     System.out.println(cci);
                 } finally {
