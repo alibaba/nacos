@@ -25,10 +25,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - uses: actions/checkout@v2
-      - name: Set up JDK 8
+      - name: Set up JDK
         uses: actions/setup-java@v2
         with:
           java-version: ${{ matrix.java }}
+          distribution: 'adopt'
+          architecture: x64
       - name: Check with Maven
         run: mvn -B clean package apache-rat:check findbugs:findbugs -Dmaven.test.skip=true
       - name: Build with Maven
