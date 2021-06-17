@@ -178,7 +178,7 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
     }
     
     void checkIsStart() {
-        if (!initialized || shutdown) {
+        if (!initialized) {
             throw new IllegalStateException("Publisher does not start");
         }
     }

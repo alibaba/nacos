@@ -1,7 +1,7 @@
 # This workflow will build a Java project with Maven
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Continuous Integration
+name: Integration Test
 
 on:
   push:
@@ -31,9 +31,12 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'adopt'
           architecture: x64
-      - name: Check with Maven
-        run: mvn -B clean package apache-rat:check findbugs:findbugs -Dmaven.test.skip=true
-      - name: Build with Maven
-        run: mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
-      - name: Test With Maven
-        run: mvn -Prelease-nacos clean test -DforkCount=0
+      - name: Test Config
+        run: mvn clean package -Pcit-test
+      - name: Clean Env
+        run: mvn clean -Premove-test-data
+      - name: Test Naming
+        run: mvn clean package -Pnit-test
+      - name: Clean Env
+        run: mvn clean -Premove-test-data
+
