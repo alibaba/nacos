@@ -54,7 +54,7 @@ public class CacheDataTest {
         Assert.assertEquals(0, cacheData1.getTaskId());
         Assert.assertFalse(cacheData1.isSyncWithServer());
         Assert.assertFalse(cacheData1.isUseLocalConfigInfo());
-        Assert.assertEquals(0, cacheData1.getLastModifiedTs());
+        Assert.assertEquals(0, cacheData1.getLastModifiedTs().intValue());
         Assert.assertEquals(0, cacheData1.getLocalConfigInfoVersion());
         
         cacheData1.setInitializing(false);
@@ -76,7 +76,7 @@ public class CacheDataTest {
         //TODO FIX getType
         // Assert.assertFalse("123",cacheData1.getType());
         Assert.assertTrue(cacheData1.isUseLocalConfigInfo());
-        Assert.assertEquals(timeStamp, cacheData1.getLastModifiedTs());
+        Assert.assertEquals(timeStamp, cacheData1.getLastModifiedTs().longValue());
         Assert.assertEquals(timeStamp, cacheData1.getLocalConfigInfoVersion());
     }
     
