@@ -33,10 +33,11 @@ import static org.junit.Assert.assertTrue;
 
 public class TpsMonitorManagerTest {
     
-    static TpsMonitorManager tpsMonitorManager = new TpsMonitorManager();
+    static TpsMonitorManager tpsMonitorManager;
     
     @BeforeClass
     public static void setUpBeforeClass() {
+        tpsMonitorManager = new TpsMonitorManager();
         TpsMonitorPoint publish = new TpsMonitorPoint("configPublish");
         tpsMonitorManager.registerTpsControlPoint(publish);
         TpsControlRule rule = new TpsControlRule();
