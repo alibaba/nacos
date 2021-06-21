@@ -31,7 +31,9 @@ import java.util.concurrent.TimeUnit;
  * @date 2021-06-21 18:23
  */
 public class TpsRecorderTest {
+    
     TpsRecorder tpsRecorder;
+    
     long start;
     
     @Before
