@@ -75,6 +75,22 @@ public class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(1)).getServerConfig(dataId, group, tenant, timeout, false);
         
     }
+
+    @Test
+    public void testGetDraftConfig() throws NacosException {
+        final String dataId = "1";
+        final String group = "2";
+        final String tenant = "";
+        final int timeout = 3000;
+        ConfigResponse response = new ConfigResponse();
+        response.setContent("aa");
+        response.setConfigType("bb");
+        Mockito.when(mockWoker.getDraftConfig(dataId, group, "", timeout, false)).thenReturn(response);
+        final String config = nacosConfigService.getDraftConfig(dataId, group, timeout);
+        Assert.assertEquals("aa", config);
+        Mockito.verify(mockWoker, Mockito.times(1)).getDraftConfig(dataId, group, tenant, timeout, false);
+
+    }
     
     @Test
     public void testGetConfigAndSignListener() throws NacosException {
@@ -201,7 +217,58 @@ public class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(1))
                 .publishConfig(dataId, group, namespace, null, null, null, content, null, casMd5, type);
     }
-    
+
+    @Test
+    public void testPublishDraftConfig() throws NacosException {
+        String dataId = "1";
+        String group = "2";
+        String namespace = "";
+
+        Mockito.when(mockWoker.publishConfigFromDraft(dataId, group, namespace, null, null, null, null, null, null))
+                .thenReturn(true);
+
+        final boolean b = nacosConfigService.publishConfigFromDraft(dataId, group);
+        Assert.assertTrue(b);
+
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .publishConfigFromDraft(dataId, group, namespace, null, null, null, null, null, null);
+    }
+
+    @Test
+    public void testDraftConfig() throws NacosException {
+        String dataId = "1";
+        String group = "2";
+        String content = "123";
+        String namespace = "";
+        String type = ConfigType.getDefaultType().getType();
+        Mockito.when(mockWoker.draftConfig(dataId, group, namespace, null, null, null, content, null, null, type))
+                .thenReturn(true);
+
+        final boolean b = nacosConfigService.draftConfig(dataId, group, content);
+        Assert.assertTrue(b);
+
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .draftConfig(dataId, group, namespace, null, null, null, content, null, null, type);
+    }
+
+    @Test
+    public void testDraftConfig2() throws NacosException {
+        String dataId = "1";
+        String group = "2";
+        String content = "123";
+        String namespace = "";
+        String type = ConfigType.PROPERTIES.getType();
+
+        Mockito.when(mockWoker.draftConfig(dataId, group, namespace, null, null, null, content, null, null, type))
+                .thenReturn(true);
+
+        final boolean b = nacosConfigService.draftConfig(dataId, group, content, type);
+        Assert.assertTrue(b);
+
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .draftConfig(dataId, group, namespace, null, null, null, content, null, null, type);
+    }
+
     @Test
     public void testRemoveConfig() throws NacosException {
         String dataId = "1";
@@ -214,6 +281,20 @@ public class NacosConfigServiceTest {
         Assert.assertTrue(b);
         
         Mockito.verify(mockWoker, Mockito.times(1)).removeConfig(dataId, group, tenant, null);
+    }
+
+    @Test
+    public void testRemoveDraftConfig() throws NacosException {
+        String dataId = "1";
+        String group = "2";
+        String tenant = "";
+
+        Mockito.when(mockWoker.removeDraftConfig(dataId, group, tenant, null)).thenReturn(true);
+
+        final boolean b = nacosConfigService.removeDraftConfig(dataId, group);
+        Assert.assertTrue(b);
+
+        Mockito.verify(mockWoker, Mockito.times(1)).removeDraftConfig(dataId, group, tenant, null);
     }
     
     @Test

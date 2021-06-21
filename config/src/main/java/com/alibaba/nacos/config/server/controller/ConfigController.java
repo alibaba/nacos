@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
+import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -73,6 +74,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -182,7 +184,108 @@ public class ConfigController {
                         ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
         return true;
     }
-    
+
+    /**
+     * Adds or updates non-aggregated data draft.
+     *
+     * @throws NacosException NacosException.
+     */
+    @PostMapping("/draft")
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    public Boolean draftConfig(HttpServletRequest request, HttpServletResponse response,
+                                 @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
+                                 @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+                                 @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
+                                 @RequestParam(value = "appName", required = false) String appName,
+                                 @RequestParam(value = "src_user", required = false) String srcUser,
+                                 @RequestParam(value = "config_tags", required = false) String configTags,
+                                 @RequestParam(value = "desc", required = false) String desc,
+                                 @RequestParam(value = "use", required = false) String use,
+                                 @RequestParam(value = "effect", required = false) String effect,
+                                 @RequestParam(value = "type", required = false) String type,
+                                 @RequestParam(value = "schema", required = false) String schema) throws NacosException {
+
+        final String srcIp = RequestUtil.getRemoteIp(request);
+        final String requestIpApp = RequestUtil.getAppName(request);
+        srcUser = RequestUtil.getSrcUserName(request);
+        //check type
+        if (!ConfigType.isValidType(type)) {
+            type = ConfigType.getDefaultType().getType();
+        }
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+        ParamUtils.checkParam(dataId, group, "datumId", content);
+        ParamUtils.checkParam(tag);
+        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configTags);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "desc", desc);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "use", use);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "effect", effect);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "schema", schema);
+        ParamUtils.checkParam(configAdvanceInfo);
+
+        if (AggrWhitelist.isAggrDataId(dataId)) {
+            LOGGER.warn("[aggr-conflict] {} attempt to draft single data, {}, {}", RequestUtil.getRemoteIp(request),
+                    dataId, group);
+            throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
+        }
+
+        final Timestamp time = TimeUtils.getCurrentTime();
+        String betaIps = request.getHeader("betaIps");
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
+        configInfo.setType(type);
+        if (StringUtils.isBlank(betaIps)) {
+            if (StringUtils.isBlank(tag)) {
+                persistService.insertOrUpdateDraft(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
+                /*ConfigChangePublisher
+                        .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));*/
+            } else {
+                LOGGER.warn("[tag-conflict] {} attempt to draft data with tag, {}, {}", RequestUtil.getRemoteIp(request),
+                        dataId, group);
+                throw new NacosException(NacosException.NO_RIGHT, "tag:" + tag + " is not supported");
+            }
+        } else {
+            LOGGER.warn("[beta-conflict] {} attempt to draft data with betaIps, {}, {}", RequestUtil.getRemoteIp(request),
+                    dataId, group);
+            throw new NacosException(NacosException.NO_RIGHT, "betaIps:" + betaIps + " is not supported");
+        }
+        return true;
+    }
+
+    /**
+     * Adds or updates non-aggregated data from draft.
+     *
+     * @throws NacosException NacosException.
+     */
+    @PostMapping("/publish")
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    public Boolean publishDraftConfig(HttpServletRequest request, HttpServletResponse response,
+                                      @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                                      @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
+            throws NacosException {
+        final String requestIpApp = RequestUtil.getAppName(request);
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+        ParamUtils.checkParam(dataId, group, "datumId", "pub");
+        String clientIp = RequestUtil.getRemoteIp(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        ConfigInfo configInfo = persistService.publishDraftConfigInfo(dataId, group, tenant, clientIp, srcUser, time);
+        if (Objects.nonNull(configInfo)) {
+            ConfigChangePublisher
+                    .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
+            ConfigTraceService
+                    .logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(), InetUtils.getSelfIP(),
+                            ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+        } else {
+            LOGGER.warn("[pub-draft-error] {} attempt to publish data from draft, {}, {}", RequestUtil.getRemoteIp(request),
+                    dataId, group);
+            throw new NacosException(NacosException.NO_RIGHT, "failed to publish draft config for dataId: " + dataId);
+        }
+        return true;
+    }
+
     /**
      * Get configure board information fail.
      *
@@ -208,6 +311,33 @@ public class ConfigController {
         String isNotify = request.getHeader("notify");
         inner.doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp);
     }
+
+    /**
+     * Get draft configure board information fail.
+     *
+     * @throws NacosException   NacosException.
+     */
+    @GetMapping("/draft")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public void getDraftConfig(HttpServletRequest request, HttpServletResponse response,
+                                         @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                                         @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
+            throws IOException, NacosException {
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        // check params
+        ParamUtils.checkParam(dataId, group, "datumId", "content");
+        ConfigInfoBase configInfoBase = persistService.findDraftConfigInfo(dataId, group, tenant);
+        PrintWriter out = null;
+
+        if (configInfoBase == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.getWriter().println("config data not exist");
+        } else {
+            response.getWriter().print(configInfoBase.getContent());
+        }
+    }
     
     /**
      * Get the specific configuration information that the console USES.
@@ -225,6 +355,24 @@ public class ConfigController {
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         return persistService.findConfigAllInfo(dataId, group, tenant);
+    }
+
+    /**
+     * Get the specific draft configuration information that the console USES.
+     *
+     * @throws NacosException NacosException.
+     */
+    @GetMapping(value = "/draft", params = "show=all")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public ConfigAllInfo detailDraftConfigInfo(HttpServletRequest request, HttpServletResponse response,
+                                          @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                                          @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
+            throws NacosException {
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+        // check params
+        ParamUtils.checkParam(dataId, group, "datumId", "content");
+        return persistService.findDraftConfigAllInfo(dataId, group, tenant);
     }
     
     /**
@@ -254,6 +402,26 @@ public class ConfigController {
                 ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
+        return true;
+    }
+
+    /**
+     * Synchronously delete all pre-aggregation draft data under a dataId.
+     *
+     * @throws NacosException NacosException.
+     */
+    @DeleteMapping("/draft")
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    public Boolean deleteDraftConfig(HttpServletRequest request, HttpServletResponse response,
+                                @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                                @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
+            throws NacosException {
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+        ParamUtils.checkParam(dataId, group, "datumId", "rm");
+        String clientIp = RequestUtil.getRemoteIp(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
+        persistService.removeDraftConfigInfo(dataId, group, tenant, clientIp, srcUser);
         return true;
     }
     
@@ -286,6 +454,27 @@ public class ConfigController {
         }
         return RestResultUtils.success(true);
     }
+
+    /**
+     * Execute delete config operation.
+     *
+     * @return java.lang.Boolean
+     * @Description: delete draft configuration based on multiple config ids
+     * @Date 2019/7/5 10:26
+     * @Param [request, response, dataId, group, tenant, tag]
+     */
+    @DeleteMapping(value = "/draft", params = "delType=ids")
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    public RestResult<Boolean> deleteDraftConfigs(HttpServletRequest request, HttpServletResponse response,
+                                             @RequestParam(value = "ids") List<Long> ids) {
+        String clientIp = RequestUtil.getRemoteIp(request);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        List<ConfigInfo> configInfoList = persistService.removeDraftConfigInfoByIds(ids, clientIp, null);
+        if (CollectionUtils.isEmpty(configInfoList)) {
+            return RestResultUtils.success(true);
+        }
+        return RestResultUtils.success(true);
+    }
     
     @GetMapping("/catalog")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -293,6 +482,15 @@ public class ConfigController {
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
         ConfigAdvanceInfo configInfo = persistService.findConfigAdvanceInfo(dataId, group, tenant);
+        return RestResultUtils.success(configInfo);
+    }
+
+    @GetMapping("/draft/catalog")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public RestResult<ConfigAdvanceInfo> getDraftConfigAdvanceInfo(@RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
+        ConfigAdvanceInfo configInfo = persistService.findDraftConfigAdvanceInfo(dataId, group, tenant);
         return RestResultUtils.success(configInfo);
     }
     
@@ -367,6 +565,32 @@ public class ConfigController {
             throw new RuntimeException(errorMsg, e);
         }
     }
+
+    /**
+     * Query the draft configuration information and return it in JSON format.
+     */
+    @GetMapping(value = "/draft", params = "search=accurate")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public Page<ConfigInfo> searchDraftConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                                         @RequestParam(value = "appName", required = false) String appName,
+                                         @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+                                         @RequestParam(value = "config_tags", required = false) String configTags,
+                                         @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(100);
+        if (StringUtils.isNotBlank(appName)) {
+            configAdvanceInfo.put("appName", appName);
+        }
+        if (StringUtils.isNotBlank(configTags)) {
+            configAdvanceInfo.put("config_tags", configTags);
+        }
+        try {
+            return persistService.findDraftConfigInfo4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+        } catch (Exception e) {
+            String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
+            LOGGER.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
+    }
     
     /**
      * Fuzzy query configuration information. Fuzzy queries based only on content are not allowed, that is, both dataId
@@ -388,6 +612,33 @@ public class ConfigController {
         }
         try {
             return persistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+        } catch (Exception e) {
+            String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
+            LOGGER.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
+    }
+
+    /**
+     * Fuzzy query draft configuration information. Fuzzy queries based only on content are not allowed, that is, both dataId
+     * and group are NULL, but content is not NULL. In this case, all configurations are returned.
+     */
+    @GetMapping(value = "/draft", params = "search=blur")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public Page<ConfigInfo> fuzzySearchDraftConfig(@RequestParam("dataId") String dataId,
+                                              @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
+                                              @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+                                              @RequestParam(value = "config_tags", required = false) String configTags,
+                                              @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(50);
+        if (StringUtils.isNotBlank(appName)) {
+            configAdvanceInfo.put("appName", appName);
+        }
+        if (StringUtils.isNotBlank(configTags)) {
+            configAdvanceInfo.put("config_tags", configTags);
+        }
+        try {
+            return persistService.findDraftConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             LOGGER.error(errorMsg, e);
@@ -616,7 +867,76 @@ public class ConfigController {
         }
         return RestResultUtils.success("导入成功", saveResult);
     }
-    
+
+    /**
+     * Execute import and draft config operation.
+     *
+     * @param request   http servlet request .
+     * @param srcUser   src user string value.
+     * @param namespace namespace string value.
+     * @param policy    policy model.
+     * @param file      MultipartFile.
+     * @return RestResult Map.
+     * @throws NacosException NacosException.
+     */
+    @PostMapping(value = "/draft", params = "import=true")
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    public RestResult<Map<String, Object>> importAndDraftConfig(HttpServletRequest request,
+            @RequestParam(value = "src_user", required = false) String srcUser,
+            @RequestParam(value = "namespace", required = false) String namespace,
+            @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy, MultipartFile file)
+            throws NacosException {
+        Map<String, Object> failedData = new HashMap<>(4);
+
+        if (Objects.isNull(file)) {
+            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+        }
+
+        namespace = NamespaceUtil.processNamespaceParameter(namespace);
+        if (StringUtils.isNotBlank(namespace) && persistService.tenantInfoCountByTenantId(namespace) <= 0) {
+            failedData.put("succCount", 0);
+            return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
+        }
+        List<ConfigAllInfo> configInfoList = new ArrayList<>();
+        List<Map<String, String>> unrecognizedList = new ArrayList<>();
+        try {
+            ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
+            ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
+            RestResult<Map<String, Object>> errorResult;
+            if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
+                // new export
+                errorResult = parseImportDataV2(unziped, configInfoList,
+                        unrecognizedList, namespace);
+            } else {
+                errorResult = parseImportData(unziped, configInfoList, unrecognizedList,
+                        namespace);
+            }
+            if (errorResult != null) {
+                return errorResult;
+            }
+        } catch (IOException e) {
+            failedData.put("succCount", 0);
+            LOGGER.error("parsing data failed", e);
+            return RestResultUtils.buildResult(ResultCodeEnum.PARSING_DATA_FAILED, failedData);
+        }
+
+        if (CollectionUtils.isEmpty(configInfoList)) {
+            failedData.put("succCount", 0);
+            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+        }
+        final String srcIp = RequestUtil.getRemoteIp(request);
+        String requestIpApp = RequestUtil.getAppName(request);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        Map<String, Object> saveResult = persistService
+                .batchInsertOrUpdateDraft(configInfoList, srcUser, srcIp, null, time, false, policy);
+        // unrecognizedCount
+        if (!unrecognizedList.isEmpty()) {
+            saveResult.put("unrecognizedCount", unrecognizedList.size());
+            saveResult.put("unrecognizedData", unrecognizedList);
+        }
+        return RestResultUtils.success("导入成功", saveResult);
+    }
+
     /**
      * old import config.
      *

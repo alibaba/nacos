@@ -35,6 +35,17 @@ public interface ConfigService {
      * @return config value
      * @throws NacosException NacosException
      */
+    String getDraftConfig(String dataId, String group, long timeoutMs) throws NacosException;
+
+    /**
+     * Get config.
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs read timeout
+     * @return config value
+     * @throws NacosException NacosException
+     */
     String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
     
     /**
@@ -67,7 +78,56 @@ public interface ConfigService {
      * @throws NacosException NacosException
      */
     void addListener(String dataId, String group, Listener listener) throws NacosException;
-    
+
+    /**
+     * Save config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @return Whether save
+     * @throws NacosException NacosException
+     */
+    boolean draftConfig(String dataId, String group, String content) throws NacosException;
+
+    /**
+     * Save config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param type    config type {@link ConfigType}
+     * @return Whether save
+     * @throws NacosException NacosException
+     */
+    boolean draftConfig(String dataId, String group, String content, String type) throws NacosException;
+
+    /**
+     * Cas Save config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param casMd5  casMd5 prev content's md5 to cas.
+     * @return Whether save
+     * @throws NacosException NacosException
+     */
+    boolean draftConfigCas(String dataId, String group, String content, String casMd5) throws NacosException;
+
+    /**
+     * Cas Save config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param casMd5  casMd5 prev content's md5 to cas.
+     * @param type    config type {@link ConfigType}
+     * @return Whether save
+     * @throws NacosException NacosException
+     */
+    boolean draftConfigCas(String dataId, String group, String content, String casMd5, String type)
+            throws NacosException;
+
     /**
      * Publish config.
      *
@@ -78,8 +138,7 @@ public interface ConfigService {
      * @throws NacosException NacosException
      */
     boolean publishConfig(String dataId, String group, String content) throws NacosException;
-    
-    
+
     /**
      * Publish config.
      *
@@ -91,7 +150,17 @@ public interface ConfigService {
      * @throws NacosException NacosException
      */
     boolean publishConfig(String dataId, String group, String content, String type) throws NacosException;
-    
+
+    /**
+     * Publish config from draft.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @return Whether publish
+     * @throws NacosException NacosException
+     */
+    boolean publishConfigFromDraft(String dataId, String group) throws NacosException;
+
     /**
      * Cas Publish config.
      *
@@ -127,6 +196,16 @@ public interface ConfigService {
      * @throws NacosException NacosException
      */
     boolean removeConfig(String dataId, String group) throws NacosException;
+
+    /**
+     * Remove draft config.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @return whether remove
+     * @throws NacosException NacosException
+     */
+    boolean removeDraftConfig(String dataId, String group) throws NacosException;
     
     /**
      * Remove listener.

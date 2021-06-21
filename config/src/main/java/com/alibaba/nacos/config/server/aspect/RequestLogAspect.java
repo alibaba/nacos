@@ -18,8 +18,11 @@ package com.alibaba.nacos.config.server.aspect;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigDraftRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigPublishDraftRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigRemoveDraftRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -61,6 +64,36 @@ public class RequestLogAspect {
             "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
                     + "&& target(com.alibaba.nacos.config.server.remote.ConfigPublishRequestHandler) "
                     + "&& args(request,meta)";
+
+    /**
+     * Draft config.
+     */
+    private static final String CLIENT_INTERFACE_DRAFT_SINGLE_CONFIG =
+            "execution(* com.alibaba.nacos.config.server.controller.ConfigController.draftConfig(..)) && args"
+                    + "(request,response,dataId,group,tenant,content,..)";
+
+    /**
+     * Draft config.
+     */
+    private static final String CLIENT_INTERFACE_DRAFT_SINGLE_CONFIG_RPC =
+            "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
+                    + "&& target(com.alibaba.nacos.config.server.remote.ConfigDraftRequestHandler) "
+                    + "&& args(request,meta)";
+
+    /**
+     * Publish draft config.
+     */
+    private static final String CLIENT_INTERFACE_PUBLISH_DRAFT_SINGLE_CONFIG =
+            "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishDraftConfig(..)) && args"
+                    + "(request,response,dataId,group,tenant,..)";
+
+    /**
+     * Publish draft config.
+     */
+    private static final String CLIENT_INTERFACE_PUBLISH_DRAFT_SINGLE_CONFIG_RPC =
+            "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
+                    + "&& target(com.alibaba.nacos.config.server.remote.ConfigPublishDraftRequestHandler) "
+                    + "&& args(request,meta)";
     
     /**
      * Get config.
@@ -76,7 +109,22 @@ public class RequestLogAspect {
     private static final String CLIENT_INTERFACE_GET_CONFIG_RPC =
             "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
                     + " && target(com.alibaba.nacos.config.server.remote.ConfigQueryRequestHandler) && args(request,meta)";
-    
+
+    /**
+     * Get draft config.
+     */
+    private static final String CLIENT_INTERFACE_GET_DRAFT_CONFIG =
+            "execution(* com.alibaba.nacos.config.server.controller.ConfigController.getDraftConfig(..)) && args(request,"
+                    + "response,dataId,group,tenant,..)";
+
+    /**
+     * Get draft config.
+     */
+    @SuppressWarnings("checkstyle:linelength")
+    private static final String CLIENT_INTERFACE_GET_DRAFT_CONFIG_RPC =
+            "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
+                    + " && target(com.alibaba.nacos.config.server.remote.ConfigDraftQueryRequestHandler) && args(request,meta)";
+
     /**
      * Remove config.
      */
@@ -91,16 +139,30 @@ public class RequestLogAspect {
     private static final String CLIENT_INTERFACE_REMOVE_ALL_CONFIG_RPC =
             "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
                     + " && target(com.alibaba.nacos.config.server.remote.ConfigRemoveRequestHandler) && args(request,meta)";
-    
+
     /**
-     * Remove config.
+     * Remove draft config.
+     */
+    private static final String CLIENT_INTERFACE_REMOVE_DRAFT_ALL_CONFIG =
+            "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteDraftConfig(..)) && args(request,"
+                    + "response,dataId,group,tenant,..)";
+
+    /**
+     * Remove draft config.
+     */
+    @SuppressWarnings("checkstyle:linelength")
+    private static final String CLIENT_INTERFACE_REMOVE_DRAFT_ALL_CONFIG_RPC =
+            "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
+                    + " && target(com.alibaba.nacos.config.server.remote.ConfigRemoveDraftRequestHandler) && args(request,meta)";
+
+    /**
+     * Listen.
      */
     @SuppressWarnings("checkstyle:linelength")
     private static final String CLIENT_INTERFACE_LISTEN_CONFIG_RPC =
             "execution(* com.alibaba.nacos.core.remote.RequestHandler.handleRequest(..)) "
                     + " && target(com.alibaba.nacos.config.server.remote.ConfigChangeBatchListenRequestHandler) && args(request,meta)";
-    
-    
+
     /**
      * PublishSingle.
      */
@@ -113,7 +175,7 @@ public class RequestLogAspect {
         return logClientRequestRpc("publish", pjp, request, meta, request.getDataId(), request.getGroup(),
                 request.getTenant(), md5);
     }
-    
+
     /**
      * PublishSingle.
      */
@@ -124,7 +186,52 @@ public class RequestLogAspect {
         MetricsMonitor.getPublishMonitor().incrementAndGet();
         return logClientRequest("publish", pjp, request, response, dataId, group, tenant, md5);
     }
-    
+
+    /**
+     * DraftSingle.
+     */
+    @Around(CLIENT_INTERFACE_DRAFT_SINGLE_CONFIG_RPC)
+    public Object interfaceDraftSingleRpc(ProceedingJoinPoint pjp, ConfigDraftRequest request, RequestMeta meta)
+            throws Throwable {
+        final String md5 =
+                request.getContent() == null ? null : MD5Utils.md5Hex(request.getContent(), Constants.ENCODE);
+        return logClientRequestRpc("draft", pjp, request, meta, request.getDataId(), request.getGroup(),
+                request.getTenant(), md5);
+    }
+
+    /**
+     * DraftSingle.
+     */
+    @Around(CLIENT_INTERFACE_DRAFT_SINGLE_CONFIG)
+    public Object interfaceDraftSingle(ProceedingJoinPoint pjp, HttpServletRequest request,
+                                         HttpServletResponse response, String dataId, String group, String tenant, String content) throws Throwable {
+        final String md5 = content == null ? null : MD5Utils.md5Hex(content, Constants.ENCODE);
+        return logClientRequest("draft", pjp, request, response, dataId, group, tenant, md5);
+    }
+
+    /**
+     * PublishDraftSingle.
+     */
+    @Around(CLIENT_INTERFACE_PUBLISH_DRAFT_SINGLE_CONFIG_RPC)
+    public Object interfacePublishDraftSingleRpc(ProceedingJoinPoint pjp, ConfigPublishDraftRequest request, RequestMeta meta)
+            throws Throwable {
+        final String md5 = null;
+        MetricsMonitor.getPublishMonitor().incrementAndGet();
+        return logClientRequestRpc("pubdraft", pjp, request, meta, request.getDataId(), request.getGroup(),
+                request.getTenant(), md5);
+    }
+
+    /**
+     * PublishDraftSingle.
+     */
+    @Around(CLIENT_INTERFACE_PUBLISH_DRAFT_SINGLE_CONFIG)
+    public Object interfacePublishDraftSingle(ProceedingJoinPoint pjp, HttpServletRequest request,
+                                         HttpServletResponse response, String dataId, String group, String tenant) throws Throwable {
+        final String md5 = null;
+        MetricsMonitor.getPublishMonitor().incrementAndGet();
+        return logClientRequest("pubdraft", pjp, request, response, dataId, group, tenant, md5);
+    }
+
     /**
      * RemoveAll.
      */
@@ -141,6 +248,25 @@ public class RequestLogAspect {
     public Object interfaceRemoveAllRpc(ProceedingJoinPoint pjp, ConfigRemoveRequest request, RequestMeta meta)
             throws Throwable {
         return logClientRequestRpc("remove", pjp, request, meta, request.getDataId(), request.getGroup(),
+                request.getTenant(), null);
+    }
+
+    /**
+     * RemoveDraftAll.
+     */
+    @Around(CLIENT_INTERFACE_REMOVE_DRAFT_ALL_CONFIG)
+    public Object interfaceRemoveDraftAll(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
+                                     String dataId, String group, String tenant) throws Throwable {
+        return logClientRequest("rmdraft", pjp, request, response, dataId, group, tenant, null);
+    }
+
+    /**
+     * RemoveDraftAll.
+     */
+    @Around(CLIENT_INTERFACE_REMOVE_DRAFT_ALL_CONFIG_RPC)
+    public Object interfaceRemoveDraftAllRpc(ProceedingJoinPoint pjp, ConfigRemoveDraftRequest request, RequestMeta meta)
+            throws Throwable {
+        return logClientRequestRpc("rmdraft", pjp, request, meta, request.getDataId(), request.getGroup(),
                 request.getTenant(), null);
     }
     

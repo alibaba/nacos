@@ -54,13 +54,13 @@ public abstract class ConfigTransportClient {
     private static final Logger LOGGER = LogUtils.logger(ConfigTransportClient.class);
     
     private static final String SECURITY_TOKEN_HEADER =  "Spas-SecurityToken";
-    
+
     private static final String ACCESS_KEY_HEADER = "Spas-AccessKey";
-    
+
     private static final String CONFIG_INFO_HEADER = "exConfigInfo";
-    
+
     private static final String DEFAULT_CONFIG_INFO = "true";
-    
+
     String encode;
     
     String tenant;
@@ -82,9 +82,9 @@ public abstract class ConfigTransportClient {
     private volatile StsCredential stsCredential;
     
     public void shutdown() {
-    
+
     }
-    
+
     public ConfigTransportClient(Properties properties, ServerListManager serverListManager) {
         
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
@@ -118,7 +118,7 @@ public abstract class ConfigTransportClient {
             secretKey = stsCredential.accessKeySecret;
             spasHeaders.put(SECURITY_TOKEN_HEADER, stsCredential.securityToken);
         }
-        
+
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
             spasHeaders.put(ACCESS_KEY_HEADER, accessKey);
         }
@@ -304,7 +304,21 @@ public abstract class ConfigTransportClient {
      * @param group  group
      */
     public abstract void removeCache(String dataId, String group);
-    
+
+    /**
+     * query draft config.
+     *
+     * @param dataId      dataId.
+     * @param group       group.
+     * @param tenat       tenat.
+     * @param readTimeous readTimeous.
+     * @param notify      query for notify sync.
+     * @return content.
+     * @throws NacosException throw where query fail .
+     */
+    public abstract ConfigResponse queryDraftConfig(String dataId, String group, String tenat, long readTimeous, boolean notify)
+            throws NacosException;
+
     /**
      * query config.
      *
@@ -337,7 +351,44 @@ public abstract class ConfigTransportClient {
      */
     public abstract boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
             String betaIps, String content, String encryptedDataKey, String casMd5, String type) throws NacosException;
-    
+
+    /**
+     * publish config.
+     *
+     * @param dataId  dataId.
+     * @param group   group.
+     * @param tenant  tenant.
+     * @param appName appName.
+     * @param tag     tag.
+     * @param betaIps betaIps.
+     * @param encryptedDataKey encryptedDataKey
+     * @param casMd5  casMd5.
+     * @param type    type.
+     * @return success or not.
+     * @throws NacosException throw where publish fail.
+     */
+    public abstract boolean publishConfigFromDraft(String dataId, String group, String tenant, String appName, String tag,
+            String betaIps, String encryptedDataKey, String casMd5, String type) throws NacosException;
+
+    /**
+     * save config.
+     *
+     * @param dataId  dataId.
+     * @param group   group.
+     * @param tenant  tenant.
+     * @param appName appName.
+     * @param tag     tag.
+     * @param betaIps betaIps.
+     * @param content content.
+     * @param encryptedDataKey encryptedDataKey
+     * @param casMd5  casMd5.
+     * @param type    type.
+     * @return success or not.
+     * @throws NacosException throw where publish fail.
+     */
+    public abstract boolean draftConfig(String dataId, String group, String tenant, String appName, String tag,
+                                          String betaIps, String content, String encryptedDataKey, String casMd5, String type) throws NacosException;
+
     /**
      * remove config.
      *
@@ -349,7 +400,19 @@ public abstract class ConfigTransportClient {
      * @throws NacosException throw where publish fail.
      */
     public abstract boolean removeConfig(String dataid, String group, String tenat, String tag) throws NacosException;
-    
+
+    /**
+     * remove draft config.
+     *
+     * @param dataid dataid.
+     * @param group  group.
+     * @param tenat  tenat.
+     * @param tag    tag.
+     * @return success or not.
+     * @throws NacosException throw where publish fail.
+     */
+    public abstract boolean removeDraftConfig(String dataid, String group, String tenat, String tag) throws NacosException;
+
     private static class StsCredential {
         
         @JsonProperty(value = "AccessKeyId")

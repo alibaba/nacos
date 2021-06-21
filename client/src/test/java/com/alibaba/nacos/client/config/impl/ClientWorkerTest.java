@@ -152,7 +152,89 @@ public class ClientWorkerTest {
             Assert.assertEquals(-401, e.getErrCode());
         }
     }
-    
+
+    @Test
+    public void testDraftConfig() throws NacosException {
+        Properties prop = new Properties();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        ServerListManager agent = Mockito.mock(ServerListManager.class);
+        ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
+        ClientWorker.ConfigRpcTransportClient mockClient = Mockito.mock(ClientWorker.ConfigRpcTransportClient.class);
+
+        String dataId = "a";
+        String group = "b";
+        String tenant = "c";
+        String content = "d";
+
+        String appName = "app";
+        String tag = "tag";
+
+        String betaIps = "1.1.1.1";
+        String casMd5 = "1111";
+
+        String type = "properties";
+
+        boolean b = clientWorker
+                .draftConfig(dataId, group, tenant, appName, tag, betaIps, content, null, casMd5, type);
+        Assert.assertFalse(b);
+        try {
+            clientWorker.removeDraftConfig(dataId, group, tenant, tag);
+            Assert.fail();
+        } catch (NacosException e) {
+            Assert.assertEquals("Client not connected,current status:STARTING", e.getErrMsg());
+            Assert.assertEquals(-401, e.getErrCode());
+
+        }
+        try {
+            clientWorker.getServerConfig(dataId, group, tenant, 100, false);
+            Assert.fail();
+        } catch (NacosException e) {
+            Assert.assertEquals("Client not connected,current status:STARTING", e.getErrMsg());
+            Assert.assertEquals(-401, e.getErrCode());
+        }
+    }
+
+    @Test
+    public void testPublishDraftConfig() throws NacosException {
+        Properties prop = new Properties();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        ServerListManager agent = Mockito.mock(ServerListManager.class);
+        ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
+        ClientWorker.ConfigRpcTransportClient mockClient = Mockito.mock(ClientWorker.ConfigRpcTransportClient.class);
+
+        String dataId = "a";
+        String group = "b";
+        String tenant = "c";
+        String content = "d";
+
+        String appName = "app";
+        String tag = "tag";
+
+        String betaIps = "1.1.1.1";
+        String casMd5 = "1111";
+
+        String type = "properties";
+
+        boolean b = clientWorker
+                .publishConfigFromDraft(dataId, group, tenant, appName, tag, betaIps, null, null, null);
+        Assert.assertFalse(b);
+        try {
+            clientWorker.removeConfig(dataId, group, tenant, tag);
+            Assert.fail();
+        } catch (NacosException e) {
+            Assert.assertEquals("Client not connected,current status:STARTING", e.getErrMsg());
+            Assert.assertEquals(-401, e.getErrCode());
+
+        }
+        try {
+            clientWorker.getServerConfig(dataId, group, tenant, 100, false);
+            Assert.fail();
+        } catch (NacosException e) {
+            Assert.assertEquals("Client not connected,current status:STARTING", e.getErrMsg());
+            Assert.assertEquals(-401, e.getErrCode());
+        }
+    }
+
     @Test
     public void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties prop = new Properties();

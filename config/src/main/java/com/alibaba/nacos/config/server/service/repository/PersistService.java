@@ -61,7 +61,10 @@ public interface PersistService {
     String SQL_FIND_ALL_CONFIG_INFO = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema from config_info";
     String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
     String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
+    String SQL_FIND_DRAFT_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info_draft WHERE ";
     String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
+    String SQL_DELETE_DRAFT_CONFIG_INFO_BY_IDS = "DELETE FROM config_info_draft WHERE ";
+
     int QUERY_LIMIT_SIZE = 50;
     String PATTERN_STR = "*";
     
@@ -85,6 +88,33 @@ public interface PersistService {
      */
     void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo, final Timestamp time,
             final Map<String, Object> configAdvanceInfo, final boolean notify);
+
+    /**
+     * Add common configuration information from draft and publish data change events.
+     * @param draftConfigInfo   draft config info
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param time              time
+     * @return {@link ConfigInfo}
+     */
+    ConfigInfo addConfigInfoFromDraft(final ConfigInfo draftConfigInfo, final String dataId, final String group, final String tenant,
+                                      final String srcIp, final String srcUser, final Timestamp time);
+
+    /**
+     * Add common draft configuration information and publish data change events.
+     *
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param configInfo        config info
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @param notify            whether to push
+     */
+    void addDraftConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+                            final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify);
     
     /**
      * Add beta configuration information and publish data change events.
@@ -124,6 +154,34 @@ public interface PersistService {
      */
     void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser, final Timestamp time,
             final Map<String, Object> configAdvanceInfo, final boolean notify);
+
+    /**
+     * Update common configuration information from draft and publish data change events.
+     *
+     * @param draftConfigInfo   draft config info
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param time              time
+     * @return {@link ConfigInfo}
+     */
+    ConfigInfo updateConfigInfoFromDraft(final ConfigInfo draftConfigInfo, final String dataId, final String group, final String tenant,
+                                      final String srcIp, final String srcUser, final Timestamp time);
+
+    /**
+     * Update common draft configuration information.
+     *
+     * @param configInfo        config info
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @param notify            whether to push
+     */
+    void updateDraftConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+                               final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify);
     
     /**
      * Update common configuration information.
@@ -219,7 +277,7 @@ public interface PersistService {
      */
     boolean insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify);
-    
+
     /**
      * insert or update tag config.
      *
@@ -231,7 +289,7 @@ public interface PersistService {
      * @param notify     whether to push
      */
     void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp, final String srcUser,
-            final Timestamp time, final boolean notify);
+                           final Timestamp time, final boolean notify);
     
     /**
      * insert or update tag config cas.
@@ -282,6 +340,19 @@ public interface PersistService {
      */
     void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo, boolean notify);
+
+    /**
+     * Write to the draft table, insert or update.
+     *
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param configInfo        config info
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @param notify            whether to push
+     */
+    void insertOrUpdateDraft(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+                             Map<String, Object> configAdvanceInfo, boolean notify);
     
     /**
      * insert or update cas..
@@ -341,7 +412,30 @@ public interface PersistService {
      * @author klw
      */
     List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
-    
+
+    /**
+     * Delete draft configuration information, physical deletion.
+     *
+     * @param dataId  data id
+     * @param group   group
+     * @param tenant  tenant
+     * @param srcIp   remote ip
+     * @param srcUser user
+     */
+    void removeDraftConfigInfo(final String dataId, final String group, final String tenant, final String srcIp,
+                                                final String srcUser);
+
+    /**
+     * Delete draft config info by ids.
+     *
+     * @param ids     id list
+     * @param srcIp   remote ip
+     * @param srcUser user
+     * @return {@link ConfigInfo} list
+     * @author klw
+     */
+    List<ConfigInfo> removeDraftConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
+
     /**
      * Delete configuration information, physical deletion.
      *
@@ -417,6 +511,13 @@ public interface PersistService {
      * @return config max id
      */
     long findConfigMaxId();
+
+    /**
+     * Get the draft maxId.
+     *
+     * @return draft config max id
+     */
+    long findDraftConfigMaxId();
     
     /**
      * Add or update data in batches. Any exception during the transaction will force a TransactionSystemException to be
@@ -524,6 +625,24 @@ public interface PersistService {
      * @return config info
      */
     ConfigInfoWrapper findConfigInfo(final String dataId, final String group, final String tenant);
+
+    /**
+     * Query draft configuration information by primary key ID.
+     *
+     * @param id id
+     * @return {@link ConfigInfo}
+     */
+    ConfigInfo findDraftConfigInfo(long id);
+
+    /**
+     * Query draft configuration information; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @return config info
+     */
+    ConfigInfoWrapper findDraftConfigInfo(final String dataId, final String group, final String tenant);
     
     /**
      * Query configuration information based on dataId.
@@ -576,7 +695,21 @@ public interface PersistService {
      */
     Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId, final String group,
             final String tenant, final Map<String, Object> configAdvanceInfo);
-    
+
+    /**
+     * find draft config info.
+     *
+     * @param pageNo            page number
+     * @param pageSize          page size
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findDraftConfigInfo4Page(final int pageNo, final int pageSize, final String dataId, final String group,
+                                              final String tenant, final Map<String, Object> configAdvanceInfo);
+
     /**
      * Query configuration information based on dataId.
      *
@@ -673,7 +806,22 @@ public interface PersistService {
      * @return number of configuration items.
      */
     int configInfoCount(String tenant);
-    
+
+    /**
+     * Returns the number of draft configuration items.
+     *
+     * @return number of configuration items.
+     */
+    int configInfoDraftCount();
+
+    /**
+     * Returns the number of draft configuration items.
+     *
+     * @param tenant tenant
+     * @return number of configuration items.
+     */
+    int configInfoDraftCount(String tenant);
+
     /**
      * Returns the number of beta configuration items.
      *
@@ -798,6 +946,15 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize);
+
+    /**
+     * Query all draft config info.
+     *
+     * @param lastMaxId last max id
+     * @param pageSize  page size
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
+     */
+    Page<ConfigInfoWrapper> findAllDraftConfigInfoFragment(final long lastMaxId, final int pageSize);
     
     /**
      * Query all beta config info for dump task.
@@ -871,6 +1028,20 @@ public interface PersistService {
      */
     Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
+
+    /**
+     * Query draft config info.
+     *
+     * @param pageNo            page number
+     * @param pageSize          page size
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findDraftConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
+                                                  final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
      * Fuzzy query configuration information based on dataId and group.
@@ -998,6 +1169,35 @@ public interface PersistService {
      */
     long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Timestamp time, Map<String, Object> configAdvanceInfo);
+
+    /**
+     * Add configuration from draft; database atomic operation, minimum sql action, no business encapsulation.
+     *
+     * @param id                id
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param time              time
+     * @return execute sql result
+     */
+    long addConfigInfoFromDraftAtomic(final long id, final String dataId, final String group, final String tenant,
+                                      final String srcIp, final String srcUser, final Timestamp time);
+
+    /**
+     * Add draft configuration; database atomic operation, minimum sql action, no business encapsulation.
+     *
+     * @param id                id
+     * @param srcIp             ip
+     * @param srcUser           user
+     * @param configInfo        info
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @return execute sql result
+     */
+    long addDraftConfigInfoAtomic(final long id, final String srcIp, final String srcUser,
+                                  final ConfigInfo configInfo, final Timestamp time, Map<String, Object> configAdvanceInfo);
     
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
@@ -1020,14 +1220,67 @@ public interface PersistService {
      * @param tenant     tenant
      */
     void addConfigTagsRelation(long configId, String configTags, String dataId, String group, String tenant);
-    
+
+    /**
+     * Add draft configuration tag; database atomic operation, minimum sql action, no business encapsulation.
+     *
+     * @param configId id
+     * @param tagName  tag
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
+     */
+    void addDraftConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant);
+
+    /**
+     * Add configuration tag from draft; database atomic operation, minimum sql action, no business encapsulation.
+     *
+     * @param configId id
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
+     */
+    void addConfigTagsRelationFromDraftAtomic(final long configId, final String dataId, final String group, final String tenant);
+
+    /**
+     * Add draft configuration tag; database atomic operation.
+     *
+     * @param configId   config id
+     * @param configTags tags
+     * @param dataId     dataId
+     * @param group      group
+     * @param tenant     tenant
+     */
+    void addDraftConfigTagsRelation(long configId, String configTags, String dataId, String group, String tenant);
+
     /**
      * Delete tag.
      *
      * @param id id
      */
     void removeTagByIdAtomic(long id);
-    
+
+    /**
+     * Delete draft tag.
+     *
+     * @param id id
+     */
+    void removeDraftTagByIdAtomic(long id);
+
+    /**
+     * Publish draft configuration information, physical remove from draft.
+     *
+     * @param dataId  data id
+     * @param group   group
+     * @param tenant  tenant
+     * @param srcIp   remote ip
+     * @param srcUser user
+     * @param time    time
+     * @return {@link ConfigInfo}
+     */
+    ConfigInfo publishDraftConfigInfo(final String dataId, final String group, final String tenant,
+                                      final String srcIp, final String srcUser, Timestamp time);
+
     /**
      * Query config tag list.
      *
@@ -1035,6 +1288,14 @@ public interface PersistService {
      * @return config tag list
      */
     List<String> getConfigTagsByTenant(String tenant);
+
+    /**
+     * Query draft config tag list.
+     *
+     * @param tenant tenant
+     * @return config tag list
+     */
+    List<String>  getDraftConfigTagsByTenant(String tenant);
     
     /**
      * Query tag list.
@@ -1045,6 +1306,16 @@ public interface PersistService {
      * @return tag list
      */
     List<String> selectTagByConfig(String dataId, String group, String tenant);
+
+    /**
+     * Query tag list.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     * @return tag list
+     */
+    List<String> selectDraftTagByConfig(String dataId, String group, String tenant);
     
     /**
      * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
@@ -1057,13 +1328,32 @@ public interface PersistService {
      */
     void removeConfigInfoAtomic(final String dataId, final String group, final String tenant, final String srcIp,
             final String srcUser);
-    
+
+    /**
+     * Remove draft configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param tenant  tenant
+     * @param srcIp   ip
+     * @param srcUser user
+     */
+    void removeDraftConfigInfoAtomic(final String dataId, final String group, final String tenant, final String srcIp,
+                                          final String srcUser);
+
     /**
      * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
      *
      * @param ids ids
      */
     void removeConfigInfoByIdsAtomic(final String ids);
+
+    /**
+     * Remove draft configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param ids ids
+     */
+    void removeDraftConfigInfoByIdsAtomic(final String ids);
     
     /**
      * Delete configuration; database atomic operation, minimum SQL action, no business encapsulation.
@@ -1077,7 +1367,7 @@ public interface PersistService {
      */
     void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
             final String srcIp, final String srcUser);
-    
+
     /**
      * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
      *
@@ -1089,7 +1379,34 @@ public interface PersistService {
      */
     void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, Map<String, Object> configAdvanceInfo);
-    
+
+    /**
+     * Update configuration from draft; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param tenant  tenant
+     * @param draftConfigInfo        config info
+     * @param draftConfigAdvanceInfo advance info
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param time              time
+     */
+    void updateConfigInfoFromDraftAtomic(final ConfigInfo draftConfigInfo, final ConfigAdvanceInfo draftConfigAdvanceInfo,
+                                         final String dataId, final String group, final String tenant,
+                                         final String srcIp, final String srcUser, final Timestamp time);
+
+    /**
+     * Update draft configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param configInfo        config info
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     */
+    void updateDraftConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+                                     final Timestamp time, Map<String, Object> configAdvanceInfo);
     
     /**
      * find ConfigInfo by ids.
@@ -1100,6 +1417,16 @@ public interface PersistService {
      * @date 2019/7/5 16:37
      */
     List<ConfigInfo> findConfigInfosByIds(final String ids);
+
+    /**
+     * find draft ConfigInfo by ids.
+     *
+     * @param ids id list
+     * @return {@link com.alibaba.nacos.config.server.model.ConfigInfo} list
+     * @author klw
+     * @date 2019/7/5 16:37
+     */
+    List<ConfigInfo> findDraftConfigInfosByIds(final String ids);
     
     /**
      * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
@@ -1110,7 +1437,18 @@ public interface PersistService {
      * @return advance info
      */
     ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group, final String tenant);
-    
+
+
+    /**
+     * Query draft configuration information; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @return advance info
+     */
+    ConfigAdvanceInfo findDraftConfigAdvanceInfo(final String dataId, final String group, final String tenant);
+
     /**
      * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
      *
@@ -1120,6 +1458,16 @@ public interface PersistService {
      * @return advance info
      */
     ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant);
+
+    /**
+     * Query draft configuration information; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @return advance info
+     */
+    ConfigAllInfo findDraftConfigAllInfo(final String dataId, final String group, final String tenant);
     
     /**
      * Update change records; database atomic operations, minimal sql actions, no business encapsulation.
@@ -1326,6 +1674,26 @@ public interface PersistService {
      */
     Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
             Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)
+            throws NacosException;
+
+
+    /**
+     * batch operation on draft,insert or update the format of the returned: succCount: number of successful imports skipCount:
+     * number of import skips (only with skip for the same configs) failData: import failed data (only with abort for
+     * the same configs) skipData: data skipped at import  (only with skip for the same configs).
+     *
+     * @param configInfoList    config info list
+     * @param srcUser           user
+     * @param srcIp             remote ip
+     * @param configAdvanceInfo advance info
+     * @param time              time
+     * @param notify            whether to push
+     * @param policy            {@link SameConfigPolicy}
+     * @return map containing the number of affected rows
+     * @throws NacosException nacos exception
+     */
+    Map<String, Object> batchInsertOrUpdateDraft(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
+                                                 Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)
             throws NacosException;
     
     /**

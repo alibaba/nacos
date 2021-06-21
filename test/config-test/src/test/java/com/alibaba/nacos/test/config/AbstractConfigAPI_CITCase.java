@@ -48,6 +48,10 @@ public abstract class AbstractConfigAPI_CITCase {
     public static final long TIME_OUT = 5000;
     
     private static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
+
+    private static final String DRAFT_CONFIG_CONTROLLER_PATH = "/v1/cs/configs/draft";
+
+    private static final String PUBLISH_DRAFT_CONFIG_CONTROLLER_PATH = "/v1/cs/configs/publish";
     
     private static final String SPECIAL_CHARACTERS = "!@#$%^&*()_+-=_|/'?.";
     
@@ -160,6 +164,72 @@ public abstract class AbstractConfigAPI_CITCase {
         Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
     }
+
+    /**
+     * @TCDescription : nacos_正常获取draft数据
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test(timeout = 3 * TIME_OUT)
+    public void nacos_getdraftconfig_1() throws Exception {
+        final String content = "test";
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+        String value = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content, value);
+        result = iconfig.removeDraftConfig(dataId, group);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+        value = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        System.out.println(value);
+        Assert.assertNull(value);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_服务端无draft配置时，获取draft配置
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_getdraftconfig_2() throws Exception {
+        String content = iconfig.getDraftConfig(dataId, "nacos", TIME_OUT);
+        Assert.assertNull(content);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_获取draft配置时dataId为null
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_getdraftconfig_3() throws Exception {
+        try {
+            String content = iconfig.getDraftConfig(null, group, TIME_OUT);
+        } catch (Exception e) {
+            Assert.assertTrue(true);
+            return;
+        }
+        Assert.fail();
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_获取配置时group为null
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_getdraftconfig_4() throws Exception {
+        final String dataId = "nacos_getdraftconfig_4";
+        final String content = "test";
+        boolean result = iconfig.draftConfig(dataId, null, content);
+        Assert.assertTrue(result);
+        Thread.sleep(TIME_OUT);
+
+        String value = iconfig.getDraftConfig(dataId, null, TIME_OUT);
+        Assert.assertEquals(content, value);
+
+        result = iconfig.removeDraftConfig(dataId, null);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+    }
     
     /**
      * @throws Exception
@@ -241,8 +311,7 @@ public abstract class AbstractConfigAPI_CITCase {
         String value = iconfig.getConfig(dataId, null, TIME_OUT);
         Assert.assertEquals(content, value);
     }
-    
-    
+
     /**
      * @throws Exception
      * @TCDescription : nacos_发布配置时配置内容为null
@@ -273,7 +342,296 @@ public abstract class AbstractConfigAPI_CITCase {
         String value = iconfig.getConfig(dataId, group, TIME_OUT);
         Assert.assertEquals(content, value);
     }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_服务端无该draft配置项时，正常创建draft配置
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_draftConfig_1() throws Exception {
+        final String content = "draftConfigTest";
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+        result = iconfig.removeDraftConfig(dataId, group);
+        Assert.assertTrue(result);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_服务端有该draft配置项时，正常修改draft配置
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_draftConfig_2() throws Exception {
+        final String content = "draftConfigTest";
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        final String content1 = "test.abc";
+        result = iconfig.draftConfig(dataId, group, content1);
+        Thread.sleep(TIME_OUT);
+        String value = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content1, value);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_保存draft配置时包含特殊字符
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_draftConfig_3() throws Exception {
+        String content = "test" + SPECIAL_CHARACTERS;
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        String value = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content, value);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_保存draft配置时dataId为null
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_draftConfig_4() throws Exception {
+        try {
+            String content = "test";
+            boolean result = iconfig.draftConfig(null, group, content);
+            Thread.sleep(TIME_OUT);
+            Assert.assertTrue(result);
+        } catch (Exception e) {
+            Assert.assertTrue(true);
+            return;
+        }
+        Assert.fail();
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_保存draft配置时group为null
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_draftConfig_5() throws Exception {
+        final String dataId = "nacos_draftConfig_5";
+        String content = "test";
+        boolean result = iconfig.draftConfig(dataId, null, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        String value = iconfig.getDraftConfig(dataId, null, TIME_OUT);
+        Assert.assertEquals(content, value);
+    }
+
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_保存draft配置时配置内容为null
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_draftConfig_6() throws Exception {
+        String content = null;
+        try {
+            boolean result = iconfig.draftConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
+        } catch (Exception e) {
+            Assert.assertTrue(true);
+            return;
+        }
+        Assert.fail();
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_保存draft配置时配置内容包含中文字符
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_draftConfig_7() throws Exception {
+        String content = "阿里abc";
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+        String value = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content, value);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_服务端无该配置项时，正常创建draft和发布配置
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_publishDraftConfig_1() throws Exception {
+        final String content = "publishDraftConfigTest";
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        result = iconfig.publishConfigFromDraft(dataId, group);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        result = iconfig.removeDraftConfig(dataId, group);
+        Assert.assertTrue(result);
+
+        result = iconfig.removeConfig(dataId, group);
+        Assert.assertTrue(result);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_服务端有该配置项时，正常通过draft修改配置
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_publishDraftConfig_2() throws Exception {
+        final String content = "publishDraftConfigTest";
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        result = iconfig.publishConfigFromDraft(dataId, group);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        final String content1 = "test.abc";
+        result = iconfig.draftConfig(dataId, group, content1);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        result = iconfig.publishConfigFromDraft(dataId, group);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        String value = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        Assert.assertNull(value);
+
+        value = iconfig.getConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content1, value);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_发布draft配置时包含特殊字符
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_publishDraftConfig_3() throws Exception {
+        String content = "test" + SPECIAL_CHARACTERS;
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        result = iconfig.publishConfigFromDraft(dataId, group);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        String value = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        Assert.assertNull(value);
+
+        value = iconfig.getConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content, value);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_发布draft配置时group为null
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_publishDraftConfig_5() throws Exception {
+        final String dataId = "nacos_publishDraftConfig_5";
+        String content = "test";
+        boolean result = iconfig.draftConfig(dataId, null, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        result = iconfig.publishConfigFromDraft(dataId, null);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        String value = iconfig.getDraftConfig(dataId, null, TIME_OUT);
+        Assert.assertNull(value);
+
+        value = iconfig.getConfig(dataId, null, TIME_OUT);
+        Assert.assertEquals(content, value);
+    }
+
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_发布draft配置时配置内容包含中文字符
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_publishDraftConfig_7() throws Exception {
+        String content = "阿里abc";
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        result = iconfig.publishConfigFromDraft(dataId, group);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+
+        String value = iconfig.getDraftConfig(dataId, null, TIME_OUT);
+        Assert.assertNull(value);
+
+        value = iconfig.getConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content, value);
+    }
     
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_服务端有该draft配置项时，正常删除配置
+     */
+    @Test
+    public void nacos_removeDraftConfig_1() throws Exception {
+        String content = "test";
+        boolean result = iconfig.draftConfig(dataId, group, content);
+        
+        Assert.assertTrue(result);
+        Thread.sleep(TIME_OUT);
+        
+        result = iconfig.removeDraftConfig(dataId, group);
+        Assert.assertTrue(result);
+        Thread.sleep(TIME_OUT);
+        String value = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        Assert.assertNull(value);
+    }
+    
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_服务端无该draft配置项时，配置删除失败
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_removeDraftConfig_2() throws Exception {
+        group += "removeDraftConfig2";
+        boolean result = iconfig.removeDraftConfig(dataId, group);
+        Assert.assertTrue(result);
+    }
+    
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_删除draft配置时dataId为null
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_removeDraftConfig_3() throws Exception {
+        try {
+            boolean result = iconfig.removeDraftConfig(null, group);
+            Assert.assertTrue(result);
+        } catch (Exception e) {
+            Assert.assertTrue(true);
+            return;
+        }
+        Assert.fail();
+    }
+    
+    /**
+     * @throws Exception
+     * @TCDescription : nacos_删除配置时group为null
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_removeDraftConfig_4() throws Exception {
+        boolean result = iconfig.removeDraftConfig(dataId, null);
+        Assert.assertTrue(result);
+    }
+
     /**
      * @throws Exception
      * @TCDescription : nacos_服务端有该配置项时，正常删除配置
@@ -282,17 +640,17 @@ public abstract class AbstractConfigAPI_CITCase {
     public void nacos_removeConfig_1() throws Exception {
         String content = "test";
         boolean result = iconfig.publishConfig(dataId, group, content);
-        
+
         Assert.assertTrue(result);
         Thread.sleep(TIME_OUT);
-        
+
         result = iconfig.removeConfig(dataId, group);
         Assert.assertTrue(result);
         Thread.sleep(TIME_OUT);
         String value = iconfig.getConfig(dataId, group, TIME_OUT);
         Assert.assertNull(value);
     }
-    
+
     /**
      * @throws Exception
      * @TCDescription : nacos_服务端无该配置项时，配置删除失败
@@ -303,7 +661,7 @@ public abstract class AbstractConfigAPI_CITCase {
         boolean result = iconfig.removeConfig(dataId, group);
         Assert.assertTrue(result);
     }
-    
+
     /**
      * @throws Exception
      * @TCDescription : nacos_删除配置时dataId为null
@@ -319,7 +677,7 @@ public abstract class AbstractConfigAPI_CITCase {
         }
         Assert.fail();
     }
-    
+
     /**
      * @throws Exception
      * @TCDescription : nacos_删除配置时group为null
@@ -645,6 +1003,31 @@ public abstract class AbstractConfigAPI_CITCase {
     }
     
     /**
+     * @TCDescription : nacos_openAPI_draft配置具体信息
+     */
+    @Test(timeout = 3 * TIME_OUT)
+    public void nacos_openAPI_detailDraftConfig_1() {
+        HttpRestResult<String> result = null;
+        
+        try {
+            final String content = "test";
+            boolean ret = iconfig.draftConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
+            Assert.assertTrue(ret);
+            Map<String, String> params = new HashMap<>();
+            params.put("dataId", dataId);
+            params.put("group", group);
+            params.put("show", "all");
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            
+            Assert.assertEquals(content, JacksonUtils.toObj(result.getData()).get("content").textValue());
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
+    /**
      * @TCDescription : nacos_openAPI_配置具体信息
      * @TestStep :
      * @ExpectResult :
@@ -654,7 +1037,7 @@ public abstract class AbstractConfigAPI_CITCase {
     @Test(timeout = 3 * TIME_OUT)
     public void nacos_openAPI_detailConfig_1() {
         HttpRestResult<String> result = null;
-        
+
         try {
             final String content = "test";
             boolean ret = iconfig.publishConfig(dataId, group, content);
@@ -666,7 +1049,7 @@ public abstract class AbstractConfigAPI_CITCase {
             params.put("show", "all");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
-            
+
             Assert.assertEquals(content, JacksonUtils.toObj(result.getData()).get("content").textValue());
         } catch (Exception e) {
             Assert.fail();
@@ -698,6 +1081,32 @@ public abstract class AbstractConfigAPI_CITCase {
             System.out.println(result.getData());
             Assert.assertFalse(JacksonUtils.toObj(result.getData()).get("data").isNull());
             
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_draft_catalog信息
+     */
+    @Test(timeout = 3 * TIME_OUT)
+    public void nacos_openAPI_draft_catalog() {
+        HttpRestResult<String> result = null;
+
+        try {
+            final String content = "test";
+            boolean ret = iconfig.draftConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
+            Assert.assertTrue(ret);
+            Map<String, String> params = new HashMap<>();
+            params.put("dataId", dataId);
+            params.put("group", group);
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH + "/catalog", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+
+            System.out.println(result.getData());
+            Assert.assertFalse(JacksonUtils.toObj(result.getData()).get("data").isNull());
+
         } catch (Exception e) {
             Assert.fail();
         }
@@ -810,7 +1219,66 @@ public abstract class AbstractConfigAPI_CITCase {
             Assert.fail();
         }
     }
-    
+
+    /**
+     * @TCDescription : nacos_openAPI_模糊查询draft配置信息
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_openAPI_fuzzySearchDraftConfig() {
+        HttpRestResult<String> result = null;
+
+        try {
+            final String content = "test123";
+            boolean ret = iconfig.draftConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
+            Assert.assertTrue(ret);
+            Map<String, String> params = new HashMap<>();
+            params.put("dataId", dataId);
+            params.put("group", group);
+            params.put("pageNo", "1");
+            params.put("pageSize", "10");
+            params.put("search", "blur");
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+
+            Assert.assertTrue(JacksonUtils.toObj(result.getData()).get("totalCount").intValue() >= 1);
+            Assert.assertTrue(JacksonUtils.toObj(result.getData()).get("pageItems").get(0).get("content").textValue()
+                    .startsWith(content));
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_模糊查询draft配置信息
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_openAPI_fuzzySearchDraftConfig_1() {
+        HttpRestResult<String> result = null;
+        
+        try {
+            final String content = "test123";
+            boolean ret = iconfig.draftConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
+            Assert.assertTrue(ret);
+            Map<String, String> params = new HashMap<>();
+            params.put("dataId", dataId + "*");
+            params.put("group", group + "*");
+            params.put("pageNo", "1");
+            params.put("pageSize", "10");
+            params.put("search", "blur");
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertTrue(JacksonUtils.toObj(result.getData()).get("totalCount").intValue() >= 1);
+            Assert.assertEquals(content,
+                    JacksonUtils.toObj(result.getData()).get("pageItems").get(0).get("content").textValue());
+            
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
     /**
      * @TCDescription : nacos_openAPI_模糊查询配置信息
      * @TestStep : 1. 发布配置 2. 查询配置信息
@@ -821,7 +1289,7 @@ public abstract class AbstractConfigAPI_CITCase {
     @Test(timeout = 5 * TIME_OUT)
     public void nacos_openAPI_fuzzySearchConfig_1() {
         HttpRestResult<String> result = null;
-        
+
         try {
             final String content = "test123";
             boolean ret = iconfig.publishConfig(dataId, group, content);
@@ -834,12 +1302,12 @@ public abstract class AbstractConfigAPI_CITCase {
             params.put("pageSize", "10");
             params.put("search", "blur");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            
+
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
             Assert.assertTrue(JacksonUtils.toObj(result.getData()).get("totalCount").intValue() >= 1);
             Assert.assertEquals(content,
                     JacksonUtils.toObj(result.getData()).get("pageItems").get(0).get("content").textValue());
-            
+
         } catch (Exception e) {
             Assert.fail();
         }
@@ -911,6 +1379,158 @@ public abstract class AbstractConfigAPI_CITCase {
             Assert.fail();
         }
     }
-    
-    
+
+    /**
+     * @TCDescription : nacos_openAPI_查询draft配置信息
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_openAPI_searchDraftConfig() {
+        HttpRestResult<String> result = null;
+
+        try {
+            final String content = "test123";
+            boolean ret = iconfig.draftConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+            Thread.sleep(TIME_OUT);
+            Map<String, String> params = new HashMap<>();
+            params.put("dataId", dataId);
+            params.put("group", group);
+            params.put("pageNo", "1");
+            params.put("pageSize", "10");
+            params.put("search", "accurate");
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals(1, JacksonUtils.toObj(result.getData()).get("totalCount").intValue());
+            Assert.assertEquals(content,
+                    JacksonUtils.toObj(result.getData()).get("pageItems").get(0).get("content").textValue());
+
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_查询draft配置信息，包含中文，utf-8
+     */
+    @Test(timeout = 5 * TIME_OUT)
+    public void nacos_openAPI_searchDraftConfig_2() {
+        HttpRestResult<String> result = null;
+
+        try {
+            final String content = "test测试";
+            boolean ret = iconfig.draftConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+            Thread.sleep(TIME_OUT);
+
+            Map<String, String> params = new HashMap<>();
+            params.put("dataId", dataId);
+            params.put("group", group);
+            params.put("pageNo", "1");
+            params.put("pageSize", "10");
+            params.put("search", "accurate");
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals(1, JacksonUtils.toObj(result.getData()).get("totalCount").intValue());
+            Assert.assertEquals(content,
+                    JacksonUtils.toObj(result.getData()).get("pageItems").get(0).get("content").textValue());
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_draft配置保存、发布
+     */
+    @Test(timeout = 10 * TIME_OUT)
+    public void nacos_openAPI_publishDraftConfig_1() {
+        HttpRestResult<String> result = null;
+
+        try {
+            final String content = "test";
+            Map<String, String> params = new HashMap<>();
+            params.put("dataId", dataId);
+            params.put("group", group);
+            params.put("content", content);
+            result = agent.httpPost(DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals("true", result.getData());
+
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals(content, result.getData());
+
+            result = agent.httpPost(PUBLISH_DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals("true", result.getData());
+
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_NOT_FOUND, result.getCode());
+            Assert.assertNull(result.getData());
+
+            result = agent.httpGet(CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals(content, result.getData());
+
+            result = agent.httpPost(DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals("true", result.getData());
+
+            result = agent.httpDelete(DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals("true", result.getData());
+
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_NOT_FOUND, result.getCode());
+            Assert.assertNull(result.getData());
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_tag_draft配置保存、发布
+     */
+    @Test(timeout = 10 * TIME_OUT)
+    public void nacos_openAPI_publishDraftConfig_2() {
+        HttpRestResult<String> result = null;
+
+        try {
+            final String content = "test";
+            final String config_tags = "tag1,tag2";
+            Map<String, String> params = new HashMap<>();
+            params.put("dataId", dataId);
+            params.put("group", group);
+            params.put("content", content);
+            params.put("config_tags", config_tags);
+            params.put("show", "all");
+            result = agent.httpPost(DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals("true", result.getData());
+
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals(content, JacksonUtils.toObj(result.getData()).get("content").textValue());
+            Assert.assertEquals(config_tags, JacksonUtils.toObj(result.getData()).get("configTags").textValue());
+
+            result = agent.httpPost(PUBLISH_DRAFT_CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals("true", result.getData());
+
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals("", result.getData());
+
+            result = agent.httpGet(DRAFT_CONFIG_CONTROLLER_PATH + "/catalog", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertTrue(JacksonUtils.toObj(result.getData()).get("data").isNull());
+
+            result = agent.httpGet(CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            Assert.assertEquals(content, JacksonUtils.toObj(result.getData()).get("content").textValue());
+            Assert.assertEquals(config_tags, JacksonUtils.toObj(result.getData()).get("configTags").textValue());
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
 }

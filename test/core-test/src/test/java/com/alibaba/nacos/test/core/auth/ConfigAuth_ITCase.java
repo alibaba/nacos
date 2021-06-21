@@ -85,6 +85,9 @@ public class ConfigAuth_ITCase extends AuthBase {
         iconfig = NacosFactory.createConfigService(properties);
 
         final String content = "test";
+        assertFalse(iconfig.draftConfig(dataId, group, content));
+        assertFalse(iconfig.publishConfigFromDraft(dataId, group));
+        assertFalse(iconfig.removeDraftConfig(dataId, group));
         assertFalse(iconfig.publishConfig(dataId, group, content));
         assertFalse(iconfig.removeConfig(dataId, group));
     }
@@ -92,22 +95,26 @@ public class ConfigAuth_ITCase extends AuthBase {
     @Test
     public void readWithReadPermission() throws Exception {
 
-        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(2);
         AtomicInteger ai = new AtomicInteger(0);
 
         properties.put(PropertyKeyConst.USERNAME, username1);
         properties.put(PropertyKeyConst.PASSWORD, password1);
         iconfig = NacosFactory.createConfigService(properties);
 
-        final String content = "test" + System.currentTimeMillis();
-        System.out.println(content);
+        final String content1 = "test" + System.currentTimeMillis();
+        System.out.println("content1:" + content1);
+        TimeUnit.SECONDS.sleep(1L);
+        final String content2 = "test" + System.currentTimeMillis();
+        System.out.println("content2:" + content2);
 
         iconfig.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
                 ConfigChangeItem cci = event.getChangeItem("content");
                 System.out.println("content:" + cci);
-                if (!content.equals(cci.getNewValue())) {
+                if (!content1.equals(cci.getNewValue()) &&
+                        !content2.equals(cci.getNewValue())) {
                     return;
                 }
                 latch.countDown();
@@ -120,12 +127,29 @@ public class ConfigAuth_ITCase extends AuthBase {
         properties.put(PropertyKeyConst.PASSWORD, password2);
         ConfigService configService = NacosFactory.createConfigService(properties);
 
-        boolean result = configService.publishConfig(dataId, group, content);
+        boolean result = configService.publishConfig(dataId, group, content1);
         Assert.assertTrue(result);
         TimeUnit.SECONDS.sleep(5L);
 
         String res = iconfig.getConfig(dataId, group, TIME_OUT);
-        Assert.assertEquals(content, res);
+        Assert.assertEquals(content1, res);
+
+        latch.await(5L, TimeUnit.SECONDS);
+        Assert.assertEquals(1, latch.getCount());
+
+        result = configService.draftConfig(dataId, group, content2);
+        Assert.assertTrue(result);
+        TimeUnit.SECONDS.sleep(5L);
+
+        res = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content2, res);
+
+        result = configService.publishConfigFromDraft(dataId, group);
+        Assert.assertTrue(result);
+        TimeUnit.SECONDS.sleep(5L);
+
+        res = iconfig.getConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content2, res);
 
         latch.await(5L, TimeUnit.SECONDS);
         Assert.assertEquals(0, latch.getCount());
@@ -140,7 +164,20 @@ public class ConfigAuth_ITCase extends AuthBase {
         iconfig = NacosFactory.createConfigService(properties);
 
         final String content = "test";
-        boolean res = iconfig.publishConfig(dataId, group, content);
+
+        boolean res = iconfig.draftConfig(dataId, group, content);
+        Assert.assertTrue(res);
+
+        res = iconfig.removeDraftConfig(dataId, group);
+        Assert.assertTrue(res);
+
+        res = iconfig.draftConfig(dataId, group, content);
+        Assert.assertTrue(res);
+
+        res = iconfig.publishConfigFromDraft(dataId, group);
+        Assert.assertTrue(res);
+
+        res = iconfig.publishConfig(dataId, group, content);
         Assert.assertTrue(res);
 
         res = iconfig.removeConfig(dataId, group);
@@ -175,7 +212,16 @@ public class ConfigAuth_ITCase extends AuthBase {
 
         boolean result = iconfig.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
+        result = iconfig.draftConfig(dataId, group, content);
+        Assert.assertTrue(result);
         TimeUnit.SECONDS.sleep(5L);
+
+        try {
+            iconfig.getDraftConfig(dataId, group, TIME_OUT);
+            fail();
+        } catch (NacosException ne) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
+        }
 
         try {
             iconfig.getConfig(dataId, group, TIME_OUT);
@@ -191,23 +237,28 @@ public class ConfigAuth_ITCase extends AuthBase {
 
 
     @Test
-    public void ReadWriteWithFullPermission() throws Exception {
+    public void readWriteWithFullPermission() throws Exception {
 
-        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(2);
         AtomicInteger ai = new AtomicInteger(0);
 
         properties.put(PropertyKeyConst.USERNAME, username3);
         properties.put(PropertyKeyConst.PASSWORD, password3);
         iconfig = NacosFactory.createConfigService(properties);
 
-        final String content = "test" + System.currentTimeMillis();
+        final String content1 = "test" + System.currentTimeMillis();
+        System.out.println("content1:" + content1);
+        TimeUnit.SECONDS.sleep(1L);
+        final String content2 = "test" + System.currentTimeMillis();
+        System.out.println("content2:" + content2);
 
         iconfig.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
                 ConfigChangeItem cci = event.getChangeItem("content");
                 System.out.println("content:" + cci);
-                if (!content.equals(cci.getNewValue())) {
+                if (!content1.equals(cci.getNewValue()) &&
+                        !content2.equals(cci.getNewValue())) {
                     return;
                 }
                 latch.countDown();
@@ -216,12 +267,30 @@ public class ConfigAuth_ITCase extends AuthBase {
 
         TimeUnit.SECONDS.sleep(3L);
 
-        boolean result = iconfig.publishConfig(dataId, group, content);
+        boolean result = iconfig.publishConfig(dataId, group, content1);
         Assert.assertTrue(result);
         TimeUnit.SECONDS.sleep(5L);
 
         String res = iconfig.getConfig(dataId, group, TIME_OUT);
-        Assert.assertEquals(content, res);
+        Assert.assertEquals(content1, res);
+
+        latch.await(5L, TimeUnit.SECONDS);
+
+        Assert.assertEquals(1, latch.getCount());
+
+        result = iconfig.draftConfig(dataId, group, content2);
+        Assert.assertTrue(result);
+        TimeUnit.SECONDS.sleep(5L);
+
+        res = iconfig.getDraftConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content2, res);
+
+        result = iconfig.publishConfigFromDraft(dataId, group);
+        Assert.assertTrue(result);
+        TimeUnit.SECONDS.sleep(5L);
+
+        res = iconfig.getConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content2, res);
 
         latch.await(5L, TimeUnit.SECONDS);
 

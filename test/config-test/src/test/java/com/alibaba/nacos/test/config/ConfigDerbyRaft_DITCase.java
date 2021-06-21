@@ -88,7 +88,7 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
                 new String[] {"this.is.raft_cluster=lessspring_7", "this.is.raft_cluster=lessspring_7",
                         "this.is.raft_cluster=lessspring_7"});
     }
-    
+
     @Test
     public void test_b_publish_config() throws Exception {
         ThreadUtils.sleep(5000);
@@ -258,6 +258,168 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         latch[1].await(10_000L, TimeUnit.MILLISECONDS);
         Assert.assertEquals(content, r.get());
         Assert.assertEquals(content, iconfig7.getConfig(dataId, group, 2_000L));
+    }
+
+    @Test
+    public void test_a_draft_config() throws Exception {
+        boolean result = iconfig7.draftConfig("raft_test", "cluster_test_1", "this.is.raft_cluster=lessspring_7");
+        Assert.assertTrue(result);
+
+        ThreadUtils.sleep(5000);
+
+        ConfigurableApplicationContext context7 = applications.get("8847");
+        ConfigurableApplicationContext context8 = applications.get("8848");
+        ConfigurableApplicationContext context9 = applications.get("8849");
+
+        PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
+        PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
+        PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
+
+        String s7 = operate7.findDraftConfigInfo("raft_test", "cluster_test_1", "").getContent();
+        String s8 = operate8.findDraftConfigInfo("raft_test", "cluster_test_1", "").getContent();
+        String s9 = operate9.findDraftConfigInfo("raft_test", "cluster_test_1", "").getContent();
+
+        Assert.assertArrayEquals("The three nodes must have consistent data", new String[] {s7, s8, s9},
+                new String[] {"this.is.raft_cluster=lessspring_7", "this.is.raft_cluster=lessspring_7",
+                        "this.is.raft_cluster=lessspring_7"});
+    }
+
+    @Test
+    public void test_b_draft_config() throws Exception {
+        ThreadUtils.sleep(5000);
+
+        boolean result = iconfig8.draftConfig("raft_test", "cluster_test_2", "this.is.raft_cluster=lessspring_8");
+        Assert.assertTrue(result);
+
+        ThreadUtils.sleep(5000);
+
+        ConfigurableApplicationContext context7 = applications.get("8847");
+        ConfigurableApplicationContext context8 = applications.get("8848");
+        ConfigurableApplicationContext context9 = applications.get("8849");
+
+        PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
+        PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
+        PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
+
+        String s7 = operate7.findDraftConfigInfo("raft_test", "cluster_test_2", "").getContent();
+        String s8 = operate8.findDraftConfigInfo("raft_test", "cluster_test_2", "").getContent();
+        String s9 = operate9.findDraftConfigInfo("raft_test", "cluster_test_2", "").getContent();
+
+        Assert.assertArrayEquals("The three nodes must have consistent data", new String[] {s7, s8, s9},
+                new String[] {"this.is.raft_cluster=lessspring_8", "this.is.raft_cluster=lessspring_8",
+                        "this.is.raft_cluster=lessspring_8"});
+    }
+
+    @Test
+    public void test_c_draft_config() throws Exception {
+        ThreadUtils.sleep(5000);
+        boolean result = iconfig9.draftConfig("raft_test", "cluster_test_2", "this.is.raft_cluster=lessspring_9");
+        Assert.assertTrue(result);
+
+        ThreadUtils.sleep(5000);
+
+        ConfigurableApplicationContext context7 = applications.get("8847");
+        ConfigurableApplicationContext context8 = applications.get("8848");
+        ConfigurableApplicationContext context9 = applications.get("8849");
+
+        PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
+        PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
+        PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
+
+        String s7 = operate7.findDraftConfigInfo("raft_test", "cluster_test_2", "").getContent();
+        String s8 = operate8.findDraftConfigInfo("raft_test", "cluster_test_2", "").getContent();
+        String s9 = operate9.findDraftConfigInfo("raft_test", "cluster_test_2", "").getContent();
+
+        Assert.assertArrayEquals("The three nodes must have consistent data", new String[] {s7, s8, s9},
+                new String[] {"this.is.raft_cluster=lessspring_9", "this.is.raft_cluster=lessspring_9",
+                        "this.is.raft_cluster=lessspring_9"});
+    }
+
+    @Test
+    public void test_d_modify_draft_config() throws Exception {
+        boolean result = iconfig7
+                .draftConfig("raft_test", "cluster_test_1", "this.is.raft_cluster=lessspring_7_it_is_for_modify");
+        Assert.assertTrue(result);
+
+        ThreadUtils.sleep(5000);
+
+        ConfigurableApplicationContext context7 = applications.get("8847");
+        ConfigurableApplicationContext context8 = applications.get("8848");
+        ConfigurableApplicationContext context9 = applications.get("8849");
+
+        PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
+        PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
+        PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
+
+        String s7 = operate7.findDraftConfigInfo("raft_test", "cluster_test_1", "").getContent();
+        String s8 = operate8.findDraftConfigInfo("raft_test", "cluster_test_1", "").getContent();
+        String s9 = operate9.findDraftConfigInfo("raft_test", "cluster_test_1", "").getContent();
+
+        Assert.assertArrayEquals("The three nodes must have consistent data", new String[] {s7, s8, s9},
+                new String[] {"this.is.raft_cluster=lessspring_7_it_is_for_modify",
+                        "this.is.raft_cluster=lessspring_7_it_is_for_modify",
+                        "this.is.raft_cluster=lessspring_7_it_is_for_modify"});
+    }
+
+    @Test
+    public void test_l_client_operation_on_draft() throws Exception {
+        final String dataId = "test_l_client_operation";
+        final String groupId = "test_l_client_operation";
+        String content = "test_l_client_operation" + System.currentTimeMillis();
+
+        // publish by 8847
+        boolean result = iconfig7.draftConfig(dataId, groupId, content);
+        Assert.assertTrue(result);
+        ThreadUtils.sleep(5000);
+
+        String v1_7 = iconfig7.getDraftConfig(dataId, groupId, 5000L);
+        String v1_8 = iconfig8.getDraftConfig(dataId, groupId, 5000L);
+        String v1_9 = iconfig9.getDraftConfig(dataId, groupId, 5000L);
+
+        Assert.assertEquals(content, v1_7);
+        Assert.assertEquals(content, v1_8);
+        Assert.assertEquals(content, v1_9);
+
+        // publish by 8848
+        content = "test_l_client_operation" + System.currentTimeMillis();
+        result = iconfig8.draftConfig(dataId, groupId, content);
+        Assert.assertTrue(result);
+        ThreadUtils.sleep(5000);
+
+        String v2_7 = iconfig7.getDraftConfig(dataId, groupId, 5000L);
+        String v2_8 = iconfig8.getDraftConfig(dataId, groupId, 5000L);
+        String v2_9 = iconfig9.getDraftConfig(dataId, groupId, 5000L);
+
+        Assert.assertEquals(content, v2_7);
+        Assert.assertEquals(content, v2_8);
+        Assert.assertEquals(content, v2_9);
+
+        // publish by 8849
+        content = "test_l_client_operation" + System.currentTimeMillis();
+        result = iconfig9.draftConfig(dataId, groupId, content);
+        Assert.assertTrue(result);
+        ThreadUtils.sleep(5000);
+
+        String v3_7 = iconfig7.getDraftConfig(dataId, groupId, 5000L);
+        String v3_8 = iconfig8.getDraftConfig(dataId, groupId, 5000L);
+        String v3_9 = iconfig9.getDraftConfig(dataId, groupId, 5000L);
+
+        Assert.assertEquals(content, v3_7);
+        Assert.assertEquals(content, v3_8);
+        Assert.assertEquals(content, v3_9);
+
+        // delete by 8849
+        result = iconfig9.removeDraftConfig(dataId, groupId);
+        Assert.assertTrue(result);
+        ThreadUtils.sleep(5000);
+
+        String v4_7 = iconfig7.getDraftConfig(dataId, groupId, 5000L);
+        String v4_8 = iconfig8.getDraftConfig(dataId, groupId, 5000L);
+        String v4_9 = iconfig9.getDraftConfig(dataId, groupId, 5000L);
+
+        Assert.assertNull(v4_7);
+        Assert.assertNull(v4_8);
+        Assert.assertNull(v4_9);
     }
     
     @Test

@@ -61,11 +61,44 @@ public class ConfigExample {
 
         boolean isRemoveOk = configService.removeConfig(dataId, group);
         System.out.println(isRemoveOk);
-        Thread.sleep(3000);
 
+        Thread.sleep(3000);
         content = configService.getConfig(dataId, group, 5000);
         System.out.println(content);
+
         Thread.sleep(300000);
 
+        boolean isDraftOk = configService.draftConfig(dataId, group, "content");
+        System.out.println(isDraftOk);
+
+        Thread.sleep(3000);
+        content = configService.getDraftConfig(dataId, group, 5000);
+        System.out.println(content);
+
+        boolean isRemoveDraftOk = configService.removeDraftConfig(dataId, group);
+        System.out.println(isRemoveDraftOk);
+
+        Thread.sleep(3000);
+        content = configService.getDraftConfig(dataId, group, 5000);
+        System.out.println(content);
+
+        Thread.sleep(300000);
+
+        isDraftOk = configService.draftConfig(dataId, group, "content");
+        System.out.println(isDraftOk);
+
+        Thread.sleep(3000);
+        boolean isPublishDraftOk = configService.publishConfigFromDraft(dataId, group);
+        System.out.println(isPublishDraftOk);
+
+        Thread.sleep(3000);
+        content = configService.getConfig(dataId, group, 5000);
+        System.out.println(content);
+
+        Thread.sleep(3000);
+        content = configService.getDraftConfig(dataId, group, 5000);
+        System.out.println(content);
+
+        Thread.sleep(300000);
     }
 }
