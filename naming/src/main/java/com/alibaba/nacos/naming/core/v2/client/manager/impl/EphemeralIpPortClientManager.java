@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactoryHolder;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
@@ -61,16 +61,23 @@ public class EphemeralIpPortClientManager implements ClientManager {
     }
     
     @Override
-    public boolean clientConnected(Client client) {
-        Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
-        if (!clients.containsKey(client.getClientId())) {
-            clients.putIfAbsent(client.getClientId(), (IpPortBasedClient) client);
-        }
+    public boolean clientConnected(String clientId, ClientAttributes attributes) {
+        return clientConnected(clientFactory.newClient(clientId, attributes));
+    }
+    
+    @Override
+    public boolean clientConnected(final Client client) {
+        clients.computeIfAbsent(client.getClientId(), s -> {
+            Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
+            IpPortBasedClient ipPortBasedClient = (IpPortBasedClient) client;
+            ipPortBasedClient.init();
+            return ipPortBasedClient;
+        });
         return true;
     }
     
     @Override
-    public boolean syncClientConnected(String clientId, ClientSyncAttributes attributes) {
+    public boolean syncClientConnected(String clientId, ClientAttributes attributes) {
         return clientConnected(clientFactory.newSyncedClient(clientId, attributes));
     }
     

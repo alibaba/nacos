@@ -46,6 +46,7 @@ public class IpPortBasedClientTest {
     @Before
     public void setUp() throws Exception {
         ipPortBasedClient = new IpPortBasedClient(clientId, true);
+        ipPortBasedClient.init();
         instancePublishInfo = new InstancePublishInfo();
     }
     
