@@ -19,10 +19,12 @@ import static org.junit.Assert.assertTrue;
 
 public class TpsMonitorManagerTest {
     
-    static TpsMonitorManager tpsMonitorManager = new TpsMonitorManager();
+    static TpsMonitorManager tpsMonitorManager;
     
     @BeforeClass
-    public static void setUpBeforeClass() {
+    public static void setUpBeforeClass() throws InterruptedException {
+        tpsMonitorManager = new TpsMonitorManager();
+        TimeUnit.SECONDS.sleep(1);
         TpsMonitorPoint publish = new TpsMonitorPoint("configPublish");
         tpsMonitorManager.registerTpsControlPoint(publish);
         TpsControlRule rule = new TpsControlRule();
@@ -31,17 +33,13 @@ public class TpsMonitorManagerTest {
                 .putIfAbsent("testKey:a*b", new TpsControlRule.Rule(500, TimeUnit.SECONDS, "EACH", "intercept"));
         rule.getMonitorKeyRule()
                 .putIfAbsent("testKey:*", new TpsControlRule.Rule(2000000, TimeUnit.SECONDS, "SUM", "intercept"));
-        
         publish.applyRule(rule);
     }
     
     @Before
-    public void setUp() {
+    public void setUp() throws InterruptedException {
         // make sure different case will not effect each other.
-        try {
-            Thread.sleep(1000L);
-        } catch (InterruptedException ignored) {
-        }
+        TimeUnit.SECONDS.sleep(1);
     }
     
     @Test
