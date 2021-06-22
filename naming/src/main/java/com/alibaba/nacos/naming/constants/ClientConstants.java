@@ -25,6 +25,8 @@ public class ClientConstants {
     
     public static final String CONNECTION_TYPE = "connectionType";
     
+    public static final String CONNECTION_METADATA = "connectionMetadata";
+    
     public static final String DEFAULT_FACTORY = "default";
     
     public static final String EPHEMERAL_IP_PORT = "ephemeralIpPort";

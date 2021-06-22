@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import org.junit.After;
 import org.junit.Before;
@@ -44,7 +44,7 @@ public class PersistentIpPortClientManagerTest {
     private final String snapshotClientId = System.currentTimeMillis() + "_127.0.0.1_8080";
     
     @Mock
-    private ClientSyncAttributes clientSyncAttributes;
+    private ClientAttributes clientAttributes;
     
     @Mock
     private IpPortBasedClient client;
@@ -80,7 +80,7 @@ public class PersistentIpPortClientManagerTest {
     
     @Test(expected = UnsupportedOperationException.class)
     public void makeSureSyncClientConnected() {
-        persistentIpPortClientManager.syncClientConnected(clientId, clientSyncAttributes);
+        persistentIpPortClientManager.syncClientConnected(clientId, clientAttributes);
     }
     
     @Test(expected = UnsupportedOperationException.class)

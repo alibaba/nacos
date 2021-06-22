@@ -38,9 +38,9 @@ public class TpsMonitorManagerTest {
     @BeforeClass
     public static void setUpBeforeClass() throws InterruptedException {
         tpsMonitorManager = new TpsMonitorManager();
-        TimeUnit.SECONDS.sleep(1);
         TpsMonitorPoint publish = new TpsMonitorPoint("configPublish");
         tpsMonitorManager.registerTpsControlPoint(publish);
+        TimeUnit.SECONDS.sleep(1);
         TpsControlRule rule = new TpsControlRule();
         rule.setPointRule(new TpsControlRule.Rule(5000, TimeUnit.SECONDS, "SUM", "intercept"));
         rule.getMonitorKeyRule()
