@@ -218,6 +218,7 @@ public class EnvUtil {
     public static boolean getStandaloneMode() {
         if (Objects.isNull(isStandalone)) {
             isStandalone = Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME);
+            isStandalone = true;//曹明杰修改 单机测试，不做集群，为了查看源码
         }
         return isStandalone;
     }
