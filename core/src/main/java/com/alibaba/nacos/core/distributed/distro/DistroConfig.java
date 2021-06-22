@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
@@ -24,7 +28,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  *
  * @author xiweng.yy
  */
-public class DistroConfig {
+public class DistroConfig extends Subscriber<ServerConfigChangeEvent> {
     
     private static final DistroConfig INSTANCE = new DistroConfig();
     
@@ -43,6 +47,7 @@ public class DistroConfig {
     private DistroConfig() {
         try {
             getDistroConfigFromEnv();
+            NotifyCenter.registerSubscriber(this);
         } catch (Exception e) {
             Loggers.CORE.warn("Get Distro config from env failed, will use default value", e);
         }
@@ -113,5 +118,19 @@ public class DistroConfig {
     
     public void setLoadDataRetryDelayMillis(long loadDataRetryDelayMillis) {
         this.loadDataRetryDelayMillis = loadDataRetryDelayMillis;
+    }
+    
+    @Override
+    public void onEvent(ServerConfigChangeEvent event) {
+        try {
+            getDistroConfigFromEnv();
+        } catch (Exception e) {
+            Loggers.CORE.warn("Upgrade Distro config from env failed, will use old value", e);
+        }
+    }
+    
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return ServerConfigChangeEvent.class;
     }
 }
