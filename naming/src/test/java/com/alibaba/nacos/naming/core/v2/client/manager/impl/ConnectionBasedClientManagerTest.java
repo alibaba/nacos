@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import org.junit.After;
 import org.junit.Before;
@@ -52,7 +52,7 @@ public class ConnectionBasedClientManagerTest {
     private ConnectionMeta connectionMeta;
     
     @Mock
-    private ClientSyncAttributes clientSyncAttributes;
+    private ClientAttributes clientAttributes;
     
     @Before
     public void setUp() throws Exception {
@@ -62,7 +62,7 @@ public class ConnectionBasedClientManagerTest {
         when(connection.getMetaInfo()).thenReturn(connectionMeta);
         when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE)).thenReturn(RemoteConstants.LABEL_MODULE_NAMING);
         
-        assertTrue(connectionBasedClientManager.syncClientConnected(connectionId, clientSyncAttributes));
+        assertTrue(connectionBasedClientManager.syncClientConnected(connectionId, clientAttributes));
         assertTrue(connectionBasedClientManager.verifyClient(connectionId));
         connectionBasedClientManager.clientConnected(connection);
         

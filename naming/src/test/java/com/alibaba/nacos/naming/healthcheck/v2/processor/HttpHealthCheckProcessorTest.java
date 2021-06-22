@@ -40,7 +40,6 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -117,7 +116,7 @@ public class HttpHealthCheckProcessorTest {
     }
     
     @Test
-    public void testOnReceive()
+    public void testOnReceiveWithOK()
             throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, InterruptedException {
         Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
         Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
@@ -127,18 +126,52 @@ public class HttpHealthCheckProcessorTest {
                         HealthCheckTaskV2.class, Service.class);
         Object objects = constructor
                 .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
-        List<Integer> codeList = Stream
-                .of(HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_UNAVAILABLE, HttpURLConnection.HTTP_NOT_FOUND)
+        int code = HttpURLConnection.HTTP_OK;
+        when(restResult.getCode()).thenReturn(code);
+        Method onReceive = aClass.getMethod("onReceive", RestResult.class);
+        onReceive.invoke(objects, restResult);
+        //verify
+        this.verifyCall(code);
+        List<Integer> codeList = Stream.of(HttpURLConnection.HTTP_UNAVAILABLE, HttpURLConnection.HTTP_NOT_FOUND)
                 .collect(Collectors.toList());
-        for (Integer code : codeList) {
-            when(restResult.getCode()).thenReturn(code);
-            Method onReceive = aClass.getMethod("onReceive", RestResult.class);
-            onReceive.invoke(objects, restResult);
-            
-            //verify
-            this.verifyCall(code);
-            TimeUnit.SECONDS.sleep(1);
-        }
+    }
+    
+    @Test
+    public void testOnReceiveWithUnavailable()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, InterruptedException {
+        Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
+        Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
+        Class<?> aClass = Arrays.stream(classes).findFirst().get();
+        Constructor<?> constructor = aClass
+                .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
+                        HealthCheckTaskV2.class, Service.class);
+        Object objects = constructor
+                .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
+        int code = HttpURLConnection.HTTP_UNAVAILABLE;
+        when(restResult.getCode()).thenReturn(code);
+        Method onReceive = aClass.getMethod("onReceive", RestResult.class);
+        onReceive.invoke(objects, restResult);
+        //verify
+        this.verifyCall(code);
+    }
+    
+    @Test
+    public void testOnReceiveWithNotFound()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, InterruptedException {
+        Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
+        Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
+        Class<?> aClass = Arrays.stream(classes).findFirst().get();
+        Constructor<?> constructor = aClass
+                .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
+                        HealthCheckTaskV2.class, Service.class);
+        Object objects = constructor
+                .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
+        int code = HttpURLConnection.HTTP_NOT_FOUND;
+        when(restResult.getCode()).thenReturn(code);
+        Method onReceive = aClass.getMethod("onReceive", RestResult.class);
+        onReceive.invoke(objects, restResult);
+        //verify
+        this.verifyCall(code);
     }
     
     private void verifyCall(int code) {
