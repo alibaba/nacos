@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(MockitoJUnitRunner.class)
 public class MemberUtilTest {
     
-    private static final String IP = "1.1.1.1";
+    private static final String IP = "1.1.1.2";
     
     private static final int PORT = 8848;
     
@@ -79,7 +79,7 @@ public class MemberUtilTest {
     @Test
     public void testIsBasicInfoChangedForIp() {
         Member newMember = buildMember();
-        newMember.setIp("1.1.1.2");
+        newMember.setIp("1.1.1.3");
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     
