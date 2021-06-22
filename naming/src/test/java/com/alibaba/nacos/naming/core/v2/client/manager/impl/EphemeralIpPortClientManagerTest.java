@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.junit.Before;
@@ -51,7 +51,7 @@ public class EphemeralIpPortClientManagerTest {
     private SwitchDomain switchDomain;
     
     @Mock
-    private ClientSyncAttributes attributes;
+    private ClientAttributes attributes;
     
     EphemeralIpPortClientManager ephemeralIpPortClientManager;
     

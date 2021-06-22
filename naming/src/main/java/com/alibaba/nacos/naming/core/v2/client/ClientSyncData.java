@@ -32,7 +32,7 @@ public class ClientSyncData implements Serializable {
     
     private String clientId;
     
-    private ClientSyncAttributes attributes;
+    private ClientAttributes attributes;
     
     private List<String> namespaces;
     
@@ -52,7 +52,7 @@ public class ClientSyncData implements Serializable {
         this.groupNames = groupNames;
         this.serviceNames = serviceNames;
         this.instancePublishInfos = instancePublishInfos;
-        this.attributes = new ClientSyncAttributes();
+        this.attributes = new ClientAttributes();
     }
     
     public String getClientId() {
@@ -95,11 +95,11 @@ public class ClientSyncData implements Serializable {
         this.instancePublishInfos = instancePublishInfos;
     }
     
-    public ClientSyncAttributes getAttributes() {
+    public ClientAttributes getAttributes() {
         return attributes;
     }
     
-    public void setAttributes(ClientSyncAttributes attributes) {
+    public void setAttributes(ClientAttributes attributes) {
         this.attributes = attributes;
     }
 }

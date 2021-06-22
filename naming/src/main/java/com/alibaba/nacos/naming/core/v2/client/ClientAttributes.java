@@ -21,17 +21,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Client sync data attributes.
+ * Client data attributes.
  *
  * @author xiweng.yy
  */
-public class ClientSyncAttributes implements Serializable {
+public class ClientAttributes implements Serializable {
     
     private static final long serialVersionUID = -5794675800507288793L;
     
     private Map<String, Object> clientAttributes;
     
-    public ClientSyncAttributes() {
+    public ClientAttributes() {
         this.clientAttributes = new HashMap<>(1);
     }
     

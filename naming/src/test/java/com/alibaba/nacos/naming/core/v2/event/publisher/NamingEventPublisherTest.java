@@ -95,12 +95,6 @@ public class NamingEventPublisherTest {
         verify(subscriber).onEvent(testEvent);
     }
     
-    @Test(expected = IllegalStateException.class)
-    public void testPublishAfterShutDown() throws NacosException {
-        namingEventPublisher.shutdown();
-        namingEventPublisher.publish(new TestEvent());
-    }
-    
     @Test
     public void getStatus() throws NacosException {
         namingEventPublisher.publish(new TestEvent());
