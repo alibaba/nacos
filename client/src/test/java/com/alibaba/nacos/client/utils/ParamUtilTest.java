@@ -20,83 +20,110 @@ package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Properties;
 
 public class ParamUtilTest {
     
+    private String defaultAppKey;
+    
+    private String defaultAppName;
+    
+    private String defaultContextPath;
+    
+    private String defaultVersion;
+    
+    private int defaultConnectTimeout;
+    
+    private double defaultPerTaskConfigSize;
+    
+    private String defaultNodesPath;
+    
+    @Before
+    public void before() {
+        defaultAppKey = "";
+        defaultAppName = "unknown";
+        defaultContextPath = "nacos";
+        defaultVersion = VersionUtils.version;
+        defaultConnectTimeout = 1000;
+        defaultPerTaskConfigSize = 3000.0;
+        defaultNodesPath = "serverlist";
+        
+    }
+    
+    @After
+    public void after() {
+        ParamUtil.setAppKey(defaultAppKey);
+        ParamUtil.setAppName(defaultAppName);
+        ParamUtil.setDefaultContextPath(defaultContextPath);
+        ParamUtil.setClientVersion(defaultVersion);
+        ParamUtil.setConnectTimeout(defaultConnectTimeout);
+        ParamUtil.setPerTaskConfigSize(defaultPerTaskConfigSize);
+        ParamUtil.setDefaultNodesPath(defaultNodesPath);
+    }
+    
     @Test
     public void testGetAppKey() {
         String defaultVal = ParamUtil.getAppKey();
-        Assert.assertEquals("", defaultVal);
+        Assert.assertEquals(defaultAppKey, defaultVal);
         
         String expect = "test";
         ParamUtil.setAppKey(expect);
         Assert.assertEquals(expect, ParamUtil.getAppKey());
-        
-        ParamUtil.setAppKey(defaultVal);
     }
     
     @Test
     public void testGetAppName() {
         String defaultVal = ParamUtil.getAppName();
-        Assert.assertEquals("unknown", defaultVal);
+        Assert.assertEquals(defaultAppName, defaultVal);
         
         String expect = "test";
         ParamUtil.setAppName(expect);
         Assert.assertEquals(expect, ParamUtil.getAppName());
-        
-        ParamUtil.setAppName(defaultVal);
     }
     
     @Test
     public void testGetDefaultContextPath() {
         String defaultVal = ParamUtil.getDefaultContextPath();
-        Assert.assertEquals("nacos", defaultVal);
+        Assert.assertEquals(defaultContextPath, defaultVal);
         
         String expect = "test";
         ParamUtil.setDefaultContextPath(expect);
         Assert.assertEquals(expect, ParamUtil.getDefaultContextPath());
-        
-        ParamUtil.setDefaultContextPath(defaultVal);
     }
     
     @Test
     public void testGetClientVersion() {
         String defaultVal = ParamUtil.getClientVersion();
-        Assert.assertEquals(VersionUtils.version, defaultVal);
+        Assert.assertEquals(defaultVersion, defaultVal);
         
         String expect = "test";
         ParamUtil.setClientVersion(expect);
         Assert.assertEquals(expect, ParamUtil.getClientVersion());
-        
-        ParamUtil.setClientVersion(defaultVal);
     }
     
     @Test
     public void testSetConnectTimeout() {
         int defaultVal = ParamUtil.getConnectTimeout();
-        Assert.assertEquals(1000, defaultVal);
+        Assert.assertEquals(defaultConnectTimeout, defaultVal);
         
         int expect = 50;
         ParamUtil.setConnectTimeout(expect);
         Assert.assertEquals(expect, ParamUtil.getConnectTimeout());
-        
-        ParamUtil.setConnectTimeout(defaultVal);
     }
     
     @Test
     public void testGetPerTaskConfigSize() {
         double defaultVal = ParamUtil.getPerTaskConfigSize();
-        Assert.assertEquals(3000.0, defaultVal, 0.01);
+        Assert.assertEquals(defaultPerTaskConfigSize, defaultVal, 0.01);
         
         double expect = 50.0;
         ParamUtil.setPerTaskConfigSize(expect);
         Assert.assertEquals(expect, ParamUtil.getPerTaskConfigSize(), 0.01);
-        
-        ParamUtil.setPerTaskConfigSize(defaultVal);
     }
     
     @Test
@@ -113,8 +140,6 @@ public class ParamUtilTest {
         String expect = "test";
         ParamUtil.setDefaultNodesPath(expect);
         Assert.assertEquals(expect, ParamUtil.getDefaultNodesPath());
-        
-        ParamUtil.setDefaultNodesPath(defaultVal);
     }
     
     @Test
