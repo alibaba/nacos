@@ -192,7 +192,9 @@ public class DefaultRequestFuture implements RequestFuture {
         public void run() {
             setFailResult(new TimeoutException(
                     "Timeout After " + requestCallBack.getTimeout() + " milliseconds,requestId =" + requestId));
-            timeoutInnerTrigger.triggerOnTimeout();
+            if (timeoutInnerTrigger != null) {
+                timeoutInnerTrigger.triggerOnTimeout();
+            }
         }
     }
     
