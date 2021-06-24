@@ -26,8 +26,13 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Naming client gprc connection event listener.
@@ -46,12 +51,32 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     
     private final Set<String> subscribes = new ConcurrentHashSet<String>();
     
+    private volatile boolean connected = false;
+    
+    private int queueSize = 16384;
+    
+    private BlockingQueue<Runnable> redoQueue = new ArrayBlockingQueue<>(queueSize);
+    
+    private static final long DEFAULT_REDO_DELAY = 3000L;
+    
+    private static final int DEFAULT_REDO_THREAD = 2;
+    
+    private ScheduledExecutorService redoExecutorService;
+    
     public NamingGrpcConnectionEventListener(NamingGrpcClientProxy clientProxy) {
         this.clientProxy = clientProxy;
+        this.redoExecutorService = new ScheduledThreadPoolExecutor(DEFAULT_REDO_THREAD, r -> {
+            Thread t = new Thread(r);
+            t.setName("com.alibaba.nacos.client.naming.grpc.event.listener");
+            t.setDaemon(true);
+            return t;
+        });
+        startRedoFailedTaskThread();
     }
     
     @Override
     public void onConnected() {
+        connected = true;
         redoSubscribe();
         redoRegisterEachService();
     }
@@ -63,7 +88,8 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
             try {
                 clientProxy.subscribe(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters());
             } catch (NacosException e) {
-                LogUtils.NAMING_LOGGER.warn(String.format("re subscribe service %s failed", serviceInfo.getName()), e);
+                redoQueue.offer(new RedoSubscribeTask(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters()));
+                LogUtils.NAMING_LOGGER.warn(String.format("re subscribe service %s failed, try again later.", serviceInfo.getName()), e);
             }
         }
     }
@@ -81,13 +107,29 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
         try {
             clientProxy.registerService(serviceName, groupName, instance);
         } catch (NacosException e) {
+            redoQueue.offer(new RedoRegisterTask(serviceName, groupName, instance));
             LogUtils.NAMING_LOGGER.warn(String
-                    .format("redo register for service %s@@%s, %s failed", groupName, serviceName, instance.toString()), e);
+                    .format("redo register for service %s@@%s, %s failed, try again later.", groupName, serviceName, instance.toString()), e);
         }
+    }
+    
+    private void startRedoFailedTaskThread() {
+        redoExecutorService.submit(() -> {
+            while (true) {
+                try {
+                    final Runnable task = redoQueue.take();
+                    redoExecutorService.schedule(task, DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    LogUtils.NAMING_LOGGER.warn("Take redo task interrupted", e);
+                }
+            }
+        });
     }
     
     @Override
     public void onDisConnect() {
+        connected = false;
+        redoQueue.clear();
         LogUtils.NAMING_LOGGER.warn("Grpc connection disconnect");
     }
     
@@ -121,5 +163,66 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     
     public void removeSubscriberForRedo(String fullServiceName, String cluster) {
         subscribes.remove(ServiceInfo.getKey(fullServiceName, cluster));
+    }
+    
+    public void shutdown() {
+        LogUtils.NAMING_LOGGER.info("Shutdown grpc event listener executor " + redoExecutorService);
+        redoExecutorService.shutdownNow();
+    }
+    
+    class RedoSubscribeTask implements Runnable {
+        
+        String serviceName;
+        
+        String groupName;
+        
+        String clusters;
+    
+        public RedoSubscribeTask(String serviceName, String groupName, String clusters) {
+            this.serviceName = serviceName;
+            this.groupName = groupName;
+            this.clusters = clusters;
+        }
+    
+        @Override
+        public void run() {
+            try {
+                clientProxy.subscribe(serviceName, groupName, clusters);
+            } catch (NacosException e) {
+                if (connected) {
+                    redoQueue.offer(this);
+                    LogUtils.NAMING_LOGGER.warn(String.format("re subscribe service %s failed, try again later.", serviceName), e);
+                }
+            }
+        }
+        
+    }
+    
+    class RedoRegisterTask implements Runnable {
+    
+        String serviceName;
+        
+        String groupName;
+        
+        Instance instance;
+    
+        public RedoRegisterTask(String serviceName, String groupName, Instance instance) {
+            this.serviceName = serviceName;
+            this.groupName = groupName;
+            this.instance = instance;
+        }
+    
+        @Override
+        public void run() {
+            try {
+                clientProxy.registerService(serviceName, groupName, instance);
+            } catch (NacosException e) {
+                if (connected) {
+                    redoQueue.offer(this);
+                    LogUtils.NAMING_LOGGER.warn(String
+                            .format("redo register for service %s@@%s, %s failed, try again later.", groupName, serviceName, instance.toString()), e);
+                }
+            }
+        }
     }
 }

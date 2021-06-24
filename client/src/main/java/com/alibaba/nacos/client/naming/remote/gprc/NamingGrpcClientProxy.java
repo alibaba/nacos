@@ -232,6 +232,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     @Override
     public void shutdown() throws NacosException {
         rpcClient.shutdown();
+        namingGrpcConnectionEventListener.shutdown();
     }
     
     public boolean isEnable() {

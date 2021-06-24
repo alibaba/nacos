@@ -158,7 +158,7 @@ public class NacosRoleServiceImpl {
     
     public List<RoleInfo> getRoles(String username) {
         List<RoleInfo> roleInfoList = roleInfoMap.get(username);
-        if (!authConfigs.isCachingEnabled()) {
+        if (!authConfigs.isCachingEnabled() || roleInfoList == null) {
             Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage != null) {
                 roleInfoList = roleInfoPage.getPageItems();
@@ -177,7 +177,7 @@ public class NacosRoleServiceImpl {
     
     public List<PermissionInfo> getPermissions(String role) {
         List<PermissionInfo> permissionInfoList = permissionInfoMap.get(role);
-        if (!authConfigs.isCachingEnabled()) {
+        if (!authConfigs.isCachingEnabled() || permissionInfoList == null) {
             Page<PermissionInfo> permissionInfoPage = getPermissionsFromDatabase(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (permissionInfoPage != null) {
                 permissionInfoList = permissionInfoPage.getPageItems();
