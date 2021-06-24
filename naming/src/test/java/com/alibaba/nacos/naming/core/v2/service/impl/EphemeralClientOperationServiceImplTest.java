@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.core.v2.service.impl;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
@@ -52,7 +52,7 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
     private PersistentIpPortClientManager persistentIpPortClientManager;
     
     @Mock
-    private ClientSyncAttributes clientSyncAttributes;
+    private ClientAttributes clientAttributes;
     
     @Mock
     private SwitchDomain switchDomain;
@@ -83,7 +83,7 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
     
         EphemeralIpPortClientManager ephemeralIpPortClientManager = new EphemeralIpPortClientManager(distroMapper,
                 switchDomain);
-        ephemeralIpPortClientManager.syncClientConnected(clientId, clientSyncAttributes);
+        ephemeralIpPortClientManager.syncClientConnected(clientId, clientAttributes);
         ClientManagerDelegate clientManagerDelegate = new ClientManagerDelegate(connectionBasedClientManager,
                 ephemeralIpPortClientManager, persistentIpPortClientManager);
         ephemeralClientOperationServiceImpl = new EphemeralClientOperationServiceImpl(clientManagerDelegate);

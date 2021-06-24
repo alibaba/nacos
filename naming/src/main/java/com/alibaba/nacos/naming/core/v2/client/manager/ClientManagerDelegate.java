@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client.manager;
 
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.EphemeralIpPortClientManager;
@@ -52,12 +52,17 @@ public class ClientManagerDelegate implements ClientManager {
     }
     
     @Override
+    public boolean clientConnected(String clientId, ClientAttributes attributes) {
+        return getClientManagerById(clientId).clientConnected(clientId, attributes);
+    }
+    
+    @Override
     public boolean clientConnected(Client client) {
         return getClientManagerById(client.getClientId()).clientConnected(client);
     }
     
     @Override
-    public boolean syncClientConnected(String clientId, ClientSyncAttributes attributes) {
+    public boolean syncClientConnected(String clientId, ClientAttributes attributes) {
         return getClientManagerById(clientId).syncClientConnected(clientId, attributes);
     }
     
