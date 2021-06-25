@@ -630,14 +630,13 @@ class ConfigEditor extends React.Component {
                 </Button>
               )}
               <Button
-                size="large"
                 type="primary"
                 disabled={tabActiveKey === 'production'}
                 onClick={() => this.openDiff('publish')}
               >
                 {locale.publish}
               </Button>
-              <Button size="large" type="normal" onClick={() => this.goBack()}>
+              <Button type="normal" onClick={() => this.goBack()}>
                 {locale.back}
               </Button>
             </Col>

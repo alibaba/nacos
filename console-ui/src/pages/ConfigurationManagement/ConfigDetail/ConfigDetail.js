@@ -373,13 +373,13 @@ class ConfigDetail extends React.Component {
           </Form>
           <Row>
             <Col span="24" className="button-list">
-              <Button size="large" type="primary" onClick={() => this.onClickConfigCompare()}>
+              <Button type="primary" onClick={() => this.onClickConfigCompare()}>
                 {locale.configComparison}
               </Button>{' '}
-              <Button size="large" type="primary" onClick={this.openDiff.bind(this)}>
+              <Button type="primary" onClick={this.openDiff.bind(this)}>
                 {locale.versionComparison}
               </Button>{' '}
-              <Button size="large" type="normal" onClick={this.goList.bind(this)}>
+              <Button type="normal" onClick={this.goList.bind(this)}>
                 {locale.back}
               </Button>
             </Col>
