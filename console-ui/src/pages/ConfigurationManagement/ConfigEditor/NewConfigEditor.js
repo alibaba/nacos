@@ -141,10 +141,8 @@ class ConfigEditor extends React.Component {
       readOnly: false,
       lineNumbersMinChars: true,
       theme: 'vs-dark',
-      wordWrapColumn: 120,
       folding: false,
       showFoldingControls: 'always',
-      wordWrap: 'wordWrapColumn',
       cursorStyle: 'line',
       automaticLayout: true,
     };
@@ -597,7 +595,7 @@ class ConfigEditor extends React.Component {
                 </div>
               }
             >
-              <div id="container" className={editorClass} />
+              <div id="container" className={editorClass} style={{ height: 450 }} />
             </Form.Item>
           </Form>
           <Row>
