@@ -14,23 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.constants;
+package com.alibaba.nacos.common.event;
+
+import com.alibaba.nacos.common.notify.Event;
 
 /**
- * Constants for client.
+ * Server configuration changed event.
+ *
+ * <p>
+ * When nacos server configuration file (default nacos/conf/application.properties) changed, The event should be notify
+ * to all subscriber.
+ * </p>
  *
  * @author xiweng.yy
  */
-public class ClientConstants {
+public class ServerConfigChangeEvent extends Event {
     
-    public static final String CONNECTION_TYPE = "connectionType";
+    private static final long serialVersionUID = 289992068985663172L;
     
-    public static final String CONNECTION_METADATA = "connectionMetadata";
-    
-    public static final String DEFAULT_FACTORY = "default";
-    
-    public static final String EPHEMERAL_IP_PORT = "ephemeralIpPort";
-    
-    public static final String PERSISTENT_IP_PORT = "persistentIpPort";
-    
+    public static ServerConfigChangeEvent newEvent() {
+        return new ServerConfigChangeEvent();
+    }
 }

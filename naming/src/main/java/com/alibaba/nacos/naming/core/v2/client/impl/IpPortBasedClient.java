@@ -54,13 +54,6 @@ public class IpPortBasedClient extends AbstractClient {
         this.ephemeral = ephemeral;
         this.clientId = clientId;
         this.responsibleId = getResponsibleTagFromId();
-        if (ephemeral) {
-            beatCheckTask = new ClientBeatCheckTaskV2(this);
-            HealthCheckReactor.scheduleCheck(beatCheckTask);
-        } else {
-            healthCheckTaskV2 = new HealthCheckTaskV2(this);
-            HealthCheckReactor.scheduleCheck(healthCheckTaskV2);
-        }
     }
     
     private String getResponsibleTagFromId() {
@@ -127,6 +120,19 @@ public class IpPortBasedClient extends AbstractClient {
             result.initHealthCheck();
         }
         return result;
+    }
+    
+    /**
+     * Init client.
+     */
+    public void init() {
+        if (ephemeral) {
+            beatCheckTask = new ClientBeatCheckTaskV2(this);
+            HealthCheckReactor.scheduleCheck(beatCheckTask);
+        } else {
+            healthCheckTaskV2 = new HealthCheckTaskV2(this);
+            HealthCheckReactor.scheduleCheck(healthCheckTaskV2);
+        }
     }
     
     /**
