@@ -16,10 +16,12 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,6 +63,12 @@ public class MemberUtilTest {
     
     private Member buildMember() {
         return Member.builder().ip(IP).port(PORT).state(NodeState.UP).build();
+    }
+    
+    @After
+    public void tearDown() throws NacosException {
+        NotifyCenter.deregisterPublisher(MembersChangeEvent.class);
+        memberManager.shutdown();
     }
     
     @Test
