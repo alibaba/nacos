@@ -154,7 +154,7 @@ CREATE TABLE `config_tags_relation_draft` (
 `tenant_id` varchar(128) DEFAULT '' COMMENT 'tenant_id',
 `nid` bigint(20) NOT NULL AUTO_INCREMENT,
 PRIMARY KEY (`nid`),
-UNIQUE KEY `uk_configtagrelation_configidtag` (`id`,`tag_name`,`tag_type`),
+UNIQUE KEY `uk_configtagrelationdraft_configidtag` (`id`,`tag_name`,`tag_type`),
 KEY `idx_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_tags_relation_draft';
 
