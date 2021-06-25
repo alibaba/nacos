@@ -24,10 +24,7 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,10 +50,6 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     
     private volatile boolean connected = false;
     
-    private int queueSize = 16384;
-    
-    private BlockingQueue<Runnable> redoQueue = new ArrayBlockingQueue<>(queueSize);
-    
     private static final long DEFAULT_REDO_DELAY = 3000L;
     
     private static final int DEFAULT_REDO_THREAD = 2;
@@ -71,65 +64,65 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
             t.setDaemon(true);
             return t;
         });
-        startRedoFailedTaskThread();
     }
     
     @Override
     public void onConnected() {
         connected = true;
-        redoSubscribe();
-        redoRegisterEachService();
+        LogUtils.NAMING_LOGGER.info("Grpc re-connect, redo subscribe services");
+        redoSubscribe(subscribes);
+        LogUtils.NAMING_LOGGER.info("Grpc re-connect, redo register services");
+        redoRegisterEachService(registeredInstanceCached.keySet());
     }
     
-    private void redoSubscribe() {
-        LogUtils.NAMING_LOGGER.info("Grpc re-connect, redo subscribe services");
+    private void redoSubscribe(Set<String> subscribes) {
+        Set<String> failedSubscribes = new ConcurrentHashSet<>();
         for (String each : subscribes) {
             ServiceInfo serviceInfo = ServiceInfo.fromKey(each);
             try {
                 clientProxy.subscribe(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters());
             } catch (NacosException e) {
-                redoQueue.offer(new RedoSubscribeTask(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters()));
-                LogUtils.NAMING_LOGGER.warn(String.format("re subscribe service %s failed, try again later.", serviceInfo.getName()), e);
-            }
-        }
-    }
-    
-    private void redoRegisterEachService() {
-        LogUtils.NAMING_LOGGER.info("Grpc re-connect, redo register services");
-        for (Map.Entry<String, Instance> each : registeredInstanceCached.entrySet()) {
-            String serviceName = NamingUtils.getServiceName(each.getKey());
-            String groupName = NamingUtils.getGroupName(each.getKey());
-            redoRegisterEachInstance(serviceName, groupName, each.getValue());
-        }
-    }
-    
-    private void redoRegisterEachInstance(String serviceName, String groupName, Instance instance) {
-        try {
-            clientProxy.registerService(serviceName, groupName, instance);
-        } catch (NacosException e) {
-            redoQueue.offer(new RedoRegisterTask(serviceName, groupName, instance));
-            LogUtils.NAMING_LOGGER.warn(String
-                    .format("redo register for service %s@@%s, %s failed, try again later.", groupName, serviceName, instance.toString()), e);
-        }
-    }
-    
-    private void startRedoFailedTaskThread() {
-        redoExecutorService.submit(() -> {
-            while (true) {
-                try {
-                    final Runnable task = redoQueue.take();
-                    redoExecutorService.schedule(task, DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    LogUtils.NAMING_LOGGER.warn("Take redo task interrupted", e);
+                if (connected) {
+                    failedSubscribes.add(each);
+                    LogUtils.NAMING_LOGGER.warn(String.format("re subscribe service %s failed, try again later.", serviceInfo.getName()), e);
+                } else {
+                    failedSubscribes.clear();
+                    break;
                 }
             }
-        });
+        }
+        if (!failedSubscribes.isEmpty()) {
+            redoExecutorService.schedule(() -> redoSubscribe(failedSubscribes), DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
+        }
+    }
+    
+    private void redoRegisterEachService(Set<String> services) {
+        Set<String> failedServices = new ConcurrentHashSet<>();
+        for (String each : services) {
+            String serviceName = NamingUtils.getServiceName(each);
+            String groupName = NamingUtils.getGroupName(each);
+            Instance instance = registeredInstanceCached.get(each);
+            try {
+                clientProxy.registerService(serviceName, groupName, instance);
+            } catch (NacosException e) {
+                if (connected) {
+                    failedServices.add(each);
+                    LogUtils.NAMING_LOGGER.warn(String
+                            .format("redo register for service %s@@%s, %s failed, try again later.", groupName, serviceName, instance.toString()), e);
+                } else {
+                    failedServices.clear();
+                    break;
+                }
+            }
+        }
+        if (!failedServices.isEmpty()) {
+            redoExecutorService.schedule(() -> redoRegisterEachService(failedServices), DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
+        }
     }
     
     @Override
     public void onDisConnect() {
         connected = false;
-        redoQueue.clear();
         LogUtils.NAMING_LOGGER.warn("Grpc connection disconnect");
     }
     
@@ -170,59 +163,4 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
         redoExecutorService.shutdownNow();
     }
     
-    class RedoSubscribeTask implements Runnable {
-        
-        String serviceName;
-        
-        String groupName;
-        
-        String clusters;
-    
-        public RedoSubscribeTask(String serviceName, String groupName, String clusters) {
-            this.serviceName = serviceName;
-            this.groupName = groupName;
-            this.clusters = clusters;
-        }
-    
-        @Override
-        public void run() {
-            try {
-                clientProxy.subscribe(serviceName, groupName, clusters);
-            } catch (NacosException e) {
-                if (connected) {
-                    redoQueue.offer(this);
-                    LogUtils.NAMING_LOGGER.warn(String.format("re subscribe service %s failed, try again later.", serviceName), e);
-                }
-            }
-        }
-        
-    }
-    
-    class RedoRegisterTask implements Runnable {
-    
-        String serviceName;
-        
-        String groupName;
-        
-        Instance instance;
-    
-        public RedoRegisterTask(String serviceName, String groupName, Instance instance) {
-            this.serviceName = serviceName;
-            this.groupName = groupName;
-            this.instance = instance;
-        }
-    
-        @Override
-        public void run() {
-            try {
-                clientProxy.registerService(serviceName, groupName, instance);
-            } catch (NacosException e) {
-                if (connected) {
-                    redoQueue.offer(this);
-                    LogUtils.NAMING_LOGGER.warn(String
-                            .format("redo register for service %s@@%s, %s failed, try again later.", groupName, serviceName, instance.toString()), e);
-                }
-            }
-        }
-    }
 }
