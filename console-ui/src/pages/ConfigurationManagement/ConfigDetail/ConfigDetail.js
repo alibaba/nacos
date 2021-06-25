@@ -206,10 +206,8 @@ class ConfigDetail extends React.Component {
       readOnly: true,
       lineNumbersMinChars: true,
       theme: 'vs-dark',
-      wordWrapColumn: 120,
       folding: false,
       showFoldingControls: 'always',
-      wordWrap: 'wordWrapColumn',
       cursorStyle: 'line',
       automaticLayout: true,
     };
@@ -365,7 +363,7 @@ class ConfigDetail extends React.Component {
               <Input htmlType={'text'} readOnly {...init('md5')} />
             </FormItem>
             <FormItem label={locale.configuration} required {...formItemLayout}>
-              <div className={editorClass} id="container" />
+              <div className={editorClass} id="container" style={{ height: 500 }} />
             </FormItem>
           </Form>
           <Row>
