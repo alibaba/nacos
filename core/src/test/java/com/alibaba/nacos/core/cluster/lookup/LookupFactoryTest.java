@@ -21,7 +21,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.file.WatchFileCenter;
 import junit.framework.TestCase;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,6 +54,12 @@ public class LookupFactoryTest extends TestCase {
         when(servletContext.getContextPath()).thenReturn("");
         EnvUtil.setEnvironment(new StandardEnvironment());
         memberManager = new ServerMemberManager(servletContext);
+    }
+    
+    @After
+    public void tearDown() throws NacosException {
+        WatchFileCenter.deregisterAllWatcher(EnvUtil.getConfPath());
+        memberManager.shutdown();
     }
     
     @Test
