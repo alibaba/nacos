@@ -463,6 +463,15 @@ class ConfigEditor extends React.Component {
     } = this.state;
     const { locale = {} } = this.props;
 
+    const formItemLayout = {
+      labelCol: {
+        span: 2,
+      },
+      wrapperCol: {
+        span: 22,
+      },
+    };
+
     return (
       <div className="config-editor">
         <Loading
@@ -472,9 +481,7 @@ class ConfigEditor extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <h1 className="func-title">
-            <div>{locale.toedit}</div>
-          </h1>
+          <h1>{locale.toedit}</h1>
           {betaPublishSuccess && (
             <Tab shape="wrapped" activeKey={tabActiveKey} onChange={key => this.clickTab(key)}>
               {TAB_LIST.map(key => (
@@ -484,7 +491,7 @@ class ConfigEditor extends React.Component {
               ))}
             </Tab>
           )}
-          <Form className="form">
+          <Form className="new-config-form" {...formItemLayout}>
             <Form.Item label="Data ID:" required {...dataIdError}>
               <Input
                 value={form.dataId}
@@ -504,12 +511,9 @@ class ConfigEditor extends React.Component {
               />
             </Form.Item>
             <Form.Item label=" ">
-              <div
-                className="switch"
-                onClick={() => this.setState({ openAdvancedSettings: !openAdvancedSettings })}
-              >
+              <a onClick={() => this.setState({ openAdvancedSettings: !openAdvancedSettings })}>
                 {openAdvancedSettings ? locale.collapse : locale.groupNotEmpty}
-              </div>
+              </a>
             </Form.Item>
             {openAdvancedSettings && (
               <>
