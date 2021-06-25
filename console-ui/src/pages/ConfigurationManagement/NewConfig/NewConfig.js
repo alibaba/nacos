@@ -131,10 +131,8 @@ class NewConfig extends React.Component {
       readOnly: false,
       lineNumbersMinChars: true,
       theme: 'vs-dark',
-      wordWrapColumn: 120,
       folding: true,
       showFoldingControls: 'always',
-      wordWrap: 'wordWrapColumn',
       cursorStyle: 'line',
       automaticLayout: true,
     });
@@ -594,7 +592,7 @@ class NewConfig extends React.Component {
               }
               required
             >
-              <div id={'container'} className={editorClass} />
+              <div id={'container'} className={editorClass} style={{ height: 450 }} />
             </FormItem>
 
             <FormItem label=" ">
