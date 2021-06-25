@@ -78,17 +78,16 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     private void redoSubscribe(Set<String> subscribes) {
         Set<String> failedSubscribes = new ConcurrentHashSet<>();
         for (String each : subscribes) {
+            if (!connected) {
+                failedSubscribes.clear();
+                break;
+            }
             ServiceInfo serviceInfo = ServiceInfo.fromKey(each);
             try {
                 clientProxy.subscribe(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters());
             } catch (NacosException e) {
-                if (connected) {
-                    failedSubscribes.add(each);
-                    LogUtils.NAMING_LOGGER.warn(String.format("re subscribe service %s failed, try again later.", serviceInfo.getName()), e);
-                } else {
-                    failedSubscribes.clear();
-                    break;
-                }
+                failedSubscribes.add(each);
+                LogUtils.NAMING_LOGGER.warn(String.format("re subscribe service %s failed, try again later.", serviceInfo.getName()), e);
             }
         }
         if (!failedSubscribes.isEmpty()) {
@@ -99,25 +98,31 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     private void redoRegisterEachService(Set<String> services) {
         Set<String> failedServices = new ConcurrentHashSet<>();
         for (String each : services) {
+            if (!connected) {
+                failedServices.clear();
+                break;
+            }
             String serviceName = NamingUtils.getServiceName(each);
             String groupName = NamingUtils.getGroupName(each);
             Instance instance = registeredInstanceCached.get(each);
-            try {
-                clientProxy.registerService(serviceName, groupName, instance);
-            } catch (NacosException e) {
-                if (connected) {
-                    failedServices.add(each);
-                    LogUtils.NAMING_LOGGER.warn(String
-                            .format("redo register for service %s@@%s, %s failed, try again later.", groupName, serviceName, instance.toString()), e);
-                } else {
-                    failedServices.clear();
-                    break;
-                }
+            if (!redoRegisterEachInstance(serviceName, groupName, instance)) {
+                failedServices.add(each);
             }
         }
         if (!failedServices.isEmpty()) {
             redoExecutorService.schedule(() -> redoRegisterEachService(failedServices), DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
         }
+    }
+    
+    private boolean redoRegisterEachInstance(String serviceName, String groupName, Instance instance) {
+        try {
+            clientProxy.registerService(serviceName, groupName, instance);
+        } catch (NacosException e) {
+            LogUtils.NAMING_LOGGER.warn(String
+                    .format("redo register for service %s@@%s, %s failed, try again later.", groupName, serviceName, instance.toString()), e);
+            return false;
+        }
+        return true;
     }
     
     @Override
