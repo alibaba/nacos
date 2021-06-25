@@ -35,7 +35,6 @@ import istio.networking.v1alpha3.WorkloadEntryOuterClass;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +55,7 @@ public class NacosToMcpResources {
     
     private final Map<String, ResourceOuterClass.Resource> resourceMap = new ConcurrentHashMap<>(16);
     
-    private final Map<String, String> checksumMap = new ConcurrentHashMap<>(16);
+    private final Map<String, Long> revisionMap = new ConcurrentHashMap<>(16);
     
     private static final String SERVICE_NAME_SPLITTER = "nacos";
     
@@ -116,25 +115,24 @@ public class NacosToMcpResources {
                 }
                 
                 for (Service service : services) {
-                    ServiceInfo serviceInfo = serviceStorage.getData(service);
-                    
                     String convertedName = convertName(service);
                     allServices.add(convertedName);
                     // Service not changed:
-                    if (checksumMap.containsKey(convertedName) && checksumMap.get(convertedName)
-                            .equals(serviceInfo.getChecksum())) {
+                    if (revisionMap.containsKey(convertedName) && revisionMap.get(convertedName)
+                            .equals(service.getRevision())) {
                         continue;
                     }
                     // Update the resource:
+                    ServiceInfo serviceInfo = serviceStorage.getData(service);
                     changed = true;
                     if (!serviceInfo.validate()) {
                         resourceMap.remove(convertedName);
-                        checksumMap.remove(convertedName);
+                        revisionMap.remove(convertedName);
                         continue;
                     }
                     
                     resourceMap.put(convertedName, convertService(service));
-                    checksumMap.put(convertedName, serviceInfo.getChecksum());
+                    revisionMap.put(convertedName, service.getRevision());
                 }
             }
             
@@ -142,7 +140,7 @@ public class NacosToMcpResources {
                 if (!allServices.contains(key)) {
                     changed = true;
                     resourceMap.remove(key);
-                    checksumMap.remove(key);
+                    revisionMap.remove(key);
                 }
             }
             if (!changed) {
