@@ -365,7 +365,7 @@ class ConfigDetail extends React.Component {
               <Input htmlType={'text'} readOnly {...init('md5')} />
             </FormItem>
             <FormItem label={locale.configuration} required {...formItemLayout}>
-              <div className={editorClass} id="container" />
+              <div className={editorClass} id="container" style={{ height: 500 }} />
             </FormItem>
           </Form>
           <Row>
