@@ -19,9 +19,9 @@ package com.alibaba.nacos.sys.utils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +113,7 @@ public class InetUtils {
                 if (InternetAddressUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIP.startsWith(InternetAddressUtil.IPV6_START_MARK) && !tmpSelfIP
                         .endsWith(InternetAddressUtil.IPV6_END_MARK)) {
                     tmpSelfIP = InternetAddressUtil.IPV6_START_MARK + tmpSelfIP + InternetAddressUtil.IPV6_END_MARK;
-                    if (StringUtils.contains(tmpSelfIP, InternetAddressUtil.PERCENT_SIGN_IN_IPV6)) {
+                    if (StringUtils.containsIgnoreCase(tmpSelfIP, InternetAddressUtil.PERCENT_SIGN_IN_IPV6)) {
                         tmpSelfIP = tmpSelfIP.substring(0, tmpSelfIP.indexOf(InternetAddressUtil.PERCENT_SIGN_IN_IPV6))
                                 + InternetAddressUtil.IPV6_END_MARK;
                     }

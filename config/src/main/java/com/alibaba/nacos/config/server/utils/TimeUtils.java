@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang3.time.FastDateFormat;
+import org.apache.commons.lang.time.FastDateFormat;
 
 import java.sql.Timestamp;
 import java.util.Calendar;

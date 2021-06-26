@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.utils.BooleanUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionStandaloneEmbedStorage;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;

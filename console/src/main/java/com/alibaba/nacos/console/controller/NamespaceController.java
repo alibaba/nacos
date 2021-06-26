@@ -26,7 +26,7 @@ import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;

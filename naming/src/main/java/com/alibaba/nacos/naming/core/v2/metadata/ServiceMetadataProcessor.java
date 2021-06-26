@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
+import com.alibaba.nacos.common.utils.TypeUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -32,7 +33,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.BooleanUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
@@ -47,7 +48,6 @@ import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import com.google.protobuf.Message;
-import org.apache.commons.lang3.BooleanUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

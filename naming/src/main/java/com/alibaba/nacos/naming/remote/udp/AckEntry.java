@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.udp;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.net.DatagramPacket;
 import java.util.Map;

@@ -35,7 +35,7 @@ import com.alibaba.nacos.naming.push.v1.NamingSubscriberServiceV1Impl;
 import com.alibaba.nacos.naming.push.v1.PushClient;
 import com.alibaba.nacos.naming.utils.InstanceUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;

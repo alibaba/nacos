@@ -20,13 +20,13 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -124,7 +124,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
         
         int port = 0;
-        if (providerAddr.length == InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils.isNumber(providerAddr[1])) {
+        if (providerAddr.length == InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils.isDigits(providerAddr[1])) {
             port = Integer.parseInt(providerAddr[1]);
         }
         

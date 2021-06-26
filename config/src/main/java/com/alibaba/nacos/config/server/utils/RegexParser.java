@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang3.CharUtils;
+import org.apache.commons.lang.CharUtils;
 
 /**
  * Generic classes for wildcard characters, decisions, and standard canonical transformations that can be supported by

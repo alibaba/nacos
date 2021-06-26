@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ByteUtils;
+import com.alibaba.nacos.common.utils.TypeUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -42,7 +43,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.google.protobuf.ByteString;
-import org.apache.commons.lang3.reflect.TypeUtils;
 
 import java.lang.reflect.Type;
 import java.nio.file.Paths;

@@ -23,7 +23,7 @@ import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -102,7 +102,7 @@ public class WatchFileCenter_ITCase {
             
             @Override
             public boolean interest(String context) {
-                return StringUtils.contains(context, fileName);
+                return StringUtils.containsIgnoreCase(context, fileName);
             }
         });
         
@@ -157,7 +157,7 @@ public class WatchFileCenter_ITCase {
             
             @Override
             public boolean interest(String context) {
-                return StringUtils.contains(context, fileName);
+                return StringUtils.containsIgnoreCase(context, fileName);
             }
         });
         

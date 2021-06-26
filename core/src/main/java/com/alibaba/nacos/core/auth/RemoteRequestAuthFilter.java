@@ -27,9 +27,9 @@ import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

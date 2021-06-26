@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -51,7 +52,6 @@ import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -2508,7 +2508,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify, callFinally);
                 succCount++;
             } catch (Throwable e) {
-                if (!StringUtils.contains(e.toString(), "DuplicateKeyException")) {
+                if (!StringUtils.containsIgnoreCase(e.toString(), "DuplicateKeyException")) {
                     throw new NacosException(NacosException.SERVER_ERROR, e);
                 }
                 // uniqueness constraint conflict

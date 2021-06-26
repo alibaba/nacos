@@ -41,7 +41,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.http.HttpStatus;
@@ -281,7 +281,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         
         // If only IP information is passed in, a fuzzy match is required
         for (Map.Entry<String, Member> entry : serverList.entrySet()) {
-            if (StringUtils.contains(entry.getKey(), address)) {
+            if (StringUtils.containsIgnoreCase(entry.getKey(), address)) {
                 result = true;
                 break;
             }

@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
@@ -32,7 +33,6 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.control.TpsControl;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;

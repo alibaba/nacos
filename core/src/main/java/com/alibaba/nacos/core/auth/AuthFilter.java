@@ -23,11 +23,11 @@ import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.Filter;
@@ -75,7 +75,7 @@ public class AuthFilter implements Filter {
         
         if (authConfigs.isEnableUserAgentAuthWhite()) {
             String userAgent = WebUtils.getUserAgent(req);
-            if (StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
+            if (org.apache.commons.lang.StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
                 chain.doFilter(request, response);
                 return;
             }
