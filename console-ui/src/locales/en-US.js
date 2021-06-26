@@ -142,6 +142,10 @@ const I18N_CONF = {
     pubNoData: 'No results found.',
     nodeState: 'NodeState',
     extendInfo: 'NodeMetaData',
+    operation: 'Operation',
+    leave: 'Leave',
+    confirm: 'Confirm',
+    confirmTxt: 'Confirm that you want to go offline this cluster node?',
   },
   EditClusterDialog: {
     updateCluster: 'Update Cluster',
