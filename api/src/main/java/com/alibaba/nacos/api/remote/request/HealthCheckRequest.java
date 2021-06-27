@@ -23,5 +23,9 @@ package com.alibaba.nacos.api.remote.request;
  * @version $Id: ServerCheckRequest.java, v 0.1 2020年07月22日 8:32 PM liuzunfei Exp $
  */
 public class HealthCheckRequest extends InternalRequest {
-
+    
+    public static final HealthCheckRequest INSTANCE = new HealthCheckRequest();
+    
+    private HealthCheckRequest() {
+    }
 }

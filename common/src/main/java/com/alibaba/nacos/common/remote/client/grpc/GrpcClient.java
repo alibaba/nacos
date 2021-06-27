@@ -140,7 +140,7 @@ public abstract class GrpcClient extends RpcClient {
             if (requestBlockingStub == null) {
                 return null;
             }
-            ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
+            ServerCheckRequest serverCheckRequest = ServerCheckRequest.INSTANCE;
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
             Payload response = responseFuture.get(3000L, TimeUnit.MILLISECONDS);

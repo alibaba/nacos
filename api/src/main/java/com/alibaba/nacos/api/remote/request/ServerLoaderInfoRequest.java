@@ -23,6 +23,8 @@ package com.alibaba.nacos.api.remote.request;
  */
 public class ServerLoaderInfoRequest extends InternalRequest {
     
-    public ServerLoaderInfoRequest() {
+    public static final ServerLoaderInfoRequest INSTANCE = new ServerLoaderInfoRequest();
+    
+    private ServerLoaderInfoRequest() {
     }
 }

@@ -468,7 +468,7 @@ public abstract class RpcClient implements Closeable {
     }
     
     private boolean healthCheck() {
-        HealthCheckRequest healthCheckRequest = new HealthCheckRequest();
+        HealthCheckRequest healthCheckRequest = HealthCheckRequest.INSTANCE;
         if (this.currentConnection == null) {
             return false;
         }

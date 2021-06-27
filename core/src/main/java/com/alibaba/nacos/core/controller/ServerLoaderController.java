@@ -267,7 +267,7 @@ public class ServerLoaderController {
         CountDownLatch countDownLatch = new CountDownLatch(memberSize);
         for (Member member : serverMemberManager.allMembersWithoutSelf()) {
             if (MemberUtil.isSupportedLongCon(member)) {
-                ServerLoaderInfoRequest serverLoaderInfoRequest = new ServerLoaderInfoRequest();
+                ServerLoaderInfoRequest serverLoaderInfoRequest = ServerLoaderInfoRequest.INSTANCE;
                 
                 try {
                     clusterRpcClientProxy.asyncRequest(member, serverLoaderInfoRequest, new RequestCallBack() {
@@ -309,7 +309,7 @@ public class ServerLoaderController {
         
         try {
             ServerLoaderInfoResponse handle = serverLoaderInfoRequestHandler
-                    .handle(new ServerLoaderInfoRequest(), new RequestMeta());
+                    .handle(ServerLoaderInfoRequest.INSTANCE, new RequestMeta());
             ServerLoaderMetrics metrics = new ServerLoaderMetrics();
             metrics.setAddress(serverMemberManager.getSelf().getAddress());
             metrics.setMetric(handle.getLoaderMetrics());
