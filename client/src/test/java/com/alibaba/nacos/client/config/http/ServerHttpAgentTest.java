@@ -56,7 +56,7 @@ public class ServerHttpAgentTest {
         final String namespace = serverHttpAgent.getNamespace();
         final String tenant = serverHttpAgent.getTenant();
         final String name = serverHttpAgent.getName();
-        Assert.assertEquals(null, encode);
+        Assert.assertNull(encode);
         Assert.assertEquals("namespace1", namespace);
         Assert.assertEquals("namespace1", tenant);
         Assert.assertEquals("aaa-namespace1", name);

@@ -28,24 +28,34 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 适配spas接口.
+ * adapt spas interface.
  *
  * @author Nacos
  */
 public class SpasAdapter {
     
+    private static final String TIMESTAMP_HEADER = "Timestamp";
+    
+    private static final String SIGNATURE_HEADER = "Spas-Signature";
+    
+    private static final String GROUP_KEY = "group";
+    
+    public static final String TENANT_KEY = "tenant";
+    
+    private static final String SHA_ENCRYPT = "HmacSHA1";
+    
     public static Map<String, String> getSignHeaders(String resource, String secretKey) {
         Map<String, String> header = new HashMap<String, String>(2);
         String timeStamp = String.valueOf(System.currentTimeMillis());
-        header.put("Timestamp", timeStamp);
+        header.put(TIMESTAMP_HEADER, timeStamp);
         if (secretKey != null) {
-            String signature = "";
+            String signature;
             if (StringUtils.isBlank(resource)) {
                 signature = signWithHmacSha1Encrypt(timeStamp, secretKey);
             } else {
                 signature = signWithHmacSha1Encrypt(resource + "+" + timeStamp, secretKey);
             }
-            header.put("Spas-Signature", signature);
+            header.put(SIGNATURE_HEADER, signature);
         }
         return header;
     }
@@ -104,22 +114,18 @@ public class SpasAdapter {
     public static String signWithHmacSha1Encrypt(String encryptText, String encryptKey) {
         try {
             byte[] data = encryptKey.getBytes(Constants.ENCODE);
-            // 根据给定的字节数组构造一个密钥,第二参数指定一个密钥算法的名称
-            SecretKey secretKey = new SecretKeySpec(data, "HmacSHA1");
-            // 生成一个指定 Mac 算法 的 Mac 对象
-            Mac mac = Mac.getInstance("HmacSHA1");
-            // 用给定密钥初始化 Mac 对象
+            // Construct a key according to the given byte array, and the second parameter specifies the name of a key algorithm
+            SecretKey secretKey = new SecretKeySpec(data, SHA_ENCRYPT);
+            // Generate a Mac object specifying Mac algorithm
+            Mac mac = Mac.getInstance(SHA_ENCRYPT);
+            // Initialize the Mac object with the given key
             mac.init(secretKey);
             byte[] text = encryptText.getBytes(Constants.ENCODE);
             byte[] textFinal = mac.doFinal(text);
-            // 完成 Mac 操作, base64编码，将byte数组转换为字符串
+            // Complete Mac operation, base64 encoding, convert byte array to string
             return new String(Base64.encodeBase64(textFinal), Constants.ENCODE);
         } catch (Exception e) {
             throw new RuntimeException("signWithhmacSHA1Encrypt fail", e);
         }
     }
-    
-    private static final String GROUP_KEY = "group";
-    
-    public static final String TENANT_KEY = "tenant";
 }

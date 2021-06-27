@@ -20,10 +20,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * RpcClientFactory.to support muti client for diffrent modules of usage.
@@ -33,7 +35,9 @@ import java.util.Set;
  */
 public class RpcClientFactory {
     
-    static Map<String, RpcClient> clientMap = new HashMap<String, RpcClient>();
+    private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
+    
+    private static final Map<String, RpcClient> CLIENT_MAP = new ConcurrentHashMap<>();
     
     /**
      * get all client.
@@ -41,7 +45,7 @@ public class RpcClientFactory {
      * @return client collection.
      */
     public static Set<Map.Entry<String, RpcClient>> getAllClientEntries() {
-        return clientMap.entrySet();
+        return CLIENT_MAP.entrySet();
     }
     
     /**
@@ -50,15 +54,14 @@ public class RpcClientFactory {
      * @param clientName client name.
      */
     public static void destroyClient(String clientName) throws NacosException {
-        RpcClient rpcClient = clientMap.remove(clientName);
+        RpcClient rpcClient = CLIENT_MAP.remove(clientName);
         if (rpcClient != null) {
             rpcClient.shutdown();
         }
     }
     
     public static RpcClient getClient(String clientName) {
-        
-        return clientMap.get(clientName);
+        return CLIENT_MAP.get(clientName);
     }
     
     /**
@@ -69,23 +72,19 @@ public class RpcClientFactory {
      * @return rpc client.
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
-        String clientNameInner = clientName;
-        synchronized (clientMap) {
-            if (clientMap.get(clientNameInner) == null) {
-                RpcClient moduleClient = null;
+        return CLIENT_MAP.compute(clientName, (clientNameInner, client) -> {
+            if (client == null) {
+                LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
                 if (ConnectionType.GRPC.equals(connectionType)) {
-                    moduleClient = new GrpcSdkClient(clientNameInner);
-                    
+                    client = new GrpcSdkClient(clientNameInner);
                 }
-                if (moduleClient == null) {
+                if (client == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
                 }
-                moduleClient.labels(labels);
-                clientMap.put(clientNameInner, moduleClient);
-                return moduleClient;
+                client.labels(labels);
             }
-            return clientMap.get(clientNameInner);
-        }
+            return client;
+        });
     }
     
     /**
@@ -97,23 +96,19 @@ public class RpcClientFactory {
      */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
             Map<String, String> labels) {
-        String clientNameInner = clientName;
-        synchronized (clientMap) {
-            if (clientMap.get(clientNameInner) == null) {
-                RpcClient moduleClient = null;
+        return CLIENT_MAP.compute(clientName, (clientNameInner, client) -> {
+            if (client == null) {
                 if (ConnectionType.GRPC.equals(connectionType)) {
-                    moduleClient = new GrpcClusterClient(clientNameInner);
-                    
+                    client = new GrpcClusterClient(clientNameInner);
                 }
-                if (moduleClient == null) {
+                if (client == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
                 }
-                moduleClient.labels(labels);
-                clientMap.put(clientNameInner, moduleClient);
-                return moduleClient;
+                client.labels(labels);
+                return client;
             }
-            return clientMap.get(clientNameInner);
-        }
+            return client;
+        });
     }
     
 }

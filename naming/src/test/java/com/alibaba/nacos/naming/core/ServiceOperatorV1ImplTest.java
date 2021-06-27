@@ -28,6 +28,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 public class ServiceOperatorV1ImplTest extends BaseTest {
     
     private ServiceOperatorV1Impl serviceOperatorV1Impl;
@@ -49,11 +52,14 @@ public class ServiceOperatorV1ImplTest extends BaseTest {
     
     @Test
     public void testUpdate() throws NacosException {
-        serviceManager.createEmptyService(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
-        String serviceName = "order-service";
+        String serviceName = "DEFAULT_GROUP@@order-service";
+        serviceManager.createEmptyService(TEST_NAMESPACE, serviceName, true);
         com.alibaba.nacos.naming.core.v2.pojo.Service service = Service
                 .newService(TEST_NAMESPACE, NamingUtils.getGroupName(serviceName),
                         NamingUtils.getServiceName(serviceName));
-        serviceOperatorV1Impl.update(service, new ServiceMetadata());
+        ServiceMetadata metadata = new ServiceMetadata();
+        metadata.setProtectThreshold(0.1F);
+        serviceOperatorV1Impl.update(service, metadata);
+        assertThat(serviceManager.getService(TEST_NAMESPACE, serviceName).getProtectThreshold(), is(0.1F));
     }
 }

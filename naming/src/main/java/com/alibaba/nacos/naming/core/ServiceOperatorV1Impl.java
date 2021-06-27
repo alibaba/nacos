@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
@@ -100,22 +101,23 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
         serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
         
         ObjectNode res = JacksonUtils.createEmptyJsonNode();
-        res.put("name", NamingUtils.getServiceName(serviceName));
-        res.put("namespaceId", service.getNamespaceId());
-        res.put("protectThreshold", service.getProtectThreshold());
-        res.replace("metadata", JacksonUtils.transferToJsonNode(service.getMetadata()));
-        res.replace("selector", JacksonUtils.transferToJsonNode(service.getSelector()));
-        res.put("groupName", NamingUtils.getGroupName(serviceName));
+        res.put(FieldsConstants.NAME, NamingUtils.getServiceName(serviceName));
+        res.put(FieldsConstants.NAME_SPACE_ID, service.getNamespaceId());
+        res.put(FieldsConstants.PROTECT_THRESHOLD, service.getProtectThreshold());
+        res.replace(FieldsConstants.METADATA, JacksonUtils.transferToJsonNode(service.getMetadata()));
+        res.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(service.getSelector()));
+        res.put(FieldsConstants.GROUP_NAME, NamingUtils.getGroupName(serviceName));
         
         ArrayNode clusters = JacksonUtils.createEmptyArrayNode();
         for (Cluster cluster : service.getClusterMap().values()) {
             ObjectNode clusterJson = JacksonUtils.createEmptyJsonNode();
-            clusterJson.put("name", cluster.getName());
-            clusterJson.replace("healthChecker", JacksonUtils.transferToJsonNode(cluster.getHealthChecker()));
-            clusterJson.replace("metadata", JacksonUtils.transferToJsonNode(cluster.getMetadata()));
+            clusterJson.put(FieldsConstants.NAME, cluster.getName());
+            clusterJson.replace(FieldsConstants.HEALTH_CHECKER,
+                    JacksonUtils.transferToJsonNode(cluster.getHealthChecker()));
+            clusterJson.replace(FieldsConstants.METADATA, JacksonUtils.transferToJsonNode(cluster.getMetadata()));
             clusters.add(clusterJson);
         }
-        res.replace("clusters", clusters);
+        res.replace(FieldsConstants.CLUSTERS, clusters);
         return res;
     }
     

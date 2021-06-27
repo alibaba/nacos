@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client.factory;
 
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 
 /**
  * Client factory.
@@ -37,9 +37,10 @@ public interface ClientFactory<C extends Client> {
      * Build a new {@link Client}.
      *
      * @param clientId client id
+     * @param attributes client attributes
      * @return new {@link Client} implementation
      */
-    C newClient(String clientId);
+    C newClient(String clientId, ClientAttributes attributes);
     
     /**
      * Build a new {@link Client} synced from other server node.
@@ -48,5 +49,5 @@ public interface ClientFactory<C extends Client> {
      * @param attributes client attributes
      * @return new sync {@link Client} implementation
      */
-    C newSyncedClient(String clientId, ClientSyncAttributes attributes);
+    C newSyncedClient(String clientId, ClientAttributes attributes);
 }

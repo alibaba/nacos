@@ -38,6 +38,7 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.consistency.persistent.impl.AbstractSnapshotOperation;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
@@ -85,6 +86,8 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    
+    private static final int INITIAL_CAPACITY = 128;
     
     public PersistentClientOperationServiceImpl(final PersistentIpPortClientManager clientManager) {
         this.clientManager = clientManager;
@@ -168,7 +171,10 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     
     private void onInstanceRegister(Service service, Instance instance, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
-        Client client = clientManager.computeIfAbsent(clientId, () -> new IpPortBasedClient(clientId, false));
+        if (!clientManager.contains(clientId)) {
+            clientManager.clientConnected(clientId, new ClientAttributes());
+        }
+        Client client = clientManager.getClient(clientId);
         InstancePublishInfo instancePublishInfo = getPublishInfo(instance);
         client.addServiceInstance(singleton, instancePublishInfo);
         client.setLastUpdatedTime();
@@ -275,7 +281,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         protected InputStream dumpSnapshot() {
             Map<String, IpPortBasedClient> clientMap = clientManager.showClients();
-            ConcurrentHashMap<String, ClientSyncData> clone = new ConcurrentHashMap<>(128);
+            ConcurrentHashMap<String, ClientSyncData> clone = new ConcurrentHashMap<>(INITIAL_CAPACITY);
             clientMap.forEach((clientId, client) -> {
                 clone.put(clientId, client.generateSyncData());
             });
@@ -287,6 +293,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             ConcurrentHashMap<String, IpPortBasedClient> snapshot = new ConcurrentHashMap<>(newData.size());
             for (Map.Entry<String, ClientSyncData> entry : newData.entrySet()) {
                 IpPortBasedClient snapshotClient = new IpPortBasedClient(entry.getKey(), false);
+                snapshotClient.init();
                 loadSyncDataToClient(entry, snapshotClient);
                 snapshot.put(entry.getKey(), snapshotClient);
             }

@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class AddressServerMemberLookup extends AbstractMemberLookup {
     
-    private final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() { };
+    private final GenericType<String> genericType = new GenericType<String>() { };
     
     public String domainName;
     
@@ -77,11 +77,17 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     
     private static final long DEFAULT_SYNC_TASK_DELAY_MS = 5_000L;
     
-    private static final String ADDRESS_SERVER_DOMAIN_PROPERTY = "address_server_domain";
+    private static final String ADDRESS_SERVER_DOMAIN_ENV = "address_server_domain";
     
-    private static final String ADDRESS_SERVER_PORT_PROPERTY = "address_server_port";
+    private static final String ADDRESS_SERVER_DOMAIN_PROPERTY = "address.server.domain";
     
-    private static final String ADDRESS_SERVER_URL = "address_server_url";
+    private static final String ADDRESS_SERVER_PORT_ENV = "address_server_port";
+    
+    private static final String ADDRESS_SERVER_PORT_PROPERTY = "address.server.port";
+    
+    private static final String ADDRESS_SERVER_URL_ENV = "address_server_url";
+    
+    private static final String ADDRESS_SERVER_URL_PROPERTY = "address.server.url";
     
     private static final String ADDRESS_SERVER_RETRY_PROPERTY = "nacos.core.address-server.retry";
     
@@ -98,21 +104,21 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     }
     
     private void initAddressSys() {
-        String envDomainName = System.getenv(ADDRESS_SERVER_DOMAIN_PROPERTY);
+        String envDomainName = System.getenv(ADDRESS_SERVER_DOMAIN_ENV);
         if (StringUtils.isBlank(envDomainName)) {
             domainName = EnvUtil.getProperty(ADDRESS_SERVER_DOMAIN_PROPERTY, DEFAULT_SERVER_DOMAIN);
         } else {
             domainName = envDomainName;
         }
-        String envAddressPort = System.getenv(ADDRESS_SERVER_PORT_PROPERTY);
+        String envAddressPort = System.getenv(ADDRESS_SERVER_PORT_ENV);
         if (StringUtils.isBlank(envAddressPort)) {
             addressPort = EnvUtil.getProperty(ADDRESS_SERVER_PORT_PROPERTY, DEFAULT_SERVER_POINT);
         } else {
             addressPort = envAddressPort;
         }
-        String envAddressUrl = System.getenv(ADDRESS_SERVER_URL);
+        String envAddressUrl = System.getenv(ADDRESS_SERVER_URL_ENV);
         if (StringUtils.isBlank(envAddressUrl)) {
-            addressUrl = EnvUtil.getProperty(ADDRESS_SERVER_URL, EnvUtil.getContextPath() + "/" + "serverlist");
+            addressUrl = EnvUtil.getProperty(ADDRESS_SERVER_URL_PROPERTY, EnvUtil.getContextPath() + "/" + "serverlist");
         } else {
             addressUrl = envAddressUrl;
         }

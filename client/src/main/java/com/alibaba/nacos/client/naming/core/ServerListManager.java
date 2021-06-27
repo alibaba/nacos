@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -58,6 +60,8 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
     
+    private final String namespace;
+    
     private final AtomicInteger currentIndex = new AtomicInteger();
     
     private final List<String> serverList = new ArrayList<>();
@@ -73,6 +77,11 @@ public class ServerListManager implements ServerListFactory, Closeable {
     private long lastServerListRefreshTime = 0L;
     
     public ServerListManager(Properties properties) {
+        this(properties, null);
+    }
+    
+    public ServerListManager(Properties properties, String namespace) {
+        this.namespace = namespace;
         initServerAddr(properties);
         if (!serverList.isEmpty()) {
             currentIndex.set(new Random().nextInt(serverList.size()));
@@ -103,7 +112,10 @@ public class ServerListManager implements ServerListFactory, Closeable {
         try {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
             Header header = NamingHttpUtil.builderHeader();
-            HttpRestResult<String> restResult = nacosRestTemplate.get(urlString, header, Query.EMPTY, String.class);
+            Query query = StringUtils.isNotBlank(namespace)
+                    ? Query.newInstance().addParam("namespace", namespace)
+                    : Query.EMPTY;
+            HttpRestResult<String> restResult = nacosRestTemplate.get(urlString, header, query, String.class);
             if (!restResult.ok()) {
                 throw new IOException(
                         "Error while requesting: " + urlString + "'. Server returned: " + restResult.getCode());
@@ -117,7 +129,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
             }
             return list;
         } catch (Exception e) {
-            e.printStackTrace();
+            NAMING_LOGGER.error("[SERVER-LIST] failed to update server list.", e);
         }
         return null;
     }
@@ -140,6 +152,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
             }
             serversFromEndpoint = list;
             lastServerListRefreshTime = System.currentTimeMillis();
+            NotifyCenter.publishEvent(new ServerListChangedEvent());
         } catch (Throwable e) {
             NAMING_LOGGER.warn("failed to update server list", e);
         }

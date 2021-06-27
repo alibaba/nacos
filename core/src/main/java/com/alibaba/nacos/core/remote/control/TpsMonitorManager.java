@@ -308,7 +308,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     private File checkBaseDir() {
         File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator);
         if (!baseDir.exists()) {
-            baseDir.mkdir();
+            baseDir.mkdirs();
         }
         return baseDir;
     }

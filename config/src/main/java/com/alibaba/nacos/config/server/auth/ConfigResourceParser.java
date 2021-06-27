@@ -70,12 +70,16 @@ public class ConfigResourceParser implements ResourceParser {
             sb.append(namespaceId);
         }
         
-        sb.append(Resource.SPLITTER);
+        if (StringUtils.isBlank(groupName)) {
+            sb.append(Resource.SPLITTER).append("*");
+        } else {
+            sb.append(Resource.SPLITTER).append(groupName);
+        }
         
         if (StringUtils.isBlank(dataId)) {
-            sb.append("*").append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append("*");
+            sb.append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append("*");
         } else {
-            sb.append(groupName).append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append(dataId);
+            sb.append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append(dataId);
         }
         
         return sb.toString();

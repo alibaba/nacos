@@ -65,7 +65,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
      * generate response by resource.
      *
      * @param resourceMap all mcp resource
-     * @return
+     * @return mcp resources.
      */
     private Mcp.Resources generateResponse(Map<String, ResourceOuterClass.Resource> resourceMap) {
         return Mcp.Resources.newBuilder().addAllResources(resourceMap.values())

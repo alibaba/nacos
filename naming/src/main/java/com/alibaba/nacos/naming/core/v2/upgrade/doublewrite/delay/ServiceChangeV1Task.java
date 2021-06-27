@@ -69,7 +69,7 @@ public class ServiceChangeV1Task extends AbstractDelayTask {
         this.content = action == DoubleWriteAction.REMOVE ? DoubleWriteContent.BOTH : content;
         this.action = action;
         setLastProcessTime(System.currentTimeMillis());
-        setTaskInterval(1000L);
+        setTaskInterval(INTERVAL);
     }
     
     @Override

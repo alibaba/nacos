@@ -65,7 +65,7 @@ class Header extends React.Component {
       const [, base64Url = ''] = token.split('.');
       const base64 = base64Url.replace('-', '+').replace('_', '/');
       try {
-        const parsedToken = JSON.parse(window.atob(base64));
+        const parsedToken = JSON.parse(decodeURIComponent(escape(window.atob(base64))));
         return parsedToken.sub;
       } catch (e) {
         delete localStorage.token;

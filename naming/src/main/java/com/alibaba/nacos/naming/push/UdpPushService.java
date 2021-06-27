@@ -140,14 +140,14 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
                 long lastRefTime = System.nanoTime();
                 for (PushClient client : clients.values()) {
                     if (client.zombie()) {
-                        Loggers.PUSH.debug("client is zombie: " + client.toString());
+                        Loggers.PUSH.debug("client is zombie: " + client);
                         clients.remove(client.toString());
-                        Loggers.PUSH.debug("client is zombie: " + client.toString());
+                        Loggers.PUSH.debug("client is zombie: " + client);
                         continue;
                     }
                     
                     AckEntry ackEntry;
-                    Loggers.PUSH.debug("push serviceName: {} to client: {}", serviceName, client.toString());
+                    Loggers.PUSH.debug("push serviceName: {} to client: {}", serviceName, client);
                     String key = getPushCacheKey(serviceName, client.getIp(), client.getAgent());
                     byte[] compressData = null;
                     Map<String, Object> data = null;

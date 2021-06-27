@@ -85,7 +85,7 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                         e.getErrMsg());
             }
             Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);
-            defaultResponseInstance.setErrorInfo(NacosException.NO_RIGHT, e.getMessage());
+            defaultResponseInstance.setErrorInfo(NacosException.NO_RIGHT, e.getErrMsg());
             return defaultResponseInstance;
         } catch (Exception e) {
             Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);

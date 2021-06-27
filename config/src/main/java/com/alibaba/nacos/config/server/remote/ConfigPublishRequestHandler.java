@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.MapUtil;
@@ -106,8 +107,8 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                         boolean casSuccess = persistService
                                 .insertOrUpdateCas(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
                         if (!casSuccess) {
-                            return ConfigPublishResponse
-                                    .buildFailResponse("Cas publish fail,server md5 may have changed.");
+                            return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                                    "Cas publish fail,server md5 may have changed.");
                         }
                     } else {
                         persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
@@ -119,8 +120,8 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                         boolean casSuccess = persistService
                                 .insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser, time, false);
                         if (!casSuccess) {
-                            return ConfigPublishResponse
-                                    .buildFailResponse("Cas publish tag config fail,server md5 may have changed.");
+                            return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                                    "Cas publish tag config fail,server md5 may have changed.");
                         }
                     } else {
                         persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
@@ -135,8 +136,8 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                     boolean casSuccess = persistService
                             .insertOrUpdateBetaCas(configInfo, betaIps, srcIp, srcUser, time, false);
                     if (!casSuccess) {
-                        return ConfigPublishResponse
-                                .buildFailResponse("Cas publish beta config fail,server md5 may have changed.");
+                        return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                                "Cas publish beta config fail,server md5 may have changed.");
                     }
                 } else {
                     persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
@@ -151,7 +152,9 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             return ConfigPublishResponse.buildSuccessResponse();
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
-            return ConfigPublishResponse.buildFailResponse(e.getMessage());
+            return ConfigPublishResponse.buildFailResponse(
+                    (e instanceof NacosException) ? ((NacosException) e).getErrCode() : ResponseCode.FAIL.getCode(),
+                    e.getMessage());
         }
     }
     

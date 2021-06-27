@@ -22,6 +22,10 @@ import org.junit.Test;
 
 import java.util.List;
 
+/**
+ *
+ * {@link ClassUtils} unit tests.
+ */
 public class ClassUtilsTest {
     
     @Test
@@ -32,4 +36,23 @@ public class ClassUtilsTest {
         }.getType());
     }
     
+    @Test
+    public void testFindClassByName() {
+        Class clazz = ClassUtils.findClassByName("java.lang.Integer");
+        Assert.assertEquals("java.lang.Integer", clazz.getName());
+    }
+    
+    @Test
+    public void testGetName() {
+        final String name = "java.lang.Integer";
+        Integer val = 1;
+        Assert.assertEquals(name, ClassUtils.getName(val));
+        Assert.assertEquals(name, ClassUtils.getName(Integer.class));
+        
+        Assert.assertEquals(name, ClassUtils.getCanonicalName(val));
+        Assert.assertEquals(name, ClassUtils.getCanonicalName(Integer.class));
+        
+        Assert.assertEquals("Integer", ClassUtils.getSimplaName(val));
+        Assert.assertEquals("Integer", ClassUtils.getSimplaName(Integer.class));
+    }
 }

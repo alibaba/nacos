@@ -59,7 +59,7 @@ public class ClientBeatProcessorV2 implements BeatProcessor {
         HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) client.getInstancePublishInfo(service);
         if (instance.getIp().equals(ip) && instance.getPort() == port) {
             if (Loggers.EVT_LOG.isDebugEnabled()) {
-                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
+                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo);
             }
             instance.setLastHeartBeatTime(System.currentTimeMillis());
             if (!instance.isHealthy()) {

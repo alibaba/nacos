@@ -37,6 +37,6 @@ public class ContextPathUtil {
         if (StringUtils.isBlank(contextPath) || ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
             return StringUtils.EMPTY;
         }
-        return contextPath.startsWith("/") ? contextPath : "/" + contextPath;
+        return contextPath.startsWith(ROOT_WEB_CONTEXT_PATH) ? contextPath : ROOT_WEB_CONTEXT_PATH + contextPath;
     }
 }

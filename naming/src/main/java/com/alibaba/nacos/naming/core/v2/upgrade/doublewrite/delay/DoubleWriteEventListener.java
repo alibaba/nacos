@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -52,7 +53,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
             DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine) {
         this.upgradeJudgement = upgradeJudgement;
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
-        NotifyCenter.registerSubscriber(this);
+        NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
         stopDoubleWrite = EnvUtil.getStandaloneMode();
         if (!stopDoubleWrite) {
             Thread doubleWriteEnabledChecker = new DoubleWriteEnabledChecker();

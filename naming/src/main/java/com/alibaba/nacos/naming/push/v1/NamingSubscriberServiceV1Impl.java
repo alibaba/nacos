@@ -85,11 +85,9 @@ public class NamingSubscriberServiceV1Impl implements NamingSubscriberService {
             return Collections.emptyList();
         }
         Collection<Subscriber> result = new ArrayList<>();
-        clientConcurrentMap.forEach((key, client) -> {
-            result.add(
-                    new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId,
-                            serviceName, client.getPort()));
-        });
+        clientConcurrentMap.forEach((key, client) -> result
+                .add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(),
+                        namespaceId, serviceName, client.getPort())));
         return result;
     }
     
@@ -165,7 +163,7 @@ public class NamingSubscriberServiceV1Impl implements NamingSubscriberService {
         } else {
             PushClient res = clients.putIfAbsent(client.toString(), client);
             if (res != null) {
-                Loggers.PUSH.warn("client: {} already associated with key {}", res.getAddrStr(), res.toString());
+                Loggers.PUSH.warn("client: {} already associated with key {}", res.getAddrStr(), res);
             }
             Loggers.PUSH.debug("client: {} added for serviceName: {}", client.getAddrStr(), client.getServiceName());
         }
