@@ -49,6 +49,9 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     public void registerInstance(Service service, Instance instance, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = clientManager.getClient(clientId);
+        if (client == null) {
+            return;
+        }
         InstancePublishInfo instanceInfo = getPublishInfo(instance);
         client.addServiceInstance(singleton, instanceInfo);
         client.setLastUpdatedTime();
@@ -65,6 +68,9 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         }
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = clientManager.getClient(clientId);
+        if (client == null) {
+            return;
+        }
         InstancePublishInfo removedInstance = client.removeServiceInstance(singleton);
         client.setLastUpdatedTime();
         if (null != removedInstance) {
@@ -78,6 +84,9 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     public void subscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
+        if (client == null) {
+            return;
+        }
         client.addServiceSubscriber(singleton, subscriber);
         client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
@@ -87,6 +96,9 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
+        if (client == null) {
+            return;
+        }
         client.removeServiceSubscriber(singleton);
         client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
