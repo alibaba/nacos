@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.common.utils.Objects;
+import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.Page;
@@ -42,6 +47,8 @@ public class HistoryController {
     
     /**
      * Query the list history config.
+     * notes:
+     * @since 2.0.3 add {@link Secured} for history config permission check.
      *
      * @param dataId   dataId string value.
      * @param group    group string value.
@@ -53,6 +60,7 @@ public class HistoryController {
      * @return the page of history config.
      */
     @GetMapping(params = "search=accurate")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -69,25 +77,70 @@ public class HistoryController {
     
     /**
      * Query the detailed configuration history information.
+     * notes:
+     * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
      *
      * @param nid history_config_info nid
+     * @param dataId dataId  @since 2.0.3
+     * @param group groupId  @since 2.0.3
+     * @param tenant tenantId  @since 2.0.3
      * @return history config info
      */
     @GetMapping
-    public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("nid") Long nid) {
-        return persistService.detailConfigHistory(nid);
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant, @RequestParam("nid") Long nid)
+            throws AccessException {
+        ConfigHistoryInfo configHistoryInfo = persistService.detailConfigHistory(nid);
+        if (Objects.isNull(configHistoryInfo)) {
+            return null;
+        }
+        // check if history config match the input
+        checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
+        return configHistoryInfo;
+    }
+    
+    /**
+     * Check if the input dataId and group match the history config.
+     *
+     * @param configHistoryInfo history config.
+     * @param dataId dataId
+     * @param group group
+     * @param tenant tenant
+     * @throws AccessException not match exception.
+     * @since 2.0.3
+     */
+    private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId, String group, String tenant) throws AccessException {
+        if (Objects.equals(configHistoryInfo.getDataId(), dataId) && Objects.equals(configHistoryInfo.getGroup(), group)) {
+            return;
+        }
+        throw new AccessException("Please check dataId and group.");
     }
     
     /**
      * Query previous config history information.
+     * notes:
+     * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
      *
      * @param id config_info id
+     * @param dataId dataId  @since 2.0.3
+     * @param group groupId  @since 2.0.3
+     * @param tenant tenantId  @since 2.0.3
      * @return history config info
      * @since 1.4.0
      */
     @GetMapping(value = "/previous")
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("id") Long id) {
-        return persistService.detailPreviousConfigHistory(id);
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant, @RequestParam("id") Long id)
+            throws AccessException {
+        ConfigHistoryInfo configHistoryInfo = persistService.detailPreviousConfigHistory(id);
+        if (Objects.isNull(configHistoryInfo)) {
+            return null;
+        }
+        // check if history config match the input
+        checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
+        return configHistoryInfo;
     }
     
 }
