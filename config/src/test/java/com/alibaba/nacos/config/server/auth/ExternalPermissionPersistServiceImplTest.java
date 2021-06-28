@@ -61,14 +61,14 @@ public class ExternalPermissionPersistServiceImplTest {
     }
     
     @Test
-    public void getPermissions() {
+    public void testGetPermissions() {
         Page<PermissionInfo> role = externalPermissionPersistService.getPermissions("role", 1, 10);
         
         Assert.assertNotNull(role);
     }
     
     @Test
-    public void addPermission() {
+    public void testAddPermission() {
         String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
         externalPermissionPersistService.addPermission("role", "resource", "action");
         
@@ -76,7 +76,7 @@ public class ExternalPermissionPersistServiceImplTest {
     }
     
     @Test
-    public void deletePermission() {
+    public void testDeletePermission() {
         String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
         externalPermissionPersistService.deletePermission("role", "resource", "action");
         
