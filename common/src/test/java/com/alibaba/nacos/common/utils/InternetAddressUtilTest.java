@@ -184,7 +184,7 @@ public class InternetAddressUtilTest {
     public static void checkSplitIPPortStr(String addr, boolean isEx, String... equalsStrs) {
         try {
             String[] array = InternetAddressUtil.splitIPPortStr(addr);
-            Assert.assertTrue(array.length == equalsStrs.length);
+            Assert.assertEquals(array.length, equalsStrs.length);
             for (int i = 0; i < array.length; i++) {
                 Assert.assertEquals(array[i], equalsStrs[i]);
             }
