@@ -101,7 +101,7 @@ public class EnvUtil {
         StringBuilder result = new StringBuilder();
         for (String string : list) {
             result.append(string);
-            result.append(",");
+            result.append(',');
         }
         return result.substring(0, result.length() - 1);
     }

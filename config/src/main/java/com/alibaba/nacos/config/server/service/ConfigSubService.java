@@ -172,7 +172,7 @@ public class ConfigSubService {
             try {
                 StringBuilder paramUrl = new StringBuilder();
                 for (Map.Entry<String, String> param : params.entrySet()) {
-                    paramUrl.append("&").append(param.getKey()).append("=")
+                    paramUrl.append('&').append(param.getKey()).append('=')
                             .append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
                 }
                 

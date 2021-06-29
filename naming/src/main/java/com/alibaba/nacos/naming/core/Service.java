@@ -283,7 +283,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         StringBuilder stringBuilder = new StringBuilder();
         
         for (Instance instance : allIPs()) {
-            stringBuilder.append(instance.toIpAddr()).append("_").append(instance.isHealthy()).append(",");
+            stringBuilder.append(instance.toIpAddr()).append('_').append(instance.isHealthy()).append(',');
         }
         
         Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}", getNamespaceId(), getName(),
@@ -560,7 +560,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_" + ip.isHealthy() + "_" + ip
                     .getClusterName();
             ipsString.append(string);
-            ipsString.append(",");
+            ipsString.append(',');
         }
         
         checksum = MD5Utils.md5Hex(ipsString.toString(), Constants.ENCODE);

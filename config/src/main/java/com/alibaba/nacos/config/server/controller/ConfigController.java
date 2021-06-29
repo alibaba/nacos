@@ -474,7 +474,7 @@ public class ConfigController {
                     metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf(".")) + "~" + metaDataId
                             .substring(metaDataId.lastIndexOf(".") + 1);
                 }
-                metaData.append(ci.getGroup()).append(".").append(metaDataId).append(".app=")
+                metaData.append(ci.getGroup()).append('.').append(metaDataId).append(".app=")
                         // Fixed use of "\r\n" here
                         .append(ci.getAppName()).append("\r\n");
             }

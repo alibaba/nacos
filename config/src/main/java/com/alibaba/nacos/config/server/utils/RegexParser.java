@@ -41,7 +41,7 @@ public class RegexParser {
             throw new NullPointerException("regex string can't be null");
         }
         StringBuilder result = new StringBuilder();
-        result.append("^");
+        result.append('^');
         for (int i = 0; i < regex.length(); i++) {
             char ch = regex.charAt(i);
             if (CharUtils.isAsciiAlphanumeric(ch) || CharUtils.isAsciiNumeric(ch)) {
@@ -65,7 +65,7 @@ public class RegexParser {
                 result.append("\\" + ch);
             }
         }
-        result.append("$");
+        result.append('$');
         return result.toString();
     }
     
