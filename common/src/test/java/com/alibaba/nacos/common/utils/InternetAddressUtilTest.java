@@ -120,14 +120,12 @@ public class InternetAddressUtilTest {
     
     @Test
     public void testCheckIPs() {
-        String[] ips = {"127.0.0.1"};
-        Assert.assertEquals("ok", InternetAddressUtil.checkIPs(ips));
+        Assert.assertEquals("ok", InternetAddressUtil.checkIPs("127.0.0.1"));
         Assert.assertEquals("ok", InternetAddressUtil.checkIPs());
         Assert.assertEquals("ok", InternetAddressUtil.checkIPs());
         Assert.assertEquals("ok", InternetAddressUtil.checkIPs(null));
         
-        String[] illegalIps = {"127.100.19", "127.0.0.1"};
-        Assert.assertEquals("illegal ip: 127.100.19", InternetAddressUtil.checkIPs(illegalIps));
+        Assert.assertEquals("illegal ip: 127.100.19", InternetAddressUtil.checkIPs("127.100.19", "127.0.0.1"));
     }
     
     @Test
