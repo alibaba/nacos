@@ -91,7 +91,7 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     
     public User getUser(String username) {
         User user = userMap.get(username);
-        if (!authConfigs.isCachingEnabled() || user == null) {
+        if (!authConfigs.isCachingEnabled()) {
             user = getUserFromDatabase(username);
         }
         return user;
