@@ -61,7 +61,7 @@ public class EmbeddedPermissionPersistServiceImplTest {
         Mockito.when(embeddedStoragePersistService.createPaginationHelper()).thenReturn(paginationHelper);
     }
     
-    @Test()
+    @Test
     public void testGetPermissions() {
         String role = "role";
         Page<PermissionInfo> permissions = embeddedPermissionPersistService.getPermissions(role, 1, 10);
