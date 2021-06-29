@@ -254,7 +254,7 @@ class ClusterNodeList extends React.Component {
                     function showCollapse() {
                       const collapse = (
                         <Collapse>
-                          <Panel title="节点元数据">
+                          <Panel title={locale.extendInfo}>
                             <ul>
                               <li>
                                 <pre>{JSON.stringify(value, null, 4)}</pre>
