@@ -111,6 +111,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         }
         if (!client.isEphemeral()) {
             Loggers.SRV_LOG.warn("Client connection {} type is not ephemeral", clientId);
+            return false;
         }
         return true;
     }
