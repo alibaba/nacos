@@ -49,8 +49,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     public void registerInstance(Service service, Instance instance, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = clientManager.getClient(clientId);
-        if (null == client || !client.isEphemeral()) {
-            Loggers.SRV_LOG.warn("Client connection {} already disconnect", clientId);
+        if (!clientIsLegal(client, clientId)) {
             return;
         }
         InstancePublishInfo instanceInfo = getPublishInfo(instance);
@@ -69,8 +68,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         }
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = clientManager.getClient(clientId);
-        if (null == client || !client.isEphemeral()) {
-            Loggers.SRV_LOG.warn("Client connection {} already disconnect", clientId);
+        if (!clientIsLegal(client, clientId)) {
             return;
         }
         InstancePublishInfo removedInstance = client.removeServiceInstance(singleton);
@@ -86,8 +84,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     public void subscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
-        if (null == client || !client.isEphemeral()) {
-            Loggers.SRV_LOG.warn("Client connection {} already disconnect", clientId);
+        if (!clientIsLegal(client, clientId)) {
             return;
         }
         client.addServiceSubscriber(singleton, subscriber);
@@ -99,13 +96,22 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
-        if (null == client || !client.isEphemeral()) {
-            Loggers.SRV_LOG.warn("Client connection {} already disconnect", clientId);
+        if (!clientIsLegal(client, clientId)) {
             return;
         }
         client.removeServiceSubscriber(singleton);
         client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
-        
+    }
+    
+    private boolean clientIsLegal(Client client, String clientId) {
+        if (client == null) {
+            Loggers.SRV_LOG.warn("Client connection {} already disconnect", clientId);
+            return false;
+        }
+        if (!client.isEphemeral()) {
+            Loggers.SRV_LOG.warn("Client connection {} type is not ephemeral", clientId);
+        }
+        return true;
     }
 }
