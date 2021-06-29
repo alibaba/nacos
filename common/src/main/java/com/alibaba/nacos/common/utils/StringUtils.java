@@ -139,12 +139,15 @@ public class StringUtils {
         StringBuilder stringBuilder = new StringBuilder();
         Object[] objects = collection.toArray();
         
-        for (int i = 0; i < collection.size() - 1; i++) {
-            stringBuilder.append(objects[i].toString()).append(separator);
-        }
-        
-        if (collection.size() > 0) {
-            stringBuilder.append(objects[collection.size() - 1]);
+        for (int i = 0; i < collection.size(); i++) {
+            if (objects[i] != null) {
+                stringBuilder.append(objects[i].toString());
+                if (i != collection.size() -1) {
+                    if (separator != null) {
+                        stringBuilder.append(separator);
+                    }
+                }
+            }
         }
         
         return stringBuilder.toString();
