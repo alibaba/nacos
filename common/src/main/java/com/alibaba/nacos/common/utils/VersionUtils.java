@@ -52,12 +52,7 @@ public class VersionUtils {
         }
     }
     
-    private static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
-        @Override
-        public int compare(String o1, String o2) {
-            return o1.compareTo(o2);
-        }
-    };
+    private static final Comparator<String> STRING_COMPARATOR = String::compareTo;
     
     /**
      * compare two version who is latest.
