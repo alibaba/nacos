@@ -142,7 +142,7 @@ public class StringUtils {
         for (int i = 0; i < collection.size(); i++) {
             if (objects[i] != null) {
                 stringBuilder.append(objects[i].toString());
-                if (i != collection.size() - 1) {
+                if (i != collection.size() - 1 && separator != null) {
                     if (separator != null) {
                         stringBuilder.append(separator);
                     }
