@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Objects;
 
 /**
  * Common methods for exception.

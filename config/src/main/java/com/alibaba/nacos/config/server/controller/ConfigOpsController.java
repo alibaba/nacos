@@ -20,7 +20,6 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
@@ -31,8 +30,8 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +49,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Manage controllers.

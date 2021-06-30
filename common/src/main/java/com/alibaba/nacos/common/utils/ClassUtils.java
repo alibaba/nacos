@@ -18,6 +18,8 @@ package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 
+import java.util.Objects;
+
 import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
 /**
