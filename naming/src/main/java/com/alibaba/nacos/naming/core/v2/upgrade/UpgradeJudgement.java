@@ -82,6 +82,8 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     private ScheduledExecutorService upgradeChecker;
     
+    private SelfUpgradeChecker selfUpgradeChecker;
+    
     private static final int MAJOR_VERSION = 2;
     
     private static final int MINOR_VERSION = 4;
@@ -111,6 +113,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     }
     
     private void initUpgradeChecker() {
+        selfUpgradeChecker = SelfUpgradeCheckerSpiHolder.findSelfChecker(EnvUtil.getProperty("upgrading.checker.type", "default"));
         upgradeChecker = ExecutorFactory.newSingleScheduledExecutorService(new NameThreadFactory("upgrading.checker"));
         upgradeChecker.scheduleAtFixedRate(() -> {
             if (isUseGrpcFeatures()) {
@@ -191,7 +194,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     private boolean checkForUpgrade() {
         if (!useGrpcFeatures.get()) {
-            boolean selfCheckResult = checkServiceAndInstanceNumber() && checkDoubleWriteStatus();
+            boolean selfCheckResult = selfUpgradeChecker.isReadyToUpgrade(serviceManager, doubleWriteDelayTaskEngine);
             Member self = memberManager.getSelf();
             self.setExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE, selfCheckResult);
             memberManager.updateMember(self);
@@ -206,16 +209,6 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
             result &= null != isReadyToUpgrade && (boolean) isReadyToUpgrade;
         }
         return result;
-    }
-    
-    private boolean checkServiceAndInstanceNumber() {
-        boolean result = serviceManager.getServiceCount() == MetricsMonitor.getDomCountMonitor().get();
-        result &= serviceManager.getInstanceCount() == MetricsMonitor.getIpCountMonitor().get();
-        return result;
-    }
-    
-    private boolean checkDoubleWriteStatus() {
-        return doubleWriteDelayTaskEngine.isEmpty();
     }
     
     private void doUpgrade() {
