@@ -40,6 +40,8 @@ public class StringUtils {
     
     public static final String EMPTY = "";
     
+    public static final String LF = "\n";
+    
     public static String newStringForUtf8(byte[] bytes) {
         return new String(bytes, Charset.forName(Constants.ENCODE));
     }
@@ -64,14 +66,28 @@ public class StringUtils {
     }
     
     /**
-     * Judge whether all strings are blank.
+     * <p>Checks if a CharSequence is whitespace, empty ("") or null.</p>
      *
-     * @param strs strings
-     * @return true if all strings are blank, otherwise false
+     * <pre>
+     * StringUtils.isBlank(null)      = true
+     * StringUtils.isBlank("")        = true
+     * StringUtils.isBlank(" ")       = true
+     * StringUtils.isBlank("bob")     = false
+     * StringUtils.isBlank("  bob  ") = false
+     * </pre>
+     *
+     * @param cs  the CharSequence to check, may be null
+     * @return {@code true} if the CharSequence is null, empty or whitespace
+     * @since 2.0
+     * @since 3.0 Changed signature from isBlank(String) to isBlank(CharSequence)
      */
-    public static boolean isAllBlank(String... strs) {
-        for (String str : strs) {
-            if (isNotBlank(str)) {
+    public static boolean isBlank(final CharSequence cs) {
+        int strLen;
+        if (cs == null || (strLen = cs.length()) == 0) {
+            return true;
+        }
+        for (int i = 0; i < strLen; i++) {
+            if (Character.isWhitespace(cs.charAt(i)) == false) {
                 return false;
             }
         }
@@ -83,7 +99,7 @@ public class StringUtils {
     }
     
     public static boolean isNotEmpty(String str) {
-        return !StringUtils.isEmpty(str);
+        return !isEmpty(str);
     }
     
     public static boolean isEmpty(String str) {
@@ -91,7 +107,7 @@ public class StringUtils {
     }
     
     public static String defaultIfEmpty(String str, String defaultStr) {
-        return StringUtils.isEmpty(str) ? defaultStr : str;
+        return isEmpty(str) ? defaultStr : str;
     }
     
     public static boolean equals(String str1, String str2) {
@@ -256,25 +272,11 @@ public class StringUtils {
         return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
     }
     
-    //   The following utility functions are extracted from <link>org.apache.commons.lang3</link>
-    //   start
-    
     /**
      * Checks if CharSequence contains a search CharSequence irrespective of case, handling {@code null}.
      * Case-insensitivity is defined as by {@link String#equalsIgnoreCase(String)}.
      *
      * <p>A {@code null} CharSequence will return {@code false}.</p>
-     *
-     * <pre>
-     * StringUtils.contains(null, *) = false
-     * StringUtils.contains(*, null) = false
-     * StringUtils.contains("", "") = true
-     * StringUtils.contains("abc", "") = true
-     * StringUtils.contains("abc", "a") = true
-     * StringUtils.contains("abc", "z") = false
-     * StringUtils.contains("abc", "A") = true
-     * StringUtils.contains("abc", "Z") = false
-     * </pre>
      *
      * @param str       the CharSequence to check, may be null
      * @param searchStr the CharSequence to find, may be null
@@ -287,10 +289,35 @@ public class StringUtils {
         if (str == null || searchStr == null) {
             return false;
         }
-        final int len = searchStr.length();
-        final int max = str.length() - len;
-        for (int i = 0; i <= max; i++) {
-            if (regionMatches(str, true, i, searchStr, 0, len)) {
+        String str1 = str.toString().toLowerCase();
+        String str2 = str.toString().toLowerCase();
+        return str1.contains(str2);
+    }
+    
+    /**
+     * <p>Checks if none of the CharSequences are blank ("") or null and whitespace only..</p>
+     *
+     * @param css  the CharSequences to check, may be null or empty
+     * @return {@code true} if none of the CharSequences are blank or null or whitespace only
+     * @since 3.2
+     */
+    public static boolean isNoneBlank(final CharSequence... css) {
+        return !isAnyBlank(css);
+    }
+    
+    /**
+     * <p>Checks if any one of the CharSequences are blank ("") or null and not whitespace only..</p>
+     *
+     * @param css  the CharSequences to check, may be null or empty
+     * @return {@code true} if any of the CharSequences are blank or null or whitespace only
+     * @since 3.2
+     */
+    public static boolean isAnyBlank(final CharSequence... css) {
+        if (ArrayUtils.isEmpty(css)) {
+            return true;
+        }
+        for (final CharSequence cs : css) {
+            if (isBlank(cs)) {
                 return true;
             }
         }
@@ -298,125 +325,105 @@ public class StringUtils {
     }
     
     /**
-     * Green implementation of regionMatches.
+     * <p>Check if a CharSequence starts with a specified prefix.</p>
      *
-     * @param cs         the {@code CharSequence} to be processed
-     * @param ignoreCase whether or not to be case insensitive
-     * @param thisStart  the index to start on the {@code cs} CharSequence
-     * @param substring  the {@code CharSequence} to be looked for
-     * @param start      the index to start on the {@code substring} CharSequence
-     * @param length     character length of the region
-     * @return whether the region matched
+     * <p>{@code null}s are handled without exceptions. Two {@code null}
+     * references are considered to be equal. The comparison is case sensitive.</p>
+     *
+     * @see java.lang.String#startsWith(String)
+     * @param str  the CharSequence to check, may be null
+     * @param prefix the prefix to find, may be null
+     * @return {@code true} if the CharSequence starts with the prefix, case sensitive, or
+     *  both {@code null}
+     * @since 2.4
+     * @since 3.0 Changed signature from startsWith(String, String) to startsWith(CharSequence, CharSequence)
      */
-    static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart,
-            final CharSequence substring, final int start, final int length) {
-        if (cs instanceof String && substring instanceof String) {
-            return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
-        }
-        int index1 = thisStart;
-        int index2 = start;
-        int tmpLen = length;
-        
-        while (tmpLen-- > 0) {
-            final char c1 = cs.charAt(index1++);
-            final char c2 = substring.charAt(index2++);
-            
-            if (c1 == c2) {
-                continue;
-            }
-            
-            if (!ignoreCase) {
-                return false;
-            }
-            
-            // The same check as in String.regionMatches():
-            if (Character.toUpperCase(c1) != Character.toUpperCase(c2) && Character.toLowerCase(c1) != Character
-                    .toLowerCase(c2)) {
-                return false;
-            }
-        }
-        
-        return true;
+    public static boolean startsWith(final CharSequence str, final CharSequence prefix) {
+        return startsWith(str, prefix, false);
     }
     
     /**
-     * <p>Compares two CharSequences, returning {@code true} if they represent
-     * equal sequences of characters, ignoring case.</p>
+     * <p>Check if a CharSequence starts with a specified prefix (optionally case insensitive).</p>
+     *
+     * @see java.lang.String#startsWith(String)
+     * @param str  the CharSequence to check, may be null
+     * @param prefix the prefix to find, may be null
+     * @param ignoreCase indicates whether the compare should ignore case
+     *  (case insensitive) or not.
+     * @return {@code true} if the CharSequence starts with the prefix or
+     *  both {@code null}
+     */
+    private static boolean startsWith(final CharSequence str, final CharSequence prefix, final boolean ignoreCase) {
+        if (str == null || prefix == null) {
+            return str == null && prefix == null;
+        }
+        if (prefix.length() > str.length()) {
+            return false;
+        }
+        if (ignoreCase) {
+            String lowerCaseStr = str.toString().toLowerCase();
+            String lowerCasePrefix = str.toString().toLowerCase();
+            return lowerCaseStr.startsWith(lowerCasePrefix);
+        } else {
+            return str.toString().startsWith(prefix.toString());
+        }
+    }
+    
+    /**
+     * <p>Case insensitive check if a CharSequence starts with a specified prefix.</p>
      *
      * <p>{@code null}s are handled without exceptions. Two {@code null}
-     * references are considered equal. Comparison is case insensitive.</p>
+     * references are considered to be equal. The comparison is case insensitive.</p>
+     *
+     * @see java.lang.String#startsWith(String)
+     * @param str  the CharSequence to check, may be null
+     * @param prefix the prefix to find, may be null
+     * @return {@code true} if the CharSequence starts with the prefix, case insensitive, or
+     *  both {@code null}
+     * @since 2.4
+     * @since 3.0 Changed signature from startsWithIgnoreCase(String, String) to startsWithIgnoreCase(CharSequence, CharSequence)
+     */
+    public static boolean startsWithIgnoreCase(final CharSequence str, final CharSequence prefix) {
+        return startsWith(str, prefix, true);
+    }
+    
+    /**
+     * <p>Deletes all whitespaces from a String as defined by
+     * {@link Character#isWhitespace(char)}.</p>
      *
      * <pre>
-     * StringUtils.equalsIgnoreCase(null, null)   = true
-     * StringUtils.equalsIgnoreCase(null, "abc")  = false
-     * StringUtils.equalsIgnoreCase("abc", null)  = false
-     * StringUtils.equalsIgnoreCase("abc", "abc") = true
-     * StringUtils.equalsIgnoreCase("abc", "ABC") = true
+     * StringUtils.deleteWhitespace(null)         = null
+     * StringUtils.deleteWhitespace("")           = ""
+     * StringUtils.deleteWhitespace("abc")        = "abc"
+     * StringUtils.deleteWhitespace("   ab  c  ") = "abc"
      * </pre>
      *
-     * @param str1 the first CharSequence, may be null
-     * @param str2 the second CharSequence, may be null
-     * @return {@code true} if the CharSequence are equal, case insensitive, or both {@code null}
-     * @since 3.0 Changed signature from equalsIgnoreCase(String, String) to equalsIgnoreCase(CharSequence,
-     * CharSequence)
+     * @param str  the String to delete whitespace from, may be null
+     * @return the String without whitespaces, <code>null</code> if null String input
      */
-    public static boolean equalsIgnoreCase(final CharSequence str1, final CharSequence str2) {
-        if (str1 == null || str2 == null) {
-            return str1 == str2;
-        } else if (str1 == str2) {
-            return true;
-        } else if (str1.length() != str2.length()) {
+    public static String deleteWhitespace(String str) {
+        if (isEmpty(str)) {
+            return str;
+        }
+        int sz = str.length();
+        char[] chs = new char[sz];
+        int count = 0;
+        for (int i = 0; i < sz; i++) {
+            if (!Character.isWhitespace(str.charAt(i))) {
+                chs[count++] = str.charAt(i);
+            }
+        }
+        if (count == sz) {
+            return str;
+        }
+        return new String(chs, 0, count);
+    }
+    
+    public static boolean equalsIgnoreCase(String name, String name1) {
+        if (name == null || name1 == null) {
             return false;
-        } else {
-            return CharSequenceUtils.regionMatches(str1, true, 0, str2, 0, str1.length());
-        }
-    }
-    
-    static class CharSequenceUtils {
-        
-        /**
-         * Green implementation of regionMatches.
-         *
-         * @param cs         the {@code CharSequence} to be processed
-         * @param ignoreCase whether or not to be case insensitive
-         * @param thisStart  the index to start on the {@code cs} CharSequence
-         * @param substring  the {@code CharSequence} to be looked for
-         * @param start      the index to start on the {@code substring} CharSequence
-         * @param length     character length of the region
-         * @return whether the region matched
-         */
-        static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart,
-                final CharSequence substring, final int start, final int length) {
-            if (cs instanceof String && substring instanceof String) {
-                return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
-            }
-            int index1 = thisStart;
-            int index2 = start;
-            int tmpLen = length;
-            
-            while (tmpLen-- > 0) {
-                final char c1 = cs.charAt(index1++);
-                final char c2 = substring.charAt(index2++);
-                
-                if (c1 == c2) {
-                    continue;
-                }
-                
-                if (!ignoreCase) {
-                    return false;
-                }
-                
-                // The same check as in String.regionMatches():
-                if (Character.toUpperCase(c1) != Character.toUpperCase(c2) && Character.toLowerCase(c1) != Character
-                        .toLowerCase(c2)) {
-                    return false;
-                }
-            }
-            
-            return true;
         }
         
+        return name.equalsIgnoreCase(name1);
     }
-    
-    //   end
 }
