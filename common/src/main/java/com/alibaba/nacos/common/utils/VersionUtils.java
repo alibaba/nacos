@@ -39,9 +39,7 @@ public class VersionUtils {
     private static final String NACOS_VERSION_FILE = "nacos-version.txt";
     
     static {
-        InputStream in = null;
-        try {
-            in = VersionUtils.class.getClassLoader().getResourceAsStream(NACOS_VERSION_FILE);
+        try (InputStream in = VersionUtils.class.getClassLoader().getResourceAsStream(NACOS_VERSION_FILE)) {
             Properties props = new Properties();
             props.load(in);
             String val = props.getProperty("version");
@@ -51,23 +49,10 @@ public class VersionUtils {
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
     }
     
-    private static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
-        @Override
-        public int compare(String o1, String o2) {
-            return o1.compareTo(o2);
-        }
-    };
+    private static final Comparator<String> STRING_COMPARATOR = String::compareTo;
     
     /**
      * compare two version who is latest.
