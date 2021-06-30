@@ -125,11 +125,12 @@ public class StringUtils {
     }
     
     /**
-     * Join object with input separator.
+     * <p>Joins the elements of the provided array into a single String
+     * containing the provided list of elements.</p>
      *
-     * @param collection collection of objects need to join
-     * @param separator  separator
-     * @return joined string
+     * @param collection  the Collection of values to join together, may be null
+     * @param separator  the separator string to use
+     * @return the joined String, {@code null} if null array input
      */
     public static String join(Collection collection, String separator) {
         if (collection == null) {
@@ -141,7 +142,7 @@ public class StringUtils {
         
         for (int i = 0; i < collection.size(); i++) {
             if (objects[i] != null) {
-                stringBuilder.append(objects[i].toString());
+                stringBuilder.append(objects[i]);
                 if (i != collection.size() - 1 && separator != null) {
                     if (separator != null) {
                         stringBuilder.append(separator);
