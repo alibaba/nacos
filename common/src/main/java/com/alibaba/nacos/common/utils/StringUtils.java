@@ -28,7 +28,7 @@ import java.util.Locale;
 /**
  * string util.
  *
- * @author Nacos
+ * @author zzq
  */
 public class StringUtils {
     
@@ -42,44 +42,21 @@ public class StringUtils {
     
     public static final String LF = "\n";
     
+    /**
+     * <p>Create a string with encoding format as utf8.</p>
+     *
+     * @param bytes the bytes that make up the string
+     * @return created string
+     */
     public static String newStringForUtf8(byte[] bytes) {
         return new String(bytes, Charset.forName(Constants.ENCODE));
     }
     
     /**
-     * Judge whether string is blank.
+     * <p>Checks if a string is  empty (""), null and  whitespace only.</p>
      *
-     * @param str string
-     * @return true if str is null, empty string or only blanks, otherwise false
-     */
-    public static boolean isBlank(String str) {
-        int strLen;
-        if (str == null || (strLen = str.length()) == 0) {
-            return true;
-        }
-        for (int i = 0; i < strLen; i++) {
-            if (!Character.isWhitespace(str.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    /**
-     * <p>Checks if a CharSequence is whitespace, empty ("") or null.</p>
-     *
-     * <pre>
-     * StringUtils.isBlank(null)      = true
-     * StringUtils.isBlank("")        = true
-     * StringUtils.isBlank(" ")       = true
-     * StringUtils.isBlank("bob")     = false
-     * StringUtils.isBlank("  bob  ") = false
-     * </pre>
-     *
-     * @param cs  the CharSequence to check, may be null
-     * @return {@code true} if the CharSequence is null, empty or whitespace
-     * @since 2.0
-     * @since 3.0 Changed signature from isBlank(String) to isBlank(CharSequence)
+     * @param cs the string to check
+     * @return {@code true} if the string is empty and null and whitespace
      */
     public static boolean isBlank(final CharSequence cs) {
         int strLen;
@@ -94,26 +71,68 @@ public class StringUtils {
         return true;
     }
     
+    /**
+     * <p>Checks if a string is not empty (""), not null and not whitespace only.</p>
+     *
+     * @param str the string to check, may be null
+     * @return {@code true} if the string is not empty and not null and not whitespace
+     */
     public static boolean isNotBlank(String str) {
         return !isBlank(str);
     }
     
+    /**
+     * <p>Checks if a str is not empty ("") or not null.</p>
+     *
+     * @param str the str to check, may be null
+     * @return {@code true} if the str is not empty or not null
+     */
     public static boolean isNotEmpty(String str) {
         return !isEmpty(str);
     }
     
+    /**
+     * <p>Checks if a str is empty ("") or null.</p>
+     *
+     * @param str the str to check, may be null
+     * @return {@code true} if the str is empty or null
+     */
     public static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
     }
     
+    /**
+     * <p>Returns either the passed in CharSequence, or if the CharSequence is
+     * empty or {@code null}, the value of {@code defaultStr}.</p>
+     *
+     * @param str        the CharSequence to check, may be null
+     * @param defaultStr the default CharSequence to return if the input is empty ("") or {@code null}, may be null
+     * @return the passed in CharSequence, or the default
+     */
     public static String defaultIfEmpty(String str, String defaultStr) {
         return isEmpty(str) ? defaultStr : str;
     }
     
+    /**
+     * <p>Compares two CharSequences, returning {@code true} if they represent
+     * equal sequences of characters.</p>
+     *
+     * @param str1 the first string, may be {@code null}
+     * @param str2 the second string, may be {@code null}
+     * @return {@code true} if the string are equal (case-sensitive), or both {@code null}
+     * @see Object#equals(Object)
+     */
     public static boolean equals(String str1, String str2) {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
     
+    /**
+     * <p>Removes control characters (char &lt;= 32) from both
+     * ends of this String, handling {@code null} by returning {@code null}.</p>
+     *
+     * @param str the String to be trimmed, may be null
+     * @return the trimmed string, {@code null} if null String input
+     */
     public static String trim(final String str) {
         return str == null ? null : str.trim();
     }
@@ -144,7 +163,7 @@ public class StringUtils {
      * <p>Joins the elements of the provided array into a single String
      * containing the provided list of elements.</p>
      *
-     * @param collection  the Collection of values to join together, may be null
+     * @param collection the Collection of values to join together, may be null
      * @param separator  the separator string to use
      * @return the joined String, {@code null} if null array input
      */
@@ -282,8 +301,6 @@ public class StringUtils {
      * @param searchStr the CharSequence to find, may be null
      * @return true if the CharSequence contains the search CharSequence irrespective of case or false if not or {@code
      * null} string input
-     * @since 3.0 Changed signature from containsIgnoreCase(String, String) to containsIgnoreCase(CharSequence,
-     * CharSequence)
      */
     public static boolean containsIgnoreCase(final CharSequence str, final CharSequence searchStr) {
         if (str == null || searchStr == null) {
@@ -297,9 +314,8 @@ public class StringUtils {
     /**
      * <p>Checks if none of the CharSequences are blank ("") or null and whitespace only..</p>
      *
-     * @param css  the CharSequences to check, may be null or empty
+     * @param css the CharSequences to check, may be null or empty
      * @return {@code true} if none of the CharSequences are blank or null or whitespace only
-     * @since 3.2
      */
     public static boolean isNoneBlank(final CharSequence... css) {
         return !isAnyBlank(css);
@@ -308,9 +324,8 @@ public class StringUtils {
     /**
      * <p>Checks if any one of the CharSequences are blank ("") or null and not whitespace only..</p>
      *
-     * @param css  the CharSequences to check, may be null or empty
+     * @param css the CharSequences to check, may be null or empty
      * @return {@code true} if any of the CharSequences are blank or null or whitespace only
-     * @since 3.2
      */
     public static boolean isAnyBlank(final CharSequence... css) {
         if (ArrayUtils.isEmpty(css)) {
@@ -330,13 +345,10 @@ public class StringUtils {
      * <p>{@code null}s are handled without exceptions. Two {@code null}
      * references are considered to be equal. The comparison is case sensitive.</p>
      *
-     * @see java.lang.String#startsWith(String)
-     * @param str  the CharSequence to check, may be null
+     * @param str    the CharSequence to check, may be null
      * @param prefix the prefix to find, may be null
-     * @return {@code true} if the CharSequence starts with the prefix, case sensitive, or
-     *  both {@code null}
-     * @since 2.4
-     * @since 3.0 Changed signature from startsWith(String, String) to startsWith(CharSequence, CharSequence)
+     * @return {@code true} if the CharSequence starts with the prefix, case sensitive, or both {@code null}
+     * @see java.lang.String#startsWith(String)
      */
     public static boolean startsWith(final CharSequence str, final CharSequence prefix) {
         return startsWith(str, prefix, false);
@@ -345,13 +357,11 @@ public class StringUtils {
     /**
      * <p>Check if a CharSequence starts with a specified prefix (optionally case insensitive).</p>
      *
+     * @param str        the CharSequence to check, may be null
+     * @param prefix     the prefix to find, may be null
+     * @param ignoreCase indicates whether the compare should ignore case (case insensitive) or not.
+     * @return {@code true} if the CharSequence starts with the prefix or both {@code null}
      * @see java.lang.String#startsWith(String)
-     * @param str  the CharSequence to check, may be null
-     * @param prefix the prefix to find, may be null
-     * @param ignoreCase indicates whether the compare should ignore case
-     *  (case insensitive) or not.
-     * @return {@code true} if the CharSequence starts with the prefix or
-     *  both {@code null}
      */
     private static boolean startsWith(final CharSequence str, final CharSequence prefix, final boolean ignoreCase) {
         if (str == null || prefix == null) {
@@ -375,13 +385,10 @@ public class StringUtils {
      * <p>{@code null}s are handled without exceptions. Two {@code null}
      * references are considered to be equal. The comparison is case insensitive.</p>
      *
-     * @see java.lang.String#startsWith(String)
-     * @param str  the CharSequence to check, may be null
+     * @param str    the CharSequence to check, may be null
      * @param prefix the prefix to find, may be null
-     * @return {@code true} if the CharSequence starts with the prefix, case insensitive, or
-     *  both {@code null}
-     * @since 2.4
-     * @since 3.0 Changed signature from startsWithIgnoreCase(String, String) to startsWithIgnoreCase(CharSequence, CharSequence)
+     * @return {@code true} if the CharSequence starts with the prefix, case insensitive, or both {@code null}
+     * @see java.lang.String#startsWith(String)
      */
     public static boolean startsWithIgnoreCase(final CharSequence str, final CharSequence prefix) {
         return startsWith(str, prefix, true);
@@ -391,14 +398,7 @@ public class StringUtils {
      * <p>Deletes all whitespaces from a String as defined by
      * {@link Character#isWhitespace(char)}.</p>
      *
-     * <pre>
-     * StringUtils.deleteWhitespace(null)         = null
-     * StringUtils.deleteWhitespace("")           = ""
-     * StringUtils.deleteWhitespace("abc")        = "abc"
-     * StringUtils.deleteWhitespace("   ab  c  ") = "abc"
-     * </pre>
-     *
-     * @param str  the String to delete whitespace from, may be null
+     * @param str the String to delete whitespace from, may be null
      * @return the String without whitespaces, <code>null</code> if null String input
      */
     public static String deleteWhitespace(String str) {
@@ -419,11 +419,15 @@ public class StringUtils {
         return new String(chs, 0, count);
     }
     
-    public static boolean equalsIgnoreCase(String name, String name1) {
-        if (name == null || name1 == null) {
-            return false;
-        }
-        
-        return name.equalsIgnoreCase(name1);
+    /**
+     * <p>Compares two CharSequences, returning {@code true} if they represent
+     * equal sequences of characters, ignoring case.</p>
+     *
+     * @param str1 the first string, may be null
+     * @param str2 the second string, may be null
+     * @return {@code true} if the string are equal, case insensitive, or both {@code null}
+     */
+    public static boolean equalsIgnoreCase(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equalsIgnoreCase(str2);
     }
 }
