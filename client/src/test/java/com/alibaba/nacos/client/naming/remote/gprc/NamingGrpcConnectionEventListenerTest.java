@@ -169,7 +169,7 @@ public class NamingGrpcConnectionEventListenerTest {
         method.setAccessible(true);
         executorService.schedule(() -> method.invoke(listener, failedServices), 0, TimeUnit.MILLISECONDS);
         //then
-        Thread.sleep(100);
+        TimeUnit.MILLISECONDS.sleep(100L);
         verify(proxy, times(1)).registerService(serviceName, groupName, instance);
     }
     
@@ -241,7 +241,7 @@ public class NamingGrpcConnectionEventListenerTest {
         method.setAccessible(true);
         executorService.schedule(() -> method.invoke(listener, failedSubscribes), 0, TimeUnit.MILLISECONDS);
         //then
-        Thread.sleep(100);
+        TimeUnit.MILLISECONDS.sleep(100L);
         ServiceInfo info = ServiceInfo.fromKey(fullServiceName);
         verify(proxy, times(1)).subscribe(info.getName(), info.getGroupName(), cluster);
     }
