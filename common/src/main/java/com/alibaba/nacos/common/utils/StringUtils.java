@@ -135,18 +135,21 @@ public class StringUtils {
         if (collection == null) {
             return null;
         }
-        
+    
         StringBuilder stringBuilder = new StringBuilder();
         Object[] objects = collection.toArray();
-        
-        for (int i = 0; i < collection.size() - 1; i++) {
-            stringBuilder.append(objects[i].toString()).append(separator);
+    
+        for (int i = 0; i < collection.size(); i++) {
+            if (objects[i] != null) {
+                stringBuilder.append(objects[i].toString());
+                if (i != collection.size() - 1 && separator != null) {
+                    if (separator != null) {
+                        stringBuilder.append(separator);
+                    }
+                }
+            }
         }
-        
-        if (collection.size() > 0) {
-            stringBuilder.append(objects[collection.size() - 1]);
-        }
-        
+    
         return stringBuilder.toString();
     }
     
