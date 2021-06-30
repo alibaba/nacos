@@ -307,7 +307,7 @@ public class StringUtils {
             return false;
         }
         String str1 = str.toString().toLowerCase();
-        String str2 = str.toString().toLowerCase();
+        String str2 = searchStr.toString().toLowerCase();
         return str1.contains(str2);
     }
     

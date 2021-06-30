@@ -137,9 +137,9 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.containsIgnoreCase(StringUtils.EMPTY, StringUtils.EMPTY));
         Assert.assertTrue(StringUtils.containsIgnoreCase("abc", StringUtils.EMPTY));
         Assert.assertTrue(StringUtils.containsIgnoreCase("abc", "a"));
-        Assert.assertTrue(StringUtils.containsIgnoreCase("abc", "z"));
+        Assert.assertFalse(StringUtils.containsIgnoreCase("abc", "z"));
         Assert.assertTrue(StringUtils.containsIgnoreCase("abc", "A"));
-        Assert.assertTrue(StringUtils.containsIgnoreCase("abc", "Z"));
+        Assert.assertFalse(StringUtils.containsIgnoreCase("abc", "Z"));
     }
     
     @Test
