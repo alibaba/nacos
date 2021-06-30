@@ -247,12 +247,12 @@ public class CPInstancesAPI_ITCase {
     @Test
     public void getService_1() throws Exception {
         String serviceName = NamingBase.randomDomainName();
-        ListView<String> listView = naming1.getServicesOfServer(1, 20);
+        ListView<String> listView = naming1.getServicesOfServer(1, 50);
 
         namingServiceCreate(serviceName, TEST_NAMESPACE_1);
         TimeUnit.SECONDS.sleep(5L);
 
-        ListView<String> listView1 = naming1.getServicesOfServer(1, 20);
+        ListView<String> listView1 = naming1.getServicesOfServer(1, 50);
         Assert.assertEquals(listView.getCount()+1, listView1.getCount());
 
         namingServiceDelete(serviceName, TEST_NAMESPACE_1);
