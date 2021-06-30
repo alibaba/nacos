@@ -135,10 +135,10 @@ public class StringUtils {
         if (collection == null) {
             return null;
         }
-    
+        
         StringBuilder stringBuilder = new StringBuilder();
         Object[] objects = collection.toArray();
-    
+        
         for (int i = 0; i < collection.size(); i++) {
             if (objects[i] != null) {
                 stringBuilder.append(objects[i].toString());
@@ -149,7 +149,7 @@ public class StringUtils {
                 }
             }
         }
-    
+        
         return stringBuilder.toString();
     }
     
