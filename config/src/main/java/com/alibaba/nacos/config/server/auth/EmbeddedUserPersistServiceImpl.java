@@ -55,7 +55,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void createUser(String username, String password) {
-        String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
         
         try {
             EmbeddedStorageContextUtils.addSqlContext(sql, username, password, true);
@@ -109,7 +109,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         
         PaginationHelper<User> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "SELECT count(*) FROM users WHERE ";
+        String sqlCountRows = "SELECT COUNT(*) FROM users WHERE ";
         String sqlFetchRows = "SELECT username,password FROM users WHERE ";
         
         String where = " 1=1 ";

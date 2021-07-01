@@ -110,7 +110,7 @@ public class GroupCapacityPersistService {
             // Note: add "tenant_id = ''" condition.
             sql = "INSERT INTO group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
                     + "gmt_create, gmt_modified) SELECT ?, ?, COUNT(*), ?, ?, ?, ?, ? FROM config_info WHERE "
-                    + "group_id=? and tenant_id = '';";
+                    + "group_id=? AND tenant_id = '';";
         }
         return insertGroupCapacity(sql, capacity);
     }

@@ -75,7 +75,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "SELECT count(*) FROM roles WHERE ";
+        String sqlCountRows = "SELECT COUNT(*) FROM roles WHERE ";
         String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
     
         String where = " username= ? ";
