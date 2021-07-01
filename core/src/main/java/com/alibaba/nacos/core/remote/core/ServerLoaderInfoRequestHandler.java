@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -42,6 +43,14 @@ public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderI
     
     @Autowired
     private ConnectionManager connectionManager;
+    
+    public ServerLoaderInfoRequestHandler() {
+    }
+    
+    @JustForTest
+    public ServerLoaderInfoRequestHandler(ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
     
     @Override
     public ServerLoaderInfoResponse handle(ServerLoaderInfoRequest request, RequestMeta meta) throws NacosException {

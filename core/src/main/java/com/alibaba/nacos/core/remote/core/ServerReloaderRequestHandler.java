@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.ServerReloadResponse;
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -42,6 +43,14 @@ public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadReq
     
     @Autowired
     private ConnectionManager connectionManager;
+    
+    public ServerReloaderRequestHandler() {
+    }
+    
+    @JustForTest
+    public ServerReloaderRequestHandler(ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
     
     @Override
     public ServerReloadResponse handle(ServerReloadRequest request, RequestMeta meta) throws NacosException {
