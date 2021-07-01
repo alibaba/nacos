@@ -18,8 +18,6 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.RpcClient;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
@@ -47,12 +45,6 @@ public class GrpcServerTest {
     public void testGrpcSdkServer() throws Exception {
         BaseGrpcServer grpcSdkServer = new GrpcSdkServer();
         grpcSdkServer.start();
-        GrpcSdkClient grpcSdkClient = new GrpcSdkClient("");
-        grpcSdkClient.start();
-        RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
-        serverInfo.setServerIp("12.7.0.1");
-        serverInfo.setServerPort(9848);
-        grpcSdkClient.connectToServer(serverInfo);
         
         Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
         
@@ -65,6 +57,7 @@ public class GrpcServerTest {
     public void testGrpcClusterServer() throws Exception {
         BaseRpcServer grpcSdkServer = new GrpcClusterServer();
         grpcSdkServer.start();
+        
         Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
     
         Assert.assertEquals(grpcSdkServer.rpcPortOffset(), 1001);
