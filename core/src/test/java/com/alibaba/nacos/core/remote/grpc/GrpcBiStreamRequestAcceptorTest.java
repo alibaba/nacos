@@ -37,7 +37,6 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -74,6 +73,10 @@ public class GrpcBiStreamRequestAcceptorTest {
     
     private StreamObserver<Payload> payloadStreamObserver;
     
+    private String connectId = UUID.randomUUID().toString();
+    
+    private String requestId = UUID.randomUUID().toString();
+    
     @Before
     public void setUp() throws IOException {
         String serverName = InProcessServerBuilder.generateName();
@@ -82,8 +85,8 @@ public class GrpcBiStreamRequestAcceptorTest {
                 .forName(serverName).directExecutor().addService(new GrpcBiStreamRequestAcceptor(connectionManager))
                 .intercept(new ServerInterceptor() {
                     @Override
-                    public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata,
-                            ServerCallHandler<ReqT, RespT> serverCallHandler) {
+                    public <R, S> ServerCall.Listener<R> interceptCall(ServerCall<R, S> serverCall, Metadata metadata,
+                            ServerCallHandler<R, S> serverCallHandler) {
                         Context ctx = Context.current().withValue(CONTEXT_KEY_CONN_ID, UUID.randomUUID().toString())
                                 .withValue(CONTEXT_KEY_CONN_LOCAL_PORT, 1234)
                                 .withValue(CONTEXT_KEY_CONN_REMOTE_PORT, 8948)
@@ -99,8 +102,6 @@ public class GrpcBiStreamRequestAcceptorTest {
     
     @Test
     public void testConnectionSetupRequest() {
-        String connectId = UUID.randomUUID().toString();
-        String requestId = UUID.randomUUID().toString();
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {

@@ -98,8 +98,8 @@ public class GrpcRequestAcceptorTest {
                 .forName(serverName).directExecutor().addService(new GrpcRequestAcceptor(requestHandlerRegistry, connectionManager))
                 .intercept(new ServerInterceptor() {
                     @Override
-                    public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> serverCall, Metadata metadata,
-                            ServerCallHandler<ReqT, RespT> serverCallHandler) {
+                    public <R, S> ServerCall.Listener<R> interceptCall(ServerCall<R, S> serverCall, Metadata metadata,
+                            ServerCallHandler<R, S> serverCallHandler) {
                         Context ctx = Context.current().withValue(CONTEXT_KEY_CONN_ID, UUID.randomUUID().toString())
                                 .withValue(CONTEXT_KEY_CONN_LOCAL_PORT, 1234)
                                 .withValue(CONTEXT_KEY_CONN_REMOTE_PORT, 8948)
@@ -116,6 +116,13 @@ public class GrpcRequestAcceptorTest {
     
     @Test
     public void testApplicationUnStarted() {
+        RequestMeta metadata = new RequestMeta();
+        metadata.setClientIp("127.0.0.1");
+        metadata.setConnectionId(connectId);
+        ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
+        serverCheckRequest.setRequestId(requestId);
+        Payload request = GrpcUtils.convert(serverCheckRequest, metadata);
+        
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
@@ -136,20 +143,20 @@ public class GrpcRequestAcceptorTest {
                 System.out.println("complete");
             }
         };
-        RequestMeta metadata = new RequestMeta();
-        metadata.setClientIp("127.0.0.1");
-        metadata.setConnectionId(connectId);
-    
-        ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
-        serverCheckRequest.setRequestId(requestId);
         
-        Payload request = GrpcUtils.convert(serverCheckRequest, metadata);
         streamStub.request(request, streamObserver);
     }
     
     @Test
     public void testServerCheckRequest() {
         ApplicationUtils.setStarted(true);
+        RequestMeta metadata = new RequestMeta();
+        metadata.setClientIp("127.0.0.1");
+        metadata.setConnectionId(connectId);
+        ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
+        serverCheckRequest.setRequestId(requestId);
+        Payload request = GrpcUtils.convert(serverCheckRequest, metadata);
+        
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
@@ -168,14 +175,7 @@ public class GrpcRequestAcceptorTest {
                 System.out.println("complete");
             }
         };
-        RequestMeta metadata = new RequestMeta();
-        metadata.setClientIp("127.0.0.1");
-        metadata.setConnectionId(connectId);
-    
-        ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
-        serverCheckRequest.setRequestId(requestId);
-    
-        Payload request = GrpcUtils.convert(serverCheckRequest, metadata);
+        
         streamStub.request(request, streamObserver);
         ApplicationUtils.setStarted(false);
     }
@@ -183,6 +183,13 @@ public class GrpcRequestAcceptorTest {
     @Test
     public void testNoRequestHandler() {
         ApplicationUtils.setStarted(true);
+        RequestMeta metadata = new RequestMeta();
+        metadata.setClientIp("127.0.0.1");
+        metadata.setConnectionId(connectId);
+        InstanceRequest instanceRequest = new InstanceRequest();
+        instanceRequest.setRequestId(requestId);
+        Payload request = GrpcUtils.convert(instanceRequest, metadata);
+        
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
@@ -204,14 +211,7 @@ public class GrpcRequestAcceptorTest {
                 System.out.println("complete");
             }
         };
-        RequestMeta metadata = new RequestMeta();
-        metadata.setClientIp("127.0.0.1");
-        metadata.setConnectionId(connectId);
-    
-        InstanceRequest instanceRequest = new InstanceRequest();
-        instanceRequest.setRequestId(requestId);
-    
-        Payload request = GrpcUtils.convert(instanceRequest, metadata);
+        
         streamStub.request(request, streamObserver);
         ApplicationUtils.setStarted(false);
     }
@@ -221,6 +221,14 @@ public class GrpcRequestAcceptorTest {
         ApplicationUtils.setStarted(true);
         Mockito.when(requestHandlerRegistry.getByRequestType(Mockito.anyString())).thenReturn(mockHandler);
         Mockito.when(connectionManager.checkValid(Mockito.any())).thenReturn(false);
+        
+        RequestMeta metadata = new RequestMeta();
+        metadata.setClientIp("127.0.0.1");
+        metadata.setConnectionId(connectId);
+        InstanceRequest instanceRequest = new InstanceRequest();
+        instanceRequest.setRequestId(requestId);
+        Payload request = GrpcUtils.convert(instanceRequest, metadata);
+        
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
@@ -242,14 +250,7 @@ public class GrpcRequestAcceptorTest {
                 System.out.println("complete");
             }
         };
-        RequestMeta metadata = new RequestMeta();
-        metadata.setClientIp("127.0.0.1");
-        metadata.setConnectionId(connectId);
-    
-        InstanceRequest instanceRequest = new InstanceRequest();
-        instanceRequest.setRequestId(requestId);
-    
-        Payload request = GrpcUtils.convert(instanceRequest, metadata);
+        
         streamStub.request(request, streamObserver);
         ApplicationUtils.setStarted(false);
     }
@@ -259,6 +260,7 @@ public class GrpcRequestAcceptorTest {
         ApplicationUtils.setStarted(true);
         Mockito.when(requestHandlerRegistry.getByRequestType(Mockito.anyString())).thenReturn(mockHandler);
         Mockito.when(connectionManager.checkValid(Mockito.any())).thenReturn(true);
+        
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
@@ -282,7 +284,6 @@ public class GrpcRequestAcceptorTest {
         };
 
         streamStub.request(null, streamObserver);
-        
         ApplicationUtils.setStarted(false);
     }
     
@@ -295,6 +296,13 @@ public class GrpcRequestAcceptorTest {
         ConnectionMeta connectionMeta = new ConnectionMeta(connectId, ip, ip, 8888, 9848, "GRPC", "", "", new HashMap<>());
         Connection connection = new GrpcConnection(connectionMeta, null, null);
         Mockito.when(connectionManager.getConnection(Mockito.any())).thenReturn(connection);
+    
+        RequestMeta metadata = new RequestMeta();
+        metadata.setClientIp("127.0.0.1");
+        metadata.setConnectionId(connectId);
+        HealthCheckRequest mockRequest = new HealthCheckRequest();
+        Payload payload = GrpcUtils.convert(mockRequest, metadata);
+        
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
@@ -313,14 +321,8 @@ public class GrpcRequestAcceptorTest {
                 System.out.println("complete");
             }
         };
-    
-        RequestMeta metadata = new RequestMeta();
-        metadata.setClientIp("127.0.0.1");
-        metadata.setConnectionId(connectId);
         
-        HealthCheckRequest mockRequest = new HealthCheckRequest();
-        streamStub.request(GrpcUtils.convert(mockRequest, metadata), streamObserver);
-        
+        streamStub.request(payload, streamObserver);
         ApplicationUtils.setStarted(false);
     }
     
@@ -329,6 +331,13 @@ public class GrpcRequestAcceptorTest {
         ApplicationUtils.setStarted(true);
         Mockito.when(requestHandlerRegistry.getByRequestType(Mockito.anyString())).thenReturn(mockHandler);
         Mockito.when(connectionManager.checkValid(Mockito.any())).thenReturn(true);
+        
+        RequestMeta metadata = new RequestMeta();
+        metadata.setClientIp("127.0.0.1");
+        metadata.setConnectionId(connectId);
+        InstanceRequest instanceRequest = new InstanceRequest();
+        Payload payload = GrpcUtils.convert(instanceRequest, metadata);
+        
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
@@ -350,16 +359,8 @@ public class GrpcRequestAcceptorTest {
                 System.out.println("complete");
             }
         };
-    
-        RequestMeta metadata = new RequestMeta();
-        metadata.setClientIp("127.0.0.1");
-        metadata.setConnectionId(connectId);
-    
-        InstanceRequest instanceRequest = new InstanceRequest();
-    
-        Payload payload = GrpcUtils.convert(instanceRequest, metadata);
-        streamStub.request(payload, streamObserver);
         
+        streamStub.request(payload, streamObserver);
         ApplicationUtils.setStarted(false);
     }
     
@@ -372,10 +373,10 @@ public class GrpcRequestAcceptorTest {
         public Response handleRequest(HealthCheckRequest request, RequestMeta meta) throws NacosException {
             return handle(request, meta);
         }
-    
+        
         @Override
         public HealthCheckResponse handle(HealthCheckRequest request, RequestMeta meta) throws NacosException {
-            System.out.println("MockHandler get request: " + request +" meta: " + meta);
+            System.out.println("MockHandler get request: " + request + " meta: " + meta);
             return new HealthCheckResponse();
         }
     }
