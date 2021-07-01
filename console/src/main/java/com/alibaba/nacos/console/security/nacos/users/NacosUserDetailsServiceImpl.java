@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NacosUserDetailsServiceImpl implements UserDetailsService {
     
     private Map<String, User> userMap = new ConcurrentHashMap<>();
-    
+
     @Autowired
     private UserPersistService userPersistService;
 
