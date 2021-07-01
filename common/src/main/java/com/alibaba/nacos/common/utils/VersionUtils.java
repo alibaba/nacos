@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.utils;
 
 import java.io.InputStream;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
