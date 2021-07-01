@@ -28,6 +28,7 @@ import java.util.Locale;
 /**
  * string util.
  *
+ * @author Nacos
  * @author zzq
  */
 public class StringUtils {
