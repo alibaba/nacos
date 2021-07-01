@@ -37,7 +37,6 @@ import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDel
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.AsyncServicesCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
-import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.codehaus.jackson.Version;
 import org.codehaus.jackson.util.VersionUtil;
