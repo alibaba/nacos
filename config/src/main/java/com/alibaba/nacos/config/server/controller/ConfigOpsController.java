@@ -99,7 +99,7 @@ public class ConfigOpsController {
     @GetMapping(value = "/derby")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin")
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
-        String selectSign = "select";
+        String selectSign = "SELECT";
         String limitSign = "ROWS FETCH NEXT";
         String limit = " OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY";
         try {

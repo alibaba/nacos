@@ -58,8 +58,8 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
         PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "select count(*) from permissions where ";
-        String sqlFetchRows = "select role,resource,action from permissions where ";
+        String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
+        String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
     
         String where = " role= ? ";
         List<String> params = new ArrayList<>();
