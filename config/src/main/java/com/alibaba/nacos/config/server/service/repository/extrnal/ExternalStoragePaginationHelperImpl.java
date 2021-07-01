@@ -91,9 +91,9 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         if (isDerby()) {
             selectSql = sqlFetchRows + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
         } else if (lastMaxId != null) {
-            selectSql = sqlFetchRows + " and id > " + lastMaxId + " order by id asc" + " limit " + 0 + "," + pageSize;
+            selectSql = sqlFetchRows + " AND id > " + lastMaxId + " ORDER BY id ASC" + " LIMIT " + 0 + "," + pageSize;
         } else {
-            selectSql = sqlFetchRows + " limit " + startRow + "," + pageSize;
+            selectSql = sqlFetchRows + " LIMIT " + startRow + "," + pageSize;
         }
         
         List<E> result = jdbcTemplate.query(selectSql, args, rowMapper);
@@ -209,7 +209,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         String sqlUpdate = sql;
         
         if (isDerby()) {
-            sqlUpdate = sqlUpdate.replaceAll("limit \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+            sqlUpdate = sqlUpdate.replaceAll("LIMIT \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         }
         
         try {
