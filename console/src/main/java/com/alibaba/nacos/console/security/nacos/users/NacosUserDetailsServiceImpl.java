@@ -42,13 +42,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NacosUserDetailsServiceImpl implements UserDetailsService {
     
     private Map<String, User> userMap = new ConcurrentHashMap<>();
-
+    
     @Autowired
     private UserPersistService userPersistService;
-
+    
     @Autowired
     private AuthConfigs authConfigs;
-
+    
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
         try {
