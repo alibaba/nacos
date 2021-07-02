@@ -104,13 +104,13 @@ public class GroupCapacityPersistService {
     public boolean insertGroupCapacity(final GroupCapacity capacity) {
         String sql;
         if (CLUSTER.equals(capacity.getGroup())) {
-            sql = "insert into group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
-                    + "gmt_create, gmt_modified) select ?, ?, count(*), ?, ?, ?, ?, ? from config_info;";
+            sql = "INSERT INTO group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
+                    + "gmt_create, gmt_modified) SELECT ?, ?, COUNT(*), ?, ?, ?, ?, ? FROM config_info;";
         } else {
             // Note: add "tenant_id = ''" condition.
-            sql = "insert into group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
-                    + "gmt_create, gmt_modified) select ?, ?, count(*), ?, ?, ?, ?, ? from config_info where "
-                    + "group_id=? and tenant_id = '';";
+            sql = "INSERT INTO group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
+                    + "gmt_create, gmt_modified) SELECT ?, ?, COUNT(*), ?, ?, ?, ?, ? FROM config_info WHERE "
+                    + "group_id=? AND tenant_id = '';";
         }
         return insertGroupCapacity(sql, capacity);
     }

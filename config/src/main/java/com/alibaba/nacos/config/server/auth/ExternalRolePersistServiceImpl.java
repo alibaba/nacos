@@ -62,8 +62,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
-        String sqlFetchRows = "select role,username from roles where ";
+        String sqlCountRows = "SELECT COUNT(*) from (SELECT DISTINCT role FROM roles) roles WHERE ";
+        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " 1=1 ";
         
@@ -88,8 +88,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "select count(*) from roles where ";
-        String sqlFetchRows = "select role,username from roles where ";
+        String sqlCountRows = "SELECT COUNT(*) FROM roles WHERE ";
+        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " username= ? ";
         List<String> params = new ArrayList<>();
@@ -162,7 +162,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public List<String> findRolesLikeRoleName(String role) {
-        String sql = "SELECT role FROM roles WHERE role like '%' ? '%'";
+        String sql = "SELECT role FROM roles WHERE role LIKE '%' ? '%'";
         List<String> users = this.jt.queryForList(sql, new String[] {role}, String.class);
         return users;
     }

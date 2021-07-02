@@ -131,8 +131,8 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         
         PaginationHelper<User> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "select count(*) from users where ";
-        String sqlFetchRows = "select username,password from users where ";
+        String sqlCountRows = "SELECT COUNT(*) FROM users WHERE ";
+        String sqlFetchRows = "SELECT username,password FROM users WHERE ";
         
         String where = " 1=1 ";
         
@@ -154,7 +154,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
 
     @Override
     public List<String> findUserLikeUsername(String username) {
-        String sql = "SELECT username FROM users WHERE username like '%' ? '%'";
+        String sql = "SELECT username FROM users WHERE username LIKE '%' ? '%'";
         List<String> users = this.jt.queryForList(sql, new String[]{username}, String.class);
         return users;
     }
