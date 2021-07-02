@@ -19,9 +19,6 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
-import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
-import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
@@ -157,10 +154,18 @@ public class ConnectionManagerTest {
             String limitRule = "{\"monitorIpList\": [\"1.1.1.1\", \"2.2.2.2\"], \"countLimit\": 1}";
             ConnectionLimitRuleChangeEvent limitRuleChangeEvent = new ConnectionLimitRuleChangeEvent(limitRule);
             connectionManager.onEvent(limitRuleChangeEvent);
+    
+            ConnectionManager.ConnectionLimitRule connectionLimitRule = connectionManager.getConnectionLimitRule();
+            Assert.assertEquals(1, connectionLimitRule.getCountLimit());
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
         }
+    }
+    
+    @Test
+    public void testGetSubscribeType() {
+        Assert.assertEquals(ConnectionLimitRuleChangeEvent.class, connectionManager.subscribeType());
     }
 }
 

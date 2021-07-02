@@ -41,7 +41,6 @@ public class ClientConnectionEventListenerRegistryTest {
     @Mock
     private Connection connection;
     
-    
     @Test
     public void testRegistryMethods() {
         try {
