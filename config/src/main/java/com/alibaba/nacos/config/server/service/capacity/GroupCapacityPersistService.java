@@ -262,7 +262,7 @@ public class GroupCapacityPersistService {
         sql.append(" gmt_modified = ?");
         argList.add(TimeUtils.getCurrentTime());
         
-        sql.append(" where group_id = ?");
+        sql.append(" WHERE group_id = ?");
         argList.add(group);
         try {
             return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;
