@@ -63,6 +63,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role from roles) roles WHERE ";
+
         String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " 1=1 ";
@@ -87,8 +88,9 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-        
+
         String sqlCountRows = "SELECT count(*) FROM roles WHERE ";
+
         String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " username= ? ";

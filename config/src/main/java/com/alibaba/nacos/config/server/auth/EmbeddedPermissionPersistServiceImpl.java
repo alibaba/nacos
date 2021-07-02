@@ -53,6 +53,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
+
         String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
     
         String where = " role= ? ";
