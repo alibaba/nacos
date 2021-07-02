@@ -64,7 +64,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                         grpcRequest.getBody().toByteString().toStringUtf8());
             }
         } catch (Throwable throwable) {
-            Loggers.REMOTE_DIGEST.error("[{}]Monitor request error,payload={},error={}", clientIp,
+            Loggers.REMOTE_DIGEST.error("[{}]Monitor request error,payload={},error={}", connectionId, clientIp,
                     grpcRequest.toByteString().toStringUtf8());
         }
         
