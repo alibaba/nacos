@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,24 @@
 
 package com.alibaba.nacos.common.utils;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 /**
- * Nacos number util.
- *
- * @author xiweng.yy
+ * test RandomUtils.
+ * @author zzq
  */
-public class NumberUtil {
+public class RandomUtilsTest {
     
-    /**
-     * Whether all chars of input string is digit.
-     *
-     * @param input {@code String} checked
-     * @return {@code true} if all chars is digit, otherwise false
-     */
-    public static boolean isDigits(String input) {
-        if (StringUtils.isEmpty(input)) {
-            return false;
-        }
-        for (int i = 0; i < input.length(); i++) {
-            if (!Character.isDigit(input.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
+    @Test
+    public void nextLong() {
+        final long result = RandomUtils.nextLong(1L, 199L);
+        Assert.assertTrue(result >= 1L && result < 199L);
     }
     
+    @Test
+    public void nextInt() {
+        final int result = RandomUtils.nextInt(1, 199);
+        Assert.assertTrue(result >= 1 && result < 199);
+    }
 }
