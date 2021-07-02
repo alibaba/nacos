@@ -89,7 +89,7 @@ public class RpcAckCallbackSynchronizer {
             throws NacosException {
         
         Map<String, DefaultRequestFuture> stringDefaultPushFutureMap = initContextIfNecessary(connectionId);
-        ;
+        
         if (!stringDefaultPushFutureMap.containsKey(requestId)) {
             DefaultRequestFuture pushCallBackPrev = stringDefaultPushFutureMap
                     .putIfAbsent(requestId, defaultPushFuture);
