@@ -23,8 +23,8 @@ package com.alibaba.nacos.common.utils;
 public class NumberUtils {
     
     /**
-     * <p>Convert a <code>String</code> to an <code>int</code>, returning
-     * <code>zero</code> if the conversion fails.</p>
+     * Convert a <code>String</code> to an <code>int</code>, returning
+     * <code>zero</code> if the conversion fails.
      *
      * @param str  the string to convert, may be null
      * @return the int represented by the string, or <code>zero</code> if
@@ -35,8 +35,8 @@ public class NumberUtils {
     }
     
     /**
-     * <p>Convert a <code>String</code> to an <code>int</code>, returning a
-     * default value if the conversion fails.</p>
+     * Convert a <code>String</code> to an <code>int</code>, returning a
+     * default value if the conversion fails.
      *
      * @param str  the string to convert, may be null
      * @param defaultValue  the default value
@@ -54,8 +54,8 @@ public class NumberUtils {
     }
     
     /**
-     * <p>Convert a <code>String</code> to a <code>long</code>, returning a
-     * default value if the conversion fails.</p>
+     * Convert a <code>String</code> to a <code>long</code>, returning a
+     * default value if the conversion fails.
      *
      * @param str  the string to convert, may be null
      * @param defaultValue  the default value
@@ -73,8 +73,8 @@ public class NumberUtils {
     }
     
     /**
-     * <p>Convert a <code>String</code> to a <code>double</code>, returning a
-     * default value if the conversion fails.</p>
+     * Convert a <code>String</code> to a <code>double</code>, returning a
+     * default value if the conversion fails.
      *
      * @param str the string to convert, may be <code>null</code>
      * @param defaultValue the default value
@@ -93,11 +93,8 @@ public class NumberUtils {
     }
 
     /**
-     * <p>Checks whether the <code>String</code> contains only
-     * digit characters.</p>
-     *
-     * <p><code>Null</code> and empty String will return
-     * <code>false</code>.</p>
+     * Checks whether the <code>String</code> contains only
+     * digit characters.
      *
      * @param str  the <code>String</code> to check
      * @return <code>true</code> if str contains only unicode numeric
@@ -115,11 +112,8 @@ public class NumberUtils {
     }
     
     /**
-     * <p>Convert a <code>String</code> to a <code>float</code>, returning
-     * <code>0.0f</code> if the conversion fails.</p>
-     *
-     * <p>If the string <code>str</code> is <code>null</code>,
-     * <code>0.0f</code> is returned.</p>
+     * Convert a <code>String</code> to a <code>float</code>, returning
+     * <code>0.0f</code> if the conversion fails.
      *
      * @param str the string to convert, may be <code>null</code>
      * @return the float represented by the string, or <code>0.0f</code>
@@ -130,13 +124,10 @@ public class NumberUtils {
     }
     
     /**
-     * <p>Convert a <code>String</code> to a <code>float</code>, returning a
-     * default value if the conversion fails.</p>
+     * Convert a <code>String</code> to a <code>float</code>, returning a
+     * default value if the conversion fails.
      *
-     * <p>If the string <code>str</code> is <code>null</code>, the default
-     * value is returned.</p>
-     *
-     * @param str the string to convert, may be <code>null</code>
+     * @param str the string to convert, may be null
      * @param defaultValue the default value
      * @return the float represented by the string, or defaultValue
      *  if conversion fails
