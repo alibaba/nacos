@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
@@ -31,6 +32,7 @@ import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
 import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
+import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatExtensionHandler;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
@@ -56,6 +58,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +85,10 @@ public class InstanceController {
     
     @Autowired
     private UpgradeJudgement upgradeJudgement;
+    
+    public InstanceController() {
+        NacosServiceLoader.load(ClientBeatExtensionHandler.class);
+    }
     
     /**
      * Register new instance.
@@ -379,9 +386,15 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-        Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
-        
-        int resultCode = getInstanceOperator().handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat);
+        Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}, namespaceId: {}", clientBeat,
+                serviceName, namespaceId);
+        Collection<ClientBeatExtensionHandler> extensionHandlers = NacosServiceLoader
+                .newServiceInstances(ClientBeatExtensionHandler.class);
+        for (ClientBeatExtensionHandler each : extensionHandlers) {
+            each.configExtensionInfoFromRequest(request);
+        }
+        int resultCode = getInstanceOperator()
+                .handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat, extensionHandlers);
         result.put(CommonParams.CODE, resultCode);
         result.put(SwitchEntry.CLIENT_BEAT_INTERVAL,
                 getInstanceOperator().getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));

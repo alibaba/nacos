@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
+import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatExtensionHandler;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
@@ -274,7 +275,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     
     @Override
     public int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster,
-            RsInfo clientBeat) throws NacosException {
+            RsInfo clientBeat, Collection<ClientBeatExtensionHandler> extensionHandlers) throws NacosException {
         com.alibaba.nacos.naming.core.Instance instance = serviceManager
                 .getInstance(namespaceId, serviceName, cluster, ip, port);
         
@@ -295,7 +296,9 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             instance.setServiceName(serviceName);
             instance.setInstanceId(instance.getInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
-            
+            for (ClientBeatExtensionHandler each : extensionHandlers) {
+                each.handleExtensionInfo(instance);
+            }
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
         

@@ -41,6 +41,7 @@ import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
+import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatExtensionHandler;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatProcessorV2;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -50,6 +51,7 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -211,7 +213,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     @Override
     public int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster,
-            RsInfo clientBeat) throws NacosException {
+            RsInfo clientBeat, Collection<ClientBeatExtensionHandler> extensionHandlers) throws NacosException {
         Service service = getService(namespaceId, serviceName, true);
         String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
         IpPortBasedClient client = (IpPortBasedClient) clientManager.getClient(clientId);
@@ -228,6 +230,9 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             instance.setServiceName(serviceName);
             instance.setInstanceId(instance.getInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
+            for (ClientBeatExtensionHandler each : extensionHandlers) {
+                each.handleExtensionInfo(instance);
+            }
             registerInstance(namespaceId, serviceName, instance);
             client = (IpPortBasedClient) clientManager.getClient(clientId);
         }
