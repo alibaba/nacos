@@ -90,12 +90,4 @@ public class NumberUtilsTest {
         Assert.assertEquals(5.0f, NumberUtils.toFloat("001Z.2345", 5.0f), 0);
     }
     
-    @Test
-    public void testIsNumber() {
-        Assert.assertTrue(NumberUtils.isNumber("28.55"));
-        Assert.assertTrue(NumberUtils.isNumber("0"));
-        Assert.assertTrue(NumberUtils.isNumber("+100.10"));
-        Assert.assertTrue(NumberUtils.isNumber("-22.022"));
-        Assert.assertTrue(NumberUtils.isNumber("0X22"));
-    }
 }
