@@ -25,6 +25,7 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -38,6 +39,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class ServerLoaderInfoRequestHandlerTest {
     
+    @InjectMocks
+    private ServerLoaderInfoRequestHandler handler;
+    
     @Mock
     private ConnectionManager connectionManager;
     
@@ -49,8 +53,7 @@ public class ServerLoaderInfoRequestHandlerTest {
     
         ServerLoaderInfoRequest request = new ServerLoaderInfoRequest();
         RequestMeta meta = new RequestMeta();
-        
-        ServerLoaderInfoRequestHandler handler = new ServerLoaderInfoRequestHandler(connectionManager);
+
         try {
             ServerLoaderInfoResponse response = handler.handle(request, meta);
             String sdkConCount = response.getMetricsValue("sdkConCount");

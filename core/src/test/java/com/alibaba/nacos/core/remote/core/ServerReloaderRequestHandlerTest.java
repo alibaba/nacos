@@ -25,6 +25,7 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -37,6 +38,9 @@ import org.mockito.junit.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ServerReloaderRequestHandlerTest {
+    
+    @InjectMocks
+    private ServerReloaderRequestHandler handler;
     
     @Mock
     private ConnectionManager connectionManager;
@@ -51,7 +55,6 @@ public class ServerReloaderRequestHandlerTest {
         RequestMeta meta = new RequestMeta();
         meta.setClientIp("1.1.1.1");
         
-        ServerReloaderRequestHandler handler = new ServerReloaderRequestHandler(connectionManager);
         try {
             ServerReloadResponse reloadResponse = handler.handle(reloadRequest, meta);
             Assert.assertEquals("ignore", reloadResponse.getMessage());
