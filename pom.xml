@@ -993,6 +993,7 @@
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-testing</artifactId>
                 <version>${grpc-java.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.api.grpc</groupId>

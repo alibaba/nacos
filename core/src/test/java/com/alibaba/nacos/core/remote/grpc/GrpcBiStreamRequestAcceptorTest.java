@@ -42,6 +42,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -71,6 +72,9 @@ public class GrpcBiStreamRequestAcceptorTest {
     @Mock
     private ConnectionManager connectionManager;
     
+    @InjectMocks
+    private GrpcBiStreamRequestAcceptor acceptor;
+    
     private StreamObserver<Payload> payloadStreamObserver;
     
     private String connectId = UUID.randomUUID().toString();
@@ -82,7 +86,7 @@ public class GrpcBiStreamRequestAcceptorTest {
         String serverName = InProcessServerBuilder.generateName();
         String remoteIp = "127.0.0.1";
         Server mockServer = InProcessServerBuilder
-                .forName(serverName).directExecutor().addService(new GrpcBiStreamRequestAcceptor(connectionManager))
+                .forName(serverName).directExecutor().addService(acceptor)
                 .intercept(new ServerInterceptor() {
                     @Override
                     public <R, S> ServerCall.Listener<R> interceptCall(ServerCall<R, S> serverCall, Metadata metadata,

@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.Connection;
@@ -52,13 +51,6 @@ import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN
  */
 @Service
 public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestStreamImplBase {
-    
-    public GrpcBiStreamRequestAcceptor() {}
-    
-    @JustForTest
-    public GrpcBiStreamRequestAcceptor(ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
-    }
     
     @Autowired
     ConnectionManager connectionManager;

@@ -26,7 +26,6 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
-import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
@@ -54,15 +53,6 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     
     @Autowired
     private ConnectionManager connectionManager;
-    
-    public GrpcRequestAcceptor() {
-    }
-    
-    @JustForTest
-    public GrpcRequestAcceptor(RequestHandlerRegistry requestHandlerRegistry, ConnectionManager connectionManager) {
-        this.requestHandlerRegistry = requestHandlerRegistry;
-        this.connectionManager = connectionManager;
-    }
     
     private void traceIfNecessary(Payload grpcRequest, boolean receive) {
         String clientIp = grpcRequest.getMetadata().getClientIp();

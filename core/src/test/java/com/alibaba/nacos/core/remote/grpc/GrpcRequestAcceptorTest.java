@@ -51,6 +51,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -82,6 +83,9 @@ public class GrpcRequestAcceptorTest {
     @Mock
     private RequestHandlerRegistry requestHandlerRegistry;
     
+    @InjectMocks
+    private GrpcRequestAcceptor acceptor;
+    
     private RequestGrpc.RequestStub streamStub;
     
     private String connectId = UUID.randomUUID().toString();
@@ -95,7 +99,7 @@ public class GrpcRequestAcceptorTest {
         String serverName = InProcessServerBuilder.generateName();
         String remoteIp = "127.0.0.1";
         grpcCleanupRule.register(InProcessServerBuilder
-                .forName(serverName).directExecutor().addService(new GrpcRequestAcceptor(requestHandlerRegistry, connectionManager))
+                .forName(serverName).directExecutor().addService(acceptor)
                 .intercept(new ServerInterceptor() {
                     @Override
                     public <R, S> ServerCall.Listener<R> interceptCall(ServerCall<R, S> serverCall, Metadata metadata,
