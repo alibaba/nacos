@@ -64,12 +64,13 @@ public class ConnectionManagerTest {
     @Mock
     private ConnectionMeta connectionMeta;
     
-    private String connectId = UUID.randomUUID().toString();
+    private String connectId;
     
     private String clientIp = "1.1.1.1";
     
     @Before
     public void setUp() {
+        connectId = UUID.randomUUID().toString();
         connectionManager.start();
         connectionManager.initLimitRue();
         Mockito.when(channel.isOpen()).thenReturn(true);
