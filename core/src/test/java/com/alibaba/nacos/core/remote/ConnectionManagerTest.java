@@ -103,7 +103,7 @@ public class ConnectionManagerTest {
     
     @Test
     public void testTraced() {
-        Assert.assertFalse(connectionManager.traced(clientIp));
+        Assert.assertTrue(connectionManager.traced(clientIp));
     }
     
     @Test
