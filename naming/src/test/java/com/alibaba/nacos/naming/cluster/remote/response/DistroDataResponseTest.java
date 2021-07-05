@@ -18,27 +18,20 @@
 
 package com.alibaba.nacos.naming.cluster.remote.response;
 
-import org.junit.After;
-import org.junit.Before;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 public class DistroDataResponseTest {
     
-    @Before
-    public void setUp() throws Exception {
-    }
-    
-    @After
-    public void tearDown() throws Exception {
-    }
-    
     @Test
-    public void getDistroData() {
+    public void test() {
+        DistroDataResponse distroDataResponse = new DistroDataResponse();
+        DistroData distroData = mock(DistroData.class);
+        distroDataResponse.setDistroData(distroData);
+        assertEquals(distroData, distroDataResponse.getDistroData());
     }
     
-    @Test
-    public void setDistroData() {
-    }
 }
