@@ -62,7 +62,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "SELECT COUNT(*) from (SELECT DISTINCT role FROM roles) roles WHERE ";
+        String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
+
         String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " 1=1 ";
@@ -87,8 +88,9 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-        
-        String sqlCountRows = "SELECT COUNT(*) FROM roles WHERE ";
+
+        String sqlCountRows = "SELECT count(*) FROM roles WHERE ";
+
         String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " username= ? ";
@@ -117,7 +119,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     @Override
     public void addRole(String role, String userName) {
         
-        String sql = "INSERT into roles (role, username) VALUES (?, ?)";
+        String sql = "INSERT INTO roles (role, username) VALUES (?, ?)";
         
         try {
             jt.update(sql, role, userName);
@@ -134,7 +136,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      */
     @Override
     public void deleteRole(String role) {
-        String sql = "DELETE from roles WHERE role=?";
+        String sql = "DELETE FROM roles WHERE role=?";
         try {
             jt.update(sql, role);
         } catch (CannotGetJdbcConnectionException e) {
@@ -151,7 +153,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      */
     @Override
     public void deleteRole(String role, String username) {
-        String sql = "DELETE from roles WHERE role=? and username=?";
+        String sql = "DELETE FROM roles WHERE role=? AND username=?";
         try {
             jt.update(sql, role, username);
         } catch (CannotGetJdbcConnectionException e) {

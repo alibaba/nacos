@@ -188,7 +188,7 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
 
     @Override
     public void updateLimit(final String sql, final Object[] args) {
-        String sqlUpdate = sql.replaceAll("limit \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+        String sqlUpdate = sql.replaceAll("LIMIT \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         
         EmbeddedStorageContextUtils.addSqlContext(sqlUpdate, args);
         try {

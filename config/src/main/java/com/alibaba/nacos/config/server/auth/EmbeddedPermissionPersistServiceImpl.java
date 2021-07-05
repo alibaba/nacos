@@ -52,7 +52,8 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
         PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "SELECT COUNT(*) FROM permissions WHERE ";
+        String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
+
         String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
     
         String where = " role= ? ";
@@ -84,7 +85,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
      */
     @Override
     public void addPermission(String role, String resource, String action) {
-        String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO permissions (role, resource, action) VALUES (?, ?, ?)";
         EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
         databaseOperate.blockUpdate();
     }
@@ -98,7 +99,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
      */
     @Override
     public void deletePermission(String role, String resource, String action) {
-        String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
+        String sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=?";
         EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
         databaseOperate.blockUpdate();
     }

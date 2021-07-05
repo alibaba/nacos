@@ -84,11 +84,11 @@ public class ExternalRolePersistServiceImplTest {
     public void testDeleteRole() {
         
         externalRolePersistService.deleteRole("role");
-        String sql = "DELETE from roles WHERE role=?";
+        String sql = "DELETE FROM roles WHERE role=?";
         Mockito.verify(jt).update(sql, "role");
         
         externalRolePersistService.deleteRole("role", "userName");
-        String sql2 = "DELETE from roles WHERE role=? and username=?";
+        String sql2 = "DELETE FROM roles WHERE role=? AND username=?";
         Mockito.verify(jt).update(sql2, "role", "userName");
         
     }
