@@ -72,7 +72,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void deleteUser(String username) {
-        String sql = "DELETE from users WHERE username=?";
+        String sql = "DELETE FROM users WHERE username=?";
         try {
             EmbeddedStorageContextUtils.addSqlContext(sql, username);
             databaseOperate.blockUpdate();
@@ -109,7 +109,8 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         
         PaginationHelper<User> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "SELECT COUNT(*) FROM users WHERE ";
+        String sqlCountRows = "SELECT count(*) FROM users WHERE ";
+
         String sqlFetchRows = "SELECT username,password FROM users WHERE ";
         
         String where = " 1=1 ";

@@ -206,7 +206,7 @@ public final class RowMapperManager {
             } catch (SQLException ignore) {
             }
             try {
-                info.setId(rs.getLong("ID"));
+                info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
             try {
@@ -238,7 +238,7 @@ public final class RowMapperManager {
             } catch (SQLException ignore) {
             }
             try {
-                info.setId(rs.getLong("ID"));
+                info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
             try {
@@ -270,7 +270,7 @@ public final class RowMapperManager {
             } catch (SQLException ignore) {
             }
             try {
-                info.setId(rs.getLong("ID"));
+                info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
             try {
@@ -305,7 +305,7 @@ public final class RowMapperManager {
             } catch (SQLException ignore) {
             }
             try {
-                info.setId(rs.getLong("ID"));
+                info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
             try {
@@ -366,7 +366,7 @@ public final class RowMapperManager {
             } catch (SQLException ignore) {
             }
             try {
-                info.setId(rs.getLong("ID"));
+                info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
             info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
@@ -399,7 +399,7 @@ public final class RowMapperManager {
             } catch (SQLException ignore) {
             }
             try {
-                info.setId(rs.getLong("ID"));
+                info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
             try {
@@ -427,7 +427,7 @@ public final class RowMapperManager {
             } catch (SQLException ignore) {
             }
             try {
-                info.setId(rs.getLong("ID"));
+                info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
             try {
@@ -452,7 +452,7 @@ public final class RowMapperManager {
             } catch (SQLException ignore) {
             }
             try {
-                info.setId(rs.getLong("ID"));
+                info.setId(rs.getLong("id"));
             } catch (SQLException ignore) {
             }
             return info;

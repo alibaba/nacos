@@ -105,11 +105,11 @@ public class GroupCapacityPersistService {
         String sql;
         if (CLUSTER.equals(capacity.getGroup())) {
             sql = "INSERT INTO group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
-                    + "gmt_create, gmt_modified) SELECT ?, ?, COUNT(*), ?, ?, ?, ?, ? FROM config_info;";
+                    + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info;";
         } else {
             // Note: add "tenant_id = ''" condition.
             sql = "INSERT INTO group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
-                    + "gmt_create, gmt_modified) SELECT ?, ?, COUNT(*), ?, ?, ?, ?, ? FROM config_info WHERE "
+                    + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE "
                     + "group_id=? AND tenant_id = '';";
         }
         return insertGroupCapacity(sql, capacity);
@@ -262,7 +262,7 @@ public class GroupCapacityPersistService {
         sql.append(" gmt_modified = ?");
         argList.add(TimeUtils.getCurrentTime());
         
-        sql.append(" where group_id = ?");
+        sql.append(" WHERE group_id = ?");
         argList.add(group);
         try {
             return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;

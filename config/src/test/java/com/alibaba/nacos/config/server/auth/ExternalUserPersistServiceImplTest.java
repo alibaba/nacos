@@ -72,7 +72,7 @@ public class ExternalUserPersistServiceImplTest {
     public void testDeleteUser() {
         externalUserPersistService.deleteUser("username");
         
-        String sql = "DELETE from users WHERE username=?";
+        String sql = "DELETE FROM users WHERE username=?";
         Mockito.verify(jdbcTemplate).update(sql, "username");
     }
     

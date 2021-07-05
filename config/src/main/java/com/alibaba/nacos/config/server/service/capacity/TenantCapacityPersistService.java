@@ -210,7 +210,7 @@ public class TenantCapacityPersistService {
     public boolean updateTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
         List<Object> argList = Lists.newArrayList();
-        StringBuilder sql = new StringBuilder("update tenant_capacity set");
+        StringBuilder sql = new StringBuilder("UPDATE tenant_capacity SET");
         if (quota != null) {
             sql.append(" quota = ?,");
             argList.add(quota);
@@ -230,7 +230,7 @@ public class TenantCapacityPersistService {
         sql.append(" gmt_modified = ?");
         argList.add(TimeUtils.getCurrentTime());
         
-        sql.append(" where tenant_id = ?");
+        sql.append(" WHERE tenant_id = ?");
         argList.add(tenant);
         try {
             return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;

@@ -69,7 +69,7 @@ public class ExternalPermissionPersistServiceImplTest {
     
     @Test
     public void testAddPermission() {
-        String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO permissions (role, resource, action) VALUES (?, ?, ?)";
         externalPermissionPersistService.addPermission("role", "resource", "action");
         
         Mockito.verify(jdbcTemplate).update(sql, "role", "resource", "action");
@@ -77,7 +77,7 @@ public class ExternalPermissionPersistServiceImplTest {
     
     @Test
     public void testDeletePermission() {
-        String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
+        String sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=?";
         externalPermissionPersistService.deletePermission("role", "resource", "action");
         
         Mockito.verify(jdbcTemplate).update(sql, "role", "resource", "action");
