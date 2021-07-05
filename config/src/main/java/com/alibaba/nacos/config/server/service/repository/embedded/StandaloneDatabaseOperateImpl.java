@@ -119,7 +119,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
                 int code = 500;
                 if (!CollectionUtils.isEmpty(results)) {
-                    code = results.stream().anyMatch(Boolean.FALSE::equals) ? 200 : 500;
+                    code = (!results.stream().anyMatch(Boolean.FALSE::equals)) ? 200 : 500;
                 }
                 return RestResult.<String>builder().withCode(code).withData("").build();
             } catch (Throwable ex) {
