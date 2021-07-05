@@ -21,9 +21,9 @@ import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.jsonwebtoken.io.Decoders;
-import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -133,7 +133,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
         if (Objects.nonNull(AuthConfigs.cachingEnabled)) {
             return cachingEnabled;
         }
-        return BooleanUtils.toBoolean(EnvUtil.getProperty("nacos.core.auth.caching.enabled", "true"));
+        return ConvertUtils.toBoolean(EnvUtil.getProperty("nacos.core.auth.caching.enabled", "true"));
     }
     
     @JustForTest

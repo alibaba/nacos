@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.parser;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * Default resource parser.
