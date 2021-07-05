@@ -114,11 +114,7 @@ public final class ConvertUtils {
         if (StringUtils.isBlank(val)) {
             return defaultValue;
         }
-        try {
-            return Boolean.parseBoolean(val);
-        } catch (NumberFormatException exception) {
-            return defaultValue;
-        }
+        return Boolean.parseBoolean(val);
     }
     
     //   The following utility functions are extracted from <link>org.apache.commons.lang3</link>
