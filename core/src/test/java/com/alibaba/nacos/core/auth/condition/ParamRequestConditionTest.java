@@ -48,7 +48,7 @@ public class ParamRequestConditionTest {
         ParamRequestCondition paramRequestCondition1 = paramRequestCondition.getMatchingCondition(request);
         Assert.assertNull(paramRequestCondition1);
         
-        request.setParameter("test", "null");
+        request.setParameter("test", "1244");
         ParamRequestCondition paramRequestCondition2 = paramRequestCondition.getMatchingCondition(request);
         Assert.assertNotNull(paramRequestCondition2);
     }
