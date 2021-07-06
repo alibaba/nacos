@@ -24,7 +24,7 @@ import com.alibaba.nacos.core.auth.RequestMappingInfo.RequestMappingInfoComparat
 import com.alibaba.nacos.core.auth.condition.ParamRequestCondition;
 import com.alibaba.nacos.core.auth.condition.PathRequestCondition;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.ArrayUtils;
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -143,6 +143,18 @@ public class StringUtilsTest {
     }
     
     @Test
+    public void testContains() {
+        Assert.assertFalse(StringUtils.contains(null, "1"));
+        Assert.assertFalse(StringUtils.contains("abc", null));
+        Assert.assertTrue(StringUtils.contains(StringUtils.EMPTY, StringUtils.EMPTY));
+        Assert.assertTrue(StringUtils.contains("abc", StringUtils.EMPTY));
+        Assert.assertTrue(StringUtils.contains("abc", "a"));
+        Assert.assertFalse(StringUtils.contains("abc", "z"));
+        Assert.assertFalse(StringUtils.contains("abc", "A"));
+        Assert.assertFalse(StringUtils.contains("abc", "Z"));
+    }
+    
+    @Test
     public void testIsNoneBlank() {
         Assert.assertFalse(StringUtils.isNoneBlank(null));
         Assert.assertFalse(StringUtils.isNoneBlank(null, "foo"));
