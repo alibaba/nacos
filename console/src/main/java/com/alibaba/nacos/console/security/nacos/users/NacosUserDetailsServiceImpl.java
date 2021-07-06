@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Custem user service.
+ * Custom user service.
  *
  * @author wfnuser
  * @author nkorange
