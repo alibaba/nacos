@@ -34,7 +34,7 @@ public class ParamRequestConditionTest {
     
     @Before
     public void setUp() {
-         paramRequestCondition = new ParamRequestCondition("test=1244");
+        paramRequestCondition = new ParamRequestCondition("test=1244");
     }
     
     @Test
