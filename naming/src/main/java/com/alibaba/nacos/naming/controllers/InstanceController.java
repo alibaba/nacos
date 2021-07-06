@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
@@ -45,8 +46,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -274,11 +274,11 @@ public class InstanceController {
         }
         String healthy = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(healthy)) {
-            patchObject.setHealthy(BooleanUtils.toBoolean(healthy));
+            patchObject.setHealthy(ConvertUtils.toBoolean(healthy));
         }
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(enabledString)) {
-            patchObject.setEnabled(BooleanUtils.toBoolean(enabledString));
+            patchObject.setEnabled(ConvertUtils.toBoolean(enabledString));
         }
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         getInstanceOperator().patchInstance(namespaceId, serviceName, patchObject);
@@ -462,13 +462,13 @@ public class InstanceController {
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         boolean enabled;
         if (StringUtils.isBlank(enabledString)) {
-            enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+            enabled = ConvertUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
         } else {
-            enabled = BooleanUtils.toBoolean(enabledString);
+            enabled = ConvertUtils.toBoolean(enabledString);
         }
         
         String weight = WebUtils.optional(request, "weight", "1");
-        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
+        boolean healthy = ConvertUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
         
         Instance instance = getBasicIpAddress(request);
         instance.setWeight(Double.parseDouble(weight));
@@ -486,7 +486,7 @@ public class InstanceController {
         if (StringUtils.isBlank(cluster)) {
             cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        boolean ephemeral = BooleanUtils.toBoolean(
+        boolean ephemeral = ConvertUtils.toBoolean(
                 WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
         
         Instance instance = new Instance();

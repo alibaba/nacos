@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
@@ -50,9 +51,8 @@ import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -244,7 +244,7 @@ public class UpgradeOpsController {
         serviceMetadata.setProtectThreshold(protectThreshold);
         serviceMetadata.setSelector(parseSelector(selector));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
-        boolean ephemeral = BooleanUtils.toBoolean(
+        boolean ephemeral = ConvertUtils.toBoolean(
                 WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
         serviceMetadata.setEphemeral(ephemeral);
         getServiceOperator(ver).create(namespaceId, serviceName, serviceMetadata);
@@ -551,13 +551,13 @@ public class UpgradeOpsController {
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         boolean enabled;
         if (StringUtils.isBlank(enabledString)) {
-            enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+            enabled = ConvertUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
         } else {
-            enabled = BooleanUtils.toBoolean(enabledString);
+            enabled = ConvertUtils.toBoolean(enabledString);
         }
 
         String weight = WebUtils.optional(request, "weight", "1");
-        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
+        boolean healthy = ConvertUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
 
         Instance instance = getBasicIpAddress(request);
         instance.setWeight(Double.parseDouble(weight));
@@ -575,7 +575,7 @@ public class UpgradeOpsController {
         if (StringUtils.isBlank(cluster)) {
             cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        boolean ephemeral = BooleanUtils.toBoolean(
+        boolean ephemeral = ConvertUtils.toBoolean(
                 WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
 
         Instance instance = new Instance();

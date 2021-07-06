@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.web;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * Distro service name tag generator for v1.x.
