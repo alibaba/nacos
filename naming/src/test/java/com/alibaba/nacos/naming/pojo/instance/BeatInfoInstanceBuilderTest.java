@@ -64,7 +64,7 @@ public class BeatInfoInstanceBuilderTest {
     
     @Test
     public void testBuild() {
-        Instance actual = builder.setBeatInfo(beatInfo).build();
+        Instance actual = builder.setServiceName("g@@s").setBeatInfo(beatInfo).build();
         assertThat(actual.getServiceName(), is("g@@s"));
         assertThat(actual.getIp(), is("1.1.1.1"));
         assertThat(actual.getPort(), is(8848));

@@ -406,7 +406,8 @@ public class UpgradeOpsController {
         final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         
-        final Instance instance = HttpRequestInstanceBuilder.newBuilder(switchDomain).setRequest(request).build();
+        final Instance instance = HttpRequestInstanceBuilder.newBuilder()
+                .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         
         getInstanceOperator(ver).registerInstance(namespaceId, serviceName, instance);
         return "ok";
@@ -424,7 +425,8 @@ public class UpgradeOpsController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String deregisterInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
             HttpServletRequest request) throws Exception {
-        Instance instance = HttpRequestInstanceBuilder.newBuilder(switchDomain).setRequest(request).build();
+        Instance instance = HttpRequestInstanceBuilder.newBuilder()
+                .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
@@ -448,7 +450,8 @@ public class UpgradeOpsController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-        Instance instance = HttpRequestInstanceBuilder.newBuilder(switchDomain).setRequest(request).build();
+        Instance instance = HttpRequestInstanceBuilder.newBuilder()
+                .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         getInstanceOperator(ver).updateInstance(namespaceId, serviceName, instance);
         return "ok";
     }

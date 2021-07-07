@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 
 import javax.servlet.http.HttpServletRequest;
@@ -51,16 +51,15 @@ public class HttpRequestInstanceBuilder {
     
     private final Collection<InstanceExtensionHandler> handlers;
     
-    private final SwitchDomain switchDomain;
+    private boolean defaultInstanceEphemeral = true;
     
-    private HttpRequestInstanceBuilder(SwitchDomain switchDomain) {
+    private HttpRequestInstanceBuilder() {
         this.actualBuilder = InstanceBuilder.newBuilder();
         this.handlers = NacosServiceLoader.newServiceInstances(InstanceExtensionHandler.class);
-        this.switchDomain = switchDomain;
     }
     
-    public static HttpRequestInstanceBuilder newBuilder(SwitchDomain switchDomain) {
-        return new HttpRequestInstanceBuilder(switchDomain);
+    public static HttpRequestInstanceBuilder newBuilder() {
+        return new HttpRequestInstanceBuilder();
     }
     
     /**
@@ -77,6 +76,11 @@ public class HttpRequestInstanceBuilder {
         return result;
     }
     
+    public HttpRequestInstanceBuilder setDefaultInstanceEphemeral(boolean defaultInstanceEphemeral) {
+        this.defaultInstanceEphemeral = defaultInstanceEphemeral;
+        return this;
+    }
+    
     public HttpRequestInstanceBuilder setRequest(HttpServletRequest request) throws NacosException {
         for (InstanceExtensionHandler each : handlers) {
             each.configExtensionInfoFromRequest(request);
@@ -89,13 +93,23 @@ public class HttpRequestInstanceBuilder {
         actualBuilder.setServiceName(WebUtils.required(request, CommonParams.SERVICE_NAME));
         actualBuilder.setIp(WebUtils.required(request, "ip"));
         actualBuilder.setPort(Integer.parseInt(WebUtils.required(request, "port")));
-        actualBuilder.setWeight(Double.parseDouble(WebUtils.optional(request, "weight", "1")));
         actualBuilder.setHealthy(ConvertUtils.toBoolean(WebUtils.optional(request, "healthy", "true")));
-        actualBuilder.setEphemeral(ConvertUtils.toBoolean(
-                WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral()))));
+        actualBuilder.setEphemeral(ConvertUtils
+                .toBoolean(WebUtils.optional(request, "ephemeral", String.valueOf(defaultInstanceEphemeral))));
+        setWeight(request);
         setCluster(request);
         setEnabled(request);
         setMetadata(request);
+    }
+    
+    private void setWeight(HttpServletRequest request) throws NacosException {
+        double weight = Double.parseDouble(WebUtils.optional(request, "weight", "1"));
+        if (weight > Constants.MAX_WEIGHT_VALUE || weight < Constants.MIN_WEIGHT_VALUE) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "instance format invalid: The weights range from " + Constants.MIN_WEIGHT_VALUE + " to "
+                            + Constants.MAX_WEIGHT_VALUE);
+        }
+        actualBuilder.setWeight(weight);
     }
     
     private void setCluster(HttpServletRequest request) {

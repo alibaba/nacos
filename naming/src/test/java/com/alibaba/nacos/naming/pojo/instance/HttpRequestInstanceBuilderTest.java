@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -52,9 +51,6 @@ public class HttpRequestInstanceBuilderTest {
     @Mock
     private HttpServletRequest request;
     
-    @Mock
-    private SwitchDomain switchDomain;
-    
     private HttpRequestInstanceBuilder builder;
     
     @BeforeClass
@@ -64,11 +60,11 @@ public class HttpRequestInstanceBuilderTest {
     
     @Before
     public void setUp() throws Exception {
-        builder = HttpRequestInstanceBuilder.newBuilder(switchDomain);
+        builder = HttpRequestInstanceBuilder.newBuilder();
         when(request.getParameter(CommonParams.SERVICE_NAME)).thenReturn("service");
         when(request.getParameter("ip")).thenReturn(IP);
         when(request.getParameter("port")).thenReturn(PORT);
-        when(switchDomain.isDefaultInstanceEphemeral()).thenReturn(true);
+        builder.setDefaultInstanceEphemeral(true);
     }
     
     @Test
@@ -121,5 +117,14 @@ public class HttpRequestInstanceBuilderTest {
         assertThat(actual.getMetadata().get("app"), is("DEFAULT"));
         assertThat(actual.getMetadata().get("a"), is("b"));
         verify(request).getParameter("mock");
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testBuildWithIllegalWeight() throws NacosException {
+        Map<String, String[]> mockMap = new HashMap<>();
+        mockMap.put("weight", new String[] {""});
+        when(request.getParameterMap()).thenReturn(mockMap);
+        when(request.getParameter("weight")).thenReturn("10001");
+        Instance actual = builder.setRequest(request).build();
     }
 }

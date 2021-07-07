@@ -220,7 +220,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             if (null == clientBeat) {
                 return NamingResponseCode.RESOURCE_NOT_FOUND;
             }
-            Instance instance = builder.setBeatInfo(clientBeat).build();
+            Instance instance = builder.setBeatInfo(clientBeat).setServiceName(serviceName).build();
             registerInstance(namespaceId, serviceName, instance);
             client = (IpPortBasedClient) clientManager.getClient(clientId);
         }

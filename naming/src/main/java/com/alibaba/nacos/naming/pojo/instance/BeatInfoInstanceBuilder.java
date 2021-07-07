@@ -65,6 +65,11 @@ public class BeatInfoInstanceBuilder {
         return this;
     }
     
+    public BeatInfoInstanceBuilder setServiceName(String serviceName) {
+        actualBuilder.setServiceName(serviceName);
+        return this;
+    }
+    
     public BeatInfoInstanceBuilder setBeatInfo(RsInfo beatInfo) {
         setAttributesToBuilder(beatInfo);
         return this;
@@ -76,7 +81,6 @@ public class BeatInfoInstanceBuilder {
         actualBuilder.setWeight(beatInfo.getWeight());
         actualBuilder.setMetadata(beatInfo.getMetadata());
         actualBuilder.setClusterName(beatInfo.getCluster());
-        actualBuilder.setServiceName(beatInfo.getServiceName());
         actualBuilder.setEphemeral(beatInfo.isEphemeral());
     }
     
