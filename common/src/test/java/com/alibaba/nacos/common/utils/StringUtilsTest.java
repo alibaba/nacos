@@ -200,4 +200,13 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.equalsIgnoreCase("abc", "abc"));
         Assert.assertTrue(StringUtils.equalsIgnoreCase("abc", "ABC"));
     }
+    
+    @Test
+    public void testSplit() {
+        Assert.assertNull(StringUtils.split(null, ","));
+        Assert.assertArrayEquals(new String[0], StringUtils.split("", ","));
+        Assert.assertArrayEquals(new String[]{"ab", "cd", "ef"}, StringUtils.split("ab cd ef", null));
+        Assert.assertArrayEquals(new String[]{"ab", "cd", "ef"}, StringUtils.split("ab   cd ef", null));
+        Assert.assertArrayEquals(new String[]{"ab", "cd", "ef"}, StringUtils.split("ab:cd:ef", ":"));
+    }
 }

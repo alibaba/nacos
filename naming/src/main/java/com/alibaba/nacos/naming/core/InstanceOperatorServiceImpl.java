@@ -187,7 +187,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         checkIfDisabled(service);
         
         List<com.alibaba.nacos.naming.core.Instance> srvedIps = service
-                .srvIPs(Arrays.asList(cluster.split(",")));
+                .srvIPs(Arrays.asList(StringUtils.split(cluster, StringUtils.COMMA)));
         
         // filter ips using selector:
         if (service.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
