@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck.heartbeat;
+package com.alibaba.nacos.naming.pojo.instance;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Client beat extension handler.
+ * Instance extension handler.
  *
- * <p>An extension handler for client beat, which is to handle some specified beat request for 1.x client.
+ * <p>An extension handler for {@link Instance}, which is to handle some specified request for 1.x client.
  *
  * @author xiweng.yy
  */
-public interface ClientBeatExtensionHandler {
+public interface InstanceExtensionHandler {
     
     /**
      * Config extension info from http request.
