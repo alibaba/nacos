@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * Synthesize dataId+groupId form. Escape reserved characters in dataId and groupId.

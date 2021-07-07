@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang3.time.FastDateFormat;
+import com.alibaba.nacos.common.utils.DateFormatUtils;
 
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -28,6 +28,8 @@ import java.util.Calendar;
  */
 public class TimeUtils {
     
+    private static final String YYYYMMMDDHHMMSS = "yyyy-MM-dd HH:mm:ss";
+    
     public static Timestamp getCurrentTime() {
         return new Timestamp(System.currentTimeMillis());
     }
@@ -35,7 +37,6 @@ public class TimeUtils {
     public static String getCurrentTimeStr() {
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(System.currentTimeMillis());
-        FastDateFormat format = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
-        return format.format(c.getTime());
+        return DateFormatUtils.format(c.getTime(), YYYYMMMDDHHMMSS);
     }
 }

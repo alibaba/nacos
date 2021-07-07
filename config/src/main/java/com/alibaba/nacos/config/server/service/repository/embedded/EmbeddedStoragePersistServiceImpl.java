@@ -51,7 +51,7 @@ import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -2508,7 +2508,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify, callFinally);
                 succCount++;
             } catch (Throwable e) {
-                if (!StringUtils.contains(e.toString(), "DuplicateKeyException")) {
+                if (!e.toString().contains("DuplicateKeyException")) {
                     throw new NacosException(NacosException.SERVER_ERROR, e);
                 }
                 // uniqueness constraint conflict
