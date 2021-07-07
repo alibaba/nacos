@@ -23,12 +23,12 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
-import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatExtensionHandler;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.push.v1.ClientInfo;
 import com.alibaba.nacos.naming.push.v1.DataSource;
@@ -103,13 +103,13 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     
     @Override
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
-        com.alibaba.nacos.naming.core.Instance coreInstance = (com.alibaba.nacos.naming.core.Instance) instance;
+        com.alibaba.nacos.naming.core.Instance coreInstance = parseInstance(instance);
         serviceManager.registerInstance(namespaceId, serviceName, coreInstance);
     }
     
     @Override
     public void removeInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
-        com.alibaba.nacos.naming.core.Instance coreInstance = (com.alibaba.nacos.naming.core.Instance) instance;
+        com.alibaba.nacos.naming.core.Instance coreInstance = parseInstance(instance);
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
             Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
@@ -120,7 +120,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     
     @Override
     public void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
-        com.alibaba.nacos.naming.core.Instance coreInstance = (com.alibaba.nacos.naming.core.Instance) instance;
+        com.alibaba.nacos.naming.core.Instance coreInstance = parseInstance(instance);
         serviceManager.updateInstance(namespaceId, serviceName, coreInstance);
     }
     
@@ -144,9 +144,6 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         }
         if (null != patchObject.getHealthy()) {
             instance.setHealthy(patchObject.getHealthy());
-        }
-        if (null != patchObject.getApp()) {
-            instance.setApp(patchObject.getApp());
         }
         instance.setLastBeat(System.currentTimeMillis());
         instance.validate();
@@ -275,7 +272,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     
     @Override
     public int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster,
-            RsInfo clientBeat, Collection<ClientBeatExtensionHandler> extensionHandlers) throws NacosException {
+            RsInfo clientBeat, BeatInfoInstanceBuilder builder) throws NacosException {
         com.alibaba.nacos.naming.core.Instance instance = serviceManager
                 .getInstance(namespaceId, serviceName, cluster, ip, port);
         
@@ -286,19 +283,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             
             Loggers.SRV_LOG.warn("[CLIENT-BEAT] The instance has been removed for health mechanism, "
                     + "perform data compensation operations, beat: {}, serviceName: {}", clientBeat, serviceName);
-            
-            instance = new com.alibaba.nacos.naming.core.Instance();
-            instance.setPort(clientBeat.getPort());
-            instance.setIp(clientBeat.getIp());
-            instance.setWeight(clientBeat.getWeight());
-            instance.setMetadata(clientBeat.getMetadata());
-            instance.setClusterName(cluster);
-            instance.setServiceName(serviceName);
-            instance.setInstanceId(instance.getInstanceId());
-            instance.setEphemeral(clientBeat.isEphemeral());
-            for (ClientBeatExtensionHandler each : extensionHandlers) {
-                each.handleExtensionInfo(instance);
-            }
+            instance = parseInstance(builder.setBeatInfo(clientBeat).build());
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
         
@@ -370,5 +355,19 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
             return new ArrayList<>();
         };
         return serviceManager.batchOperate(namespace, instanceOperationInfo, operateFunction);
+    }
+    
+    private com.alibaba.nacos.naming.core.Instance parseInstance(Instance apiInstance) {
+        com.alibaba.nacos.naming.core.Instance result = new com.alibaba.nacos.naming.core.Instance();
+        result.setPort(apiInstance.getPort());
+        result.setIp(apiInstance.getIp());
+        result.setWeight(apiInstance.getWeight());
+        result.setMetadata(apiInstance.getMetadata());
+        result.setClusterName(apiInstance.getClusterName());
+        result.setServiceName(apiInstance.getServiceName());
+        result.setInstanceId(apiInstance.getInstanceId());
+        result.setEphemeral(apiInstance.isEphemeral());
+        result.setApp(apiInstance.getMetadata().getOrDefault("app", "DEFAULT"));
+        return result;
     }
 }
