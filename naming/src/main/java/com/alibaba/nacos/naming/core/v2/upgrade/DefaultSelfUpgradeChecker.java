@@ -36,7 +36,6 @@ public class DefaultSelfUpgradeChecker implements SelfUpgradeChecker {
     
     @Override
     public boolean isReadyToUpgrade(ServiceManager serviceManager, DoubleWriteDelayTaskEngine taskEngine) {
-        System.out.println("test");
         return checkServiceAndInstanceNumber(serviceManager) && checkDoubleWriteStatus(taskEngine);
     }
     

@@ -20,11 +20,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
-import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatExtensionHandler;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -112,18 +111,19 @@ public interface InstanceOperator {
     /**
      * Handle beat request.
      *
-     * @param namespaceId       namespace
-     * @param serviceName       grouped service name group@@service
-     * @param ip                ip of instance
-     * @param port              port of instance
-     * @param cluster           cluster of instance
-     * @param clientBeat        client beat info
-     * @param extensionHandlers client beat extension handlers
+     * @param namespaceId namespace
+     * @param serviceName grouped service name group@@service
+     * @param ip          ip of instance
+     * @param port        port of instance
+     * @param cluster     cluster of instance
+     * @param clientBeat  client beat info
+     * @param builder     client beat instance builder, will be used when current instance is not exist and clientBeat
+     *                    exist
      * @return result code
      * @throws NacosException nacos exception when service non-exist and client beat info is null
      */
     int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster, RsInfo clientBeat,
-            Collection<ClientBeatExtensionHandler> extensionHandlers) throws NacosException;
+            BeatInfoInstanceBuilder builder) throws NacosException;
     
     /**
      * Get heart beat interval for specified instance.
