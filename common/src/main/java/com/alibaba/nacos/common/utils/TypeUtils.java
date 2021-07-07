@@ -112,13 +112,13 @@ public class TypeUtils {
             final StringBuilder buf = new StringBuilder();
             
             buf.append(raw.getName());
-            buf.append("<");
+            buf.append('<');
             buf.append(typeArguments[0].getTypeName());
             for (int i = 1; i < typeArguments.length; i++) {
                 buf.append(", ");
                 buf.append(typeArguments[i].getTypeName());
             }
-            buf.append(">");
+            buf.append('>');
             
             return buf.toString();
         }

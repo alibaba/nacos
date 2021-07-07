@@ -74,13 +74,13 @@ public class NamingResourceParser implements ResourceParser {
         }
         
         if (StringUtils.isBlank(groupName)) {
-            sb.append(Resource.SPLITTER).append("*");
+            sb.append(Resource.SPLITTER).append('*');
         } else {
             sb.append(Resource.SPLITTER).append(groupName);
         }
         
         if (StringUtils.isBlank(serviceName)) {
-            sb.append(Resource.SPLITTER).append(AUTH_NAMING_PREFIX).append("*");
+            sb.append(Resource.SPLITTER).append(AUTH_NAMING_PREFIX).append('*');
         } else {
             sb.append(Resource.SPLITTER).append(AUTH_NAMING_PREFIX).append(serviceName);
         }
