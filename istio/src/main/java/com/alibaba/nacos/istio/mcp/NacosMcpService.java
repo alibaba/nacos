@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.istio.mcp;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.istio.misc.Loggers;
 import io.grpc.stub.StreamObserver;
 import istio.mcp.v1alpha1.Mcp;
 import istio.mcp.v1alpha1.ResourceOuterClass;
 import istio.mcp.v1alpha1.ResourceSourceGrpc;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
