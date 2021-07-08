@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
