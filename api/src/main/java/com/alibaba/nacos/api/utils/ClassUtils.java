@@ -18,7 +18,6 @@ import java.util.jar.JarEntry;
  */
 public class ClassUtils {
     
-    
     /**
      * Get all subclasses under the specified package.
      */
@@ -44,18 +43,18 @@ public class ClassUtils {
     }
     
     /**
-     * Find all classes from a packageName
+     * Find all classes from a packageName.
      */
     private static ArrayList<Class> getAllClass(String packageName) {
         
         List<String> classNameList =  getClassName(packageName);
         ArrayList<Class> list = new ArrayList<>();
         
-        for(String className : classNameList){
+        for (String className : classNameList) {
             try {
                 list.add(Class.forName(className));
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException("load class from name failed:"+ className + e.getMessage());
+                throw new RuntimeException("load class from name failed:" + className + e.getMessage());
             }
         }
         
@@ -63,7 +62,7 @@ public class ClassUtils {
     }
     
     /**
-     *  Get all classes under the package
+     *  Get all classes under the package.
      * @return list of class name
      */
     public static List<String> getClassName(String packageName) {
@@ -79,11 +78,11 @@ public class ClassUtils {
                 String fileSearchPath = url.getPath();
                 fileNames = getClassNameByFile(fileSearchPath);
             } else if (type.equals("jar")) {
-                try{
-                    JarURLConnection jarURLConnection = (JarURLConnection) url.openConnection();
-                    JarFile jarFile = jarURLConnection.getJarFile();
+                try {
+                    JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
+                    JarFile jarFile = jarUrlConnection.getJarFile();
                     fileNames = getClassNameByJar(jarFile);
-                }catch (java.io.IOException e){
+                } catch (java.io.IOException e) {
                     throw new RuntimeException("open Package URL failed：" + e.getMessage());
                 }
                 
@@ -119,7 +118,6 @@ public class ClassUtils {
         return classNames;
     }
     
-    
     /**
      * Get all classes in a package from jar .
      * @return classNames
@@ -137,10 +135,9 @@ public class ClassUtils {
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("getClassNameByJar Error:"+e.getMessage());
+            throw new RuntimeException("getClassNameByJar Error:" + e.getMessage());
         }
         return classNames;
     }
-    
     
 }

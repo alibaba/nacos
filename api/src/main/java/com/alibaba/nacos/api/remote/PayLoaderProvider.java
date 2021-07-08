@@ -17,29 +17,26 @@ import java.util.Set;
 
 public abstract class PayLoaderProvider {
     
-    
     /**
      * get the Request classes.
      *
      * @return Set of class extends Request
      * @throws Exception exception throws .
      */
-    public Set<Class<? extends Request>> getPayLoadRequestSet() throws Exception{
+    public Set<Class<? extends Request>> getPayLoadRequestSet() throws Exception {
         String packageName = this.getClass().getPackage().getName();
         int lastIndex = packageName.lastIndexOf(".");
         String requestPackageName = packageName.substring(0, lastIndex + 1) + "request";
-        ArrayList<Class> PayLoadRequestList  = ClassUtils.getAllClassByAbstractClass(Request.class, requestPackageName);
-        Set<Class<? extends Request>> PayLoadRequestSet = new HashSet<>();
-        for (Class clazz: PayLoadRequestList){
-            boolean addFlag = PayLoadRequestSet.add(clazz);
+        ArrayList<Class> payLoadRequestList = ClassUtils.getAllClassByAbstractClass(Request.class, requestPackageName);
+        Set<Class<? extends Request>> payLoadRequestSet = new HashSet<>();
+        for (Class clazz: payLoadRequestList) {
+            boolean addFlag = payLoadRequestSet.add(clazz);
             if (!addFlag) {
                 throw new RuntimeException(String.format("Fail to Load Request class, clazz:%s ", clazz.getCanonicalName()));
             }
         }
-        return PayLoadRequestSet;
+        return payLoadRequestSet;
     }
-    
-    
     
     /**
      * get the Response classes.
@@ -47,19 +44,19 @@ public abstract class PayLoaderProvider {
      * @return Set of class extends Response
      * @throws Exception exception throws .
      */
-    public Set<Class<? extends Response>> getPayLoadResponseSet() throws Exception{
+    public Set<Class<? extends Response>> getPayLoadResponseSet() throws Exception {
         String packageName = this.getClass().getPackage().getName();
         int lastIndex = packageName.lastIndexOf(".");
-        String ResponsePackageName = packageName.substring(0, lastIndex + 1) + "response";
-        ArrayList<Class> PayLoadResponseList  = ClassUtils.getAllClassByAbstractClass(Response.class, ResponsePackageName);
-        Set<Class<? extends Response>> PayLoadResponseSet = new HashSet<>();
-        for (Class clazz: PayLoadResponseList){
-            boolean addFlag = PayLoadResponseSet.add(clazz);
+        String responsePackageName = packageName.substring(0, lastIndex + 1) + "response";
+        ArrayList<Class> payLoadResponseList  = ClassUtils.getAllClassByAbstractClass(Response.class, responsePackageName);
+        Set<Class<? extends Response>> payLoadResponseSet = new HashSet<>();
+        for (Class clazz: payLoadResponseList) {
+            boolean addFlag = payLoadResponseSet.add(clazz);
             if (!addFlag) {
                 throw new RuntimeException(String.format("Fail to Load Response class, clazz:%s ", clazz.getCanonicalName()));
             }
         }
-        return PayLoadResponseSet;
+        return payLoadResponseSet;
     }
     
 }

@@ -24,13 +24,13 @@ public class PayLoaderProviderScanner  {
     }
     
     private void init() {
-        if (initialized){
+        if (initialized) {
             return;
         }
         ServiceLoader<PayLoaderProvider> payLoaderProviders = ServiceLoader.load(PayLoaderProvider.class);
-        for (PayLoaderProvider each : payLoaderProviders){
+        for (PayLoaderProvider each : payLoaderProviders) {
             boolean addFlag = payLoaderProviderSet.add(each);
-            if (!addFlag){
+            if (!addFlag) {
                 throw new RuntimeException(String.format("Fail to Load Service, clazz:%s ", each.getClass().getCanonicalName()));
             }
         }
@@ -39,7 +39,7 @@ public class PayLoaderProviderScanner  {
 
     public Set<Class<? extends Request>> getAllPayLoadRequestSet() throws Exception {
         Set<Class<? extends Request>> allPayLoadRequestSet = new HashSet<>();
-        for (PayLoaderProvider eachPayLoaderProvider : payLoaderProviderSet){
+        for (PayLoaderProvider eachPayLoaderProvider : payLoaderProviderSet) {
             Set<Class<? extends Request>> newPayLoadRequestSet = eachPayLoaderProvider.getPayLoadRequestSet();
             for (Class<? extends Request> newPayLoadRequest : newPayLoadRequestSet) {
                 boolean addFlag = allPayLoadRequestSet.add(newPayLoadRequest);
@@ -51,10 +51,9 @@ public class PayLoaderProviderScanner  {
         return allPayLoadRequestSet;
     }
     
-    
     public Set<Class<? extends Response>> getAllPayLoadResponseSet() throws Exception {
         Set<Class<? extends Response>> allPayLoadResponseSet = new HashSet<>();
-        for (PayLoaderProvider eachPayLoaderProvider : payLoaderProviderSet){
+        for (PayLoaderProvider eachPayLoaderProvider : payLoaderProviderSet) {
             Set<Class<? extends Response>> newPayLoadResponseSet = eachPayLoaderProvider.getPayLoadResponseSet();
             for (Class<? extends Response> newPayLoadResponse : newPayLoadResponseSet) {
                 boolean addFlag = allPayLoadResponseSet.add(newPayLoadResponse);
@@ -65,4 +64,5 @@ public class PayLoaderProviderScanner  {
         }
         return allPayLoadResponseSet;
     }
+    
 }
