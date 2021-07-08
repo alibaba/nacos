@@ -33,12 +33,13 @@ import java.util.Set;
 
 public class PayloadRegistry {
     
-    private static final Map<String, Class> REGISTRY_REQUEST = new HashMap<String, Class>();
+    private static final Map<String, Class> REGISTRY_REQUEST = new HashMap<>();
     
     static boolean initialized = false;
     
     public static void init() {
         scan();
+        System.out.println(REGISTRY_REQUEST.size());
     }
     
     private static synchronized void scan() {
