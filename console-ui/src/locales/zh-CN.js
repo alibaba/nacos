@@ -135,8 +135,8 @@ const I18N_CONF = {
   },
   ClusterNodeList: {
     clusterNodeList: '节点列表',
-    nodeIp: '节点Ip',
-    nodeIpPlaceholder: '请输入节点Ip',
+    nodeIp: '节点',
+    nodeIpPlaceholder: '请输入节点IP',
     query: '查询',
     pubNoData: '没有数据',
     nodeState: '节点状态',

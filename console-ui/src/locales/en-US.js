@@ -136,7 +136,7 @@ const I18N_CONF = {
   },
   ClusterNodeList: {
     clusterNodeList: 'Node List',
-    nodeIp: 'NodeIp',
+    nodeIp: 'Node',
     nodeIpPlaceholder: 'Please enter node Ip',
     query: 'Search',
     pubNoData: 'No results found.',

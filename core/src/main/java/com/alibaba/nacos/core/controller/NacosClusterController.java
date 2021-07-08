@@ -41,10 +41,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Cluster communication interface.
@@ -69,28 +69,32 @@ public class NacosClusterController {
     /**
      * The console displays the list of cluster members.
      *
-     * @param ipKeyWord search keyWord
-     * @return all members
+     * @param keyword search keyWord
+     * @return eligible members
      */
     @GetMapping(value = "/nodes")
     public RestResult<Collection<Member>> listNodes(
-            @RequestParam(value = "keyword", required = false) String ipKeyWord) {
+            @RequestParam(value = "keyword", required = false) String keyword) {
+        keyword = keyword.trim();
         Collection<Member> members = memberManager.allMembers();
-        Collection<Member> result = new ArrayList<>();
-        
-        members.stream().sorted().forEach(member -> {
-            if (StringUtils.isBlank(ipKeyWord)) {
-                result.add(member);
-                return;
-            }
-            final String address = member.getAddress();
-            if (StringUtils.equals(address, ipKeyWord) || StringUtils.startsWith(address, ipKeyWord)) {
-                result.add(member);
-            }
-        });
-        
-        return RestResultUtils.success(result);
+        if (StringUtils.isBlank(keyword)) {
+            return RestResultUtils.success(members.stream().sorted().collect(Collectors.toList()));
+        } else {
+            return RestResultUtils.success(this.fliterMembers(members, keyword));
+        }
     }
+    
+    /**
+     * eligible members.
+     *
+     * @param members nacos cluster all members
+     * @param keyword search keyWord
+     * @return eligible members
+     */
+    private Collection<Member> fliterMembers(Collection<Member> members, String keyword) {
+        return members.stream().filter(item -> item.getAddress().contains(keyword)).sorted().collect(Collectors.toList());
+    }
+    
     
     // The client can get all the nacos node information in the current
     // cluster according to this interface
