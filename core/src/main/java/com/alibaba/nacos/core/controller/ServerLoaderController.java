@@ -239,7 +239,6 @@ public class ServerLoaderController {
     @GetMapping("/reloadClient")
     public ResponseEntity<String> reloadSingle(@RequestParam String connectionId,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
-        Map<String, String> responseMap = new HashMap<>(3);
         connectionManager.loadSingle(connectionId, redirectAddress);
         return ResponseEntity.ok().body("success");
     }

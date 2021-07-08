@@ -112,4 +112,10 @@ public class NacosClusterControllerTest {
         RestResult<String> result = nacosClusterController.switchLookup("test");
         Assert.assertTrue(result.ok());
     }
+    
+    @Test
+    public void testLeave() throws Exception {
+        RestResult<String> result = nacosClusterController.leave(Collections.singletonList("1.1.1.1"));
+        Assert.assertEquals("ok", result.getData());
+    }
 }
