@@ -2508,7 +2508,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify, callFinally);
                 succCount++;
             } catch (Throwable e) {
-                if (!e.toString().contains("DuplicateKeyException")) {
+                if (!StringUtils.contains(e.toString(), "DuplicateKeyException")) {
                     throw new NacosException(NacosException.SERVER_ERROR, e);
                 }
                 // uniqueness constraint conflict
