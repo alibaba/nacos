@@ -14,32 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.healthcheck.heartbeat;
-
-import com.alibaba.nacos.api.naming.pojo.Instance;
-
-import javax.servlet.http.HttpServletRequest;
+package com.alibaba.nacos.api.naming.spi.generator;
 
 /**
- * Client beat extension handler.
- *
- * <p>An extension handler for client beat, which is to handle some specified beat request for 1.x client.
+ * Generator SPI for Instance Id.
  *
  * @author xiweng.yy
  */
-public interface ClientBeatExtensionHandler {
+public interface IdGenerator {
     
     /**
-     * Config extension info from http request.
+     * Generate instance id.
      *
-     * @param request http request
+     * @return instance id
      */
-    void configExtensionInfoFromRequest(HttpServletRequest request);
-    
-    /**
-     * Do handle for instance.
-     *
-     * @param needHandleInstance instance needed to be handled.
-     */
-    void handleExtensionInfo(Instance needHandleInstance);
+    String generateInstanceId();
 }

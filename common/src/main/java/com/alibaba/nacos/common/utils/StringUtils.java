@@ -313,6 +313,20 @@ public class StringUtils {
     }
     
     /**
+     * Checks if CharSequence contains a search CharSequence.
+     *
+     * @param str       the CharSequence to check, may be null
+     * @param searchStr the CharSequence to find, may be null
+     * @return true if the CharSequence contains the search CharSequence
+     */
+    public static boolean contains(final CharSequence str, final CharSequence searchStr) {
+        if (str == null || searchStr == null) {
+            return false;
+        }
+        return str.toString().contains(searchStr);
+    }
+    
+    /**
      * <p>Checks if none of the CharSequences are blank ("") or null and whitespace only..</p>
      *
      * @param css the CharSequences to check, may be null or empty

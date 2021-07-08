@@ -239,7 +239,6 @@ public class ServerLoaderController {
     @GetMapping("/reloadClient")
     public ResponseEntity<String> reloadSingle(@RequestParam String connectionId,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
-        Map<String, String> responseMap = new HashMap<>(3);
         connectionManager.loadSingle(connectionId, redirectAddress);
         return ResponseEntity.ok().body("success");
     }
@@ -401,10 +400,10 @@ public class ServerLoaderController {
     
     private static String getRemoteIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
-        if (!org.apache.commons.lang3.StringUtils.isBlank(xForwardedFor)) {
+        if (!StringUtils.isBlank(xForwardedFor)) {
             return xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
         }
         String nginxHeader = request.getHeader(X_REAL_IP);
-        return org.apache.commons.lang3.StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
+        return StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
     }
 }
