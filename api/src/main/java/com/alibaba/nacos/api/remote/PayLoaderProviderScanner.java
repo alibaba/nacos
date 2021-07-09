@@ -8,27 +8,19 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
- * PayLoaderProviderScanner.
+ * PayLoaderProviderScanner scan all request and response.
  *
  * @author dingjuntao
  * @date 2021/7/8 16:44
  */
-
 public class PayLoaderProviderScanner  {
-    
-    private static boolean initialized = false;
-    
+
     private HashSet<PayLoaderProvider> payLoaderProviderSet = new HashSet<>();
     
-    PayLoaderProviderScanner() {
-        init();
-    }
-    
-    private void init() {
-        if (initialized) {
-            return;
-        }
-        
+    /**
+     * PayLoaderProviderScanner init, load payLoaderProviders.
+     */
+    public void init() {
         ServiceLoader<PayLoaderProvider> payLoaderProviders = ServiceLoader.load(PayLoaderProvider.class);
         
         for (PayLoaderProvider each : payLoaderProviders) {
@@ -45,15 +37,13 @@ public class PayLoaderProviderScanner  {
                 throw new RuntimeException(String.format("Fail to Load Service, clazz:%s ", serverPayLoaderProvider.getCanonicalName()));
             }
         } catch (ClassNotFoundException ignored) {
-        
+            
         } catch (InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Fail to Load server request ：" + e.getMessage());
         }
-    
-        initialized = true;
     }
 
-    public Set<Class<? extends Request>> getAllPayLoadRequestSet() throws Exception {
+    public Set<Class<? extends Request>> getAllPayLoadRequestSet() {
         Set<Class<? extends Request>> allPayLoadRequestSet = new HashSet<>();
         for (PayLoaderProvider eachPayLoaderProvider : payLoaderProviderSet) {
             Set<Class<? extends Request>> newPayLoadRequestSet = eachPayLoaderProvider.getPayLoadRequestSet();
@@ -67,7 +57,7 @@ public class PayLoaderProviderScanner  {
         return allPayLoadRequestSet;
     }
     
-    public Set<Class<? extends Response>> getAllPayLoadResponseSet() throws Exception {
+    public Set<Class<? extends Response>> getAllPayLoadResponseSet() {
         Set<Class<? extends Response>> allPayLoadResponseSet = new HashSet<>();
         for (PayLoaderProvider eachPayLoaderProvider : payLoaderProviderSet) {
             Set<Class<? extends Response>> newPayLoadResponseSet = eachPayLoaderProvider.getPayLoadResponseSet();

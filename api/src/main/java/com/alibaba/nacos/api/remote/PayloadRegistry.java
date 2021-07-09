@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * payload regitry,include all request and response.
+ * payload regitry, include all request and response.
  *
  * @author liuzunfei
  * @version $Id: PayloadRegistry.java, v 0.1 2020年09月01日 10:56 AM liuzunfei Exp $
@@ -39,7 +39,6 @@ public class PayloadRegistry {
     
     public static void init() {
         scan();
-        System.out.println(REGISTRY_REQUEST.size());
     }
     
     private static synchronized void scan() {
@@ -47,17 +46,16 @@ public class PayloadRegistry {
             return;
         }
         PayLoaderProviderScanner payLoaderProviderScanner = new PayLoaderProviderScanner();
-        try {
-            Set<Class<? extends Request>> subTypesRequest = payLoaderProviderScanner.getAllPayLoadRequestSet();
-            for (Class clazz : subTypesRequest) {
-                register(clazz.getSimpleName(), clazz);
-            }
-            Set<Class<? extends Response>> subTypesOfResponse = payLoaderProviderScanner.getAllPayLoadResponseSet();
-            for (Class clazz : subTypesOfResponse) {
-                register(clazz.getSimpleName(), clazz);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        payLoaderProviderScanner.init();
+
+        Set<Class<? extends Request>> subTypesRequest = payLoaderProviderScanner.getAllPayLoadRequestSet();
+        for (Class clazz : subTypesRequest) {
+            register(clazz.getSimpleName(), clazz);
+        }
+        
+        Set<Class<? extends Response>> subTypesOfResponse = payLoaderProviderScanner.getAllPayLoadResponseSet();
+        for (Class clazz : subTypesOfResponse) {
+            register(clazz.getSimpleName(), clazz);
         }
         
         initialized = true;

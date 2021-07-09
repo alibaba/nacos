@@ -26,17 +26,13 @@ public class ClassUtils {
         ArrayList<Class> list = new ArrayList<>();
         
         if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
-            try {
-                ArrayList<Class> allClass = getAllClass(packageName);
-                for (Class eachClass : allClass) {
-                    if (clazz.isAssignableFrom(eachClass)) {
-                        if (!clazz.equals(eachClass)) {
-                            list.add(eachClass);
-                        }
+            ArrayList<Class> allClass = getAllClass(packageName);
+            for (Class eachClass : allClass) {
+                if (clazz.isAssignableFrom(eachClass)) {
+                    if (!clazz.equals(eachClass)) {
+                        list.add(eachClass);
                     }
                 }
-            } catch (Exception e) {
-                throw new RuntimeException("getAllClassByAbstractClass Error: " + e.getMessage());
             }
         }
         return list;

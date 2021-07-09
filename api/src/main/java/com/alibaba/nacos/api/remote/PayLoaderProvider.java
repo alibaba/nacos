@@ -23,7 +23,7 @@ public abstract class PayLoaderProvider {
      * @return Set of class extends Request
      * @throws Exception exception throws .
      */
-    public Set<Class<? extends Request>> getPayLoadRequestSet() throws Exception {
+    public Set<Class<? extends Request>> getPayLoadRequestSet() {
         String packageName = this.getClass().getPackage().getName();
         int lastIndex = packageName.lastIndexOf(".");
         String requestPackageName = packageName.substring(0, lastIndex + 1) + "request";
@@ -44,7 +44,7 @@ public abstract class PayLoaderProvider {
      * @return Set of class extends Response
      * @throws Exception exception throws .
      */
-    public Set<Class<? extends Response>> getPayLoadResponseSet() throws Exception {
+    public Set<Class<? extends Response>> getPayLoadResponseSet() {
         String packageName = this.getClass().getPackage().getName();
         int lastIndex = packageName.lastIndexOf(".");
         String responsePackageName = packageName.substring(0, lastIndex + 1) + "response";
