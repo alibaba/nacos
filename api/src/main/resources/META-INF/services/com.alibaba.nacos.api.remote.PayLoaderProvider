@@ -1,4 +1,3 @@
 com.alibaba.nacos.api.remote.impl.RemotePayLoaderProvider
 com.alibaba.nacos.api.naming.remote.impl.NamingPayLoaderProvider
 com.alibaba.nacos.api.config.remote.impl.ConfigPayLoaderProvider
-com.alibaba.nacos.naming.cluster.remote.impl.ClusterPayLoaderProvider

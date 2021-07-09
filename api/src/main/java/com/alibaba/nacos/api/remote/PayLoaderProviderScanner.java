@@ -4,7 +4,6 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 
 import java.util.HashSet;
-import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -29,24 +28,28 @@ public class PayLoaderProviderScanner  {
         if (initialized) {
             return;
         }
-        int providerCount = 0;
         
         ServiceLoader<PayLoaderProvider> payLoaderProviders = ServiceLoader.load(PayLoaderProvider.class);
-        try {
-            for (PayLoaderProvider each : payLoaderProviders) {
-                boolean addFlag = payLoaderProviderSet.add(each);
-                if (!addFlag) {
-                    throw new RuntimeException(String.format("Fail to Load Service, clazz:%s ", each.getClass().getCanonicalName()));
-                }
-                providerCount ++;
-            }
-        } catch (ServiceConfigurationError e) {
-            // 客户端就是会有这个错误
-            if (providerCount != 3){
-                throw new RuntimeException(e.fillInStackTrace());
+        
+        for (PayLoaderProvider each : payLoaderProviders) {
+            boolean addFlag = payLoaderProviderSet.add(each);
+            if (!addFlag) {
+                throw new RuntimeException(String.format("Fail to Load Service, clazz:%s ", each.getClass().getCanonicalName()));
             }
         }
+
+        try {
+            Class<?> serverPayLoaderProvider = Class.forName("com.alibaba.nacos.naming.cluster.remote.impl.ClusterPayLoaderProvider");
+            boolean addInstanceFlag = payLoaderProviderSet.add((PayLoaderProvider) serverPayLoaderProvider.newInstance());
+            if (!addInstanceFlag) {
+                throw new RuntimeException(String.format("Fail to Load Service, clazz:%s ", serverPayLoaderProvider.getCanonicalName()));
+            }
+        } catch (ClassNotFoundException ignored) {
         
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    
         initialized = true;
     }
 

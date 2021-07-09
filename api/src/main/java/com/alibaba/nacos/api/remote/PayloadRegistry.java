@@ -57,7 +57,7 @@ public class PayloadRegistry {
                 register(clazz.getSimpleName(), clazz);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         
         initialized = true;

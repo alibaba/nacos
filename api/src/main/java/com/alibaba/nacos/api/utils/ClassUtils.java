@@ -90,7 +90,7 @@ public class ClassUtils {
                 throw new RuntimeException("file system not support! cannot load MsgProcessor！");
             }
         } else {
-            throw new RuntimeException("url cannot be null!");
+            throw new RuntimeException("url of packagePath cannot be null!");
         }
         return fileNames;
     }
