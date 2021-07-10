@@ -29,7 +29,7 @@ public class ClassUtils {
             ArrayList<Class> allClass = getAllClass(packageName);
             for (Class eachClass : allClass) {
                 if (clazz.isAssignableFrom(eachClass)) {
-                    if (!clazz.equals(eachClass)) {
+                    if (!clazz.equals(eachClass) && ! Modifier.isAbstract(eachClass.getModifiers())) {
                         list.add(eachClass);
                     }
                 }

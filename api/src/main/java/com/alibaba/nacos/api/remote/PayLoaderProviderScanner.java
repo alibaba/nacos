@@ -29,18 +29,6 @@ public class PayLoaderProviderScanner  {
                 throw new RuntimeException(String.format("Fail to Load Service, clazz:%s ", each.getClass().getCanonicalName()));
             }
         }
-
-        try {
-            Class<?> serverPayLoaderProvider = Class.forName("com.alibaba.nacos.naming.cluster.remote.impl.ClusterPayLoaderProvider");
-            boolean addInstanceFlag = payLoaderProviderSet.add((PayLoaderProvider) serverPayLoaderProvider.newInstance());
-            if (!addInstanceFlag) {
-                throw new RuntimeException(String.format("Fail to Load Service, clazz:%s ", serverPayLoaderProvider.getCanonicalName()));
-            }
-        } catch (ClassNotFoundException ignored) {
-            
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException("Fail to Load server request ：" + e.getMessage());
-        }
     }
 
     public Set<Class<? extends Request>> getAllPayLoadRequestSet() {
