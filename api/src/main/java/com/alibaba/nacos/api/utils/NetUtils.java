@@ -54,7 +54,7 @@ public class NetUtils {
             return localIp;
         }
 
-        if (System.getProperties().contains(CLIENT_LOCAL_IP_PROPERTY)) {
+        if (System.getProperties().containsKey(CLIENT_LOCAL_IP_PROPERTY)) {
             return localIp = System.getProperty(CLIENT_LOCAL_IP_PROPERTY, getAddress());
         }
 
