@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.push.v1;
 
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.codehaus.jackson.Version;
 import org.codehaus.jackson.util.VersionUtil;
 

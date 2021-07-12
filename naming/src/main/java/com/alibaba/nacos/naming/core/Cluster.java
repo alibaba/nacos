@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;

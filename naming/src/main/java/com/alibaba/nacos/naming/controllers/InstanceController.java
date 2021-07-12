@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.InstanceOperator;
@@ -47,8 +48,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -281,11 +281,11 @@ public class InstanceController {
         }
         String healthy = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(healthy)) {
-            patchObject.setHealthy(BooleanUtils.toBoolean(healthy));
+            patchObject.setHealthy(ConvertUtils.toBoolean(healthy));
         }
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(enabledString)) {
-            patchObject.setEnabled(BooleanUtils.toBoolean(enabledString));
+            patchObject.setEnabled(ConvertUtils.toBoolean(enabledString));
         }
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         getInstanceOperator().patchInstance(namespaceId, serviceName, patchObject);

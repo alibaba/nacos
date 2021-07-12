@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.HealthOperator;
@@ -36,8 +37,7 @@ import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -105,7 +105,7 @@ public class HealthController {
         if (StringUtils.isBlank(healthyString)) {
             throw new IllegalArgumentException("Param 'healthy' is required.");
         }
-        boolean health = BooleanUtils.toBoolean(healthyString);
+        boolean health = ConvertUtils.toBoolean(healthyString);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String clusterName = WebUtils

@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.InstanceOperator;
@@ -51,9 +52,8 @@ import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -238,7 +238,7 @@ public class UpgradeOpsController {
         serviceMetadata.setProtectThreshold(protectThreshold);
         serviceMetadata.setSelector(parseSelector(selector));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
-        boolean ephemeral = BooleanUtils.toBoolean(
+        boolean ephemeral = ConvertUtils.toBoolean(
                 WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
         serviceMetadata.setEphemeral(ephemeral);
         getServiceOperator(ver).create(namespaceId, serviceName, serviceMetadata);
@@ -522,7 +522,7 @@ public class UpgradeOpsController {
         result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
         return result;
     }
-    
+  
     private InstanceOperator getInstanceOperator(String ver) {
         return "v2".equals(ver) ? instanceServiceV2 : instanceServiceV1;
     }
