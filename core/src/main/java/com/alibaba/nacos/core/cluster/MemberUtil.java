@@ -182,7 +182,7 @@ public class MemberUtil {
     public static void syncToFile(Collection<Member> members) {
         try {
             StringBuilder builder = new StringBuilder();
-            builder.append("#").append(LocalDateTime.now()).append(StringUtils.LF);
+            builder.append('#').append(LocalDateTime.now()).append(StringUtils.LF);
             for (String member : simpleMembers(members)) {
                 builder.append(member).append(StringUtils.LF);
             }

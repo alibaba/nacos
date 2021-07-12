@@ -103,7 +103,7 @@ public class SimpleFlowData {
         
         for (int i = 0; i < slotCount; i++) {
             if (i > 0) {
-                sb.append(" ");
+                sb.append(' ');
             }
             sb.append(this.data[(i + index) % slotCount].get());
         }

@@ -335,7 +335,7 @@ public class ServiceManager implements RecordListener<Service> {
                 StringBuilder stringBuilder = new StringBuilder();
                 List<Instance> allIps = service.allIPs();
                 for (Instance instance : allIps) {
-                    stringBuilder.append(instance.toIpAddr()).append("_").append(instance.isHealthy()).append(",");
+                    stringBuilder.append(instance.toIpAddr()).append('_').append(instance.isHealthy()).append(',');
                 }
                 Loggers.EVT_LOG
                         .debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}", service.getNamespaceId(),

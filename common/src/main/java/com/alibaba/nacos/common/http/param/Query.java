@@ -106,10 +106,10 @@ public class Query {
         for (Map.Entry<String, Object> entry : entrySet) {
             try {
                 if (null != entry.getValue()) {
-                    urlBuilder.append(entry.getKey()).append("=")
+                    urlBuilder.append(entry.getKey()).append('=')
                             .append(URLEncoder.encode(String.valueOf(entry.getValue()), DEFAULT_ENC));
                     if (i > 1) {
-                        urlBuilder.append("&");
+                        urlBuilder.append('&');
                     }
                 }
                 i--;
