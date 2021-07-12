@@ -29,6 +29,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import javax.servlet.ServletContext;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
@@ -107,5 +109,38 @@ public class ServerMemberManagerTest {
         assertTrue(serverMemberManager.getMemberAddressInfos().contains("1.1.1.1:8848"));
         assertEquals("test", serverMemberManager.getServerList().get("1.1.1.1:8848").getExtendVal("naming"));
         verify(eventPublisher, never()).publish(any(MembersChangeEvent.class));
+    }
+    
+    @Test
+    public void testHasMember() {
+        assertTrue(serverMemberManager.hasMember("1.1.1.1"));
+    }
+    
+    @Test
+    public void testMemberLeave() {
+        Member member = Member.builder().ip("1.1.3.3").port(8848).state(NodeState.DOWN).build();
+        boolean joinResult = serverMemberManager.memberJoin(Collections.singletonList(member));
+        assertTrue(joinResult);
+    
+        List<String> ips = serverMemberManager.getServerListUnhealth();
+        assertEquals(1, ips.size());
+        
+        boolean result = serverMemberManager.memberLeave(Collections.singletonList(member));
+        assertTrue(result);
+    }
+    
+    @Test
+    public void testIsUnHealth() {
+        assertFalse(serverMemberManager.isUnHealth("1.1.1.1"));
+    }
+    
+    @Test
+    public void testIsFirstIp() {
+        assertFalse(serverMemberManager.isFirstIp());
+    }
+    
+    @Test
+    public void testGetServerList() {
+        assertEquals(2, serverMemberManager.getServerList().size());
     }
 }
