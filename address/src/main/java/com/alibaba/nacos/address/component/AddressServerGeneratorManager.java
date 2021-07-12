@@ -103,8 +103,8 @@ public class AddressServerGeneratorManager {
         
         StringBuilder ips = new StringBuilder();
         instanceList.forEach(instance -> {
-            ips.append(instance.getIp()).append(":").append(instance.getPort());
-            ips.append("\n");
+            ips.append(instance.getIp()).append(':').append(instance.getPort());
+            ips.append('\n');
         });
         
         return ips.toString();

@@ -38,7 +38,7 @@ public class ExceptionUtil {
         StringBuilder strBuilder = new StringBuilder();
         
         while (cause != null && !StringUtils.isEmpty(cause.getMessage())) {
-            strBuilder.append("caused: ").append(cause.getMessage()).append(";");
+            strBuilder.append("caused: ").append(cause.getMessage()).append(';');
             cause = cause.getCause();
         }
         

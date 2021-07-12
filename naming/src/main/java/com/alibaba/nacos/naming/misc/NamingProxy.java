@@ -346,7 +346,7 @@ public class NamingProxy {
         public String toUrl() {
             StringBuilder sb = new StringBuilder();
             for (String key : params.keySet()) {
-                sb.append(key).append("=").append(params.get(key)).append("&");
+                sb.append(key).append('=').append(params.get(key)).append('&');
             }
             return sb.toString();
         }

@@ -73,9 +73,9 @@ public class MD5Util {
         for (String groupKey : changedGroupKeys) {
             String[] dataIdGroupId = GroupKey2.parseKey(groupKey);
             sb.append(dataIdGroupId[0]);
-            sb.append(":");
+            sb.append(':');
             sb.append(dataIdGroupId[1]);
-            sb.append(";");
+            sb.append(';');
         }
         return sb.toString();
     }

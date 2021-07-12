@@ -69,7 +69,7 @@ public class NamingBase extends HttpClient4Test {
         sb.append("jinhan");
         for (int i = 0; i < 2; i++) {
             sb.append(RandomUtils.getStringWithNumAndCha(5));
-            sb.append(".");
+            sb.append('.');
         }
         int i = RandomUtils.getIntegerBetween(0, 2);
         if (i == 0) {
