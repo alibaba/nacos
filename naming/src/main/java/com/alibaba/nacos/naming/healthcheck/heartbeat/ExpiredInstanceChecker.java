@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
@@ -74,5 +75,6 @@ public class ExpiredInstanceChecker implements InstanceBeatChecker {
         Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.toString(), JacksonUtils.toJson(instance));
         client.removeServiceInstance(service);
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
+        NotifyCenter.publishEvent(new MetadataEvent.InstanceMetadataEvent(service, instance.getMetadataId(), true));
     }
 }
