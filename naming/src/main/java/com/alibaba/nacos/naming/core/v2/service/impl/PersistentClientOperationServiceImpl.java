@@ -240,9 +240,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     
     private class PersistentInstanceSnapshotOperation extends AbstractSnapshotOperation {
         
-        private final String snapshotSaveTag = ClassUtils.getSimplaName(getClass()) + ".SAVE";
+        private final String snapshotSaveTag = ClassUtils.getSimpleName(getClass()) + ".SAVE";
         
-        private final String snapshotLoadTag = ClassUtils.getSimplaName(getClass()) + ".LOAD";
+        private final String snapshotLoadTag = ClassUtils.getSimpleName(getClass()) + ".LOAD";
         
         private static final String SNAPSHOT_ARCHIVE = "persistent_instance.zip";
         
