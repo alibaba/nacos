@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.utils;
 
-import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -27,12 +27,15 @@ import static org.junit.Assert.assertEquals;
 
 public class NetUtilsTest {
 
-    @Before
-    public void setUp() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         Class<?> clazz = Class.forName("com.alibaba.nacos.api.utils.NetUtils");
         Field field = clazz.getDeclaredField("localIp");
         field.setAccessible(true);
         field.set(null, "");
+        System.clearProperty("com.alibaba.nacos.client.local.ip");
+        System.clearProperty("com.alibaba.nacos.client.naming.local.ip");
+        System.clearProperty("com.alibaba.nacos.client.local.preferHostname");
     }
 
     @Test
@@ -40,14 +43,12 @@ public class NetUtilsTest {
         System.setProperty("com.alibaba.nacos.client.naming.local.ip", "10.2.7.8");
         System.setProperty("com.alibaba.nacos.client.local.ip", "10.2.8.8");
         assertEquals("10.2.8.8", NetUtils.localIP());
-        System.clearProperty("com.alibaba.nacos.client.local.ip");
     }
 
     @Test
     public void testCompatibleLocalIP() {
         System.setProperty("com.alibaba.nacos.client.naming.local.ip", "10.2.7.8");
         assertEquals("10.2.7.8", NetUtils.localIP());
-        System.clearProperty("com.alibaba.nacos.client.naming.local.ip");
     }
 
     @Test
@@ -60,8 +61,6 @@ public class NetUtilsTest {
 
         System.setProperty("com.alibaba.nacos.client.local.preferHostname", "true");
         assertEquals(hostname, NetUtils.localIP());
-
-        System.clearProperty("com.alibaba.nacos.client.local.preferHostname");
     }
 
 }
