@@ -42,7 +42,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.google.protobuf.ByteString;
-import org.apache.commons.lang3.reflect.TypeUtils;
+import com.alibaba.nacos.common.utils.TypeUtils;
 
 import java.lang.reflect.Type;
 import java.nio.file.Paths;

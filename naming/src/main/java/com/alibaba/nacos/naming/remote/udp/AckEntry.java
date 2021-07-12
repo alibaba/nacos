@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.udp;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.net.DatagramPacket;
 import java.util.Map;
@@ -75,6 +75,6 @@ public class AckEntry {
     }
     
     public static String getAckKey(String host, int port, long lastRefTime) {
-        return StringUtils.strip(host) + "," + port + "," + lastRefTime;
+        return StringUtils.trim(host) + "," + port + "," + lastRefTime;
     }
 }

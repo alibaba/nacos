@@ -26,7 +26,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -119,7 +119,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         
         int port = 0;
         if (providerAddr.length == InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils
-                .isNumber(providerAddr[1])) {
+                .isDigits(providerAddr[1])) {
             port = Integer.parseInt(providerAddr[1]);
         }
         

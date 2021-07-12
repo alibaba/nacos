@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_PREFIX;
 

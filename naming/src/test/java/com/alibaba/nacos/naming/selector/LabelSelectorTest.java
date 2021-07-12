@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
