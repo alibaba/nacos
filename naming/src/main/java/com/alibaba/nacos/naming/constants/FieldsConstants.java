@@ -67,4 +67,5 @@ public class FieldsConstants {
     
     public static final String NOFIX = "nofix";
     
+    public static final String RESERVED_CLIENT_ID = "reserved.client.id";
 }

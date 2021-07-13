@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
@@ -123,17 +124,21 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "service not found, namespace: " + namespaceId + ", service: " + service);
         }
-        String metadataId = InstancePublishInfo
-                .genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
-        metadataOperateService.updateInstanceMetadata(service, metadataId, buildMetadata(instance));
+        Instance currentInstance = findInstance(serviceStorage.getData(service), instance);
+        // make sure the instance ephemeral type is same with service.
+        instance.setEphemeral(service.isEphemeral());
+        clientOperationService.registerInstance(service, instance,
+                currentInstance.getMetadata().get(FieldsConstants.RESERVED_CLIENT_ID));
     }
     
-    private InstanceMetadata buildMetadata(Instance instance) {
-        InstanceMetadata result = new InstanceMetadata();
-        result.setEnabled(instance.isEnabled());
-        result.setWeight(instance.getWeight());
-        result.getExtendData().putAll(instance.getMetadata());
-        return result;
+    private Instance findInstance(ServiceInfo serviceInfo, Instance instance) throws NacosException {
+        for (Instance each : serviceInfo.getHosts()) {
+            if (each.getIp().equals(instance.getIp()) && each.getPort() == instance.getPort() && each.getClusterName()
+                    .equals(instance.getClusterName())) {
+                return each;
+            }
+        }
+        throw new NacosException(NacosException.INVALID_PARAM, "instance not exist: " + instance);
     }
     
     @Override

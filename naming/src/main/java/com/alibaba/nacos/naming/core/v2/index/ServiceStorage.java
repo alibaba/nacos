@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.index;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
@@ -106,7 +107,7 @@ public class ServiceStorage {
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
             Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(each, service);
             if (instancePublishInfo.isPresent()) {
-                Instance instance = parseInstance(service, instancePublishInfo.get());
+                Instance instance = parseInstance(service, instancePublishInfo.get(), each);
                 result.add(instance);
                 clusters.add(instance.getClusterName());
             }
@@ -124,11 +125,12 @@ public class ServiceStorage {
         return Optional.ofNullable(client.getInstancePublishInfo(service));
     }
     
-    private Instance parseInstance(Service service, InstancePublishInfo instanceInfo) {
+    private Instance parseInstance(Service service, InstancePublishInfo instanceInfo, String clientId) {
         Instance result = InstanceUtil.parseToApiInstance(service, instanceInfo);
         Optional<InstanceMetadata> metadata = metadataManager
                 .getInstanceMetadata(service, instanceInfo.getMetadataId());
         metadata.ifPresent(instanceMetadata -> InstanceUtil.updateInstanceMetadata(result, instanceMetadata));
+        result.getMetadata().put(FieldsConstants.RESERVED_CLIENT_ID, clientId);
         return result;
     }
 }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.index;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -41,8 +42,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(MockitoJUnitRunner.class)
 public class ServiceStorageTest {
+    
+    private static final String MOCK_CLIENT_ID = "1.1.1.1#3306#true";
     
     @Mock
     private ClientServiceIndexesManager clientServiceIndexesManager;
@@ -92,7 +97,7 @@ public class ServiceStorageTest {
         
         Assert.assertNotNull(clusters);
         for (String cluster : clusters) {
-            Assert.assertEquals(cluster, NACOS);
+            assertEquals(cluster, NACOS);
         }
     }
     
@@ -125,8 +130,8 @@ public class ServiceStorageTest {
         ConcurrentMap<Service, ServiceInfo> infoConcurrentMap = (ConcurrentMap<Service, ServiceInfo>) serviceDataIndexes
                 .get(serviceStorage);
         
-        Assert.assertEquals(serviceSetConcurrentMap.size(), 0);
-        Assert.assertEquals(infoConcurrentMap.size(), 0);
+        assertEquals(serviceSetConcurrentMap.size(), 0);
+        assertEquals(infoConcurrentMap.size(), 0);
     }
     
     @Test
@@ -156,12 +161,13 @@ public class ServiceStorageTest {
     public void testParseInstance() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<ServiceStorage> serviceStorageClass = ServiceStorage.class;
         Method parseInstance = serviceStorageClass
-                .getDeclaredMethod("parseInstance", Service.class, InstancePublishInfo.class);
+                .getDeclaredMethod("parseInstance", Service.class, InstancePublishInfo.class, String.class);
         parseInstance.setAccessible(true);
-        Instance instance = (Instance) parseInstance.invoke(serviceStorage, SERVICE, instancePublishInfo);
+        Instance instance = (Instance) parseInstance.invoke(serviceStorage, SERVICE, instancePublishInfo, MOCK_CLIENT_ID);
         
         Mockito.verify(namingMetadataManager).getInstanceMetadata(SERVICE, instancePublishInfo.getMetadataId());
         Assert.assertNotNull(instance);
+        assertEquals(MOCK_CLIENT_ID, instance.getMetadata().get(FieldsConstants.RESERVED_CLIENT_ID));
     }
     
 }
