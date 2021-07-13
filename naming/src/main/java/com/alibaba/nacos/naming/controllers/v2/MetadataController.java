@@ -83,18 +83,11 @@ public class MetadataController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public RestResult<String> updateInstanceMetadata(HttpServletRequest request) throws NacosException {
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        String group = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        Optional<Service> service = ServiceManager.getInstance().getSingletonIfExist(namespaceId, group, serviceName);
-        if (!service.isPresent()) {
-            return RestResultUtils.failedWithMsg(NacosException.NOT_FOUND,
-                    String.format(SERVICE_NOT_FOUNT_MSG, group, serviceName, namespaceId));
-        }
+        Service service = getServiceFromRequest(request);
         Instance instance = HttpRequestInstanceBuilder.newBuilder().setRequest(request).build();
         String metadataId = InstancePublishInfo
                 .genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
-        metadataOperateService.updateInstanceMetadata(service.get(), metadataId, buildMetadata(instance));
+        metadataOperateService.updateInstanceMetadata(service, metadataId, buildMetadata(instance));
         return RestResultUtils.success("Update metadata completed", null);
     }
     
@@ -104,5 +97,17 @@ public class MetadataController {
         result.setWeight(instance.getWeight());
         result.getExtendData().putAll(instance.getMetadata());
         return result;
+    }
+    
+    private Service getServiceFromRequest(HttpServletRequest request) throws NacosException {
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String group = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        Optional<Service> service = ServiceManager.getInstance().getSingletonIfExist(namespaceId, group, serviceName);
+        if (!service.isPresent()) {
+            throw new NacosException(NacosException.NOT_FOUND,
+                    String.format(SERVICE_NOT_FOUNT_MSG, group, serviceName, namespaceId));
+        }
+        return service.get();
     }
 }

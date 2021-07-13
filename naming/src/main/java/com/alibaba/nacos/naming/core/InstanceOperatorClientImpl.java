@@ -50,6 +50,7 @@ import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.push.UdpPushService;
+import com.alibaba.nacos.naming.utils.InstanceUtil;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 
 import java.util.HashMap;
@@ -124,55 +125,37 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "service not found, namespace: " + namespaceId + ", service: " + service);
         }
-        Instance currentInstance = findInstance(serviceStorage.getData(service), instance);
+        Instance currentInstance = getInstance0(service, instance.getClusterName(), instance.getIp(),
+                instance.getPort());
         // make sure the instance ephemeral type is same with service.
         instance.setEphemeral(service.isEphemeral());
         clientOperationService.registerInstance(service, instance,
                 currentInstance.getMetadata().get(FieldsConstants.RESERVED_CLIENT_ID));
     }
     
-    private Instance findInstance(ServiceInfo serviceInfo, Instance instance) throws NacosException {
-        for (Instance each : serviceInfo.getHosts()) {
-            if (each.getIp().equals(instance.getIp()) && each.getPort() == instance.getPort() && each.getClusterName()
-                    .equals(instance.getClusterName())) {
-                return each;
-            }
-        }
-        throw new NacosException(NacosException.INVALID_PARAM, "instance not exist: " + instance);
-    }
-    
     @Override
     public void patchInstance(String namespaceId, String serviceName, InstancePatchObject patchObject)
             throws NacosException {
         Service service = getService(namespaceId, serviceName, true);
-        Instance instance = getInstance(namespaceId, serviceName, patchObject.getCluster(), patchObject.getIp(),
+        Instance currentInstance = getInstance(namespaceId, serviceName, patchObject.getCluster(), patchObject.getIp(),
                 patchObject.getPort());
-        String metadataId = InstancePublishInfo
-                .genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
-        Optional<InstanceMetadata> instanceMetadata = metadataManager.getInstanceMetadata(service, metadataId);
-        InstanceMetadata newMetadata = instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
-        mergeMetadata(newMetadata, patchObject);
-        metadataOperateService.updateInstanceMetadata(service, metadataId, newMetadata);
-    }
-    
-    private InstanceMetadata cloneMetadata(InstanceMetadata instanceMetadata) {
-        InstanceMetadata result = new InstanceMetadata();
-        result.setExtendData(new HashMap<>(instanceMetadata.getExtendData()));
-        result.setWeight(instanceMetadata.getWeight());
-        result.setEnabled(instanceMetadata.isEnabled());
-        return result;
-    }
-    
-    private void mergeMetadata(InstanceMetadata newMetadata, InstancePatchObject patchObject) {
-        if (null != patchObject.getMetadata()) {
-            newMetadata.setExtendData(new HashMap<>(patchObject.getMetadata()));
+        Instance patchedInstance = InstanceUtil.deepCopy(currentInstance);
+        // make sure the instance ephemeral type is same with service.
+        patchedInstance.setEphemeral(service.isEphemeral());
+        if (null != patchObject.getWeight()) {
+            patchedInstance.setWeight(patchObject.getWeight());
         }
         if (null != patchObject.getEnabled()) {
-            newMetadata.setEnabled(patchObject.getEnabled());
+            patchedInstance.setEnabled(patchObject.getEnabled());
         }
-        if (null != patchObject.getWeight()) {
-            newMetadata.setWeight(patchObject.getWeight());
+        if (null != patchObject.getHealthy()) {
+            patchedInstance.setHealthy(patchObject.getHealthy());
         }
+        if (null != patchObject.getMetadata()) {
+            patchedInstance.setMetadata(patchObject.getMetadata());
+        }
+        clientOperationService.registerInstance(service, patchedInstance,
+                currentInstance.getMetadata().get(FieldsConstants.RESERVED_CLIENT_ID));
     }
     
     @Override
@@ -322,6 +305,14 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             } catch (NacosException ignored) {
             }
         }
+        return result;
+    }
+    
+    private InstanceMetadata cloneMetadata(InstanceMetadata instanceMetadata) {
+        InstanceMetadata result = new InstanceMetadata();
+        result.setExtendData(new HashMap<>(instanceMetadata.getExtendData()));
+        result.setWeight(instanceMetadata.getWeight());
+        result.setEnabled(instanceMetadata.isEnabled());
         return result;
     }
     

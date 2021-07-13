@@ -340,6 +340,7 @@ public class MultiTenant_InstanceAPI_ITCase {
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
                 Params.newParams().appendParam("serviceName", serviceName).appendParam("ip", "33.33.33.33")
                         .appendParam("port", "8888").done(), String.class, HttpMethod.PUT);
+        System.out.println(response.getStatusCode());
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         
         response = request("/nacos/v1/ns/instance/list",
