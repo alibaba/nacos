@@ -97,7 +97,9 @@ public class NamingBase extends HttpClient4Test {
     }
 
     public static boolean verifyInstance(Instance i1, Instance i2) {
-
+        // Since 2.0.3, the instance get from server will keep `reserved.client.id` in metadata to tag which client id this instance belong.
+        i1.getMetadata().remove("reserved.client.id");
+        i2.getMetadata().remove("reserved.client.id");
         if (!i1.getIp().equals(i2.getIp()) || i1.getPort() != i2.getPort() ||
             i1.getWeight() != i2.getWeight() || i1.isHealthy() != i2.isHealthy() ||
             !i1.getMetadata().equals(i2.getMetadata())) {

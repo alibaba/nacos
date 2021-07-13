@@ -333,7 +333,6 @@ public class MultiTenant_InstanceAPI_ITCase {
         naming2.registerInstance(serviceName, "22.22.22.22", 80);
         
         naming.registerInstance(serviceName, "33.33.33.33", 8888);
-        naming.registerInstance(serviceName, "44.44.44.44", 8888);
         
         TimeUnit.SECONDS.sleep(5L);
         
@@ -410,6 +409,8 @@ public class MultiTenant_InstanceAPI_ITCase {
                         .appendParam("namespaceId", "namespace-2").appendParam("weight", "8.0").done(), String.class,
                 HttpMethod.PUT);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+    
+        TimeUnit.SECONDS.sleep(3L);
         
         response = request("/nacos/v1/ns/instance",
                 Params.newParams().appendParam("serviceName", serviceName).appendParam("groupName", TEST_GROUP_2)
