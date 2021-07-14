@@ -19,6 +19,8 @@ package com.alibaba.nacos.api.naming.selector;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import java.io.Serializable;
+
 /**
  * The {@link Selector} mainly work on the logic of parse and select.
  * {@link #parse(Object)} allow user accept the condition which provided by Nacos to build the {@link #select(Object)} judge logic.
@@ -34,7 +36,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * @date 2021-07-09 21:24
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION, property = "type")
-public interface Selector<R, C, D> {
+public interface Selector<R, C, D> extends Serializable {
     
     /**
      * parse the selector, build the inner info which used by {@link #select(Object)}.
