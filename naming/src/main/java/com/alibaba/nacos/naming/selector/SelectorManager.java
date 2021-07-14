@@ -71,7 +71,7 @@ public class SelectorManager {
         Collection<SelectorContextBuilder> selectorContextBuilders = NacosServiceLoader.load(SelectorContextBuilder.class);
         for (SelectorContextBuilder selectorContextBuilder : selectorContextBuilders) {
             if (contextBuilders.containsKey(selectorContextBuilder.getContextType())) {
-                Loggers.SRV_LOG.warn("[SelectorManager] init selectorContextBuilders, SelectorContextBuilder type {} have value, ignore it.",
+                Loggers.SRV_LOG.warn("[SelectorManager] init selectorContextBuilders, SelectorContextBuilder type {} has value, ignore it.",
                         selectorContextBuilder.getContextType());
                 continue;
             }
@@ -86,7 +86,7 @@ public class SelectorManager {
         Collection<Selector> selectors = NacosServiceLoader.load(Selector.class);
         for (Selector selector : selectors) {
             if (selectorTypes.containsKey(selector.getType())) {
-                Loggers.SRV_LOG.warn("[SelectorManager] init Selectors, Selector type {} have value, ignore it.", selector.getType());
+                Loggers.SRV_LOG.warn("[SelectorManager] init Selectors, Selector type {} has value, ignore it.", selector.getType());
                 continue;
             }
             Class<? extends Selector> selectorClass = selector.getClass();
