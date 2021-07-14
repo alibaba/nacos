@@ -18,17 +18,14 @@ package com.alibaba.nacos.api.remote;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import org.reflections.Reflections;
 
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * payload regitry,include all request and response.
+ * payload regitry, include all request and response.
  *
  * @author liuzunfei
  * @version $Id: PayloadRegistry.java, v 0.1 2020年09月01日 10:56 AM liuzunfei Exp $
@@ -36,7 +33,7 @@ import java.util.Set;
 
 public class PayloadRegistry {
     
-    private static final Map<String, Class> REGISTRY_REQUEST = new HashMap<String, Class>();
+    private static final Map<String, Class> REGISTRY_REQUEST = new HashMap<>();
     
     static boolean initialized = false;
     
@@ -48,28 +45,17 @@ public class PayloadRegistry {
         if (initialized) {
             return;
         }
-        
-        List<String> requestScanPackage = Arrays
-                .asList("com.alibaba.nacos.api.naming.remote.request", "com.alibaba.nacos.api.config.remote.request",
-                        "com.alibaba.nacos.api.remote.request", "com.alibaba.nacos.naming.cluster.remote.request");
-        for (String pkg : requestScanPackage) {
-            Reflections reflections = new Reflections(pkg);
-            Set<Class<? extends Request>> subTypesRequest = reflections.getSubTypesOf(Request.class);
-            for (Class clazz : subTypesRequest) {
-                register(clazz.getSimpleName(), clazz);
-            }
+        PayLoaderProviderScanner payLoaderProviderScanner = new PayLoaderProviderScanner();
+        payLoaderProviderScanner.init();
+
+        Set<Class<? extends Request>> subTypesRequest = payLoaderProviderScanner.getAllPayLoadRequestSet();
+        for (Class clazz : subTypesRequest) {
+            register(clazz.getSimpleName(), clazz);
         }
         
-        List<String> responseScanPackage = Arrays
-                .asList("com.alibaba.nacos.api.naming.remote.response",
-                "com.alibaba.nacos.api.config.remote.response", "com.alibaba.nacos.api.remote.response",
-                "com.alibaba.nacos.naming.cluster.remote.response");
-        for (String pkg : responseScanPackage) {
-            Reflections reflections = new Reflections(pkg);
-            Set<Class<? extends Response>> subTypesOfResponse = reflections.getSubTypesOf(Response.class);
-            for (Class clazz : subTypesOfResponse) {
-                register(clazz.getSimpleName(), clazz);
-            }
+        Set<Class<? extends Response>> subTypesOfResponse = payLoaderProviderScanner.getAllPayLoadResponseSet();
+        for (Class clazz : subTypesOfResponse) {
+            register(clazz.getSimpleName(), clazz);
         }
         
         initialized = true;
