@@ -16,6 +16,7 @@ public class PayLoaderProviderScannerTest {
     @Test
     public void getAllPayLoadRequestSetTest() {
         PayLoaderProviderScanner payLoaderProviderScanner = new PayLoaderProviderScanner();
+        payLoaderProviderScanner.init();
         try {
             Set<Class<? extends Request>> set = payLoaderProviderScanner.getAllPayLoadRequestSet();
             for (Class<? extends Request> newPayLoadRequest : set) {
@@ -29,6 +30,7 @@ public class PayLoaderProviderScannerTest {
     @Test
     public void getAllPayLoadResponseSetTest() {
         PayLoaderProviderScanner payLoaderProviderScanner = new PayLoaderProviderScanner();
+        payLoaderProviderScanner.init();
         try {
             Set<Class<? extends Response>> set = payLoaderProviderScanner.getAllPayLoadResponseSet();
             for (Class<? extends Response> newPayLoadRequest : set) {
