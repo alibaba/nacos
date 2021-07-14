@@ -41,7 +41,6 @@ public class CmdbContext {
      */
     private List<CmdbInstance> providers;
     
-    
     public CmdbInstance getConsumer() {
         return consumer;
     }
@@ -66,7 +65,7 @@ public class CmdbContext {
     public static class CmdbInstance<T extends Instance> {
     
         /**
-         * the CMDB info of instance
+         * the CMDB info of instance.
          */
         private Entity entity;
     
