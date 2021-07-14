@@ -42,6 +42,7 @@ import java.util.List;
  * @see com.alibaba.nacos.common.utils.JacksonUtils
  * @since 0.7.0
  */
+@Deprecated
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = NoneSelector.class)
 public interface Selector extends Serializable {
     

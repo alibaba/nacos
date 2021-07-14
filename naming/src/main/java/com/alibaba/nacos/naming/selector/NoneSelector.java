@@ -30,6 +30,7 @@ import java.util.List;
  * @author nkorange
  * @since 0.7.0
  */
+@Deprecated
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class NoneSelector extends com.alibaba.nacos.api.selector.NoneSelector implements Selector {
     
