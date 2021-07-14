@@ -117,9 +117,10 @@ public class ServerHttpAgent implements HttpAgent {
     @Override
     public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        final long endTime = System.currentTimeMillis() + readTimeoutMs;
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
+        long delay = maxRetry * (readTimeoutMs + 3000);
+        final long endTime = System.currentTimeMillis() + delay;
         HttpClientConfig httpConfig = HttpClientConfig.builder()
                 .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
                 .setConTimeOutMillis(ConfigHttpClientManager.getInstance().getConnectTimeoutOrDefault(3000)).build();
