@@ -92,7 +92,7 @@ public class SelectorManager {
             Class<? extends Selector> selectorClass = selector.getClass();
             try {
                 Constructor constructor = selectorClass.getConstructor();
-                if (!constructor.isAccessible()) {
+                if (Objects.isNull(constructor)) {
                     throw new NoSuchMethodException();
                 }
                 // register json serial.

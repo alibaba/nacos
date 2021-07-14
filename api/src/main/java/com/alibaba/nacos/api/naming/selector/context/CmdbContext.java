@@ -58,7 +58,12 @@ public class CmdbContext {
         this.providers = providers;
     }
     
-    static class CmdbInstance<T extends Instance> {
+    @Override
+    public String toString() {
+        return "CmdbContext{" + "consumer=" + consumer + ", providers=" + providers + '}';
+    }
+    
+    public static class CmdbInstance<T extends Instance> {
     
         /**
          * the CMDB info of instance
@@ -84,6 +89,11 @@ public class CmdbContext {
     
         public void setInstance(T instance) {
             this.instance = instance;
+        }
+    
+        @Override
+        public String toString() {
+            return "CmdbInstance{" + "entity=" + entity + ", instance=" + instance + '}';
         }
     }
 }

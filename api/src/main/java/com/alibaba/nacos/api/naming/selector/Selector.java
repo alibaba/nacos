@@ -26,6 +26,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * {@link #getType()} will return the type.
  * {@link #getContextType()} will return the context type which used by {@link #select(Object)}.
  *
+ * Now, Nacos only provide the {@link AbstractCmdbSelector} for user to implement their own select logic. Other type is waiting.
+ *
  * @author chenglu
  * @date 2021-07-09 21:24
  */
