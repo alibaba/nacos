@@ -30,9 +30,14 @@ import java.util.Enumeration;
  * @author xuanyin.zy
  */
 public class NetUtils {
-    
+
+    @Deprecated
     private static final String CLIENT_NAMING_LOCAL_IP_PROPERTY = "com.alibaba.nacos.client.naming.local.ip";
-    
+
+    private static final String CLIENT_LOCAL_IP_PROPERTY = "com.alibaba.nacos.client.local.ip";
+
+    private static final String CLIENT_LOCAL_PREFER_HOSTNAME_PROPERTY = "com.alibaba.nacos.client.local.preferHostname";
+
     private static final String LEGAL_LOCAL_IP_PROPERTY = "java.net.preferIPv6Addresses";
     
     private static final String DEFAULT_SOLVE_FAILED_RETURN = "resolve_failed";
@@ -48,14 +53,28 @@ public class NetUtils {
         if (!StringUtils.isEmpty(localIp)) {
             return localIp;
         }
-        
-        String ip = System.getProperty(CLIENT_NAMING_LOCAL_IP_PROPERTY, findFirstNonLoopbackAddress());
+
+        if (System.getProperties().containsKey(CLIENT_LOCAL_IP_PROPERTY)) {
+            return localIp = System.getProperty(CLIENT_LOCAL_IP_PROPERTY, getAddress());
+        }
+
+        String ip = System.getProperty(CLIENT_NAMING_LOCAL_IP_PROPERTY, getAddress());
         
         return localIp = ip;
         
     }
+
+    private static String getAddress() {
+        InetAddress inetAddress = findFirstNonLoopbackAddress();
+        if (inetAddress == null) {
+            return DEFAULT_SOLVE_FAILED_RETURN;
+        }
+
+        boolean preferHost = Boolean.parseBoolean(System.getProperty(CLIENT_LOCAL_PREFER_HOSTNAME_PROPERTY));
+        return preferHost ? inetAddress.getHostName() : inetAddress.getHostAddress();
+    }
     
-    private static String findFirstNonLoopbackAddress() {
+    private static InetAddress findFirstNonLoopbackAddress() {
         InetAddress result = null;
         
         try {
@@ -87,16 +106,16 @@ public class NetUtils {
         }
         
         if (result != null) {
-            return result.getHostAddress();
+            return result;
         }
         
         try {
-            return InetAddress.getLocalHost().getHostAddress();
+            return InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
             //ignore
         }
         
-        return DEFAULT_SOLVE_FAILED_RETURN;
+        return null;
         
     }
 }
