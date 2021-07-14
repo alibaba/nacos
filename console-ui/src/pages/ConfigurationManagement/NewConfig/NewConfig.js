@@ -80,6 +80,7 @@ class NewConfig extends React.Component {
       encrypt: false,
       addonBefore: '',
       showGroupWarning: false,
+      editorClass: 'editor-normal',
     };
     this.codeValue = '';
     this.mode = 'text';
@@ -99,6 +100,7 @@ class NewConfig extends React.Component {
     } else {
       this.initMoacoEditor();
     }
+    this.initFullScreenEvent();
   }
 
   changeModel(type) {
@@ -129,12 +131,26 @@ class NewConfig extends React.Component {
       readOnly: false,
       lineNumbersMinChars: true,
       theme: 'vs-dark',
-      wordWrapColumn: 120,
       folding: true,
       showFoldingControls: 'always',
-      wordWrap: 'wordWrapColumn',
       cursorStyle: 'line',
       automaticLayout: true,
+    });
+  }
+
+  initFullScreenEvent() {
+    document.body.addEventListener('keydown', e => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        this.setState({
+          editorClass: 'editor-full-screen',
+        });
+      }
+      if (e.key === 'Escape') {
+        this.setState({
+          editorClass: 'editor-normal',
+        });
+      }
     });
   }
 
@@ -435,6 +451,7 @@ class NewConfig extends React.Component {
         label: 'Properties',
       },
     ];
+    const { editorClass } = this.state;
 
     return (
       <div style={{ padding: 10 }}>
@@ -499,7 +516,13 @@ class NewConfig extends React.Component {
                 {locale.annotation}
               </Message>
             </FormItem>
-
+            <FormItem label=" ">
+              <div>
+                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
+                  {this.state.showmore ? locale.dataIdLength : locale.collapse}
+                </a>
+              </div>
+            </FormItem>
             <FormItem
               label={locale.tags}
               className={`more-item${!this.state.showmore ? ' hide' : ''}`}
@@ -527,13 +550,6 @@ class NewConfig extends React.Component {
               className={`more-item${!this.state.showmore ? ' hide' : ''}`}
             >
               <Input {...init('appName')} readOnly={this.inApp} />
-            </FormItem>
-            <FormItem label=" ">
-              <div className="more-container">
-                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                  {this.state.showmore ? locale.dataIdLength : locale.collapse}
-                </a>
-              </div>
             </FormItem>
 
             <FormItem label={locale.description}>
@@ -575,7 +591,7 @@ class NewConfig extends React.Component {
               }
               required
             >
-              <div id={'container'} style={{ width: '100%', height: 300 }} />
+              <div id={'container'} className={editorClass} style={{ height: 450 }} />
             </FormItem>
 
             <FormItem label=" ">

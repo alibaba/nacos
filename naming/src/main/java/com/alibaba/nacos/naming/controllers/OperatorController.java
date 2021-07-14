@@ -17,12 +17,15 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
@@ -34,12 +37,10 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,7 +49,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,10 +58,9 @@ import java.util.List;
  * @author nkorange
  */
 @RestController
-@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator", UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
+@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
+        UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 public class OperatorController {
-    
-    private final PushService pushService;
     
     private final SwitchManager switchManager;
     
@@ -79,10 +78,9 @@ public class OperatorController {
     
     private final RaftCore raftCore;
     
-    public OperatorController(PushService pushService, SwitchManager switchManager, ServerListManager serverListManager,
+    public OperatorController(SwitchManager switchManager, ServerListManager serverListManager,
             ServiceManager serviceManager, ServerMemberManager memberManager, ServerStatusManager serverStatusManager,
             SwitchDomain switchDomain, DistroMapper distroMapper, RaftCore raftCore) {
-        this.pushService = pushService;
         this.switchManager = switchManager;
         this.serverListManager = serverListManager;
         this.serviceManager = serviceManager;
@@ -103,38 +101,26 @@ public class OperatorController {
     @RequestMapping("/push/state")
     public ObjectNode pushState(@RequestParam(required = false) boolean detail,
             @RequestParam(required = false) boolean reset) {
-        
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
-        List<PushService.Receiver.AckEntry> failedPushes = PushService.getFailedPushes();
-        int failedPushCount = pushService.getFailedPushCount();
-        result.put("succeed", pushService.getTotalPush() - failedPushCount);
-        result.put("total", pushService.getTotalPush());
-        
-        if (pushService.getTotalPush() > 0) {
-            result.put("ratio", ((float) pushService.getTotalPush() - failedPushCount) / pushService.getTotalPush());
+        int failedPushCount = MetricsMonitor.getFailedPushMonitor().get();
+        int totalPushCount = MetricsMonitor.getTotalPushMonitor().get();
+        result.put("succeed", totalPushCount - failedPushCount);
+        result.put("total", totalPushCount);
+        if (totalPushCount > 0) {
+            result.put("ratio", ((float) totalPushCount - failedPushCount) / totalPushCount);
         } else {
             result.put("ratio", 0);
         }
-        
-        ArrayNode dataArray = JacksonUtils.createEmptyArrayNode();
         if (detail) {
-            for (PushService.Receiver.AckEntry entry : failedPushes) {
-                try {
-                    dataArray.add(new String(entry.origin.getData(), "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    dataArray.add("[encoding failure]");
-                }
-            }
-            result.replace("data", dataArray);
+            ObjectNode detailNode = JacksonUtils.createEmptyJsonNode();
+            detailNode.put("avgPushCost", MetricsMonitor.getAvgPushCostMonitor().get());
+            detailNode.put("maxPushCost", MetricsMonitor.getMaxPushCostMonitor().get());
+            result.replace("detail", detailNode);
         }
-        
         if (reset) {
-            PushService.resetPushState();
+            MetricsMonitor.resetPush();
         }
-        
         result.put("reset", reset);
-        
         return result;
     }
     
@@ -176,65 +162,54 @@ public class OperatorController {
      */
     @GetMapping("/metrics")
     public ObjectNode metrics(HttpServletRequest request) {
-        
+        boolean onlyStatus = Boolean.parseBoolean(WebUtils.optional(request, "onlyStatus", "true"));
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
-        int serviceCount = serviceManager.getServiceCount();
-        int ipCount = serviceManager.getInstanceCount();
-        
+        result.put("status", serverStatusManager.getServerStatus().name());
+        if (onlyStatus) {
+            return result;
+        }
         int responsibleDomCount = serviceManager.getResponsibleServiceCount();
         int responsibleIpCount = serviceManager.getResponsibleInstanceCount();
-        
-        result.put("status", serverStatusManager.getServerStatus().name());
-        result.put("serviceCount", serviceCount);
-        result.put("instanceCount", ipCount);
+        result.put("serviceCount", MetricsMonitor.getDomCountMonitor().get());
+        result.put("instanceCount", MetricsMonitor.getIpCountMonitor().get());
+        result.put("subscribeCount", MetricsMonitor.getSubscriberCount().get());
         result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIpCount);
         result.put("cpu", EnvUtil.getCPU());
         result.put("load", EnvUtil.getLoad());
         result.put("mem", EnvUtil.getMem());
-        
         return result;
     }
     
     @GetMapping("/distro/server")
     public ObjectNode getResponsibleServer4Service(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName) {
-        
+            @RequestParam String serviceName) throws NacosException {
         Service service = serviceManager.getService(namespaceId, serviceName);
         
-        if (service == null) {
-            throw new IllegalArgumentException("service not found");
-        }
+        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
         result.put("responsibleServer", distroMapper.mapSrv(serviceName));
-        
+        return result;
+    }
+    
+    @GetMapping("/distro/client")
+    public ObjectNode getResponsibleServer4Client(@RequestParam String ip, @RequestParam String port) {
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        String tag = ip + InternetAddressUtil.IP_PORT_SPLITER + port;
+        result.put("responsibleServer", distroMapper.mapSrv(tag));
         return result;
     }
     
     /**
-     * Get distro metric status.
+     * This interface will be removed in a future release.
      *
-     * @param action action
-     * @return distro metric status
+     * @param healthy whether only query health server.
+     * @return "ok"
+     * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0
      */
-    @GetMapping("/distro/status")
-    public ObjectNode distroStatus(@RequestParam(defaultValue = "view") String action) {
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
-        if (StringUtils.equals(SwitchEntry.ACTION_VIEW, action)) {
-            result.replace("status", JacksonUtils.transferToJsonNode(memberManager.allMembers()));
-            return result;
-        }
-        
-        return result;
-    }
-    
     @GetMapping("/servers")
     public ObjectNode getHealthyServerList(@RequestParam(required = false) boolean healthy) {
         

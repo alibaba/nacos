@@ -67,7 +67,9 @@ public abstract class AbstractHealthChecker implements Cloneable, Serializable {
     public static class None extends AbstractHealthChecker {
         
         public static final String TYPE = "NONE";
-        
+    
+        private static final long serialVersionUID = -760631831097384737L;
+    
         public None() {
             super(TYPE);
         }

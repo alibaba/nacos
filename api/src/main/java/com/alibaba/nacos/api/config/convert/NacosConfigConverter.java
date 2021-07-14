@@ -34,7 +34,7 @@ public interface NacosConfigConverter<T> {
     boolean canConvert(Class<T> targetType);
     
     /**
-     * convert the Naocs's config of type S to target type T.
+     * Convert the Nacos' config of type S to target type T.
      *
      * @param config the Naocs's config to convert, which must be an instance of S (never {@code null})
      * @return the converted object, which must be an instance of T (potentially {@code null})

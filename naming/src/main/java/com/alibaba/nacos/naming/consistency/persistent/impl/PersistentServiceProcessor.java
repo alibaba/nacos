@@ -33,13 +33,14 @@ import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.naming.utils.Constants;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.protobuf.ByteString;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -157,5 +158,20 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
     @Override
     public boolean isAvailable() {
         return hasLeader && !hasError;
+    }
+    
+    @Override
+    public Optional<String> getErrorMsg() {
+        String errorMsg;
+        if (hasLeader && hasError) {
+            errorMsg = "The raft peer is in error: " + jRaftErrorMsg;
+        } else if (hasLeader && !hasError) {
+            errorMsg = null;
+        } else if (!hasLeader && hasError) {
+            errorMsg = "Could not find leader! And the raft peer is in error: " + jRaftErrorMsg;
+        } else {
+            errorMsg = "Could not find leader!";
+        }
+        return Optional.ofNullable(errorMsg);
     }
 }

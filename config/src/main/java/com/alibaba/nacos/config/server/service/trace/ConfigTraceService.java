@@ -21,7 +21,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
@@ -186,7 +186,7 @@ public class ConfigTraceService {
      * @param clientIp         clientIp
      */
     public static void logPullEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
-            String type, long delayed, String clientIp) {
+            String type, long delayed, String clientIp, boolean sli) {
         if (!LogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }
@@ -195,8 +195,8 @@ public class ConfigTraceService {
             tenant = null;
         }
         //localIp | dataid | group | tenant| requestIpAppName| ts | event | type | [delayed] | ext(clientIp)
-        LogUtil.TRACE_LOG
-                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant, requestIpAppName,
-                        ts, "pull", type, delayed, clientIp);
+        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
+                requestIpAppName, ts, "pull", type, delayed, clientIp, sli);
     }
+    
 }

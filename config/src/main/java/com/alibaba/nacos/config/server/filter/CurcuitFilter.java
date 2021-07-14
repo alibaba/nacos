@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.filter;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
@@ -113,6 +114,10 @@ public class CurcuitFilter implements Filter {
                 return;
             }
             final List<String> peers = (List<String>) ((ProtocolMetaData.ValueItem) o).getData();
+            if (CollectionUtils.isEmpty(peers)) {
+                isOpenService = false;
+                return;
+            }
             final Member self = memberManager.getSelf();
             final String raftAddress = self.getIp() + ":" + self.getExtendVal(MemberMetaDataConstants.RAFT_PORT);
             // Only when you are in the cluster and the current Leader is

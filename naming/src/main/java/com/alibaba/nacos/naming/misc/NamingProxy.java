@@ -19,11 +19,11 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -202,8 +202,8 @@ public class NamingProxy {
             
             RestResult<String> result;
             
-            if (!IPUtil.containsPort(curServer)) {
-                curServer = curServer + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            if (!InternetAddressUtil.containsPort(curServer)) {
+                curServer = curServer + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
             }
             
             result = HttpClient.httpGet("http://" + curServer + api, headers, params);
@@ -244,8 +244,8 @@ public class NamingProxy {
             
             RestResult<String> result;
             
-            if (!IPUtil.containsPort(curServer)) {
-                curServer = curServer + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            if (!InternetAddressUtil.containsPort(curServer)) {
+                curServer = curServer + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
             }
             
             if (isPost) {
@@ -294,8 +294,8 @@ public class NamingProxy {
             
             RestResult<String> result;
             
-            if (!IPUtil.containsPort(curServer)) {
-                curServer = curServer + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+            if (!InternetAddressUtil.containsPort(curServer)) {
+                curServer = curServer + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
             }
             
             if (isPost) {
@@ -346,7 +346,7 @@ public class NamingProxy {
         public String toUrl() {
             StringBuilder sb = new StringBuilder();
             for (String key : params.keySet()) {
-                sb.append(key).append("=").append(params.get(key)).append("&");
+                sb.append(key).append('=').append(params.get(key)).append('&');
             }
             return sb.toString();
         }

@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.naming.selector;
 
-import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -42,7 +43,7 @@ import java.util.List;
  * @since 0.7.0
  */
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = NoneSelector.class)
-public interface Selector {
+public interface Selector extends Serializable {
     
     /**
      * Get the type of this selector.
@@ -58,5 +59,5 @@ public interface Selector {
      * @param providers candidate provider addresses
      * @return selected provider addresses
      */
-    List<Instance> select(String consumer, List<Instance> providers);
+    <T extends Instance> List<T> select(String consumer, List<T> providers);
 }

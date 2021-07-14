@@ -80,6 +80,8 @@ public class SwitchDomain implements Record, Cloneable {
     
     private boolean lightBeatEnabled = true;
     
+    private boolean doubleWriteEnabled = true;
+    
     private Map<String, Integer> limitedUrlMap = new HashMap<>();
     
     /**
@@ -97,7 +99,7 @@ public class SwitchDomain implements Record, Cloneable {
     private String pushPythonVersion = "0.4.3";
     
     private String pushCVersion = "1.0.12";
-
+    
     private String pushCSharpVersion = "0.9.0";
     
     private boolean enableAuthentication = false;
@@ -332,11 +334,11 @@ public class SwitchDomain implements Record, Cloneable {
     public void setPushGoVersion(String pushGoVersion) {
         this.pushGoVersion = pushGoVersion;
     }
-
+    
     public String getPushCSharpVersion() {
         return pushCSharpVersion;
     }
-
+    
     public void setPushCSharpVersion(String pushCSharpVersion) {
         this.pushCSharpVersion = pushCSharpVersion;
     }
@@ -387,6 +389,14 @@ public class SwitchDomain implements Record, Cloneable {
     
     public void setLightBeatEnabled(boolean lightBeatEnabled) {
         this.lightBeatEnabled = lightBeatEnabled;
+    }
+    
+    public boolean isDoubleWriteEnabled() {
+        return doubleWriteEnabled;
+    }
+    
+    public void setDoubleWriteEnabled(boolean doubleWriteEnabled) {
+        this.doubleWriteEnabled = doubleWriteEnabled;
     }
     
     @Override

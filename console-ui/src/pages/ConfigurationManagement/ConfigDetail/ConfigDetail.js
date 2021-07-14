@@ -59,6 +59,7 @@ class ConfigDetail extends React.Component {
       checkedBeta: false,
       switchEncrypt: false,
       tag: [],
+      editorClass: 'editor-normal',
     };
     this.field = new Field(this);
     this.dataId = getParams('dataId') || 'yanlin';
@@ -78,6 +79,7 @@ class ConfigDetail extends React.Component {
   componentDidMount() {
     this.initData();
     this.getDataDetail();
+    this.initFullScreenEvent();
   }
 
   initData() {
@@ -88,6 +90,22 @@ class ConfigDetail extends React.Component {
       });
     }
     this.setState({ tag: [{ title: locale.official, key: 'normal' }] });
+  }
+
+  initFullScreenEvent() {
+    document.body.addEventListener('keydown', e => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        this.setState({
+          editorClass: 'editor-full-screen',
+        });
+      }
+      if (e.key === 'Escape') {
+        this.setState({
+          editorClass: 'editor-normal',
+        });
+      }
+    });
   }
 
   openLoading() {
@@ -262,7 +280,7 @@ class ConfigDetail extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const { configCompareVisible } = this.state;
+    const { configCompareVisible, editorClass } = this.state;
     const { init } = this.field;
     const formItemLayout = {
       labelCol: {
@@ -299,31 +317,34 @@ class ConfigDetail extends React.Component {
           ) : (
             ''
           )}
-          <Form inline={false} field={this.field}>
-            <FormItem label={'Data ID:'} required {...formItemLayout}>
+          <Form inline={false} field={this.field} {...formItemLayout}>
+            <FormItem label={'Data ID:'} required>
               <Input htmlType={'text'} readOnly {...init('dataId')} />
             </FormItem>
-            <FormItem label={'Group:'} required {...formItemLayout}>
+            <FormItem label={'Group:'} required>
               <Input htmlType={'text'} readOnly {...init('group')} />
             </FormItem>
-            <div style={{ marginTop: 10 }}>
-              <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                {this.state.showmore ? locale.collapse : locale.more}
-              </a>
-            </div>
-            {this.state.showmore ? (
+            <FormItem label=" ">
               <div>
-                <FormItem label={locale.home} {...formItemLayout}>
-                  <Input htmlType={'text'} readOnly {...init('appName')} />
-                </FormItem>
-
-                <FormItem label={locale.tags} {...formItemLayout}>
-                  <Input htmlType={'text'} readOnly {...init('config_tags')} />
-                </FormItem>
+                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
+                  {this.state.showmore ? locale.collapse : locale.more}
+                </a>
               </div>
-            ) : (
-              ''
-            )}
+            </FormItem>
+
+            <FormItem
+              label={locale.home}
+              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+            >
+              <Input htmlType={'text'} readOnly {...init('appName')} />
+            </FormItem>
+
+            <FormItem
+              label={locale.tags}
+              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+            >
+              <Input htmlType={'text'} readOnly {...init('config_tags')} />
+            </FormItem>
 
             <FormItem label={locale.description} {...formItemLayout}>
               <Input.TextArea htmlType={'text'} multiple rows={3} readOnly {...init('desc')} />
@@ -331,7 +352,7 @@ class ConfigDetail extends React.Component {
             {activeKey === 'normal' ? (
               ''
             ) : (
-              <FormItem label={locale.betaRelease} {...formItemLayout}>
+              <FormItem label={locale.betaRelease}>
                 <div style={{ width: '100%' }} id={'betaips'}>
                   <Input.TextArea
                     multiple
@@ -343,22 +364,22 @@ class ConfigDetail extends React.Component {
                 </div>
               </FormItem>
             )}
-            <FormItem label={'MD5:'} required {...formItemLayout}>
+            <FormItem label={'MD5:'} required>
               <Input htmlType={'text'} readOnly {...init('md5')} />
             </FormItem>
-            <FormItem label={locale.configuration} required {...formItemLayout}>
-              <div style={{ clear: 'both', height: 300 }} id="container" />
+            <FormItem label={locale.configuration} required>
+              <div className={editorClass} id="container" style={{ height: 500 }} />
             </FormItem>
           </Form>
           <Row>
             <Col span="24" className="button-list">
-              <Button size="large" type="primary" onClick={() => this.onClickConfigCompare()}>
+              <Button type="primary" onClick={() => this.onClickConfigCompare()}>
                 {locale.configComparison}
               </Button>{' '}
-              <Button size="large" type="primary" onClick={this.openDiff.bind(this)}>
+              <Button type="primary" onClick={this.openDiff.bind(this)}>
                 {locale.versionComparison}
               </Button>{' '}
-              <Button size="large" type="normal" onClick={this.goList.bind(this)}>
+              <Button type="normal" onClick={this.goList.bind(this)}>
                 {locale.back}
               </Button>
             </Col>

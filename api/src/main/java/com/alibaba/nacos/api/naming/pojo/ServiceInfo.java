@@ -39,7 +39,13 @@ public class ServiceInfo {
     @JsonIgnore
     private String jsonFromServer = EMPTY;
     
+    private static final String EMPTY = "";
+    
+    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
+    
     public static final String SPLITER = "@@";
+    
+    private static final String DEFAULT_CHARSET = "UTF-8";
     
     private String name;
     
@@ -56,6 +62,8 @@ public class ServiceInfo {
     private String checksum = "";
     
     private volatile boolean allIPs = false;
+    
+    private volatile boolean reachProtectionThreshold = false;
     
     public ServiceInfo() {
     }
@@ -109,6 +117,18 @@ public class ServiceInfo {
         this.hosts = hosts;
     }
     
+    public void addHost(Instance host) {
+        hosts.add(host);
+    }
+    
+    public void addAllHosts(List<? extends Instance> hosts) {
+        this.hosts.addAll(hosts);
+    }
+    
+    public List<Instance> getHosts() {
+        return new ArrayList<Instance>(hosts);
+    }
+    
     public boolean isValid() {
         return hosts != null;
     }
@@ -151,10 +171,6 @@ public class ServiceInfo {
     
     public void setCacheMillis(long cacheMillis) {
         this.cacheMillis = cacheMillis;
-    }
-    
-    public List<Instance> getHosts() {
-        return new ArrayList<Instance>(hosts);
     }
     
     /**
@@ -214,7 +230,7 @@ public class ServiceInfo {
     public String getKeyEncoded() {
         String serviceName = getGroupedServiceName();
         try {
-            serviceName = URLEncoder.encode(serviceName, "UTF-8");
+            serviceName = URLEncoder.encode(serviceName, DEFAULT_CHARSET);
         } catch (UnsupportedEncodingException e) {
             //do nothing
         }
@@ -223,7 +239,7 @@ public class ServiceInfo {
     
     private String getGroupedServiceName() {
         String serviceName = this.name;
-        if (!isEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+        if (!isEmpty(groupName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
             serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         }
         return serviceName;
@@ -275,7 +291,11 @@ public class ServiceInfo {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
     
-    private static final String EMPTY = "";
-    
-    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
+    public boolean isReachProtectionThreshold() {
+        return reachProtectionThreshold;
+    }
+
+    public void setReachProtectionThreshold(boolean reachProtectionThreshold) {
+        this.reachProtectionThreshold = reachProtectionThreshold;
+    }
 }

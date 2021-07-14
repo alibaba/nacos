@@ -1,0 +1,42 @@
+# This workflow will build a Java project with Maven
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Integration Test
+
+on:
+  push:
+    branches: [ master, develop, v1.x-develop, v1.X ]
+  pull_request:
+    branches: [ develop, v1.x-develop ]
+
+jobs:
+  unix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        java: [8, 11]
+    steps:
+      - name: Cache Maven Repos
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - uses: actions/checkout@v2
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'adopt'
+          architecture: x64
+      - name: Test Config
+        run: mvn clean package -Pcit-test
+      - name: Clean Env
+        run: mvn clean -Premove-test-data
+      - name: Test Naming
+        run: mvn clean package -Pnit-test
+      - name: Clean Env
+        run: mvn clean -Premove-test-data
+

@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.codec.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Sign util.
@@ -30,7 +31,7 @@ import java.nio.charset.Charset;
  */
 public class SignUtil {
     
-    private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final Charset UTF8 = StandardCharsets.UTF_8;
     
     public SignUtil() {
     }

@@ -52,7 +52,7 @@ public class ServerListController {
      * @return result of get
      */
     @RequestMapping(value = "/{product}/{cluster}", method = RequestMethod.GET)
-    public ResponseEntity getCluster(@PathVariable String product, @PathVariable String cluster) {
+    public ResponseEntity<String> getCluster(@PathVariable String product, @PathVariable String cluster) {
         
         String productName = addressServerBuilderManager.generateProductName(product);
         String serviceName = addressServerBuilderManager.generateNacosServiceName(productName);

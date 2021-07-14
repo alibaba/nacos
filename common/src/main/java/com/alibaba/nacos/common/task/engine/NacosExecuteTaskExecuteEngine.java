@@ -104,7 +104,7 @@ public class NacosExecuteTaskExecuteEngine extends AbstractNacosTaskExecuteEngin
     public String workersStatus() {
         StringBuilder sb = new StringBuilder();
         for (TaskExecuteWorker worker : executeWorkers) {
-            sb.append(worker.status()).append("\n");
+            sb.append(worker.status()).append('\n');
         }
         return sb.toString();
     }

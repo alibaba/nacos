@@ -18,11 +18,13 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,14 +34,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 public class ServiceTest extends BaseTest {
     
     private Service service;
     
+    @Mock
+    private DoubleWriteEventListener doubleWriteEventListener;
+    
     @Before
     public void before() {
         super.before();
+        when(context.getBean(DoubleWriteEventListener.class)).thenReturn(doubleWriteEventListener);
         service = new Service("test-service");
         mockInjectPushServer();
         mockInjectHealthCheckProcessor();

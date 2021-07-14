@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.constant.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,7 +135,11 @@ public class ZipUtils {
                         out.write(buffer, 0, offset);
                     }
                     String entryName = entry.getName();
-                    if (".meta.yml".equals(entryName)) {
+                    if (metaDataItem == null && Constants.CONFIG_EXPORT_METADATA.equals(entryName)) {
+                        metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
+                        continue;
+                    }
+                    if (metaDataItem == null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(entryName)) {
                         metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
                         continue;
                     }

@@ -46,6 +46,8 @@ import java.util.Map;
 @SuppressWarnings("all")
 public class SnowFlowerIdGenerator implements IdGenerator {
     
+    private static final String DATETIME_PATTERN =  "yyyy-MM-dd HH:mm:ss.SSS";
+    
     /**
      * Start time intercept (2018-08-05 08:34)
      */
@@ -53,22 +55,22 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     
     private static final Logger logger = LoggerFactory.getLogger(SnowFlowerIdGenerator.class);
     
-    // 序列所占位数
+    // the bits of sequence
     private static final long SEQUENCE_BITS = 12L;
     
-    // workerId所占位数
+    // the bits of workerId
     private static final long WORKER_ID_BITS = 10L;
     
-    // 序列掩码（111111111111B = 4095）
+    // the mask of sequence (111111111111B = 4095)
     private static final long SEQUENCE_MASK = 4095L;
     
-    // workerId左边共12位（序列号）
+    // the left shift bits of workerId equals 12 bits
     private static final long WORKER_ID_LEFT_SHIFT_BITS = 12L;
     
-    // 时间戳左边共22位（序列号+workerId）
+    // the left shift bits of timestamp equals 22 bits (WORKER_ID_LEFT_SHIFT_BITS + workerId)
     private static final long TIMESTAMP_LEFT_SHIFT_BITS = 22L;
     
-    // 工作机器ID最大值1024
+    // the max of worker ID is 1024
     private static final long WORKER_ID_MAX_VALUE = 1024L;
     
     private long workerId;
@@ -122,7 +124,7 @@ public class SnowFlowerIdGenerator implements IdGenerator {
         }
         
         this.lastTime = currentMillis;
-        logger.debug("{}-{}-{}", (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")).format(new Date(this.lastTime)),
+        logger.debug("{}-{}-{}", (new SimpleDateFormat(DATETIME_PATTERN)).format(new Date(this.lastTime)),
                 workerId, this.sequence);
         
         currentId = currentMillis - EPOCH << 22 | workerId << 12 | this.sequence;

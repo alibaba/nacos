@@ -151,7 +151,7 @@ public final class HttpUtils {
                 if (subPath.startsWith("/")) {
                     sb.append(subPath);
                 } else {
-                    sb.append("/").append(subPath);
+                    sb.append('/').append(subPath);
                 }
             } else {
                 if (subPath.startsWith("/")) {
@@ -199,9 +199,9 @@ public final class HttpUtils {
                 continue;
             }
             
-            sb.append(entry.getKey()).append("=");
+            sb.append(entry.getKey()).append('=');
             sb.append(URLEncoder.encode(entry.getValue(), encoding));
-            sb.append("&");
+            sb.append('&');
         }
         
         return sb.toString();
@@ -222,10 +222,10 @@ public final class HttpUtils {
         }
         
         for (Iterator<String> iter = paramValues.iterator(); iter.hasNext(); ) {
-            sb.append(iter.next()).append("=");
+            sb.append(iter.next()).append('=');
             sb.append(URLEncoder.encode(iter.next(), encoding));
             if (iter.hasNext()) {
-                sb.append("&");
+                sb.append('&');
             }
         }
         return sb.toString();

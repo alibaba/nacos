@@ -21,7 +21,7 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -57,12 +57,14 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         jt = persistService.getJdbcTemplate();
     }
     
+    @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
-        String sqlFetchRows = "select role,username from roles where ";
+        String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
+
+        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " 1=1 ";
         
@@ -82,12 +84,14 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         }
     }
     
+    @Override
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-        
-        String sqlCountRows = "select count(*) from roles where ";
-        String sqlFetchRows = "select role,username from roles where ";
+
+        String sqlCountRows = "SELECT count(*) FROM roles WHERE ";
+
+        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " username= ? ";
         List<String> params = new ArrayList<>();
@@ -112,9 +116,10 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      * @param role     role string value.
      * @param userName username string value.
      */
+    @Override
     public void addRole(String role, String userName) {
         
-        String sql = "INSERT into roles (role, username) VALUES (?, ?)";
+        String sql = "INSERT INTO roles (role, username) VALUES (?, ?)";
         
         try {
             jt.update(sql, role, userName);
@@ -129,8 +134,9 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      *
      * @param role role string value.
      */
+    @Override
     public void deleteRole(String role) {
-        String sql = "DELETE from roles WHERE role=?";
+        String sql = "DELETE FROM roles WHERE role=?";
         try {
             jt.update(sql, role);
         } catch (CannotGetJdbcConnectionException e) {
@@ -145,8 +151,9 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      * @param role     role string value.
      * @param username username string value.
      */
+    @Override
     public void deleteRole(String role, String username) {
-        String sql = "DELETE from roles WHERE role=? and username=?";
+        String sql = "DELETE FROM roles WHERE role=? AND username=?";
         try {
             jt.update(sql, role, username);
         } catch (CannotGetJdbcConnectionException e) {
@@ -157,7 +164,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public List<String> findRolesLikeRoleName(String role) {
-        String sql = "SELECT role FROM roles WHERE role like '%' ? '%'";
+        String sql = "SELECT role FROM roles WHERE role LIKE '%' ? '%'";
         List<String> users = this.jt.queryForList(sql, new String[] {role}, String.class);
         return users;
     }

@@ -30,22 +30,17 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author zongtanghu
  */
-public class DefaultSharePublisher extends DefaultPublisher {
+public class DefaultSharePublisher extends DefaultPublisher implements ShardedEventPublisher {
     
-    private final Map<Class<? extends SlowEvent>, Set<Subscriber>> subMappings = new ConcurrentHashMap<Class<? extends SlowEvent>, Set<Subscriber>>();
+    private final Map<Class<? extends SlowEvent>, Set<Subscriber>> subMappings = new ConcurrentHashMap<>();
     
     private final Lock lock = new ReentrantLock();
     
-    /**
-     * Add listener for default share publisher.
-     *
-     * @param subscriber    {@link Subscriber}
-     * @param subscribeType subscribe event type, such as slow event or general event.
-     */
+    @Override
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
         // Actually, do a classification based on the slowEvent type.
         Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;
-        // For adding to parent class attributes synchronization.
+        // For stop waiting subscriber, see {@link DefaultPublisher#openEventHandler}.
         subscribers.add(subscriber);
         
         lock.lock();
@@ -63,12 +58,7 @@ public class DefaultSharePublisher extends DefaultPublisher {
         }
     }
     
-    /**
-     * Remove listener for default share publisher.
-     *
-     * @param subscriber    {@link Subscriber}
-     * @param subscribeType subscribe event type, such as slow event or general event.
-     */
+    @Override
     public void removeSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
         // Actually, do a classification based on the slowEvent type.
         Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;

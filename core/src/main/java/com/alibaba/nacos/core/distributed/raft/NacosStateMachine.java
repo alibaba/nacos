@@ -47,10 +47,10 @@ import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import com.google.protobuf.Message;
-import org.apache.commons.lang3.BooleanUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -270,7 +270,8 @@ class NacosStateMachine extends StateMachineAdapter {
                                 throw new ConsistencyException(e);
                             }
                         });
-                        final Status status = result && BooleanUtils.and(results) ? Status.OK()
+                        final Status status = result
+                                && !Arrays.asList(results).stream().anyMatch(Boolean.FALSE::equals) ? Status.OK()
                                 : new Status(RaftError.EIO, "Fail to compress snapshot at %s, error is %s",
                                         writer.getPath(), t == null ? "" : t.getMessage());
                         done.run(status);

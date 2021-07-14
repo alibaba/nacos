@@ -16,28 +16,61 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 /**
  * Distro configuration.
  *
  * @author xiweng.yy
  */
-@Component
-public class DistroConfig {
+public class DistroConfig extends Subscriber<ServerConfigChangeEvent> {
     
-    @Value("${nacos.core.protocol.distro.data.sync_delay_ms:1000}")
-    private long syncDelayMillis = 1000;
+    private static final DistroConfig INSTANCE = new DistroConfig();
     
-    @Value("${nacos.core.protocol.distro.data.sync_retry_delay_ms:3000}")
-    private long syncRetryDelayMillis = 3000;
+    private long syncDelayMillis = DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS;
     
-    @Value("${nacos.core.protocol.distro.data.verify_interval_ms:5000}")
-    private long verifyIntervalMillis = 5000;
+    private long syncTimeoutMillis = DistroConstants.DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS;
     
-    @Value("${nacos.core.protocol.distro.data.load_retry_delay_ms:30000}")
-    private long loadDataRetryDelayMillis = 30000;
+    private long syncRetryDelayMillis = DistroConstants.DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS;
+    
+    private long verifyIntervalMillis = DistroConstants.DEFAULT_DATA_VERIFY_INTERVAL_MILLISECONDS;
+    
+    private long verifyTimeoutMillis = DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS;
+    
+    private long loadDataRetryDelayMillis = DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS;
+    
+    private DistroConfig() {
+        try {
+            getDistroConfigFromEnv();
+            NotifyCenter.registerSubscriber(this);
+        } catch (Exception e) {
+            Loggers.CORE.warn("Get Distro config from env failed, will use default value", e);
+        }
+    }
+    
+    private void getDistroConfigFromEnv() {
+        syncDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, Long.class,
+                DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS);
+        syncTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS, Long.class,
+                DistroConstants.DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS);
+        syncRetryDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS, Long.class,
+                DistroConstants.DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS);
+        verifyIntervalMillis = EnvUtil.getProperty(DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS, Long.class,
+                DistroConstants.DEFAULT_DATA_VERIFY_INTERVAL_MILLISECONDS);
+        verifyTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS, Long.class,
+                DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS);
+        loadDataRetryDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS, Long.class,
+                DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS);
+    }
+    
+    public static DistroConfig getInstance() {
+        return INSTANCE;
+    }
     
     public long getSyncDelayMillis() {
         return syncDelayMillis;
@@ -45,6 +78,14 @@ public class DistroConfig {
     
     public void setSyncDelayMillis(long syncDelayMillis) {
         this.syncDelayMillis = syncDelayMillis;
+    }
+    
+    public long getSyncTimeoutMillis() {
+        return syncTimeoutMillis;
+    }
+    
+    public void setSyncTimeoutMillis(long syncTimeoutMillis) {
+        this.syncTimeoutMillis = syncTimeoutMillis;
     }
     
     public long getSyncRetryDelayMillis() {
@@ -63,11 +104,33 @@ public class DistroConfig {
         this.verifyIntervalMillis = verifyIntervalMillis;
     }
     
+    public long getVerifyTimeoutMillis() {
+        return verifyTimeoutMillis;
+    }
+    
+    public void setVerifyTimeoutMillis(long verifyTimeoutMillis) {
+        this.verifyTimeoutMillis = verifyTimeoutMillis;
+    }
+    
     public long getLoadDataRetryDelayMillis() {
         return loadDataRetryDelayMillis;
     }
     
     public void setLoadDataRetryDelayMillis(long loadDataRetryDelayMillis) {
         this.loadDataRetryDelayMillis = loadDataRetryDelayMillis;
+    }
+    
+    @Override
+    public void onEvent(ServerConfigChangeEvent event) {
+        try {
+            getDistroConfigFromEnv();
+        } catch (Exception e) {
+            Loggers.CORE.warn("Upgrade Distro config from env failed, will use old value", e);
+        }
+    }
+    
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return ServerConfigChangeEvent.class;
     }
 }

@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.AclInfo;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -34,6 +34,13 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  */
 @Service
 public class ClientIpWhiteList {
+
+    public static final String CLIENT_IP_WHITELIST_METADATA = "com.alibaba.nacos.metadata.clientIpWhitelist";
+
+    private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<List<String>>(
+            new ArrayList<String>());
+
+    private static Boolean isOpen = false;
     
     /**
      * Judge whether specified client ip includes in the whitelist.
@@ -83,11 +90,4 @@ public class ClientIpWhiteList {
             DEFAULT_LOG.error("failed to load clientIpWhiteList, " + ioe.toString(), ioe);
         }
     }
-    
-    public static final String CLIENT_IP_WHITELIST_METADATA = "com.alibaba.nacos.metadata.clientIpWhitelist";
-    
-    private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<List<String>>(
-            new ArrayList<String>());
-    
-    private static Boolean isOpen = false;
 }

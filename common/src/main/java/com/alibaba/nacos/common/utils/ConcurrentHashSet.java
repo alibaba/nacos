@@ -17,10 +17,7 @@
 package com.alibaba.nacos.common.utils;
 
 import java.util.AbstractSet;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -49,11 +46,7 @@ public class ConcurrentHashSet<E> extends AbstractSet<E> {
     
     @Override
     public Iterator<E> iterator() {
-        List<E> list = new ArrayList<E>();
-        for (Map.Entry<E, Boolean> entry : map.entrySet()) {
-            list.add(entry.getKey());
-        }
-        return list.iterator();
+        return map.keySet().iterator();
     }
     
     @Override

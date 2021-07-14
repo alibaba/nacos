@@ -23,7 +23,7 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -193,10 +193,10 @@ public class CapacityManagementAspect {
     private void correctUsage(String group, String tenant, boolean hasTenant) {
         try {
             if (hasTenant) {
-                LOGGER.info("主动修正usage, tenant: {}", tenant);
+                LOGGER.info("[capacityManagement] correct usage, tenant: {}", tenant);
                 capacityService.correctTenantUsage(tenant);
             } else {
-                LOGGER.info("主动修正usage, group: {}", group);
+                LOGGER.info("[capacityManagement] correct usage, group: {}", group);
                 capacityService.correctGroupUsage(group);
             }
         } catch (Exception e) {

@@ -50,6 +50,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class MergeDatumService {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(MergeDatumService.class);
+    
+    final TaskManager mergeTasks;
+    
     private PersistService persistService;
     
     static final int INIT_THREAD_COUNT = 40;
@@ -180,9 +184,4 @@ public class MergeDatumService {
             LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
         }
     }
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(MergeDatumService.class);
-    
-    final TaskManager mergeTasks;
-    
 }

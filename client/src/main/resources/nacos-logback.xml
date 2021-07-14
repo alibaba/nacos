@@ -52,11 +52,35 @@
         </encoder>
     </appender>
     
+    <appender name="REMOTE_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${JM.LOG.PATH}/nacos/remote.log</file>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${JM.LOG.PATH}/nacos/remote.log.%i</fileNamePattern>
+            <maxIndex>${JM.LOG.RETAIN.COUNT:-7}</maxIndex>
+        </rollingPolicy>
+        
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${JM.LOG.FILE.SIZE:-10MB}</maxFileSize>
+        </triggeringPolicy>
+        
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
+        </encoder>
+    </appender>
+    
     
     <logger name="com.alibaba.nacos.client" level="${com.alibaba.nacos.config.log.level:-info}"
         additivity="false">
         <appender-ref ref="CONFIG_LOG_FILE"/>
     </logger>
+    
+    
+    <Logger name="com.alibaba.nacos.common.remote.client" level="${com.alibaba.nacos.log.level:-info}"
+        additivity="false">
+        <appender-ref ref="REMOTE_LOG_FILE"/>
+    </Logger>
+    
     
     <logger name="com.alibaba.nacos.client.config" level="${com.alibaba.nacos.config.log.level:-info}"
         additivity="false">

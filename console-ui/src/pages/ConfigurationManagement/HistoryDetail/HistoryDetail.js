@@ -60,11 +60,6 @@ class HistoryDetail extends React.Component {
   getDataDetail() {
     const { locale = {} } = this.props;
     const self = this;
-    const typeMap = {
-      U: locale.update,
-      I: locale.insert,
-      D: locale.deleteAction,
-    };
     request({
       url: `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
       success(result) {
@@ -74,8 +69,9 @@ class HistoryDetail extends React.Component {
           self.field.setValue('content', data.content);
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
           self.field.setValue('envs', self.serverId);
-          self.field.setValue('srcUser', self.srcUser);
-          self.field.setValue('opType', typeMap[data.opType.trim()]);
+          self.field.setValue('srcUser', data.srcUser);
+          self.field.setValue('srcIp', data.srcIp);
+          self.field.setValue('opType', data.opType.trim());
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
         }
@@ -85,8 +81,20 @@ class HistoryDetail extends React.Component {
 
   goList() {
     this.props.history.push(
-      `/historyRollback?serverId=${this.serverId}&group=${this.group}&dataId=${this.dataId}&namespace=${this.tenant}`
+      `/historyRollback?serverId=${this.serverId}&historyGroup=${this.group}&historyDataId=${this.dataId}&namespace=${this.tenant}`
     );
+  }
+
+  getOpType(type, locale) {
+    if (type) {
+      const typeMap = {
+        U: locale.update,
+        I: locale.insert,
+        D: locale.deleteAction,
+      };
+      return typeMap[type];
+    }
+    return '';
   }
 
   render() {
@@ -100,6 +108,7 @@ class HistoryDetail extends React.Component {
         span: 18,
       },
     };
+    const { getOpType } = this;
     return (
       <div style={{ padding: 10 }}>
         <h1>{locale.historyDetails}</h1>
@@ -123,8 +132,11 @@ class HistoryDetail extends React.Component {
           <Form.Item label={locale.operator} required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('srcUser')} />
           </Form.Item>
+          <Form.Item label={locale.sourceIp} required {...formItemLayout}>
+            <Input htmlType="text" readOnly {...init('srcIp')} />
+          </Form.Item>
           <Form.Item label={locale.actionType} required {...formItemLayout}>
-            <Input htmlType="text" readOnly {...init('opType')} />
+            <Input htmlType="text" readOnly value={getOpType(init('opType').value, locale)} />
           </Form.Item>
           <Form.Item label="MD5:" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('md5')} />
