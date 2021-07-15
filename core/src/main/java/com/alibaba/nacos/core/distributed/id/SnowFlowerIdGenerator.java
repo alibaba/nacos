@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.distributed.id;
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +28,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * copy from http://www.cluozy.com/home/hexo/2018/08/11/shariding-JDBC-snowflake/.
@@ -72,13 +72,19 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     
     // the max of worker ID is 1024
     private static final long WORKER_ID_MAX_VALUE = 1024L;
-    
+
+    //CLOCK_REALTIME
+    private final long startWallTime = System.currentTimeMillis();
+
+    //CLOCK_MONOTONIC
+    private final long monotonicStartTime = System.nanoTime();
+
     private long workerId;
-    
+
     private long sequence;
-    
+
     private long lastTime;
-    
+
     private long currentId;
     
     {
@@ -111,10 +117,8 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     
     @Override
     public synchronized long nextId() {
-        long currentMillis = System.currentTimeMillis();
-        Preconditions.checkState(this.lastTime <= currentMillis,
-                "Clock is moving backwards, last time is %d milliseconds, current time is %d milliseconds",
-                new Object[] {this.lastTime, currentMillis});
+        long currentMillis = currentTimeMillis();
+
         if (this.lastTime == currentMillis) {
             if (0L == (this.sequence = ++this.sequence & 4095L)) {
                 currentMillis = this.waitUntilNextTime(currentMillis);
@@ -163,13 +167,18 @@ public class SnowFlowerIdGenerator implements IdGenerator {
      */
     private long waitUntilNextTime(long lastTimestamp) {
         long time;
-        time = System.currentTimeMillis();
+        time = currentTimeMillis();
         while (time <= lastTimestamp) {
-            ;
-            time = System.currentTimeMillis();
+            time = currentTimeMillis();
+            //System.nanoTime() is much faster than System.currentTimeMillis(), so execute System.currentTimeMillis() call to reduce CPU consumption.
+            logger.trace("wall time:{}, monotonic time:{}", System.currentTimeMillis(), time);
         }
-        
+
         return time;
     }
-    
+
+    private long currentTimeMillis() {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - monotonicStartTime) + startWallTime;
+    }
+
 }
