@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.naming.selector.context.CmdbContext;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -56,7 +55,7 @@ public class MockSelector extends AbstractCmdbSelector<Instance> {
     }
     
     @Override
-    protected List<Instance> doSelect(CmdbContext context) {
+    protected List<Instance> doSelect(CmdbContext<Instance> context) {
         if (context.getProviders() == null) {
             return null;
         }
@@ -69,12 +68,12 @@ public class MockSelector extends AbstractCmdbSelector<Instance> {
                     }
                     return value.equals(labels.get(key));
                 })
-                .map((Function<CmdbContext.CmdbInstance, Instance>) CmdbContext.CmdbInstance::getInstance)
+                .map(CmdbContext.CmdbInstance::getInstance)
                 .collect(Collectors.toList());
     }
     
     @Override
-    public Selector<List<Instance>, CmdbContext, String> parse(String condition) {
+    public Selector<List<Instance>, CmdbContext<Instance>, String> parse(String condition) {
         String[] keyValues = condition.split("=");
         key = keyValues[0];
         value = keyValues[1];
@@ -84,5 +83,10 @@ public class MockSelector extends AbstractCmdbSelector<Instance> {
     @Override
     public String getType() {
         return "mock";
+    }
+    
+    @Override
+    public String getContextType() {
+        return "MOCK_CMDB";
     }
 }

@@ -29,31 +29,31 @@ import java.util.List;
  * @author chenglu
  * @date 2021-07-09 21:31
  */
-public class CmdbContext {
+public class CmdbContext<T extends Instance> {
     
     /**
      * consumer is the instance which provide the info.
      */
-    private CmdbInstance consumer;
+    private CmdbInstance<T> consumer;
     
     /**
      * the providers which be selected.
      */
-    private List<CmdbInstance> providers;
+    private List<CmdbInstance<T>> providers;
     
-    public CmdbInstance getConsumer() {
+    public CmdbInstance<T> getConsumer() {
         return consumer;
     }
     
-    public void setConsumer(CmdbInstance consumer) {
+    public void setConsumer(CmdbInstance<T> consumer) {
         this.consumer = consumer;
     }
     
-    public List<CmdbInstance> getProviders() {
+    public List<CmdbInstance<T>> getProviders() {
         return providers;
     }
     
-    public void setProviders(List<CmdbInstance> providers) {
+    public void setProviders(List<CmdbInstance<T>> providers) {
         this.providers = providers;
     }
     
@@ -62,7 +62,7 @@ public class CmdbContext {
         return "CmdbContext{" + "consumer=" + consumer + ", providers=" + providers + '}';
     }
     
-    public static class CmdbInstance<T extends Instance> {
+    public static class CmdbInstance<T> {
     
         /**
          * the CMDB info of instance.
