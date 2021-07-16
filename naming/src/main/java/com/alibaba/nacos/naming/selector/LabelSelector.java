@@ -56,6 +56,7 @@ import java.util.Set;
  * @see CmdbReader
  * @since 0.7.0
  */
+@Deprecated
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class LabelSelector extends ExpressionSelector implements Selector {
     
