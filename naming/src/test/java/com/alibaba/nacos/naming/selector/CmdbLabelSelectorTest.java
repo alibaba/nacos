@@ -18,13 +18,9 @@
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.naming.selector.Selector;
-import com.alibaba.nacos.naming.core.Instance;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * {@link CmdbLabelSelector} unit test.
@@ -51,16 +47,5 @@ public class CmdbLabelSelectorTest {
         Assert.assertEquals(2, cmdbLabelSelector.getLabels().size());
         Assert.assertTrue(cmdbLabelSelector.getLabels().contains("A"));
         Assert.assertTrue(cmdbLabelSelector.getLabels().contains("B"));
-    }
-    
-    @Test
-    public void testSelect() {
-        Selector selector = selectorManager.parseSelector("label", "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
-    
-        Instance provider = new Instance();
-        provider.setApp("aaa");
-        provider.setIp("2.2.2.2");
-        List<Instance> providers = Arrays.asList(provider);
-        // selectorManager.select(selector, "1.1.1.1", providers);
     }
 }
