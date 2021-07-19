@@ -44,6 +44,7 @@ public interface Selector<R, C, D> extends Serializable {
      *
      * @param condition condition.
      * @return selector.
+     * @throws NacosException parse failed exception.
      */
     Selector<R, C, D> parse(D condition) throws NacosException;
     
