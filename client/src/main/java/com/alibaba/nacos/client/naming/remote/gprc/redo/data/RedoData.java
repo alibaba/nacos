@@ -21,6 +21,7 @@ package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
  *
  * @author xiweng.yy
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RedoData<T> {
     
     private final String serviceName;

@@ -47,7 +47,9 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     private static final int REDO_THREAD = 1;
     
-    //TODO get redo delay from config
+    /**
+     * TODO get redo delay from config.
+     */
     private static final long DEFAULT_REDO_DELAY = 3000L;
     
     private final ConcurrentMap<String, InstanceRedoData> registeredInstances = new ConcurrentHashMap<>();
