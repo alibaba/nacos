@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Naming client gprc redo service.
@@ -46,6 +47,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     private static final int REDO_THREAD = 1;
     
+    //TODO get redo delay from config
     private static final long DEFAULT_REDO_DELAY = 3000L;
     
     private final ConcurrentMap<String, InstanceRedoData> registeredInstances = new ConcurrentHashMap<>();
@@ -54,13 +56,12 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     private final ScheduledExecutorService redoExecutor;
     
-    private final NamingGrpcClientProxy clientProxy;
-    
     private volatile boolean connected = false;
     
     public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy) {
-        this.clientProxy = clientProxy;
         this.redoExecutor = new ScheduledThreadPoolExecutor(REDO_THREAD, new NameThreadFactory(REDO_THREAD_NAME));
+        this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this), DEFAULT_REDO_DELAY,
+                DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
     }
     
     public boolean isConnected() {
