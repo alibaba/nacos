@@ -75,15 +75,13 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 if (isClientDisabled()) {
                     return;
                 }
-                // TODO
-                clientProxy.registerService(serviceName, groupName, redoData.get());
+                clientProxy.doRegisterService(serviceName, groupName, redoData.get());
                 break;
             case UNREGISTER:
                 if (isClientDisabled()) {
                     return;
                 }
-                // TODO
-                clientProxy.deregisterService(serviceName, groupName, redoData.get());
+                clientProxy.doDeregisterService(serviceName, groupName, redoData.get());
                 break;
             case REMOVE:
                 redoService.removeInstanceForRedo(serviceName, groupName);
@@ -115,15 +113,13 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 if (isClientDisabled()) {
                     return;
                 }
-                // TODO
-                clientProxy.subscribe(serviceName, groupName, cluster);
+                clientProxy.doSubscribe(serviceName, groupName, cluster);
                 break;
             case UNREGISTER:
                 if (isClientDisabled()) {
                     return;
                 }
-                // TODO
-                clientProxy.unsubscribe(serviceName, groupName, cluster);
+                clientProxy.doUnsubscribe(serviceName, groupName, cluster);
                 break;
             case REMOVE:
                 redoService.removeSubscriberForRedo(redoData.getServiceName(), redoData.getGroupName(), redoData.get());

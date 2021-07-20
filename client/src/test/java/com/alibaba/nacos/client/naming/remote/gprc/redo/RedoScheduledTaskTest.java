@@ -65,7 +65,7 @@ public class RedoScheduledTaskTest {
         Set<InstanceRedoData> mockData = generateMockInstanceData(false, false);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
         redoTask.run();
-        verify(clientProxy).registerService(SERVICE, GROUP, INSTANCE);
+        verify(clientProxy).doRegisterService(SERVICE, GROUP, INSTANCE);
     }
     
     @Test
@@ -73,7 +73,7 @@ public class RedoScheduledTaskTest {
         Set<InstanceRedoData> mockData = generateMockInstanceData(true, true);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
         redoTask.run();
-        verify(clientProxy).deregisterService(SERVICE, GROUP, INSTANCE);
+        verify(clientProxy).doDeregisterService(SERVICE, GROUP, INSTANCE);
     }
     
     @Test
@@ -90,7 +90,7 @@ public class RedoScheduledTaskTest {
         Set<InstanceRedoData> mockData = generateMockInstanceData(false, false);
         when(redoService.findInstanceRedoData()).thenReturn(mockData);
         redoTask.run();
-        verify(clientProxy, never()).registerService(SERVICE, GROUP, INSTANCE);
+        verify(clientProxy, never()).doRegisterService(SERVICE, GROUP, INSTANCE);
     }
     
     private Set<InstanceRedoData> generateMockInstanceData(boolean registered, boolean unregistering) {
@@ -107,7 +107,7 @@ public class RedoScheduledTaskTest {
         Set<SubscriberRedoData> mockData = generateMockSubscriberData(false, false);
         when(redoService.findSubscriberRedoData()).thenReturn(mockData);
         redoTask.run();
-        verify(clientProxy).subscribe(SERVICE, GROUP, CLUSTER);
+        verify(clientProxy).doSubscribe(SERVICE, GROUP, CLUSTER);
     }
     
     @Test
@@ -115,7 +115,7 @@ public class RedoScheduledTaskTest {
         Set<SubscriberRedoData> mockData = generateMockSubscriberData(true, true);
         when(redoService.findSubscriberRedoData()).thenReturn(mockData);
         redoTask.run();
-        verify(clientProxy).unsubscribe(SERVICE, GROUP, CLUSTER);
+        verify(clientProxy).doUnsubscribe(SERVICE, GROUP, CLUSTER);
     }
     
     @Test
@@ -132,7 +132,7 @@ public class RedoScheduledTaskTest {
         Set<SubscriberRedoData> mockData = generateMockSubscriberData(false, false);
         when(redoService.findSubscriberRedoData()).thenReturn(mockData);
         redoTask.run();
-        verify(clientProxy, never()).subscribe(SERVICE, GROUP, CLUSTER);
+        verify(clientProxy, never()).doSubscribe(SERVICE, GROUP, CLUSTER);
     }
     
     private Set<SubscriberRedoData> generateMockSubscriberData(boolean registered, boolean unregistering) {
