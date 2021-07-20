@@ -66,6 +66,6 @@ public class MockCmdbContextBuilder implements SelectorContextBuilder<CmdbContex
     
     @Override
     public String getContextType() {
-        return "CMDB";
+        return "MOCK_CMDB";
     }
 }

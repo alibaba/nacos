@@ -29,12 +29,12 @@ import java.util.List;
  * @author chenglu
  * @date 2021-07-09 21:29
  */
-public abstract class AbstractCmdbSelector<T extends Instance> implements Selector<List<T>, CmdbContext, String> {
+public abstract class AbstractCmdbSelector<T extends Instance> implements Selector<List<T>, CmdbContext<T>, String> {
     
     private static final String DEFAULT_CONTEXT_TYPE = "CMDB";
     
     @Override
-    public List<T> select(CmdbContext context) {
+    public List<T> select(CmdbContext<T> context) {
         return doSelect(context);
     }
     
@@ -44,7 +44,7 @@ public abstract class AbstractCmdbSelector<T extends Instance> implements Select
      * @param context selector context {@link CmdbContext}.
      * @return the select result.
      */
-    protected abstract List<T> doSelect(CmdbContext context);
+    protected abstract List<T> doSelect(CmdbContext<T> context);
     
     @Override
     public String getContextType() {
