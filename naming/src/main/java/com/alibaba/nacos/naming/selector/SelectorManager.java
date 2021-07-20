@@ -76,6 +76,8 @@ public class SelectorManager {
                 continue;
             }
             contextBuilders.put(selectorContextBuilder.getContextType(), selectorContextBuilder);
+            Loggers.SRV_LOG.info("[SelectorManager] Load SelectorContextBuilder({}) contextType({}) successfully.", selectorContextBuilder.getClass(),
+                    selectorContextBuilder.getContextType());
         }
     }
     
@@ -98,7 +100,9 @@ public class SelectorManager {
                 // register json serial.
                 JacksonUtils.registerSubtype(selectorClass, selector.getType());
                 selectorTypes.put(selector.getType(), selectorClass);
-            } catch (NoSuchMethodException e) {
+                Loggers.SRV_LOG.info("[SelectorManager] Load Selector({}) type({}) contextType({}) successfully.", selectorClass, selector.getType(),
+                        selector.getContextType());
+            } catch (Exception e) {
                 Loggers.SRV_LOG.warn("[SelectorManager] Selector {} cannot find public access default constructor, will be ignored.",
                         selectorClass);
             }
@@ -144,13 +148,16 @@ public class SelectorManager {
      * @param providers the provider list for select.
      * @return the select instance list.
      */
-    public List<Instance> select(Selector selector, String consumerIp, List<Instance> providers) {
+    public <T extends Instance> List<T> select(Selector selector, String consumerIp, List<T> providers) {
+        if (Objects.isNull(selector)) {
+            return providers;
+        }
         SelectorContextBuilder selectorContextBuilder = contextBuilders.get(selector.getContextType());
         if (Objects.isNull(selectorContextBuilder)) {
             Loggers.SRV_LOG.info("[SelectorManager] cannot find the contextBuilder of type {}.", selector.getType());
             return providers;
         }
         Object context = selectorContextBuilder.build(consumerIp, providers);
-        return (List<Instance>) selector.select(context);
+        return (List<T>) selector.select(context);
     }
 }

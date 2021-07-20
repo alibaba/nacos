@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.api.naming.selector;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.io.Serializable;
@@ -43,8 +44,9 @@ public interface Selector<R, C, D> extends Serializable {
      *
      * @param condition condition.
      * @return selector.
+     * @throws NacosException parse failed exception.
      */
-    Selector<R, C, D> parse(D condition);
+    Selector<R, C, D> parse(D condition) throws NacosException;
     
     /**
      * select the target result.
