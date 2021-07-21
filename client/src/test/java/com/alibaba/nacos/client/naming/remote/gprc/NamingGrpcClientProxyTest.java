@@ -39,6 +39,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
@@ -46,10 +47,13 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.ArgumentMatcher;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -62,480 +66,215 @@ import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class NamingGrpcClientProxyTest {
+    
+    private static final String NAMESPACE_ID = "ns1";
+    
+    private static final String SERVICE_NAME = "service1";
+    
+    private static final String GROUP_NAME = "group1";
+    
+    private static final String CLUSTERS = "cluster1";
+    
+    @Mock
+    private SecurityProxy proxy;
+    
+    @Mock
+    private ServerListFactory factory;
+    
+    @Mock
+    private ServiceInfoHolder holder;
+    
+    @Mock
+    private RpcClient rpcClient;
+    
+    private Properties prop;
+    
+    private NamingGrpcClientProxy client;
+    
+    private Response response;
+    
+    private Instance instance;
     
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
     
-    @Test
-    public void testRegisterService() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        String serviceName = "service1";
-        Instance instance = new Instance();
-        instance.setServiceName(serviceName);
+    @Before
+    public void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
+        prop = new Properties();
+        client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, prop, holder);
+        Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
+        rpcClientField.setAccessible(true);
+        rpcClientField.set(client, this.rpcClient);
+        response = new InstanceResponse();
+        when(this.rpcClient.request(any())).thenReturn(response);
+        instance = new Instance();
+        instance.setServiceName(SERVICE_NAME);
         instance.setIp("1.1.1.1");
         instance.setPort(1111);
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        // inject rpcClient;
-        RpcClient rpc = mock(RpcClient.class);
-        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClient.setAccessible(true);
-        rpcClient.set(client, rpc);
-        
-        Response res = new InstanceResponse();
-        when(rpc.request(any())).thenReturn(res);
-        
-        String groupName = "group1";
-        
-        // when
-        client.registerService(serviceName, groupName, instance);
-        
-        // then
-        verify(rpc, times(1)).request(argThat(new ArgumentMatcher<Request>() {
-            @Override
-            public boolean matches(Request request) {
-                if (request instanceof InstanceRequest) {
-                    InstanceRequest request1 = (InstanceRequest) request;
-                    return request1.getType().equals(NamingRemoteConstants.REGISTER_INSTANCE);
-                }
-                return false;
-            }
-        }));
-        
     }
     
     @Test
-    public void testDeregisterService() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        String serviceName = "service1";
-        Instance instance = new Instance();
-        instance.setServiceName(serviceName);
-        instance.setIp("1.1.1.1");
-        instance.setPort(1111);
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        // inject rpcClient;
-        RpcClient rpc = mock(RpcClient.class);
-        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClient.setAccessible(true);
-        rpcClient.set(client, rpc);
-        
-        Response res = new InstanceResponse();
-        when(rpc.request(any())).thenReturn(res);
-        
-        String groupName = "group1";
-        
-        // when
-        client.deregisterService(serviceName, groupName, instance);
-        
-        // then
-        verify(rpc, times(1)).request(argThat(new ArgumentMatcher<Request>() {
-            @Override
-            public boolean matches(Request request) {
-                if (request instanceof InstanceRequest) {
-                    InstanceRequest request1 = (InstanceRequest) request;
-                    return request1.getType().equals(NamingRemoteConstants.DE_REGISTER_INSTANCE);
-                }
-                return false;
+    public void testRegisterService() throws NacosException {
+        client.registerService(SERVICE_NAME, GROUP_NAME, instance);
+        verify(this.rpcClient, times(1)).request(argThat(request -> {
+            if (request instanceof InstanceRequest) {
+                InstanceRequest request1 = (InstanceRequest) request;
+                return request1.getType().equals(NamingRemoteConstants.REGISTER_INSTANCE);
             }
+            return false;
+        }));
+    }
+    
+    @Test
+    public void testDeregisterService() throws NacosException {
+        client.deregisterService(SERVICE_NAME, GROUP_NAME, instance);
+        verify(this.rpcClient, times(1)).request(argThat(request -> {
+            if (request instanceof InstanceRequest) {
+                InstanceRequest request1 = (InstanceRequest) request;
+                return request1.getType().equals(NamingRemoteConstants.DE_REGISTER_INSTANCE);
+            }
+            return false;
         }));
     }
     
     @Test
     public void testUpdateInstance() throws Exception {
         //TODO thrown.expect(UnsupportedOperationException.class);
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        String serviceName = "service1";
-        
-        Instance instance = new Instance();
-        instance.setServiceName(serviceName);
-        instance.setIp("1.1.1.1");
-        instance.setPort(1111);
-        
-        String groupName = "group1";
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        client.updateInstance(serviceName, groupName, instance);
+        client.updateInstance(SERVICE_NAME, GROUP_NAME, instance);
     }
     
     @Test
     public void testQueryInstancesOfService() throws Exception {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        String serviceName = "service1";
-        
-        Instance instance = new Instance();
-        instance.setServiceName(serviceName);
-        instance.setIp("1.1.1.1");
-        instance.setPort(1111);
-        // inject rpcClient;
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        RpcClient rpc = mock(RpcClient.class);
-        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClient.setAccessible(true);
-        rpcClient.set(client, rpc);
-        
         QueryServiceResponse res = new QueryServiceResponse();
-        String clusters = "cluster1";
-        String groupName = "group1";
-        
-        ServiceInfo info = new ServiceInfo(groupName + "@@" + serviceName + "@@" + clusters);
+        ServiceInfo info = new ServiceInfo(GROUP_NAME + "@@" + SERVICE_NAME + "@@" + CLUSTERS);
         res.setServiceInfo(info);
-        when(rpc.request(any())).thenReturn(res);
-        
-        // when
-        ServiceInfo actual = client.queryInstancesOfService(serviceName, groupName, clusters, 0, false);
-        
+        when(this.rpcClient.request(any())).thenReturn(res);
+        ServiceInfo actual = client.queryInstancesOfService(SERVICE_NAME, GROUP_NAME, CLUSTERS, 0, false);
         Assert.assertEquals(info, actual);
     }
     
     @Test
     public void testQueryService() throws Exception {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        String serviceName = "service1";
-        String groupName = "group1";
-        // when
-        Service service = client.queryService(serviceName, groupName);
-        // then
+        Service service = client.queryService(SERVICE_NAME, GROUP_NAME);
         Assert.assertNull(service);
     }
     
     @Test
     public void testCreateService() throws Exception {
         //TODO thrown.expect(UnsupportedOperationException.class);
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
         Service service = new Service();
         AbstractSelector selector = new NoneSelector();
-        
-        // when
         client.createService(service, selector);
-        
     }
     
     @Test
     public void testDeleteService() throws Exception {
         //TODO thrown.expect(UnsupportedOperationException.class);
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        String serviceName = "service1";
-        String groupName = "group1";
-        // when
-        Assert.assertFalse(client.deleteService(serviceName, groupName));
+        Assert.assertFalse(client.deleteService(SERVICE_NAME, GROUP_NAME));
     }
     
     @Test
     public void testUpdateService() throws NacosException {
         //TODO thrown.expect(UnsupportedOperationException.class);
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
         Service service = new Service();
         AbstractSelector selector = new NoneSelector();
-        // when
         client.updateService(service, selector);
     }
     
     @Test
     public void testGetServiceList() throws Exception {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        String serviceName = "service1";
-        
-        Instance instance = new Instance();
-        instance.setServiceName(serviceName);
-        instance.setIp("1.1.1.1");
-        instance.setPort(1111);
-        // inject rpcClient;
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        RpcClient rpc = mock(RpcClient.class);
-        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClient.setAccessible(true);
-        rpcClient.set(client, rpc);
-        
         ServiceListResponse res = new ServiceListResponse();
-        
         List<String> services = Arrays.asList("service1", "service2");
         res.setServiceNames(services);
         res.setCount(5);
-        when(rpc.request(any())).thenReturn(res);
-        
+        when(this.rpcClient.request(any())).thenReturn(res);
         AbstractSelector selector = new NoneSelector();
-        String groupName = "group1";
-        
-        // when
-        ListView<String> serviceList = client.getServiceList(1, 10, groupName, selector);
-        
+        ListView<String> serviceList = client.getServiceList(1, 10, GROUP_NAME, selector);
         Assert.assertEquals(5, serviceList.getCount());
         Assert.assertEquals(services, serviceList.getData());
     }
     
     @Test
     public void testSubscribe() throws Exception {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        String serviceName = "service1";
-        
-        Instance instance = new Instance();
-        instance.setServiceName(serviceName);
-        instance.setIp("1.1.1.1");
-        instance.setPort(1111);
-        // inject rpcClient;
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        RpcClient rpc = mock(RpcClient.class);
-        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClient.setAccessible(true);
-        rpcClient.set(client, rpc);
-        
         SubscribeServiceResponse res = new SubscribeServiceResponse();
-        String clusters = "cluster1";
-        String groupName = "group1";
-        
-        ServiceInfo info = new ServiceInfo(groupName + "@@" + serviceName + "@@" + clusters);
+        ServiceInfo info = new ServiceInfo(GROUP_NAME + "@@" + SERVICE_NAME + "@@" + CLUSTERS);
         res.setServiceInfo(info);
-        when(rpc.request(any())).thenReturn(res);
-        
-        // when
-        ServiceInfo actual = client.subscribe(serviceName, groupName, clusters);
-        
+        when(this.rpcClient.request(any())).thenReturn(res);
+        ServiceInfo actual = client.subscribe(SERVICE_NAME, GROUP_NAME, CLUSTERS);
         Assert.assertEquals(info, actual);
     }
     
     @Test
     public void testUnsubscribe() throws Exception {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        String serviceName = "service1";
-        
-        Instance instance = new Instance();
-        instance.setServiceName(serviceName);
-        instance.setIp("1.1.1.1");
-        instance.setPort(1111);
-        // inject rpcClient;
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        RpcClient rpc = mock(RpcClient.class);
-        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClient.setAccessible(true);
-        rpcClient.set(client, rpc);
-        
         SubscribeServiceResponse res = new SubscribeServiceResponse();
-        String clusters = "cluster1";
-        String groupName = "group1";
-        
-        ServiceInfo info = new ServiceInfo(groupName + "@@" + serviceName + "@@" + clusters);
+        ServiceInfo info = new ServiceInfo(GROUP_NAME + "@@" + SERVICE_NAME + "@@" + CLUSTERS);
         res.setServiceInfo(info);
-        when(rpc.request(any())).thenReturn(res);
-        
-        // when
-        client.unsubscribe(serviceName, groupName, clusters);
-        
-        verify(rpc, times(1)).request(argThat(new ArgumentMatcher<Request>() {
-            @Override
-            public boolean matches(Request request) {
-                if (request instanceof SubscribeServiceRequest) {
-                    SubscribeServiceRequest request1 = (SubscribeServiceRequest) request;
-                    // not subscribe
-                    return !request1.isSubscribe();
-                }
-                return false;
+        when(this.rpcClient.request(any())).thenReturn(res);
+        client.unsubscribe(SERVICE_NAME, GROUP_NAME, CLUSTERS);
+        verify(this.rpcClient, times(1)).request(argThat(request -> {
+            if (request instanceof SubscribeServiceRequest) {
+                SubscribeServiceRequest request1 = (SubscribeServiceRequest) request;
+                // not subscribe
+                return !request1.isSubscribe();
             }
+            return false;
         }));
     }
     
     @Test
-    public void testUpdateBeatInfo() throws NacosException {
+    public void testUpdateBeatInfo() {
         //TODO thrown.expect(UnsupportedOperationException.class);
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        // when
         client.updateBeatInfo(new HashSet<>());
     }
     
     @Test
-    public void testServerHealthy() throws NacosException, IllegalAccessException, NoSuchFieldException {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        // inject rpcClient;
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        RpcClient rpc = mock(RpcClient.class);
-        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClient.setAccessible(true);
-        rpcClient.set(client, rpc);
-        
-        when(rpc.isRunning()).thenReturn(true);
-        
-        // when
+    public void testServerHealthy() {
+        when(this.rpcClient.isRunning()).thenReturn(true);
         Assert.assertTrue(client.serverHealthy());
-        
-        verify(rpc, times(1)).isRunning();
+        verify(this.rpcClient, times(1)).isRunning();
     }
     
     @Test
     public void testShutdown() throws Exception {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        // inject rpcClient;
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        RpcClient rpc = mock(RpcClient.class);
-        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClient.setAccessible(true);
-        rpcClient.set(client, rpc);
-        
-        when(rpc.isRunning()).thenReturn(true);
-        
-        // when
         client.shutdown();
-        
-        verify(rpc, times(1)).shutdown();
+        verify(this.rpcClient, times(1)).shutdown();
     }
     
     @Test
-    public void testIsEnable() throws Exception {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-        
-        // inject rpcClient;
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
-        
-        RpcClient rpc = mock(RpcClient.class);
-        Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
-        rpcClient.setAccessible(true);
-        rpcClient.set(client, rpc);
-        
-        when(rpc.isRunning()).thenReturn(true);
-        
-        // when
+    public void testIsEnable() {
+        when(this.rpcClient.isRunning()).thenReturn(true);
         Assert.assertTrue(client.isEnable());
-        
-        verify(rpc, times(1)).isRunning();
+        verify(this.rpcClient, times(1)).isRunning();
     }
     
     @Test
     public void testServerListChanged() throws Exception {
-        // given
-        String namespaceId = "ns1";
-        SecurityProxy proxy = mock(SecurityProxy.class);
-        ServerListFactory factory = mock(ServerListFactory.class);
-        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        Properties prop = new Properties();
-    
         String originServer = "www.google.com";
-        when(factory.getServerList()).thenReturn(Stream.of(originServer, "anotherServer").collect(Collectors.toList()));
-        // inject rpcClient;
-        NamingGrpcClientProxy client = new NamingGrpcClientProxy(namespaceId, proxy, factory, prop, holder);
+        List<String> serverList = Stream.of(originServer, "anotherServer").collect(Collectors.toList());
+        when(factory.getServerList()).thenReturn(serverList);
         when(factory.genNextServer()).thenReturn(originServer);
-    
+        
         RpcClient rpc = new RpcClient("testServerListHasChanged", factory) {
             @Override
             public ConnectionType getConnectionType() {
                 return ConnectionType.GRPC;
             }
-        
+            
             @Override
             public int rpcPortOffset() {
                 return 0;
             }
-        
+            
             @Override
             public Connection connectToServer(ServerInfo serverInfo) throws Exception {
                 return new Connection(serverInfo) {
-                
+                    
                     @Override
                     public Response request(Request request, long timeoutMills) throws NacosException {
                         Response response = new Response() {
@@ -543,17 +282,17 @@ public class NamingGrpcClientProxyTest {
                         response.setRequestId(request.getRequestId());
                         return response;
                     }
-                
+                    
                     @Override
                     public RequestFuture requestFuture(Request request) throws NacosException {
                         return new DefaultRequestFuture("test", request.getRequestId());
                     }
-                
+                    
                     @Override
                     public void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException {
-                    
+                        
                     }
-                
+                    
                     @Override
                     public void close() {
                     }
@@ -563,12 +302,12 @@ public class NamingGrpcClientProxyTest {
         Field rpcClient = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClient.setAccessible(true);
         rpcClient.set(client, rpc);
-    
+        
         rpc.serverListFactory(factory);
         rpc.registerServerRequestHandler(new NamingPushRequestHandler(holder));
-        Field listenerField = NamingGrpcClientProxy.class.getDeclaredField("namingGrpcConnectionEventListener");
+        Field listenerField = NamingGrpcClientProxy.class.getDeclaredField("redoService");
         listenerField.setAccessible(true);
-        NamingGrpcConnectionEventListener listener = (NamingGrpcConnectionEventListener) listenerField.get(client);
+        NamingGrpcRedoService listener = (NamingGrpcRedoService) listenerField.get(client);
         rpc.registerConnectionListener(listener);
         rpc.start();
         int retry = 10;
@@ -578,14 +317,14 @@ public class NamingGrpcClientProxyTest {
                 Assert.fail("rpc is not running");
             }
         }
-    
+        
         Assert.assertEquals(originServer, rpc.getCurrentServer().getServerIp());
-    
+        
         String newServer = "www.aliyun.com";
         when(factory.genNextServer()).thenReturn(newServer);
         when(factory.getServerList()).thenReturn(Stream.of(newServer, "anotherServer").collect(Collectors.toList()));
         NotifyCenter.publishEvent(new ServerListChangedEvent());
-    
+        
         retry = 10;
         while (originServer.equals(rpc.getCurrentServer().getServerIp())) {
             TimeUnit.SECONDS.sleep(1);
@@ -593,7 +332,7 @@ public class NamingGrpcClientProxyTest {
                 Assert.fail("failed to auth switch server");
             }
         }
-
+        
         Assert.assertEquals(newServer, rpc.getCurrentServer().getServerIp());
     }
 }
