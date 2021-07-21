@@ -215,7 +215,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     }
     
     /**
-     * Remove subscribe for redo.
+     * Remove subscriber for redo.
      *
      * @param serviceName service name
      * @param groupName   group name
@@ -230,7 +230,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     /**
      * Find all subscriber redo data which need do redo.
      *
-     * @return set of {@code InstanceRedoData} need to do redo.
+     * @return set of {@code SubscriberRedoData} need to do redo.
      */
     public Set<SubscriberRedoData> findSubscriberRedoData() {
         Set<SubscriberRedoData> result = new HashSet<>();
@@ -248,7 +248,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * Shutdown redo service.
      */
     public void shutdown() {
-        LogUtils.NAMING_LOGGER.info("Shutdown grpc event listener executor " + redoExecutor);
+        LogUtils.NAMING_LOGGER.info("Shutdown grpc redo service executor " + redoExecutor);
         registeredInstances.clear();
         subscribes.clear();
         redoExecutor.shutdownNow();
