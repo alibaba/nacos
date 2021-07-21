@@ -47,4 +47,8 @@ public class DistroConstants {
     
     public static final long DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS = 30000L;
     
+    public static final String DATA_WARM_UP = "nacos.naming.data.warmup";
+    
+    public static final boolean DEFAULT_DATA_WARM_UP = false;
+    
 }
