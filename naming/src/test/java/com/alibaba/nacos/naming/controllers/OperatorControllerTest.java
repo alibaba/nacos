@@ -17,7 +17,6 @@
 
 package com.alibaba.nacos.naming.controllers;
 
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;

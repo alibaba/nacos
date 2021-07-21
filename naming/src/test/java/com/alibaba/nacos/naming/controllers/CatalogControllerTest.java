@@ -140,7 +140,7 @@ public class CatalogControllerTest {
             Object res = catalogController.listDetail(true, Constants.DEFAULT_NAMESPACE_ID, 1, 10,
                     TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME, TEST_GROUP_NAME, null, true);
             Assert.assertTrue(res instanceof List);
-            Assert.assertEquals(0, ((List)res).size());
+            Assert.assertEquals(0, ((List) res).size());
         } catch (NacosException e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
