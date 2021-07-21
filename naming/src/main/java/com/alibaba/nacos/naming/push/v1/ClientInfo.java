@@ -61,6 +61,11 @@ public class ClientInfo {
          * Java client type.
          */
         JAVA(ClientTypeDescription.JAVA_CLIENT),
+    
+        /**
+         * java client type 0.8 version
+         */
+        JAVA08(ClientTypeDescription.JAVA_CLIENT_08),
         /**
          * C client type.
          */
@@ -117,6 +122,8 @@ public class ClientInfo {
     public static class ClientTypeDescription {
         
         public static final String JAVA_CLIENT = "Nacos-Java-Client";
+        
+        public static final String JAVA_CLIENT_08 = "Java";
         
         public static final String DNSF_CLIENT = "Nacos-DNS";
         

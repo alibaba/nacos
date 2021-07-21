@@ -38,6 +38,7 @@ import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.v1.ClientInfo;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -125,7 +126,6 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-        
         getInstanceOperator().removeInstance(namespaceId, serviceName, instance);
         return "ok";
     }
@@ -292,7 +292,6 @@ public class InstanceController {
     @GetMapping("/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public Object list(HttpServletRequest request) throws Exception {
-        
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
@@ -492,4 +491,5 @@ public class InstanceController {
     private InstanceOperator getInstanceOperator() {
         return upgradeJudgement.isUseGrpcFeatures() ? instanceServiceV2 : instanceServiceV1;
     }
+    
 }

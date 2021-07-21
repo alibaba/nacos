@@ -96,6 +96,8 @@ public class SwitchDomain implements Record, Cloneable {
     
     private String pushJavaVersion = "0.1.0";
     
+    private String pushJava08Version = "0.0.0";
+    
     private String pushPythonVersion = "0.4.3";
     
     private String pushCVersion = "1.0.12";
@@ -161,6 +163,14 @@ public class SwitchDomain implements Record, Cloneable {
     
     public void update(SwitchDomain domain) {
     
+    }
+    
+    public String getPushJava08Version() {
+        return pushJava08Version;
+    }
+    
+    public void setPushJava08Version(String pushJava08Version) {
+        this.pushJava08Version = pushJava08Version;
     }
     
     public List<String> getIncrementalList() {

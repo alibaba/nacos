@@ -43,6 +43,8 @@ public class ServiceInfo {
     
     private String name;
     
+    private String dom;
+    
     private String groupName;
     
     private String clusters;
@@ -95,7 +97,7 @@ public class ServiceInfo {
     }
     
     public ServiceInfo(String name, String clusters) {
-        this.name = name;
+        setName(name);
         this.clusters = clusters;
     }
     
@@ -133,6 +135,10 @@ public class ServiceInfo {
     
     public void setName(String name) {
         this.name = name;
+        String[] ss = this.name.split(SPLITER);
+        if (ss.length > 1) {
+            this.dom = ss[1];
+        }
     }
     
     public String getGroupName() {
@@ -271,6 +277,14 @@ public class ServiceInfo {
     
     public void setChecksum(String checksum) {
         this.checksum = checksum;
+    }
+    
+    public String getDom() {
+        return dom;
+    }
+    
+    public void setDom(String dom) {
+        this.dom = dom;
     }
     
     private static boolean isEmpty(String str) {

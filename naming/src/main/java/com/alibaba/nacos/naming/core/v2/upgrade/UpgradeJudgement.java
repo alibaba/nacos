@@ -41,6 +41,7 @@ import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.codehaus.jackson.Version;
 import org.codehaus.jackson.util.VersionUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -80,6 +81,9 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     private final DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine;
     
     private ScheduledExecutorService upgradeChecker;
+    
+    @Value("${nacos.naming.use.grpc:true}")
+    private boolean namingUseGrpc;
     
     public UpgradeJudgement(RaftPeerSet raftPeerSet, RaftCore raftCore, ClusterVersionJudgement versionJudgement,
             ServerMemberManager memberManager, ServiceManager serviceManager,
@@ -124,7 +128,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     }
     
     public boolean isUseGrpcFeatures() {
-        return useGrpcFeatures.get();
+        return useGrpcFeatures.get() && namingUseGrpc;
     }
     
     public boolean isUseJraftFeatures() {
