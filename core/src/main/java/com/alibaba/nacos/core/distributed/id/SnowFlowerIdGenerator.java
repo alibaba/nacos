@@ -124,8 +124,11 @@ public class SnowFlowerIdGenerator implements IdGenerator {
         }
         
         this.lastTime = currentMillis;
-        logger.debug("{}-{}-{}", (new SimpleDateFormat(DATETIME_PATTERN)).format(new Date(this.lastTime)),
-                workerId, this.sequence);
+        
+        if (logger.isDebugEnabled()) {
+            logger.debug("{}-{}-{}", (new SimpleDateFormat(DATETIME_PATTERN)).format(new Date(this.lastTime)),
+                    workerId, this.sequence);
+        }
         
         currentId = currentMillis - EPOCH << 22 | workerId << 12 | this.sequence;
         return currentId;
