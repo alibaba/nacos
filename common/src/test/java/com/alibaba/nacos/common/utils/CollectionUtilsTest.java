@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.internal.util.collections.Sets;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -271,6 +272,18 @@ public class CollectionUtilsTest {
         Assert.assertEquals("default", CollectionUtils.getOrDefault(Collections.emptyList(), 1, "default"));
         Assert.assertEquals("element",
                 CollectionUtils.getOrDefault(Collections.singletonList("element"), 0, "default"));
+    }
+    
+    @Test
+    public void testList() {
+        try {
+            CollectionUtils.list(null);
+        } catch (Exception ex) {
+            Assert.assertEquals(NullPointerException.class, ex.getClass());
+        }
+        Assert.assertEquals(Arrays.asList(null, null, null), CollectionUtils.list(null, null, null));
+        Assert.assertEquals(Arrays.asList("", "a", "b"), CollectionUtils.list("", "a", "b"));
+        Assert.assertEquals(new ArrayList(), CollectionUtils.list());
     }
     
     private <T> Enumeration<T> asEnumeration(final Iterator<T> iterator) {
