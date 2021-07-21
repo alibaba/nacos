@@ -46,11 +46,6 @@ public class DistroConfigTest {
         distroConfig = DistroConfig.getInstance();
     }
     
-    @After
-    public void tearDown() {
-        NotifyCenter.deregisterSubscriber(distroConfig);
-    }
-    
     @Test
     public void testSetSyncDelayMillis() {
         distroConfig.setSyncDelayMillis(syncDelayMillis);
