@@ -86,7 +86,7 @@ public class ExternalDataSourceProperties {
             int currentSize = index + 1;
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
             DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
-            poolProperties.setDriverClassName(StringUtils.isEmpty(driverClassName) ? MYSQL_JDBC_DRIVER_NAME : driverClassName);
+            poolProperties.setDriverClassName(StringUtils.isBlank(driverClassName) ? MYSQL_JDBC_DRIVER_NAME : driverClassName);
             poolProperties.setJdbcUrl(url.get(index).trim());
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
