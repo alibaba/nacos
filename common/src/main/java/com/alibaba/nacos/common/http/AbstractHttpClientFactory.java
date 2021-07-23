@@ -26,8 +26,10 @@ import com.alibaba.nacos.common.tls.TlsHelper;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.BiConsumer;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
@@ -40,7 +42,6 @@ import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.RequestContent;
 import org.apache.http.ssl.SSLContexts;
-import org.apache.http.util.TextUtils;
 import org.slf4j.Logger;
 
 import javax.net.ssl.HostnameVerifier;
@@ -90,79 +91,63 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
                         .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
                         .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
                         .setUserAgent(originalRequestConfig.getUserAgent())
-                        .setConnectionManager(getConnectionManager(originalRequestConfig, false))
+                        .setConnectionManager(getConnectionManager(originalRequestConfig))
                         .build()));
     }
     
     /**
-     * create the {@link NHttpClientConnectionManager}, the code mainly from {@link org.apache.http.impl.nio.client.HttpAsyncClientBuilder}.
+     * create the {@link NHttpClientConnectionManager}, the code mainly from {@link HttpAsyncClientBuilder#build()}.
      * we add the {@link IOReactorExceptionHandler} to handle the {@link IOException} and {@link RuntimeException}
      * to avoid the {@link org.apache.http.nio.reactor.IOReactor} killed by unknown error of network.
      *
      * @param originalRequestConfig request config.
-     * @param systemProperties using systemProperties.
      * @return {@link NHttpClientConnectionManager}.
      */
-    private NHttpClientConnectionManager getConnectionManager(HttpClientConfig originalRequestConfig, boolean systemProperties) {
-        SSLContext sslcontext = systemProperties ? SSLContexts.createSystemDefault() : SSLContexts.createDefault();
-        final String[] supportedProtocols = systemProperties ? split(
-                System.getProperty("https.protocols")) : null;
-        final String[] supportedCipherSuites = systemProperties ? split(
-                System.getProperty("https.cipherSuites")) : null;
+    private NHttpClientConnectionManager getConnectionManager(HttpClientConfig originalRequestConfig) {
+        SSLContext sslcontext = SSLContexts.createDefault();
         HostnameVerifier hostnameVerifier = new DefaultHostnameVerifier();
-        SchemeIOSessionStrategy  sslStrategy = new SSLIOSessionStrategy(
-                    sslcontext, supportedProtocols, supportedCipherSuites, hostnameVerifier);
+        SchemeIOSessionStrategy sslStrategy = new SSLIOSessionStrategy(sslcontext, null, null, hostnameVerifier);
+        
         final DefaultConnectingIOReactor ioreactor;
         try {
             ioreactor = new DefaultConnectingIOReactor(getIoReactorConfig());
         } catch (IOReactorException e) {
+            assignLogger().error("[NHttpClientConnectionManager] Create DefaultConnectingIOReactor failed", e);
             throw new IllegalStateException();
         }
-        // if the handle return true, then the exception thrown by Reactor will be ignore, and will not finish the IOReactor.
+        
+        // if the handle return true, then the exception thrown by IOReactor will be ignore, and will not finish the IOReactor.
         ioreactor.setExceptionHandler(new IOReactorExceptionHandler() {
             
             @Override
             public boolean handle(IOException ex) {
-                assignLogger().warn("[IOReactorExceptionHandler] handle IOException, ignore it.", ex);
+                assignLogger().warn("[NHttpClientConnectionManager] handle IOException, ignore it.", ex);
                 return true;
             }
     
             @Override
             public boolean handle(RuntimeException ex) {
-                assignLogger().warn("[IOReactorExceptionHandler] handle RuntimeException, ignore it.", ex);
+                assignLogger().warn("[NHttpClientConnectionManager] handle RuntimeException, ignore it.", ex);
                 return true;
             }
         });
-        final PoolingNHttpClientConnectionManager poolingmgr = new PoolingNHttpClientConnectionManager(
-                ioreactor,
-                RegistryBuilder.<SchemeIOSessionStrategy>create()
-                        .register("http", NoopIOSessionStrategy.INSTANCE)
-                        .register("https", sslStrategy)
-                        .build());
-        if (systemProperties) {
-            String s = System.getProperty("http.keepAlive", "true");
-            if ("true".equalsIgnoreCase(s)) {
-                s = System.getProperty("http.maxConnections", "5");
-                final int max = Integer.parseInt(s);
-                poolingmgr.setDefaultMaxPerRoute(max);
-                poolingmgr.setMaxTotal(2 * max);
-            }
-        } else {
-            if (originalRequestConfig.getMaxConnTotal() > 0) {
-                poolingmgr.setMaxTotal(originalRequestConfig.getMaxConnTotal());
-            }
-            if (originalRequestConfig.getMaxConnPerRoute() > 0) {
-                poolingmgr.setDefaultMaxPerRoute(originalRequestConfig.getMaxConnPerRoute());
-            }
+        
+        Registry<SchemeIOSessionStrategy> registry = RegistryBuilder.<SchemeIOSessionStrategy>create()
+                .register("http", NoopIOSessionStrategy.INSTANCE)
+                .register("https", sslStrategy)
+                .build();
+        final PoolingNHttpClientConnectionManager poolingmgr = new PoolingNHttpClientConnectionManager(ioreactor, registry);
+        
+        int maxTotal = originalRequestConfig.getMaxConnTotal();
+        if (maxTotal > 0) {
+            poolingmgr.setMaxTotal(maxTotal);
+        }
+        
+        int maxPerRoute = originalRequestConfig.getMaxConnPerRoute();
+        if (maxPerRoute > 0) {
+            poolingmgr.setDefaultMaxPerRoute(maxPerRoute);
         }
         return poolingmgr;
-    }
-    
-    private String[] split(final String s) {
-        if (TextUtils.isBlank(s)) {
-            return null;
-        }
-        return s.split(" *, *");
     }
     
     protected IOReactorConfig getIoReactorConfig() {
