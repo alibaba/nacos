@@ -98,7 +98,8 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     /**
      * create the {@link NHttpClientConnectionManager}, the code mainly from {@link HttpAsyncClientBuilder#build()}.
      * we add the {@link IOReactorExceptionHandler} to handle the {@link IOException} and {@link RuntimeException}
-     * to avoid the {@link org.apache.http.nio.reactor.IOReactor} killed by unknown error of network.
+     * thrown by the {@link org.apache.http.impl.nio.reactor.BaseIOReactor} when process the event of Network.
+     * Using this way to avoid the {@link DefaultConnectingIOReactor} killed by unknown error of network.
      *
      * @param originalRequestConfig request config.
      * @return {@link NHttpClientConnectionManager}.
