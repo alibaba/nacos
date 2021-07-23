@@ -36,9 +36,10 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
     
     private final HostnameVerifier hv;
     
-    private static ConcurrentHashMap<String, Boolean> hosts = new ConcurrentHashMap<String, Boolean>();
+    private static final ConcurrentHashMap<String, Boolean> HOSTS = new ConcurrentHashMap<>();
     
-    private static final String[] LOCALHOST_HOSTNAME = new String[] {"localhost", InternetAddressUtil.localHostIP()};
+    private static final String[] LOCALHOST_HOSTNAME = new String[] {InternetAddressUtil.LOCAL_HOST,
+            InternetAddressUtil.localHostIP()};
     
     public SelfHostnameVerifier(HostnameVerifier hv) {
         this.hv = hv;
@@ -60,12 +61,12 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
             LOGGER.warn("host is empty, isIP = false");
             return false;
         }
-        Boolean cacheHostVerify = hosts.get(host);
+        Boolean cacheHostVerify = HOSTS.get(host);
         if (cacheHostVerify != null) {
             return cacheHostVerify;
         }
         boolean isIp = InternetAddressUtil.isIP(host);
-        hosts.putIfAbsent(host, isIp);
+        HOSTS.putIfAbsent(host, isIp);
         return isIp;
     }
 }
