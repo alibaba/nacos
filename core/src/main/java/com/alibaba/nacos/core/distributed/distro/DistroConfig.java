@@ -16,11 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
-import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
-import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 /**
@@ -28,7 +24,9 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  *
  * @author xiweng.yy
  */
-public class DistroConfig extends Subscriber<ServerConfigChangeEvent> {
+public class DistroConfig extends AbstractDynamicConfig {
+    
+    private static final String DISTRO = "Distro";
     
     private static final DistroConfig INSTANCE = new DistroConfig();
     
@@ -45,15 +43,11 @@ public class DistroConfig extends Subscriber<ServerConfigChangeEvent> {
     private long loadDataRetryDelayMillis = DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS;
     
     private DistroConfig() {
-        try {
-            getDistroConfigFromEnv();
-            NotifyCenter.registerSubscriber(this);
-        } catch (Exception e) {
-            Loggers.CORE.warn("Get Distro config from env failed, will use default value", e);
-        }
+        super(DISTRO);
     }
     
-    private void getDistroConfigFromEnv() {
+    @Override
+    protected void getConfigFromEnv() {
         syncDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, Long.class,
                 DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS);
         syncTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS, Long.class,
@@ -121,16 +115,10 @@ public class DistroConfig extends Subscriber<ServerConfigChangeEvent> {
     }
     
     @Override
-    public void onEvent(ServerConfigChangeEvent event) {
-        try {
-            getDistroConfigFromEnv();
-        } catch (Exception e) {
-            Loggers.CORE.warn("Upgrade Distro config from env failed, will use old value", e);
-        }
-    }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return ServerConfigChangeEvent.class;
+    protected String printConfig() {
+        return "DistroConfig{" + "syncDelayMillis=" + syncDelayMillis + ", syncTimeoutMillis=" + syncTimeoutMillis
+                + ", syncRetryDelayMillis=" + syncRetryDelayMillis + ", verifyIntervalMillis=" + verifyIntervalMillis
+                + ", verifyTimeoutMillis=" + verifyTimeoutMillis + ", loadDataRetryDelayMillis="
+                + loadDataRetryDelayMillis + '}';
     }
 }

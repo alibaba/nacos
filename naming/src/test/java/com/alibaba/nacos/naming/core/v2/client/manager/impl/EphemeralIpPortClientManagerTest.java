@@ -21,11 +21,14 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collection;
 
@@ -54,6 +57,11 @@ public class EphemeralIpPortClientManagerTest {
     private ClientAttributes attributes;
     
     EphemeralIpPortClientManager ephemeralIpPortClientManager;
+    
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+    }
     
     @Before
     public void setUp() throws Exception {

@@ -28,6 +28,7 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatUpdateTask;
+import com.alibaba.nacos.naming.misc.ClientConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
@@ -150,18 +151,18 @@ public class EphemeralIpPortClientManager implements ClientManager {
         }
         
         private boolean isExpireClient(long currentTime, IpPortBasedClient client) {
-            return client.isEphemeral() && isExpirePublishedClient(currentTime, client) && isExpireSubscriberClient(
-                    currentTime, client);
+            long noUpdatedTime = currentTime - client.getLastUpdatedTime();
+            return client.isEphemeral() && (
+                    isExpirePublishedClient(noUpdatedTime, client) && isExpireSubscriberClient(noUpdatedTime, client)
+                            || noUpdatedTime > ClientConfig.getInstance().getClientExpiredTime());
         }
         
-        private boolean isExpirePublishedClient(long currentTime, IpPortBasedClient client) {
-            return client.getAllPublishedService().isEmpty()
-                    && currentTime - client.getLastUpdatedTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
+        private boolean isExpirePublishedClient(long noUpdatedTime, IpPortBasedClient client) {
+            return client.getAllPublishedService().isEmpty() && noUpdatedTime > Constants.DEFAULT_IP_DELETE_TIMEOUT;
         }
         
-        private boolean isExpireSubscriberClient(long currentTime, IpPortBasedClient client) {
-            return client.getAllSubscribeService().isEmpty() || currentTime - client.getLastUpdatedTime() > switchDomain
-                    .getDefaultPushCacheMillis();
+        private boolean isExpireSubscriberClient(long noUpdatedTime, IpPortBasedClient client) {
+            return client.getAllSubscribeService().isEmpty() || noUpdatedTime > switchDomain.getDefaultPushCacheMillis();
         }
     }
 }
