@@ -249,12 +249,10 @@ public final class CollectionUtils {
     }
     
     /**
-     * Return an arraylist containing all input parameters.
-     * Throw an NullPointerException when the input parameter is null.
+     * return an arraylist containing all input parameters.
      * @author zzq
      * @param elements element array
      * @return arraylist containing all input parameters
-     *
      */
     public static <T> List<T> list(T... elements) {
         if (elements == null) {
