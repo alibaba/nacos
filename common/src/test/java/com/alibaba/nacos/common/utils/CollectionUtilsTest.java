@@ -282,7 +282,7 @@ public class CollectionUtilsTest {
     }
     
     @Test(expected = IllegalArgumentException.class)
-    public void testNullPointerException() {
+    public void testListNullPointerException() {
         CollectionUtils.list(null);
     }
     
