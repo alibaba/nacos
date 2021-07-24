@@ -260,7 +260,7 @@ public final class CollectionUtils {
         if (elements == null) {
             throw new NullPointerException();
         }
-        ArrayList<T> list = new ArrayList<>();
+        ArrayList<T> list = new ArrayList<>(elements.length);
         Collections.addAll(list, elements);
         return list;
     }
