@@ -258,7 +258,7 @@ public final class CollectionUtils {
      */
     public static <T> List<T> list(T... elements) {
         if (elements == null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
         }
         ArrayList<T> list = new ArrayList<>(elements.length);
         Collections.addAll(list, elements);
