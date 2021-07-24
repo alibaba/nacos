@@ -16,9 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.google.common.collect.Sets;
-
-import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Value Convert Utils.
@@ -29,9 +27,9 @@ public final class ConvertUtils {
     
     private static final String NULL_STR = "null";
     
-    public static final HashSet<String> TRUE_SET = Sets.newHashSet("y", "yes", "on", "true", "t");
+    public static final Set<String> TRUE_SET = CollectionUtils.set("y", "yes", "on", "true", "t");
     
-    public static final HashSet<String> FALSE_SET = Sets.newHashSet("n", "no", "off", "false", "f");
+    public static final Set<String> FALSE_SET = CollectionUtils.set("n", "no", "off", "false", "f");
     
     /**
      * Convert String value to int value if parameter value is legal. And it automatically defaults to 0 if parameter
