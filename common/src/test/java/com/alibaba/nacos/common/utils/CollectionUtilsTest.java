@@ -276,14 +276,14 @@ public class CollectionUtilsTest {
     
     @Test
     public void testList() {
-        try {
-            CollectionUtils.list(null);
-        } catch (Exception ex) {
-            Assert.assertEquals(NullPointerException.class, ex.getClass());
-        }
         Assert.assertEquals(Arrays.asList(null, null, null), CollectionUtils.list(null, null, null));
         Assert.assertEquals(Arrays.asList("", "a", "b"), CollectionUtils.list("", "a", "b"));
         Assert.assertEquals(new ArrayList(), CollectionUtils.list());
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullPointerException() {
+        CollectionUtils.list(null);
     }
     
     private <T> Enumeration<T> asEnumeration(final Iterator<T> iterator) {
