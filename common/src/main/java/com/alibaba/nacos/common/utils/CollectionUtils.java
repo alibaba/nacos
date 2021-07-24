@@ -258,7 +258,7 @@ public final class CollectionUtils {
      */
     public static <T> List<T> list(T... elements) {
         if (elements == null) {
-            throw new NullPointerException();
+            throw new IllegalArgumentException();
         }
         ArrayList<T> list = new ArrayList<>(elements.length);
         Collections.addAll(list, elements);
