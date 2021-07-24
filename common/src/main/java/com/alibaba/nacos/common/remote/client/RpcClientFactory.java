@@ -72,17 +72,14 @@ public class RpcClientFactory {
      * @return rpc client.
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
-        return CLIENT_MAP.compute(clientName, (clientNameInner, client) -> {
-            if (client == null) {
-                LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
-                if (ConnectionType.GRPC.equals(connectionType)) {
-                    client = new GrpcSdkClient(clientNameInner);
-                }
-                if (client == null) {
-                    throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
-                }
-                client.labels(labels);
-            }
+        if (!ConnectionType.GRPC.equals(connectionType)) {
+            throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
+        }
+
+        return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
+            LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
+            RpcClient client = new GrpcSdkClient(clientNameInner);
+            client.labels(labels);
             return client;
         });
     }
@@ -96,17 +93,13 @@ public class RpcClientFactory {
      */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
             Map<String, String> labels) {
-        return CLIENT_MAP.compute(clientName, (clientNameInner, client) -> {
-            if (client == null) {
-                if (ConnectionType.GRPC.equals(connectionType)) {
-                    client = new GrpcClusterClient(clientNameInner);
-                }
-                if (client == null) {
-                    throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
-                }
-                client.labels(labels);
-                return client;
-            }
+        if (!ConnectionType.GRPC.equals(connectionType)) {
+            throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
+        }
+
+        return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
+            RpcClient client = new GrpcClusterClient(clientNameInner);
+            client.labels(labels);
             return client;
         });
     }
