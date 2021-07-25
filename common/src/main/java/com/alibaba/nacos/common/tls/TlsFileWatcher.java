@@ -112,7 +112,7 @@ public final class TlsFileWatcher {
                         IoUtils.closeQuietly(in);
                     }
                     if (!newHash.equals(fileMd5Map.get(filePath))) {
-                        LOGGER.info(filePath + " file hash changed,need reload sslcontext");
+                        LOGGER.info(filePath + " file hash changed, need reload ssl context");
                         fileMd5Map.put(filePath, newHash);
                         item.getValue().onChanged(filePath);
                         LOGGER.info(filePath + " onChanged success!");
