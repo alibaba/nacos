@@ -105,8 +105,8 @@ public final class TlsFileWatcher {
                     try {
                         in = new FileInputStream(filePath);
                         newHash = MD5Utils.md5Hex(IoUtils.toString(in, Constants.ENCODE), Constants.ENCODE);
-                    } catch (Exception ignored) {
-                        LOGGER.warn(" service has exception when calculate the file MD5. " + ignored);
+                    } catch (Exception exception) {
+                        LOGGER.warn(" service has exception when calculate the file MD5. " + exception);
                         continue;
                     } finally {
                         IoUtils.closeQuietly(in);
