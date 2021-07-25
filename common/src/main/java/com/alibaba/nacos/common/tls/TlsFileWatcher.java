@@ -52,9 +52,9 @@ public final class TlsFileWatcher {
     
     private final int checkInterval = TlsSystemConfig.tlsFileCheckInterval;
     
-    private Map<String, String> fileMd5Map = new HashMap<String, String>();
+    private Map<String, String> fileMd5Map = new HashMap<>();
     
-    private ConcurrentHashMap<String, FileChangeListener> watchFilesMap = new ConcurrentHashMap<String, FileChangeListener>();
+    private ConcurrentHashMap<String, FileChangeListener> watchFilesMap = new ConcurrentHashMap<>();
     
     private final ScheduledExecutorService service = ExecutorFactory.Managed
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(TlsFileWatcher.class),
