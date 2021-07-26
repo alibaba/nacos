@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.Objects;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -89,7 +89,7 @@ public class Http extends AbstractHealthChecker {
     
     @Override
     public int hashCode() {
-        return Objects.hashCode(path, headers, expectedResponseCode);
+        return Arrays.hashCode(new Object[]{path, headers, expectedResponseCode});
     }
     
     @Override

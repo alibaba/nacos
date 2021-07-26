@@ -17,7 +17,8 @@
 package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
-import com.google.common.base.Objects;
+
+import java.util.Arrays;
 
 /**
  * Implementation of health checker for TCP.
@@ -36,7 +37,7 @@ public class Tcp extends AbstractHealthChecker {
     
     @Override
     public int hashCode() {
-        return Objects.hashCode(TYPE);
+        return Arrays.hashCode(new String[]{TYPE});
     }
     
     @Override
