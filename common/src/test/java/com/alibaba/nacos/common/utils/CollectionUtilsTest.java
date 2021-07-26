@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.utils;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,6 +24,8 @@ import org.mockito.internal.util.collections.Sets;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -136,12 +137,12 @@ public class CollectionUtilsTest {
     
     @Test(expected = IndexOutOfBoundsException.class)
     public void testGetEnumeration1() {
-        CollectionUtils.get(Iterators.asEnumeration(Collections.emptyIterator()), 0);
+        CollectionUtils.get(asEnumeration(Collections.emptyIterator()), 0);
     }
     
     @Test(expected = IndexOutOfBoundsException.class)
     public void testGetEnumeration2() {
-        CollectionUtils.get(Iterators.asEnumeration(Collections.emptyIterator()), -1);
+        CollectionUtils.get(asEnumeration(Collections.emptyIterator()), -1);
     }
     
     @Test
@@ -194,8 +195,8 @@ public class CollectionUtilsTest {
         Assert.assertEquals(2, CollectionUtils.size(Arrays.asList("1", "2").iterator()));
         
         // enumeration
-        Assert.assertEquals(0, CollectionUtils.size(Iterators.asEnumeration(Collections.emptyIterator())));
-        Assert.assertEquals(1, CollectionUtils.size(Iterators.asEnumeration(Collections.singleton("").iterator())));
+        Assert.assertEquals(0, CollectionUtils.size(asEnumeration(Collections.emptyIterator())));
+        Assert.assertEquals(1, CollectionUtils.size(asEnumeration(Collections.singleton("").iterator())));
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -231,8 +232,8 @@ public class CollectionUtilsTest {
         Assert.assertFalse(CollectionUtils.sizeIsEmpty(Arrays.asList("1", "2").iterator()));
         
         // enumeration
-        Assert.assertTrue(CollectionUtils.sizeIsEmpty(Iterators.asEnumeration(Collections.emptyIterator())));
-        Assert.assertFalse(CollectionUtils.sizeIsEmpty(Iterators.asEnumeration(Collections.singleton("").iterator())));
+        Assert.assertTrue(CollectionUtils.sizeIsEmpty(asEnumeration(Collections.emptyIterator())));
+        Assert.assertFalse(CollectionUtils.sizeIsEmpty(asEnumeration(Collections.singleton("").iterator())));
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -270,5 +271,20 @@ public class CollectionUtilsTest {
         Assert.assertEquals("default", CollectionUtils.getOrDefault(Collections.emptyList(), 1, "default"));
         Assert.assertEquals("element",
                 CollectionUtils.getOrDefault(Collections.singletonList("element"), 0, "default"));
+    }
+    
+    private <T> Enumeration<T> asEnumeration(final Iterator<T> iterator) {
+        if (iterator == null) {
+            throw new IllegalArgumentException("iterator cannot be null ");
+        }
+        return new Enumeration<T>() {
+            public boolean hasMoreElements() {
+                return iterator.hasNext();
+            }
+        
+            public T nextElement() {
+                return iterator.next();
+            }
+        };
     }
 }
