@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 
 import java.util.HashSet;
@@ -194,7 +193,7 @@ public final class ConvertUtils {
      */
     @SuppressWarnings("all")
     public static Boolean toBooleanObject(String str) {
-        String formatStr = Strings.nullToEmpty(str).toLowerCase();
+        String formatStr = (str == null ? StringUtils.EMPTY : str).toLowerCase();
     
         if (TRUE_SET.contains(formatStr)) {
             return true;
