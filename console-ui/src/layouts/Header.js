@@ -83,7 +83,7 @@ class Header extends React.Component {
       language = 'en-us',
       location: { pathname },
     } = this.props;
-    const { home, docs, blog, community, languageSwitchButton } = locale;
+    const { home, docs, blog, community, enterprise, languageSwitchButton } = locale;
     const { passwordResetUser = '' } = this.state;
     const BASE_URL = `https://nacos.io/${language.toLocaleLowerCase()}/`;
     const NAV_MENU = [
@@ -91,6 +91,11 @@ class Header extends React.Component {
       { id: 2, title: docs, link: `${BASE_URL}docs/what-is-nacos.html` },
       { id: 3, title: blog, link: `${BASE_URL}blog/index.html` },
       { id: 4, title: community, link: `${BASE_URL}community/index.html` },
+      {
+        id: 5,
+        title: enterprise,
+        link: 'https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0',
+      },
     ];
     return (
       <>
