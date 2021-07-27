@@ -17,7 +17,9 @@
 package com.alibaba.nacos.common.utils;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -245,4 +247,20 @@ public final class CollectionUtils {
             return defaultValue;
         }
     }
+    
+    /**
+     * return an arraylist containing all input parameters.
+     * @author zzq
+     * @param elements element array
+     * @return arraylist containing all input parameters
+     */
+    public static <T> List<T> list(T... elements) {
+        if (elements == null) {
+            throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
+        }
+        ArrayList<T> list = new ArrayList<>(elements.length);
+        Collections.addAll(list, elements);
+        return list;
+    }
+    
 }
