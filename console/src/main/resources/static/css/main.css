@@ -172,7 +172,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */.new-config-form{margin-top:36px}.more-item.hide{display:none}
+ */.new-config-form{margin-top:36px}
 
 /*!
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
@@ -220,7 +220,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */.button-list{text-align:right}.button-list button{margin-left:1em;font-size:14px}.editor-full-screen{width:100%;height:100%;position:fixed;top:0;left:0;z-index:100}.editor-normal{clear:both;height:300px}
+ */.button-list{text-align:right}.button-list button{margin-left:1em;font-size:14px}.editor-full-screen{width:100%;height:100%;position:fixed;top:0;left:0;z-index:100}.editor-normal{clear:both}.more-item.hide{display:none}
 
 /*!
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
@@ -236,7 +236,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */.config-editor{padding:10px}.config-editor .func-title{overflow:hidden;height:50px;width:100%;font-weight:500;margin-bottom:9px;font-size:18px;line-height:36px;color:#73777a}.config-editor .form{display:table}.config-editor .form .next-form-item{display:table-row}.config-editor .form .next-form-item .next-form-item-label{white-space:nowrap;word-break:keep-all}.config-editor .form .next-form-item .next-form-item-control,.config-editor .form .next-form-item .next-select{width:100%}.config-editor .form .next-form-item .next-form-item-control,.config-editor .form .next-form-item .next-form-item-label{display:table-cell}.config-editor .form .next-form-item-control{padding-bottom:12px}.config-editor .form .next-checkbox-label{color:#73777a;font-weight:400}.config-editor .form .next-radio-label{color:#73777a}.config-editor .form .switch{color:#33cde5;cursor:pointer;user-select:none}.config-editor .form .help-label>*{display:inline-block}.config-editor .form .help-label>i{color:#1dc11d;margin:0 .25em}.config-editor .button-list{text-align:right}.config-editor .button-list button{margin-left:1em;font-size:14px}.config-editor .editor-full-screen{width:100%;height:100%;position:fixed;top:0;left:0;z-index:100}.config-editor .editor-normal{clear:both;height:300px}
+ */.config-editor{padding:10px}.config-editor .func-title{overflow:hidden;height:50px;width:100%;font-weight:500;margin-bottom:9px;font-size:18px;line-height:36px;color:#73777a}.config-editor .form{display:table}.config-editor .form .next-form-item{display:table-row}.config-editor .form .next-form-item .next-form-item-label{white-space:nowrap;word-break:keep-all}.config-editor .form .next-form-item .next-form-item-control,.config-editor .form .next-form-item .next-select{width:100%}.config-editor .form .next-form-item .next-form-item-control,.config-editor .form .next-form-item .next-form-item-label{display:table-cell}.config-editor .form .next-form-item-control{padding-bottom:12px}.config-editor .form .next-checkbox-label{color:#73777a;font-weight:400}.config-editor .form .next-radio-label{color:#73777a}.config-editor .form .switch{color:#33cde5;cursor:pointer;user-select:none}.config-editor .form .help-label>*{display:inline-block}.config-editor .form .help-label>i{color:#1dc11d;margin:0 .25em}.config-editor .button-list{text-align:right}.config-editor .button-list button{margin-left:1em;font-size:14px}.config-editor .editor-full-screen{width:100%;height:100%;position:fixed;top:0;left:0;z-index:100}.config-editor .editor-normal{clear:both}
 
 /*!
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
