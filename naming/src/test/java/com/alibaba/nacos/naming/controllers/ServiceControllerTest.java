@@ -16,65 +16,150 @@
 
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceOperatorV1Impl;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
+import com.alibaba.nacos.naming.core.SubscribeManager;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
+import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.Collections;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = MockServletContext.class)
-@WebAppConfiguration
+@RunWith(MockitoJUnitRunner.class)
 public class ServiceControllerTest extends BaseTest {
     
     @InjectMocks
     private ServiceController serviceController;
     
-    @InjectMocks
-    private ServiceOperatorV1Impl serviceOperatorV1;
+    @Mock
+    private ServiceOperatorV2Impl serviceOperatorV2;
     
-    private MockMvc mockmvc;
+    @Mock
+    private UpgradeJudgement upgradeJudgement;
+    
+    @Mock
+    private SubscribeManager subscribeManager;
     
     @Before
     public void before() {
         super.before();
-        ReflectionTestUtils.setField(serviceController, "serviceOperatorV1", serviceOperatorV1);
-        mockmvc = MockMvcBuilders.standaloneSetup(serviceController).build();
+        ReflectionTestUtils.setField(serviceController, "upgradeJudgement", upgradeJudgement);
+        Mockito.when(upgradeJudgement.isUseGrpcFeatures()).thenReturn(true);
     }
     
     @Test
     public void testList() throws Exception {
-        Map<String, Service> serviceNameList = new HashMap<>();
-        for (int i = 0; i < 3; i++) {
-            serviceNameList.put("DEFAULT_GROUP@@providers:com.alibaba.nacos.controller.test:" + i, new Service());
+        
+        Mockito.when(serviceOperatorV2.listService(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt()))
+                .thenReturn(Collections.singletonList("DEFAULT_GROUP@@providers:com.alibaba.nacos.controller.test:1"));
+    
+        MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+        servletRequest.addParameter("pageNo", "1");
+        servletRequest.addParameter("pageSize", "10");
+        
+        ObjectNode objectNode = serviceController.list(servletRequest);
+        Assert.assertEquals(1, objectNode.get("count").asInt());
+    }
+    
+    @Test
+    public void testCreate() {
+        try {
+            Mockito.when(upgradeJudgement.isUseGrpcFeatures()).thenReturn(true);
+            String res = serviceController.create(TEST_NAMESPACE, TEST_SERVICE_NAME, 0, "", "");
+            Assert.assertEquals("ok", res);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testRemove() {
+        try {
+            String res = serviceController.remove(TEST_NAMESPACE, TEST_SERVICE_NAME);
+            Assert.assertEquals("ok", res);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testDetail() {
+        try {
+            ObjectNode result = Mockito.mock(ObjectNode.class);
+            Mockito.when(serviceOperatorV2.queryService(Mockito.anyString(), Mockito.anyString())).thenReturn(result);
+            
+            ObjectNode objectNode = serviceController.detail(TEST_NAMESPACE, TEST_SERVICE_NAME);
+            Assert.assertEquals(result, objectNode);
+        } catch (NacosException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testUpdate() {
+        MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+        servletRequest.addParameter(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME);
+        servletRequest.addParameter("protectThreshold", "0.01");
+        try {
+            String res = serviceController.update(servletRequest);
+            Assert.assertEquals("ok", res);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testSearchService() {
+        try {
+            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
+                    .thenReturn(Collections.singletonList("result"));
+            
+            ObjectNode objectNode = serviceController.searchService(TEST_NAMESPACE, "", true);
+            Assert.assertEquals(1, objectNode.get("count").asInt());
+        } catch (NacosException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
         }
         
-        Mockito.when(serviceManager.chooseServiceMap(Constants.DEFAULT_NAMESPACE_ID)).thenReturn(serviceNameList);
+        try {
+            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
+                    .thenReturn(Arrays.asList("re1", "re2"));
+            Mockito.when(serviceOperatorV2.listAllNamespace()).thenReturn(Arrays.asList("re1", "re2"));
+            
+            ObjectNode objectNode = serviceController.searchService(null, "", true);
+            Assert.assertEquals(4, objectNode.get("count").asInt());
+        } catch (NacosException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testSubscribers() {
+        Mockito.when(subscribeManager.getSubscribers(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
+                .thenReturn(Collections.singletonList(Mockito.mock(Subscriber.class)));
         
-        mockmvc.perform(MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service" + "/list")
-                .param("pageNo", "1").param("pageSize", "10").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.doms").isArray())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.doms").isNotEmpty())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.count").value(serviceNameList.size()));
+        MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+        servletRequest.addParameter(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME);
+        
+        ObjectNode objectNode = serviceController.subscribers(servletRequest);
+        Assert.assertEquals(1, objectNode.get("count").asInt());
     }
 }

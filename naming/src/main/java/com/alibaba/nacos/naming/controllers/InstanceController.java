@@ -19,12 +19,14 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
@@ -37,14 +39,16 @@ import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
+import com.alibaba.nacos.naming.pojo.instance.HttpRequestInstanceBuilder;
+import com.alibaba.nacos.naming.pojo.instance.InstanceExtensionHandler;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,6 +60,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +88,11 @@ public class InstanceController {
     @Autowired
     private UpgradeJudgement upgradeJudgement;
     
+    public InstanceController() {
+        Collection<InstanceExtensionHandler> handlers = NacosServiceLoader.load(InstanceExtensionHandler.class);
+        Loggers.SRV_LOG.info("Load instance extension handler {}", handlers);
+    }
+    
     /**
      * Register new instance.
      *
@@ -100,7 +110,8 @@ public class InstanceController {
         final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         
-        final Instance instance = parseInstance(request);
+        final Instance instance = HttpRequestInstanceBuilder.newBuilder()
+                .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         
         getInstanceOperator().registerInstance(namespaceId, serviceName, instance);
         return "ok";
@@ -117,7 +128,8 @@ public class InstanceController {
     @DeleteMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String deregister(HttpServletRequest request) throws Exception {
-        Instance instance = getIpAddress(request);
+        Instance instance = HttpRequestInstanceBuilder.newBuilder()
+                .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
@@ -140,7 +152,9 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-        getInstanceOperator().updateInstance(namespaceId, serviceName, parseInstance(request));
+        Instance instance = HttpRequestInstanceBuilder.newBuilder()
+                .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
+        getInstanceOperator().updateInstance(namespaceId, serviceName, instance);
         return "ok";
     }
     
@@ -267,11 +281,11 @@ public class InstanceController {
         }
         String healthy = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(healthy)) {
-            patchObject.setHealthy(BooleanUtils.toBoolean(healthy));
+            patchObject.setHealthy(ConvertUtils.toBoolean(healthy));
         }
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(enabledString)) {
-            patchObject.setEnabled(BooleanUtils.toBoolean(enabledString));
+            patchObject.setEnabled(ConvertUtils.toBoolean(enabledString));
         }
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         getInstanceOperator().patchInstance(namespaceId, serviceName, patchObject);
@@ -379,9 +393,12 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-        Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
-        
-        int resultCode = getInstanceOperator().handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat);
+        Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}, namespaceId: {}", clientBeat,
+                serviceName, namespaceId);
+        BeatInfoInstanceBuilder builder = BeatInfoInstanceBuilder.newBuilder();
+        builder.setRequest(request);
+        int resultCode = getInstanceOperator()
+                .handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat, builder);
         result.put(CommonParams.CODE, resultCode);
         result.put(SwitchEntry.CLIENT_BEAT_INTERVAL,
                 getInstanceOperator().getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));
@@ -421,68 +438,6 @@ public class InstanceController {
         }
         result.replace("ips", ipArray);
         return result;
-    }
-    
-    private Instance parseInstance(HttpServletRequest request) throws Exception {
-        
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String app = WebUtils.optional(request, "app", "DEFAULT");
-        Instance instance = getIpAddress(request);
-        instance.setApp(app);
-        instance.setServiceName(serviceName);
-        // Generate simple instance id first. This value would be updated according to
-        // INSTANCE_ID_GENERATOR.
-        instance.setInstanceId(instance.generateInstanceId());
-        instance.setLastBeat(System.currentTimeMillis());
-        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        if (StringUtils.isNotEmpty(metadata)) {
-            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
-        }
-        
-        instance.validate();
-        
-        return instance;
-    }
-    
-    private Instance getIpAddress(HttpServletRequest request) {
-        
-        String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
-        boolean enabled;
-        if (StringUtils.isBlank(enabledString)) {
-            enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
-        } else {
-            enabled = BooleanUtils.toBoolean(enabledString);
-        }
-        
-        String weight = WebUtils.optional(request, "weight", "1");
-        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
-        
-        Instance instance = getBasicIpAddress(request);
-        instance.setWeight(Double.parseDouble(weight));
-        instance.setHealthy(healthy);
-        instance.setEnabled(enabled);
-        
-        return instance;
-    }
-    
-    private Instance getBasicIpAddress(HttpServletRequest request) {
-        
-        final String ip = WebUtils.required(request, "ip");
-        final String port = WebUtils.required(request, "port");
-        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
-        if (StringUtils.isBlank(cluster)) {
-            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        }
-        boolean ephemeral = BooleanUtils.toBoolean(
-                WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
-        
-        Instance instance = new Instance();
-        instance.setPort(Integer.parseInt(port));
-        instance.setIp(ip);
-        instance.setEphemeral(ephemeral);
-        instance.setClusterName(cluster);
-        
-        return instance;
     }
     
     private InstanceOperator getInstanceOperator() {

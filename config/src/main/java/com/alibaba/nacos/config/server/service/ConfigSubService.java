@@ -26,7 +26,7 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -172,7 +172,7 @@ public class ConfigSubService {
             try {
                 StringBuilder paramUrl = new StringBuilder();
                 for (Map.Entry<String, String> param : params.entrySet()) {
-                    paramUrl.append("&").append(param.getKey()).append("=")
+                    paramUrl.append('&').append(param.getKey()).append('=')
                             .append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
                 }
                 

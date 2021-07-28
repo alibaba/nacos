@@ -21,13 +21,14 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactoryHolder;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatUpdateTask;
+import com.alibaba.nacos.naming.misc.ClientConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
@@ -61,16 +62,23 @@ public class EphemeralIpPortClientManager implements ClientManager {
     }
     
     @Override
-    public boolean clientConnected(Client client) {
-        Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
-        if (!clients.containsKey(client.getClientId())) {
-            clients.putIfAbsent(client.getClientId(), (IpPortBasedClient) client);
-        }
+    public boolean clientConnected(String clientId, ClientAttributes attributes) {
+        return clientConnected(clientFactory.newClient(clientId, attributes));
+    }
+    
+    @Override
+    public boolean clientConnected(final Client client) {
+        clients.computeIfAbsent(client.getClientId(), s -> {
+            Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
+            IpPortBasedClient ipPortBasedClient = (IpPortBasedClient) client;
+            ipPortBasedClient.init();
+            return ipPortBasedClient;
+        });
         return true;
     }
     
     @Override
-    public boolean syncClientConnected(String clientId, ClientSyncAttributes attributes) {
+    public boolean syncClientConnected(String clientId, ClientAttributes attributes) {
         return clientConnected(clientFactory.newSyncedClient(clientId, attributes));
     }
     
@@ -143,18 +151,18 @@ public class EphemeralIpPortClientManager implements ClientManager {
         }
         
         private boolean isExpireClient(long currentTime, IpPortBasedClient client) {
-            return client.isEphemeral() && isExpirePublishedClient(currentTime, client) && isExpireSubscriberClient(
-                    currentTime, client);
+            long noUpdatedTime = currentTime - client.getLastUpdatedTime();
+            return client.isEphemeral() && (
+                    isExpirePublishedClient(noUpdatedTime, client) && isExpireSubscriberClient(noUpdatedTime, client)
+                            || noUpdatedTime > ClientConfig.getInstance().getClientExpiredTime());
         }
         
-        private boolean isExpirePublishedClient(long currentTime, IpPortBasedClient client) {
-            return client.getAllPublishedService().isEmpty()
-                    && currentTime - client.getLastUpdatedTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
+        private boolean isExpirePublishedClient(long noUpdatedTime, IpPortBasedClient client) {
+            return client.getAllPublishedService().isEmpty() && noUpdatedTime > Constants.DEFAULT_IP_DELETE_TIMEOUT;
         }
         
-        private boolean isExpireSubscriberClient(long currentTime, IpPortBasedClient client) {
-            return client.getAllSubscribeService().isEmpty() || currentTime - client.getLastUpdatedTime() > switchDomain
-                    .getDefaultPushCacheMillis();
+        private boolean isExpireSubscriberClient(long noUpdatedTime, IpPortBasedClient client) {
+            return client.getAllSubscribeService().isEmpty() || noUpdatedTime > switchDomain.getDefaultPushCacheMillis();
         }
     }
 }

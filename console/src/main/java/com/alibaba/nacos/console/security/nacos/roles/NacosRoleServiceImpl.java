@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.security.nacos.roles;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.auth.PermissionPersistService;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
@@ -27,7 +28,6 @@ import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.jsonwebtoken.lang.Collections;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.mina.util.ConcurrentHashSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -158,7 +158,7 @@ public class NacosRoleServiceImpl {
     
     public List<RoleInfo> getRoles(String username) {
         List<RoleInfo> roleInfoList = roleInfoMap.get(username);
-        if (!authConfigs.isCachingEnabled()) {
+        if (!authConfigs.isCachingEnabled() || roleInfoList == null) {
             Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage != null) {
                 roleInfoList = roleInfoPage.getPageItems();
@@ -177,7 +177,7 @@ public class NacosRoleServiceImpl {
     
     public List<PermissionInfo> getPermissions(String role) {
         List<PermissionInfo> permissionInfoList = permissionInfoMap.get(role);
-        if (!authConfigs.isCachingEnabled()) {
+        if (!authConfigs.isCachingEnabled() || permissionInfoList == null) {
             Page<PermissionInfo> permissionInfoPage = getPermissionsFromDatabase(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (permissionInfoPage != null) {
                 permissionInfoList = permissionInfoPage.getPageItems();

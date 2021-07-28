@@ -29,14 +29,16 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import junit.framework.TestCase;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.core.env.StandardEnvironment;
-import org.springframework.mock.web.MockServletContext;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -76,14 +78,17 @@ public class DistroLoadDataTaskTest extends TestCase {
     @Mock
     private DistroCallback loadCallback;
     
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+    }
+    
     @Before
     public void setUp() throws Exception {
-        EnvUtil.setEnvironment(new StandardEnvironment());
-        memberManager = new ServerMemberManager(new MockServletContext());
-        Member member1 = Member.builder().ip("2.2.2.2").port(8848).build();
-        Member member2 = Member.builder().ip("1.1.1.1").port(8848).build();
-        memberManager.update(member1);
-        memberManager.update(member2);
+        List<Member> memberList = new LinkedList<>();
+        memberList.add(Member.builder().ip("2.2.2.2").port(8848).build());
+        memberList.add(Member.builder().ip("1.1.1.1").port(8848).build());
+        when(memberManager.allMembersWithoutSelf()).thenReturn(memberList);
         componentHolder = new DistroComponentHolder();
         componentHolder.registerDataStorage(type, distroDataStorage);
         componentHolder.registerTransportAgent(type, distroTransportAgent);
@@ -98,7 +103,8 @@ public class DistroLoadDataTaskTest extends TestCase {
     @Test
     public void testRun() {
         distroLoadDataTask.run();
-        Map<String, Boolean> loadCompletedMap = (Map<String, Boolean>) ReflectionTestUtils.getField(distroLoadDataTask, "loadCompletedMap");
+        Map<String, Boolean> loadCompletedMap = (Map<String, Boolean>) ReflectionTestUtils
+                .getField(distroLoadDataTask, "loadCompletedMap");
         assertNotNull(loadCompletedMap);
         assertTrue(loadCompletedMap.containsKey(type));
         verify(distroTransportAgent).getDatumSnapshot(any(String.class));

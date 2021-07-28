@@ -29,7 +29,7 @@ import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class AddressServerMemberLookup extends AbstractMemberLookup {
     
-    private final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() { };
+    private final GenericType<String> genericType = new GenericType<String>() { };
     
     public String domainName;
     

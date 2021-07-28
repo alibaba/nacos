@@ -20,7 +20,7 @@ import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.naming.core.Instance;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -103,8 +103,8 @@ public class AddressServerGeneratorManager {
         
         StringBuilder ips = new StringBuilder();
         instanceList.forEach(instance -> {
-            ips.append(instance.getIp()).append(":").append(instance.getPort());
-            ips.append("\n");
+            ips.append(instance.getIp()).append(':').append(instance.getPort());
+            ips.append('\n');
         });
         
         return ips.toString();

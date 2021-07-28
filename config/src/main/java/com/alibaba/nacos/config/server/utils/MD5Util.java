@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.core.utils.StringPool;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -73,9 +73,9 @@ public class MD5Util {
         for (String groupKey : changedGroupKeys) {
             String[] dataIdGroupId = GroupKey2.parseKey(groupKey);
             sb.append(dataIdGroupId[0]);
-            sb.append(":");
+            sb.append(':');
             sb.append(dataIdGroupId[1]);
-            sb.append(";");
+            sb.append(';');
         }
         return sb.toString();
     }

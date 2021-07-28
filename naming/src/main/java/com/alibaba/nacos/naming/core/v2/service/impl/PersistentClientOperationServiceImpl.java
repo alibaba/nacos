@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ClassUtils;
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -36,8 +35,10 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.consistency.persistent.impl.AbstractSnapshotOperation;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
@@ -46,7 +47,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.util.CRC64;
@@ -61,6 +61,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -170,7 +171,10 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     
     private void onInstanceRegister(Service service, Instance instance, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
-        Client client = clientManager.computeIfAbsent(clientId, () -> new IpPortBasedClient(clientId, false));
+        if (!clientManager.contains(clientId)) {
+            clientManager.clientConnected(clientId, new ClientAttributes());
+        }
+        Client client = clientManager.getClient(clientId);
         InstancePublishInfo instancePublishInfo = getPublishInfo(instance);
         client.addServiceInstance(singleton, instancePublishInfo);
         client.setLastUpdatedTime();
@@ -236,9 +240,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     
     private class PersistentInstanceSnapshotOperation extends AbstractSnapshotOperation {
         
-        private final String snapshotSaveTag = ClassUtils.getSimplaName(getClass()) + ".SAVE";
+        private final String snapshotSaveTag = ClassUtils.getSimpleName(getClass()) + ".SAVE";
         
-        private final String snapshotLoadTag = ClassUtils.getSimplaName(getClass()) + ".LOAD";
+        private final String snapshotLoadTag = ClassUtils.getSimpleName(getClass()) + ".LOAD";
         
         private static final String SNAPSHOT_ARCHIVE = "persistent_instance.zip";
         
@@ -289,6 +293,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             ConcurrentHashMap<String, IpPortBasedClient> snapshot = new ConcurrentHashMap<>(newData.size());
             for (Map.Entry<String, ClientSyncData> entry : newData.entrySet()) {
                 IpPortBasedClient snapshotClient = new IpPortBasedClient(entry.getKey(), false);
+                snapshotClient.init();
                 loadSyncDataToClient(entry, snapshotClient);
                 snapshot.put(entry.getKey(), snapshotClient);
             }

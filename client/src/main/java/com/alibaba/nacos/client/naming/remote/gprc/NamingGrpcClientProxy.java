@@ -40,6 +40,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -72,7 +73,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private final RpcClient rpcClient;
     
-    private final NamingGrpcConnectionEventListener namingGrpcConnectionEventListener;
+    private final NamingGrpcRedoService redoService;
     
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
             Properties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
@@ -84,15 +85,15 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels);
-        this.namingGrpcConnectionEventListener = new NamingGrpcConnectionEventListener(this);
+        this.redoService = new NamingGrpcRedoService(this);
         start(serverListFactory, serviceInfoHolder);
     }
     
     private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
-        rpcClient.start();
+        rpcClient.registerConnectionListener(redoService);
         rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
-        rpcClient.registerConnectionListener(namingGrpcConnectionEventListener);
+        rpcClient.start();
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -110,10 +111,23 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance {}", namespaceId, serviceName,
                 instance);
-        namingGrpcConnectionEventListener.cacheInstanceForRedo(serviceName, groupName, instance);
+        redoService.cacheInstanceForRedo(serviceName, groupName, instance);
+        doRegisterService(serviceName, groupName, instance);
+    }
+    
+    /**
+     * Execute register operation.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param instance    instance to register
+     * @throws NacosException nacos exception
+     */
+    public void doRegisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
         requestToServer(request, Response.class);
+        redoService.instanceRegistered(serviceName, groupName);
     }
     
     @Override
@@ -121,10 +135,23 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         NAMING_LOGGER
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
                         instance);
-        namingGrpcConnectionEventListener.removeInstanceForRedo(serviceName, groupName, instance);
+        redoService.instanceDeregister(serviceName, groupName);
+        doDeregisterService(serviceName, groupName, instance);
+    }
+    
+    /**
+     * Execute deregister operation.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param instance    instance
+     * @throws NacosException nacos exception
+     */
+    public void doDeregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.DE_REGISTER_INSTANCE, instance);
         requestToServer(request, Response.class);
+        redoService.removeInstanceForRedo(serviceName, groupName);
     }
     
     @Override
@@ -181,21 +208,46 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        redoService.cacheSubscriberForRedo(serviceName, groupName, clusters);
+        return doSubscribe(serviceName, groupName, clusters);
+    }
+    
+    /**
+     * Execute subscribe operation.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param clusters    clusters, current only support subscribe all clusters, maybe deprecated
+     * @return current service info of subscribe service
+     * @throws NacosException nacos exception
+     */
+    public ServiceInfo doSubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, groupName, serviceName, clusters,
                 true);
         SubscribeServiceResponse response = requestToServer(request, SubscribeServiceResponse.class);
-        namingGrpcConnectionEventListener
-                .cacheSubscriberForRedo(NamingUtils.getGroupedName(serviceName, groupName), clusters);
+        redoService.subscriberRegistered(serviceName, groupName, clusters);
         return response.getServiceInfo();
     }
     
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        redoService.subscriberDeregister(serviceName, groupName, clusters);
+        doUnsubscribe(serviceName, groupName, clusters);
+    }
+    
+    /**
+     * Execute unsubscribe operation.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param clusters    clusters, current only support subscribe all clusters, maybe deprecated
+     * @throws NacosException nacos exception
+     */
+    public void doUnsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceName, groupName, clusters,
                 false);
         requestToServer(request, SubscribeServiceResponse.class);
-        namingGrpcConnectionEventListener
-                .removeSubscriberForRedo(NamingUtils.getGroupedName(serviceName, groupName), clusters);
+        redoService.removeSubscriberForRedo(serviceName, groupName, clusters);
     }
     
     @Override
@@ -232,6 +284,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     @Override
     public void shutdown() throws NacosException {
         rpcClient.shutdown();
+        redoService.shutdown();
     }
     
     public boolean isEnable() {

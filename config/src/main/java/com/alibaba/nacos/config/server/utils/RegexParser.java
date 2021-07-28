@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang3.CharUtils;
-
 /**
  * Generic classes for wildcard characters, decisions, and standard canonical transformations that can be supported by
  * ConfigCenter.
@@ -41,10 +39,10 @@ public class RegexParser {
             throw new NullPointerException("regex string can't be null");
         }
         StringBuilder result = new StringBuilder();
-        result.append("^");
+        result.append('^');
         for (int i = 0; i < regex.length(); i++) {
             char ch = regex.charAt(i);
-            if (CharUtils.isAsciiAlphanumeric(ch) || CharUtils.isAsciiNumeric(ch)) {
+            if (isAsciiAlphanumeric(ch)) {
                 result.append(ch);
             } else if (ch == '*') {
                 result.append(".*");
@@ -65,12 +63,28 @@ public class RegexParser {
                 result.append("\\" + ch);
             }
         }
-        result.append("$");
+        result.append('$');
         return result.toString();
     }
     
     public static boolean containsWildcard(String regex) {
         return (regex.contains("?") || regex.contains("*"));
+    }
+    
+    private static Boolean isAsciiAlphanumeric(final char ch) {
+        return  isAsciiAlphaUpper(ch) || isAsciiAlphaLower(ch) || isAsciiNumeric(ch);
+    }
+    
+    private static Boolean isAsciiNumeric(final char ch) {
+        return ch >= '0' && ch <= '9';
+    }
+    
+    private static Boolean isAsciiAlphaUpper(final char ch) {
+        return ch >= 'A' && ch <= 'Z';
+    }
+    
+    private static Boolean isAsciiAlphaLower(final char ch) {
+        return ch >= 'a' && ch <= 'z';
     }
     
 }

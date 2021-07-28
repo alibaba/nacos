@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.config.server.service.capacity;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.google.common.collect.Lists;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -209,8 +209,8 @@ public class TenantCapacityPersistService {
      */
     public boolean updateTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
-        List<Object> argList = Lists.newArrayList();
-        StringBuilder sql = new StringBuilder("update tenant_capacity set");
+        List<Object> argList = CollectionUtils.list();
+        StringBuilder sql = new StringBuilder("UPDATE tenant_capacity SET");
         if (quota != null) {
             sql.append(" quota = ?,");
             argList.add(quota);
@@ -230,7 +230,7 @@ public class TenantCapacityPersistService {
         sql.append(" gmt_modified = ?");
         argList.add(TimeUtils.getCurrentTime());
         
-        sql.append(" where tenant_id = ?");
+        sql.append(" WHERE tenant_id = ?");
         argList.add(tenant);
         try {
             return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;

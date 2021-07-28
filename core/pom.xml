@@ -174,10 +174,10 @@
             <artifactId>protoc-gen-grpc-java</artifactId>
             <type>pom</type>
         </dependency>
-        
+    
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-testing</artifactId>
         </dependency>
     </dependencies>
 </project>

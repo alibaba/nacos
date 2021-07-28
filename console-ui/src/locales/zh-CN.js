@@ -20,6 +20,7 @@ const I18N_CONF = {
     docs: '文档',
     blog: '博客',
     community: '社区',
+    enterprise: 'Nacos企业版',
     languageSwitchButton: 'En',
     logout: '登出',
     changePassword: '修改密码',
@@ -141,6 +142,10 @@ const I18N_CONF = {
     pubNoData: '没有数据',
     nodeState: '节点状态',
     extendInfo: '节点元数据',
+    operation: '操作',
+    leave: '下线',
+    confirm: '确认',
+    confirmTxt: '确认要下线此集群节点?',
   },
   EditClusterDialog: {
     updateCluster: '更新集群',

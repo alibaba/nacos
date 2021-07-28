@@ -38,6 +38,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Listener Management.
@@ -88,7 +89,10 @@ public class CacheData {
     
     private volatile String encryptedDataKey;
     
-    private volatile long lastModifiedTs;
+    /**
+     * local cache change timestamp,for concurrent control.
+     */
+    private volatile AtomicLong lastModifiedTs = new AtomicLong(0);
     
     private int taskId;
     
@@ -131,7 +135,7 @@ public class CacheData {
      *
      * @return property value of lastModifiedTs
      */
-    public long getLastModifiedTs() {
+    public AtomicLong getLastModifiedTs() {
         return lastModifiedTs;
     }
     
@@ -141,7 +145,7 @@ public class CacheData {
      * @param lastModifiedTs value to be assigned to property lastModifiedTs
      */
     public void setLastModifiedTs(long lastModifiedTs) {
-        this.lastModifiedTs = lastModifiedTs;
+        this.lastModifiedTs.set(lastModifiedTs);
     }
     
     public String getType() {
@@ -414,6 +418,8 @@ public class CacheData {
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
         this.md5 = getMd5String(content);
     }
+    
+    // ==================
     
     public String getEncryptedDataKey() {
         return encryptedDataKey;

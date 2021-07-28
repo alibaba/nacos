@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.Collections;
@@ -84,6 +85,10 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     
     @Override
     public List<DistroData> getVerifyData() {
+        // If upgrade to 2.0.X, do not verify for v1.
+        if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
+            return Collections.emptyList();
+        }
         Map<String, String> keyChecksums = new HashMap<>(64);
         for (String key : dataStore.keys()) {
             if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {

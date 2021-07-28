@@ -60,14 +60,7 @@ public class InitUtils {
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             
             tmpNamespace = TenantUtil.getUserTenantForAns();
-            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-                @Override
-                public String call() {
-                    String namespace = System.getProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
-                    LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
-                    return namespace;
-                }
-            });
+            LogUtils.NAMING_LOGGER.info("initializer namespace from System Property : {}", tmpNamespace);
             
             tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
                 @Override

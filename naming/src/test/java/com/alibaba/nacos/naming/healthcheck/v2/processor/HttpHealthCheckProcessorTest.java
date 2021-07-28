@@ -24,12 +24,14 @@ import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -82,6 +84,7 @@ public class HttpHealthCheckProcessorTest {
         when(healthCheckTaskV2.getClient()).thenReturn(ipPortBasedClient);
         when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(healthCheckInstancePublishInfo);
         httpHealthCheckProcessor = new HttpHealthCheckProcessor(healthCheckCommon, switchDomain);
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Test
@@ -113,8 +116,8 @@ public class HttpHealthCheckProcessorTest {
     }
     
     @Test
-    public void testOnReceive()
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+    public void testOnReceiveWithOK()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, InterruptedException {
         Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
         Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
         Class<?> aClass = Arrays.stream(classes).findFirst().get();
@@ -123,17 +126,52 @@ public class HttpHealthCheckProcessorTest {
                         HealthCheckTaskV2.class, Service.class);
         Object objects = constructor
                 .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
-        List<Integer> codeList = Stream
-                .of(HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_UNAVAILABLE, HttpURLConnection.HTTP_NOT_FOUND)
+        int code = HttpURLConnection.HTTP_OK;
+        when(restResult.getCode()).thenReturn(code);
+        Method onReceive = aClass.getMethod("onReceive", RestResult.class);
+        onReceive.invoke(objects, restResult);
+        //verify
+        this.verifyCall(code);
+        List<Integer> codeList = Stream.of(HttpURLConnection.HTTP_UNAVAILABLE, HttpURLConnection.HTTP_NOT_FOUND)
                 .collect(Collectors.toList());
-        for (Integer code : codeList) {
-            when(restResult.getCode()).thenReturn(code);
-            Method onReceive = aClass.getMethod("onReceive", RestResult.class);
-            onReceive.invoke(objects, restResult);
-            
-            //verify
-            this.verifyCall(code);
-        }
+    }
+    
+    @Test
+    public void testOnReceiveWithUnavailable()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, InterruptedException {
+        Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
+        Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
+        Class<?> aClass = Arrays.stream(classes).findFirst().get();
+        Constructor<?> constructor = aClass
+                .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
+                        HealthCheckTaskV2.class, Service.class);
+        Object objects = constructor
+                .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
+        int code = HttpURLConnection.HTTP_UNAVAILABLE;
+        when(restResult.getCode()).thenReturn(code);
+        Method onReceive = aClass.getMethod("onReceive", RestResult.class);
+        onReceive.invoke(objects, restResult);
+        //verify
+        this.verifyCall(code);
+    }
+    
+    @Test
+    public void testOnReceiveWithNotFound()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, InterruptedException {
+        Class<HttpHealthCheckProcessor> healthCheckProcessorClass = HttpHealthCheckProcessor.class;
+        Class<?>[] classes = healthCheckProcessorClass.getDeclaredClasses();
+        Class<?> aClass = Arrays.stream(classes).findFirst().get();
+        Constructor<?> constructor = aClass
+                .getConstructor(HttpHealthCheckProcessor.class, HealthCheckInstancePublishInfo.class,
+                        HealthCheckTaskV2.class, Service.class);
+        Object objects = constructor
+                .newInstance(httpHealthCheckProcessor, healthCheckInstancePublishInfo, healthCheckTaskV2, service);
+        int code = HttpURLConnection.HTTP_NOT_FOUND;
+        when(restResult.getCode()).thenReturn(code);
+        Method onReceive = aClass.getMethod("onReceive", RestResult.class);
+        onReceive.invoke(objects, restResult);
+        //verify
+        this.verifyCall(code);
     }
     
     private void verifyCall(int code) {

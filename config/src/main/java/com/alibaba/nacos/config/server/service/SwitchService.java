@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -123,7 +123,7 @@ public class SwitchService {
             String value = entry.getValue();
             sb.append(split);
             sb.append(key);
-            sb.append("=");
+            sb.append('=');
             sb.append(value);
             split = "; ";
         }

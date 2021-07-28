@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

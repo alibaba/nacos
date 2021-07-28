@@ -89,7 +89,7 @@ public abstract class RpcClient implements Closeable {
     protected ClientAbilities clientAbilities;
     
     /**
-     * default keep alive time 10s.
+     * default keep alive time 5s.
      */
     private long keepAliveTime = 5000L;
     
@@ -176,7 +176,6 @@ public abstract class RpcClient implements Closeable {
         this.keepAliveTime = keepAliveTime * timeUnit.toMillis(keepAliveTime);
         LoggerUtils.printIfInfoEnabled(LOGGER, "[{}]RpcClient init keepalive time, keepAliveTimeMillis={}", name,
                 keepAliveTime);
-        
         return this;
     }
     
@@ -706,7 +705,7 @@ public abstract class RpcClient implements Closeable {
             throw (exceptionThrow instanceof NacosException) ? (NacosException) exceptionThrow
                     : new NacosException(SERVER_ERROR, exceptionThrow);
         } else {
-            throw new NacosException(SERVER_ERROR, "Request fail,Unknown Error");
+            throw new NacosException(SERVER_ERROR, "Request fail, unknown Error");
         }
     }
     

@@ -121,4 +121,19 @@ public final class Constants {
      * Whether enabled for instance according to instance self publish.
      */
     public static final String PUBLISH_INSTANCE_ENABLE = "publishInstanceEnable";
+    
+    /**
+     * Max value of instance weight.
+     */
+    public static final double MAX_WEIGHT_VALUE = 10000.0D;
+    
+    /**
+     * Min positive value of instance weight.
+     */
+    public static final double MIN_POSITIVE_WEIGHT_VALUE = 0.01D;
+    
+    /**
+     * Min value of instance weight.
+     */
+    public static final double MIN_WEIGHT_VALUE = 0.00D;
 }

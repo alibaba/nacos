@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import org.apache.commons.lang3.RandomUtils;
+import com.alibaba.nacos.common.utils.RandomUtils;
 
 /**
  * Health check task.

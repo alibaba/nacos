@@ -76,4 +76,12 @@ public final class MetricsMonitor {
     public static Timer getRaftApplyReadTimer() {
         return RAFT_APPLY_READ_TIMER;
     }
+    
+    public static DistributionSummary getRaftReadIndexFailed() {
+        return RAFT_READ_INDEX_FAILED;
+    }
+    
+    public static DistributionSummary getRaftFromLeader() {
+        return RAFT_FROM_LEADER;
+    }
 }

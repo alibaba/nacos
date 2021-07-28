@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,7 +73,7 @@ public class Instances implements Record {
                     ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_" + ip.isHealthy() + "_" + ip.isEnabled()
                             + "_" + ip.getClusterName() + "_" + convertMap2String(ip.getMetadata());
             sb.append(string);
-            sb.append(",");
+            sb.append(',');
         }
         
         return MD5Utils.md5Hex(sb.toString(), Constants.ENCODE);
@@ -96,9 +96,9 @@ public class Instances implements Record {
         Collections.sort(keys);
         for (String key : keys) {
             sb.append(key);
-            sb.append(":");
+            sb.append(':');
             sb.append(map.get(key));
-            sb.append(",");
+            sb.append(',');
         }
         return sb.toString();
     }

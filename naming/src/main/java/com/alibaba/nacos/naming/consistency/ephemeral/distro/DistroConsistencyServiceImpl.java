@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
@@ -42,7 +41,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.javatuples.Pair;
 import org.springframework.context.annotation.DependsOn;
 
@@ -50,6 +49,7 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -311,6 +311,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @Override
     public boolean processVerifyData(DistroData distroData, String sourceAddress) {
+        // If upgrade to 2.0.X, do not verify for v1.
+        if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
+            return true;
+        }
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
         Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
         onReceiveChecksums(verifyData, sourceAddress);
