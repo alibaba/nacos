@@ -39,6 +39,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@link ConnectionManager} unit test.
@@ -102,7 +103,8 @@ public class ConnectionManagerTest {
     }
     
     @Test
-    public void testTraced() {
+    public void testTraced() throws InterruptedException {
+        TimeUnit.SECONDS.sleep(1);
         Assert.assertTrue(connectionManager.traced(clientIp));
     }
     
