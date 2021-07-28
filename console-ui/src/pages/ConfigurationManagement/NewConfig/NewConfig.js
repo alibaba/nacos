@@ -363,6 +363,7 @@ class NewConfig extends React.Component {
       },
       complete: () => {
         this.closeLoading();
+        this.goList();
       },
       error: res => {
         this.closeLoading();
