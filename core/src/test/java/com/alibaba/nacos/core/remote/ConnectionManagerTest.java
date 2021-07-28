@@ -28,6 +28,7 @@ import io.grpc.netty.shaded.io.netty.channel.Channel;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -103,6 +104,7 @@ public class ConnectionManagerTest {
     }
     
     @Test
+    @Ignore("depend system env, need be refactor")
     public void testTraced() throws InterruptedException {
         TimeUnit.SECONDS.sleep(1);
         Assert.assertTrue(connectionManager.traced(clientIp));
