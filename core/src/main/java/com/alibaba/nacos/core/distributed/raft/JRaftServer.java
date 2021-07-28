@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -63,7 +64,6 @@ import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 import com.alipay.sofa.jraft.util.BytesUtil;
 import com.alipay.sofa.jraft.util.Endpoint;
-import com.google.common.base.Joiner;
 import com.google.protobuf.Message;
 import org.springframework.util.CollectionUtils;
 
@@ -473,7 +473,7 @@ public class JRaftServer {
                 Map<String, String> params = new HashMap<>();
                 params.put(JRaftConstants.GROUP_ID, group);
                 params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.REMOVE_PEERS);
-                params.put(JRaftConstants.COMMAND_VALUE, Joiner.on(",").join(waitRemove));
+                params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(waitRemove, StringUtils.COMMA));
                 RestResult<String> result = maintainService.execute(params);
                 if (result.ok()) {
                     successCnt.incrementAndGet();
