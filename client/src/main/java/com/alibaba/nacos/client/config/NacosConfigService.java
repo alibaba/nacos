@@ -112,7 +112,12 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public boolean publishConfig(String dataId, String group, String content) throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content);
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, null);
+    }
+    
+    @Override
+    public boolean publishConfig(String dataId, String group, String content, String type) throws NacosException {
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, type);
     }
     
     @Override
@@ -211,7 +216,7 @@ public class NacosConfigService implements ConfigService {
     }
     
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
-            String betaIps, String content) throws NacosException {
+            String betaIps, String content, String type) throws NacosException {
         group = null2defaultGroup(group);
         ParamUtils.checkParam(dataId, group, content);
         
@@ -236,6 +241,9 @@ public class NacosConfigService implements ConfigService {
         }
         if (StringUtils.isNotEmpty(tag)) {
             params.put("tag", tag);
+        }
+        if (StringUtils.isNotEmpty(type)) {
+            params.put("type", type);
         }
         Map<String, String> headers = new HashMap<String, String>(1);
         if (StringUtils.isNotEmpty(betaIps)) {
