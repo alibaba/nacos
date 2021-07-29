@@ -28,7 +28,6 @@ import io.grpc.netty.shaded.io.netty.channel.Channel;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -36,11 +35,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  * {@link ConnectionManager} unit test.
@@ -72,6 +71,11 @@ public class ConnectionManagerTest {
     
     @Before
     public void setUp() {
+        // create base file path
+        File baseDir = new File(EnvUtil.getNacosHome(), "data");
+        if (!baseDir.exists()) {
+            baseDir.mkdirs();
+        }
         connectId = UUID.randomUUID().toString();
         connectionManager.start();
         connectionManager.initLimitRue();
@@ -104,9 +108,7 @@ public class ConnectionManagerTest {
     }
     
     @Test
-    @Ignore("depend system env, need be refactor")
-    public void testTraced() throws InterruptedException {
-        TimeUnit.SECONDS.sleep(1);
+    public void testTraced() {
         Assert.assertTrue(connectionManager.traced(clientIp));
     }
     
