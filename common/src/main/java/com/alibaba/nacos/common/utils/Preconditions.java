@@ -16,9 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
-
-import static com.google.common.base.Strings.lenientFormat;
+import java.util.Objects;
 
 /**
  * Check precondition, throws an {@code IllegalArgumentException} If the conditions are not met.
@@ -33,7 +31,10 @@ public class Preconditions {
      * @param errorMessage the exception message to use if the check fails
      * @throws IllegalArgumentException if {@code expression} is false
      */
-    public static void checkArgument(boolean expression, @Nullable Object errorMessage) {
+    public static void checkArgument(boolean expression, Object errorMessage) {
+        if (Objects.isNull(errorMessage)) {
+            throw new IllegalArgumentException("errorMessage cannot be null.");
+        }
         if (!expression) {
             throw new IllegalArgumentException(String.valueOf(errorMessage));
         }
@@ -46,9 +47,12 @@ public class Preconditions {
      * @param errorMessageArgs the arguments to be substituted into the message template.
      * @throws IllegalArgumentException if {@code expression} is false
      */
-    public static void checkArgument(boolean expression, @Nullable String errorMessageTemplate, @Nullable Object @Nullable... errorMessageArgs) {
+    public static void checkArgument(boolean expression, String errorMessageTemplate, Object... errorMessageArgs) {
+        if (Objects.isNull(errorMessageArgs) || Objects.isNull(errorMessageTemplate)) {
+            throw new IllegalArgumentException("errorMessageTemplate or errorMessage cannot be null.");
+        }
         if (!expression) {
-            throw new IllegalArgumentException(lenientFormat(errorMessageTemplate, errorMessageArgs));
+            throw new IllegalArgumentException(String.format(errorMessageTemplate, errorMessageArgs));
         }
     }
 }
