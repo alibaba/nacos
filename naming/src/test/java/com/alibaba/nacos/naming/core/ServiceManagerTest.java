@@ -31,7 +31,6 @@ import com.alibaba.nacos.naming.core.ServiceManager.ServiceChecksum;
 import com.alibaba.nacos.naming.misc.Message;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -419,7 +418,7 @@ public class ServiceManagerTest extends BaseTest {
     
     @Test
     public void testSnowflakeInstanceId() throws Exception {
-        Map<String, String> metaData = Maps.newHashMap();
+        Map<String, String> metaData = new HashMap<>();
         metaData.put(PreservedMetadataKeys.INSTANCE_ID_GENERATOR, Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR);
         
         instance.setMetadata(metaData);
