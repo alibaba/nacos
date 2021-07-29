@@ -88,6 +88,7 @@ public interface ConfigService {
      * @param type  type
      * @return Whether publish
      * @throws NacosException NacosException
+     * @since 1.4
      */
     boolean publishConfig(String dataId, String group, String content,String type) throws NacosException;
     
