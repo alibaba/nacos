@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
@@ -35,7 +36,6 @@ import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -82,7 +82,7 @@ public class CatalogServiceV2Impl implements CatalogService {
         serviceObject.put(FieldsConstants.NAME, serviceName);
         serviceObject.put(FieldsConstants.GROUP_NAME, groupName);
         serviceObject.put(FieldsConstants.PROTECT_THRESHOLD, detailedService.getProtectThreshold());
-        serviceObject.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(detailedService.getSelector()));
+        serviceObject.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(detailedService.getNewSelector()));
         serviceObject
                 .replace(FieldsConstants.METADATA, JacksonUtils.transferToJsonNode(detailedService.getExtendData()));
         

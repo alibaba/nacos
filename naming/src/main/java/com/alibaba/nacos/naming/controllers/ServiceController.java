@@ -41,6 +41,7 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -56,6 +57,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.HashMap;
@@ -90,6 +92,9 @@ public class ServiceController {
     @Autowired
     private UpgradeJudgement upgradeJudgement;
     
+    @Autowired
+    private SelectorManager selectorManager;
+    
     /**
      * Create a new service. This API will create a persistence service.
      *
@@ -111,10 +116,32 @@ public class ServiceController {
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(protectThreshold);
         serviceMetadata.setSelector(parseSelector(selector));
+        serviceMetadata.setNewSelector(parseNewSelector(selector));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
         serviceMetadata.setEphemeral(false);
         getServiceOperator().create(namespaceId, serviceName, serviceMetadata);
         return "ok";
+    }
+    
+    /**
+     * parse {@link com.alibaba.nacos.api.naming.selector.Selector}.
+     *
+     * @param selectorStr selector json string.
+     * @return {@link com.alibaba.nacos.api.naming.selector.Selector}.
+     */
+    private com.alibaba.nacos.api.naming.selector.Selector parseNewSelector(String selectorStr) {
+        if (StringUtils.isBlank(selectorStr)) {
+            return null;
+        }
+    
+        try {
+            JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorStr, "UTF-8"));
+            String selectorType = selectorJson.get("type").asText();
+            return selectorManager.parseSelector(selectorType, selectorJson.get("expression").asText());
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("[Parse Selector] parse failed, selectorStr: {}.", selectorStr, e);
+            return null;
+        }
     }
     
     /**
@@ -191,6 +218,7 @@ public class ServiceController {
         serviceMetadata.setExtendData(
                 UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
         serviceMetadata.setSelector(parseSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
+        serviceMetadata.setNewSelector(parseNewSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
         com.alibaba.nacos.naming.core.v2.pojo.Service service = com.alibaba.nacos.naming.core.v2.pojo.Service
                 .newService(namespaceId, NamingUtils.getGroupName(serviceName),
                         NamingUtils.getServiceName(serviceName));
@@ -362,6 +390,17 @@ public class ServiceController {
             result.put("count", 0);
             return result;
         }
+    }
+    
+    /**
+     * Get all {@link com.alibaba.nacos.api.naming.selector.Selector} types.
+     *
+     * @return {@link com.alibaba.nacos.api.naming.selector.Selector} types.
+     */
+    @GetMapping("/selector/types")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    public List<String> listSelectorTypes() {
+        return selectorManager.getAllSelectorTypes();
     }
     
     private Selector parseSelector(String selectorJsonString) throws Exception {

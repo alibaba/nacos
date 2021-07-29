@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.selector.Selector;
 import com.alibaba.nacos.api.naming.selector.context.SelectorContextBuilder;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
@@ -126,6 +127,9 @@ public class SelectorManager {
      * @return {@link Selector}.
      */
     public Selector parseSelector(String type, String condition) {
+        if (StringUtils.isBlank(type)) {
+            return null;
+        }
         Class<? extends Selector> clazz = selectorTypes.get(type);
         if (Objects.isNull(clazz)) {
             return null;
