@@ -17,13 +17,16 @@
 package com.alibaba.nacos.common.utils;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Copy from {@link org.apache.commons.collections}.
@@ -263,4 +266,16 @@ public final class CollectionUtils {
         return list;
     }
     
+    /**
+     * Return an set containing all input parameters.
+     * @param elements elements element array
+     * @return set containing all input parameters
+     */
+    public static <T> Set<T> set(T... elements) {
+        if (elements == null) {
+            throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
+        } else {
+            return new LinkedHashSet(Arrays.asList(elements));
+        }
+    }
 }
