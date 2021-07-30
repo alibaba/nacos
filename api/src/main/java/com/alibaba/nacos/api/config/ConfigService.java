@@ -89,6 +89,7 @@ public interface ConfigService {
      * @param type    config type {@link ConfigType}
      * @return Whether publish
      * @throws NacosException NacosException
+     * @since 1.4.0-SNAPSHOT
      */
     boolean publishConfig(String dataId, String group, String content, String type) throws NacosException;
     
@@ -117,19 +118,6 @@ public interface ConfigService {
      */
     boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type)
             throws NacosException;
-    
-    /**
-     * Publish config.
-     *
-     * @param dataId  dataId
-     * @param group   group
-     * @param content content
-     * @param type  type
-     * @return Whether publish
-     * @throws NacosException NacosException
-     * @since 1.4
-     */
-    boolean publishConfig(String dataId, String group, String content,String type) throws NacosException;
     
     /**
      * Remove config.
