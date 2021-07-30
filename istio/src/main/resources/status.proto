@@ -21,10 +21,10 @@ import "google/protobuf/any.proto";
 option java_multiple_files = true;
 option java_outer_classname = "StatusProto";
 option java_package = "com.google.rpc";
-option objc_class_prefix = "RPC";
+option objc_class_prefix = "REMOTE";
 
 // The `Status` type defines a logical error model that is suitable for
-// different programming environments, including REST APIs and RPC APIs. It is
+// different programming environments, including REST APIs and REMOTE APIs. It is
 // used by [gRPC](https://github.com/grpc). The error model is designed to be:
 //
 // - Simple to use and understand for most users

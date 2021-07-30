@@ -16,16 +16,18 @@
 
 package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.auth.RequestMappingInfo;
 import com.alibaba.nacos.core.auth.RequestMappingInfo.RequestMappingInfoComparator;
 import com.alibaba.nacos.core.auth.condition.ParamRequestCondition;
 import com.alibaba.nacos.core.auth.condition.PathRequestCondition;
-import org.apache.commons.lang3.ArrayUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,7 +47,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.alibaba.nacos.core.utils.Constants.REQUEST_PATH_SEPARATOR;
+import static com.alibaba.nacos.sys.env.Constants.REQUEST_PATH_SEPARATOR;
+
 
 /**
  * Method cache.
@@ -58,20 +61,14 @@ public class ControllerMethodsCache {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ControllerMethodsCache.class);
     
-    @Value("${server.servlet.contextPath:/nacos}")
-    private String contextPath;
-    
     private ConcurrentMap<RequestMappingInfo, Method> methods = new ConcurrentHashMap<>();
     
     private final ConcurrentMap<String, List<RequestMappingInfo>> urlLookup = new ConcurrentHashMap<>();
     
     public Method getMethod(HttpServletRequest request) {
         String path = getPath(request);
-        if (path == null) {
-            return null;
-        }
         String httpMethod = request.getMethod();
-        String urlKey = httpMethod + REQUEST_PATH_SEPARATOR + path.replace(contextPath, "");
+        String urlKey = httpMethod + REQUEST_PATH_SEPARATOR + path.replaceFirst(EnvUtil.getContextPath(), "");
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
         if (CollectionUtils.isEmpty(requestMappingInfos)) {
             return null;
@@ -96,13 +93,12 @@ public class ControllerMethodsCache {
     }
     
     private String getPath(HttpServletRequest request) {
-        String path = null;
         try {
-            path = new URI(request.getRequestURI()).getPath();
+            return new URI(request.getRequestURI()).getPath();
         } catch (URISyntaxException e) {
             LOGGER.error("parse request to path error", e);
+            throw new NacosRuntimeException(NacosException.NOT_FOUND, "Invalid URI");
         }
-        return path;
     }
     
     private List<RequestMappingInfo> findMatchedInfo(List<RequestMappingInfo> requestMappingInfos,
@@ -221,16 +217,11 @@ public class ControllerMethodsCache {
         if (requestMappingInfos == null) {
             urlLookup.putIfAbsent(urlKey, new ArrayList<>());
             requestMappingInfos = urlLookup.get(urlKey);
+            // For issue #4701.
+            String urlKeyBackup = urlKey + "/";
+            urlLookup.putIfAbsent(urlKeyBackup, requestMappingInfos);
         }
         requestMappingInfos.add(requestMappingInfo);
         methods.put(requestMappingInfo, method);
-    }
-    
-    public String getContextPath() {
-        return contextPath;
-    }
-    
-    public void setContextPath(String contextPath) {
-        this.contextPath = contextPath;
     }
 }

@@ -18,27 +18,30 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.Objects;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.javatuples.Pair;
 import org.springframework.context.annotation.DependsOn;
 
@@ -46,6 +49,8 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,98 +71,50 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 @DependsOn("ProtocolManager")
 @org.springframework.stereotype.Service("distroConsistencyService")
-public class DistroConsistencyServiceImpl implements EphemeralConsistencyService {
+public class DistroConsistencyServiceImpl implements EphemeralConsistencyService, DistroDataProcessor {
     
     private final DistroMapper distroMapper;
     
     private final DataStore dataStore;
     
-    private final TaskDispatcher taskDispatcher;
-    
     private final Serializer serializer;
-    
-    private final ServerMemberManager memberManager;
     
     private final SwitchDomain switchDomain;
     
     private final GlobalConfig globalConfig;
     
-    private boolean initialized = false;
+    private final DistroProtocol distroProtocol;
     
     private volatile Notifier notifier = new Notifier();
-    
-    private LoadDataTask loadDataTask = new LoadDataTask();
     
     private Map<String, ConcurrentLinkedQueue<RecordListener>> listeners = new ConcurrentHashMap<>();
     
     private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
     
-    public DistroConsistencyServiceImpl(DistroMapper distroMapper, DataStore dataStore, TaskDispatcher taskDispatcher,
-            Serializer serializer, ServerMemberManager memberManager, SwitchDomain switchDomain,
-            GlobalConfig globalConfig) {
+    public DistroConsistencyServiceImpl(DistroMapper distroMapper, DataStore dataStore, Serializer serializer,
+            SwitchDomain switchDomain, GlobalConfig globalConfig, DistroProtocol distroProtocol) {
         this.distroMapper = distroMapper;
         this.dataStore = dataStore;
-        this.taskDispatcher = taskDispatcher;
         this.serializer = serializer;
-        this.memberManager = memberManager;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
+        this.distroProtocol = distroProtocol;
     }
     
     @PostConstruct
     public void init() {
-        GlobalExecutor.submitLoadDataTask(loadDataTask);
         GlobalExecutor.submitDistroNotifyTask(notifier);
-    }
-    
-    private class LoadDataTask implements Runnable {
-        
-        @Override
-        public void run() {
-            try {
-                load();
-                if (!initialized) {
-                    GlobalExecutor.submitLoadDataTask(this, globalConfig.getLoadDataRetryDelayMillis());
-                } else {
-                    Loggers.DISTRO.info("load data success");
-                }
-            } catch (Exception e) {
-                Loggers.DISTRO.error("load data failed.", e);
-            }
-        }
-    }
-    
-    private void load() throws Exception {
-        if (ApplicationUtils.getStandaloneMode()) {
-            initialized = true;
-            return;
-        }
-        // size = 1 means only myself in the list, we need at least one another server alive:
-        while (memberManager.getServerList().size() <= 1) {
-            Thread.sleep(1000L);
-            Loggers.DISTRO.info("waiting server list init...");
-        }
-        
-        for (Map.Entry<String, Member> entry : memberManager.getServerList().entrySet()) {
-            final String address = entry.getValue().getAddress();
-            if (ApplicationUtils.getLocalAddress().equals(address)) {
-                continue;
-            }
-            if (Loggers.DISTRO.isDebugEnabled()) {
-                Loggers.DISTRO.debug("sync from " + address);
-            }
-            // try sync data from remote server:
-            if (syncAllDataFromRemote(address)) {
-                initialized = true;
-                return;
-            }
-        }
     }
     
     @Override
     public void put(String key, Record value) throws NacosException {
         onPut(key, value);
-        taskDispatcher.addTask(key);
+        // If upgrade to 2.0.X, do not sync for v1.
+        if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
+            return;
+        }
+        distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE,
+                DistroConfig.getInstance().getSyncDelayMillis());
     }
     
     @Override
@@ -191,7 +148,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
         
-        notifier.addTask(key, ApplyAction.CHANGE);
+        notifier.addTask(key, DataOperation.CHANGE);
     }
     
     /**
@@ -207,7 +164,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
         
-        notifier.addTask(key, ApplyAction.DELETE);
+        notifier.addTask(key, DataOperation.DELETE);
     }
     
     /**
@@ -267,25 +224,19 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
             
             try {
-                byte[] result = NamingProxy.getData(toUpdateKeys, server);
-                processData(result);
+                DistroHttpCombinedKey distroKey = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
+                        server);
+                distroKey.getActualResourceTypes().addAll(toUpdateKeys);
+                DistroData remoteData = distroProtocol.queryFromRemote(distroKey);
+                if (null != remoteData) {
+                    processData(remoteData.getContent());
+                }
             } catch (Exception e) {
                 Loggers.DISTRO.error("get data from " + server + " failed!", e);
             }
         } finally {
             // Remove this 'in process' flag:
             syncChecksumTasks.remove(server);
-        }
-    }
-    
-    private boolean syncAllDataFromRemote(String server) {
-        
-        try {
-            byte[] data = NamingProxy.getAllData(server);
-            return processData(data);
-        } catch (Exception e) {
-            Loggers.DISTRO.error("sync full data from " + server + " failed!", e);
-            return false;
         }
     }
     
@@ -346,6 +297,40 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
     
     @Override
+    public boolean processData(DistroData distroData) {
+        DistroHttpData distroHttpData = (DistroHttpData) distroData;
+        Datum<Instances> datum = (Datum<Instances>) distroHttpData.getDeserializedContent();
+        onPut(datum.key, datum.value);
+        return true;
+    }
+    
+    @Override
+    public String processType() {
+        return KeyBuilder.INSTANCE_LIST_KEY_PREFIX;
+    }
+    
+    @Override
+    public boolean processVerifyData(DistroData distroData, String sourceAddress) {
+        // If upgrade to 2.0.X, do not verify for v1.
+        if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
+            return true;
+        }
+        DistroHttpData distroHttpData = (DistroHttpData) distroData;
+        Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
+        onReceiveChecksums(verifyData, sourceAddress);
+        return true;
+    }
+    
+    @Override
+    public boolean processSnapshot(DistroData distroData) {
+        try {
+            return processData(distroData.getContent());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    @Override
     public void listen(String key, RecordListener listener) throws NacosException {
         if (!listeners.containsKey(key)) {
             listeners.put(key, new ConcurrentLinkedQueue<>());
@@ -376,15 +361,26 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         return isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
     }
     
+    @Override
+    public Optional<String> getErrorMsg() {
+        String errorMsg;
+        if (!isInitialized() && !ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus())) {
+            errorMsg = "Distro protocol is not initialized";
+        } else {
+            errorMsg = null;
+        }
+        return Optional.ofNullable(errorMsg);
+    }
+    
     public boolean isInitialized() {
-        return initialized || !globalConfig.isDataWarmup();
+        return distroProtocol.isInitialized() || !globalConfig.isDataWarmup();
     }
     
     public class Notifier implements Runnable {
         
         private ConcurrentHashMap<String, String> services = new ConcurrentHashMap<>(10 * 1024);
         
-        private BlockingQueue<Pair<String, ApplyAction>> tasks = new ArrayBlockingQueue<>(1024 * 1024);
+        private BlockingQueue<Pair<String, DataOperation>> tasks = new ArrayBlockingQueue<>(1024 * 1024);
         
         /**
          * Add new notify task to queue.
@@ -392,12 +388,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
          * @param datumKey data key
          * @param action   action for data
          */
-        public void addTask(String datumKey, ApplyAction action) {
+        public void addTask(String datumKey, DataOperation action) {
             
-            if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
+            if (services.containsKey(datumKey) && action == DataOperation.CHANGE) {
                 return;
             }
-            if (action == ApplyAction.CHANGE) {
+            if (action == DataOperation.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
             tasks.offer(Pair.with(datumKey, action));
@@ -413,7 +409,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             
             for (; ; ) {
                 try {
-                    Pair<String, ApplyAction> pair = tasks.take();
+                    Pair<String, DataOperation> pair = tasks.take();
                     handle(pair);
                 } catch (Throwable e) {
                     Loggers.DISTRO.error("[NACOS-DISTRO] Error while handling notifying task", e);
@@ -421,10 +417,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
         }
         
-        private void handle(Pair<String, ApplyAction> pair) {
+        private void handle(Pair<String, DataOperation> pair) {
             try {
                 String datumKey = pair.getValue0();
-                ApplyAction action = pair.getValue1();
+                DataOperation action = pair.getValue1();
                 
                 services.remove(datumKey);
                 
@@ -439,12 +435,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     count++;
                     
                     try {
-                        if (action == ApplyAction.CHANGE) {
+                        if (action == DataOperation.CHANGE) {
                             listener.onChange(datumKey, dataStore.get(datumKey).value);
                             continue;
                         }
                         
-                        if (action == ApplyAction.DELETE) {
+                        if (action == DataOperation.DELETE) {
                             listener.onDelete(datumKey);
                             continue;
                         }

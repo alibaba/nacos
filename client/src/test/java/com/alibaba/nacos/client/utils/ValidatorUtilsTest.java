@@ -16,7 +16,12 @@
 
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
+import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Properties;
 
 public class ValidatorUtilsTest {
     
@@ -56,4 +61,14 @@ public class ValidatorUtilsTest {
         ValidatorUtils.checkContextPath(contextPath4);
     }
     
+    @Test
+    public void testCheckInitParam() {
+        try {
+            Properties properties = new Properties();
+            properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "test");
+            ValidatorUtils.checkInitParam(properties);
+        } catch (NacosException e) {
+            Assert.fail();
+        }
+    }
 }

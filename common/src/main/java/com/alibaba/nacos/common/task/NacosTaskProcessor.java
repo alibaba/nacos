@@ -29,5 +29,5 @@ public interface NacosTaskProcessor {
      * @param task     task.
      * @return process task result.
      */
-    boolean process(AbstractDelayTask task);
+    boolean process(NacosTask task);
 }

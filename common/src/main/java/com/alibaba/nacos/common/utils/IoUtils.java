@@ -37,6 +37,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * IO related tool methods.
@@ -50,9 +51,9 @@ public class IoUtils {
      *
      * @param raw compress stream
      * @return byte array after decompress
-     * @throws Exception exception
+     * @throws IOException exception
      */
-    public static byte[] tryDecompress(InputStream raw) throws Exception {
+    public static byte[] tryDecompress(InputStream raw) throws IOException {
         GZIPInputStream gis = null;
         ByteArrayOutputStream out = null;
         try {
@@ -60,15 +61,11 @@ public class IoUtils {
             out = new ByteArrayOutputStream();
             copy(gis, out);
             return out.toByteArray();
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (out != null) {
-                out.close();
-            }
-            if (gis != null) {
-                gis.close();
-            }
+            closeQuietly(out);
+            closeQuietly(gis);
         }
         
         return null;
@@ -94,13 +91,32 @@ public class IoUtils {
             IoUtils.copy(gis, out);
             return out.toByteArray();
         } finally {
-            if (out != null) {
-                out.close();
-            }
-            if (gis != null) {
-                gis.close();
-            }
+            closeQuietly(out);
+            closeQuietly(gis);
         }
+    }
+    
+    /**
+     * Try compress by GZIP for string.
+     *
+     * @param str      strings to be compressed.
+     * @param encoding encoding.
+     * @return byte[]
+     */
+    public static byte[] tryCompress(String str, String encoding) {
+        if (str == null || str.length() == 0) {
+            return null;
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        GZIPOutputStream gzip;
+        try {
+            gzip = new GZIPOutputStream(out);
+            gzip.write(str.getBytes(encoding));
+            gzip.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return out.toByteArray();
     }
     
     private static BufferedReader toBufferedReader(Reader reader) {
@@ -122,9 +138,7 @@ public class IoUtils {
             os.write(data.getBytes(encoding));
             os.flush();
         } finally {
-            if (null != os) {
-                os.close();
-            }
+            closeQuietly(os);
         }
     }
     
@@ -311,12 +325,8 @@ public class IoUtils {
             sc = new FileInputStream(sf).getChannel();
             sc.transferTo(0, sc.size(), tc);
         } finally {
-            if (null != sc) {
-                sc.close();
-            }
-            if (null != tc) {
-                tc.close();
-            }
+            closeQuietly(sc);
+            closeQuietly(tc);
         }
     }
     

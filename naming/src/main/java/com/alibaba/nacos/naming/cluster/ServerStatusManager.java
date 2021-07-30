@@ -19,12 +19,12 @@ package com.alibaba.nacos.naming.cluster;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import java.util.Optional;
 
 /**
  * Detect and control the working status of local server.
@@ -38,10 +38,13 @@ public class ServerStatusManager {
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
     private ServerStatus serverStatus = ServerStatus.STARTING;
+    
+    public ServerStatusManager(SwitchDomain switchDomain) {
+        this.switchDomain = switchDomain;
+    }
     
     @PostConstruct
     public void init() {
@@ -64,6 +67,10 @@ public class ServerStatusManager {
     
     public ServerStatus getServerStatus() {
         return serverStatus;
+    }
+    
+    public Optional<String> getErrorMsg() {
+        return consistencyService.getErrorMsg();
     }
     
     public class ServerStatusUpdater implements Runnable {

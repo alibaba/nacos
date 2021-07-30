@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.core.code.StandaloneProfileApplicationListener;
-import org.apache.commons.lang3.ArrayUtils;
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -27,7 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static com.alibaba.nacos.core.utils.Constants.STANDALONE_SPRING_PROFILE;
+import static com.alibaba.nacos.sys.env.Constants.STANDALONE_SPRING_PROFILE;
 
 /**
  * {@link StandaloneProfileApplicationListener} Test.

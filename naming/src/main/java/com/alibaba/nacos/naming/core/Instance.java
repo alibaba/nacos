@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -25,8 +26,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import org.apache.commons.lang3.math.NumberUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,11 +41,7 @@ import java.util.regex.Pattern;
 @JsonInclude(Include.NON_NULL)
 public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance implements Comparable {
     
-    private static final double MAX_WEIGHT_VALUE = 10000.0D;
-    
-    private static final double MIN_POSITIVE_WEIGHT_VALUE = 0.01D;
-    
-    private static final double MIN_WEIGHT_VALUE = 0.00D;
+    private static final long serialVersionUID = -6527721638428975306L;
     
     private volatile long lastBeat = System.currentTimeMillis();
     
@@ -57,9 +53,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     private String tenant;
     
     private String app;
-    
-    private static final Pattern IP_PATTERN = Pattern
-            .compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
     
     private static final Pattern ONLY_DIGIT_AND_DOT = Pattern.compile("(\\d|\\.)+");
     
@@ -117,19 +110,20 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
         
         String provider = ipAddressAttributes[0];
-        Matcher matcher = IP_PATTERN.matcher(provider);
-        if (!matcher.matches()) {
+        String[] providerAddr;
+        try {
+            providerAddr = InternetAddressUtil.splitIPPortStr(provider);
+        } catch (Exception ex) {
             return null;
         }
         
-        int expectedGroupCount = 2;
-        
         int port = 0;
-        if (NumberUtils.isNumber(matcher.group(expectedGroupCount))) {
-            port = Integer.parseInt(matcher.group(expectedGroupCount));
+        if (providerAddr.length == InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils
+                .isDigits(providerAddr[1])) {
+            port = Integer.parseInt(providerAddr[1]);
         }
         
-        Instance instance = new Instance(matcher.group(1), port);
+        Instance instance = new Instance(providerAddr[0], port);
         
         // 7 possible formats of config:
         // ip:port
@@ -213,13 +207,14 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
             throw new IllegalArgumentException("malformed ip config: " + json);
         }
         
-        if (ip.getWeight() > MAX_WEIGHT_VALUE) {
-            ip.setWeight(MAX_WEIGHT_VALUE);
+        if (ip.getWeight() > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE) {
+            ip.setWeight(com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
         }
         
-        if (ip.getWeight() < MIN_POSITIVE_WEIGHT_VALUE && ip.getWeight() > MIN_WEIGHT_VALUE) {
-            ip.setWeight(MIN_POSITIVE_WEIGHT_VALUE);
-        } else if (ip.getWeight() < MIN_WEIGHT_VALUE) {
+        if (ip.getWeight() < com.alibaba.nacos.naming.constants.Constants.MIN_POSITIVE_WEIGHT_VALUE
+                && ip.getWeight() > com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
+            ip.setWeight(com.alibaba.nacos.naming.constants.Constants.MIN_POSITIVE_WEIGHT_VALUE);
+        } else if (ip.getWeight() < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
             ip.setWeight(0.0D);
         }
         
@@ -358,16 +353,17 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
      */
     public void validate() throws NacosException {
         if (onlyContainsDigitAndDot()) {
-            Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
-            if (!matcher.matches()) {
+            if (!InternetAddressUtil.containsPort(getIp() + InternetAddressUtil.IP_PORT_SPLITER + getPort())) {
                 throw new NacosException(NacosException.INVALID_PARAM,
                         "instance format invalid: Your IP address is spelled incorrectly");
             }
         }
         
-        if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                    "instance format invalid: The weights range from " + MIN_WEIGHT_VALUE + " to " + MAX_WEIGHT_VALUE);
+        if (getWeight() > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE
+                || getWeight() < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
+            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid: The weights range from "
+                    + com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE + " to "
+                    + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
         }
         
     }

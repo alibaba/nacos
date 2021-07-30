@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.Objects;
 
+import java.util.Objects;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +34,8 @@ import java.util.Map;
 public class Http extends AbstractHealthChecker {
     
     public static final String TYPE = "HTTP";
+    
+    private static final long serialVersionUID = 551826315222362349L;
     
     private String path = "";
     
@@ -75,7 +77,7 @@ public class Http extends AbstractHealthChecker {
             return Collections.emptyMap();
         }
         final Map<String, String> headerMap = new HashMap<String, String>(16);
-        for (final String s : headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
+        for (final String s : headers.split(Constants.NAMING_HTTP_HEADER_SPLITTER)) {
             final String[] splits = s.split(":");
             if (splits.length != 2) {
                 continue;
@@ -87,7 +89,7 @@ public class Http extends AbstractHealthChecker {
     
     @Override
     public int hashCode() {
-        return Objects.hashCode(path, headers, expectedResponseCode);
+        return Objects.hash(path, headers, expectedResponseCode);
     }
     
     @Override

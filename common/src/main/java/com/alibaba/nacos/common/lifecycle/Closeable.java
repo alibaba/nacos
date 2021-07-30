@@ -30,6 +30,6 @@ public interface Closeable {
      *
      * @throws NacosException exception.
      */
-    public void shutdown() throws NacosException;
+    void shutdown() throws NacosException;
     
 }

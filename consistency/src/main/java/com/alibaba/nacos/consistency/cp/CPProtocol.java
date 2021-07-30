@@ -25,7 +25,7 @@ import com.alibaba.nacos.consistency.ConsistencyProtocol;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public interface CPProtocol<C extends Config, P extends LogProcessor4CP> extends ConsistencyProtocol<C, P> {
+public interface CPProtocol<C extends Config, P extends RequestProcessor4CP> extends ConsistencyProtocol<C, P> {
     
     /**
      * Returns whether this node is a leader node

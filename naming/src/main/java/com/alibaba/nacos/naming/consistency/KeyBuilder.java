@@ -17,7 +17,9 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_PREFIX;
 
 /**
  * Key operations for data.
@@ -39,6 +41,10 @@ public class KeyBuilder {
     
     public static final String BRIEF_INSTANCE_LIST_KEY_PREFIX = "iplist.";
     
+    public static final String RESOURCE_KEY_SNAPSHOT = "snapshot";
+    
+    public static final String RESOURCE_KEY_CHECKSUM = "checksum";
+    
     private static String buildEphemeralInstanceListKey(String namespaceId, String serviceName) {
         return INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName;
     }
@@ -56,7 +62,7 @@ public class KeyBuilder {
         return SERVICE_META_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName;
     }
     
-    public static String getSwitchDomainKey() {
+    public static String  getSwitchDomainKey() {
         return SERVICE_META_KEY_PREFIX + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
     
@@ -81,8 +87,7 @@ public class KeyBuilder {
     }
     
     public static boolean matchSwitchKey(String key) {
-        return key.endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME) || key
-                .endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME + UtilsAndCommons.RAFT_CACHE_FILE_SUFFIX);
+        return key.endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME);
     }
     
     public static boolean matchServiceName(String key, String namespaceId, String serviceName) {
@@ -140,5 +145,9 @@ public class KeyBuilder {
     
     public static String getServiceName(String key) {
         return key.split(NAMESPACE_KEY_CONNECTOR)[1];
+    }
+    
+    public static boolean isDatumCacheFile(String key) {
+        return key.startsWith(RAFT_CACHE_FILE_PREFIX);
     }
 }

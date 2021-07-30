@@ -17,8 +17,12 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.ConstructorException;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,28 +37,46 @@ import java.util.Map;
  */
 public class YmlChangeParser extends AbstractConfigChangeParser {
     
+    private static final String INVALID_CONSTRUCTOR_ERROR_INFO = "could not determine a constructor for the tag";
+    
+    private static final String CONFIG_TYPE = "yaml";
+    
     public YmlChangeParser() {
-        super("yaml");
+        super(CONFIG_TYPE);
     }
     
     @Override
     public Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type) {
         Map<String, Object> oldMap = Collections.emptyMap();
         Map<String, Object> newMap = Collections.emptyMap();
-        
-        if (StringUtils.isNotBlank(oldContent)) {
-            oldMap = (new Yaml()).load(oldContent);
-            oldMap = getFlattenedMap(oldMap);
-        }
-        if (StringUtils.isNotBlank(newContent)) {
-            newMap = (new Yaml()).load(newContent);
-            newMap = getFlattenedMap(newMap);
+        try {
+            Yaml yaml = new Yaml(new SafeConstructor());
+            if (StringUtils.isNotBlank(oldContent)) {
+                oldMap = yaml.load(oldContent);
+                oldMap = getFlattenedMap(oldMap);
+            }
+            if (StringUtils.isNotBlank(newContent)) {
+                newMap = yaml.load(newContent);
+                newMap = getFlattenedMap(newMap);
+            }
+        } catch (ConstructorException e) {
+            handleYamlException(e);
         }
         
         return filterChangeData(oldMap, newMap);
     }
     
-    private final Map<String, Object> getFlattenedMap(Map<String, Object> source) {
+    private void handleYamlException(ConstructorException e) {
+        if (e.getMessage().startsWith(INVALID_CONSTRUCTOR_ERROR_INFO)) {
+            throw new NacosRuntimeException(NacosException.INVALID_PARAM,
+                    "AbstractConfigChangeListener only support basic java data type for yaml. If you want to listen "
+                            + "key changes for custom classes, please use `Listener` to listener whole yaml configuration and parse it by yourself.",
+                    e);
+        }
+        throw e;
+    }
+    
+    private Map<String, Object> getFlattenedMap(Map<String, Object> source) {
         Map<String, Object> result = new LinkedHashMap<String, Object>(128);
         buildFlattenedMap(result, source, null);
         return result;

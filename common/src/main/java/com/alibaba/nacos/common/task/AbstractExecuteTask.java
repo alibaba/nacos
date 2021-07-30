@@ -21,7 +21,9 @@ package com.alibaba.nacos.common.task;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractExecuteTask implements NacosTask {
+public abstract class AbstractExecuteTask implements NacosTask, Runnable {
+    
+    protected static final long INTERVAL = 3000L;
     
     @Override
     public boolean shouldProcess() {

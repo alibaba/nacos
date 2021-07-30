@@ -20,7 +20,8 @@ import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.sys.utils.DiskUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,12 +36,23 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.alibaba.nacos.common.constant.HttpHeaderConsts.ACCEPT_ENCODING;
+import static com.alibaba.nacos.common.http.param.MediaType.APPLICATION_JSON;
+
 /**
  * web utils.
  *
  * @author nkorange
  */
 public class WebUtils {
+    
+    private static final String ENCODING_KEY = "encoding";
+    
+    private static final String COMMA = ",";
+    
+    private static final String SEMI = ";";
+    
+    private static final String TMP_SUFFIX = ".tmp";
     
     /**
      * get target value from parameterMap, if not found will throw {@link IllegalArgumentException}.
@@ -54,7 +66,7 @@ public class WebUtils {
         if (StringUtils.isEmpty(value)) {
             throw new IllegalArgumentException("Param '" + key + "' is required.");
         }
-        String encoding = req.getParameter("encoding");
+        String encoding = req.getParameter(ENCODING_KEY);
         return resolveValue(value, encoding);
     }
     
@@ -74,7 +86,7 @@ public class WebUtils {
         if (StringUtils.isBlank(value)) {
             return defaultValue;
         }
-        String encoding = req.getParameter("encoding");
+        String encoding = req.getParameter(ENCODING_KEY);
         return resolveValue(value, encoding);
     }
     
@@ -90,8 +102,35 @@ public class WebUtils {
             encoding = StandardCharsets.UTF_8.name();
         }
         try {
+            value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
+        } catch (UnsupportedEncodingException ignore) {
+        }
+        return value.trim();
+    }
+    
+    /**
+     * decode target value with UrlDecode.
+     *
+     * <p>Under Content-Type:application/x-www-form-urlencoded situation.
+     *
+     * @param value    value
+     * @param encoding encode
+     * @return Decoded data
+     */
+    private static String resolveValueWithUrlDecode(String value, String encoding) {
+        if (StringUtils.isEmpty(encoding)) {
+            encoding = StandardCharsets.UTF_8.name();
+        }
+        try {
             value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
         } catch (UnsupportedEncodingException ignore) {
+        } catch (Exception ex) {
+            // If the value contains a special character without encoding (such as "[IPv6]"),
+            // a URLDecoder exception is thrown, which is ignored and the original value is returned
+            final String seq = "URLDecoder";
+            if (!StringUtils.contains(ex.toString(), seq)) {
+                throw ex;
+            }
         }
         return value.trim();
     }
@@ -103,9 +142,9 @@ public class WebUtils {
      * @return accept encode
      */
     public static String getAcceptEncoding(HttpServletRequest req) {
-        String encode = StringUtils.defaultIfEmpty(req.getHeader("Accept-Charset"), StandardCharsets.UTF_8.name());
-        encode = encode.contains(",") ? encode.substring(0, encode.indexOf(",")) : encode;
-        return encode.contains(";") ? encode.substring(0, encode.indexOf(";")) : encode;
+        String encode = StringUtils.defaultIfEmpty(req.getHeader(ACCEPT_ENCODING), StandardCharsets.UTF_8.name());
+        encode = encode.contains(COMMA) ? encode.substring(0, encode.indexOf(COMMA)) : encode;
+        return encode.contains(SEMI) ? encode.substring(0, encode.indexOf(SEMI)) : encode;
     }
     
     /**
@@ -113,7 +152,7 @@ public class WebUtils {
      *
      * @param request HttpServletRequest
      * @return the value of the request header "user-agent", or the value of the request header "client-version" if the
-     *         request does not have a header of "user-agent".
+     * request does not have a header of "user-agent".
      */
     public static String getUserAgent(HttpServletRequest request) {
         String userAgent = request.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
@@ -134,7 +173,7 @@ public class WebUtils {
      */
     public static void response(HttpServletResponse response, String body, int code) throws IOException {
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType("application/json;charset=UTF-8");
+        response.setContentType(APPLICATION_JSON);
         response.getWriter().write(body);
         response.setStatus(code);
     }
@@ -143,8 +182,8 @@ public class WebUtils {
      * Handle file upload operations.
      *
      * @param multipartFile file
-     * @param consumer post processor
-     * @param response {@link DeferredResult}
+     * @param consumer      post processor
+     * @param response      {@link DeferredResult}
      */
     public static void onFileUpload(MultipartFile multipartFile, Consumer<File> consumer,
             DeferredResult<RestResult<String>> response) {
@@ -155,7 +194,7 @@ public class WebUtils {
         }
         File tmpFile = null;
         try {
-            tmpFile = DiskUtils.createTmpFile(multipartFile.getName(), ".tmp");
+            tmpFile = DiskUtils.createTmpFile(multipartFile.getName(), TMP_SUFFIX);
             multipartFile.transferTo(tmpFile);
             consumer.accept(tmpFile);
         } catch (Throwable ex) {

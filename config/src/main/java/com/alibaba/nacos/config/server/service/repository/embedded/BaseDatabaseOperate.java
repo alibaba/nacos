@@ -32,6 +32,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
@@ -196,6 +197,19 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
      */
     default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate,
             List<ModifyRequest> contexts) {
+        return update(transactionTemplate, jdbcTemplate, contexts, null);
+    }
+    
+    /**
+     * execute update operation, to fix #3617.
+     *
+     * @param transactionTemplate {@link TransactionTemplate}
+     * @param jdbcTemplate        {@link JdbcTemplate}
+     * @param contexts            {@link List} ModifyRequest list
+     * @return {@link Boolean}
+     */
+    default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate,
+            List<ModifyRequest> contexts, BiConsumer<Boolean, Throwable> consumer) {
         return transactionTemplate.execute(status -> {
             String[] errSql = new String[] {null};
             Object[][] args = new Object[][] {null};
@@ -207,10 +221,16 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                     LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
                     jdbcTemplate.update(pair.getSql(), pair.getArgs());
                 });
+                if (consumer != null) {
+                    consumer.accept(Boolean.TRUE, null);
+                }
                 return Boolean.TRUE;
             } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
                 FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
-                return false;
+                if (consumer != null) {
+                    consumer.accept(Boolean.FALSE, e);
+                }
+                return Boolean.FALSE;
             } catch (CannotGetJdbcConnectionException e) {
                 FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                 throw e;

@@ -42,8 +42,8 @@ public class ClientTrackService {
     /**
      * TrackClientMd5.
      *
-     * @param ip ip string value.
-     * @param clientMd5Map clientMd5Map.
+     * @param ip                     ip string value.
+     * @param clientMd5Map           clientMd5Map.
      * @param clientLastPollingTsMap clientLastPollingTsMap.
      */
     public static void trackClientMd5(String ip, Map<String, String> clientMd5Map,
@@ -57,8 +57,8 @@ public class ClientTrackService {
     /**
      * Put the specified value(ip/groupKey/clientMd5) into clientRecords Map.
      *
-     * @param ip ip string value.
-     * @param groupKey groupKey string value.
+     * @param ip        ip string value.
+     * @param groupKey  groupKey string value.
      * @param clientMd5 clientMd5 string value.
      */
     public static void trackClientMd5(String ip, String groupKey, String clientMd5) {
@@ -76,11 +76,11 @@ public class ClientTrackService {
     public static int subscribeClientCount() {
         return clientRecords.size();
     }
-
+    
     /**
-     * Get all of subsciber count.
+     * Get all of subscriber count.
      *
-     * @return all of subsciber count.
+     * @return all of subscriber count.
      */
     public static long subscriberCount() {
         long count = 0;
@@ -92,7 +92,6 @@ public class ClientTrackService {
     
     /**
      * Groupkey ->  SubscriberStatus.
-     *
      */
     public static Map<String, SubscriberStatus> listSubStatus(String ip) {
         Map<String, SubscriberStatus> status = new HashMap<String, SubscriberStatus>(100);
@@ -134,9 +133,8 @@ public class ClientTrackService {
     }
     
     /**
-     * Specify subscriber's ip and look up whether data is lastest.
+     * Specify subscriber's ip and look up whether data is latest.
      * groupKey -> isUptodate.
-     *
      */
     public static Map<String, Boolean> isClientUptodate(String ip) {
         Map<String, Boolean> result = new HashMap<String, Boolean>(100);
@@ -150,7 +148,7 @@ public class ClientTrackService {
     }
     
     /**
-     * Specify groupKey and look up whether subsciber and data is lastest.
+     * Specify groupKey and look up whether subscriber and data is latest.
      * IP -> isUptodate.
      */
     public static Map<String, Boolean> listSubscriberByGroup(String groupKey) {

@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.naming.pojo;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +32,9 @@ import java.util.Map;
  * @author nkorange
  */
 @SuppressWarnings("checkstyle:abbreviationaswordinname")
-public class Cluster {
+public class Cluster implements Serializable {
+    
+    private static final long serialVersionUID = -7196138840047197271L;
     
     /**
      * Name of belonging service.

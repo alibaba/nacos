@@ -167,4 +167,10 @@ public interface NamingMaintainService {
      */
     void updateService(Service service, AbstractSelector selector) throws NacosException;
     
+    /**
+     * Shutdown the resource service.
+     *
+     * @throws NacosException exception.
+     */
+    void shutDown() throws NacosException;
 }

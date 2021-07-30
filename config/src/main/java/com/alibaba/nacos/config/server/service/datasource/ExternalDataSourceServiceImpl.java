@@ -16,34 +16,29 @@
 
 package com.alibaba.nacos.config.server.service.datasource;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.sql.DataSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * Base data source.
@@ -52,10 +47,6 @@ import com.zaxxer.hikari.HikariDataSource;
  */
 public class ExternalDataSourceServiceImpl implements DataSourceService {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDataSourceServiceImpl.class);
-    
-    private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
-    
     /**
      * JDBC execute timeout value, unit:second.
      */
@@ -63,6 +54,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private static final int TRANSACTION_QUERY_TIMEOUT = 5;
     
+    private static final int DB_MASTER_SELECT_THRESHOLD = 1;
+
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
     
     private List<HikariDataSource> dataSourceList = new ArrayList<>();
@@ -82,8 +75,6 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     private volatile List<Boolean> isHealthList;
     
     private volatile int masterIndex;
-    
-    private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
     
     @Override
     public void init() {
@@ -114,11 +105,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             try {
                 reload();
             } catch (IOException e) {
-                e.printStackTrace();
+                FATAL_LOG.error("[ExternalDataSourceService] dats source reload error", e);
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
-            
-            ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+
+            if (this.dataSourceList.size() > DB_MASTER_SELECT_THRESHOLD) {
+                ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+            }
             ConfigExecutor.scheduleConfigTask(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
         }
     }
@@ -127,7 +120,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     public synchronized void reload() throws IOException {
         try {
             dataSourceList = new ExternalDataSourceProperties()
-                    .build(ApplicationUtils.getEnvironment(), (dataSource) -> {
+                    .build(EnvUtil.getEnvironment(), (dataSource) -> {
                         JdbcTemplate jdbcTemplate = new JdbcTemplate();
                         jdbcTemplate.setQueryTimeout(queryTimeout);
                         jdbcTemplate.setDataSource(dataSource);
@@ -190,29 +183,15 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
                     // The master is unhealthy.
-                    return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
+                    return "DOWN:" + InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     // The slave  is unhealthy.
-                    return "WARN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
+                    return "WARN:" + InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
         
         return "UP";
-    }
-    
-    private String getIpFromUrl(String url) {
-        
-        Matcher m = ipPattern.matcher(url);
-        if (m.find()) {
-            return m.group();
-        }
-        
-        return "";
-    }
-    
-    static String defaultIfNull(String value, String defaultValue) {
-        return null == value ? defaultValue : value;
     }
     
     class SelectMasterTask implements Runnable {
@@ -240,7 +219,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     masterIndex = index;
                     break;
                 } catch (DataAccessException e) { // read only
-                    e.printStackTrace(); // TODO remove
+                    FATAL_LOG.warn("[master-db] master db access error", e);
                 }
             }
             
@@ -269,10 +248,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         FATAL_LOG.error("[db-error] master db {} down.",
-                                getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         FATAL_LOG.error("[db-error] slave db {} down.",
-                                getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     

@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.config.server.constant.PropertiesConstant;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -99,7 +100,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     /**
      * Inline storage value = ${nacos.standalone}.
      */
-    private static boolean embeddedStorage = ApplicationUtils.getStandaloneMode();
+    private static boolean embeddedStorage = EnvUtil.getStandaloneMode();
     
     public static int getNotifyConnectTimeout() {
         return notifyConnectTimeout;
@@ -222,7 +223,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
     
     public static boolean isStandaloneMode() {
-        return ApplicationUtils.getStandaloneMode();
+        return EnvUtil.getStandaloneMode();
     }
     
     public static boolean isUseExternalDB() {
@@ -242,7 +243,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     // if use raft+derby, Reduce leader read pressure
     
     public static boolean isDirectRead() {
-        return ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
+        return EnvUtil.getStandaloneMode() && isEmbeddedStorage();
     }
     
     public static void setEmbeddedStorage(boolean embeddedStorage) {
@@ -251,30 +252,36 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     private void loadSetting() {
         try {
-            setNotifyConnectTimeout(Integer.parseInt(ApplicationUtils.getProperty("notifyConnectTimeout", "100")));
+            setNotifyConnectTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.NOTIFY_CONNECT_TIMEOUT,
+                    String.valueOf(notifyConnectTimeout))));
             LOGGER.info("notifyConnectTimeout:{}", notifyConnectTimeout);
-            setNotifySocketTimeout(Integer.parseInt(ApplicationUtils.getProperty("notifySocketTimeout", "200")));
+            setNotifySocketTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.NOTIFY_SOCKET_TIMEOUT,
+                    String.valueOf(notifySocketTimeout))));
             LOGGER.info("notifySocketTimeout:{}", notifySocketTimeout);
-            setHealthCheck(Boolean.parseBoolean(ApplicationUtils.getProperty("isHealthCheck", "true")));
+            setHealthCheck(Boolean.parseBoolean(
+                    EnvUtil.getProperty(PropertiesConstant.IS_HEALTH_CHECK, String.valueOf(isHealthCheck))));
             LOGGER.info("isHealthCheck:{}", isHealthCheck);
-            setMaxHealthCheckFailCount(Integer.parseInt(ApplicationUtils.getProperty("maxHealthCheckFailCount", "12")));
+            setMaxHealthCheckFailCount(Integer.parseInt(
+                    EnvUtil.getProperty(PropertiesConstant.MAX_HEALTH_CHECK_FAIL_COUNT,
+                            String.valueOf(maxHealthCheckFailCount))));
             LOGGER.info("maxHealthCheckFailCount:{}", maxHealthCheckFailCount);
-            setMaxContent(Integer.parseInt(ApplicationUtils.getProperty("maxContent", String.valueOf(maxContent))));
+            setMaxContent(
+                    Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.MAX_CONTENT, String.valueOf(maxContent))));
             LOGGER.info("maxContent:{}", maxContent);
-            // 容量管理
-            setManageCapacity(getBoolean("isManageCapacity", isManageCapacity));
-            setCapacityLimitCheck(getBoolean("isCapacityLimitCheck", isCapacityLimitCheck));
-            setDefaultClusterQuota(getInt("defaultClusterQuota", defaultClusterQuota));
-            setDefaultGroupQuota(getInt("defaultGroupQuota", defaultGroupQuota));
-            setDefaultTenantQuota(getInt("defaultTenantQuota", defaultTenantQuota));
-            setDefaultMaxSize(getInt("defaultMaxSize", defaultMaxSize));
-            setDefaultMaxAggrCount(getInt("defaultMaxAggrCount", defaultMaxAggrCount));
-            setDefaultMaxAggrSize(getInt("defaultMaxAggrSize", defaultMaxAggrSize));
-            setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
-            setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
-            
+            // capacity management
+            setManageCapacity(getBoolean(PropertiesConstant.IS_MANAGE_CAPACITY, isManageCapacity));
+            setCapacityLimitCheck(getBoolean(PropertiesConstant.IS_CAPACITY_LIMIT_CHECK, isCapacityLimitCheck));
+            setDefaultClusterQuota(getInt(PropertiesConstant.DEFAULT_CLUSTER_QUOTA, defaultClusterQuota));
+            setDefaultGroupQuota(getInt(PropertiesConstant.DEFAULT_GROUP_QUOTA, defaultGroupQuota));
+            setDefaultTenantQuota(getInt(PropertiesConstant.DEFAULT_TENANT_QUOTA, defaultTenantQuota));
+            setDefaultMaxSize(getInt(PropertiesConstant.DEFAULT_MAX_SIZE, defaultMaxSize));
+            setDefaultMaxAggrCount(getInt(PropertiesConstant.DEFAULT_MAX_AGGR_COUNT, defaultMaxAggrCount));
+            setDefaultMaxAggrSize(getInt(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
+            setCorrectUsageDelay(getInt(PropertiesConstant.CORRECT_USAGE_DELAY, correctUsageDelay));
+            setInitialExpansionPercent(getInt(PropertiesConstant.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
             // External data sources are used by default in cluster mode
-            setUseExternalDB("mysql".equalsIgnoreCase(getString("spring.datasource.platform", "")));
+            setUseExternalDB(PropertiesConstant.MYSQL
+                    .equalsIgnoreCase(getString(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "")));
             
             // must initialize after setUseExternalDB
             // This value is true in stand-alone mode and false in cluster mode
@@ -284,7 +291,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             if (isUseExternalDB()) {
                 setEmbeddedStorage(false);
             } else {
-                boolean embeddedStorage = PropertyUtil.embeddedStorage || Boolean.getBoolean("embeddedStorage");
+                boolean embeddedStorage =
+                        PropertyUtil.embeddedStorage || Boolean.getBoolean(PropertiesConstant.EMBEDDED_STORAGE);
                 setEmbeddedStorage(embeddedStorage);
                 
                 // If the embedded data source storage is not turned on, it is automatically
@@ -317,16 +325,15 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
     
     public String getProperty(String key) {
-        return ApplicationUtils.getProperty(key);
+        return EnvUtil.getProperty(key);
     }
     
     public String getProperty(String key, String defaultValue) {
-        return ApplicationUtils.getProperty(key, defaultValue);
+        return EnvUtil.getProperty(key, defaultValue);
     }
     
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-        ApplicationUtils.injectEnvironment(configurableApplicationContext.getEnvironment());
         loadSetting();
     }
 }

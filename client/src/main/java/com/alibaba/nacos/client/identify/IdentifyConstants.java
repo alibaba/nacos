@@ -51,4 +51,15 @@ public class IdentifyConstants {
     
     public static final String NO_APP_NAME = "";
     
+    public static final String PROJECT_NAME_PROPERTY = "project.name";
+    
+    public static final String RAM_ROLE_NAME_PROPERTY = "ram.role.name";
+    
+    public static final String REFRESH_TIME_PROPERTY = "time.to.refresh.in.millisecond";
+    
+    public static final String SECURITY_PROPERTY = "security.credentials";
+    
+    public static final String SECURITY_URL_PROPERTY = "security.credentials.url";
+    
+    public static final String SECURITY_CACHE_PROPERTY = "cache.security.credentials";
 }

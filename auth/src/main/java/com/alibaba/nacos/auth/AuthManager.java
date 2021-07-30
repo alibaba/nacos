@@ -39,6 +39,15 @@ public interface AuthManager {
     User login(Object request) throws AccessException;
     
     /**
+     * Authentication of request, identify the user who request the resource.
+     *
+     * @param request where we can find the user information
+     * @return user related to this request, null if no user info is found.
+     * @throws AccessException if authentication is failed
+     */
+    User loginRemote(Object request) throws AccessException;
+    
+    /**
      * Authorization of request, constituted with resource and user.
      *
      * @param permission permission to auth

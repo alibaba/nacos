@@ -18,7 +18,7 @@ Nacos的编码规范遵从于《阿里巴巴JAVA开发规约》和社区制定�
 
 Nacos Code Style file is `style/nacos-code-style-for-idea.xml` in source code. Developers can import it to Idea IDE and reformat code by IDE.
 
-Nacos代码风格文件在源代码下的`style/nacos-code-style-for-idea.xml`文件中，开发者可以将其倒入到Idea IDE中，并让IDE帮助您格式化代码。
+Nacos代码风格文件在源代码下的`style/nacos-code-style-for-idea.xml`文件中，开发者可以将其导入到Idea IDE中，并让IDE帮助您格式化代码。
 
 #### Import Way/导入方式
 

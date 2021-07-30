@@ -27,8 +27,8 @@ import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
-import com.alibaba.nacos.core.utils.DiskUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.util.CRC64;
 
@@ -51,13 +51,17 @@ import javax.sql.DataSource;
  */
 public class DerbySnapshotOperation implements SnapshotOperation {
     
+    private static final String DERBY_SNAPSHOT_SAVE = DerbySnapshotOperation.class.getSimpleName() + ".SAVE";
+    
+    private static final String DERBY_SNAPSHOT_LOAD = DerbySnapshotOperation.class.getSimpleName() + ".LOAD";
+    
     private final String backupSql = "CALL SYSCS_UTIL.SYSCS_BACKUP_DATABASE(?)";
     
     private final String snapshotDir = "derby_data";
     
     private final String snapshotArchive = "derby_data.zip";
     
-    private final String derbyBaseDir = Paths.get(ApplicationUtils.getNacosHome(), "data", "derby-data").toString();
+    private final String derbyBaseDir = Paths.get(EnvUtil.getNacosHome(), "data", "derby-data").toString();
     
     private final String restoreDB = "jdbc:derby:" + derbyBaseDir;
     
@@ -72,8 +76,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     @Override
     public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
         RaftExecutor.doSnapshot(() -> {
-            
-            TimerContext.start("CONFIG_DERBY_SNAPSHOT_SAVE");
+            TimerContext.start(DERBY_SNAPSHOT_SAVE);
             
             final Lock lock = writeLock;
             lock.lock();
@@ -100,7 +103,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 callFinally.accept(false, t);
             } finally {
                 lock.unlock();
-                TimerContext.end(LogUtil.FATAL_LOG);
+                TimerContext.end(DERBY_SNAPSHOT_SAVE, LogUtil.FATAL_LOG);
             }
         });
     }
@@ -109,8 +112,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     public boolean onSnapshotLoad(Reader reader) {
         final String readerPath = reader.getPath();
         final String sourceFile = Paths.get(readerPath, snapshotArchive).toString();
-        
-        TimerContext.start("CONFIG_DERBY_SNAPSHOT_LOAD");
+        TimerContext.start(DERBY_SNAPSHOT_LOAD);
         final Lock lock = writeLock;
         lock.lock();
         try {
@@ -145,7 +147,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             return false;
         } finally {
             lock.unlock();
-            TimerContext.end(LogUtil.FATAL_LOG);
+            TimerContext.end(DERBY_SNAPSHOT_LOAD, LogUtil.FATAL_LOG);
         }
     }
     

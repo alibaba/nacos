@@ -18,16 +18,16 @@ package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.cmdb.pojo.PreservedEntityTypes;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -56,8 +56,11 @@ import java.util.Set;
  * @see CmdbReader
  * @since 0.7.0
  */
+@Deprecated
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class LabelSelector extends ExpressionSelector implements Selector {
+    
+    private static final long serialVersionUID = -7381912003505096093L;
     
     /**
      * The labels relevant to this the selector.
@@ -105,21 +108,20 @@ public class LabelSelector extends ExpressionSelector implements Selector {
     }
     
     @Override
-    public List<Instance> select(String consumer, List<Instance> providers) {
-        
+    public <T extends Instance> List<T> select(String consumer, List<T> providers) {
         if (labels.isEmpty()) {
             return providers;
         }
+    
+        List<T> instanceList = new ArrayList<>();
+        for (T instance : providers) {
         
-        List<Instance> instanceList = new ArrayList<>();
-        for (Instance instance : providers) {
-            
             boolean matched = true;
             for (String labelName : getLabels()) {
-                
+            
                 String consumerLabelValue = getCmdbReader()
                         .queryLabel(consumer, PreservedEntityTypes.ip.name(), labelName);
-                
+            
                 if (StringUtils.isNotBlank(consumerLabelValue) && !StringUtils.equals(consumerLabelValue,
                         getCmdbReader().queryLabel(instance.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
                     matched = false;
@@ -130,11 +132,11 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                 instanceList.add(instance);
             }
         }
-        
+    
         if (instanceList.isEmpty()) {
             return providers;
         }
-        
+    
         return instanceList;
     }
     
@@ -257,6 +259,8 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                 return -1;
             }
             
+            final String labelConsumer = elements.get(index++).split(CONSUMER_PREFIX)[1];
+            
             index = skipEmpty(elements, index);
             if (index >= elements.size()) {
                 return -1;
@@ -275,9 +279,8 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                 return -1;
             }
             
-            String labelProvider = elements.get(index).split(PROVIDER_PREFIX)[1];
+            final String labelProvider = elements.get(index).split(PROVIDER_PREFIX)[1];
             
-            String labelConsumer = elements.get(index++).split(CONSUMER_PREFIX)[1];
             if (!labelConsumer.equals(labelProvider)) {
                 return -1;
             }

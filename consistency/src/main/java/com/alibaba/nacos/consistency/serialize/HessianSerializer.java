@@ -25,6 +25,7 @@ import com.caucho.hessian.io.SerializerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 /**
  * hessian serializer.
@@ -34,18 +35,33 @@ import java.io.IOException;
 @SuppressWarnings("all")
 public class HessianSerializer implements Serializer {
     
+    private static final String NAME = "Hessian";
+    
     private SerializerFactory serializerFactory = new SerializerFactory();
     
     public HessianSerializer() {
     }
     
     @Override
-    public <T> T deserialize(byte[] data, Class cls) {
-        
+    public <T> T deserialize(byte[] data) {
+        return deseiralize0(data);
+    }
+    
+    @Override
+    public <T> T deserialize(byte[] data, Class<T> cls) {
+        return deserialize(data);
+    }
+    
+    @Override
+    public <T> T deserialize(byte[] data, Type type) {
+        return deserialize(data);
+    }
+    
+    private <T> T deseiralize0(byte[] data) {
         if (ByteUtils.isEmpty(data)) {
             return null;
         }
-        
+    
         Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));
         input.setSerializerFactory(serializerFactory);
         Object resultObject;
@@ -75,7 +91,7 @@ public class HessianSerializer implements Serializer {
     
     @Override
     public String name() {
-        return "Hessian";
+        return NAME;
     }
     
 }

@@ -41,7 +41,7 @@ public class MemoryMonitor {
                 .scheduleConfigTask(new PrintGetConfigResponeTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
         
         ConfigExecutor
-                .scheduleConfigTask(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS, DELAY_SECONDS,
+                .scheduleConfigTask(new ThreadTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS, DELAY_SECONDS,
                         TimeUnit.SECONDS);
         
     }

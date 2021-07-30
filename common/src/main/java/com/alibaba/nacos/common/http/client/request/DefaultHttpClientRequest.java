@@ -65,7 +65,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
                 && requestHttpEntity.getBody() instanceof Map) {
             HttpUtils.initRequestFromEntity(httpRequestBase, (Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
         } else {
-            HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
+            HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(), headers);
         }
         replaceDefaultConfig(httpRequestBase, requestHttpEntity.getHttpClientConfig());
         return httpRequestBase;

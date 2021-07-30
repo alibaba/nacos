@@ -29,11 +29,11 @@ import com.google.protobuf.Message;
  */
 public class NacosClosure implements Closure {
     
-    private final Message message;
+    private Message message;
     
-    private final Closure closure;
+    private Closure closure;
     
-    private final NacosStatus nacosStatus = new NacosStatus();
+    private NacosStatus nacosStatus = new NacosStatus();
     
     public NacosClosure(Message message, Closure closure) {
         this.message = message;
@@ -44,6 +44,13 @@ public class NacosClosure implements Closure {
     public void run(Status status) {
         nacosStatus.setStatus(status);
         closure.run(nacosStatus);
+        clear();
+    }
+    
+    private void clear() {
+        message = null;
+        closure = null;
+        nacosStatus = null;
     }
     
     public void setResponse(Response response) {

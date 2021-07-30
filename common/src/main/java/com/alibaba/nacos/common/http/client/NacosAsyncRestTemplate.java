@@ -106,6 +106,27 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     }
     
     /**
+     * async http delete large request, when the parameter exceeds the URL limit, you can use this method to put the
+     * parameter into the body pass.
+     *
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type
+     *
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
+     *
+     * @param url          url
+     * @param header       http header param
+     * @param body         body
+     * @param responseType return type
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
+     */
+    public <T> void delete(String url, Header header, String body, Type responseType, Callback<T> callback) {
+        execute(url, HttpMethod.DELETE_LARGE,
+                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), Query.EMPTY, body),
+                responseType, callback);
+    }
+    
+    /**
      * async http put Create a new resource by PUTting the given body to http request.
      *
      * <p>URL request params are expanded using the given query {@link Query}.

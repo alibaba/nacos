@@ -37,6 +37,8 @@ public class RaftEvent extends SlowEvent {
     
     private Long term = null;
     
+    private String errMsg = "";
+    
     private List<String> raftClusterInfo = Collections.emptyList();
     
     public static RaftEventBuilder builder() {
@@ -75,6 +77,14 @@ public class RaftEvent extends SlowEvent {
         this.raftClusterInfo = raftClusterInfo;
     }
     
+    public String getErrMsg() {
+        return errMsg;
+    }
+    
+    public void setErrMsg(String errMsg) {
+        this.errMsg = errMsg;
+    }
+    
     @Override
     public String toString() {
         return "RaftEvent{" + "groupId='" + groupId + '\'' + ", leader='" + leader + '\'' + ", term=" + term
@@ -90,6 +100,8 @@ public class RaftEvent extends SlowEvent {
         private Long term = null;
         
         private List<String> raftClusterInfo = Collections.emptyList();
+        
+        private String errMsg = "";
         
         private RaftEventBuilder() {
         }
@@ -113,6 +125,11 @@ public class RaftEvent extends SlowEvent {
             this.raftClusterInfo = raftClusterInfo;
             return this;
         }
+    
+        public RaftEventBuilder errMsg(String errMsg) {
+            this.errMsg = errMsg;
+            return this;
+        }
         
         public RaftEvent build() {
             RaftEvent raftEvent = new RaftEvent();
@@ -120,6 +137,7 @@ public class RaftEvent extends SlowEvent {
             raftEvent.setLeader(leader);
             raftEvent.setTerm(term);
             raftEvent.setRaftClusterInfo(raftClusterInfo);
+            raftEvent.setErrMsg(errMsg);
             return raftEvent;
         }
     }

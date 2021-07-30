@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
+import java.io.Serializable;
+
 /**
  * Abstract selector that only contains a type.
  *
@@ -27,7 +29,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
  * @since 0.7.0
  */
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = NoneSelector.class)
-public abstract class AbstractSelector {
+public abstract class AbstractSelector implements Serializable {
+    
+    private static final long serialVersionUID = 4530233098102379229L;
     
     /**
      * The type of this selector, each child class should announce its own unique type.

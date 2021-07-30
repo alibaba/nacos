@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.config.server.service.dump.processor;
 
+import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
@@ -47,7 +47,7 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(AbstractDelayTask task) {
+    public boolean process(NacosTask task) {
         long currentMaxId = persistService.findConfigMaxId();
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {
@@ -55,7 +55,7 @@ public class DumpAllProcessor implements NacosTaskProcessor {
             if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
                 for (ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
-                    lastMaxId = id > lastMaxId ? id : lastMaxId;
+                    lastMaxId = Math.max(id, lastMaxId);
                     if (cf.getDataId().equals(AggrWhitelist.AGGRIDS_METADATA)) {
                         AggrWhitelist.load(cf.getContent());
                     }

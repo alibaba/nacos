@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.tls;
 
-import com.alibaba.nacos.common.utils.IpUtils;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,9 +36,10 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
     
     private final HostnameVerifier hv;
     
-    private static ConcurrentHashMap<String, Boolean> hosts = new ConcurrentHashMap<String, Boolean>();
+    private static final ConcurrentHashMap<String, Boolean> HOSTS = new ConcurrentHashMap<>();
     
-    private static final String[] LOCALHOST_HOSTNAME = new String[] {"localhost", "127.0.0.1"};
+    private static final String[] LOCALHOST_HOSTNAME = new String[] {InternetAddressUtil.LOCAL_HOST,
+            InternetAddressUtil.localHostIP()};
     
     public SelfHostnameVerifier(HostnameVerifier hv) {
         this.hv = hv;
@@ -49,23 +50,23 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
         if (LOCALHOST_HOSTNAME[0].equalsIgnoreCase(hostname) || LOCALHOST_HOSTNAME[1].equals(hostname)) {
             return true;
         }
-        if (isIpv4(hostname)) {
+        if (isIP(hostname)) {
             return true;
         }
         return hv.verify(hostname, session);
     }
     
-    private static boolean isIpv4(String host) {
+    private static boolean isIP(String host) {
         if (host == null || host.isEmpty()) {
-            LOGGER.warn("host is empty, isIPv4 = false");
+            LOGGER.warn("host is empty, isIP = false");
             return false;
         }
-        Boolean cacheHostVerify = hosts.get(host);
+        Boolean cacheHostVerify = HOSTS.get(host);
         if (cacheHostVerify != null) {
             return cacheHostVerify;
         }
-        boolean isIp = IpUtils.isIpv4(host);
-        hosts.putIfAbsent(host, isIp);
+        boolean isIp = InternetAddressUtil.isIP(host);
+        HOSTS.putIfAbsent(host, isIp);
         return isIp;
     }
 }

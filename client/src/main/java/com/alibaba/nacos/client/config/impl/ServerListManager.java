@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -30,6 +31,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
@@ -41,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -72,6 +75,52 @@ public class ServerListManager implements Closeable {
         }
     });
     
+    /**
+     * The name of the different environment.
+     */
+    private final String name;
+    
+    private String namespace = "";
+    
+    private String tenant = "";
+    
+    public static final String DEFAULT_NAME = "default";
+    
+    public static final String CUSTOM_NAME = "custom";
+    
+    public static final String FIXED_NAME = "fixed";
+    
+    private final int initServerlistRetryTimes = 5;
+    
+    /**
+     * Connection timeout and socket timeout with other servers.
+     */
+    static final int TIMEOUT = 5000;
+    
+    final boolean isFixed;
+    
+    boolean isStarted = false;
+    
+    private String endpoint;
+    
+    private int endpointPort = 8080;
+    
+    private String contentPath = ParamUtil.getDefaultContextPath();
+    
+    private String serverListName = ParamUtil.getDefaultNodesPath();
+    
+    volatile List<String> serverUrls = new ArrayList<String>();
+    
+    private volatile String currentServerAddr;
+    
+    private Iterator<String> iterator;
+    
+    public String serverPort = ParamUtil.getDefaultServerPort();
+    
+    public String addressServerUrl;
+    
+    private String serverAddrsStr;
+    
     public ServerListManager() {
         this.isFixed = false;
         this.isStarted = false;
@@ -87,9 +136,9 @@ public class ServerListManager implements Closeable {
         this.isStarted = true;
         List<String> serverAddrs = new ArrayList<String>();
         for (String serverAddr : fixed) {
-            String[] serverAddrArr = serverAddr.split(":");
+            String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
             if (serverAddrArr.length == 1) {
-                serverAddrs.add(serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                serverAddrs.add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
             } else {
                 serverAddrs.add(serverAddr);
             }
@@ -108,7 +157,9 @@ public class ServerListManager implements Closeable {
         this.isFixed = false;
         this.isStarted = false;
         this.name = CUSTOM_NAME + "-" + host + "-" + port;
-        this.addressServerUrl = String.format("http://%s:%d/%s/%s", host, port, this.contentPath, this.serverListName);
+        this.addressServerUrl = String
+                .format("http://%s:%d%s/%s", host, port, ContextPathUtil.normalizeContextPath(this.contentPath),
+                        this.serverListName);
     }
     
     public ServerListManager(String endpoint) throws NacosException {
@@ -127,8 +178,8 @@ public class ServerListManager implements Closeable {
         }
         if (StringUtils.isBlank(namespace)) {
             this.name = endpoint;
-            this.addressServerUrl = String
-                    .format("http://%s:%d/%s/%s", endpoint, this.endpointPort, this.contentPath, this.serverListName);
+            this.addressServerUrl = String.format("http://%s:%d%s/%s", endpoint, this.endpointPort,
+                    ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName);
         } else {
             if (StringUtils.isBlank(endpoint)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
@@ -136,9 +187,8 @@ public class ServerListManager implements Closeable {
             this.name = endpoint + "-" + namespace;
             this.namespace = namespace;
             this.tenant = namespace;
-            this.addressServerUrl = String
-                    .format("http://%s:%d/%s/%s?namespace=%s", endpoint, this.endpointPort, this.contentPath,
-                            this.serverListName, namespace);
+            this.addressServerUrl = String.format("http://%s:%d%s/%s?namespace=%s", endpoint, this.endpointPort,
+                    ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName, namespace);
         }
     }
     
@@ -151,14 +201,16 @@ public class ServerListManager implements Closeable {
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
             this.isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
-            String[] serverAddrsArr = this.serverAddrsStr.split(",");
-            for (String serverAddr : serverAddrsArr) {
+            StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
+            while (serverAddrsTokens.hasMoreTokens()) {
+                String serverAddr = serverAddrsTokens.nextToken().trim();
                 if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
                 } else {
-                    String[] serverAddrArr = serverAddr.split(":");
+                    String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
                     if (serverAddrArr.length == 1) {
-                        serverAddrs.add(HTTP + serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                        serverAddrs.add(HTTP + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil
+                                .getDefaultServerPort());
                     } else {
                         serverAddrs.add(HTTP + serverAddr);
                     }
@@ -181,16 +233,15 @@ public class ServerListManager implements Closeable {
             this.isFixed = false;
             if (StringUtils.isBlank(namespace)) {
                 this.name = endpoint;
-                this.addressServerUrl = String
-                        .format("http://%s:%d/%s/%s", this.endpoint, this.endpointPort, this.contentPath,
-                                this.serverListName);
+                this.addressServerUrl = String.format("http://%s:%d%s/%s", this.endpoint, this.endpointPort,
+                        ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName);
             } else {
                 this.namespace = namespace;
                 this.tenant = namespace;
                 this.name = this.endpoint + "-" + namespace;
                 this.addressServerUrl = String
-                        .format("http://%s:%d/%s/%s?namespace=%s", this.endpoint, this.endpointPort, this.contentPath,
-                                this.serverListName, namespace);
+                        .format("http://%s:%d%s/%s?namespace=%s", this.endpoint, this.endpointPort,
+                                ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName, namespace);
             }
         }
     }
@@ -355,10 +406,10 @@ public class ServerListManager implements Closeable {
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
                     if (StringUtils.isNotBlank(serverAddr)) {
-                        String[] ipPort = serverAddr.trim().split(":");
+                        String[] ipPort = InternetAddressUtil.splitIPPortStr(serverAddr.trim());
                         String ip = ipPort[0].trim();
                         if (ipPort.length == 1) {
-                            result.add(ip + ":" + ParamUtil.getDefaultServerPort());
+                            result.add(ip + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
                         } else {
                             result.add(serverAddr);
                         }
@@ -407,6 +458,21 @@ public class ServerListManager implements Closeable {
         currentServerAddr = iterator.next();
     }
     
+    public String getNextServerAddr() {
+        if (iterator == null || !iterator.hasNext()) {
+            refreshCurrentServerAddr();
+            return currentServerAddr;
+        }
+        try {
+            return iterator.next();
+        } catch (Exception e) {
+            //No nothing.
+        }
+        refreshCurrentServerAddr();
+        return currentServerAddr;
+        
+    }
+    
     public String getCurrentServerAddr() {
         if (StringUtils.isBlank(currentServerAddr)) {
             iterator = iterator();
@@ -438,52 +504,6 @@ public class ServerListManager implements Closeable {
     public String getTenant() {
         return tenant;
     }
-    
-    /**
-     * The name of the different environment.
-     */
-    private final String name;
-    
-    private String namespace = "";
-    
-    private String tenant = "";
-    
-    public static final String DEFAULT_NAME = "default";
-    
-    public static final String CUSTOM_NAME = "custom";
-    
-    public static final String FIXED_NAME = "fixed";
-    
-    private final int initServerlistRetryTimes = 5;
-    
-    /**
-     * Connection timeout and socket timeout with other servers.
-     */
-    static final int TIMEOUT = 5000;
-    
-    final boolean isFixed;
-    
-    boolean isStarted = false;
-    
-    private String endpoint;
-    
-    private int endpointPort = 8080;
-    
-    private String contentPath = ParamUtil.getDefaultContextPath();
-    
-    private String serverListName = ParamUtil.getDefaultNodesPath();
-    
-    volatile List<String> serverUrls = new ArrayList<String>();
-    
-    private volatile String currentServerAddr;
-    
-    private Iterator<String> iterator;
-    
-    public String serverPort = ParamUtil.getDefaultServerPort();
-    
-    public String addressServerUrl;
-    
-    private String serverAddrsStr;
     
     /**
      * Sort the address list, with the same room priority.

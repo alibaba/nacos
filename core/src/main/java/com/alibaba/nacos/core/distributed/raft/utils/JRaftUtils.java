@@ -20,14 +20,18 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
+import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosGetRequestProcessor;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosLogProcessor;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.core.distributed.raft.processor.NacosReadRequestProcessor;
+import com.alibaba.nacos.core.distributed.raft.processor.NacosWriteRequestProcessor;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
@@ -38,7 +42,6 @@ import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.GrpcRaftRpcFactory;
 import com.alipay.sofa.jraft.rpc.impl.MarshallerRegistry;
-import com.alipay.sofa.jraft.util.Endpoint;
 import com.alipay.sofa.jraft.util.RpcFactoryHelper;
 
 import java.io.File;
@@ -62,18 +65,28 @@ public class JRaftUtils {
         GrpcRaftRpcFactory raftRpcFactory = (GrpcRaftRpcFactory) RpcFactoryHelper.rpcFactory();
         raftRpcFactory.registerProtobufSerializer(Log.class.getName(), Log.getDefaultInstance());
         raftRpcFactory.registerProtobufSerializer(GetRequest.class.getName(), GetRequest.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(WriteRequest.class.getName(), WriteRequest.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(ReadRequest.class.getName(), ReadRequest.getDefaultInstance());
         raftRpcFactory.registerProtobufSerializer(Response.class.getName(), Response.getDefaultInstance());
         
         MarshallerRegistry registry = raftRpcFactory.getMarshallerRegistry();
         registry.registerResponseInstance(Log.class.getName(), Response.getDefaultInstance());
         registry.registerResponseInstance(GetRequest.class.getName(), Response.getDefaultInstance());
+    
+        registry.registerResponseInstance(WriteRequest.class.getName(), Response.getDefaultInstance());
+        registry.registerResponseInstance(ReadRequest.class.getName(), Response.getDefaultInstance());
         
-        final RpcServer rpcServer = raftRpcFactory.createRpcServer(new Endpoint(peerId.getIp(), peerId.getPort()));
+        final RpcServer rpcServer = raftRpcFactory.createRpcServer(peerId.getEndpoint());
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
                 RaftExecutor.getRaftCliServiceExecutor());
         
+        // Deprecated
         rpcServer.registerProcessor(new NacosLogProcessor(server, SerializeFactory.getDefault()));
+        // Deprecated
         rpcServer.registerProcessor(new NacosGetRequestProcessor(server, SerializeFactory.getDefault()));
+        
+        rpcServer.registerProcessor(new NacosWriteRequestProcessor(server, SerializeFactory.getDefault()));
+        rpcServer.registerProcessor(new NacosReadRequestProcessor(server, SerializeFactory.getDefault()));
         
         return rpcServer;
     }
@@ -89,7 +102,7 @@ public class JRaftUtils {
             DiskUtils.forceMkdir(new File(snapshotUri));
             DiskUtils.forceMkdir(new File(metaDataUri));
         } catch (Exception e) {
-            Loggers.RAFT.error("Init Raft-File dir have some error : {}", e);
+            Loggers.RAFT.error("Init Raft-File dir have some error, cause: ", e);
             throw new RuntimeException(e);
         }
         
@@ -97,12 +110,7 @@ public class JRaftUtils {
         copy.setRaftMetaUri(metaDataUri);
         copy.setSnapshotUri(snapshotUri);
     }
-    
-    public static final Log injectExtendInfo(Log log, final String operate) {
-        Log gLog = Log.newBuilder(log).putExtendInfo(JRaftConstants.JRAFT_EXTEND_INFO_KEY, operate).build();
-        return gLog;
-    }
-    
+
     public static List<String> toStrings(List<PeerId> peerIds) {
         return peerIds.stream().map(peerId -> peerId.getEndpoint().toString()).collect(Collectors.toList());
     }

@@ -43,7 +43,7 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private CredentialService(String appName) {
         if (appName == null) {
-            String value = System.getProperty("project.name");
+            String value = System.getProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
             if (StringUtils.isNotEmpty(value)) {
                 appName = value;
             }
@@ -59,12 +59,13 @@ public final class CredentialService implements SpasCredentialLoader {
     public static CredentialService getInstance(String appName) {
         String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
         CredentialService instance = INSTANCES.get(key);
-        if (instance == null) {
-            instance = new CredentialService(appName);
-            CredentialService previous = INSTANCES.putIfAbsent(key, instance);
-            if (previous != null) {
-                instance = previous;
-            }
+        if (instance != null) {
+            return instance;
+        }
+        instance = new CredentialService(appName);
+        CredentialService previous = INSTANCES.putIfAbsent(key, instance);
+        if (previous != null) {
+            instance = previous;
         }
         return instance;
     }

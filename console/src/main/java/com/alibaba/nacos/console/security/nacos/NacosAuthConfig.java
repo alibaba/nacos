@@ -18,9 +18,9 @@ package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.filter.JwtAuthenticationTokenFilter;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
@@ -56,7 +56,13 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     public static final String TOKEN_PREFIX = "Bearer ";
     
     public static final String CONSOLE_RESOURCE_NAME_PREFIX = "console/";
+
+    public static final String UPDATE_PASSWORD_ENTRY_POINT = CONSOLE_RESOURCE_NAME_PREFIX + "user/password";
     
+    private static final String DEFAULT_ALL_PATH_PATTERN = "/**";
+    
+    private static final String PROPERTY_IGNORE_URLS = "nacos.security.ignore.urls";
+
     @Autowired
     private Environment env;
     
@@ -69,6 +75,9 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private NacosUserDetailsServiceImpl userDetailsService;
     
+    @Autowired
+    private LdapAuthenticationProvider ldapAuthenticationProvider;
+    
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
@@ -80,10 +89,12 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
         
         String ignoreUrls = null;
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = "/**";
+            ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
+        } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
         }
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = env.getProperty("nacos.security.ignore.urls", "/**");
+            ignoreUrls = env.getProperty(PROPERTY_IGNORE_URLS, DEFAULT_ALL_PATH_PATTERN);
         }
         if (StringUtils.isNotBlank(ignoreUrls)) {
             for (String each : ignoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)) {
@@ -94,26 +105,23 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            auth.authenticationProvider(ldapAuthenticationProvider);
+        }
     }
     
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
-            http
-                    
-                    .csrf().disable().cors() // We don't need CSRF for JWT based authentication
-                    
+            http.csrf().disable().cors()// We don't need CSRF for JWT based authentication
                     .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                    
                     .and().authorizeRequests().requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                     .antMatchers(LOGIN_ENTRY_POINT).permitAll()
-                    
                     .and().authorizeRequests().antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated()
-                    
                     .and().exceptionHandling().authenticationEntryPoint(new JwtAuthenticationEntryPoint());
-            
             // disable cache
             http.headers().cacheControl();
             

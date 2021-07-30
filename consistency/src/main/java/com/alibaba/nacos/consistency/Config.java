@@ -22,7 +22,7 @@ import java.util.Set;
 /**
  * Consistent protocol related configuration objects.
  *
- * <p>{@link LogProcessor} : The consistency protocol provides services for all businesses, but each business only cares
+ * <p>{@link RequestProcessor} : The consistency protocol provides services for all businesses, but each business only cares
  * about the transaction information belonging to that business, and the transaction processing between the various
  * services should not block each other. Therefore, the LogProcessor is abstracted to implement the parallel processing
  * of transactions of different services. Corresponding LogProcessor sub-interface: LogProcessor4AP or LogProcessor4CP,
@@ -30,7 +30,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Config<L extends LogProcessor> extends Serializable {
+public interface Config<L extends RequestProcessor> extends Serializable {
     
     /**
      * Set the cluster node information to initialize，like [ip:port, ip:port, ip:port].

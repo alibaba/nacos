@@ -27,7 +27,7 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +52,21 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  * @author Nacos
  */
 public class ConfigCacheService {
+
+    static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheService.class);
+
+    private static final String NO_SPACE_CN = "设备上没有空间";
+
+    private static final String NO_SPACE_EN = "No space left on device";
+
+    private static final String DISK_QUATA_CN = "超出磁盘限额";
+
+    private static final String DISK_QUATA_EN = "Disk quota exceeded";
+
+    /**
+     * groupKey -> cacheItem.
+     */
+    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<String, CacheItem>();
     
     @Autowired
     private static PersistService persistService;
@@ -231,8 +246,8 @@ public class ConfigCacheService {
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             if (!PropertyUtil.isDirectRead()) {
-                String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
-                if (md5.equals(loacalMd5)) {
+                String localMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
+                if (md5.equals(localMd5)) {
                     DUMP_LOG.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                     + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
                             lastModifiedTs);
@@ -607,11 +622,11 @@ public class ConfigCacheService {
     }
     
     /**
-     * Try to add read lock. If it successed, then it can call {@link #releaseWriteLock(String)}.And it won't call if
+     * Try to add read lock. If it succeeded, then it can call {@link #releaseWriteLock(String)}.And it won't call if
      * failed.
      *
      * @param groupKey groupKey string value.
-     * @return 0 - No data and failed. Positive number 0 - Success. Negative number - lock failed。
+     * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed。
      */
     public static int tryReadLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
@@ -635,7 +650,7 @@ public class ConfigCacheService {
     }
     
     /**
-     * Try to add write lock. If it successed, then it can call {@link #releaseWriteLock(String)}.And it won't call if
+     * Try to add write lock. If it succeeded, then it can call {@link #releaseWriteLock(String)}.And it won't call if
      * failed.
      *
      * @param groupKey groupKey string value.
@@ -666,20 +681,5 @@ public class ConfigCacheService {
         item = CACHE.putIfAbsent(groupKey, tmp);
         return (null == item) ? tmp : item;
     }
-    
-    private static final String NO_SPACE_CN = "设备上没有空间";
-    
-    private static final String NO_SPACE_EN = "No space left on device";
-    
-    private static final String DISK_QUATA_CN = "超出磁盘限额";
-    
-    private static final String DISK_QUATA_EN = "Disk quota exceeded";
-    
-    static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheService.class);
-    
-    /**
-     * groupKey -> cacheItem.
-     */
-    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<String, CacheItem>();
 }
 

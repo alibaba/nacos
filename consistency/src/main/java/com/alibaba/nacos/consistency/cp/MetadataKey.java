@@ -29,4 +29,6 @@ public class MetadataKey {
     
     public static final String RAFT_GROUP_MEMBER = "raftGroupMember";
     
+    public static final String ERR_MSG = "errMsg";
+    
 }

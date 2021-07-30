@@ -98,4 +98,9 @@ public class SwitchEntry {
     public static final String LIGHT_BEAT_ENABLED = "lightBeatEnabled";
     
     public static final String AUTO_CHANGE_HEALTH_CHECK_ENABLED = "autoChangeHealthCheckEnabled";
+    
+    /**
+     * Used to open or close double write service data between v2.0.0 - v2.1.0
+     */
+    public static final String DOUBLE_WRITE_ENABLED = "doubleWriteEnabled";
 }

@@ -17,8 +17,8 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import org.apache.commons.lang3.RandomUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.RandomUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,8 +26,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Raft peer.
  *
+ * @deprecated will remove in 1.4.x
  * @author nacos
  */
+@Deprecated
 public class RaftPeer {
     
     public String ip;

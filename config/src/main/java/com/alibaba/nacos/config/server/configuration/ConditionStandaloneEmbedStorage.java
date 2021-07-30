@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
@@ -32,6 +32,6 @@ public class ConditionStandaloneEmbedStorage implements Condition {
     
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        return PropertyUtil.isEmbeddedStorage() && ApplicationUtils.getStandaloneMode();
+        return PropertyUtil.isEmbeddedStorage() && EnvUtil.getStandaloneMode();
     }
 }

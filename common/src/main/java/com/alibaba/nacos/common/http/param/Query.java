@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.http.param;
 
+import com.alibaba.nacos.common.utils.MapUtil;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.LinkedHashMap;
@@ -35,6 +37,8 @@ public class Query {
     public static final Query EMPTY = Query.newInstance();
     
     private Map<String, Object> params;
+    
+    private static final String DEFAULT_ENC = "UTF-8";
     
     public Query() {
         params = new LinkedHashMap<String, Object>();
@@ -68,8 +72,10 @@ public class Query {
      * @return this query
      */
     public Query initParams(Map<String, String> params) {
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            addParam(entry.getKey(), entry.getValue());
+        if (MapUtil.isNotEmpty(params)) {
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                addParam(entry.getKey(), entry.getValue());
+            }
         }
         return this;
     }
@@ -100,10 +106,10 @@ public class Query {
         for (Map.Entry<String, Object> entry : entrySet) {
             try {
                 if (null != entry.getValue()) {
-                    urlBuilder.append(entry.getKey()).append("=")
-                            .append(URLEncoder.encode(String.valueOf(entry.getValue()), "UTF-8"));
+                    urlBuilder.append(entry.getKey()).append('=')
+                            .append(URLEncoder.encode(String.valueOf(entry.getValue()), DEFAULT_ENC));
                     if (i > 1) {
-                        urlBuilder.append("&");
+                        urlBuilder.append('&');
                     }
                 }
                 i--;

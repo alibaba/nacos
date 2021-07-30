@@ -18,10 +18,14 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Create a rest template to ensure that each custom client config and rest template are in one-to-one correspondence.
@@ -30,10 +34,23 @@ import java.util.Map;
  */
 public final class HttpClientBeanHolder {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientBeanHolder.class);
+    
     private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<String, NacosRestTemplate>(10);
     
     private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<String, NacosAsyncRestTemplate>(
             10);
+    
+    private static final AtomicBoolean ALREADY_SHUTDOWN = new AtomicBoolean(false);
+    
+    static {
+        ThreadUtils.addShutdownHook(new Runnable() {
+            @Override
+            public void run() {
+                shutdown();
+            }
+        });
+    }
     
     public static NacosRestTemplate getNacosRestTemplate(Logger logger) {
         return getNacosRestTemplate(new DefaultHttpClientFactory(logger));
@@ -79,6 +96,22 @@ public final class HttpClientBeanHolder {
             }
         }
         return nacosAsyncRestTemplate;
+    }
+    
+    /**
+     * Shutdown common http client.
+     */
+    private static void shutdown() {
+        if (!ALREADY_SHUTDOWN.compareAndSet(false, true)) {
+            return;
+        }
+        LOGGER.warn("[HttpClientBeanHolder] Start destroying common HttpClient");
+        try {
+            shutdown(DefaultHttpClientFactory.class.getName());
+        } catch (Exception ex) {
+            LOGGER.error("An exception occurred when the common HTTP client was closed : {}", ExceptionUtil.getStackTrace(ex));
+        }
+        LOGGER.warn("[HttpClientBeanHolder] Destruction of the end");
     }
     
     /**

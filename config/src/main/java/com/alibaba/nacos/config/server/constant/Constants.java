@@ -127,6 +127,8 @@ public class Constants {
     
     public static final String NAMESPACE_CONTROLLER_PATH = BASE_PATH + "/namespaces";
     
+    public static final String METRICS_CONTROLLER_PATH = BASE_PATH + "/metrics";
+    
     public static final String ENCODE = "UTF-8";
     
     public static final String MAP_FILE = "map-file.js";
@@ -267,4 +269,10 @@ public class Constants {
      * Specifies that reads wait without timeout.
      */
     public static final String EXTEND_NEED_READ_UNTIL_HAVE_DATA = "00--0-read-join-0--00";
+
+    public static final String CONFIG_EXPORT_ITEM_FILE_SEPARATOR = "/";
+    
+    public static final String CONFIG_EXPORT_METADATA = ".meta.yml";
+    
+    public static final String CONFIG_EXPORT_METADATA_NEW = ".metadata.yml";
 }

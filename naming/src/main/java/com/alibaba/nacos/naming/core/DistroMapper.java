@@ -18,13 +18,13 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -66,7 +66,7 @@ public class DistroMapper extends MemberChangeListener {
     @PostConstruct
     public void init() {
         NotifyCenter.registerSubscriber(this);
-        this.healthyList = MemberUtils.simpleMembers(memberManager.allMembers());
+        this.healthyList = MemberUtil.simpleMembers(memberManager.allMembers());
     }
     
     public boolean responsible(Cluster cluster, Instance instance) {
@@ -75,15 +75,15 @@ public class DistroMapper extends MemberChangeListener {
     }
     
     /**
-     * Judge whether current server is responsible for input service.
+     * Judge whether current server is responsible for input tag.
      *
-     * @param serviceName service name
+     * @param responsibleTag responsible tag, serviceName for v1 and ip:port for v2
      * @return true if input service is response, otherwise false
      */
-    public boolean responsible(String serviceName) {
+    public boolean responsible(String responsibleTag) {
         final List<String> servers = healthyList;
         
-        if (!switchDomain.isDistroEnabled() || ApplicationUtils.getStandaloneMode()) {
+        if (!switchDomain.isDistroEnabled() || EnvUtil.getStandaloneMode()) {
             return true;
         }
         
@@ -92,49 +92,49 @@ public class DistroMapper extends MemberChangeListener {
             return false;
         }
         
-        int index = servers.indexOf(ApplicationUtils.getLocalAddress());
-        int lastIndex = servers.lastIndexOf(ApplicationUtils.getLocalAddress());
+        int index = servers.indexOf(EnvUtil.getLocalAddress());
+        int lastIndex = servers.lastIndexOf(EnvUtil.getLocalAddress());
         if (lastIndex < 0 || index < 0) {
             return true;
         }
         
-        int target = distroHash(serviceName) % servers.size();
+        int target = distroHash(responsibleTag) % servers.size();
         return target >= index && target <= lastIndex;
     }
     
     /**
-     * Calculate which other server response input service.
+     * Calculate which other server response input tag.
      *
-     * @param serviceName service name
+     * @param responsibleTag responsible tag, serviceName for v1 and ip:port for v2
      * @return server which response input service
      */
-    public String mapSrv(String serviceName) {
+    public String mapSrv(String responsibleTag) {
         final List<String> servers = healthyList;
         
         if (CollectionUtils.isEmpty(servers) || !switchDomain.isDistroEnabled()) {
-            return ApplicationUtils.getLocalAddress();
+            return EnvUtil.getLocalAddress();
         }
         
         try {
-            int index = distroHash(serviceName) % servers.size();
+            int index = distroHash(responsibleTag) % servers.size();
             return servers.get(index);
         } catch (Throwable e) {
-            Loggers.SRV_LOG.warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + ApplicationUtils
-                    .getLocalAddress(), e);
-            return ApplicationUtils.getLocalAddress();
+            Loggers.SRV_LOG
+                    .warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + EnvUtil.getLocalAddress(), e);
+            return EnvUtil.getLocalAddress();
         }
     }
     
-    private int distroHash(String serviceName) {
-        return Math.abs(serviceName.hashCode() % Integer.MAX_VALUE);
+    private int distroHash(String responsibleTag) {
+        return Math.abs(responsibleTag.hashCode() % Integer.MAX_VALUE);
     }
     
     @Override
     public void onEvent(MembersChangeEvent event) {
         // Here, the node list must be sorted to ensure that all nacos-server's
         // node list is in the same order
-        List<String> list = MemberUtils.simpleMembers(MemberUtils
-                .selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
+        List<String> list = MemberUtil.simpleMembers(MemberUtil.selectTargetMembers(event.getMembers(),
+                member -> NodeState.UP.equals(member.getState()) || NodeState.SUSPICIOUS.equals(member.getState())));
         Collections.sort(list);
         Collection<String> old = healthyList;
         healthyList = Collections.unmodifiableList(list);

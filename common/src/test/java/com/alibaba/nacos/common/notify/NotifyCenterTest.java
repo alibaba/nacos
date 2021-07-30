@@ -132,6 +132,7 @@ public class NotifyCenterTest {
                 return ExpireEvent.class;
             }
             
+            @Override
             public boolean ignoreExpireEvent() {
                 return true;
             }

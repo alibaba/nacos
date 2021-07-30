@@ -16,13 +16,15 @@
 
 package com.alibaba.nacos.naming.pojo;
 
+import java.io.Serializable;
+
 /**
  * Record to transfer and store in Nacos cluster.
  *
  * @author nkorange
  * @since 1.0.0
  */
-public interface Record {
+public interface Record extends Serializable {
     
     /**
      * get the checksum of this record, usually for record comparison.

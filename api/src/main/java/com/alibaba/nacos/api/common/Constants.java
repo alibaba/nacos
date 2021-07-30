@@ -65,6 +65,8 @@ public class Constants {
     
     public static final String CONFIG_TYPE = "Config-Type";
     
+    public static final String ENCRYPTED_DATA_KEY = "Encrypted-Data-Key";
+    
     public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
     
     public static final String SPACING_INTERVAL = "client-spacing-interval";
@@ -80,6 +82,8 @@ public class Constants {
     public static final String TOKEN_TTL = "tokenTtl";
     
     public static final String GLOBAL_ADMIN = "globalAdmin";
+    
+    public static final String USERNAME = "username";
     
     public static final String TOKEN_REFRESH_WINDOW = "tokenRefreshWindow";
     
@@ -158,7 +162,7 @@ public class Constants {
     
     public static final int NAMING_INSTANCE_ID_SEG_COUNT = 4;
     
-    public static final String NAMING_HTTP_HEADER_SPILIER = "\\|";
+    public static final String NAMING_HTTP_HEADER_SPLITTER = "\\|";
     
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
     
@@ -176,6 +180,8 @@ public class Constants {
     
     public static final String SERVICE_INFO_SPLITER = "@@";
     
+    public static final int SERVICE_INFO_SPLIT_COUNT = 2;
+    
     public static final String NULL_STRING = "null";
     
     public static final String NUMBER_PATTERN = "^\\d+$";
@@ -188,4 +194,19 @@ public class Constants {
     
     public static final String HTTP_PREFIX = "http";
     
+    public static final String ALL_PATTERN = "*";
+    
+    public static final String COLON = ":";
+    
+    public static final String LINE_BREAK = "\n";
+    
+    public static final String POUND = "#";
+    
+    public static final String VIPSERVER_TAG = "Vipserver-Tag";
+    
+    public static final String AMORY_TAG = "Amory-Tag";
+    
+    public static final String LOCATION_TAG = "Location-Tag";
+    
+    public static final String CHARSET_KEY = "charset";
 }

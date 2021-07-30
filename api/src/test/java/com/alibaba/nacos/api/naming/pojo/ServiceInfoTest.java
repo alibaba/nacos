@@ -23,6 +23,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,13 +40,13 @@ public class ServiceInfoTest {
     public void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        serviceInfo = new ServiceInfo("testName", "testClusters");
+        serviceInfo = new ServiceInfo("G@@testName", "testClusters");
     }
     
     @Test
     public void testSerialize() throws JsonProcessingException {
         String actual = mapper.writeValueAsString(serviceInfo);
-        assertTrue(actual.contains("\"name\":\"testName\""));
+        assertTrue(actual.contains("\"name\":\"G@@testName\""));
         assertTrue(actual.contains("\"clusters\":\"testClusters\""));
         assertTrue(actual.contains("\"cacheMillis\":1000"));
         assertTrue(actual.contains("\"hosts\":[]"));
@@ -58,11 +60,11 @@ public class ServiceInfoTest {
     }
     
     @Test
-    @SuppressWarnings("checkstyle:linelength")
     public void testDeserialize() throws IOException {
-        String example = "{\"name\":\"testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],\"lastRefTime\":0,\"checksum\":\"\",\"allIPs\":false,\"valid\":true,\"groupName\":\"\"}";
+        String example = "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],"
+                + "\"lastRefTime\":0,\"checksum\":\"\",\"allIPs\":false,\"valid\":true,\"groupName\":\"\"}";
         ServiceInfo actual = mapper.readValue(example, ServiceInfo.class);
-        assertEquals("testName", actual.getName());
+        assertEquals("G@@testName", actual.getName());
         assertEquals("testClusters", actual.getClusters());
         assertEquals("", actual.getChecksum());
         assertEquals("", actual.getGroupName());
@@ -71,5 +73,33 @@ public class ServiceInfoTest {
         assertTrue(actual.getHosts().isEmpty());
         assertTrue(actual.isValid());
         assertFalse(actual.isAllIPs());
+    }
+    
+    @Test
+    public void testGetKey() {
+        String key = serviceInfo.getKey();
+        assertEquals("G@@testName@@testClusters", key);
+    }
+    
+    @Test
+    public void testGetKeyEncode() {
+        String key = serviceInfo.getKeyEncoded();
+        String encodeName = null;
+        try {
+            encodeName = URLEncoder.encode("G@@testName", "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        assertEquals(key, ServiceInfo.getKey(encodeName, "testClusters"));
+    }
+    
+    @Test
+    public void testServiceInfoConstructor() {
+        String key1 = "group@@name";
+        String key2 = "group@@name@@c2";
+        ServiceInfo s1 = new ServiceInfo(key1);
+        ServiceInfo s2 = new ServiceInfo(key2);
+        assertEquals(key1, s1.getKey());
+        assertEquals(key2, s2.getKey());
     }
 }

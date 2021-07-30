@@ -31,6 +31,7 @@ import java.util.List;
  * ServiceInfo.
  *
  * @author nkorange
+ * @author shizhengxing
  */
 @JsonInclude(Include.NON_NULL)
 public class ServiceInfo {
@@ -38,7 +39,13 @@ public class ServiceInfo {
     @JsonIgnore
     private String jsonFromServer = EMPTY;
     
+    private static final String EMPTY = "";
+    
+    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
+    
     public static final String SPLITER = "@@";
+    
+    private static final String DEFAULT_CHARSET = "UTF-8";
     
     private String name;
     
@@ -56,6 +63,8 @@ public class ServiceInfo {
     
     private volatile boolean allIPs = false;
     
+    private volatile boolean reachProtectionThreshold = false;
+    
     public ServiceInfo() {
     }
     
@@ -67,19 +76,28 @@ public class ServiceInfo {
         this.allIPs = allIPs;
     }
     
+    /**
+     * There is only one form of the key:groupName@@name@clusters. This constuctor used by DiskCache.read(String) and
+     * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
+     */
     public ServiceInfo(String key) {
-        
         int maxIndex = 2;
-        int clusterIndex = 1;
-        int serviceNameIndex = 0;
+        int clusterIndex = 2;
+        int serviceNameIndex = 1;
+        int groupIndex = 0;
         
         String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (keys.length >= maxIndex) {
+        if (keys.length >= maxIndex + 1) {
+            this.groupName = keys[groupIndex];
             this.name = keys[serviceNameIndex];
             this.clusters = keys[clusterIndex];
+        } else if (keys.length == maxIndex) {
+            this.groupName = keys[groupIndex];
+            this.name = keys[serviceNameIndex];
+        } else {
+            //defensive programming
+            throw new IllegalArgumentException("Cann't parse out 'groupName',but it must not be null!");
         }
-        
-        this.name = keys[0];
     }
     
     public ServiceInfo(String name, String clusters) {
@@ -97,6 +115,18 @@ public class ServiceInfo {
     
     public void setHosts(List<Instance> hosts) {
         this.hosts = hosts;
+    }
+    
+    public void addHost(Instance host) {
+        hosts.add(host);
+    }
+    
+    public void addAllHosts(List<? extends Instance> hosts) {
+        this.hosts.addAll(hosts);
+    }
+    
+    public List<Instance> getHosts() {
+        return new ArrayList<Instance>(hosts);
     }
     
     public boolean isValid() {
@@ -143,10 +173,6 @@ public class ServiceInfo {
         this.cacheMillis = cacheMillis;
     }
     
-    public List<Instance> getHosts() {
-        return new ArrayList<Instance>(hosts);
-    }
-    
     /**
      * Judge whether service info is validate.
      *
@@ -155,6 +181,10 @@ public class ServiceInfo {
     public boolean validate() {
         if (isAllIPs()) {
             return true;
+        }
+        
+        if (hosts == null) {
+            return false;
         }
         
         List<Instance> validHosts = new ArrayList<Instance>();
@@ -167,8 +197,8 @@ public class ServiceInfo {
                 validHosts.add(host);
             }
         }
-        
-        return true;
+        //No valid hosts, return false.
+        return !validHosts.isEmpty();
     }
     
     @JsonIgnore
@@ -182,7 +212,8 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKey() {
-        return getKey(name, clusters);
+        String serviceName = getGroupedServiceName();
+        return getKey(serviceName, clusters);
     }
     
     @JsonIgnore
@@ -197,11 +228,21 @@ public class ServiceInfo {
     
     @JsonIgnore
     public String getKeyEncoded() {
+        String serviceName = getGroupedServiceName();
         try {
-            return getKey(URLEncoder.encode(name, "UTF-8"), clusters);
+            serviceName = URLEncoder.encode(serviceName, DEFAULT_CHARSET);
         } catch (UnsupportedEncodingException e) {
-            return getKey();
+            //do nothing
         }
+        return getKey(serviceName, clusters);
+    }
+    
+    private String getGroupedServiceName() {
+        String serviceName = this.name;
+        if (!isEmpty(groupName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+            serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+        }
+        return serviceName;
     }
     
     /**
@@ -250,7 +291,11 @@ public class ServiceInfo {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
     
-    private static final String EMPTY = "";
-    
-    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
+    public boolean isReachProtectionThreshold() {
+        return reachProtectionThreshold;
+    }
+
+    public void setReachProtectionThreshold(boolean reachProtectionThreshold) {
+        this.reachProtectionThreshold = reachProtectionThreshold;
+    }
 }

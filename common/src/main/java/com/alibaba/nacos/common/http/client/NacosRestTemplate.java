@@ -20,7 +20,9 @@ import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
+import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
+import com.alibaba.nacos.common.http.client.request.JdkHttpClientRequest;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
@@ -94,6 +96,9 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     /**
      * get request, may be pulling a lot of data URL request params are expanded using the given query {@link Query},
      * More request parameters can be set via body.
+     *
+     * <p>This method can only be used when HttpClientRequest is implemented by {@link DefaultHttpClientRequest}, note:
+     * {@link JdkHttpClientRequest} Implementation does not support this method.
      *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
@@ -419,6 +424,26 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
             String httpMethod, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+        return execute(url, httpMethod, requestHttpEntity, responseType);
+    }
+    
+    /**
+     * Execute the HTTP method to the given URI template, writing the given request entity to the request, and returns
+     * the response as {@link HttpRestResult}.
+     *
+     * @param url          url
+     * @param config       HttpClientConfig
+     * @param header       http header param
+     * @param query        http query param
+     * @param body         http body param
+     * @param httpMethod   http method
+     * @param responseType return type
+     * @return {@link HttpRestResult}
+     * @throws Exception ex
+     */
+    public <T> HttpRestResult<T> exchange(String url, HttpClientConfig config, Header header, Query query,
+            Object body, String httpMethod, Type responseType) throws Exception {
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header, query, body);
         return execute(url, httpMethod, requestHttpEntity, responseType);
     }
     
