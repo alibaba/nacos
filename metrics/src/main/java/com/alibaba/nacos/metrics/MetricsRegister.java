@@ -18,10 +18,10 @@ public interface MetricsRegister {
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param document document for gauge
+     * @param description description for gauge
      * @param number number for gauge
      */
-    void registerGauge(String name, Iterable<Tag> tags, String document, Supplier<Number> number);
+    void registerGauge(String name, Iterable<Tag> tags, String description, Supplier<Number> number);
 
 
     /**
@@ -29,20 +29,20 @@ public interface MetricsRegister {
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param document document for gauge
+     * @param description description for gauge
      * @return Gauge
      */
-    Gauge registerGauge(String name, Iterable<Tag> tags, String document);
+    Gauge registerGauge(String name, Iterable<Tag> tags, String description);
 
     /**
      * Register Counter.
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param document document for gauge
+     * @param description description for gauge
      * @return Counter
      */
-    Counter registerCounter(String name, Iterable<Tag> tags, String document);
+    Counter registerCounter(String name, Iterable<Tag> tags, String description);
 
 
     /**
@@ -50,10 +50,10 @@ public interface MetricsRegister {
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param document document for gauge
+     * @param description description for gauge
      * @return Timer
      */
-    Timer registerTimer(String name, Iterable<Tag> tags, String document);
+    Timer registerTimer(String name, Iterable<Tag> tags, String description);
 
 
     /**
@@ -61,10 +61,10 @@ public interface MetricsRegister {
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param document document for gauge
+     * @param description description for gauge
      * @return Histogram
      */
-    Histogram registerHistogram(String name, Iterable<Tag> tags, String document);
+    Histogram registerHistogram(String name, Iterable<Tag> tags, String description);
 
 
     /**
@@ -72,10 +72,10 @@ public interface MetricsRegister {
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param document document for gauge
+     * @param description description for gauge
      * @return DistributionSummary
      */
-    DistributionSummary summary(String name, Iterable<Tag> tags, String document);
+    DistributionSummary summary(String name, Iterable<Tag> tags, String description);
 
 
     /**
