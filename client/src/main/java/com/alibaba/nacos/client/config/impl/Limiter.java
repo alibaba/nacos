@@ -40,11 +40,11 @@ public class Limiter {
     private static final Cache<String, RateLimiter> CACHE;
     
     static {
-        CACHE = CacheBuilder.builder().buildSynchronizedCache(
-                CacheBuilder.builder().expireNanos(1, TimeUnit.MINUTES).buildAutoExpireCache(
-                        CacheBuilder.builder().initializeCapacity(CAPACITY_SIZE).buildCache()
-                )
-        );
+        CACHE = CacheBuilder.builder()
+                .expireNanos(1, TimeUnit.MINUTES)
+                .initializeCapacity(CAPACITY_SIZE)
+                .sync(true)
+                .build();
     }
     
     private static final String LIMIT_TIME_PROPERTY = "limitTime";

@@ -44,6 +44,10 @@ public class CacheBuilder<K, V> {
     
     private int initializeCapacity = DEFAULT_INITIALIZE_CAPACITY;
     
+    private boolean sync = false;
+    
+    private boolean lru = false;
+    
     public static CacheBuilder builder() {
         return new CacheBuilder();
     }
@@ -79,6 +83,24 @@ public class CacheBuilder<K, V> {
     }
     
     /**
+     * Set whether the cache method is synchronized.
+     * @param sync if sync value is true, each method of the constructed cache is synchronized.
+     */
+    public CacheBuilder<K, V> sync(boolean sync) {
+        this.sync = sync;
+        return this;
+    }
+    
+    /**
+     * Does the constructed cache support lru.
+     * @param lru If the cache built for true is an lru cache.
+     */
+    public CacheBuilder<K, V> lru(boolean lru) {
+        this.lru = lru;
+        return this;
+    }
+    
+    /**
      * Set the initialize capacity of the cache pair.
      * @param initializeCapacity initialize capacity
      */
@@ -90,20 +112,20 @@ public class CacheBuilder<K, V> {
         return this;
     }
     
-    public Cache buildSynchronizedCache(Cache delegate) {
-        return new SynchronizedCache(delegate);
+    /**
+     * Build the cache according to the builder attribute.
+     */
+    public Cache<K, V> build() {
+        Cache<K, V> cache = new SimpleCache(initializeCapacity);
+        if (lru) {
+            cache = new LruCache<>(cache, maximumSize);
+        }
+        if (expireNanos != -1) {
+            cache = new AutoExpireCache(cache, expireNanos);
+        }
+        if (sync) {
+            cache = new SynchronizedCache<>(cache);
+        }
+        return cache;
     }
-    
-    public Cache buildAutoExpireCache(Cache delegate) {
-        return new AutoExpireCache(delegate, expireNanos);
-    }
-    
-    public Cache buidLruCache(Cache delegate) {
-        return new LruCache(delegate, maximumSize);
-    }
-    
-    public Cache buildCache() {
-        return new SimpleCache(initializeCapacity);
-    }
-    
 }
