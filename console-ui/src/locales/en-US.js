@@ -20,6 +20,7 @@ const I18N_CONF = {
     docs: 'DOCS',
     blog: 'BLOG',
     community: 'COMMUNITY',
+    enterprise: 'ENTERPRISE EDITION',
     languageSwitchButton: '中',
     logout: 'logout',
     changePassword: 'modify password',

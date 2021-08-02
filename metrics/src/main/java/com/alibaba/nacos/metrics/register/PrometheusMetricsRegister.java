@@ -1,22 +1,32 @@
 package com.alibaba.nacos.metrics.register;
 
 import com.alibaba.nacos.metrics.MetricsRegister;
-import io.micrometer.core.instrument.*;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.distribution.Histogram;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.function.Supplier;
 
+/**
+ * PrometheusMetricsRegister.
+ * @author holdonbei
+ */
 @Component
 public class PrometheusMetricsRegister implements MetricsRegister {
 
     /**
-     * registry that contains all metrics from nacos
+     * registry that contains all metrics from nacos.
      */
     private final MeterRegistry registry;
 
     /**
+     * registry is injected by spring.
      * @param registry registry provided by spring-boot-actuator
      */
     @Autowired

@@ -151,7 +151,7 @@ public class FailoverReactor implements Closeable {
             try {
                 File switchFile = new File(failoverDir + UtilAndComs.FAILOVER_SWITCH);
                 if (!switchFile.exists()) {
-                    switchParams.put("failover-mode", "false");
+                    switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
                     NAMING_LOGGER.debug("failover switch is not found, " + switchFile.getName());
                     return;
                 }

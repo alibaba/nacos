@@ -48,8 +48,6 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
@@ -587,7 +585,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         ids.removeAll(Collections.singleton(null));
         final Timestamp time = new Timestamp(System.currentTimeMillis());
         try {
-            String idsStr = Joiner.on(",").join(ids);
+            String idsStr = StringUtils.join(ids, StringUtils.COMMA);
             List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
             if (CollectionUtils.isNotEmpty(configInfoList)) {
                 removeConfigInfoByIdsAtomic(idsStr);
@@ -1297,7 +1295,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         sql.append(')');
         
-        List<Object> objectList = Lists.<Object>newArrayList(dataId, group, tenantTmp);
+        List<Object> objectList = com.alibaba.nacos.common.utils.CollectionUtils.list(dataId, group, tenantTmp);
         objectList.addAll(datumIds);
         
         Integer result = databaseOperate.queryOne(sql.toString(), objectList.toArray(), Integer.class);
