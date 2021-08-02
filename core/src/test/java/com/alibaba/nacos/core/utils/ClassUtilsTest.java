@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.google.common.reflect.TypeToken;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,7 +31,7 @@ public class ClassUtilsTest {
     public void testGeneric() {
         GenericType<List<String>> genericType = new GenericType<List<String>>() {
         };
-        Assert.assertEquals(genericType.getType(), new TypeToken<java.util.List<java.lang.String>>() {
+        Assert.assertEquals(genericType.getType(), new GenericType<List<String>>() {
         }.getType());
     }
     
