@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  *
  * @author xiweng.yy
  */
-public class ServiceUtil {
+public final class ServiceUtil {
     
     /**
      * Select service name with group name.
