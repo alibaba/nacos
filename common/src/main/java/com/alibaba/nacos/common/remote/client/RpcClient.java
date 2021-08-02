@@ -46,7 +46,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -275,105 +274,96 @@ public abstract class RpcClient implements Closeable {
             return;
         }
         
-        clientEventExecutor = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.remote.worker");
-                t.setDaemon(true);
-                return t;
-            }
+        clientEventExecutor = new ScheduledThreadPoolExecutor(2, r -> {
+            Thread t = new Thread(r);
+            t.setName("com.alibaba.nacos.client.remote.worker");
+            t.setDaemon(true);
+            return t;
         });
         
         // connection event consumer.
-        clientEventExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                while (!clientEventExecutor.isTerminated() && !clientEventExecutor.isShutdown()) {
-                    ConnectionEvent take = null;
-                    try {
-                        take = eventLinkedBlockingQueue.take();
-                        if (take.isConnected()) {
-                            notifyConnected();
-                        } else if (take.isDisConnected()) {
-                            notifyDisConnected();
-                        }
-                    } catch (Throwable e) {
-                        //Do nothing
+        clientEventExecutor.submit(() -> {
+            while (!clientEventExecutor.isTerminated() && !clientEventExecutor.isShutdown()) {
+                ConnectionEvent take = null;
+                try {
+                    take = eventLinkedBlockingQueue.take();
+                    if (take.isConnected()) {
+                        notifyConnected();
+                    } else if (take.isDisConnected()) {
+                        notifyDisConnected();
                     }
+                } catch (Throwable e) {
+                    //Do nothing
                 }
             }
         });
         
-        clientEventExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        if (isShutdown()) {
-                            break;
-                        }
-                        ReconnectContext reconnectContext = reconnectionSignal
-                                .poll(keepAliveTime, TimeUnit.MILLISECONDS);
-                        if (reconnectContext == null) {
-                            //check alive time.
-                            if (System.currentTimeMillis() - lastActiveTimeStamp >= keepAliveTime) {
-                                boolean isHealthy = healthCheck();
-                                if (!isHealthy) {
-                                    if (currentConnection == null) {
-                                        continue;
-                                    }
-                                    LoggerUtils.printIfInfoEnabled(LOGGER,
-                                            "[{}]Server healthy check fail,currentConnection={}", name,
-                                            currentConnection.getConnectionId());
-                                    
-                                    RpcClientStatus rpcClientStatus = RpcClient.this.rpcClientStatus.get();
-                                    if (RpcClientStatus.SHUTDOWN.equals(rpcClientStatus)) {
-                                        break;
-                                    }
-                                    
-                                    boolean success = RpcClient.this.rpcClientStatus
-                                            .compareAndSet(rpcClientStatus, RpcClientStatus.UNHEALTHY);
-                                    if (success) {
-                                        reconnectContext = new ReconnectContext(null, false);
-                                    } else {
-                                        continue;
-                                    }
-                                    
-                                } else {
-                                    lastActiveTimeStamp = System.currentTimeMillis();
+        clientEventExecutor.submit(() -> {
+            while (true) {
+                try {
+                    if (isShutdown()) {
+                        break;
+                    }
+                    ReconnectContext reconnectContext = reconnectionSignal
+                            .poll(keepAliveTime, TimeUnit.MILLISECONDS);
+                    if (reconnectContext == null) {
+                        //check alive time.
+                        if (System.currentTimeMillis() - lastActiveTimeStamp >= keepAliveTime) {
+                            boolean isHealthy = healthCheck();
+                            if (!isHealthy) {
+                                if (currentConnection == null) {
                                     continue;
                                 }
-                            } else {
-                                continue;
-                            }
-                            
-                        }
-                        
-                        if (reconnectContext.serverInfo != null) {
-                            //clear recommend server if server is not in server list.
-                            boolean serverExist = false;
-                            for (String server : getServerListFactory().getServerList()) {
-                                ServerInfo serverInfo = resolveServerInfo(server);
-                                if (serverInfo.getServerIp().equals(reconnectContext.serverInfo.getServerIp())) {
-                                    serverExist = true;
-                                    reconnectContext.serverInfo.serverPort = serverInfo.serverPort;
+                                LoggerUtils.printIfInfoEnabled(LOGGER,
+                                        "[{}]Server healthy check fail,currentConnection={}", name,
+                                        currentConnection.getConnectionId());
+                                
+                                RpcClientStatus rpcClientStatus = RpcClient.this.rpcClientStatus.get();
+                                if (RpcClientStatus.SHUTDOWN.equals(rpcClientStatus)) {
                                     break;
                                 }
+                                
+                                boolean statusFLowSuccess = RpcClient.this.rpcClientStatus
+                                        .compareAndSet(rpcClientStatus, RpcClientStatus.UNHEALTHY);
+                                if (statusFLowSuccess) {
+                                    reconnectContext = new ReconnectContext(null, false);
+                                } else {
+                                    continue;
+                                }
+                                
+                            } else {
+                                lastActiveTimeStamp = System.currentTimeMillis();
+                                continue;
                             }
-                            if (!serverExist) {
-                                LoggerUtils.printIfInfoEnabled(LOGGER,
-                                        "[{}] Recommend server is not in server list ,ignore recommend server {}", name,
-                                        reconnectContext.serverInfo.getAddress());
-                                
-                                reconnectContext.serverInfo = null;
-                                
+                        } else {
+                            continue;
+                        }
+                        
+                    }
+                    
+                    if (reconnectContext.serverInfo != null) {
+                        //clear recommend server if server is not in server list.
+                        boolean serverExist = false;
+                        for (String server : getServerListFactory().getServerList()) {
+                            ServerInfo serverInfo = resolveServerInfo(server);
+                            if (serverInfo.getServerIp().equals(reconnectContext.serverInfo.getServerIp())) {
+                                serverExist = true;
+                                reconnectContext.serverInfo.serverPort = serverInfo.serverPort;
+                                break;
                             }
                         }
-                        reconnect(reconnectContext.serverInfo, reconnectContext.onRequestFail);
-                    } catch (Throwable throwable) {
-                        //Do nothing
+                        if (!serverExist) {
+                            LoggerUtils.printIfInfoEnabled(LOGGER,
+                                    "[{}] Recommend server is not in server list ,ignore recommend server {}", name,
+                                    reconnectContext.serverInfo.getAddress());
+                            
+                            reconnectContext.serverInfo = null;
+                            
+                        }
                     }
+                    reconnect(reconnectContext.serverInfo, reconnectContext.onRequestFail);
+                } catch (Throwable throwable) {
+                    //Do nothing
                 }
             }
         });
@@ -413,15 +403,12 @@ public abstract class RpcClient implements Closeable {
         registerServerRequestHandler(new ConnectResetRequestHandler());
         
         //register client detection request.
-        registerServerRequestHandler(new ServerRequestHandler() {
-            @Override
-            public Response requestReply(Request request) {
-                if (request instanceof ClientDetectionRequest) {
-                    return new ClientDetectionResponse();
-                }
-                
-                return null;
+        registerServerRequestHandler(request -> {
+            if (request instanceof ClientDetectionRequest) {
+                return new ClientDetectionResponse();
             }
+            
+            return null;
         });
         
     }
