@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 public class AutoExpireCacheTest {
 
     @Test
-    public void test() throws Exception{
+    public void test() throws Exception {
         Cache cache = CacheBuilder.builder().expireNanos(1, TimeUnit.SECONDS).build();
         cache.put("a",  "a");
         TimeUnit.SECONDS.sleep(2);
