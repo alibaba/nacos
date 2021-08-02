@@ -65,18 +65,18 @@ public abstract class RpcClient implements Closeable {
     
     private ServerListFactory serverListFactory;
     
-    protected LinkedBlockingQueue<ConnectionEvent> eventLinkedBlockingQueue = new LinkedBlockingQueue<ConnectionEvent>();
+    protected LinkedBlockingQueue<ConnectionEvent> eventLinkedBlockingQueue = new LinkedBlockingQueue<>();
     
-    protected volatile AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
+    protected volatile AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<>(
             RpcClientStatus.WAIT_INIT);
     
     protected ScheduledExecutorService clientEventExecutor;
     
-    private final BlockingQueue<ReconnectContext> reconnectionSignal = new ArrayBlockingQueue<ReconnectContext>(1);
+    private final BlockingQueue<ReconnectContext> reconnectionSignal = new ArrayBlockingQueue<>(1);
     
     protected volatile Connection currentConnection;
     
-    protected Map<String, String> labels = new HashMap<String, String>();
+    protected Map<String, String> labels = new HashMap<>();
     
     private String name;
     
@@ -98,12 +98,12 @@ public abstract class RpcClient implements Closeable {
     /**
      * listener called where connection's status changed.
      */
-    protected List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>();
+    protected List<ConnectionEventListener> connectionEventListeners = new ArrayList<>();
     
     /**
      * handlers to process server push request.
      */
-    protected List<ServerRequestHandler> serverRequestHandlers = new ArrayList<ServerRequestHandler>();
+    protected List<ServerRequestHandler> serverRequestHandlers = new ArrayList<>();
     
     static {
         PayloadRegistry.init();
@@ -500,7 +500,7 @@ public abstract class RpcClient implements Closeable {
         
         try {
             
-            AtomicReference<ServerInfo> recommendServer = new AtomicReference<ServerInfo>(recommendServerInfo);
+            AtomicReference<ServerInfo> recommendServer = new AtomicReference<>(recommendServerInfo);
             if (onRequestFail && healthCheck()) {
                 LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Server check success,currentServer is{} ", name,
                         currentConnection.serverInfo.getAddress());
