@@ -284,7 +284,7 @@ public abstract class RpcClient implements Closeable {
         // connection event consumer.
         clientEventExecutor.submit(() -> {
             while (!clientEventExecutor.isTerminated() && !clientEventExecutor.isShutdown()) {
-                ConnectionEvent take = null;
+                ConnectionEvent take;
                 try {
                     take = eventLinkedBlockingQueue.take();
                     if (take.isConnected()) {
@@ -504,7 +504,7 @@ public abstract class RpcClient implements Closeable {
             
             int reConnectTimes = 0;
             int retryTurns = 0;
-            Exception lastException = null;
+            Exception lastException;
             while (!switchSuccess && !isShutdown()) {
                 
                 //1.get a new server
@@ -630,7 +630,7 @@ public abstract class RpcClient implements Closeable {
      */
     public Response request(Request request, long timeoutMills) throws NacosException {
         int retryTimes = 0;
-        Response response = null;
+        Response response;
         Exception exceptionThrow = null;
         long start = System.currentTimeMillis();
         while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < timeoutMills + start) {
@@ -902,7 +902,7 @@ public abstract class RpcClient implements Closeable {
     private ServerInfo resolveServerInfo(String serverAddress) {
         String property = System.getProperty("nacos.server.port", "8848");
         int serverPort = Integer.parseInt(property);
-        ServerInfo serverInfo = null;
+        ServerInfo serverInfo;
         if (serverAddress.contains(Constants.HTTP_PREFIX)) {
             String[] split = serverAddress.split(Constants.COLON);
             String serverIp = split[1].replaceAll("//", "");
