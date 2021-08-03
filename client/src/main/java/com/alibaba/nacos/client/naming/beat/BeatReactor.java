@@ -96,11 +96,10 @@ public class BeatReactor implements Closeable {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
         String key = buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort());
         BeatInfo existBeat;
-        //fix #1733
-        if ((existBeat = dom2Beat.remove(key)) != null) {
+        //fix #1733 again
+        if ((existBeat = dom2Beat.put(key, beatInfo)) != null) {
             existBeat.setStopped(true);
         }
-        dom2Beat.put(key, beatInfo);
         executorService.schedule(new BeatTask(beatInfo), beatInfo.getPeriod(), TimeUnit.MILLISECONDS);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
