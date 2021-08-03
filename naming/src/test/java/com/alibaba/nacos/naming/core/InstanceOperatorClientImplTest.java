@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -203,13 +202,12 @@ public class InstanceOperatorClientImplTest {
     
     @Test
     public void testBatchUpdateMetadata() throws NacosException {
-        ServiceInfo serviceInfo = new ServiceInfo();
         Instance instance = new Instance();
         instance.setServiceName("C");
         instance.setIp("1.1.1.1");
         instance.setPort(8848);
+        ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setHosts(Collections.singletonList(instance));
-        
         Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
         
         InstanceOperationInfo instanceOperationInfo = new InstanceOperationInfo();
@@ -220,13 +218,12 @@ public class InstanceOperatorClientImplTest {
     
     @Test
     public void testBatchDeleteMetadata() throws NacosException {
-        ServiceInfo serviceInfo = new ServiceInfo();
         Instance instance = new Instance();
         instance.setServiceName("C");
         instance.setIp("1.1.1.1");
         instance.setPort(8848);
+        ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setHosts(Collections.singletonList(instance));
-    
         Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
         
         List<String> res = instanceOperatorClient.batchDeleteMetadata("A", new InstanceOperationInfo(), new HashMap<>());

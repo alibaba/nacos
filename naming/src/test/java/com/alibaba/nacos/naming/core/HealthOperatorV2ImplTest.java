@@ -18,19 +18,15 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
-import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
-import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
