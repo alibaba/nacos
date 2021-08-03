@@ -17,13 +17,11 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.alibaba.nacos.common.cache.Cache;
+import com.alibaba.nacos.common.cache.builder.CacheBuilder;
 import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -39,8 +37,15 @@ public class Limiter {
     
     private static final int LIMIT_TIME = 1000;
     
-    private static final Cache<String, RateLimiter> CACHE = CacheBuilder.newBuilder().initialCapacity(CAPACITY_SIZE)
-            .expireAfterAccess(1, TimeUnit.MINUTES).build();
+    private static final Cache<String, RateLimiter> CACHE;
+    
+    static {
+        CACHE = CacheBuilder.builder()
+                .expireNanos(1, TimeUnit.MINUTES)
+                .initializeCapacity(CAPACITY_SIZE)
+                .sync(true)
+                .build();
+    }
     
     private static final String LIMIT_TIME_PROPERTY = "limitTime";
     
@@ -68,13 +73,8 @@ public class Limiter {
     public static boolean isLimit(String accessKeyID) {
         RateLimiter rateLimiter = null;
         try {
-            rateLimiter = CACHE.get(accessKeyID, new Callable<RateLimiter>() {
-                @Override
-                public RateLimiter call() throws Exception {
-                    return RateLimiter.create(limit);
-                }
-            });
-        } catch (ExecutionException e) {
+            rateLimiter = CACHE.get(accessKeyID, () -> RateLimiter.create(limit));
+        } catch (Exception e) {
             LOGGER.error("create limit fail", e);
         }
         if (rateLimiter != null && !rateLimiter.tryAcquire(LIMIT_TIME, TimeUnit.MILLISECONDS)) {
