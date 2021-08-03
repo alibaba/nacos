@@ -219,4 +219,12 @@ public class Constants {
     
         public static final String NOTIFY_HEADER = "notify";
     }
+    
+    /**
+     * The constants in remote directory.
+     */
+    public static class Remote {
+    
+        public static final String INTERNAL_MODULE = "internal";
+    }
 }
