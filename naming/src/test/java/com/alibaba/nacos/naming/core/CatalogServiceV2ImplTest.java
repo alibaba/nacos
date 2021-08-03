@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.After;
 import org.junit.Assert;
@@ -120,7 +121,6 @@ public class CatalogServiceV2ImplTest {
         }
     }
     
-    
     @Test
     public void testPageListService() {
         try {
@@ -128,7 +128,36 @@ public class CatalogServiceV2ImplTest {
             serviceInfo.setHosts(Collections.singletonList(new Instance()));
             Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
             
+            ServiceMetadata metadata = new ServiceMetadata();
+            metadata.setProtectThreshold(0.75F);
+            Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
+            
             ObjectNode obj = (ObjectNode) catalogServiceV2Impl.pageListService("A", "B", "C", 1, 10, null, false);
+            
+            Assert.assertEquals(1, obj.get(FieldsConstants.COUNT).asInt());
+        } catch (NacosException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testPageListServiceDetail() {
+        try {
+            ServiceMetadata metadata = new ServiceMetadata();
+            Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
+            
+            Instance instance = new Instance();
+            instance.setServiceName("C");
+            instance.setClusterName("D");
+            List<Instance> instances = Collections.singletonList(instance);
+            ServiceInfo serviceInfo = new ServiceInfo();
+            serviceInfo.setHosts(instances);
+            Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+    
+            List<ServiceDetailInfo> result = (List<ServiceDetailInfo>) catalogServiceV2Impl.pageListServiceDetail("A", "B", "C", 1, 10);
+            
+            Assert.assertEquals(1, result.size());
         } catch (NacosException e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
