@@ -18,6 +18,10 @@ package com.alibaba.nacos.api.exception.runtime;
 
 import java.lang.reflect.Type;
 
+import static com.alibaba.nacos.api.common.Constants.Exception.DEFAULT_MSG;
+import static com.alibaba.nacos.api.common.Constants.Exception.ERROR_CODE;
+import static com.alibaba.nacos.api.common.Constants.Exception.MSG_FOR_SPECIFIED_CLASS;
+
 /**
  * Nacos deserialization exception.
  *
@@ -25,13 +29,7 @@ import java.lang.reflect.Type;
  */
 public class NacosDeserializationException extends NacosRuntimeException {
     
-    public static final int ERROR_CODE = 101;
-    
     private static final long serialVersionUID = -2742350751684273728L;
-    
-    private static final String DEFAULT_MSG = "Nacos deserialize failed. ";
-    
-    private static final String MSG_FOR_SPECIFIED_CLASS = "Nacos deserialize for class [%s] failed. ";
     
     private Class<?> targetClass;
     

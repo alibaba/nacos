@@ -219,4 +219,24 @@ public class Constants {
     
         public static final String NOTIFY_HEADER = "notify";
     }
+    
+    /**
+     * The constants in exception directory.
+     */
+    public static class Exception {
+    
+        public static final int ERROR_CODE = 101;
+    
+        public static final String DEFAULT_MSG = "Nacos deserialize failed. ";
+    
+        public static final String MSG_FOR_SPECIFIED_CLASS = "Nacos deserialize for class [%s] failed. ";
+    
+        public static final String ERROR_MESSAGE_FORMAT = "errCode: %d, errMsg: %s ";
+    
+        public static final int SERIALIZE_ERROR_CODE = 100;
+    
+        public static final String SERIALIZE_DEFAULT_MSG = "Nacos serialize failed. ";
+    
+        public static final String SERIALIZE_MSG_FOR_SPECIFIED_CLASS = "Nacos serialize for class [%s] failed. ";
+    }
 }

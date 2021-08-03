@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.exception.runtime;
 
+import static com.alibaba.nacos.api.common.Constants.Exception.ERROR_MESSAGE_FORMAT;
+
 /**
  * Nacos runtime exception.
  *
@@ -24,8 +26,6 @@ package com.alibaba.nacos.api.exception.runtime;
 public class NacosRuntimeException extends RuntimeException {
     
     private static final long serialVersionUID = 3513491993982293262L;
-    
-    public static final String ERROR_MESSAGE_FORMAT = "errCode: %d, errMsg: %s ";
     
     private int errCode;
     
