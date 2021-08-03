@@ -23,7 +23,6 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.distribution.Histogram;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -81,16 +80,7 @@ public class PrometheusMetricsRegister implements MetricsRegister {
                 .description(description)
                 .register(registry);
     }
-
-    @Override
-    public Histogram registerHistogram(String name, Iterable<Tag> tags, String description) {
-        return (Histogram) DistributionSummary.builder(name)
-                .description(description)
-                .tags(tags)
-                .publishPercentileHistogram()
-                .register(registry);
-    }
-
+    
     @Override
     public DistributionSummary summary(String name, Iterable<Tag> tags, String description) {
         return DistributionSummary.builder(name)

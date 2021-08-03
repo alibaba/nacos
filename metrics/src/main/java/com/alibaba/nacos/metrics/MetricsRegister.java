@@ -21,7 +21,6 @@ import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.distribution.Histogram;
 
 import java.util.function.Supplier;
 
@@ -74,19 +73,7 @@ public interface MetricsRegister {
      * @return Timer
      */
     Timer registerTimer(String name, Iterable<Tag> tags, String description);
-
-
-    /**
-     * Register Histogram.
-     *
-     * @param name name
-     * @param tags Key/value pairs
-     * @param description description for gauge
-     * @return Histogram
-     */
-    Histogram registerHistogram(String name, Iterable<Tag> tags, String description);
-
-
+    
     /**
      * Summary.
      *
