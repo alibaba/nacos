@@ -219,4 +219,14 @@ public class Constants {
     
         public static final String NOTIFY_HEADER = "notify";
     }
+    
+    /**
+     * The constants in naming directory.
+     */
+    public static class Naming {
+    
+        public static final String NAMING_MODULE = "naming";
+    
+        public static final String CMDB_CONTEXT_TYPE = "CMDB";
+    }
 }
