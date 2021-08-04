@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
-import com.alibaba.nacos.naming.selector.LabelSelector;
-import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.api.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.CmdbLabelSelector;
+import com.alibaba.nacos.naming.selector.NoneRemoveSelector;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,18 +69,18 @@ public class ServiceMetadataTest {
         Selector selector = serviceMetadata.getSelector();
         
         Assert.assertNotNull(selector);
-        boolean result = selector instanceof NoneSelector;
+        boolean result = selector instanceof NoneRemoveSelector;
         Assert.assertTrue(result);
     }
     
     @Test
     public void testSetSelector() {
-        LabelSelector labelSelector = new LabelSelector();
+        CmdbLabelSelector labelSelector = new CmdbLabelSelector();
         serviceMetadata.setSelector(labelSelector);
         
         Selector selector = serviceMetadata.getSelector();
         Assert.assertNotNull(selector);
-        boolean result = selector instanceof LabelSelector;
+        boolean result = selector instanceof CmdbLabelSelector;
         Assert.assertTrue(result);
     }
     

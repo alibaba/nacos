@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
-import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.api.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.NoneRemoveSelector;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -44,16 +44,13 @@ public class ServiceMetadata implements Serializable {
     private float protectThreshold = 0.0F;
     
     /**
-     * Type of {@link com.alibaba.nacos.naming.selector.Selector}.
+     * Type of {@link com.alibaba.nacos.api.naming.selector.Selector}.
      */
-    @Deprecated
-    private Selector selector = new NoneSelector();
+    private Selector selector = new NoneRemoveSelector();
     
     private Map<String, String> extendData = new ConcurrentHashMap<>(1);
     
     private Map<String, ClusterMetadata> clusters = new ConcurrentHashMap<>(1);
-    
-    private com.alibaba.nacos.api.naming.selector.Selector newSelector;
     
     public boolean isEphemeral() {
         return ephemeral;
@@ -93,14 +90,6 @@ public class ServiceMetadata implements Serializable {
     
     public void setClusters(Map<String, ClusterMetadata> clusters) {
         this.clusters = clusters;
-    }
-    
-    public com.alibaba.nacos.api.naming.selector.Selector getNewSelector() {
-        return newSelector;
-    }
-    
-    public void setNewSelector(com.alibaba.nacos.api.naming.selector.Selector newSelector) {
-        this.newSelector = newSelector;
     }
     
     @Override

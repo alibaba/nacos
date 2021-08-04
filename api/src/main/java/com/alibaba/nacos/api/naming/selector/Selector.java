@@ -36,7 +36,7 @@ import java.io.Serializable;
  * @author chenglu
  * @date 2021-07-09 21:24
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public interface Selector<R, C, D> extends Serializable {
     
     /**

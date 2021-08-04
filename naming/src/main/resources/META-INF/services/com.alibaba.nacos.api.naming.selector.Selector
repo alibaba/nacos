@@ -16,3 +16,4 @@
 #
 
 com.alibaba.nacos.naming.selector.CmdbLabelSelector
+com.alibaba.nacos.naming.selector.NoneRemoveSelector
