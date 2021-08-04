@@ -24,6 +24,8 @@ import com.alibaba.nacos.api.selector.Selector;
 import java.util.List;
 
 /**
+ * Selector with no filtering. The logic is same to {@link com.alibaba.nacos.naming.selector.v1.NoneSelector}.
+ *
  * @author chenglu
  * @date 2021-08-04 13:28
  */

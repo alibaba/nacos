@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.api.selector.context.CmdbContext;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.selector.interpreter.ExpressionInterpreter;
 
 import java.util.Collections;
 import java.util.List;
@@ -119,7 +120,7 @@ public class LabelSelector<T extends Instance> extends AbstractCmdbSelector<T> {
     
     @Override
     public Selector<List<T>, CmdbContext<T>, String> parse(String condition) throws NacosException {
-        this.labels = com.alibaba.nacos.naming.selector.v1.LabelSelector.ExpressionInterpreter.parseExpression(condition);
+        this.labels = ExpressionInterpreter.parseExpression(condition);
         this.expression = condition;
         return this;
     }

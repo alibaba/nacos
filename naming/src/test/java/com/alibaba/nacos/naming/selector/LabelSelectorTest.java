@@ -18,10 +18,17 @@ package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.naming.selector.v1.LabelSelector;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -41,4 +48,27 @@ public class LabelSelectorTest {
         Assert.assertEquals("B", labs[1]);
     }
     
+    public static void main(String[] args) throws IOException {
+        FileInputStream fileInputStream = new FileInputStream("C:\\Users\\admin\\Desktop\\酷家乐\\test");
+        byte[] bytes = new byte[(int) fileInputStream.getChannel().size()];
+        fileInputStream.read(bytes);
+        Serializer serializer = SerializeFactory.getDefault();
+        com.alibaba.nacos.naming.selector.LabelSelector labelSelector = serializer.deserialize(bytes);
+        System.out.println(labelSelector.getLabels());
+        System.out.println(labelSelector.getExpression());
+        
+        
+        
+//        com.alibaba.nacos.naming.selector.LabelSelector labelSelector = new com.alibaba.nacos.naming.selector.LabelSelector();
+//        labelSelector.setExpression("aaa");
+//        labelSelector.setLabels(Collections.singleton("bbb"));
+//
+//        Serializer serializer = SerializeFactory.getDefault();
+//        byte[] bytes = serializer.serialize(labelSelector);
+//
+//        File file = new File("C:\\Users\\admin\\Desktop\\酷家乐\\test");
+//        file.createNewFile();
+//        FileOutputStream fileWriter = new FileOutputStream("C:\\Users\\admin\\Desktop\\酷家乐\\test");
+//        fileWriter.write(bytes);
+    }
 }
