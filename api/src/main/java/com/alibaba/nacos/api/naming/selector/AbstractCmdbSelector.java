@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.naming.selector.context.CmdbContext;
 
 import java.util.List;
 
+import static com.alibaba.nacos.api.common.Constants.Naming.CMDB_CONTEXT_TYPE;
+
 /**
  * {@link AbstractCmdbSelector} will provide one default implement of {@link Selector}, users can implement it to use the {@link CmdbContext}.
  * And return the result as default subclass of {@link Instance}.
@@ -30,8 +32,6 @@ import java.util.List;
  * @date 2021-07-09 21:29
  */
 public abstract class AbstractCmdbSelector<T extends Instance> implements Selector<List<T>, CmdbContext<T>, String> {
-    
-    private static final String DEFAULT_CONTEXT_TYPE = "CMDB";
     
     @Override
     public List<T> select(CmdbContext<T> context) {
@@ -48,6 +48,6 @@ public abstract class AbstractCmdbSelector<T extends Instance> implements Select
     
     @Override
     public String getContextType() {
-        return DEFAULT_CONTEXT_TYPE;
+        return CMDB_CONTEXT_TYPE;
     }
 }
