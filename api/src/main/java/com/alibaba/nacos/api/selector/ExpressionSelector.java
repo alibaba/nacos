@@ -22,6 +22,7 @@ package com.alibaba.nacos.api.selector;
  * @author nkorange
  * @since 0.7.0
  */
+@Deprecated
 public class ExpressionSelector extends AbstractSelector {
     
     /**

@@ -22,6 +22,7 @@ package com.alibaba.nacos.api.selector;
  * @author liaochuntao
  * @since 1.0.1
  */
+@Deprecated
 public class NoneSelector extends AbstractSelector {
     
     public NoneSelector() {

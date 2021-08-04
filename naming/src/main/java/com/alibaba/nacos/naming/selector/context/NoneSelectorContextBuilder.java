@@ -18,7 +18,7 @@
 package com.alibaba.nacos.naming.selector.context;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.context.SelectorContextBuilder;
+import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
 
 import java.util.List;
 

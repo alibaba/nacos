@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.api.naming.selector.Selector;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
@@ -40,7 +40,7 @@ import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.selector.NoneRemoveSelector;
+import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -120,12 +120,12 @@ public class ServiceController {
     }
     
     /**
-     * parse {@link com.alibaba.nacos.api.naming.selector.Selector}.
+     * parse {@link Selector}.
      *
      * @param selectorStr selector json string.
-     * @return {@link com.alibaba.nacos.api.naming.selector.Selector}.
+     * @return {@link Selector}.
      */
-    private com.alibaba.nacos.api.naming.selector.Selector parseNewSelector(String selectorStr) {
+    private Selector parseNewSelector(String selectorStr) {
         if (StringUtils.isBlank(selectorStr)) {
             return null;
         }
@@ -388,9 +388,9 @@ public class ServiceController {
     }
     
     /**
-     * Get all {@link com.alibaba.nacos.api.naming.selector.Selector} types.
+     * Get all {@link Selector} types.
      *
-     * @return {@link com.alibaba.nacos.api.naming.selector.Selector} types.
+     * @return {@link Selector} types.
      */
     @GetMapping("/selector/types")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
@@ -400,7 +400,7 @@ public class ServiceController {
     
     private Selector parseSelector(String selectorJsonString) throws Exception {
         if (StringUtils.isBlank(selectorJsonString)) {
-            return new NoneRemoveSelector();
+            return new NoneSelector();
         }
         
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));

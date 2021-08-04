@@ -17,13 +17,13 @@
 
 package com.alibaba.nacos.naming.selector;
 
-import com.alibaba.nacos.api.naming.selector.Selector;
+import com.alibaba.nacos.api.selector.Selector;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * {@link CmdbLabelSelector} unit test.
+ * {@link LabelSelector} unit test.
  *
  * @author chenglu
  * @date 2021-07-16 17:41
@@ -41,11 +41,11 @@ public class CmdbLabelSelectorTest {
     @Test
     public void testParseSelector() {
         Selector selector = selectorManager.parseSelector("label", "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
-        Assert.assertTrue(selector instanceof CmdbLabelSelector);
+        Assert.assertTrue(selector instanceof LabelSelector);
     
-        CmdbLabelSelector cmdbLabelSelector = (CmdbLabelSelector) selector;
-        Assert.assertEquals(2, cmdbLabelSelector.getLabels().size());
-        Assert.assertTrue(cmdbLabelSelector.getLabels().contains("A"));
-        Assert.assertTrue(cmdbLabelSelector.getLabels().contains("B"));
+        LabelSelector labelSelector = (LabelSelector) selector;
+        Assert.assertEquals(2, labelSelector.getLabels().size());
+        Assert.assertTrue(labelSelector.getLabels().contains("A"));
+        Assert.assertTrue(labelSelector.getLabels().contains("B"));
     }
 }

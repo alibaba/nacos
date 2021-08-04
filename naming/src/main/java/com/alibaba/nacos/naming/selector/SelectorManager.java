@@ -18,8 +18,8 @@
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.Selector;
-import com.alibaba.nacos.api.naming.selector.context.SelectorContextBuilder;
+import com.alibaba.nacos.api.selector.Selector;
+import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;

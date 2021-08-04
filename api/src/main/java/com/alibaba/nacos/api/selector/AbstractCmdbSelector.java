@@ -15,10 +15,10 @@
  *
  */
 
-package com.alibaba.nacos.api.naming.selector;
+package com.alibaba.nacos.api.selector;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.context.CmdbContext;
+import com.alibaba.nacos.api.selector.context.CmdbContext;
 
 import java.util.List;
 

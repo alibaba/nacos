@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
-import com.alibaba.nacos.api.naming.selector.Selector;
-import com.alibaba.nacos.naming.selector.NoneRemoveSelector;
+import com.alibaba.nacos.api.selector.Selector;
+import com.alibaba.nacos.naming.selector.NoneSelector;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -44,9 +44,9 @@ public class ServiceMetadata implements Serializable {
     private float protectThreshold = 0.0F;
     
     /**
-     * Type of {@link com.alibaba.nacos.api.naming.selector.Selector}.
+     * Type of {@link Selector}.
      */
-    private Selector selector = new NoneRemoveSelector();
+    private Selector selector = new NoneSelector();
     
     private Map<String, String> extendData = new ConcurrentHashMap<>(1);
     

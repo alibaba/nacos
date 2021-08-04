@@ -28,6 +28,7 @@ import java.io.Serializable;
  * @author nkorange
  * @since 0.7.0
  */
+@Deprecated
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = NoneSelector.class)
 public abstract class AbstractSelector implements Serializable {
     

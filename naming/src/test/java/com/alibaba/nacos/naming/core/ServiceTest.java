@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
-import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.naming.selector.v1.NoneSelector;
 
 import org.junit.Assert;
 import org.junit.Before;

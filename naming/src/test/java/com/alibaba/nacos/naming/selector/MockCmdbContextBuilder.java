@@ -19,8 +19,8 @@ package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.context.CmdbContext;
-import com.alibaba.nacos.api.naming.selector.context.SelectorContextBuilder;
+import com.alibaba.nacos.api.selector.context.CmdbContext;
+import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
 
 import java.util.HashMap;
 import java.util.List;

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.selector.Selector;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -32,7 +32,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.UdpPushService;
-import com.alibaba.nacos.naming.selector.NoneRemoveSelector;
+import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -79,7 +79,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     
     private Boolean enabled = true;
     
-    private Selector selector = new NoneRemoveSelector();
+    private Selector selector = new NoneSelector();
     
     private String namespaceId;
     

@@ -27,7 +27,7 @@ import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteCon
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.ServiceChangeV1Task;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.naming.selector.v1.NoneSelector;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.Map;

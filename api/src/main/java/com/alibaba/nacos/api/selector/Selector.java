@@ -15,7 +15,7 @@
  *
  */
 
-package com.alibaba.nacos.api.naming.selector;
+package com.alibaba.nacos.api.selector;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

@@ -18,7 +18,7 @@
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.Selector;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import org.junit.Assert;
