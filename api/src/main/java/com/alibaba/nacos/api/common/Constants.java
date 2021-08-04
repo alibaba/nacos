@@ -209,4 +209,14 @@ public class Constants {
     public static final String LOCATION_TAG = "Location-Tag";
     
     public static final String CHARSET_KEY = "charset";
+    
+    /**
+     * The constants in config directory.
+     */
+    public static class Config {
+        
+        public static final String CONFIG_MODULE = "config";
+    
+        public static final String NOTIFY_HEADER = "notify";
+    }
 }
