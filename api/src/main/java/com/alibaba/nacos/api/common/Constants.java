@@ -237,4 +237,14 @@ public class Constants {
     
         public static final String INTERNAL_MODULE = "internal";
     }
+    
+    /**
+     * The constants in exception directory.
+     */
+    public static class Exception {
+        
+        public static final int DESERIALIZE_ERROR_CODE = 101;
+        
+        public static final int SERIALIZE_ERROR_CODE = 100;
+    }
 }
