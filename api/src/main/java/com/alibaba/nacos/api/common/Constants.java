@@ -221,6 +221,16 @@ public class Constants {
     }
     
     /**
+     * The constants in naming directory.
+     */
+    public static class Naming {
+    
+        public static final String NAMING_MODULE = "naming";
+    
+        public static final String CMDB_CONTEXT_TYPE = "CMDB";
+    }
+    
+    /**
      * The constants in remote directory.
      */
     public static class Remote {
