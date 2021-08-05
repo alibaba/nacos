@@ -41,8 +41,6 @@ public class ClientManagerDelegate implements ClientManager {
     
     private final PersistentIpPortClientManager persistentIpPortClientManager;
     
-    private static final String SUFFIX = "false";
-    
     public ClientManagerDelegate(ConnectionBasedClientManager connectionBasedClientManager,
             EphemeralIpPortClientManager ephemeralIpPortClientManager,
             PersistentIpPortClientManager persistentIpPortClientManager) {
@@ -105,7 +103,7 @@ public class ClientManagerDelegate implements ClientManager {
         if (isConnectionBasedClient(clientId)) {
             return connectionBasedClientManager;
         }
-        return clientId.endsWith(SUFFIX) ? persistentIpPortClientManager : ephemeralIpPortClientManager;
+        return clientId.endsWith(IpPortBasedClient.PERSISTENT_SUFFIX) ? persistentIpPortClientManager : ephemeralIpPortClientManager;
     }
     
     private boolean isConnectionBasedClient(String clientId) {

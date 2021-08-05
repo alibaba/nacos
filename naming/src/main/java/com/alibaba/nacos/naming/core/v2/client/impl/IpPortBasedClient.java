@@ -40,6 +40,8 @@ public class IpPortBasedClient extends AbstractClient {
     
     public static final String ID_DELIMITER = "#";
     
+    public static final String PERSISTENT_SUFFIX = "false";
+    
     private final String clientId;
     
     private final boolean ephemeral;
