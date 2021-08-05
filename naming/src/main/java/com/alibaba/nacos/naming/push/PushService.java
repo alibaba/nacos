@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
@@ -85,7 +84,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     
     private static DatagramSocket udpSocket;
     
-    private static ConcurrentMap<String, Future> futureMap = new ConcurrentHashMap<>();
+    private static ConcurrentMap<String, Integer> eventPublishedMap = new ConcurrentHashMap<>();
+    
+    private static final int EVENT_PUBLISHED = 1;
     
     static {
         try {
@@ -122,64 +123,66 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         String serviceName = service.getName();
         String namespaceId = service.getNamespaceId();
         
-        Future future = GlobalExecutor.scheduleUdpSender(() -> {
-            try {
-                Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
-                ConcurrentMap<String, PushClient> clients = clientMap
-                        .get(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-                if (MapUtils.isEmpty(clients)) {
-                    return;
-                }
+        try {
+            GlobalExecutor.scheduleUdpSender(() -> {
+                try {
+                    Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
+                    ConcurrentMap<String, PushClient> clients = clientMap
+                            .get(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+                    if (MapUtils.isEmpty(clients)) {
+                        return;
+                    }
                 
-                Map<String, Object> cache = new HashMap<>(16);
-                long lastRefTime = System.nanoTime();
-                for (PushClient client : clients.values()) {
-                    if (client.zombie()) {
-                        Loggers.PUSH.debug("client is zombie: " + client.toString());
-                        clients.remove(client.toString());
-                        Loggers.PUSH.debug("client is zombie: " + client.toString());
-                        continue;
-                    }
-                    
-                    Receiver.AckEntry ackEntry;
-                    Loggers.PUSH.debug("push serviceName: {} to client: {}", serviceName, client.toString());
-                    String key = getPushCacheKey(serviceName, client.getIp(), client.getAgent());
-                    byte[] compressData = null;
-                    Map<String, Object> data = null;
-                    if (switchDomain.getDefaultPushCacheMillis() >= 20000 && cache.containsKey(key)) {
-                        org.javatuples.Pair pair = (org.javatuples.Pair) cache.get(key);
-                        compressData = (byte[]) (pair.getValue0());
-                        data = (Map<String, Object>) pair.getValue1();
-                        
-                        Loggers.PUSH.debug("[PUSH-CACHE] cache hit: {}:{}", serviceName, client.getAddrStr());
-                    }
-                    
-                    if (compressData != null) {
-                        ackEntry = prepareAckEntry(client, compressData, data, lastRefTime);
-                    } else {
-                        ackEntry = prepareAckEntry(client, prepareHostsData(client), lastRefTime);
-                        if (ackEntry != null) {
-                            cache.put(key, new org.javatuples.Pair<>(ackEntry.origin.getData(), ackEntry.data));
+                    Map<String, Object> cache = new HashMap<>(16);
+                    long lastRefTime = System.nanoTime();
+                    for (PushClient client : clients.values()) {
+                        if (client.zombie()) {
+                            Loggers.PUSH.debug("client is zombie: " + client.toString());
+                            clients.remove(client.toString());
+                            Loggers.PUSH.debug("client is zombie: " + client.toString());
+                            continue;
                         }
+                    
+                        Receiver.AckEntry ackEntry;
+                        Loggers.PUSH.debug("push serviceName: {} to client: {}", serviceName, client.toString());
+                        String key = getPushCacheKey(serviceName, client.getIp(), client.getAgent());
+                        byte[] compressData = null;
+                        Map<String, Object> data = null;
+                        if (switchDomain.getDefaultPushCacheMillis() >= 20000 && cache.containsKey(key)) {
+                            org.javatuples.Pair pair = (org.javatuples.Pair) cache.get(key);
+                            compressData = (byte[]) (pair.getValue0());
+                            data = (Map<String, Object>) pair.getValue1();
+                        
+                            Loggers.PUSH.debug("[PUSH-CACHE] cache hit: {}:{}", serviceName, client.getAddrStr());
+                        }
+                    
+                        if (compressData != null) {
+                            ackEntry = prepareAckEntry(client, compressData, data, lastRefTime);
+                        } else {
+                            ackEntry = prepareAckEntry(client, prepareHostsData(client), lastRefTime);
+                            if (ackEntry != null) {
+                                cache.put(key, new org.javatuples.Pair<>(ackEntry.origin.getData(), ackEntry.data));
+                            }
+                        }
+                    
+                        Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}",
+                                client.getServiceName(), client.getAddrStr(), client.getAgent(),
+                                (ackEntry == null ? null : ackEntry.key));
+                    
+                        udpPush(ackEntry);
                     }
-                    
-                    Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}",
-                            client.getServiceName(), client.getAddrStr(), client.getAgent(),
-                            (ackEntry == null ? null : ackEntry.key));
-                    
-                    udpPush(ackEntry);
+                } catch (Exception e) {
+                    Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}",
+                            serviceName, e);
+                } finally {
+                    eventPublishedMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
                 }
-            } catch (Exception e) {
-                Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
-                
-            } finally {
-                futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-            }
             
-        }, 1000, TimeUnit.MILLISECONDS);
-        
-        futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName), future);
-        
+            }, 1000, TimeUnit.MILLISECONDS);
+        } catch (Throwable t) {
+            eventPublishedMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+            Loggers.PUSH.error("[NACOS-PUSH] failed to schedule udp sender for serviceName: {}", serviceName, t);
+        }
     }
     
     public int getTotalPush() {
@@ -372,12 +375,17 @@ public class PushService implements ApplicationContextAware, ApplicationListener
      */
     public void serviceChanged(Service service) {
         // merge some change events to reduce the push frequency:
-        if (futureMap
-                .containsKey(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()))) {
-            return;
+
+        String fullServiceName = UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName());
+        if (eventPublishedMap.putIfAbsent(fullServiceName, EVENT_PUBLISHED) == null) {
+            try {
+                this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
+            } catch (Throwable t) {
+                eventPublishedMap.remove(fullServiceName);
+                Loggers.PUSH.error("[NACOS-PUSH] failed to publish service change event for serviceName: {}",
+                        service.getName(), t);
+            }
         }
-        
-        this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
     }
     
     /**
