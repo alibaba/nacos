@@ -17,10 +17,7 @@
 
 package com.alibaba.nacos.naming.selector;
 
-import com.alibaba.nacos.api.selector.Selector;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 
 /**
  * {@link LabelSelector} unit test.
@@ -36,16 +33,5 @@ public class LabelSelectorTest {
     public void setUp() {
         selectorManager = new SelectorManager();
         selectorManager.init();
-    }
-    
-    @Test
-    public void testParseSelector() {
-        Selector selector = selectorManager.parseSelector("label", "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
-        Assert.assertTrue(selector instanceof LabelSelector);
-    
-        LabelSelector labelSelector = (LabelSelector) selector;
-        Assert.assertEquals(2, labelSelector.getLabels().size());
-        Assert.assertTrue(labelSelector.getLabels().contains("A"));
-        Assert.assertTrue(labelSelector.getLabels().contains("B"));
     }
 }
