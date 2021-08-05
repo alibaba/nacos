@@ -15,31 +15,27 @@
  *
  */
 
-package com.alibaba.nacos.naming.selector.context;
+package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
+import org.junit.Assert;
+import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
- * The {@link NoneSelectorContextBuilder} will return the provider as context for the {@link com.alibaba.nacos.api.selector.Selector}
- * which doesn't need any other resource.
+ * {@link NoneSelector} unit tests.
  *
  * @author chenglu
- * @date 2021-08-04 13:31
+ * @date 2021-08-05 19:47
  */
-public class NoneSelectorContextBuilder<T extends Instance>  implements SelectorContextBuilder<List<T>, String, List<T>> {
+public class NoneSelectorTest {
     
-    private static final String CONTEXT_TYPE = "NONE";
-    
-    @Override
-    public List<T> build(String consumer, List<T> provider) {
-        return provider;
-    }
-    
-    @Override
-    public String getContextType() {
-        return CONTEXT_TYPE;
+    @Test
+    public void testSelect() {
+        NoneSelector<Instance> noneSelector = new NoneSelector<>();
+        List<Instance> providers = Collections.emptyList();
+        Assert.assertEquals(providers, noneSelector.select(providers));
     }
 }
