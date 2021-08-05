@@ -23,11 +23,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Vector;
 import java.util.stream.Collectors;
@@ -334,5 +336,24 @@ public class CollectionUtilsTest {
     @Test(expected = IllegalArgumentException.class)
     public void testSetNullPointerException() {
         CollectionUtils.set(null);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetOnlyElementIllegalArgumentException() {
+        List<Integer> list = Arrays.asList(1, 2, 3);
+        CollectionUtils.getOnlyElement(list);
+    }
+    
+    @Test(expected = NoSuchElementException.class)
+    public void testGetOnlyElementNoSuchElementException() {
+        List<Object> list = new ArrayList<>();
+        CollectionUtils.getOnlyElement(list);
+    }
+    
+    @Test
+    public void testGetOnly() {
+        List<Integer> list = Arrays.asList(1);
+        int element = CollectionUtils.getOnlyElement(list);
+        Assert.assertEquals(1, element);
     }
 }
