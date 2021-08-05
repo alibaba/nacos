@@ -19,8 +19,8 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -117,27 +117,6 @@ public class ServiceController {
         serviceMetadata.setEphemeral(false);
         getServiceOperator().create(namespaceId, serviceName, serviceMetadata);
         return "ok";
-    }
-    
-    /**
-     * parse {@link Selector}.
-     *
-     * @param selectorStr selector json string.
-     * @return {@link Selector}.
-     */
-    private Selector parseNewSelector(String selectorStr) {
-        if (StringUtils.isBlank(selectorStr)) {
-            return null;
-        }
-    
-        try {
-            JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorStr, "UTF-8"));
-            String selectorType = selectorJson.get("type").asText();
-            return selectorManager.parseSelector(selectorType, selectorJson.get("expression").asText());
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[Parse Selector] parse failed, selectorStr: {}.", selectorStr, e);
-            return null;
-        }
     }
     
     /**

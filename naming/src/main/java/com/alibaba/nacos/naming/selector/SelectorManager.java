@@ -17,6 +17,7 @@
 
 package com.alibaba.nacos.naming.selector;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
@@ -34,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
 /**
  * {@link SelectorManager} work on init {@link Selector#parse(Object)}, execute {@link Selector#select(Object)} and maintain
@@ -126,7 +129,7 @@ public class SelectorManager {
      * @param condition the condition provide for {@link Selector#parse(Object)}.
      * @return {@link Selector}.
      */
-    public Selector parseSelector(String type, String condition) {
+    public Selector parseSelector(String type, String condition) throws NacosException {
         if (StringUtils.isBlank(type)) {
             return null;
         }
@@ -140,8 +143,8 @@ public class SelectorManager {
             return selector;
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[SelectorManager] Parse Selector failed, type: {}, condition: {}.", type, condition, e);
+            throw new NacosException(SERVER_ERROR, "Selector parses failed: " + e.getMessage());
         }
-        return null;
     }
     
     /**
