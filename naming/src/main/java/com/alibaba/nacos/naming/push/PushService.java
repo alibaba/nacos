@@ -84,9 +84,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     
     private static DatagramSocket udpSocket;
     
-    private static ConcurrentMap<String, Integer> eventPublishedMap = new ConcurrentHashMap<>();
+    private static ConcurrentMap<String, Long> eventPublishMap = new ConcurrentHashMap<>();
     
-    private static final int EVENT_PUBLISHED = 1;
+    private static int EVENT_PUBLISH_TIMEOUT_MILLIS = 15000;
     
     static {
         try {
@@ -175,12 +175,12 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}",
                             serviceName, e);
                 } finally {
-                    eventPublishedMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+                    eventPublishMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
                 }
             
             }, 1000, TimeUnit.MILLISECONDS);
         } catch (Throwable t) {
-            eventPublishedMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+            eventPublishMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
             Loggers.PUSH.error("[NACOS-PUSH] failed to schedule udp sender for serviceName: {}", serviceName, t);
         }
     }
@@ -377,15 +377,26 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         // merge some change events to reduce the push frequency:
 
         String fullServiceName = UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName());
-        if (eventPublishedMap.putIfAbsent(fullServiceName, EVENT_PUBLISHED) == null) {
-            try {
-                this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
-            } catch (Throwable t) {
-                eventPublishedMap.remove(fullServiceName);
-                Loggers.PUSH.error("[NACOS-PUSH] failed to publish service change event for serviceName: {}",
-                        service.getName(), t);
+        Long currentTimeMillis = System.currentTimeMillis();
+        Long lastPublishTimeMillis;        
+        if ((lastPublishTimeMillis = eventPublishMap.putIfAbsent(fullServiceName, currentTimeMillis)) != null) {
+            if (Math.abs(currentTimeMillis - lastPublishTimeMillis) < EVENT_PUBLISH_TIMEOUT_MILLIS) {
+                return;
+            }
+            synchronized(eventPublishMap) {
+                if (!lastPublishTimeMillis.equals(eventPublishMap.get(fullServiceName))) {
+                    return;
+                }
+                eventPublishMap.put(fullServiceName, currentTimeMillis);
             }
         }
+        try {
+            this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
+        } catch (Throwable t) {
+            eventPublishMap.remove(fullServiceName);
+            Loggers.PUSH.error("[NACOS-PUSH] failed to publish service change event for serviceName: {}",
+                    service.getName(), t);
+        }        
     }
     
     /**
