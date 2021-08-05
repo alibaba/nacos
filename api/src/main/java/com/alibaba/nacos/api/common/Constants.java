@@ -219,4 +219,32 @@ public class Constants {
     
         public static final String NOTIFY_HEADER = "notify";
     }
+    
+    /**
+     * The constants in naming directory.
+     */
+    public static class Naming {
+    
+        public static final String NAMING_MODULE = "naming";
+    
+        public static final String CMDB_CONTEXT_TYPE = "CMDB";
+    }
+    
+    /**
+     * The constants in remote directory.
+     */
+    public static class Remote {
+    
+        public static final String INTERNAL_MODULE = "internal";
+    }
+    
+    /**
+     * The constants in exception directory.
+     */
+    public static class Exception {
+        
+        public static final int DESERIALIZE_ERROR_CODE = 101;
+        
+        public static final int SERIALIZE_ERROR_CODE = 100;
+    }
 }
