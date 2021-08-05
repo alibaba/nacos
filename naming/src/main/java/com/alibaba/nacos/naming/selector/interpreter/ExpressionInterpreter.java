@@ -17,11 +17,6 @@
 
 package com.alibaba.nacos.naming.selector.interpreter;
 
-/**
- * @author chenglu
- * @date 2021-08-04 16:53
- */
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 
