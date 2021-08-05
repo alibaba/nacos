@@ -86,7 +86,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     
     private static ConcurrentMap<String, Long> eventPublishMap = new ConcurrentHashMap<>();
     
-    private static int EVENT_PUBLISH_TIMEOUT_MILLIS = 15000;
+    private static final int EVENT_PUBLISH_TIMEOUT_MILLIS = 15000;
     
     static {
         try {
@@ -383,7 +383,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             if (Math.abs(currentTimeMillis - lastPublishTimeMillis) < EVENT_PUBLISH_TIMEOUT_MILLIS) {
                 return;
             }
-            synchronized(eventPublishMap) {
+            synchronized (eventPublishMap) {
                 if (!lastPublishTimeMillis.equals(eventPublishMap.get(fullServiceName))) {
                     return;
                 }
