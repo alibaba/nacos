@@ -306,10 +306,9 @@ public class JRaftServer {
                         return;
                     }
                     MetricsMonitor.raftReadIndexFailed();
-                    Loggers.RAFT.error("ReadIndex has error : {}", status.getErrorMsg());
-                    future.completeExceptionally(new ConsistencyException(
-                            "The conformance protocol is temporarily unavailable for reading, " + status
-                                    .getErrorMsg()));
+                    Loggers.RAFT.error("ReadIndex has error : {}, go to Leader read.", status.getErrorMsg());
+                    MetricsMonitor.raftReadFromLeader();
+                    readFromLeader(request, future);
                 }
             });
             return future;
