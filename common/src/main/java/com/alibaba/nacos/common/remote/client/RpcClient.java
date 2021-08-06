@@ -791,6 +791,7 @@ public abstract class RpcClient implements Closeable {
                 exceptionToThrow = e;
                 
             }
+            retryTimes++;
         }
         
         if (rpcClientStatus.compareAndSet(RpcClientStatus.RUNNING, RpcClientStatus.UNHEALTHY)) {
