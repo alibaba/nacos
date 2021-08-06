@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.consistency;
 
+import com.alibaba.nacos.consistency.serialize.JacksonSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -75,4 +76,9 @@ public class SerializeFactoryTest {
         System.out.println(result);
     }
     
+    @Test
+    public void testGetSerializer() {
+        Serializer serializer = SerializeFactory.getSerializer("JSON");
+        Assert.assertTrue(serializer instanceof JacksonSerializer);
+    }
 }

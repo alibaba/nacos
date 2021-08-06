@@ -16,17 +16,18 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.concurrent.TimeUnit;
 
-public class DistroConfigTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+
+public class DistroConfigTest {
     
     private DistroConfig distroConfig;
     

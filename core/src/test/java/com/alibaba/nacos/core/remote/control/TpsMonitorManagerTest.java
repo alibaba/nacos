@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.remote.control;
 
-import org.assertj.core.util.Lists;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -57,7 +57,7 @@ public class TpsMonitorManagerTest {
         for (int i = 0; i < 100; i++) {
             String value = "atg" + (new Random().nextInt(100) + 2) + "efb";
             boolean pass = tpsMonitorManager
-                    .applyTps("configPublish", "testconnectionId", Lists.list(new TestKey(value)));
+                    .applyTps("configPublish", "testconnectionId", CollectionUtils.list(new TestKey(value)));
             assertTrue(pass);
             try {
                 Thread.sleep(1L);
@@ -72,7 +72,7 @@ public class TpsMonitorManagerTest {
         for (int i = 0; i < 1000; i++) {
             String value = "atg" + (new Random().nextInt(100) + 2) + "efb";
             boolean pass = tpsMonitorManager
-                    .applyTps("configPublish", "testconnectionId", Lists.list(new TestKey(value)));
+                    .applyTps("configPublish", "testconnectionId", CollectionUtils.list(new TestKey(value)));
             if (!pass) {
                 return;
             }

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.naming.misc.ClientConfig;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,7 +43,8 @@ public class ConnectionBasedClientTest {
     @Test
     public void testIsExpire() {
         connectionBasedClient.setLastRenewTime();
-        long mustExpireTime = connectionBasedClient.getLastRenewTime() + 2 * Constants.DEFAULT_IP_DELETE_TIMEOUT;
+        long mustExpireTime =
+                connectionBasedClient.getLastRenewTime() + 2 * ClientConfig.getInstance().getClientExpiredTime();
         assertTrue(connectionBasedClient.isExpire(mustExpireTime));
     }
 }

@@ -35,7 +35,6 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.google.common.collect.Maps;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -176,7 +175,7 @@ public class ServerListManager extends MemberChangeListener {
             final String path =
                     UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT
                             + "/state";
-            final Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
+            final Map<String, String> params = new HashMap(2);
             final String server = target.getAddress();
             
             try {

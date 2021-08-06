@@ -95,6 +95,6 @@ public enum ConfigType {
         if (StringUtils.isBlank(type)) {
             return false;
         }
-        return null != LOCAL_MAP.get(type) ? true : false;
+        return null != LOCAL_MAP.get(type);
     }
 }

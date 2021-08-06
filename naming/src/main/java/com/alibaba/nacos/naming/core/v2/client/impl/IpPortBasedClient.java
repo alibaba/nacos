@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.v2.client.AbstractClient;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -24,6 +23,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
+import com.alibaba.nacos.naming.misc.ClientConfig;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 
 import java.util.Collection;
@@ -86,8 +86,8 @@ public class IpPortBasedClient extends AbstractClient {
     
     @Override
     public boolean isExpire(long currentTime) {
-        return isEphemeral() && getAllPublishedService().isEmpty()
-                && currentTime - getLastUpdatedTime() > Constants.DEFAULT_IP_DELETE_TIMEOUT;
+        return isEphemeral() && getAllPublishedService().isEmpty() && currentTime - getLastUpdatedTime() > ClientConfig
+                .getInstance().getClientExpiredTime();
     }
     
     public Collection<InstancePublishInfo> getAllInstancePublishInfo() {

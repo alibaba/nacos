@@ -18,9 +18,9 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.UdpPushService;
-import com.google.common.collect.Lists;
 import org.springframework.stereotype.Component;
 
 /**
@@ -46,7 +46,7 @@ public class HealthOperatorV1Impl implements HealthOperator {
         Service service = serviceManager.getService(namespace, fullServiceName);
         // Only health check "none" need update health status with api
         if (HealthCheckType.NONE.name().equals(service.getClusterMap().get(clusterName).getHealthChecker().getType())) {
-            for (Instance instance : service.allIPs(Lists.newArrayList(clusterName))) {
+            for (Instance instance : service.allIPs(CollectionUtils.list(clusterName))) {
                 if (instance.getIp().equals(ip) && instance.getPort() == port) {
                     instance.setHealthy(healthy);
                     Loggers.EVT_LOG
