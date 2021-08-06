@@ -29,6 +29,7 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -181,7 +182,7 @@ public class OperatorController {
         int responsibleClientCount = 0;
         for (String clientId : allClientId) {
             if (clientId.contains(IpPortBasedClient.ID_DELIMITER)) {
-                if (clientId.endsWith(IpPortBasedClient.PERSISTENT_SUFFIX)) {
+                if (clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX)) {
                     persistentIpPortClient += 1;
                 } else {
                     ephemeralIpPortClient += 1;
