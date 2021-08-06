@@ -40,39 +40,39 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public abstract class AbstractNamingClientProxy extends Subscriber<ServerListChangedEvent>
         implements NamingClientProxy {
-    
+
     private static final String APP_FILED = "app";
-    
+
     private static final String SIGNATURE_FILED = "signature";
-    
+
     private static final String DATA_FILED = "data";
-    
+
     private static final String AK_FILED = "ak";
-    
+
     private static final String SEPARATOR = "@@";
-    
+
     private final SecurityProxy securityProxy;
-    
+
     private final Properties properties;
-    
+
     protected AbstractNamingClientProxy(SecurityProxy securityProxy, Properties properties) {
         this.securityProxy = securityProxy;
         this.properties = properties;
     }
-    
+
     /**
      * Get nacos security headers.
      *
      * @return nacos security access token
      */
     protected Map<String, String> getSecurityHeaders() {
-        Map<String, String> result = new HashMap<>(1);
+        Map<String, String> result = new HashMap<>(2);
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
             result.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
         }
         return result;
     }
-    
+
     /**
      * Get ak/sk if exist.
      *
@@ -80,7 +80,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
      * @return Ak Sk headers.
      */
     protected Map<String, String> getSpasHeaders(String serviceName) {
-        Map<String, String> result = new HashMap<>(2);
+        Map<String, String> result = new HashMap<>(8);
         String ak = getAccessKey();
         String sk = getSecretKey();
         result.put(APP_FILED, AppNameUtils.getAppName());
@@ -97,7 +97,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
         }
         return result;
     }
-    
+
     private String getAccessKey() {
         if (properties == null) {
             return SpasAdapter.getAk();
@@ -105,7 +105,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
         return TemplateUtils
                 .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ACCESS_KEY), SpasAdapter::getAk);
     }
-    
+
     private String getSecretKey() {
         if (properties == null) {
             return SpasAdapter.getSk();
@@ -113,7 +113,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
         return TemplateUtils
                 .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.SECRET_KEY), SpasAdapter::getSk);
     }
-    
+
     private String getSignData(String serviceName) {
         return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + SEPARATOR + serviceName
                 : String.valueOf(System.currentTimeMillis());
