@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
@@ -373,8 +375,8 @@ public class ServiceController {
      */
     @GetMapping("/selector/types")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public List<String> listSelectorTypes() {
-        return selectorManager.getAllSelectorTypes();
+    public RestResult<List<String>> listSelectorTypes() {
+        return RestResultUtils.success(selectorManager.getAllSelectorTypes());
     }
     
     private Selector parseSelector(String selectorJsonString) throws Exception {
