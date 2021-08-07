@@ -32,7 +32,9 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +50,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
@@ -103,6 +107,8 @@ public abstract class RpcClient implements Closeable {
      * handlers to process server push request.
      */
     protected List<ServerRequestHandler> serverRequestHandlers = new ArrayList<>();
+    
+    private static final Pattern EXCLUDE_PROTOCOL_PATTERN = Pattern.compile("(?<=\\w{1,5}://)(.*)");
     
     static {
         PayloadRegistry.init();
@@ -900,25 +906,16 @@ public abstract class RpcClient implements Closeable {
      */
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private ServerInfo resolveServerInfo(String serverAddress) {
-        String property = System.getProperty("nacos.server.port", "8848");
-        int serverPort = Integer.parseInt(property);
-        ServerInfo serverInfo;
-        if (serverAddress.contains(Constants.HTTP_PREFIX)) {
-            String[] split = serverAddress.split(Constants.COLON);
-            String serverIp = split[1].replaceAll("//", "");
-            if (split.length > 2 && StringUtils.isNotBlank(split[2])) {
-                serverPort = Integer.parseInt(split[2]);
-            }
-            serverInfo = new ServerInfo(serverIp, serverPort);
-        } else {
-            String[] split = serverAddress.split(Constants.COLON);
-            String serverIp = split[0];
-            if (split.length > 1 && StringUtils.isNotBlank(split[1])) {
-                serverPort = Integer.parseInt(split[1]);
-            }
-            serverInfo = new ServerInfo(serverIp, serverPort);
+        Matcher matcher = EXCLUDE_PROTOCOL_PATTERN.matcher(serverAddress);
+        if (matcher.find()) {
+            serverAddress = matcher.group(1);
         }
-        return serverInfo;
+    
+        String[] ipPortTuple = serverAddress.split(Constants.COLON, 2);
+        int defaultPort = Integer.parseInt(System.getProperty("nacos.server.port", "8848"));
+        String serverPort = CollectionUtils.getOrDefault(ipPortTuple, 1, Integer.toString(defaultPort));
+        
+        return new ServerInfo(ipPortTuple[0], NumberUtils.toInt(serverPort, defaultPort));
     }
     
     public static class ServerInfo {
