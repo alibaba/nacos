@@ -612,6 +612,7 @@
         <module>consistency</module>
         <module>auth</module>
         <module>sys</module>
+        <module>metrics</module>
     </modules>
     
     <!-- 所有的子项目默认依赖 -->
@@ -706,6 +707,12 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-address</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+    
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-metrics</artifactId>
                 <version>${project.version}</version>
             </dependency>
             
