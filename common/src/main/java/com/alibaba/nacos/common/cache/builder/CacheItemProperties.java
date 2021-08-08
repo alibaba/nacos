@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config.remote.request;
-
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.remote.request.Request;
+package com.alibaba.nacos.common.cache.builder;
 
 /**
- * abstract request of config module request,all config module request should extends this class.
- * @author liuzunfei
- * @version $Id: ConfigCommonRequest.java, v 0.1 2020年07月13日 9:05 PM liuzunfei Exp $
+ * Cache item's own attributes.
+ * @author zzq
+ * @date 2021/7/30
  */
-public abstract class AbstractConfigRequest extends Request {
-
-    @Override
-    public String getModule() {
-        return Constants.Config.CONFIG_MODULE;
+public class CacheItemProperties {
+    
+    private long expireNanos;
+    
+    public long getExpireNanos() {
+        return expireNanos;
+    }
+    
+    public void setExpireNanos(long expireNanos) {
+        this.expireNanos = expireNanos;
     }
 }

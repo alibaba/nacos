@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.ServerRequest;
 
 /**
@@ -25,8 +26,6 @@ import com.alibaba.nacos.api.remote.request.ServerRequest;
  * @version $Id: ConfigChangeNotifyRequest.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
  */
 public class ConfigChangeNotifyRequest extends ServerRequest {
-    
-    private static final String MODULE = "config";
     
     String dataId;
     
@@ -76,6 +75,6 @@ public class ConfigChangeNotifyRequest extends ServerRequest {
     
     @Override
     public String getModule() {
-        return MODULE;
+        return Constants.Config.CONFIG_MODULE;
     }
 }

@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config.remote.request;
+package com.alibaba.nacos.common.cache;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.common.cache.builder.CacheBuilder;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
 
 /**
- * abstract request of config module request,all config module request should extends this class.
- * @author liuzunfei
- * @version $Id: ConfigCommonRequest.java, v 0.1 2020年07月13日 9:05 PM liuzunfei Exp $
+ * auto expire cache test.
+ * @author zzq
+ * @date 2021/8/1
  */
-public abstract class AbstractConfigRequest extends Request {
+public class AutoExpireCacheTest {
 
-    @Override
-    public String getModule() {
-        return Constants.Config.CONFIG_MODULE;
+    @Test
+    public void test() throws Exception {
+        Cache cache = CacheBuilder.builder().expireNanos(1, TimeUnit.SECONDS).build();
+        cache.put("a",  "a");
+        TimeUnit.SECONDS.sleep(2);
+        Assert.assertNull(cache.get("a"));
     }
 }

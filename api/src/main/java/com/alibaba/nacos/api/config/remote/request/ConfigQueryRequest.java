@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
+import com.alibaba.nacos.api.common.Constants;
+
 /**
  * request to query config content.
  *
@@ -23,8 +25,6 @@ package com.alibaba.nacos.api.config.remote.request;
  * @version $Id: ConfigQueryRequest.java, v 0.1 2020年07月13日 9:06 PM liuzunfei Exp $
  */
 public class ConfigQueryRequest extends AbstractConfigRequest {
-    
-    private static final String NOTIFY_HEADER = "notify";
     
     private String dataId;
     
@@ -123,7 +123,7 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     }
     
     public boolean isNotify() {
-        String notify = getHeader(NOTIFY_HEADER, Boolean.FALSE.toString());
+        String notify = getHeader(Constants.Config.NOTIFY_HEADER, Boolean.FALSE.toString());
         return Boolean.parseBoolean(notify);
     }
 }
