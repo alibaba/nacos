@@ -20,12 +20,14 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -256,7 +258,7 @@ public final class ServiceUtil {
     public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
                                                                    ServiceMetadata serviceMetadata,
                                                                    String cluster) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, false, false);
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, false, false, false, null);
     }
 
     /**
@@ -272,7 +274,7 @@ public final class ServiceUtil {
                                                                    ServiceMetadata serviceMetadata,
                                                                    boolean healthyOnly,
                                                                    boolean enableOnly) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, StringUtils.EMPTY, healthyOnly, enableOnly);
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, StringUtils.EMPTY, healthyOnly, enableOnly, false, null);
     }
 
     /**
@@ -283,18 +285,27 @@ public final class ServiceUtil {
      * @param cluster         cluster of instances
      * @param healthyOnly     whether only select instance which healthy
      * @param enableOnly      whether only select instance which enabled
+     * @param selectedOnly  whether only select instance by {@link com.alibaba.nacos.api.selector.Selector}
+     * @param subscriberIp subscriber ip address
      * @return new service info
      */
     public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
                                                                    ServiceMetadata serviceMetadata,
                                                                    String cluster,
                                                                    boolean healthyOnly,
-                                                                   boolean enableOnly) {
+                                                                   boolean enableOnly,
+                                                                   boolean selectedOnly,
+                                                                   String subscriberIp) {
         InstancesFilter filter = (filteredResult, allInstances, healthyCount) -> {
             if (serviceMetadata == null) {
                 return;
             }
-            // TODO: filter ips using selector
+            // filter ips using selector
+            if (selectedOnly) {
+                SelectorManager selectorManager = ApplicationUtils.getBean(SelectorManager.class);
+                allInstances = selectorManager.select(serviceMetadata.getSelector(), subscriberIp, allInstances);
+            }
+            
             float threshold = serviceMetadata.getProtectThreshold();
             if (threshold < 0) {
                 threshold = 0F;
