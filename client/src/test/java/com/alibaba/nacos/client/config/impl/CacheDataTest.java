@@ -73,7 +73,7 @@ public class CacheDataTest {
         
         Assert.assertEquals(123, cacheData1.getTaskId());
         Assert.assertTrue(cacheData1.isSyncWithServer());
-         Assert.assertEquals("123",cacheData1.getType());
+        Assert.assertEquals("123", cacheData1.getType());
         Assert.assertTrue(cacheData1.isUseLocalConfigInfo());
         Assert.assertEquals(timeStamp, cacheData1.getLastModifiedTs().longValue());
         Assert.assertEquals(timeStamp, cacheData1.getLocalConfigInfoVersion());
