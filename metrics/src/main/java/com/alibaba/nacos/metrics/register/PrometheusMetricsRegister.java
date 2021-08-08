@@ -26,6 +26,8 @@ import io.micrometer.core.instrument.Timer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -42,6 +44,7 @@ public class PrometheusMetricsRegister implements MetricsRegister {
     
     /**
      * registry is injected by spring.
+     *
      * @param registry registry provided by spring-boot-actuator
      */
     @Autowired
@@ -50,58 +53,62 @@ public class PrometheusMetricsRegister implements MetricsRegister {
     }
     
     @Override
-    public void registerGauge(String name, Iterable<Tag> tags, String description, Supplier<Number> number) {
+    public void registerGauge(String name, Iterable<Tag> tags, Supplier<Number> number, String description) {
         Gauge.builder(name, number)
                 .description(description)
                 .tags(tags)
                 .register(registry);
     }
     
+    public void registerGauge(String name, Iterable<Tag> tags, Supplier<Number> number) {
+        this.registerGauge(name, tags, number, "");
+    }
+    
+    
     @Override
-    public Gauge registerGauge(String name, Iterable<Tag> tags, String description) {
-        return Gauge.builder(name, () -> 0)
+    public void registerCounter(String name, Iterable<Tag> tags, String description) {
+        Counter.builder(name)
                 .description(description)
                 .tags(tags)
                 .register(registry);
     }
     
-    @Override
-    public Counter registerCounter(String name, Iterable<Tag> tags, String description) {
-        return Counter.builder(name)
-                .description(description)
-                .tags(tags)
-                .register(registry);
+    public void registerCounter(String name, Iterable<Tag> tags) {
+        this.registerCounter(name, tags, "");
     }
     
     @Override
-    public Timer registerTimer(String name, Iterable<Tag> tags, String description) {
-        return Timer.builder(name)
+    public void registerTimer(String name, Iterable<Tag> tags, long amount, TimeUnit unit, String description) {
+        Timer.builder(name)
                 .tags(tags)
                 .description(description)
-                .register(registry);
+                .register(registry)
+                .record(amount, unit);
+    }
+    
+    public void registerTimer(String name, Iterable<Tag> tags, long amount, TimeUnit unit) {
+        this.registerTimer(name, tags, amount, unit, "");
     }
     
     @Override
-    public DistributionSummary summary(String name, Iterable<Tag> tags, String description) {
-        return DistributionSummary.builder(name)
-                .description(description)
+    public void registerTimer(String name, Iterable<Tag> tags, long amount, Duration duration, String description) {
+        Timer.builder(name)
                 .tags(tags)
-                .register(registry);
+                .description(description)
+                .register(registry)
+                .record(duration);
     }
     
-    @Override
+    public void registerTimer(String name, Iterable<Tag> tags, long amount, Duration duration) {
+        this.registerTimer(name, tags, amount, duration);
+    }
+    
     public void counterIncrement(String name, Iterable<Tag> tags) {
-        registry.get(name)
-                .tags(tags)
-                .counter()
-                .increment();
+        this.counterIncrement(name, tags, 0);
     }
     
     @Override
     public void counterIncrement(String name, Iterable<Tag> tags, long count) {
-        registry.get(name)
-                .tags(tags)
-                .counter()
-                .increment(count);
+        registry.counter(name, tags).increment(count);
     }
 }

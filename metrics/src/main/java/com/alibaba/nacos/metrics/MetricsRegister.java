@@ -22,10 +22,12 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * Metrics com.alibaba.nacos.test.register.
+ * Metrics register.
  *
  * @author holdonbei
  */
@@ -36,20 +38,10 @@ public interface MetricsRegister {
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param description description for gauge
      * @param number number for gauge
-     */
-    void registerGauge(String name, Iterable<Tag> tags, String description, Supplier<Number> number);
-    
-    /**
-     * Register Gauge.
-     *
-     * @param name name
-     * @param tags Key/value pairs
      * @param description description for gauge
-     * @return Gauge
      */
-    Gauge registerGauge(String name, Iterable<Tag> tags, String description);
+    void registerGauge(String name, Iterable<Tag> tags, Supplier<Number> number, String description);
     
     /**
      * Register Counter.
@@ -57,37 +49,30 @@ public interface MetricsRegister {
      * @param name name
      * @param tags Key/value pairs
      * @param description description for gauge
-     * @return Counter
      */
-    Counter registerCounter(String name, Iterable<Tag> tags, String description);
+    void registerCounter(String name, Iterable<Tag> tags, String description);
     
     /**
      * RegisterTimer.
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param description description for gauge
-     * @return Timer
+     * @param amount record time
+     * @param unit Timeunit
+     * @param description description for timer
      */
-    Timer registerTimer(String name, Iterable<Tag> tags, String description);
+    void registerTimer(String name, Iterable<Tag> tags, long amount, TimeUnit unit, String description);
     
     /**
-     * Summary.
+     * RegisterTimer
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param description description for gauge
-     * @return DistributionSummary
+     * @param amount record time
+     * @param duration duration
+     * @param description description for timer
      */
-    DistributionSummary summary(String name, Iterable<Tag> tags, String description);
-    
-    /**
-     * Counter Increment.
-     *
-     * @param name name
-     * @param tags Key/value pairs
-     */
-    void counterIncrement(String name, Iterable<Tag> tags);
+    void registerTimer(String name, Iterable<Tag> tags, long amount, Duration duration, String description);
     
     /**
      * Counter increment by count.
