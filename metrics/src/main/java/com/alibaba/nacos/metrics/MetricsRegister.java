@@ -16,11 +16,7 @@
 
 package com.alibaba.nacos.metrics;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Timer;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -64,15 +60,22 @@ public interface MetricsRegister {
     void registerTimer(String name, Iterable<Tag> tags, long amount, TimeUnit unit, String description);
     
     /**
-     * RegisterTimer
+     * RegisterTimer.
      *
      * @param name name
      * @param tags Key/value pairs
-     * @param amount record time
      * @param duration duration
      * @param description description for timer
      */
-    void registerTimer(String name, Iterable<Tag> tags, long amount, Duration duration, String description);
+    void registerTimer(String name, Iterable<Tag> tags, Duration duration, String description);
+    
+    /**
+     * Counter increment.
+     *
+     * @param name name
+     * @param tags Key/value pairs
+     */
+    void counterIncrement(String name, Iterable<Tag> tags);
     
     /**
      * Counter increment by count.

@@ -18,7 +18,6 @@ package com.alibaba.nacos.metrics.register;
 
 import com.alibaba.nacos.metrics.MetricsRegister;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -60,11 +59,6 @@ public class PrometheusMetricsRegister implements MetricsRegister {
                 .register(registry);
     }
     
-    public void registerGauge(String name, Iterable<Tag> tags, Supplier<Number> number) {
-        this.registerGauge(name, tags, number, "");
-    }
-    
-    
     @Override
     public void registerCounter(String name, Iterable<Tag> tags, String description) {
         Counter.builder(name)
@@ -72,11 +66,7 @@ public class PrometheusMetricsRegister implements MetricsRegister {
                 .tags(tags)
                 .register(registry);
     }
-    
-    public void registerCounter(String name, Iterable<Tag> tags) {
-        this.registerCounter(name, tags, "");
-    }
-    
+
     @Override
     public void registerTimer(String name, Iterable<Tag> tags, long amount, TimeUnit unit, String description) {
         Timer.builder(name)
@@ -86,12 +76,8 @@ public class PrometheusMetricsRegister implements MetricsRegister {
                 .record(amount, unit);
     }
     
-    public void registerTimer(String name, Iterable<Tag> tags, long amount, TimeUnit unit) {
-        this.registerTimer(name, tags, amount, unit, "");
-    }
-    
     @Override
-    public void registerTimer(String name, Iterable<Tag> tags, long amount, Duration duration, String description) {
+    public void registerTimer(String name, Iterable<Tag> tags, Duration duration, String description) {
         Timer.builder(name)
                 .tags(tags)
                 .description(description)
@@ -99,12 +85,9 @@ public class PrometheusMetricsRegister implements MetricsRegister {
                 .record(duration);
     }
     
-    public void registerTimer(String name, Iterable<Tag> tags, long amount, Duration duration) {
-        this.registerTimer(name, tags, amount, duration);
-    }
-    
+    @Override
     public void counterIncrement(String name, Iterable<Tag> tags) {
-        this.counterIncrement(name, tags, 0);
+        this.counterIncrement(name, tags, 1);
     }
     
     @Override
