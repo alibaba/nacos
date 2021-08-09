@@ -92,8 +92,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     @Override
     public ObjectNode queryService(String namespaceId, String serviceName) throws NacosException {
         Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, true);
-        boolean serviceExist = ServiceManager.getInstance().containSingleton(service);
-        if (!serviceExist) {
+        if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "service not found, namespace: " + namespaceId + ", serviceName: " + serviceName);
         }
