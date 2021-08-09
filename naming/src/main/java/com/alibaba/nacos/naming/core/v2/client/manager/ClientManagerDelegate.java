@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager;
 
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
@@ -40,8 +41,6 @@ public class ClientManagerDelegate implements ClientManager {
     private final EphemeralIpPortClientManager ephemeralIpPortClientManager;
     
     private final PersistentIpPortClientManager persistentIpPortClientManager;
-    
-    private static final String SUFFIX = "false";
     
     public ClientManagerDelegate(ConnectionBasedClientManager connectionBasedClientManager,
             EphemeralIpPortClientManager ephemeralIpPortClientManager,
@@ -105,7 +104,7 @@ public class ClientManagerDelegate implements ClientManager {
         if (isConnectionBasedClient(clientId)) {
             return connectionBasedClientManager;
         }
-        return clientId.endsWith(SUFFIX) ? persistentIpPortClientManager : ephemeralIpPortClientManager;
+        return clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX) ? persistentIpPortClientManager : ephemeralIpPortClientManager;
     }
     
     private boolean isConnectionBasedClient(String clientId) {
