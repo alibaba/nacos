@@ -18,6 +18,8 @@ package com.alibaba.nacos.metrics.register;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,7 +34,7 @@ public class PrometheusMetricsRegisterTest {
     private final PrometheusMetricsRegister prometheusMetricsRegister;
     
     public PrometheusMetricsRegisterTest() {
-        meterRegistry = new SimpleMeterRegistry();
+        meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         prometheusMetricsRegister = new PrometheusMetricsRegister(meterRegistry);
     }
     
