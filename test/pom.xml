@@ -91,7 +91,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-address</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
