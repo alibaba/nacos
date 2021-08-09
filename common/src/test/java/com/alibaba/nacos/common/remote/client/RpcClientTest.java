@@ -275,6 +275,8 @@ public class RpcClientTest {
                 "http://10.10.10.10::8848")).getAddress());
         Assert.assertEquals("10.10.10.10:8848",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10")).getAddress());
+        Assert.assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
+                "https://10.10.10.10::8848")).getAddress());
     }
     
     @Test

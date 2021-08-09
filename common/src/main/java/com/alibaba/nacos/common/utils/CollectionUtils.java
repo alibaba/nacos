@@ -17,8 +17,8 @@
 package com.alibaba.nacos.common.utils;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -237,16 +237,16 @@ public final class CollectionUtils {
      * Returns the value to which the specified index , or {@code defaultValue} if this collection contains no value for
      * the index.
      *
-     * @param coll         the collection to get a value from
+     * @param obj         the object to get a value from
      * @param index        the index to get
      * @param defaultValue default value
      * @param <T>          General Type
      * @return the value to which the specified index , or {@code defaultValue} if this collection contains no value for
      * the index.
      */
-    public static <T> T getOrDefault(Collection<T> coll, int index, T defaultValue) {
+    public static <T> T getOrDefault(Object obj, int index, T defaultValue) {
         try {
-            return (T) get(coll, index);
+            return (T) get(obj, index);
         } catch (IndexOutOfBoundsException e) {
             return defaultValue;
         }
