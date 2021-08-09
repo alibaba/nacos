@@ -55,7 +55,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
     @Override
     public void run() {
         try {
-            PushDataWrapper wrapper = generatePushData();
+
             for (String each : getTargetClientIds()) {
                 Client client = delayTaskEngine.getClientManager().getClient(each);
                 if (null == client) {
@@ -63,6 +63,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
                     continue;
                 }
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
+                PushDataWrapper wrapper = generatePushData(subscriber);
                 delayTaskEngine.getPushExecutor().doPushWithCallback(each, subscriber, wrapper,
                         new NamingPushCallback(each, subscriber, wrapper.getOriginalData(), delayTask.isPushToAll()));
             }
@@ -72,10 +73,10 @@ public class PushExecuteTask extends AbstractExecuteTask {
         }
     }
     
-    private PushDataWrapper generatePushData() {
+    private PushDataWrapper generatePushData(Subscriber subscriber) {
         ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
         ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
-        serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true);
+        serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true, subscriber);
         return new PushDataWrapper(serviceInfo);
     }
     

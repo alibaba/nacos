@@ -93,6 +93,6 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     @Deprecated
     private ServiceInfo handleClusterData(ServiceInfo data, ServiceMetadata metadata, Subscriber subscriber) {
         return StringUtils.isBlank(subscriber.getCluster()) ? data
-                : ServiceUtil.selectInstancesWithHealthyProtection(data, metadata, subscriber.getCluster());
+                : ServiceUtil.selectInstancesWithHealthyProtection(data, metadata, subscriber.getCluster(), subscriber);
     }
 }
