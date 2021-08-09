@@ -32,6 +32,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -57,6 +59,7 @@ import java.util.zip.GZIPOutputStream;
  *
  * @author nacos
  */
+@EnableAsync
 @Component
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class PushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
@@ -117,6 +120,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         this.applicationContext = applicationContext;
     }
     
+    @Async
     @Override
     public void onApplicationEvent(ServiceChangeEvent event) {
         Service service = event.getService();
