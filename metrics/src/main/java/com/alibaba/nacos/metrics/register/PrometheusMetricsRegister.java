@@ -42,9 +42,9 @@ public class PrometheusMetricsRegister implements MetricsRegister {
     private final MeterRegistry registry;
     
     /**
-     * registry is injected by spring.
+     * PrometheusMeterRegistry.
      *
-     * @param registry registry provided by spring-boot-actuator
+     * @param registry meterRegistry from io.micrometer.prometheus.PrometheusMeterRegistry
      */
     @Autowired
     public PrometheusMetricsRegister(MeterRegistry registry) {
