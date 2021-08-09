@@ -221,7 +221,7 @@ class EditServiceDialog extends React.Component {
               }
             </Select>
           </Form.Item>
-          {selector.type === 'label' && (
+          {selector.type !== 'none' && (
             <Form.Item label={`${locale.selector}:`} {...formItemLayout}>
               <Input.TextArea
                 value={selector.expression}

@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.AbstractCmdbSelector;
-import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.api.selector.context.CmdbContext;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -53,25 +52,12 @@ public class LabelSelector<T extends Instance> extends AbstractCmdbSelector<T> {
      */
     private Set<String> labels;
     
-    /**
-     * the labels expression.
-     */
-    private String expression;
-    
     public Set<String> getLabels() {
         return labels;
     }
     
     public void setLabels(Set<String> labels) {
         this.labels = labels;
-    }
-    
-    public String getExpression() {
-        return expression;
-    }
-    
-    public void setExpression(String expression) {
-        this.expression = expression;
     }
     
     @Override
@@ -120,10 +106,8 @@ public class LabelSelector<T extends Instance> extends AbstractCmdbSelector<T> {
     }
     
     @Override
-    public Selector<List<T>, CmdbContext<T>, String> parse(String condition) throws NacosException {
-        this.labels = ExpressionInterpreter.parseExpression(condition);
-        this.expression = condition;
-        return this;
+    protected void doParse(String expression) throws NacosException {
+        this.labels = ExpressionInterpreter.parseExpression(expression);
     }
     
     @Override

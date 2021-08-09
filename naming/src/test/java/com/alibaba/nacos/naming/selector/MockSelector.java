@@ -17,9 +17,9 @@
 
 package com.alibaba.nacos.naming.selector;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.AbstractCmdbSelector;
-import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.api.selector.context.CmdbContext;
 
 import java.util.List;
@@ -73,11 +73,10 @@ public class MockSelector extends AbstractCmdbSelector<Instance> {
     }
     
     @Override
-    public Selector<List<Instance>, CmdbContext<Instance>, String> parse(String condition) {
-        String[] keyValues = condition.split("=");
+    protected void doParse(String expression) throws NacosException {
+        String[] keyValues = expression.split("=");
         key = keyValues[0];
         value = keyValues[1];
-        return this;
     }
     
     @Override

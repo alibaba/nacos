@@ -29,6 +29,8 @@ import java.util.Set;
  * Expression interpreter for label selector.
  *
  * <p>For now it supports very limited set of syntax rules.
+ *
+ * @author nokrange
  */
 public class ExpressionInterpreter {
     
