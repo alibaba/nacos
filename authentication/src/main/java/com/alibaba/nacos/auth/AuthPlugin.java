@@ -1,6 +1,5 @@
 package com.alibaba.nacos.auth;
 
-
 public class AuthPlugin {
     
     /**

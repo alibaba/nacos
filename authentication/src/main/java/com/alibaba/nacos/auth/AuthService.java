@@ -1,12 +1,11 @@
 package com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.model.UserFromRequest;
-import com.alibaba.nacos.auth.model.UserFromService;
+import com.alibaba.nacos.auth.authContext.AuthContextBuilder;
 
 public interface AuthService {
     
     // HTTP
-    Boolean login(Object request);//throws AccessException;
+    Boolean login(AuthContextBuilder authContext);//throws AccessException;
     
     
     // get username and password from request

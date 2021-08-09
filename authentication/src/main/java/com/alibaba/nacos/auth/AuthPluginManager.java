@@ -1,7 +1,7 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.exception.AuthPluginException;
-
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -18,6 +18,7 @@ public class AuthPluginManager {
     
     public void initAuthPlugins(AuthPlugin authPlugin) throws AuthPluginException{
         try{
+            //NacosServiceLoader<AuthPlugin>
             URL url = new File(authPlugin.getJarPath()).toURI().toURL();
             URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
             Class authclass = classLoader.loadClass(authPlugin.getClassName());
