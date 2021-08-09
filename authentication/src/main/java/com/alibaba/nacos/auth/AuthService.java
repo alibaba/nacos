@@ -1,6 +1,6 @@
-package com.alibaba.nacos.auth;
+package authentication.src.main.java.com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.authContext.AuthContextBuilder;
+import authentication.src.main.java.com.alibaba.nacos.auth.authContext.AuthContextBuilder;
 
 public interface AuthService {
     

@@ -1,4 +1,4 @@
-package com.alibaba.nacos.auth.authContext;
+package authentication.src.main.java.com.alibaba.nacos.auth.authContext;
 
 import com.alibaba.nacos.api.config.filter.IConfigContext;
 

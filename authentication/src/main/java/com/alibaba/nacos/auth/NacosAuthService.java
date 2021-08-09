@@ -1,6 +1,7 @@
-package com.alibaba.nacos.auth;
+package authentication.src.main.java.com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.authContext.AuthContextBuilder;
+import authentication.src.main.java.com.alibaba.nacos.auth.AuthService;
+import authentication.src.main.java.com.alibaba.nacos.auth.authContext.AuthContextBuilder;
 import com.alibaba.nacos.auth.model.UserFromRequest;
 import com.alibaba.nacos.auth.model.UserFromService;
 import com.alibaba.nacos.auth.utils.HttpNet;
@@ -9,7 +10,7 @@ import com.alibaba.nacos.auth.utils.NetContext;
 import java.util.HashMap;
 import java.util.Map;
 
-public class NacosAuthService implements AuthService{
+public class NacosAuthService implements AuthService {
     
     @Override
     public Boolean login(AuthContextBuilder authContext){

@@ -1,4 +1,4 @@
-package com.alibaba.nacos.auth.authContext;
+package authentication.src.main.java.com.alibaba.nacos.auth.authContext;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
 
@@ -11,7 +11,7 @@ public class HttpAuthContextBuilder implements AuthContextBuilder {
         Enumeration enu = req.getParameterNames();
         while(enu.hasMoreElements()){
             String paraName=(String)enu.nextElement();
-            authContext.setParameter(paraName,req.getParamenter(paraName));
+            authContext.setParameter(paraName,req.getParameter(paraName));
         }
         return authContext;
     }

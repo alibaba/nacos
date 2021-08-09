@@ -1,8 +1,9 @@
-package com.alibaba.nacos.auth;
+package authentication.src.main.java.com.alibaba.nacos.auth;
 
+import com.alibaba.nacos.auth.UserDetailService;
 import com.alibaba.nacos.auth.model.UserFromService;
 
-public class NacosUserDetailService implements UserDetailService{
+public class NacosUserDetailService implements UserDetailService {
     
     /**
      * 从Nacos service端获取用户信息，我看到Nacos的用户信息放在下面几个类中：

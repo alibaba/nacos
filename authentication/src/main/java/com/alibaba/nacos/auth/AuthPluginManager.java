@@ -1,48 +1,26 @@
-package com.alibaba.nacos.auth;
+package authentication.src.main.java.com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.exception.AuthPluginException;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import java.io.File;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Collection;
+import java.util.Iterator;
 
 public class AuthPluginManager {
-    private Map<String, Class> classMap = new HashMap<>();
-    
-    public AuthPluginManager(List<AuthPlugin> authplugins) throws AuthPluginException{
-        initAuthPlugins(authplugins);
-    }
-    
-    public void initAuthPlugins(AuthPlugin authPlugin) throws AuthPluginException{
-        try{
-            //NacosServiceLoader<AuthPlugin>
-            URL url = new File(authPlugin.getJarPath()).toURI().toURL();
-            URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
-            Class authclass = classLoader.loadClass(authPlugin.getClassName());
-            classMap.put(authPlugin.getClassName(),authclass);
-        }catch (Exception e){
-            throw new AuthPluginException("AuthPlugin"+authPlugin.getPluginName()+" init error,"+e.getMessage());
+
+    public void initAuthPlugins(){
+        Collection<AuthService> authServices = NacosServiceLoader.load(AuthService.class);
+        
+        Iterator<AuthService> authIterator = authServices.iterator();
+        boolean pluginNotFound = true;
+        if (authIterator.hasNext()) {
+            pluginNotFound = false;
         }
-    }
-    
-    public void initAuthPlugins(List<AuthPlugin> authplugins) throws AuthPluginException{
-        for (AuthPlugin authPlugin: authplugins){
-            initAuthPlugins(authPlugin);
+        if (pluginNotFound) {
+            System.out.println("AuthService load fail!");
+        } else {
+            for (AuthService authsercice : authServices) {
+                System.out.println(authsercice.getClass());
+            }
         }
+        
     }
-    
-    public AuthService getInstance(String className) throws AuthPluginException{
-        Class authclass = classMap.get(className);
-        Object instance = null;
-        try{
-            instance = authclass.newInstance();
-        }catch(Exception e){
-            throw new AuthPluginException("AuthPlugin"+className+" instantiate error,"+e.getMessage());
-        }
-        return (AuthService) instance;
-    }
-    
 }
