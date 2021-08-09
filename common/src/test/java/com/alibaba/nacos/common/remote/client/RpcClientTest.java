@@ -47,6 +47,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -60,9 +61,9 @@ public class RpcClientTest {
     
     Field reconnectionSignalField;
     
-    Field lastActiveTimeStampField;
-    
     Field retryTimesField;
+    
+    Field timeoutMillsField;
     
     Method resolveServerInfoMethod;
     
@@ -107,17 +108,17 @@ public class RpcClientTest {
         modifiersField1.setAccessible(true);
         modifiersField1.setInt(reconnectionSignalField, reconnectionSignalField.getModifiers() & ~Modifier.FINAL);
         
-        lastActiveTimeStampField = RpcClient.class.getDeclaredField("lastActiveTimeStamp");
-        lastActiveTimeStampField.setAccessible(true);
-        Field modifiersField2 = Field.class.getDeclaredField("modifiers");
-        modifiersField2.setAccessible(true);
-        modifiersField2.setInt(reconnectionSignalField, reconnectionSignalField.getModifiers() & ~Modifier.FINAL);
-    
         retryTimesField = RpcClient.class.getDeclaredField("RETRY_TIMES");
         retryTimesField.setAccessible(true);
         Field modifiersField3 = Field.class.getDeclaredField("modifiers");
         modifiersField3.setAccessible(true);
-        modifiersField3.setInt(reconnectionSignalField, reconnectionSignalField.getModifiers() & ~Modifier.FINAL);
+        modifiersField3.setInt(retryTimesField, retryTimesField.getModifiers() & ~Modifier.FINAL);
+        
+        timeoutMillsField = RpcClient.class.getDeclaredField("DEFAULT_TIMEOUT_MILLS");
+        timeoutMillsField.setAccessible(true);
+        Field modifiersField4 = Field.class.getDeclaredField("modifiers");
+        modifiersField4.setAccessible(true);
+        modifiersField4.setInt(timeoutMillsField, timeoutMillsField.getModifiers() & ~Modifier.FINAL);
         
         resolveServerInfoMethod = RpcClient.class.getDeclaredMethod("resolveServerInfo", String.class);
         resolveServerInfoMethod.setAccessible(true);
@@ -275,6 +276,8 @@ public class RpcClientTest {
                 "http://10.10.10.10::8848")).getAddress());
         Assert.assertEquals("10.10.10.10:8848",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10")).getAddress());
+        Assert.assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
+                "https://10.10.10.10::8848")).getAddress());
     }
     
     @Test
@@ -354,6 +357,34 @@ public class RpcClientTest {
         }
         
         verify(connection, atLeastOnce()).asyncRequest(any(), any());
+        verify(rpcClient).switchServerAsyncOnRequestFail();
+        Assert.assertNotNull(exception);
+        Assert.assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testRequestFutureWhenClientAlreadyShutDownThenThrowException() throws NacosException {
+        rpcClient.rpcClientStatus.set(RpcClientStatus.SHUTDOWN);
+        rpcClient.currentConnection = connection;
+        rpcClient.requestFuture(null);
+    }
+    
+    @Test
+    public void testRequestFutureWhenRetryReachMaxRetryTimesThenSwitchServer() throws NacosException, IllegalAccessException {
+        timeoutMillsField.set(rpcClient, 5000L);
+        retryTimesField.set(rpcClient, 3);
+        rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
+        rpcClient.currentConnection = connection;
+        doThrow(NacosException.class).when(connection).requestFuture(any());
+        Exception exception = null;
+        
+        try {
+            rpcClient.requestFuture(null);
+        } catch (NacosException e) {
+            exception = e;
+        }
+        
+        verify(connection, times(3)).requestFuture(any());
         verify(rpcClient).switchServerAsyncOnRequestFail();
         Assert.assertNotNull(exception);
         Assert.assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
