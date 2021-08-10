@@ -297,6 +297,7 @@ public final class ServiceUtil {
             // filter ips using selector
             SelectorManager selectorManager = ApplicationUtils.getBean(SelectorManager.class);
             allInstances = selectorManager.select(serviceMetadata.getSelector(), subscriberIp, allInstances);
+            filteredResult.setHosts(allInstances);
             
             float threshold = serviceMetadata.getProtectThreshold();
             if (threshold < 0) {

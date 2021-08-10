@@ -72,8 +72,7 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app,
                 meta.getClientIp(), namespaceId, groupedServiceName, 0, request.getClusters());
         ServiceInfo serviceInfo = handleClusterData(serviceStorage.getData(service),
-                metadataManager.getServiceMetadata(service).orElse(null),
-                subscriber);
+                metadataManager.getServiceMetadata(service).orElse(null), subscriber);
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
         } else {
