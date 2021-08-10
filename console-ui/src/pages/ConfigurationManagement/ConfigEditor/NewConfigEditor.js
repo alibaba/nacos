@@ -27,22 +27,18 @@ import {
   Balloon,
   Button,
   Dialog,
-  Field,
   Form,
   Checkbox,
   Icon,
   Input,
   Loading,
   Radio,
-  Switch,
   Select,
   Tab,
   Message,
   Grid,
   ConfigProvider,
 } from '@alifd/next';
-import { resolve } from 'url';
-import qs from 'qs';
 
 const { Row, Col } = Grid;
 
@@ -235,7 +231,7 @@ class ConfigEditor extends React.Component {
     if (validateContent.validate({ content, type })) {
       return this._publishConfig();
     } else {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         Dialog.confirm({
           content: locale.codeValErrorPrompt,
           onOk: () => resolve(this._publishConfig()),
@@ -292,7 +288,6 @@ class ConfigEditor extends React.Component {
   }
 
   stopBeta() {
-    const { locale } = this.props;
     const { dataId, group } = this.state.form;
     const tenant = getParams('namespace');
     return request
