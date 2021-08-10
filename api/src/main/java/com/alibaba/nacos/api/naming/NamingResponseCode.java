@@ -33,4 +33,9 @@ public class NamingResponseCode extends ResponseCode {
      */
     public static final int RESOURCE_NOT_FOUND = 20404;
     
+    /**
+     * Stop or no need to retry.
+     */
+    public static final int NO_NEED_RETRY = 21600;
+    
 }

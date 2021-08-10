@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Chooser.
@@ -62,7 +63,7 @@ public class Chooser<K, T> {
             return ref.items.get(index);
         }
         
-        if (index >= 0 && index < ref.weights.length) {
+        if (index < ref.weights.length) {
             if (random < ref.weights[index]) {
                 return ref.items.get(index);
             }
@@ -118,7 +119,7 @@ public class Chooser<K, T> {
         public Ref(List<Pair<T>> itemsWithWeight) {
             this.itemsWithWeight = itemsWithWeight;
         }
-    
+        
         /**
          * Refresh.
          */
@@ -167,7 +168,7 @@ public class Chooser<K, T> {
                 return;
             }
             throw new IllegalStateException(
-                    "Cumulative Weight caculate wrong , the sum of probabilities does not equals 1.");
+                    "Cumulative Weight calculate wrong , the sum of probabilities does not equals 1.");
         }
         
         @Override

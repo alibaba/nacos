@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 
@@ -33,7 +33,7 @@ public class NetUtils {
      * @return local server address
      */
     public static String localServer() {
-        return InetUtils.getSelfIP() + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+        return InetUtils.getSelfIP() + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
     }
     
 }

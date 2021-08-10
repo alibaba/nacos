@@ -67,6 +67,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
@@ -76,6 +77,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class DumpService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(DumpService.class);
     
     protected DumpProcessor processor;
     
@@ -88,6 +91,36 @@ public abstract class DumpService {
     protected final PersistService persistService;
     
     protected final ServerMemberManager memberManager;
+    
+    /**
+     * full dump interval.
+     */
+    static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
+    
+    /**
+     * full dump delay.
+     */
+    static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
+    
+    private TaskManager dumpTaskMgr;
+    
+    private TaskManager dumpAllTaskMgr;
+    
+    static final AtomicInteger FINISHED = new AtomicInteger();
+    
+    static final int INIT_THREAD_COUNT = 10;
+    
+    int total = 0;
+    
+    private static final String TRUE_STR = "true";
+    
+    private static final String BETA_TABLE_NAME = "config_info_beta";
+    
+    private static final String TAG_TABLE_NAME = "config_info_tag";
+    
+    Boolean isQuickStart = false;
+    
+    private int retentionDays = 30;
     
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
@@ -237,7 +270,7 @@ public abstract class DumpService {
     
     private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor) throws IOException {
         int timeStep = 6;
-        Boolean isAllDump = true;
+        boolean isAllDump = true;
         // initial dump all
         FileInputStream fis = null;
         Timestamp heartheatLastStamp = null;
@@ -343,15 +376,25 @@ public abstract class DumpService {
         dump(dataId, group, tenant, lastModified, handleIp, false);
     }
     
+    /**
+     * Add DumpTask to TaskManager, it will execute asynchronously.
+     */
     public void dump(String dataId, String group, String tenant, long lastModified, String handleIp, boolean isBeta) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        dumpTaskMgr.addTask(groupKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
+        String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta));
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
+        DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
     }
     
+    /**
+     * Add DumpTask to TaskManager, it will execute asynchronously.
+     */
     public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp,
             boolean isBeta) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        dumpTaskMgr.addTask(groupKey, new DumpTask(groupKey, tag, lastModified, handleIp, isBeta));
+        String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta), tag);
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, tag, lastModified, handleIp, isBeta));
+        DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
     }
     
     public void dumpAll() {
@@ -444,36 +487,4 @@ public abstract class DumpService {
      * @return {@link Boolean}
      */
     protected abstract boolean canExecute();
-    
-    /**
-     * full dump interval.
-     */
-    static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
-    
-    /**
-     * full dump delay.
-     */
-    static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
-    
-    private TaskManager dumpTaskMgr;
-    
-    private TaskManager dumpAllTaskMgr;
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(DumpService.class);
-    
-    static final AtomicInteger FINISHED = new AtomicInteger();
-    
-    static final int INIT_THREAD_COUNT = 10;
-    
-    int total = 0;
-    
-    private static final String TRUE_STR = "true";
-    
-    private static final String BETA_TABLE_NAME = "config_info_beta";
-    
-    private static final String TAG_TABLE_NAME = "config_info_tag";
-    
-    Boolean isQuickStart = false;
-    
-    private int retentionDays = 30;
 }

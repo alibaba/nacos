@@ -18,13 +18,14 @@ package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.zaxxer.hikari.HikariDataSource;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -73,15 +74,16 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     @PostConstruct
     @Override
     public synchronized void init() throws Exception {
-        if (!PropertyUtil.isUseExternalDB()) {
-            if (!initialize) {
-                LogUtil.DEFAULT_LOG.info("use local db service for init");
-                final String jdbcUrl =
-                        "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
-                                + ";create=true";
-                initialize(jdbcUrl);
-                initialize = true;
-            }
+        if (PropertyUtil.isUseExternalDB()) {
+            return;
+        }
+        if (!initialize) {
+            LogUtil.DEFAULT_LOG.info("use local db service for init");
+            final String jdbcUrl =
+                    "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
+                            + ";create=true";
+            initialize(jdbcUrl);
+            initialize = true;
         }
     }
     
@@ -235,9 +237,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         } catch (Exception ex) {
             throw new Exception(ex.getMessage());
         } finally {
-            if (sqlFileIn != null) {
-                sqlFileIn.close();
-            }
+            IoUtils.closeQuietly(sqlFileIn);
         }
     }
     
@@ -249,20 +249,14 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
      * @throws Exception Exception.
      */
     private void execute(Connection conn, String sqlFile) throws Exception {
-        Statement stmt = null;
-        try {
+        try (Statement stmt = conn.createStatement()) {
             List<String> sqlList = loadSql(sqlFile);
-            stmt = conn.createStatement();
             for (String sql : sqlList) {
                 try {
                     stmt.execute(sql);
                 } catch (Exception e) {
                     LogUtil.DEFAULT_LOG.warn(e.getMessage());
                 }
-            }
-        } finally {
-            if (stmt != null) {
-                stmt.close();
             }
         }
     }

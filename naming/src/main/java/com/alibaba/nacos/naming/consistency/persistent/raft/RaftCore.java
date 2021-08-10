@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.http.Callback;
@@ -25,6 +24,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -49,8 +49,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -1008,8 +1008,8 @@ public class RaftCore implements Closeable {
      * @return api url
      */
     public static String buildUrl(String ip, String api) {
-        if (!IPUtil.containsPort(ip)) {
-            ip = ip + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+        if (!InternetAddressUtil.containsPort(ip)) {
+            ip = ip + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
         return "http://" + ip + EnvUtil.getContextPath() + api;
     }

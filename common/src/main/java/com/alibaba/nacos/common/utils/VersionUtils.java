@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.utils;
 
 import java.io.InputStream;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -29,40 +30,30 @@ public class VersionUtils {
     
     public static String version;
     
+    private static String clientVersion;
+    
     /**
-     * 获取当前version.
+     * current version.
      */
     public static final String VERSION_PLACEHOLDER = "${project.version}";
     
+    private static final String NACOS_VERSION_FILE = "nacos-version.txt";
+    
     static {
-        InputStream in = null;
-        try {
-            in = VersionUtils.class.getClassLoader().getResourceAsStream("nacos-version.txt");
+        try (InputStream in = VersionUtils.class.getClassLoader().getResourceAsStream(NACOS_VERSION_FILE)) {
             Properties props = new Properties();
             props.load(in);
             String val = props.getProperty("version");
             if (val != null && !VERSION_PLACEHOLDER.equals(val)) {
                 version = val;
+                clientVersion = "Nacos-Java-Client:v" + VersionUtils.version;
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
     }
     
-    private static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
-        @Override
-        public int compare(String o1, String o2) {
-            return o1.compareTo(o2);
-        }
-    };
+    private static final Comparator<String> STRING_COMPARATOR = String::compareTo;
     
     /**
      * compare two version who is latest.
@@ -87,5 +78,9 @@ public class VersionUtils {
             return second;
         }
         return Objects.compare(sA[2].split("-")[0], sB[2].split("-")[0], STRING_COMPARATOR);
+    }
+    
+    public static String getFullClientVersion() {
+        return clientVersion;
     }
 }

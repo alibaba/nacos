@@ -41,7 +41,6 @@ module.exports = Object.assign({}, base, {
       new OptimizeCSSAssetsPlugin({}),
     ],
   },
-  devtool: 'eval-source-map',
   plugins: [
     new CleanWebpackPlugin({
       cleanOnceBeforeBuildPatterns:[

@@ -27,7 +27,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 
-
 /**
  * Nacos MCP server.
  *
@@ -52,6 +51,12 @@ public class NacosMcpServer {
     @Autowired
     private NacosMcpService nacosMcpService;
     
+    @Autowired
+    private NacosMcpOverXdsService nacosMcpOverXdsService;
+    
+    @Autowired
+    private NacosToMcpResources nacosToMcpResources;
+    
     /**
      * Start.
      *
@@ -67,9 +72,9 @@ public class NacosMcpServer {
         Loggers.MAIN.info("MCP server, starting Nacos MCP server...");
         
         server = ServerBuilder.forPort(port).addService(ServerInterceptors.intercept(nacosMcpService, intercepter))
-                .build();
+                .addService(ServerInterceptors.intercept(nacosMcpOverXdsService, intercepter)).build();
         server.start();
-        
+        nacosToMcpResources.start();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

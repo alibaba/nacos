@@ -10,7 +10,7 @@
 
 ## What does it do
 
-Nacos (official site: [http://nacos.io](http://nacos.io)) is an easy-to-use platform designed for dynamic service discovery and configuration and service management. It helps you to build cloud native applications and microservices platform easily.
+Nacos (official site: [nacos.io](https://nacos.io)) is an easy-to-use platform designed for dynamic service discovery and configuration and service management. It helps you to build cloud native applications and microservices platform easily.
 
 Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html), [Spring Cloud RESTFul service](https://nacos.io/en-us/docs/use-nacos-with-springcloud.html) or [Kubernetes service](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html).
 
@@ -55,7 +55,7 @@ sh startup.sh -m standalone
 
 On the **Windows** platform, run the following command to start server with standalone mode.  Alternatively, you can also double-click the `startup.cmd` to run NacosServer.
 ```
-cmd startup.cmd -m standalone
+startup.cmd -m standalone
 ```
 
 For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.html)
@@ -99,7 +99,7 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
      * commits-nacos@googlegroups.com: Commits notice, very high frequency.
 * Join us from DingDing(Group 1: 21708933(full), Group 2: 30438813). 
 
- ![Nacos](https://img.alicdn.com/tfs/TB1TBKEzpP7gK0jSZFjXXc5aXXa-199-220.png)
+ ![Nacos](https://nacos.io/img/nacos_dingding.jpg)
 
 ## Download
 
@@ -113,8 +113,8 @@ These are only part of the companies using Nacos, for reference only. If you are
 
 ![Alibaba Group](https://docs.alibabagroup.com/assets2/images/en/global/logo_header.png)
 ![虎牙直播](https://a.msstatic.com/huya/main/img/logo.png)
-![ICBC](http://v.icbc.com.cn/userfiles/Resources/ICBC/shouye/images/2017/logo.png)
-![爱奇艺](http://www.iqiyipic.com/common/fix/site-v4/sprite-headLogo-index.png)
+![ICBC](https://v.icbc.com.cn/userfiles/Resources/ICBC/shouye/images/2017/logo.png)
+![爱奇艺](https://www.iqiyipic.com/common/fix/site-v4/sprite-headLogo-index.png)
 ![平安科技](https://img.alicdn.com/tfs/TB1pwi9EwHqK1RjSZJnXXbNLpXa-479-59.png) 
 ![华夏信财](https://img.alicdn.com/tfs/TB1MZWSEzDpK1RjSZFrXXa78VXa-269-69.png)
 ![优客工场](https://www.urwork.cn/public/images/ui/logo.png)
@@ -130,7 +130,7 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![集萃智能](http://www.iimt.org.cn/pic/logosy.png)
 ![Acmedcare+](https://img.alicdn.com/tfs/TB1DZWSEzDpK1RjSZFrXXa78VXa-240-62.png)
 ![吾享](https://w.wuuxiang.com/theme/images/common/logo1.png)
-![北京天合互联信息有限公司](http://14605854.s21i.faiusr.com/4/ABUIABAEGAAg4OvkzwUo8b-qlwUwxQ449gM!300x300.png)
+![北京天合互联信息有限公司](https://14605854.s21i.faiusr.com/4/ABUIABAEGAAg4OvkzwUo8b-qlwUwxQ449gM!300x300.png)
 ![上海密尔克卫化工](http://www.mwclg.com/static-resource/front/images/home/img_logo_nav.png)
 ![大连新唯](https://www.synwe.com/logo-full.png)
 ![立思辰](https://user-images.githubusercontent.com/10215557/51593180-7563af00-1f2c-11e9-95b1-ec2c645d6a0b.png)
@@ -175,5 +175,6 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![天阙](https://img.alicdn.com/tfs/TB1rNq4EwHqK1RjSZFgXXa7JXXa-200-200.jpg)
 ![联合永道](https://img.alicdn.com/tfs/TB1CRAxDxYaK1RjSZFnXXa80pXa-190-190.jpg)
 ![明源云](https://img.alicdn.com/tfs/TB1.q14ErrpK1RjSZTEXXcWAVXa-219-219.jpg)
+![三诺生物](http://www.sinocare.com/public/static/images/logored6000321.png)
 
 

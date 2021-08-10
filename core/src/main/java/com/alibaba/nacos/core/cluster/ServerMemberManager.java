@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -39,7 +41,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.http.HttpStatus;
@@ -81,6 +83,18 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder
             .getNacosAsyncRestTemplate(Loggers.CORE);
     
+    private static final int DEFAULT_SERVER_PORT = 8848;
+    
+    private static final String SERVER_PORT_PROPERTY = "server.port";
+    
+    private static final String MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY = "nacos.member-change-event.queue.size";
+    
+    private static final int DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE = 128;
+    
+    private static boolean isUseAddressServer = false;
+    
+    private static final long DEFAULT_TASK_DELAY_TIME = 5_000L;
+    
     /**
      * Cluster node list.
      */
@@ -89,7 +103,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     /**
      * Is this node in the cluster list.
      */
-    private volatile boolean isInIpList = true;
+    private static volatile boolean isInIpList = true;
     
     /**
      * port.
@@ -130,10 +144,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     protected void init() throws NacosException {
         Loggers.CORE.info("Nacos-related cluster resource initialization");
-        this.port = EnvUtil.getProperty("server.port", Integer.class, 8848);
+        this.port = EnvUtil.getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
+        
+        // init abilities.
+        this.self.setAbilities(initMemberAbilities());
+        
         serverList.put(self.getAddress(), self);
         
         // register NodeChangeEvent publisher to NotifyManager
@@ -149,20 +167,36 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         Loggers.CORE.info("The cluster resource is initialized");
     }
     
+    private ServerAbilities initMemberAbilities() {
+        ServerAbilities serverAbilities = new ServerAbilities();
+        serverAbilities.getRemoteAbility().setSupportRemoteConnection(true);
+        // TODO naming and config ability should build and init by sub module.
+        serverAbilities.getNamingAbility().setSupportJraft(true);
+        return serverAbilities;
+    }
+    
     private void initAndStartLookup() throws NacosException {
         this.lookup = LookupFactory.createLookUp(this);
+        isUseAddressServer = this.lookup.useAddressServer();
         this.lookup.start();
     }
     
+    /**
+     * switch look up.
+     *
+     * @param name look up name.
+     * @throws NacosException exception.
+     */
     public void switchLookup(String name) throws NacosException {
         this.lookup = LookupFactory.switchLookup(name, this);
+        isUseAddressServer = this.lookup.useAddressServer();
         this.lookup.start();
     }
     
     private void registerClusterEvent() {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
-                EnvUtil.getProperty("nacos.member-change-event.queue.size", Integer.class, 128));
+                EnvUtil.getProperty(MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY, Integer.class, DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE));
         
         // The address information of this node needs to be dynamically modified
         // when registering the IP change of this node
@@ -191,6 +225,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         });
     }
     
+    public static boolean isUseAddressServer() {
+        return isUseAddressServer;
+    }
+    
     /**
      * member information update.
      *
@@ -214,7 +252,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             MemberUtil.copy(newMember, member);
             if (isPublishChangeEvent) {
                 // member basic data changes and all listeners need to be notified
-                notifyMemberChange();
+                notifyMemberChange(member);
             }
             return member;
         });
@@ -222,8 +260,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return true;
     }
     
-    void notifyMemberChange() {
-        NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
+    void notifyMemberChange(Member member) {
+        NotifyCenter.publishEvent(MembersChangeEvent.builder()
+                .trigger(member)
+                .members(allMembers())
+                .build());
     }
     
     /**
@@ -234,16 +275,34 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      */
     public boolean hasMember(String address) {
         boolean result = serverList.containsKey(address);
-        if (!result) {
-            // If only IP information is passed in, a fuzzy match is required
-            for (Map.Entry<String, Member> entry : serverList.entrySet()) {
-                if (StringUtils.contains(entry.getKey(), address)) {
-                    result = true;
-                    break;
-                }
+        if (result) {
+            return true;
+        }
+        
+        // If only IP information is passed in, a fuzzy match is required
+        for (Map.Entry<String, Member> entry : serverList.entrySet()) {
+            if (StringUtils.contains(entry.getKey(), address)) {
+                result = true;
+                break;
             }
         }
         return result;
+    }
+    
+    public List<String> getServerListUnhealth() {
+        List<String> unhealthyMembers = new ArrayList<>();
+        for (Member member : this.allMembers()) {
+            NodeState state = member.getState();
+            if (state.equals(NodeState.DOWN)) {
+                unhealthyMembers.add(member.getAddress());
+            }
+            
+        }
+        return unhealthyMembers;
+    }
+    
+    public MemberLookup getLookup() {
+        return lookup;
     }
     
     public Member getSelf() {
@@ -305,12 +364,15 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         for (Member member : members) {
             final String address = member.getAddress();
             
-            if (!serverList.containsKey(address)) {
+            Member existMember = serverList.get(address);
+            if (existMember == null) {
                 hasChange = true;
+                tmpMap.put(address, member);
+            } else {
+                //to keep extendInfo and abilities that report dynamically.
+                tmpMap.put(address, existMember);
             }
             
-            // Ensure that the node is created only once
-            tmpMap.put(address, member);
             if (NodeState.UP.equals(member.getState())) {
                 tmpAddressInfo.add(address);
             }
@@ -381,7 +443,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     public void onApplicationEvent(WebServerInitializedEvent event) {
         getSelf().setState(NodeState.UP);
         if (!EnvUtil.getStandaloneMode()) {
-            GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
+            GlobalExecutor.scheduleByCommon(this.infoReportTask, DEFAULT_TASK_DELAY_TIME);
         }
         EnvUtil.setPort(event.getWebServer().getPort());
         EnvUtil.setLocalAddress(this.localAddress);
@@ -424,7 +486,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return Collections.unmodifiableMap(serverList);
     }
     
-    public boolean isInIpList() {
+    public static boolean isInIpList() {
         return isInIpList;
     }
     
@@ -433,8 +495,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     class MemberInfoReportTask extends Task {
         
-        private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() {
-        };
+        private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() { };
         
         private int cursor = 0;
         
@@ -456,8 +517,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                             "/cluster/report");
             
             try {
+                Header header = Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version);
+                AuthHeaderUtil.addIdentityToHeader(header);
                 asyncRestTemplate
-                        .post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version),
+                        .post(url, header,
                                 Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
                                     @Override
                                     public void onReceive(RestResult<String> result) {
@@ -466,6 +529,31 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                             Loggers.CLUSTER
                                                     .warn("{} version is too low, it is recommended to upgrade the version : {}",
                                                             target, VersionUtils.version);
+                                            Member memberNew = null;
+                                            if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
+                                                memberNew = target.copy();
+                                                // Clean up remote version info.
+                                                // This value may still stay in extend info when remote server has been downgraded to old version.
+                                                memberNew.delExtendVal(MemberMetaDataConstants.VERSION);
+                                                memberNew.delExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE);
+                                                Loggers.CLUSTER.warn("{} : Clean up version info,"
+                                                        + " target has been downgrade to old version.", memberNew);
+                                            }
+                                            if (target.getAbilities() != null
+                                                    && target.getAbilities().getRemoteAbility() != null && target
+                                                    .getAbilities().getRemoteAbility().isSupportRemoteConnection()) {
+                                                if (memberNew == null) {
+                                                    memberNew = target.copy();
+                                                }
+                                                memberNew.getAbilities().getRemoteAbility()
+                                                        .setSupportRemoteConnection(false);
+                                                Loggers.CLUSTER
+                                                        .warn("{} : Clear support remote connection flag,target may rollback version ",
+                                                                memberNew);
+                                            }
+                                            if (memberNew != null) {
+                                                update(memberNew);
+                                            }
                                             return;
                                         }
                                         if (result.ok()) {

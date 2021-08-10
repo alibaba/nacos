@@ -24,12 +24,14 @@ import com.alibaba.nacos.common.http.client.response.JdkHttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.HashMap;
@@ -41,6 +43,8 @@ import java.util.Map;
  * @author mai.jh
  */
 public class JdkHttpClientRequest implements HttpClientRequest {
+    
+    private static final String CONTENT_LENGTH = "Content-Length";
     
     private HttpClientConfig httpClientConfig;
     
@@ -100,10 +104,11 @@ public class JdkHttpClientRequest implements HttpClientRequest {
             if (bodyStr != null) {
                 conn.setDoOutput(true);
                 byte[] b = bodyStr.getBytes();
-                conn.setRequestProperty("Content-Length", String.valueOf(b.length));
-                conn.getOutputStream().write(b, 0, b.length);
-                conn.getOutputStream().flush();
-                conn.getOutputStream().close();
+                conn.setRequestProperty(CONTENT_LENGTH, String.valueOf(b.length));
+                OutputStream outputStream = conn.getOutputStream();
+                outputStream.write(b, 0, b.length);
+                outputStream.flush();
+                IoUtils.closeQuietly(outputStream);
             }
         }
         conn.connect();

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -54,6 +54,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private static final int TRANSACTION_QUERY_TIMEOUT = 5;
     
+    private static final int DB_MASTER_SELECT_THRESHOLD = 1;
+
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
     
     private List<HikariDataSource> dataSourceList = new ArrayList<>();
@@ -103,11 +105,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             try {
                 reload();
             } catch (IOException e) {
-                e.printStackTrace();
+                FATAL_LOG.error("[ExternalDataSourceService] dats source reload error", e);
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
-            
-            ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+
+            if (this.dataSourceList.size() > DB_MASTER_SELECT_THRESHOLD) {
+                ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+            }
             ConfigExecutor.scheduleConfigTask(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
         }
     }
@@ -179,10 +183,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
                     // The master is unhealthy.
-                    return "DOWN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "DOWN:" + InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     // The slave  is unhealthy.
-                    return "WARN:" + IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
+                    return "WARN:" + InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
@@ -215,7 +219,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     masterIndex = index;
                     break;
                 } catch (DataAccessException e) { // read only
-                    e.printStackTrace(); // TODO remove
+                    FATAL_LOG.warn("[master-db] master db access error", e);
                 }
             }
             
@@ -244,10 +248,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         FATAL_LOG.error("[db-error] master db {} down.",
-                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         FATAL_LOG.error("[db-error] slave db {} down.",
-                                IPUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     

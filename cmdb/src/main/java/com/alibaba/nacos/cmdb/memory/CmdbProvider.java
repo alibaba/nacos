@@ -26,17 +26,18 @@ import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.cmdb.service.CmdbWriter;
 import com.alibaba.nacos.cmdb.utils.CmdbExecutor;
 import com.alibaba.nacos.cmdb.utils.Loggers;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +56,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
     
     private CmdbService cmdbService;
     
-    private final ServiceLoader<CmdbService> serviceLoader = ServiceLoader.load(CmdbService.class);
+    private final Collection<CmdbService> services = NacosServiceLoader.load(CmdbService.class);
     
     private Map<String, Map<String, Entity>> entityMap = new ConcurrentHashMap<>();
     
@@ -69,7 +70,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
     }
     
     private void initCmdbService() throws NacosException {
-        Iterator<CmdbService> iterator = serviceLoader.iterator();
+        Iterator<CmdbService> iterator = services.iterator();
         if (iterator.hasNext()) {
             cmdbService = iterator.next();
         }

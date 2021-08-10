@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.utils;
 
+import java.util.Set;
+
 /**
  * Value Convert Utils.
  *
@@ -24,6 +26,10 @@ package com.alibaba.nacos.common.utils;
 public final class ConvertUtils {
     
     private static final String NULL_STR = "null";
+    
+    public static final Set<String> TRUE_SET = CollectionUtils.set("y", "yes", "on", "true", "t");
+    
+    public static final Set<String> FALSE_SET = CollectionUtils.set("n", "no", "off", "false", "f");
     
     /**
      * Convert String value to int value if parameter value is legal. And it automatically defaults to 0 if parameter
@@ -56,6 +62,20 @@ public final class ConvertUtils {
         } catch (NumberFormatException exception) {
             return defaultValue;
         }
+    }
+    
+    /**
+     * Convert Object value to long value if parameter value is legal.
+     * And it automatically defaults to 0 if parameter value is null or other object.
+     *
+     * @param val object value
+     * @return Converted long value and its default value is 0.
+     */
+    public static long toLong(Object val) {
+        if (val instanceof Long) {
+            return (Long) val;
+        }
+        return toLong(val.toString());
     }
     
     /**
@@ -100,11 +120,7 @@ public final class ConvertUtils {
         if (StringUtils.isBlank(val)) {
             return defaultValue;
         }
-        try {
-            return Boolean.parseBoolean(val);
-        } catch (NumberFormatException exception) {
-            return defaultValue;
-        }
+        return Boolean.parseBoolean(val);
     }
     
     //   The following utility functions are extracted from <link>org.apache.commons.lang3</link>
@@ -175,72 +191,13 @@ public final class ConvertUtils {
      */
     @SuppressWarnings("all")
     public static Boolean toBooleanObject(String str) {
-        if (str == "true") {
-            return Boolean.TRUE;
-        } else if (str == null) {
-            return null;
+        String formatStr = (str == null ? StringUtils.EMPTY : str).toLowerCase();
+    
+        if (TRUE_SET.contains(formatStr)) {
+            return true;
+        } else if (FALSE_SET.contains(formatStr)) {
+            return false;
         } else {
-            char ch0;
-            char ch1;
-            char ch2;
-            char ch3;
-            switch (str.length()) {
-                case 1:
-                    ch0 = str.charAt(0);
-                    if (ch0 == 'y' || ch0 == 'Y' || ch0 == 't' || ch0 == 'T') {
-                        return Boolean.TRUE;
-                    }
-                    
-                    if (ch0 != 'n' && ch0 != 'N' && ch0 != 'f' && ch0 != 'F') {
-                        break;
-                    }
-                    
-                    return Boolean.FALSE;
-                case 2:
-                    ch0 = str.charAt(0);
-                    ch1 = str.charAt(1);
-                    if ((ch0 == 'o' || ch0 == 'O') && (ch1 == 'n' || ch1 == 'N')) {
-                        return Boolean.TRUE;
-                    }
-                    
-                    if ((ch0 == 'n' || ch0 == 'N') && (ch1 == 'o' || ch1 == 'O')) {
-                        return Boolean.FALSE;
-                    }
-                    break;
-                case 3:
-                    ch0 = str.charAt(0);
-                    ch1 = str.charAt(1);
-                    ch2 = str.charAt(2);
-                    if ((ch0 == 'y' || ch0 == 'Y') && (ch1 == 'e' || ch1 == 'E') && (ch2 == 's' || ch2 == 'S')) {
-                        return Boolean.TRUE;
-                    }
-                    
-                    if ((ch0 == 'o' || ch0 == 'O') && (ch1 == 'f' || ch1 == 'F') && (ch2 == 'f' || ch2 == 'F')) {
-                        return Boolean.FALSE;
-                    }
-                    break;
-                case 4:
-                    ch0 = str.charAt(0);
-                    ch1 = str.charAt(1);
-                    ch2 = str.charAt(2);
-                    ch3 = str.charAt(3);
-                    if ((ch0 == 't' || ch0 == 'T') && (ch1 == 'r' || ch1 == 'R') && (ch2 == 'u' || ch2 == 'U') && (
-                            ch3 == 'e' || ch3 == 'E')) {
-                        return Boolean.TRUE;
-                    }
-                    break;
-                case 5:
-                    ch0 = str.charAt(0);
-                    ch1 = str.charAt(1);
-                    ch2 = str.charAt(2);
-                    ch3 = str.charAt(3);
-                    char ch4 = str.charAt(4);
-                    if ((ch0 == 'f' || ch0 == 'F') && (ch1 == 'a' || ch1 == 'A') && (ch2 == 'l' || ch2 == 'L') && (
-                            ch3 == 's' || ch3 == 'S') && (ch4 == 'e' || ch4 == 'E')) {
-                        return Boolean.FALSE;
-                    }
-            }
-            
             return null;
         }
     }

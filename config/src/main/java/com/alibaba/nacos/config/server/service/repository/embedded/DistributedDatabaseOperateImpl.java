@@ -28,6 +28,7 @@ import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionDistributedEmbedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -59,7 +60,6 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
@@ -205,7 +205,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         NotifyCenter.registerToPublisher(ConfigDumpEvent.class, NotifyCenter.ringBufferSize);
         NotifyCenter.registerSubscriber(new DumpConfigHandler());
         
-        this.protocol.addLogProcessors(Collections.singletonList(this));
+        this.protocol.addRequestProcessors(Collections.singletonList(this));
         LogUtil.DEFAULT_LOG.info("use DistributedTransactionServicesImpl");
     }
     
@@ -390,7 +390,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     if (submit) {
                         List<ModifyRequest> requests = batchUpdate.stream().map(ModifyRequest::new)
                                 .collect(Collectors.toList());
-                        CompletableFuture<Response> future = protocol.submitAsync(WriteRequest.newBuilder().setGroup(group())
+                        CompletableFuture<Response> future = protocol.writeAsync(WriteRequest.newBuilder().setGroup(group())
                                 .setData(ByteString.copyFrom(serializer.serialize(requests)))
                                 .putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString()).build());
                         futures.add(future);
@@ -406,7 +406,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                 }
                 return RestResultUtils.success();
             } catch (Throwable ex) {
-                LogUtil.DEFAULT_LOG.error("data import has error : {}", ex);
+                LogUtil.DEFAULT_LOG.error("data import has error :", ex);
                 return RestResultUtils.failed(ex.getMessage());
             }
         });
@@ -432,14 +432,14 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     .putAllExtendInfo(EmbeddedStorageContextUtils.getCurrentExtendInfo())
                     .setType(sqlContext.getClass().getCanonicalName()).build();
             if (Objects.isNull(consumer)) {
-                Response response = this.protocol.submit(request);
+                Response response = this.protocol.write(request);
                 if (response.getSuccess()) {
                     return true;
                 }
                 LogUtil.DEFAULT_LOG.error("execute sql modify operation failed : {}", response.getErrMsg());
                 return false;
             } else {
-                this.protocol.submitAsync(request).whenComplete((BiConsumer<Response, Throwable>) (response, ex) -> {
+                this.protocol.writeAsync(request).whenComplete((BiConsumer<Response, Throwable>) (response, ex) -> {
                     String errMsg = Objects.isNull(ex) ? response.getErrMsg() : ExceptionUtil.getCause(ex).getMessage();
                     consumer.accept(response.getSuccess(),
                             StringUtils.isBlank(errMsg) ? null : new NJdbcException(errMsg));
@@ -539,8 +539,6 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
         } catch (DataAccessException e) {
             throw new ConsistencyException(e.toString());
-        } catch (Throwable t) {
-            throw t;
         } finally {
             lock.unlock();
         }

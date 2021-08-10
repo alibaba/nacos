@@ -60,6 +60,11 @@ public final class ConfigExecutor {
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
                     new NameThreadFactory("com.alibaba.nacos.config.LongPolling"));
     
+    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
+                    ThreadUtils.getSuitableThreadCount(),
+                    new NameThreadFactory("com.alibaba.nacos.config.server.remote.ConfigChangeNotifier"));
+    
     public static void scheduleConfigTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
@@ -84,8 +89,16 @@ public final class ConfigExecutor {
         return ((ScheduledThreadPoolExecutor) ASYNC_NOTIFY_EXECUTOR).getQueue().size();
     }
     
+    public static int asyncCofigChangeClientNotifyQueueSize() {
+        return ((ScheduledThreadPoolExecutor) ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR).getQueue().size();
+    }
+    
     public static ScheduledExecutorService getConfigSubServiceExecutor() {
         return CONFIG_SUB_SERVICE_EXECUTOR;
+    }
+    
+    public static ScheduledExecutorService getClientConfigNotifierServiceExecutor() {
+        return ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR;
     }
     
     public static void scheduleLongPolling(Runnable runnable, long initialDelay, long period, TimeUnit unit) {

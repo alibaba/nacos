@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.utils;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,19 @@ import java.nio.charset.CharsetDecoder;
  * @author configCenter
  */
 public class ConcurrentDiskUtil {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentDiskUtil.class);
+    
+    static final int RETRY_COUNT = 10;
+    
+    /**
+     * ms.
+     */
+    static final int SLEEP_BASETIME = 10;
+    
+    private static final String READ_ONLY = "r";
+    
+    private static final String READ_WRITE = "rw";
     
     /**
      * get file content.
@@ -62,7 +76,7 @@ public class ConcurrentDiskUtil {
         RandomAccessFile fis = null;
         FileLock rlock = null;
         try {
-            fis = new RandomAccessFile(file, "r");
+            fis = new RandomAccessFile(file, READ_ONLY);
             FileChannel fcin = fis.getChannel();
             int i = 0;
             do {
@@ -89,7 +103,7 @@ public class ConcurrentDiskUtil {
                 rlock = null;
             }
             if (fis != null) {
-                fis.close();
+                IoUtils.closeQuietly(fis);
                 fis = null;
             }
         }
@@ -129,7 +143,7 @@ public class ConcurrentDiskUtil {
         FileLock lock = null;
         RandomAccessFile raf = null;
         try {
-            raf = new RandomAccessFile(file, "rw");
+            raf = new RandomAccessFile(file, READ_WRITE);
             channel = raf.getChannel();
             int i = 0;
             do {
@@ -208,13 +222,4 @@ public class ConcurrentDiskUtil {
             LOGGER.warn("sleep wrong", e);
         }
     }
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentDiskUtil.class);
-    
-    static final int RETRY_COUNT = 10;
-    
-    /**
-     * ms.
-     */
-    static final int SLEEP_BASETIME = 10;
 }

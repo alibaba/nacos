@@ -17,47 +17,75 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
+import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
-import com.alibaba.nacos.client.config.http.HttpAgent;
+import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
-import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
+import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
-import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
-import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
+import static com.alibaba.nacos.api.common.Constants.ENCODE;
 
 /**
  * Long polling.
@@ -68,6 +96,40 @@ public class ClientWorker implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
+    private static final String NOTIFY_HEADER = "notify";
+    
+    private static final String TAG_PARAM = "tag";
+    
+    private static final String APP_NAME_PARAM = "appName";
+    
+    private static final String BETAIPS_PARAM = "betaIps";
+    
+    private static final String TYPE_PARAM = "type";
+    
+    private static final String ENCRYPTED_DATA_KEY_PARAM = "encryptedDataKey";
+    
+    private static final String DEFAULT_RESOURCE = "";
+    
+    /**
+     * groupKey -> cacheData.
+     */
+    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
+            new HashMap<String, CacheData>());
+    
+    private final ConfigFilterChainManager configFilterChainManager;
+    
+    private boolean isHealthServer = true;
+    
+    private String uuid = UUID.randomUUID().toString();
+    
+    private long timeout;
+    
+    private ConfigTransportClient agent;
+    
+    private int taskPenaltyTime;
+    
+    private boolean enableRemoteSyncConfig = false;
+    
     /**
      * Add listeners for data.
      *
@@ -76,28 +138,16 @@ public class ClientWorker implements Closeable {
      * @param listeners listeners
      */
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
-        for (Listener listener : listeners) {
-            cache.addListener(listener);
-        }
-    }
-    
-    /**
-     * Remove listener.
-     *
-     * @param dataId   dataId of data
-     * @param group    group of data
-     * @param listener listener
-     */
-    public void removeListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
-        CacheData cache = getCache(dataId, group);
-        if (null != cache) {
-            cache.removeListener(listener);
-            if (cache.getListeners().isEmpty()) {
-                removeCache(dataId, group);
+        synchronized (cache) {
+            
+            for (Listener listener : listeners) {
+                cache.addListener(listener);
             }
+            cache.setSyncWithServer(false);
+            agent.notifyListenConfig();
+            
         }
     }
     
@@ -111,12 +161,17 @@ public class ClientWorker implements Closeable {
      */
     public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners)
             throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
-        for (Listener listener : listeners) {
-            cache.addListener(listener);
+        synchronized (cache) {
+            for (Listener listener : listeners) {
+                cache.addListener(listener);
+            }
+            cache.setSyncWithServer(false);
+            agent.notifyListenConfig();
         }
+        
     }
     
     /**
@@ -130,12 +185,39 @@ public class ClientWorker implements Closeable {
      */
     public void addTenantListenersWithContent(String dataId, String group, String content,
             List<? extends Listener> listeners) throws NacosException {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
-        cache.setContent(content);
-        for (Listener listener : listeners) {
-            cache.addListener(listener);
+        synchronized (cache) {
+            cache.setContent(content);
+            for (Listener listener : listeners) {
+                cache.addListener(listener);
+            }
+            cache.setSyncWithServer(false);
+            agent.notifyListenConfig();
+        }
+        
+    }
+    
+    /**
+     * Remove listener.
+     *
+     * @param dataId   dataId of data
+     * @param group    group of data
+     * @param listener listener
+     */
+    public void removeListener(String dataId, String group, Listener listener) {
+        group = blank2defaultGroup(group);
+        CacheData cache = getCache(dataId, group);
+        if (null != cache) {
+            synchronized (cache) {
+                cache.removeListener(listener);
+                if (cache.getListeners().isEmpty()) {
+                    cache.setSyncWithServer(false);
+                    agent.removeCache(dataId, group);
+                }
+            }
+            
         }
     }
     
@@ -147,30 +229,77 @@ public class ClientWorker implements Closeable {
      * @param listener listener
      */
     public void removeTenantListener(String dataId, String group, Listener listener) {
-        group = null2defaultGroup(group);
+        group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
-            cache.removeListener(listener);
-            if (cache.getListeners().isEmpty()) {
-                removeCache(dataId, group, tenant);
+            synchronized (cache) {
+                cache.removeListener(listener);
+                if (cache.getListeners().isEmpty()) {
+                    cache.setSyncWithServer(false);
+                    agent.removeCache(dataId, group);
+                }
             }
         }
     }
     
     private void removeCache(String dataId, String group) {
         String groupKey = GroupKey.getKey(dataId, group);
-        cacheMap.remove(groupKey);
+        synchronized (cacheMap) {
+            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+            copy.remove(groupKey);
+            cacheMap.set(copy);
+        }
         LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
+        
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
     
     void removeCache(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
-        cacheMap.remove(groupKey);
+        synchronized (cacheMap) {
+            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+            copy.remove(groupKey);
+            cacheMap.set(copy);
+        }
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+    }
+    
+    /**
+     * remove config.
+     *
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @param tag    tag.
+     * @return success or not.
+     * @throws NacosException exception to throw.
+     */
+    public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
+        return agent.removeConfig(dataId, group, tenant, tag);
+    }
+    
+    /**
+     * publish config.
+     *
+     * @param dataId  dataId.
+     * @param group   group.
+     * @param tenant  tenant.
+     * @param appName appName.
+     * @param tag     tag.
+     * @param betaIps betaIps.
+     * @param content content.
+     * @param casMd5  casMd5.
+     * @param type    type.
+     * @return success or not.
+     * @throws NacosException exception throw.
+     */
+    public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
+            String content, String encryptedDataKey, String casMd5, String type) throws NacosException {
+        return agent
+                .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5, type);
     }
     
     /**
@@ -181,27 +310,37 @@ public class ClientWorker implements Closeable {
      * @return cache data
      */
     public CacheData addCacheDataIfAbsent(String dataId, String group) {
-        String key = GroupKey.getKey(dataId, group);
-        CacheData cacheData = cacheMap.get(key);
-        if (cacheData != null) {
-            return cacheData;
+        CacheData cache = getCache(dataId, group);
+        if (null != cache) {
+            return cache;
         }
         
-        cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
-        // multiple listeners on the same dataid+group and race condition
-        CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
-        if (lastCacheData == null) {
-            int taskId = cacheMap.size() / (int) ParamUtil.getPerTaskConfigSize();
-            lastCacheData = cacheData;
-            lastCacheData.setTaskId(taskId);
+        String key = GroupKey.getKey(dataId, group);
+        cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
+        
+        synchronized (cacheMap) {
+            CacheData cacheFromMap = getCache(dataId, group);
+            // multiple listeners on the same dataid+group and race condition,so double check again
+            //other listener thread beat me to set to cacheMap
+            if (null != cacheFromMap) {
+                cache = cacheFromMap;
+                //reset so that server not hang this check
+                cache.setInitializing(true);
+            } else {
+                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
+                cache.setTaskId(taskId);
+            }
+            
+            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+            copy.put(key, cache);
+            cacheMap.set(copy);
         }
-        // reset so that server not hang this check
-        lastCacheData.setInitializing(true);
-    
+        
         LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
-    
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
-        return lastCacheData;
+        
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        
+        return cache;
     }
     
     /**
@@ -213,33 +352,40 @@ public class ClientWorker implements Closeable {
      * @return cache data
      */
     public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
+        CacheData cache = getCache(dataId, group, tenant);
+        if (null != cache) {
+            return cache;
+        }
         String key = GroupKey.getKeyTenant(dataId, group, tenant);
-        CacheData cacheData = cacheMap.get(key);
-        if (cacheData != null) {
-            return cacheData;
-        }
-    
-        cacheData = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
-        // multiple listeners on the same dataid+group and race condition
-        CacheData lastCacheData = cacheMap.putIfAbsent(key, cacheData);
-        if (lastCacheData == null) {
-            //fix issue # 1317
-            if (enableRemoteSyncConfig) {
-                String[] ct = getServerConfig(dataId, group, tenant, 3000L);
-                cacheData.setContent(ct[0]);
+        synchronized (cacheMap) {
+            CacheData cacheFromMap = getCache(dataId, group, tenant);
+            // multiple listeners on the same dataid+group and race condition,so
+            // double check again
+            // other listener thread beat me to set to cacheMap
+            if (null != cacheFromMap) {
+                cache = cacheFromMap;
+                // reset so that server not hang this check
+                cache.setInitializing(true);
+            } else {
+                cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
+                cache.setTaskId(taskId);
+                // fix issue # 1317
+                if (enableRemoteSyncConfig) {
+                    ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L, false);
+                    cache.setContent(response.getContent());
+                }
             }
-            int taskId = cacheMap.size() / (int) ParamUtil.getPerTaskConfigSize();
-            cacheData.setTaskId(taskId);
-            lastCacheData = cacheData;
+            
+            Map<String, CacheData> copy = new HashMap<String, CacheData>(this.cacheMap.get());
+            copy.put(key, cache);
+            cacheMap.set(copy);
         }
-        
-        // reset so that server not hang this check
-        lastCacheData.setInitializing(true);
-        
         LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.size());
         
-        return lastCacheData;
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        
+        return cache;
     }
     
     public CacheData getCache(String dataId, String group) {
@@ -250,79 +396,25 @@ public class ClientWorker implements Closeable {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException();
         }
-        return cacheMap.get(GroupKey.getKeyTenant(dataId, group, tenant));
+        return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
-    public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
+    public ConfigResponse getServerConfig(String dataId, String group, String tenant, long readTimeout, boolean notify)
             throws NacosException {
-        String[] ct = new String[2];
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
-        
-        HttpRestResult<String> result = null;
-        try {
-            Map<String, String> params = new HashMap<String, String>(3);
-            if (StringUtils.isBlank(tenant)) {
-                params.put("dataId", dataId);
-                params.put("group", group);
-            } else {
-                params.put("dataId", dataId);
-                params.put("group", group);
-                params.put("tenant", tenant);
-            }
-            result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
-        } catch (Exception ex) {
-            String message = String
-                    .format("[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s",
-                            agent.getName(), dataId, group, tenant);
-            LOGGER.error(message, ex);
-            throw new NacosException(NacosException.SERVER_ERROR, ex);
-        }
-        
-        switch (result.getCode()) {
-            case HttpURLConnection.HTTP_OK:
-                LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.getData());
-                ct[0] = result.getData();
-                if (result.getHeader().getValue(CONFIG_TYPE) != null) {
-                    ct[1] = result.getHeader().getValue(CONFIG_TYPE);
-                } else {
-                    ct[1] = ConfigType.TEXT.getType();
-                }
-                return ct;
-            case HttpURLConnection.HTTP_NOT_FOUND:
-                LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
-                return ct;
-            case HttpURLConnection.HTTP_CONFLICT: {
-                LOGGER.error(
-                        "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
-                                + "tenant={}", agent.getName(), dataId, group, tenant);
-                throw new NacosException(NacosException.CONFLICT,
-                        "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
-            }
-            case HttpURLConnection.HTTP_FORBIDDEN: {
-                LOGGER.error("[{}] [sub-server-error] no right, dataId={}, group={}, tenant={}", agent.getName(),
-                        dataId, group, tenant);
-                throw new NacosException(result.getCode(), result.getMessage());
-            }
-            default: {
-                LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(),
-                        dataId, group, tenant, result.getCode());
-                throw new NacosException(result.getCode(),
-                        "http error, code=" + result.getCode() + ",dataId=" + dataId + ",group=" + group + ",tenant="
-                                + tenant);
-            }
-        }
+        return this.agent.queryConfig(dataId, group, tenant, readTimeout, notify);
     }
     
-    private void checkLocalConfig(CacheData cacheData) {
+    private void checkLocalConfig(String agentName, CacheData cacheData) {
         final String dataId = cacheData.dataId;
         final String group = cacheData.group;
         final String tenant = cacheData.tenant;
-        File path = LocalConfigInfoProcessor.getFailoverFile(agent.getName(), dataId, group, tenant);
+        File path = LocalConfigInfoProcessor.getFailoverFile(agentName, dataId, group, tenant);
         
         if (!cacheData.isUseLocalConfigInfo() && path.exists()) {
-            String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
+            String content = LocalConfigInfoProcessor.getFailover(agentName, dataId, group, tenant);
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
@@ -330,14 +422,14 @@ public class ClientWorker implements Closeable {
             
             LOGGER.warn(
                     "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                    agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                    agentName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             return;
         }
         
         // If use local config info, then it doesn't notify business listener and notify after getting from server.
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
-            LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agent.getName(),
+            LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agentName,
                     dataId, group, tenant);
             return;
         }
@@ -345,201 +437,68 @@ public class ClientWorker implements Closeable {
         // When it changed.
         if (cacheData.isUseLocalConfigInfo() && path.exists() && cacheData.getLocalConfigInfoVersion() != path
                 .lastModified()) {
-            String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
+            String content = LocalConfigInfoProcessor.getFailover(agentName, dataId, group, tenant);
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
             LOGGER.warn(
                     "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                    agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                    agentName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
         }
     }
     
-    private String null2defaultGroup(String group) {
-        return (null == group) ? Constants.DEFAULT_GROUP : group.trim();
-    }
-    
-    /**
-     * Check config info.
-     */
-    public void checkConfigInfo() {
-        // Dispatch taskes.
-        int listenerSize = cacheMap.size();
-        // Round up the longingTaskCount.
-        int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
-        if (longingTaskCount > currentLongingTaskCount) {
-            for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
-                // The task list is no order.So it maybe has issues when changing.
-                executorService.execute(new LongPollingRunnable(i));
-            }
-            currentLongingTaskCount = longingTaskCount;
-        }
-    }
-    
-    /**
-     * Fetch the dataId list from server.
-     *
-     * @param cacheDatas              CacheDatas for config infomations.
-     * @param inInitializingCacheList initial cache lists.
-     * @return String include dataId and group (ps: it maybe null).
-     * @throws Exception Exception.
-     */
-    List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        for (CacheData cacheData : cacheDatas) {
-            if (!cacheData.isUseLocalConfigInfo()) {
-                sb.append(cacheData.dataId).append(WORD_SEPARATOR);
-                sb.append(cacheData.group).append(WORD_SEPARATOR);
-                if (StringUtils.isBlank(cacheData.tenant)) {
-                    sb.append(cacheData.getMd5()).append(LINE_SEPARATOR);
-                } else {
-                    sb.append(cacheData.getMd5()).append(WORD_SEPARATOR);
-                    sb.append(cacheData.getTenant()).append(LINE_SEPARATOR);
-                }
-                if (cacheData.isInitializing()) {
-                    // It updates when cacheData occours in cacheMap by first time.
-                    inInitializingCacheList
-                            .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
-                }
-            }
-        }
-        boolean isInitializingCacheList = !inInitializingCacheList.isEmpty();
-        return checkUpdateConfigStr(sb.toString(), isInitializingCacheList);
-    }
-    
-    /**
-     * Fetch the updated dataId list from server.
-     *
-     * @param probeUpdateString       updated attribute string value.
-     * @param isInitializingCacheList initial cache lists.
-     * @return The updated dataId list(ps: it maybe null).
-     * @throws IOException Exception.
-     */
-    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws Exception {
-        
-        Map<String, String> params = new HashMap<String, String>(2);
-        params.put(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
-        Map<String, String> headers = new HashMap<String, String>(2);
-        headers.put("Long-Pulling-Timeout", "" + timeout);
-        
-        // told server do not hang me up if new initializing cacheData added in
-        if (isInitializingCacheList) {
-            headers.put("Long-Pulling-Timeout-No-Hangup", "true");
-        }
-        
-        if (StringUtils.isBlank(probeUpdateString)) {
-            return Collections.emptyList();
-        }
-        
-        try {
-            // In order to prevent the server from handling the delay of the client's long task,
-            // increase the client's read timeout to avoid this problem.
-            
-            long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
-            HttpRestResult<String> result = agent
-                    .httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params, agent.getEncode(),
-                            readTimeoutMs);
-            
-            if (result.ok()) {
-                setHealthServer(true);
-                return parseUpdateDataIdResponse(result.getData());
-            } else {
-                setHealthServer(false);
-                LOGGER.error("[{}] [check-update] get changed dataId error, code: {}", agent.getName(),
-                        result.getCode());
-            }
-        } catch (Exception e) {
-            setHealthServer(false);
-            LOGGER.error("[" + agent.getName() + "] [check-update] get changed dataId exception", e);
-            throw e;
-        }
-        return Collections.emptyList();
-    }
-    
-    /**
-     * Get the groupKey list from the http response.
-     *
-     * @param response Http response.
-     * @return GroupKey List, (ps: it maybe null).
-     */
-    private List<String> parseUpdateDataIdResponse(String response) {
-        if (StringUtils.isBlank(response)) {
-            return Collections.emptyList();
-        }
-        
-        try {
-            response = URLDecoder.decode(response, "UTF-8");
-        } catch (Exception e) {
-            LOGGER.error("[" + agent.getName() + "] [polling-resp] decode modifiedDataIdsString error", e);
-        }
-        
-        List<String> updateList = new LinkedList<String>();
-        
-        for (String dataIdAndGroup : response.split(LINE_SEPARATOR)) {
-            if (!StringUtils.isBlank(dataIdAndGroup)) {
-                String[] keyArr = dataIdAndGroup.split(WORD_SEPARATOR);
-                String dataId = keyArr[0];
-                String group = keyArr[1];
-                if (keyArr.length == 2) {
-                    updateList.add(GroupKey.getKey(dataId, group));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}", agent.getName(), dataId,
-                            group);
-                } else if (keyArr.length == 3) {
-                    String tenant = keyArr[2];
-                    updateList.add(GroupKey.getKeyTenant(dataId, group, tenant));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", agent.getName(),
-                            dataId, group, tenant);
-                } else {
-                    LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", agent.getName(),
-                            dataIdAndGroup);
-                }
-            }
-        }
-        return updateList;
+    private String blank2defaultGroup(String group) {
+        return StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager,
-            final Properties properties) {
-        this.agent = agent;
+    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ServerListManager serverListManager,
+            final Properties properties) throws NacosException {
         this.configFilterChainManager = configFilterChainManager;
-        
-        // Initialize the timeout parameter
         
         init(properties);
         
-        this.executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
+        agent = new ConfigRpcTransportClient(properties, serverListManager);
         
-        this.executorService = Executors
-                .newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread t = new Thread(r);
-                        t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
-                        t.setDaemon(true);
-                        return t;
-                    }
+        ScheduledExecutorService executorService = Executors
+                .newScheduledThreadPool(ThreadUtils.getSuitableThreadCount(1), r -> {
+                    Thread t = new Thread(r);
+                    t.setName("com.alibaba.nacos.client.Worker");
+                    t.setDaemon(true);
+                    return t;
                 });
+        agent.setExecutor(executorService);
+        agent.start();
         
-        this.executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkConfigInfo();
-                } catch (Throwable e) {
-                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-                }
+    }
+    
+    private void refreshContentAndCheck(String groupKey, boolean notify) {
+        if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
+            CacheData cache = cacheMap.get().get(groupKey);
+            refreshContentAndCheck(cache, notify);
+        }
+    }
+    
+    private void refreshContentAndCheck(CacheData cacheData, boolean notify) {
+        try {
+            ConfigResponse response = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L,
+                    notify);
+            cacheData.setContent(response.getContent());
+            cacheData.setEncryptedDataKey(response.getEncryptedDataKey());
+            if (null != response.getConfigType()) {
+                cacheData.setType(response.getConfigType());
             }
-        }, 1L, 10L, TimeUnit.MILLISECONDS);
+            if (notify) {
+                LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
+                        agent.getName(), cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.getMd5(),
+                        ContentUtils.truncateContent(response.getContent()), response.getConfigType());
+            }
+            cacheData.checkListenerMd5();
+        } catch (Exception e) {
+            LOGGER.error("refresh content and check md5 fail ,dataId={},group={},tenant={} ", cacheData.dataId,
+                    cacheData.group, cacheData.tenant, e);
+        }
     }
     
     private void init(Properties properties) {
@@ -554,93 +513,54 @@ public class ClientWorker implements Closeable {
                 .parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
     }
     
+    private Map<String, Object> getMetrics(List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
+        Map<String, Object> metric = new HashMap<>(16);
+        metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
+        metric.put("clientVersion", VersionUtils.getFullClientVersion());
+        metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
+        boolean isFixServer = agent.serverListManager.isFixed;
+        metric.put("isFixedServer", isFixServer);
+        metric.put("addressUrl", agent.serverListManager.addressServerUrl);
+        metric.put("serverUrls", agent.serverListManager.getUrlString());
+        
+        Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
+        metric.put("metricValues", metricValues);
+        Map<String, Object> metrics = new HashMap<String, Object>(1);
+        metrics.put(uuid, JacksonUtils.toJson(metric));
+        return metrics;
+    }
+    
+    private Map<ClientConfigMetricRequest.MetricsKey, Object> getMetricsValue(
+            List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
+        if (metricsKeys == null) {
+            return null;
+        }
+        Map<ClientConfigMetricRequest.MetricsKey, Object> values = new HashMap<>(16);
+        for (ClientConfigMetricRequest.MetricsKey metricsKey : metricsKeys) {
+            if (ClientConfigMetricRequest.MetricsKey.CACHE_DATA.equals(metricsKey.getType())) {
+                CacheData cacheData = cacheMap.get().get(metricsKey.getKey());
+                values.putIfAbsent(metricsKey,
+                        cacheData == null ? null : cacheData.getContent() + ":" + cacheData.getMd5());
+            }
+            if (ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA.equals(metricsKey.getType())) {
+                String[] configStr = GroupKey.parseKey(metricsKey.getKey());
+                String snapshot = LocalConfigInfoProcessor
+                        .getSnapshot(this.agent.getName(), configStr[0], configStr[1], configStr[2]);
+                values.putIfAbsent(metricsKey,
+                        snapshot == null ? null : snapshot + ":" + MD5Utils.md5Hex(snapshot, ENCODE));
+            }
+        }
+        return values;
+    }
+    
     @Override
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(executorService, LOGGER);
-        ThreadUtils.shutdownThreadPool(executor, LOGGER);
+        if (agent != null) {
+            agent.shutdown();
+        }
         LOGGER.info("{} do shutdown stop", className);
-    }
-    
-    class LongPollingRunnable implements Runnable {
-        
-        private final int taskId;
-        
-        public LongPollingRunnable(int taskId) {
-            this.taskId = taskId;
-        }
-        
-        @Override
-        public void run() {
-            
-            List<CacheData> cacheDatas = new ArrayList<CacheData>();
-            List<String> inInitializingCacheList = new ArrayList<String>();
-            try {
-                // check failover config
-                for (CacheData cacheData : cacheMap.values()) {
-                    if (cacheData.getTaskId() == taskId) {
-                        cacheDatas.add(cacheData);
-                        try {
-                            checkLocalConfig(cacheData);
-                            if (cacheData.isUseLocalConfigInfo()) {
-                                cacheData.checkListenerMd5();
-                            }
-                        } catch (Exception e) {
-                            LOGGER.error("get local config info error", e);
-                        }
-                    }
-                }
-                
-                // check server config
-                List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
-                if (!CollectionUtils.isEmpty(changedGroupKeys)) {
-                    LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
-                }
-                
-                for (String groupKey : changedGroupKeys) {
-                    String[] key = GroupKey.parseKey(groupKey);
-                    String dataId = key[0];
-                    String group = key[1];
-                    String tenant = null;
-                    if (key.length == 3) {
-                        tenant = key[2];
-                    }
-                    try {
-                        String[] ct = getServerConfig(dataId, group, tenant, 3000L);
-                        CacheData cache = cacheMap.get(GroupKey.getKeyTenant(dataId, group, tenant));
-                        cache.setContent(ct[0]);
-                        if (null != ct[1]) {
-                            cache.setType(ct[1]);
-                        }
-                        LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
-                                agent.getName(), dataId, group, tenant, cache.getMd5(),
-                                ContentUtils.truncateContent(ct[0]), ct[1]);
-                    } catch (NacosException ioe) {
-                        String message = String
-                                .format("[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",
-                                        agent.getName(), dataId, group, tenant);
-                        LOGGER.error(message, ioe);
-                    }
-                }
-                for (CacheData cacheData : cacheDatas) {
-                    if (!cacheData.isInitializing() || inInitializingCacheList
-                            .contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant))) {
-                        cacheData.checkListenerMd5();
-                        cacheData.setInitializing(false);
-                    }
-                }
-                inInitializingCacheList.clear();
-                
-                executorService.execute(this);
-                
-            } catch (Throwable e) {
-                
-                // If the rotation training task is abnormal, the next execution time of the task will be punished
-                LOGGER.error("longPolling error : ", e);
-                executorService.schedule(this, taskPenaltyTime, TimeUnit.MILLISECONDS);
-            }
-        }
     }
     
     public boolean isHealthServer() {
@@ -651,26 +571,577 @@ public class ClientWorker implements Closeable {
         this.isHealthServer = isHealthServer;
     }
     
-    final ScheduledExecutorService executor;
+    public class ConfigRpcTransportClient extends ConfigTransportClient {
+        
+        private final BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<Object>(1);
+        
+        private Object bellItem = new Object();
+        
+        private long lastAllSyncTime = System.currentTimeMillis();
+        
+        /**
+         * 5 minutes to check all listen cache keys.
+         */
+        private static final long ALL_SYNC_INTERNAL = 5 * 60 * 1000L;
+        
+        public ConfigRpcTransportClient(Properties properties, ServerListManager serverListManager) {
+            super(properties, serverListManager);
+        }
+        
+        private ConnectionType getConnectionType() {
+            return ConnectionType.GRPC;
+            
+        }
+        
+        @Override
+        public void shutdown() {
+            synchronized (RpcClientFactory.getAllClientEntries()) {
+                LOGGER.info("Trying to shutdown transport client " + this);
+                Set<Map.Entry<String, RpcClient>> allClientEntries = RpcClientFactory.getAllClientEntries();
+                Iterator<Map.Entry<String, RpcClient>> iterator = allClientEntries.iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<String, RpcClient> entry = iterator.next();
+                    if (entry.getKey().startsWith(uuid)) {
+                        LOGGER.info("Trying to shutdown rpc client " + entry.getKey());
+                        
+                        try {
+                            entry.getValue().shutdown();
+                        } catch (NacosException nacosException) {
+                            nacosException.printStackTrace();
+                        }
+                        LOGGER.info("Remove rpc client " + entry.getKey());
+                        iterator.remove();
+                    }
+                }
+                
+                LOGGER.info("Shutdown executor " + executor);
+                executor.shutdown();
+                Map<String, CacheData> stringCacheDataMap = cacheMap.get();
+                for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
+                    entry.getValue().setSyncWithServer(false);
+                }
+            }
+            
+        }
+        
+        private Map<String, String> getLabels() {
+            
+            Map<String, String> labels = new HashMap<String, String>(2, 1);
+            labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
+            labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
+            labels.put(Constants.APPNAME, AppNameUtils.getAppName());
+            labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipserverTag());
+            labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmorayTag());
+            labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
+            
+            return labels;
+        }
+        
+        private void initRpcClientHandler(final RpcClient rpcClientInner) {
+            /*
+             * Register Config Change /Config ReSync Handler
+             */
+            rpcClientInner.registerServerRequestHandler((request) -> {
+                if (request instanceof ConfigChangeNotifyRequest) {
+                    ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
+                    LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
+                            rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
+                            configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                    String groupKey = GroupKey
+                            .getKeyTenant(configChangeNotifyRequest.getDataId(), configChangeNotifyRequest.getGroup(),
+                                    configChangeNotifyRequest.getTenant());
+                    
+                    CacheData cacheData = cacheMap.get().get(groupKey);
+                    if (cacheData != null) {
+                        synchronized (cacheData) {
+                            cacheData.getLastModifiedTs().set(System.currentTimeMillis());
+                            cacheData.setSyncWithServer(false);
+                            notifyListenConfig();
+                        }
+                        
+                    }
+                    return new ConfigChangeNotifyResponse();
+                }
+                return null;
+            });
+            
+            rpcClientInner.registerServerRequestHandler((request) -> {
+                if (request instanceof ClientConfigMetricRequest) {
+                    ClientConfigMetricResponse response = new ClientConfigMetricResponse();
+                    response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
+                    return response;
+                }
+                return null;
+            });
+            
+            rpcClientInner.registerConnectionListener(new ConnectionEventListener() {
+                
+                @Override
+                public void onConnected() {
+                    LOGGER.info("[{}] Connected,notify listen context...", rpcClientInner.getName());
+                    notifyListenConfig();
+                }
+                
+                @Override
+                public void onDisConnect() {
+                    String taskId = rpcClientInner.getLabels().get("taskId");
+                    LOGGER.info("[{}] DisConnected,clear listen context...", rpcClientInner.getName());
+                    Collection<CacheData> values = cacheMap.get().values();
+                    
+                    for (CacheData cacheData : values) {
+                        if (StringUtils.isNotBlank(taskId)) {
+                            if (Integer.valueOf(taskId).equals(cacheData.getTaskId())) {
+                                cacheData.setSyncWithServer(false);
+                            }
+                        } else {
+                            cacheData.setSyncWithServer(false);
+                        }
+                    }
+                }
+                
+            });
+            
+            rpcClientInner.serverListFactory(new ServerListFactory() {
+                @Override
+                public String genNextServer() {
+                    return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
+                    
+                }
+                
+                @Override
+                public String getCurrentServer() {
+                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServerAddr();
+                    
+                }
+                
+                @Override
+                public List<String> getServerList() {
+                    return ConfigRpcTransportClient.super.serverListManager.serverUrls;
+                    
+                }
+            });
+            
+            NotifyCenter.registerSubscriber(new Subscriber() {
+                @Override
+                public void onEvent(Event event) {
+                    rpcClientInner.onServerListChange();
+                }
+                
+                @Override
+                public Class<? extends Event> subscribeType() {
+                    return ServerlistChangeEvent.class;
+                }
+            });
+        }
+        
+        @Override
+        public void startInternal() throws NacosException {
+            executor.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    while (!executor.isShutdown() && !executor.isTerminated()) {
+                        try {
+                            listenExecutebell.poll(5L, TimeUnit.SECONDS);
+                            if (executor.isShutdown() || executor.isTerminated()) {
+                                continue;
+                            }
+                            executeConfigListen();
+                        } catch (Exception e) {
+                            LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
+                        }
+                    }
+                }
+            }, 0L, TimeUnit.MILLISECONDS);
+            
+        }
+        
+        @Override
+        public String getName() {
+            return "config_rpc_client";
+        }
+        
+        @Override
+        public void notifyListenConfig() {
+            listenExecutebell.offer(bellItem);
+        }
+        
+        @Override
+        public void executeConfigListen() {
+            
+            Map<String, List<CacheData>> listenCachesMap = new HashMap<String, List<CacheData>>(16);
+            Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
+            long now = System.currentTimeMillis();
+            boolean needAllSync = now - lastAllSyncTime >= ALL_SYNC_INTERNAL;
+            for (CacheData cache : cacheMap.get().values()) {
+                
+                synchronized (cache) {
+                    
+                    //check local listeners consistent.
+                    if (cache.isSyncWithServer()) {
+                        cache.checkListenerMd5();
+                        if (!needAllSync) {
+                            continue;
+                        }
+                    }
+                    
+                    if (!CollectionUtils.isEmpty(cache.getListeners())) {
+                        //get listen  config
+                        if (!cache.isUseLocalConfigInfo()) {
+                            List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
+                            if (cacheDatas == null) {
+                                cacheDatas = new LinkedList<CacheData>();
+                                listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
+                            }
+                            cacheDatas.add(cache);
+                            
+                        }
+                    } else if (CollectionUtils.isEmpty(cache.getListeners())) {
+                        
+                        if (!cache.isUseLocalConfigInfo()) {
+                            List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
+                            if (cacheDatas == null) {
+                                cacheDatas = new LinkedList<CacheData>();
+                                removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
+                            }
+                            cacheDatas.add(cache);
+                            
+                        }
+                    }
+                }
+                
+            }
+            
+            boolean hasChangedKeys = false;
+            
+            if (!listenCachesMap.isEmpty()) {
+                for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
+                    String taskId = entry.getKey();
+                    Map<String, Long> timestampMap = new HashMap<>(listenCachesMap.size() * 2);
+                    
+                    List<CacheData> listenCaches = entry.getValue();
+                    for (CacheData cacheData : listenCaches) {
+                        timestampMap.put(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant),
+                                cacheData.getLastModifiedTs().longValue());
+                    }
+                    
+                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(listenCaches);
+                    configChangeListenRequest.setListen(true);
+                    try {
+                        RpcClient rpcClient = ensureRpcClient(taskId);
+                        ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
+                                rpcClient, configChangeListenRequest);
+                        if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
+                            
+                            Set<String> changeKeys = new HashSet<String>();
+                            //handle changed keys,notify listener
+                            if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedConfigs())) {
+                                hasChangedKeys = true;
+                                for (ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
+                                        .getChangedConfigs()) {
+                                    String changeKey = GroupKey
+                                            .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
+                                                    changeConfig.getTenant());
+                                    changeKeys.add(changeKey);
+                                    boolean isInitializing = cacheMap.get().get(changeKey).isInitializing();
+                                    refreshContentAndCheck(changeKey, !isInitializing);
+                                }
+                                
+                            }
+                            
+                            //handler content configs
+                            for (CacheData cacheData : listenCaches) {
+                                String groupKey = GroupKey
+                                        .getKeyTenant(cacheData.dataId, cacheData.group, cacheData.getTenant());
+                                if (!changeKeys.contains(groupKey)) {
+                                    //sync:cache data md5 = server md5 && cache data md5 = all listeners md5.
+                                    synchronized (cacheData) {
+                                        if (!cacheData.getListeners().isEmpty()) {
+                                            
+                                            Long previousTimesStamp = timestampMap.get(groupKey);
+                                            if (previousTimesStamp != null) {
+                                                if (!cacheData.getLastModifiedTs().compareAndSet(previousTimesStamp,
+                                                        System.currentTimeMillis())) {
+                                                    continue;
+                                                }
+                                            }
+                                            cacheData.setSyncWithServer(true);
+                                        }
+                                    }
+                                }
+                                
+                                cacheData.setInitializing(false);
+                            }
+                            
+                        }
+                    } catch (Exception e) {
+                        
+                        LOGGER.error("Async listen config change error ", e);
+                        try {
+                            Thread.sleep(50L);
+                        } catch (InterruptedException interruptedException) {
+                            //ignore
+                        }
+                    }
+                }
+            }
+            
+            if (!removeListenCachesMap.isEmpty()) {
+                for (Map.Entry<String, List<CacheData>> entry : removeListenCachesMap.entrySet()) {
+                    String taskId = entry.getKey();
+                    List<CacheData> removeListenCaches = entry.getValue();
+                    ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(removeListenCaches);
+                    configChangeListenRequest.setListen(false);
+                    try {
+                        RpcClient rpcClient = ensureRpcClient(taskId);
+                        boolean removeSuccess = unListenConfigChange(rpcClient, configChangeListenRequest);
+                        if (removeSuccess) {
+                            for (CacheData cacheData : removeListenCaches) {
+                                synchronized (cacheData) {
+                                    if (cacheData.getListeners().isEmpty()) {
+                                        ClientWorker.this
+                                                .removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
+                                    }
+                                }
+                            }
+                        }
+                        
+                    } catch (Exception e) {
+                        LOGGER.error("async remove listen config change error ", e);
+                    }
+                    try {
+                        Thread.sleep(50L);
+                    } catch (InterruptedException interruptedException) {
+                        //ignore
+                    }
+                }
+            }
+            
+            if (needAllSync) {
+                lastAllSyncTime = now;
+            }
+            //If has changed keys,notify re sync md5.
+            if (hasChangedKeys) {
+                notifyListenConfig();
+            }
+        }
+        
+        private RpcClient ensureRpcClient(String taskId) throws NacosException {
+            synchronized (ClientWorker.this) {
+                
+                Map<String, String> labels = getLabels();
+                Map<String, String> newLabels = new HashMap<String, String>(labels);
+                newLabels.put("taskId", taskId);
+                
+                RpcClient rpcClient = RpcClientFactory
+                        .createClient(uuid + "_config-" + taskId, getConnectionType(), newLabels);
+                if (rpcClient.isWaitInitiated()) {
+                    initRpcClientHandler(rpcClient);
+                    rpcClient.setTenant(getTenant());
+                    rpcClient.clientAbilities(initAbilities());
+                    rpcClient.start();
+                }
+                
+                return rpcClient;
+            }
+            
+        }
+        
+        private ClientAbilities initAbilities() {
+            ClientAbilities clientAbilities = new ClientAbilities();
+            clientAbilities.getRemoteAbility().setSupportRemoteConnection(true);
+            clientAbilities.getConfigAbility().setSupportRemoteMetrics(true);
+            return clientAbilities;
+        }
+        
+        /**
+         * build config string.
+         *
+         * @param caches caches to build config string.
+         * @return request.
+         */
+        private ConfigBatchListenRequest buildConfigRequest(List<CacheData> caches) {
+            
+            ConfigBatchListenRequest configChangeListenRequest = new ConfigBatchListenRequest();
+            for (CacheData cacheData : caches) {
+                configChangeListenRequest.addConfigListenContext(cacheData.group, cacheData.dataId, cacheData.tenant,
+                        cacheData.getMd5());
+            }
+            return configChangeListenRequest;
+        }
+        
+        @Override
+        public void removeCache(String dataId, String group) {
+            // Notify to rpc un listen ,and remove cache if success.
+            notifyListenConfig();
+        }
+        
+        /**
+         * send cancel listen config change request .
+         *
+         * @param configChangeListenRequest request of remove listen config string.
+         */
+        private boolean unListenConfigChange(RpcClient rpcClient, ConfigBatchListenRequest configChangeListenRequest)
+                throws NacosException {
+            
+            ConfigChangeBatchListenResponse response = (ConfigChangeBatchListenResponse) requestProxy(rpcClient,
+                    configChangeListenRequest);
+            return response.isSuccess();
+        }
+        
+        @Override
+        public ConfigResponse queryConfig(String dataId, String group, String tenant, long readTimeouts, boolean notify)
+                throws NacosException {
+            ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
+            request.putHeader(NOTIFY_HEADER, String.valueOf(notify));
+            RpcClient rpcClient = getOneRunningClient();
+            if (notify) {
+                CacheData cacheData = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
+                if (cacheData != null) {
+                    rpcClient = ensureRpcClient(String.valueOf(cacheData.getTaskId()));
+                }
+            }
+            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(rpcClient, request, readTimeouts);
+            
+            ConfigResponse configResponse = new ConfigResponse();
+            if (response.isSuccess()) {
+                LocalConfigInfoProcessor.saveSnapshot(this.getName(), dataId, group, tenant, response.getContent());
+                configResponse.setContent(response.getContent());
+                String configType;
+                if (StringUtils.isNotBlank(response.getContentType())) {
+                    configType = response.getContentType();
+                } else {
+                    configType = ConfigType.TEXT.getType();
+                }
+                configResponse.setConfigType(configType);
+                String encryptedDataKey = response.getEncryptedDataKey();
+                LocalEncryptedDataKeyProcessor
+                        .saveEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant, encryptedDataKey);
+                configResponse.setEncryptedDataKey(encryptedDataKey);
+                return configResponse;
+            } else if (response.getErrorCode() == ConfigQueryResponse.CONFIG_NOT_FOUND) {
+                LocalConfigInfoProcessor.saveSnapshot(this.getName(), dataId, group, tenant, null);
+                LocalEncryptedDataKeyProcessor.saveEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant, null);
+                return configResponse;
+            } else if (response.getErrorCode() == ConfigQueryResponse.CONFIG_QUERY_CONFLICT) {
+                LOGGER.error(
+                        "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
+                                + "tenant={}", this.getName(), dataId, group, tenant);
+                throw new NacosException(NacosException.CONFLICT,
+                        "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
+            } else {
+                LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", this.getName(), dataId,
+                        group, tenant, response);
+                throw new NacosException(response.getErrorCode(),
+                        "http error, code=" + response.getErrorCode() + ",dataId=" + dataId + ",group=" + group
+                                + ",tenant=" + tenant);
+                
+            }
+        }
+        
+        private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
+            return requestProxy(rpcClientInner, request, 3000L);
+        }
+        
+        private Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
+                throws NacosException {
+            try {
+                request.putAllHeader(super.getSecurityHeaders());
+                request.putAllHeader(super.getSpasHeaders());
+                request.putAllHeader(super.getCommonHeader());
+            } catch (Exception e) {
+                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
+            }
+            
+            Map<String, String> signHeaders = SpasAdapter.getSignHeaders(resourceBuild(request), secretKey);
+            if (signHeaders != null && !signHeaders.isEmpty()) {
+                request.putAllHeader(signHeaders);
+            }
+            JsonObject asJsonObjectTemp = new Gson().toJsonTree(request).getAsJsonObject();
+            asJsonObjectTemp.remove("headers");
+            asJsonObjectTemp.remove("requestId");
+            boolean limit = Limiter.isLimit(request.getClass() + asJsonObjectTemp.toString());
+            if (limit) {
+                throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
+                        "More than client-side current limit threshold");
+            }
+            return rpcClientInner.request(request, timeoutMills);
+        }
+        
+        private String resourceBuild(Request request) {
+            if (request instanceof ConfigQueryRequest) {
+                String tenant = ((ConfigQueryRequest) request).getTenant();
+                String group = ((ConfigQueryRequest) request).getGroup();
+                return getResource(tenant, group);
+            }
+            if (request instanceof ConfigPublishRequest) {
+                String tenant = ((ConfigPublishRequest) request).getTenant();
+                String group = ((ConfigPublishRequest) request).getGroup();
+                return getResource(tenant, group);
+            }
+            
+            if (request instanceof ConfigRemoveRequest) {
+                String tenant = ((ConfigRemoveRequest) request).getTenant();
+                String group = ((ConfigRemoveRequest) request).getGroup();
+                return getResource(tenant, group);
+            }
+            return DEFAULT_RESOURCE;
+        }
+        
+        private String getResource(String tenant, String group) {
+            if (StringUtils.isNotBlank(tenant) && StringUtils.isNotBlank(group)) {
+                return tenant + "+" + group;
+            }
+            if (StringUtils.isNotBlank(group)) {
+                return group;
+            }
+            if (StringUtils.isNotBlank(tenant)) {
+                return tenant;
+            }
+            return DEFAULT_RESOURCE;
+        }
+        
+        RpcClient getOneRunningClient() throws NacosException {
+            return ensureRpcClient("0");
+        }
+        
+        @Override
+        public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
+                String betaIps, String content, String encryptedDataKey, String casMd5, String type)
+                throws NacosException {
+            try {
+                ConfigPublishRequest request = new ConfigPublishRequest(dataId, group, tenant, content);
+                request.setCasMd5(casMd5);
+                request.putAdditionalParam(TAG_PARAM, tag);
+                request.putAdditionalParam(APP_NAME_PARAM, appName);
+                request.putAdditionalParam(BETAIPS_PARAM, betaIps);
+                request.putAdditionalParam(TYPE_PARAM, type);
+                request.putAdditionalParam(ENCRYPTED_DATA_KEY_PARAM, encryptedDataKey);
+                ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
+                if (!response.isSuccess()) {
+                    LOGGER.warn("[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
+                            this.getName(), dataId, group, tenant, response.getErrorCode(), response.getMessage());
+                    return false;
+                } else {
+                    LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}, config={}", getName(),
+                            dataId, group, tenant, ContentUtils.truncateContent(content));
+                    return true;
+                }
+            } catch (Exception e) {
+                LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
+                        this.getName(), dataId, group, tenant, "unkonw", e.getMessage());
+                return false;
+            }
+        }
+        
+        @Override
+        public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
+            ConfigRemoveRequest request = new ConfigRemoveRequest(dataId, group, tenant, tag);
+            ConfigRemoveResponse response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
+            return response.isSuccess();
+        }
+    }
     
-    final ScheduledExecutorService executorService;
-    
-    /**
-     * groupKey -> cacheData.
-     */
-    private final ConcurrentHashMap<String, CacheData> cacheMap = new ConcurrentHashMap<String, CacheData>();
-    
-    private final HttpAgent agent;
-    
-    private final ConfigFilterChainManager configFilterChainManager;
-    
-    private boolean isHealthServer = true;
-    
-    private long timeout;
-    
-    private double currentLongingTaskCount = 0;
-    
-    private int taskPenaltyTime;
-    
-    private boolean enableRemoteSyncConfig = false;
+    public String getAgentName() {
+        return this.agent.getName();
+    }
 }

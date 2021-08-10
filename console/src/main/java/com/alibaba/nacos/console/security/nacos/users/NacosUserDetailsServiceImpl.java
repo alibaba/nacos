@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Custem user service.
+ * Custom user service.
  *
  * @author wfnuser
  * @author nkorange
@@ -91,7 +91,7 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     
     public User getUser(String username) {
         User user = userMap.get(username);
-        if (!authConfigs.isCachingEnabled()) {
+        if (!authConfigs.isCachingEnabled() || user == null) {
             user = getUserFromDatabase(username);
         }
         return user;

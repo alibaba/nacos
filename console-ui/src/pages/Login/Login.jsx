@@ -102,6 +102,10 @@ class Login extends React.Component {
           <div className="animation animation5" />
           <Card className="login-panel" contentHeight="auto">
             <div className="login-header">{locale.login}</div>
+            <div className="internal-sys-tip">
+              <div>{locale.internalSysTip1}</div>
+              <div>{locale.internalSysTip2}</div>
+            </div>
             <Form className="login-form" field={this.field}>
               <FormItem>
                 <Input

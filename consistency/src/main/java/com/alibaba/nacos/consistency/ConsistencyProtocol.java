@@ -48,11 +48,11 @@ public interface ConsistencyProtocol<T extends Config, P extends RequestProcesso
     void init(T config);
     
     /**
-     * Add a log handler.
+     * Add a request handler.
      *
      * @param processors {@link RequestProcessor}
      */
-    void addLogProcessors(Collection<P> processors);
+    void addRequestProcessors(Collection<P> processors);
     
     /**
      * Copy of metadata information for this consensus protocol.
@@ -87,7 +87,7 @@ public interface ConsistencyProtocol<T extends Config, P extends RequestProcesso
      * @return submit operation result {@link Response}
      * @throws Exception {@link Exception}
      */
-    Response submit(WriteRequest request) throws Exception;
+    Response write(WriteRequest request) throws Exception;
     
     /**
      * Data submission operation, returning submission results asynchronously.
@@ -97,7 +97,7 @@ public interface ConsistencyProtocol<T extends Config, P extends RequestProcesso
      * @return {@link CompletableFuture} submit result
      * @throws Exception when submit throw Exception
      */
-    CompletableFuture<Response> submitAsync(WriteRequest request);
+    CompletableFuture<Response> writeAsync(WriteRequest request);
     
     /**
      * New member list .

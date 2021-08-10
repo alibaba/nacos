@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -30,8 +31,6 @@ import com.alibaba.nacos.naming.core.ServiceManager.ServiceChecksum;
 import com.alibaba.nacos.naming.misc.Message;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -244,7 +243,7 @@ public class ServiceManagerTest extends BaseTest {
     
     @Test
     public void testEasyRemoveServiceFailed() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expect(NacosException.class);
         expectedException.expectMessage("specified service not exist, serviceName : " + TEST_SERVICE_NAME);
         serviceManager.easyRemoveService(TEST_NAMESPACE, TEST_SERVICE_NAME);
     }
@@ -298,7 +297,7 @@ public class ServiceManagerTest extends BaseTest {
         //all=false, update input instances
         serviceManager
                 .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_UPDATE, false,
-                        Lists.newArrayList(updateMetadataInstance), updateMetadata);
+                        CollectionUtils.list(updateMetadataInstance), updateMetadata);
         
         assertEquals(instance.getMetadata().get("key1"), "new-value1");
         assertEquals(instance.getMetadata().get("key2"), "value2");
@@ -323,7 +322,7 @@ public class ServiceManagerTest extends BaseTest {
         
         serviceManager
                 .updateMetadata(TEST_NAMESPACE, TEST_SERVICE_NAME, true, UPDATE_INSTANCE_METADATA_ACTION_REMOVE, false,
-                        Lists.newArrayList(deleteMetadataInstance), deleteMetadata);
+                        CollectionUtils.list(deleteMetadataInstance), deleteMetadata);
         
         assertEquals(instance.getMetadata().get("key1"), "new-value1");
         assertNull(instance.getMetadata().get("key2"));
@@ -419,7 +418,7 @@ public class ServiceManagerTest extends BaseTest {
     
     @Test
     public void testSnowflakeInstanceId() throws Exception {
-        Map<String, String> metaData = Maps.newHashMap();
+        Map<String, String> metaData = new HashMap<>();
         metaData.put(PreservedMetadataKeys.INSTANCE_ID_GENERATOR, Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR);
         
         instance.setMetadata(metaData);
@@ -456,5 +455,13 @@ public class ServiceManagerTest extends BaseTest {
         String actual = JacksonUtils.toJson(checksum);
         assertTrue(actual.contains("\"namespaceId\":\"public\""));
         assertTrue(actual.contains("\"serviceName2Checksum\":{\"test\":\"1234567890\"}"));
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testCheckServiceIsNull() throws NacosException {
+        serviceManager.createEmptyService(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
+        String serviceName = "order-service";
+        Service service = serviceManager.getService(TEST_NAMESPACE, serviceName);
+        serviceManager.checkServiceIsNull(service, TEST_NAMESPACE, serviceName);
     }
 }

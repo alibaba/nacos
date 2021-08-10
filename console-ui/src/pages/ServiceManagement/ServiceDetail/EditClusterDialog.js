@@ -63,7 +63,7 @@ class EditClusterDialog extends React.Component {
       name,
       serviceName,
       metadataText,
-      defCkport,
+      defaultCheckPort,
       useIPPort4Check,
       healthChecker,
     } = this.state.editCluster;
@@ -74,7 +74,7 @@ class EditClusterDialog extends React.Component {
         serviceName,
         clusterName: name,
         metadata: metadataText,
-        checkPort: defCkport,
+        checkPort: defaultCheckPort,
         useInstancePort4Check: useIPPort4Check,
         healthChecker: JSON.stringify(healthChecker),
       },
@@ -106,7 +106,7 @@ class EditClusterDialog extends React.Component {
     const {
       healthChecker = {},
       useIPPort4Check,
-      defCkport = '80',
+      defaultCheckPort = '80',
       metadataText = '',
     } = editCluster;
     const { type, path, headers } = healthChecker;
@@ -139,8 +139,8 @@ class EditClusterDialog extends React.Component {
           <Form.Item label={`${checkPort}:`}>
             <Input
               className="in-text"
-              value={defCkport}
-              onChange={defCkport => this.onChangeCluster({ defCkport })}
+              value={defaultCheckPort}
+              onChange={defaultCheckPort => this.onChangeCluster({ defaultCheckPort })}
             />
           </Form.Item>
           <Form.Item label={`${useIpPortCheck}:`}>

@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ import java.util.Map;
  * @author nacos
  * @author jifengnan
  */
-@SuppressWarnings("PMD.ThreadPoolCreationRule")
+@SuppressWarnings("PMD.ThreadPoolCreationle")
 public class UtilsAndCommons {
     
     // ********************** Nacos HTTP Context ************************ \\
@@ -93,7 +93,7 @@ public class UtilsAndCommons {
     
     public static final String SELF_SERVICE_CLUSTER_ENV = "naming_self_service_cluster_ips";
     
-    public static final String CACHE_KEY_SPLITER = "@@@@";
+    public static final String CACHE_KEY_SPLITTER = "@@@@";
     
     public static final int MAX_PUBLISH_WAIT_TIME_MILLIS = 5000;
     
@@ -125,6 +125,10 @@ public class UtilsAndCommons {
     public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos.naming";
     
     public static final String NUMBER_PATTERN = "^\\d+$";
+    
+    public static final String ENABLE_HEALTH_CHECK = "enableHealthCheck";
+    
+    public static final String ENABLE_CLIENT_BEAT = "enableClientBeat";
     
     static {
 

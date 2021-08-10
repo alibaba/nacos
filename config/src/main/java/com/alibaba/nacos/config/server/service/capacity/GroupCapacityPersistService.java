@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.config.server.service.capacity;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.google.common.collect.Lists;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -104,13 +104,13 @@ public class GroupCapacityPersistService {
     public boolean insertGroupCapacity(final GroupCapacity capacity) {
         String sql;
         if (CLUSTER.equals(capacity.getGroup())) {
-            sql = "insert into group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
-                    + "gmt_create, gmt_modified) select ?, ?, count(*), ?, ?, ?, ?, ? from config_info;";
+            sql = "INSERT INTO group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
+                    + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info;";
         } else {
             // Note: add "tenant_id = ''" condition.
-            sql = "insert into group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
-                    + "gmt_create, gmt_modified) select ?, ?, count(*), ?, ?, ?, ?, ? from config_info where "
-                    + "group_id=? and tenant_id = '';";
+            sql = "INSERT INTO group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
+                    + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE "
+                    + "group_id=? AND tenant_id = '';";
         }
         return insertGroupCapacity(sql, capacity);
     }
@@ -215,6 +215,7 @@ public class GroupCapacityPersistService {
     
     /**
      * Decrement Usage.
+     *
      * @param groupCapacity groupCapacity object instance.
      * @return operate result.
      */
@@ -231,16 +232,16 @@ public class GroupCapacityPersistService {
     /**
      * Update GroupCapacity.
      *
-     * @param group group string value.
-     * @param quota quota int value.
-     * @param maxSize maxSize int value.
+     * @param group        group string value.
+     * @param quota        quota int value.
+     * @param maxSize      maxSize int value.
      * @param maxAggrCount maxAggrCount int value.
-     * @param maxAggrSize maxAggrSize int value.
+     * @param maxAggrSize  maxAggrSize int value.
      * @return
      */
     public boolean updateGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
-        List<Object> argList = Lists.newArrayList();
+        List<Object> argList = CollectionUtils.list();
         StringBuilder sql = new StringBuilder("update group_capacity set");
         if (quota != null) {
             sql.append(" quota = ?,");
@@ -261,7 +262,7 @@ public class GroupCapacityPersistService {
         sql.append(" gmt_modified = ?");
         argList.add(TimeUtils.getCurrentTime());
         
-        sql.append(" where group_id = ?");
+        sql.append(" WHERE group_id = ?");
         argList.add(group);
         try {
             return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;
@@ -282,7 +283,7 @@ public class GroupCapacityPersistService {
     /**
      * Correct Usage.
      *
-     * @param group group string value.
+     * @param group       group string value.
      * @param gmtModified gmtModified.
      * @return operate result.
      */
@@ -313,7 +314,7 @@ public class GroupCapacityPersistService {
     /**
      * Get group capacity list, noly has id and groupId value.
      *
-     * @param lastId lastId long value.
+     * @param lastId   lastId long value.
      * @param pageSize pageSize long value.
      * @return GroupCapacity list.
      */

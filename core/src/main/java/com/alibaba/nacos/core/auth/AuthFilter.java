@@ -27,7 +27,7 @@ import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.Filter;
@@ -73,10 +73,25 @@ public class AuthFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
         
-        String userAgent = WebUtils.getUserAgent(req);
-        
-        if (StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
-            chain.doFilter(request, response);
+        if (authConfigs.isEnableUserAgentAuthWhite()) {
+            String userAgent = WebUtils.getUserAgent(req);
+            if (StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
+                chain.doFilter(request, response);
+                return;
+            }
+        } else if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey()) && StringUtils
+                .isNotBlank(authConfigs.getServerIdentityValue())) {
+            String serverIdentity = req.getHeader(authConfigs.getServerIdentityKey());
+            if (authConfigs.getServerIdentityValue().equals(serverIdentity)) {
+                chain.doFilter(request, response);
+                return;
+            }
+            Loggers.AUTH.warn("Invalid server identity value for {} from {}", authConfigs.getServerIdentityKey(),
+                    req.getRemoteHost());
+        } else {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN,
+                    "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                            + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`");
             return;
         }
         
@@ -119,13 +134,10 @@ public class AuthFilter implements Filter {
                         e.getErrMsg());
             }
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getErrMsg());
-            return;
         } catch (IllegalArgumentException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, ExceptionUtil.getAllExceptionMsg(e));
-            return;
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.getMessage());
-            return;
         }
     }
     
