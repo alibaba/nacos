@@ -358,7 +358,7 @@ public class PushService {
                     udpPushMap.remove(fullServiceName);
                 }
 
-            }, 1000, TimeUnit.MILLISECONDS);
+            }, 0, TimeUnit.MILLISECONDS);
         } catch (Throwable t) {
             udpPushMap.remove(fullServiceName);
             Loggers.PUSH.error("[NACOS-PUSH] failed to schedule udp sender for serviceName: {}", serviceName, t);
