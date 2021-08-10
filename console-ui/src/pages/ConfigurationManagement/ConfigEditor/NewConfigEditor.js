@@ -158,8 +158,7 @@ class ConfigEditor extends React.Component {
         this.setState({
           editorClass: 'editor-full-screen',
         });
-      }
-      if (e.key === 'Escape') {
+      } else if (e.key === 'Escape') {
         this.setState({
           editorClass: 'editor-normal',
         });
@@ -372,8 +371,7 @@ class ConfigEditor extends React.Component {
     };
     if (beta) {
       params.beta = true;
-    }
-    if (!beta) {
+    } else {
       params.show = 'all';
     }
     return request.get('v1/cs/configs', { params }).then(res => {
