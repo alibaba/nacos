@@ -184,11 +184,11 @@ class ConfigEditor extends React.Component {
 
   openDiff(cbName) {
     this.diffcb = cbName;
-    let leftvalue = this.monacoEditor.getValue();
-    let rightvalue = this.codeVal || '';
-    leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-    rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-    this.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
+    let leftValue = this.monacoEditor.getValue();
+    let rightValue = this.codeVal || '';
+    leftValue = leftValue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    rightValue = rightValue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    this.diffEditorDialog.current.getInstance().openDialog(leftValue, rightValue);
   }
 
   clickTab(tabActiveKey) {
