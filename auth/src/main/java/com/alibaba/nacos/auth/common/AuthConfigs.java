@@ -47,6 +47,18 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     private static Boolean cachingEnabled = null;
     
     /**
+     * authContext location.
+     */
+    @Value("${nacos.core.auth.authorizationLocation:}")
+    private IdentifyPositionTypes authorizationLocation;
+    
+    /**
+     * Authority key set.
+     */
+    @Value("${nacos.core.auth.authorityKey:}")
+    private  String[] authorityKey;
+    
+    /**
      * Whether auth enabled.
      */
     @Value("${nacos.core.auth.enabled:false}")
@@ -93,6 +105,16 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             secretKeyBytes = Decoders.BASE64.decode(secretKey);
         }
         return secretKeyBytes;
+    }
+    
+    public IdentifyPositionTypes getAuthorizationLocation() {
+        authorizationLocation = IdentifyPositionTypes.valueOf(EnvUtil.getProperty("nacos.core.auth.authorizationLocation", ""));
+        return authorizationLocation;
+    }
+    
+    public String[] getAuthorityKey() {
+        authorityKey = EnvUtil.getProperty("nacos.core.auth.authorityKey", "").split(",");
+        return authorityKey;
     }
     
     public long getTokenValidityInSeconds() {
@@ -149,6 +171,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             serverIdentityKey = EnvUtil.getProperty("nacos.core.auth.server.identity.key", "");
             serverIdentityValue = EnvUtil.getProperty("nacos.core.auth.server.identity.value", "");
             enableUserAgentAuthWhite = EnvUtil.getProperty("nacos.core.auth.enable.userAgentAuthWhite", Boolean.class, false);
+            authorizationLocation = IdentifyPositionTypes.valueOf(EnvUtil.getProperty("nacos.core.auth.authorizationLocation", ""));
+            authorityKey = EnvUtil.getProperty("nacos.core.auth.authorityKey", "").split(",");
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
         }
