@@ -16,18 +16,13 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-
-public class CircuitBreakerTest {
-
-    static CircuitBreaker circuitBreaker;
-
-    @Test
-    public void testCircuitBreakerSpi() {
-        circuitBreaker = new CircuitBreaker();
-        Assert.assertTrue(circuitBreaker.applyForStrategy("test1"));
-    }
-
+/**
+ * Info class in charge of storing and monitoring current server point status (tps / tps window / network flow etc.)
+ * Can be extended for custom implementations
+ * TODO: design a generic status implementation that contains necessary fields
+ *
+ * @author chuzefang
+ * @version $Id: MatchMode.java, v 0.1 2021年08月07日 22:50 PM chuzefang Exp $
+ */
+public class CircuitBreakerStatus {
 }

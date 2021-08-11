@@ -17,12 +17,26 @@
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
 /**
- * Info class in charge of storing and monitoring current server status (tps / tps window / network flow etc.)
- * Can be extended for custom implementations
- * TODO: design a generic info implementation that contains necessary fields
- *
- * @author chuzefang
- * @version $Id: MatchMode.java, v 0.1 2021年08月07日 22:50 PM chuzefang Exp $
+ * ConfigLoader is in charge of fetching remote configs and load them into memory.
+ * @author czf
  */
-public class CircuitBreakerInfo {
+public class ConfigLoader {
+
+    ConfigLoader() {
+
+    }
+
+    public void fetchRemoteConfig() {
+
+    }
+
+    public void loadConfigFromCache() {
+
+    }
+
+    public void updateLocalConfig() {
+
+    }
+
+
 }

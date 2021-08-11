@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
-import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerInfo;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerStatus;
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRule;
 
 /**
@@ -33,12 +33,22 @@ public class TpsDefaultRule extends CircuitBreakerRule {
     }
 
     /**
-     * Check for current condition.
+     * Check for tps condition for the current point.
      * TODO: implement this method
      */
     @Override
-    public boolean applyRule(CircuitBreakerInfo info, CircuitBreakerConfig config) {
-        System.out.println("TpsDefaultRule");
+    public boolean applyForTps(CircuitBreakerStatus status, CircuitBreakerConfig config) {
+        System.out.println("TpsDefaultRule#applyForTps");
+        return true;
+    }
+
+    /**
+     * Check for network flow condition for the current point.
+     * TODO: implement this method
+     */
+    @Override
+    public boolean applyForFlowControl(CircuitBreakerStatus status, CircuitBreakerConfig config) {
+        System.out.println("TpsDefaultRule#applyForFLowControl");
         return true;
     }
 }

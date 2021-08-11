@@ -31,14 +31,25 @@ public class CircuitBreakerRule {
     }
 
     /**
-     * Main method for circuit breaker to apply its rule.
+     * Main method for circuit breaker to apply tps control rule.
      *
-     * @param  info current info including server status (like tps / network flow over time)
      * @param  config the specific circuit breaker config for this rule
      *
      * @return true when the current request is allowed to continue; false if the request breaks the upper limit
      */
-    public boolean applyRule(CircuitBreakerInfo info, CircuitBreakerConfig config) {
+    public boolean applyForTps(CircuitBreakerStatus status, CircuitBreakerConfig config) {
         return true;
     }
+
+    /**
+     * Main method for circuit breaker to apply network flow control rule.
+     *
+     * @param  config the specific circuit breaker config for this rule
+     *
+     * @return true when the current request is allowed to continue; false if the request breaks the upper limit
+     */
+    public boolean applyForFlowControl(CircuitBreakerStatus status, CircuitBreakerConfig config) {
+        return true;
+    }
+
 }
