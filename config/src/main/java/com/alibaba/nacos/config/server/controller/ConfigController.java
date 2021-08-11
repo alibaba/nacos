@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.config.CryptoExecutor;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
@@ -156,6 +157,11 @@ public class ConfigController {
                     dataId, group);
             throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
         }
+    
+        boolean result = CryptoExecutor.checkCipher(dataId);
+        if (result) {
+            content = CryptoExecutor.executeEncrypt(dataId, content);
+        }
         
         final Timestamp time = TimeUtils.getCurrentTime();
         String betaIps = request.getHeader("betaIps");
@@ -224,7 +230,14 @@ public class ConfigController {
         ParamUtils.checkTenant(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
-        return persistService.findConfigAllInfo(dataId, group, tenant);
+        ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
+    
+        boolean result = CryptoExecutor.checkCipher(dataId);
+        if (result) {
+            String decrypt = CryptoExecutor.executeDecrypt(dataId, configAllInfo.getContent());
+            configAllInfo.setContent(decrypt);
+        }
+        return configAllInfo;
     }
     
     /**
