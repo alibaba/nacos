@@ -157,7 +157,12 @@ public class ServiceInfoHolder implements Closeable {
             return oldService;
         }
         serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-        boolean changed = isChangedServiceInfo(oldService, serviceInfo);
+        InstancesChangeEvent instancesChangeEvent = new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+                serviceInfo.getClusters(), serviceInfo.getHosts());
+        Set<Instance> modHosts = new HashSet<Instance>();
+        Set<Instance> newHosts = new HashSet<Instance>();
+        Set<Instance> remvHosts = new HashSet<Instance>();
+        boolean changed = isChangedServiceInfo(oldService, serviceInfo, modHosts, newHosts, remvHosts);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
@@ -166,7 +171,8 @@ public class ServiceInfoHolder implements Closeable {
             NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> "
                     + JacksonUtils.toJson(serviceInfo.getHosts()));
             NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
-                    serviceInfo.getClusters(), serviceInfo.getHosts()));
+                    serviceInfo.getClusters(), serviceInfo.getHosts(), new ArrayList<>(modHosts), new ArrayList<>(newHosts),
+                    new ArrayList<>(remvHosts)));
             DiskCache.write(serviceInfo, cacheDir);
         }
         return serviceInfo;
@@ -176,7 +182,8 @@ public class ServiceInfoHolder implements Closeable {
         return null == serviceInfo.getHosts() || (pushEmptyProtection && !serviceInfo.validate());
     }
     
-    private boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
+    private boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService, Set<Instance> modHosts, Set<Instance> newHosts,
+                                         Set<Instance> remvHosts) {
         if (null == oldService) {
             NAMING_LOGGER.info("init new ips(" + newService.ipCount() + ") service: " + newService.getKey() + " -> "
                     + JacksonUtils.toJson(newService.getHosts()));
@@ -196,10 +203,6 @@ public class ServiceInfoHolder implements Closeable {
         for (Instance host : newService.getHosts()) {
             newHostMap.put(host.toInetAddr(), host);
         }
-        
-        Set<Instance> modHosts = new HashSet<Instance>();
-        Set<Instance> newHosts = new HashSet<Instance>();
-        Set<Instance> remvHosts = new HashSet<Instance>();
         
         List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
                 newHostMap.entrySet());

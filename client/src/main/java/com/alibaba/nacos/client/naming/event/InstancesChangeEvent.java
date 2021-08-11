@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.event;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.notify.Event;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,14 +39,34 @@ public class InstancesChangeEvent extends Event {
     private final String clusters;
     
     private final List<Instance> hosts;
-    
+
+    private final List<Instance> modHosts;
+
+    private final List<Instance> newHosts;
+
+    private final List<Instance> remvHosts;
+
     public InstancesChangeEvent(String serviceName, String groupName, String clusters, List<Instance> hosts) {
         this.serviceName = serviceName;
         this.groupName = groupName;
         this.clusters = clusters;
         this.hosts = hosts;
+        this.newHosts = new ArrayList<>(hosts);
+        this.modHosts = new ArrayList<>(1);
+        this.remvHosts = new ArrayList<>(1);
     }
-    
+
+    public InstancesChangeEvent(String serviceName, String groupName, String clusters, List<Instance> hosts,
+                                List<Instance> newHosts, List<Instance> modHosts, List<Instance> remvHosts) {
+        this.serviceName = serviceName;
+        this.groupName = groupName;
+        this.clusters = clusters;
+        this.hosts = hosts;
+        this.newHosts = newHosts;
+        this.modHosts = modHosts;
+        this.remvHosts = remvHosts;
+    }
+
     public String getServiceName() {
         return serviceName;
     }
@@ -61,5 +82,16 @@ public class InstancesChangeEvent extends Event {
     public List<Instance> getHosts() {
         return hosts;
     }
-    
+
+    public List<Instance> getModHosts() {
+        return modHosts;
+    }
+
+    public List<Instance> getNewHosts() {
+        return newHosts;
+    }
+
+    public List<Instance> getRemvHosts() {
+        return remvHosts;
+    }
 }
