@@ -91,8 +91,12 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     
     @Override
     public ObjectNode queryService(String namespaceId, String serviceName) throws NacosException {
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
         Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, true);
+        if (!ServiceManager.getInstance().containSingleton(service)) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "service not found, namespace: " + namespaceId + ", serviceName: " + serviceName);
+        }
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(new ServiceMetadata());
         setServiceMetadata(result, serviceMetadata, service);
         ArrayNode clusters = JacksonUtils.createEmptyArrayNode();

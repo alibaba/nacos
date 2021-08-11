@@ -455,7 +455,6 @@ public abstract class RpcClient implements Closeable {
         rpcClientStatus.set(RpcClientStatus.SHUTDOWN);
         LOGGER.info("Shutdown client event executor " + clientEventExecutor);
         clientEventExecutor.shutdownNow();
-        LOGGER.info("Close current connection " + currentConnection.getConnectionId());
         closeConnection(currentConnection);
     }
     
@@ -587,6 +586,7 @@ public abstract class RpcClient implements Closeable {
     
     private void closeConnection(Connection connection) {
         if (connection != null) {
+            LOGGER.info("Close current connection " + connection.getConnectionId());
             connection.close();
             eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
         }
