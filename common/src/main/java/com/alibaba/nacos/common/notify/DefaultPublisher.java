@@ -174,7 +174,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         final long currentEventSequence = event.sequence();
         
         if (!hasSubscriber()) {
-            LOGGER.warn("[NotifyCenter] the {} is lost, because there is no subscriber.");
+            LOGGER.warn("[NotifyCenter] the {} is lost, because there is no subscriber.", event);
             return;
         }
         
