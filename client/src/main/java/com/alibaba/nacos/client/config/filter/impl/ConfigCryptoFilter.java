@@ -30,7 +30,7 @@ import java.util.Properties;
 /**
  * Configure encryption filter.
  *
- * @Author lixiaoshuang
+ * @author lixiaoshuang
  */
 public class ConfigCryptoFilter implements IConfigFilter {
     

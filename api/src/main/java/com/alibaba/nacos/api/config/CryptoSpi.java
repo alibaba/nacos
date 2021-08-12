@@ -19,34 +19,34 @@ package com.alibaba.nacos.api.config;
 /**
  * Encryption and decryption spi.
  *
- * @Author lixiaoshuang
+ * @author lixiaoshuang
  */
 public interface CryptoSpi {
     
     /**
      * Encrypted interface.
      *
-     * @param content unencrypted
-     * @param <T>     return type
+     * @param secretKey secret key
+     * @param content   content unencrypted
      * @return encrypt value
      */
-    <T> String encrypt(T content);
+    String encrypt(String secretKey, String content);
     
     /**
      * Decryption interface.
      *
-     * @param content encrypted
-     * @param <T>     return type
+     * @param secretKey secret key
+     * @param content   encrypted
      * @return decrypt value
      */
-    <T> String decrypt(T content);
+    String decrypt(String secretKey, String content);
     
     /**
-     * Generate encryption key.
+     * Generate Secret key.
      *
      * @return Secret key
      */
-    String generateEncryptedKey();
+    String generateSecretKey();
     
     /**
      * Algorithm naming.

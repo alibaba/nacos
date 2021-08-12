@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * CryptoManager.
  *
- * @Author lixiaoshuang
+ * @author lixiaoshuang
  */
 public class CryptoManager {
     

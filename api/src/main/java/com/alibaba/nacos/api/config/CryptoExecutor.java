@@ -19,7 +19,7 @@ package com.alibaba.nacos.api.config;
 /**
  * CryptoExecuter.
  *
- * @Author lixiaoshuang
+ * @author  lixiaoshuang
  */
 public class CryptoExecutor {
     
@@ -47,7 +47,7 @@ public class CryptoExecutor {
      */
     public static String executeEncrypt(String dataId, String content) {
         CryptoSpi cryptoSpi = cryptoInstance(dataId);
-        return cryptoSpi.encrypt(content);
+        return cryptoSpi.encrypt(cryptoSpi.generateSecretKey(), content);
     }
     
     /**
@@ -59,7 +59,7 @@ public class CryptoExecutor {
      */
     public static String executeDecrypt(String dataId, String content) {
         CryptoSpi cryptoSpi = cryptoInstance(dataId);
-        return cryptoSpi.decrypt(content);
+        return cryptoSpi.decrypt("", content);
     }
     
     /**
