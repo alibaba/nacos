@@ -46,6 +46,9 @@ public class Subscriber implements Serializable {
     
     private String cluster;
     
+    public Subscriber() {
+    }
+    
     public Subscriber(String addrStr, String agent, String app, String ip, String namespaceId, String serviceName,
             int port) {
         this(addrStr, agent, app, ip, namespaceId, serviceName, port, StringUtils.EMPTY);
