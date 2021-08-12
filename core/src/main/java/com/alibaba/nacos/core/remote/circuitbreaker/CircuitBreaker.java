@@ -34,9 +34,9 @@ public class CircuitBreaker {
 
     private ConfigLoader configLoader;
 
-    private final ConcurrentHashMap<String, CircuitBreakerStatus> POINT_TO_STATUS_MAP = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CircuitBreakerStatus> pointToStatusMap = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<String, CircuitBreakerConfig> RULE_CONFIG_MAP = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CircuitBreakerConfig> ruleConfigMap = new ConcurrentHashMap<>();
 
     CircuitBreaker() {
 
@@ -50,10 +50,10 @@ public class CircuitBreaker {
      * @return true when the current request is allowed to continue; false if the request breaks the upper limit
      */
     public boolean applyForStrategy(String pointName) {
-        if (!POINT_TO_STATUS_MAP.containsKey(pointName)) {
+        if (!pointToStatusMap.containsKey(pointName)) {
             registerPoint(pointName, DEFAULT_RULE);
         }
-        CircuitBreakerConfig config = RULE_CONFIG_MAP.get(StringUtils.isEmpty(currentRule) ? DEFAULT_RULE : currentRule);
+        CircuitBreakerConfig config = ruleConfigMap.get(StringUtils.isEmpty(currentRule) ? DEFAULT_RULE : currentRule);
 
         ServiceLoader<CircuitBreakerRule> circuitBreakers = ServiceLoader.load(CircuitBreakerRule.class);
 
@@ -63,7 +63,7 @@ public class CircuitBreaker {
             if (circuitBreakerRule.getRuleName().equals(config.getStrategyName())) {
 
                 // Get current point status and use it in applyForTps and applyForFlowControl methods
-                CircuitBreakerStatus pointStatus = POINT_TO_STATUS_MAP.get(pointName);
+                CircuitBreakerStatus pointStatus = pointToStatusMap.get(pointName);
 
                 return circuitBreakerRule.applyForTps(pointStatus, config)
                         && circuitBreakerRule.applyForFlowControl(pointStatus, config);
@@ -85,12 +85,11 @@ public class CircuitBreaker {
         return true;
     }
 
-
     /**
      * Init the current global CircuitBreaker. Load configs from local or DB.
      */
     private  void init() {
-        RULE_CONFIG_MAP.put(DEFAULT_RULE, new CircuitBreakerConfig());
+        ruleConfigMap.put(DEFAULT_RULE, new CircuitBreakerConfig());
         loadConfig();
     }
 
@@ -101,15 +100,14 @@ public class CircuitBreaker {
      */
     public  void registerPoint(String pointName, String ruleName) {
 
-        if (!POINT_TO_STATUS_MAP.containsKey(pointName)) {
-            POINT_TO_STATUS_MAP.put(pointName, new CircuitBreakerStatus());
+        if (!pointToStatusMap.containsKey(pointName)) {
+            pointToStatusMap.put(pointName, new CircuitBreakerStatus());
         }
 
-        if (!RULE_CONFIG_MAP.containsKey(ruleName)) {
-            RULE_CONFIG_MAP.put(ruleName, new CircuitBreakerConfig());
+        if (!ruleConfigMap.containsKey(ruleName)) {
+            ruleConfigMap.put(ruleName, new CircuitBreakerConfig());
         }
     }
-
 
     /**
      * Load config from local file or remote db.
@@ -118,20 +116,18 @@ public class CircuitBreaker {
         configLoader.updateLocalConfig();
     }
 
-
     /**
      * Get the current config for a specific rule.
      */
     public  CircuitBreakerConfig getConfig(String ruleName) {
-        return RULE_CONFIG_MAP.getOrDefault(ruleName, new CircuitBreakerConfig());
+        return ruleConfigMap.getOrDefault(ruleName, new CircuitBreakerConfig());
     }
-
 
     /**
      * Get the current status for a specific point.
      */
     public  CircuitBreakerStatus getStatus(String pointName) {
-        return POINT_TO_STATUS_MAP.getOrDefault(pointName, new CircuitBreakerStatus());
+        return pointToStatusMap.getOrDefault(pointName, new CircuitBreakerStatus());
     }
 
 }
