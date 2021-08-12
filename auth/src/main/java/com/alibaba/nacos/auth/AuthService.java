@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.common.GrantTypes;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
@@ -47,9 +46,9 @@ public interface AuthService {
     Boolean authorityAccess(IdentityContext identityContext, Permission permission);
     
     /**
-     * idetity type.
-     * @return GrantTypes auth grant type.
+     * AuthService Name which for conveniently find AuthService instance.
+     * @return AuthServiceName mark a AuthService instance.
      */
-    GrantTypes getType();
+    String getAuthServiceName();
     
 }

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.common.GrantTypes;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,9 +36,14 @@ public class AuthPluginManager {
     private static final AuthPluginManager INSTANCE = new AuthPluginManager();
     
     /**
+     * if develop haven't set AuthServiceName, its name will be set to "DefaultAuthServiceName".
+     */
+    private static final String DEFAULTAUTHSERVICENAME = "DefaultAuthServiceName";
+    
+    /**
      * The relationship of context type and {@link AuthService}.
      */
-    private Map<GrantTypes, AuthService> authServiceMap = new HashMap<>();
+    private Map<String, AuthService> authServiceMap = new HashMap<>();
     
     public AuthPluginManager() {
         initAuthServices();
@@ -52,26 +56,26 @@ public class AuthPluginManager {
     private void initAuthServices() {
         Collection<AuthService> authServices = NacosServiceLoader.load(AuthService.class);
         for (AuthService authService : authServices) {
-            if (authServiceMap.containsKey(authService.getType())) {
-                LOGGER.warn("[AuthPluginManager] init AuthService, AuthService type {} has value, ignore it.",
-                        authService.getType());
-                continue;
+            if (authService.getAuthServiceName().isEmpty()) {
+                authServiceMap.put(DEFAULTAUTHSERVICENAME, authService);
+            } else {
+                authServiceMap.put(authService.getAuthServiceName(), authService);
             }
-            authServiceMap.put(authService.getType(), authService);
-            LOGGER.info("[AuthPluginManager] Load AuthService({}) type({}) successfully.", authService.getClass(),
-                    authService.getType());
+            LOGGER.info("[AuthPluginManager] Load AuthService({}) AuthServiceName({}) successfully.", authService.getClass(),
+                    authService.getAuthServiceName());
         }
     }
     
     /**
      * get AuthService instance which AuthService.getType() is type.
-     * @param type AuthService.
+     * @param authServiceName AuthServiceName, mark a AuthService instance.
      * @return AuthService instance.
      */
-    public Optional<AuthService> findAuthServiceSpiImpl(GrantTypes type) {
-        for (Map.Entry<GrantTypes, AuthService> entry : authServiceMap.entrySet()) {
+    public Optional<AuthService> findAuthServiceSpiImpl(String authServiceName) {
+        for (Map.Entry<String, AuthService> entry : authServiceMap.entrySet()) {
+            System.out.println(entry.getValue().getClass());
             if (authServiceMap.containsKey(entry.getKey())) {
-                return Optional.of(authServiceMap.get(type));
+                return Optional.of(authServiceMap.get(authServiceName));
             }
         }
         return Optional.empty();

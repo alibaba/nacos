@@ -26,7 +26,6 @@ import org.springframework.mock.env.MockEnvironment;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class AuthConfigsTest {
     
@@ -65,14 +64,13 @@ public class AuthConfigsTest {
         environment.setProperty("nacos.core.auth.enable.identifyPosition", String.valueOf(IDENTIFYPOSITION));
         environment.setProperty("nacos.core.auth.enable.authorityKey", AUTHORITYKEY);
         
-    
         authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
         assertEquals(TEST_AUTH_ENABLED, authConfigs.isAuthEnabled());
         assertEquals(TEST_CACHING_ENABLED, authConfigs.isCachingEnabled());
         assertEquals(TEST_SERVER_IDENTITY_KEY, authConfigs.getServerIdentityKey());
         assertEquals(TEST_SERVER_IDENTITY_VALUE, authConfigs.getServerIdentityValue());
         assertEquals(TEST_ENABLE_UA_WHITE, authConfigs.isEnableUserAgentAuthWhite());
-        assertEquals(IDENTIFYPOSITION.toString(),authConfigs.getIdentifyPositionTypes().toString());
-        Assert.assertTrue(Arrays.equals(AUTHORITYKEY.split(","),authConfigs.getAuthorityKey()));
+        assertEquals(IDENTIFYPOSITION.toString(), authConfigs.getIdentifyPositionTypes().toString());
+        Assert.assertTrue(Arrays.equals(AUTHORITYKEY.split(","), authConfigs.getAuthorityKey()));
     }
 }

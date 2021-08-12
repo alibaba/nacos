@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.context;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
-import com.alibaba.nacos.auth.exception.ConfigException;
+import com.alibaba.nacos.auth.exception.AuthConfigsException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -44,7 +44,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
      * @return IdentityContext from request context
      */
     @Override
-    public IdentityContext build(HttpServletRequest request) throws ConfigException {
+    public IdentityContext build(HttpServletRequest request) throws AuthConfigsException {
         switch (authConfigs.getIdentifyPositionTypes()) {
             case HEADER:
                 Enumeration<String> headerEnu = request.getHeaderNames();
@@ -61,7 +61,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
                 setIdentityContext(paramBothEnu, request);
                 break;
             default:
-                throw new ConfigException("Authconfig.AUTHORIZATION_REGION() config error! ");
+                throw new AuthConfigsException("AuthConfigs.identifyPosition error! Check application.properties nacos.core.auth.identifyPosition.");
         }
         return identityContext;
     }

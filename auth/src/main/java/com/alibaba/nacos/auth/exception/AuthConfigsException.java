@@ -23,15 +23,15 @@ import com.alibaba.nacos.api.exception.NacosException;
  *
  * @author wuyfee
  */
-public class ConfigException extends NacosException {
+public class AuthConfigsException extends NacosException {
     
-    public ConfigException() {}
+    public AuthConfigsException() {}
     
-    public ConfigException(int code) {
+    public AuthConfigsException(int code) {
         this.setErrCode(code);
     }
     
-    public ConfigException(String msg) {
+    public AuthConfigsException(String msg) {
         this.setErrMsg(msg);
     }
 }

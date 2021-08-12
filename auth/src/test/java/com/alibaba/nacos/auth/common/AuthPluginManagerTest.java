@@ -47,21 +47,22 @@ public class AuthPluginManagerTest {
     @Mock
     private AuthService authService;
     
-    private static final GrantTypes type = GrantTypes.password;
+    private static final String TYPE = "DefaultAuthServiceName";
     
     @Mock
     private IdentityContext identityContext;
+    
     @Mock
     private Permission permission;
     
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
-        authPluginManager = AuthPluginManager.getInstance();//new AuthPluginManager();
+        authPluginManager = AuthPluginManager.getInstance();
         Class<AuthPluginManager> authPluginManagerClass = AuthPluginManager.class;
         Field authPlugins = authPluginManagerClass.getDeclaredField("authServiceMap");
         authPlugins.setAccessible(true);
-        Map<GrantTypes,AuthService> authServiceMap = (Map<GrantTypes,AuthService>) authPlugins.get(authPluginManager);
-        authServiceMap.put(type, authService);
+        Map<String, AuthService> authServiceMap = (Map<String, AuthService>) authPlugins.get(authPluginManager);
+        authServiceMap.put(TYPE, authService);
     }
     
     @Test
@@ -74,9 +75,9 @@ public class AuthPluginManagerTest {
     @Test
     public void testFindAuthServiceSpiImpl() throws AccessException {
         Mockito.when(authService.login(identityContext)).thenReturn(true);
-        Mockito.when(authService.authorityAccess(identityContext,permission)).thenReturn(true);
-        Mockito.when(authService.getType()).thenReturn(type);
-        Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(type);
+        Mockito.when(authService.authorityAccess(identityContext, permission)).thenReturn(true);
+        Mockito.when(authService.getAuthServiceName()).thenReturn(TYPE);
+        Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
         Assert.assertTrue(authServiceImpl.isPresent());
     }
 
