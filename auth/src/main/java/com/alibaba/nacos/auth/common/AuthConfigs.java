@@ -47,7 +47,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     private static Boolean cachingEnabled = null;
     
     /**
-     * authContext location.
+     * identifyContext position.
      */
     @Value("${nacos.core.auth.identifyPosition:}")
     private IdentifyPositionTypes identifyPosition;
@@ -169,7 +169,6 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             serverIdentityKey = EnvUtil.getProperty("nacos.core.auth.server.identity.key", "");
             serverIdentityValue = EnvUtil.getProperty("nacos.core.auth.server.identity.value", "");
             enableUserAgentAuthWhite = EnvUtil.getProperty("nacos.core.auth.enable.userAgentAuthWhite", Boolean.class, false);
-            System.out.println(EnvUtil.getProperty("nacos.core.auth.identifyPosition", ""));
             identifyPosition = IdentifyPositionTypes.valueOf(EnvUtil.getProperty("nacos.core.auth.identifyPosition", "HEADER"));
             authorityKey = EnvUtil.getProperty("nacos.core.auth.authorityKey", "").split(",");
         } catch (Exception e) {
