@@ -71,7 +71,7 @@ private static final long serialVersionUID = 0L;
             break;
           }
           case 58: {
-            if (!((mutable_bitField0_ & 0x00000001) != 0)) {
+            if ((mutable_bitField0_ & 0x00000001) == 0) {
               headers_ = com.google.protobuf.MapField.newMapField(
                   HeadersDefaultEntryHolder.defaultEntry);
               mutable_bitField0_ |= 0x00000001;

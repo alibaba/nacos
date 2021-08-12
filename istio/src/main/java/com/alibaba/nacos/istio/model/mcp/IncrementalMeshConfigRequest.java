@@ -79,7 +79,7 @@ private static final long serialVersionUID = 0L;
             break;
           }
           case 26: {
-            if (!((mutable_bitField0_ & 0x00000001) != 0)) {
+            if ((mutable_bitField0_ & 0x00000001) == 0) {
               initialResourceVersions_ = com.google.protobuf.MapField.newMapField(
                   InitialResourceVersionsDefaultEntryHolder.defaultEntry);
               mutable_bitField0_ |= 0x00000001;

@@ -74,7 +74,7 @@ private static final long serialVersionUID = 0L;
             break;
           }
           case 18: {
-            if (!((mutable_bitField0_ & 0x00000001) != 0)) {
+            if ((mutable_bitField0_ & 0x00000001) == 0) {
               resources_ = new java.util.ArrayList<com.alibaba.nacos.istio.model.mcp.Resource>();
               mutable_bitField0_ |= 0x00000001;
             }
@@ -84,7 +84,7 @@ private static final long serialVersionUID = 0L;
           }
           case 26: {
             java.lang.String s = input.readStringRequireUtf8();
-            if (!((mutable_bitField0_ & 0x00000002) != 0)) {
+            if ((mutable_bitField0_ & 0x00000002) == 0) {
               removedResources_ = new com.google.protobuf.LazyStringArrayList();
               mutable_bitField0_ |= 0x00000002;
             }
@@ -874,7 +874,7 @@ private static final long serialVersionUID = 0L;
     private java.util.List<com.alibaba.nacos.istio.model.mcp.Resource> resources_ =
       java.util.Collections.emptyList();
     private void ensureResourcesIsMutable() {
-      if (!((bitField0_ & 0x00000001) != 0)) {
+      if ((bitField0_ & 0x00000001) == 0) {
         resources_ = new java.util.ArrayList<com.alibaba.nacos.istio.model.mcp.Resource>(resources_);
         bitField0_ |= 0x00000001;
        }
@@ -1221,7 +1221,7 @@ private static final long serialVersionUID = 0L;
 
     private com.google.protobuf.LazyStringList removedResources_ = com.google.protobuf.LazyStringArrayList.EMPTY;
     private void ensureRemovedResourcesIsMutable() {
-      if (!((bitField0_ & 0x00000002) != 0)) {
+      if ((bitField0_ & 0x00000002) == 0) {
         removedResources_ = new com.google.protobuf.LazyStringArrayList(removedResources_);
         bitField0_ |= 0x00000002;
        }

@@ -62,8 +62,8 @@ private static final long serialVersionUID = 0L;
             done = true;
             break;
           case 10: {
-            if (!((mutable_bitField0_ & 0x00000001) != 0)) {
-              servers_ = new java.util.ArrayList<com.alibaba.nacos.istio.model.Server>();
+            if ((mutable_bitField0_ & 0x00000001) == 0) {
+              servers_ = new java.util.ArrayList<>();
               mutable_bitField0_ |= 0x00000001;
             }
             servers_.add(
@@ -71,7 +71,7 @@ private static final long serialVersionUID = 0L;
             break;
           }
           case 18: {
-            if (!((mutable_bitField0_ & 0x00000002) != 0)) {
+            if ((mutable_bitField0_ & 0x00000002) == 0) {
               selector_ = com.google.protobuf.MapField.newMapField(
                   SelectorDefaultEntryHolder.defaultEntry);
               mutable_bitField0_ |= 0x00000002;
@@ -698,7 +698,7 @@ private static final long serialVersionUID = 0L;
     private java.util.List<com.alibaba.nacos.istio.model.Server> servers_ =
       java.util.Collections.emptyList();
     private void ensureServersIsMutable() {
-      if (!((bitField0_ & 0x00000001) != 0)) {
+      if ((bitField0_ & 0x00000001) == 0) {
         servers_ = new java.util.ArrayList<com.alibaba.nacos.istio.model.Server>(servers_);
         bitField0_ |= 0x00000001;
        }

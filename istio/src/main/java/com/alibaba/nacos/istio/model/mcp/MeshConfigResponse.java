@@ -65,7 +65,7 @@ private static final long serialVersionUID = 0L;
             break;
           }
           case 18: {
-            if (!((mutable_bitField0_ & 0x00000001) != 0)) {
+            if ((mutable_bitField0_ & 0x00000001) == 0) {
               resources_ = new java.util.ArrayList<com.alibaba.nacos.istio.model.mcp.Resource>();
               mutable_bitField0_ |= 0x00000001;
             }
@@ -827,7 +827,7 @@ private static final long serialVersionUID = 0L;
     private java.util.List<com.alibaba.nacos.istio.model.mcp.Resource> resources_ =
       java.util.Collections.emptyList();
     private void ensureResourcesIsMutable() {
-      if (!((bitField0_ & 0x00000001) != 0)) {
+      if ((bitField0_ & 0x00000001) == 0) {
         resources_ = new java.util.ArrayList<com.alibaba.nacos.istio.model.mcp.Resource>(resources_);
         bitField0_ |= 0x00000001;
        }
