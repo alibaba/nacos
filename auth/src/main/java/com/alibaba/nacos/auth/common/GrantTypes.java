@@ -34,7 +34,11 @@ public enum GrantTypes {
     /**
      * auth type AK/SK.
      */
-    AKSK;
+    AKSK,
+    /**
+     * other auth type.
+     */
+    others;
     
     private  String position;
     

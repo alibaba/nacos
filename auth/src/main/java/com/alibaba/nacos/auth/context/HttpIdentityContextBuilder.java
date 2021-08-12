@@ -45,7 +45,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
      */
     @Override
     public IdentityContext build(HttpServletRequest request) throws ConfigException {
-        switch (authConfigs.getAuthorizationLocation()) {
+        switch (authConfigs.getIdentifyPositionTypes()) {
             case HEADER:
                 Enumeration<String> headerEnu = request.getHeaderNames();
                 setIdentityContext(headerEnu, request);

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth;
 
+import com.alibaba.nacos.auth.common.GrantTypes;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
@@ -30,25 +31,25 @@ public interface AuthService {
     /**
      * Authentication of request, identify the user who request the resource.
      *
-     * @param requestContext where we can find the user information
+     * @param identityContext where we can find the user information
      * @return boolean if the user identify success
      * @throws AccessException if authentication is failed
      */
-    Boolean login(IdentityContext requestContext) throws AccessException;
+    Boolean login(IdentityContext identityContext) throws AccessException;
     
     
     /**
      * identity whether the user has the resource authority.
-     * @param requestContext  where we can find the user information.
+     * @param identityContext where we can find the user information.
      * @param permission permission to auth.
      * @return Boolean if the user has the resource authority.
      */
-    Boolean authorityAccess(IdentityContext requestContext, Permission permission);
+    Boolean authorityAccess(IdentityContext identityContext, Permission permission);
     
     /**
      * idetity type.
      * @return GrantTypes auth grant type.
      */
-    String getType();
+    GrantTypes getType();
     
 }

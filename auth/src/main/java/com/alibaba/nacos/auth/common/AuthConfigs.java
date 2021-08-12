@@ -49,8 +49,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     /**
      * authContext location.
      */
-    @Value("${nacos.core.auth.authorizationLocation:}")
-    private IdentifyPositionTypes authorizationLocation;
+    @Value("${nacos.core.auth.identifyPosition:}")
+    private IdentifyPositionTypes identifyPosition;
     
     /**
      * Authority key set.
@@ -107,13 +107,11 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
         return secretKeyBytes;
     }
     
-    public IdentifyPositionTypes getAuthorizationLocation() {
-        authorizationLocation = IdentifyPositionTypes.valueOf(EnvUtil.getProperty("nacos.core.auth.authorizationLocation", ""));
-        return authorizationLocation;
+    public IdentifyPositionTypes getIdentifyPositionTypes() {
+        return identifyPosition;
     }
     
     public String[] getAuthorityKey() {
-        authorityKey = EnvUtil.getProperty("nacos.core.auth.authorityKey", "").split(",");
         return authorityKey;
     }
     
@@ -171,7 +169,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             serverIdentityKey = EnvUtil.getProperty("nacos.core.auth.server.identity.key", "");
             serverIdentityValue = EnvUtil.getProperty("nacos.core.auth.server.identity.value", "");
             enableUserAgentAuthWhite = EnvUtil.getProperty("nacos.core.auth.enable.userAgentAuthWhite", Boolean.class, false);
-            authorizationLocation = IdentifyPositionTypes.valueOf(EnvUtil.getProperty("nacos.core.auth.authorizationLocation", ""));
+            System.out.println(EnvUtil.getProperty("nacos.core.auth.identifyPosition", ""));
+            identifyPosition = IdentifyPositionTypes.valueOf(EnvUtil.getProperty("nacos.core.auth.identifyPosition", "HEADER"));
             authorityKey = EnvUtil.getProperty("nacos.core.auth.authorityKey", "").split(",");
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
