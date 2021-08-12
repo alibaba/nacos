@@ -1132,7 +1132,7 @@ class ConfigurationManagement extends React.Component {
               <Form inline>
                 <Form.Item label="Data ID:">
                   <Input
-                    defaultValue={this.dataId}
+                    value={this.dataId}
                     htmlType="text"
                     placeholder={locale.fuzzyd}
                     style={{ width: 200 }}
