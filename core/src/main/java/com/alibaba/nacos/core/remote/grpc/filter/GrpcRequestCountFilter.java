@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.core.remote.grpc.filter;
 
+import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -34,7 +36,9 @@ public class GrpcRequestCountFilter extends AbstractRequestFilter {
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
-        MetricsMonitor.getRequestGrpcCount().increment();
+        if (request instanceof AbstractNamingRequest || request instanceof AbstractConfigRequest) {
+            MetricsMonitor.getRequestGrpcCount().increment();
+        }
         return null;
     }
     
