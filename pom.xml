@@ -632,7 +632,7 @@
             <artifactId>mockito-inline</artifactId>
             <scope>test</scope>
         </dependency>
-    
+        
     </dependencies>
     
     <!-- 管理依赖版本号,子项目不会默认依赖 -->
