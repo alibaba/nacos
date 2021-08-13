@@ -33,8 +33,10 @@ public class NacosMonitorPushResultHook implements PushResultHook {
         MetricsMonitor.incrementPushCost(result.getAllCost());
         MetricsMonitor.compareAndSetMaxPushCost(result.getAllCost());
         if (isRpc(result.getSubscriber())) {
+            MetricsMonitor.getGrpcPushSuccessCount().increment();
             NamingTpsMonitor.rpcPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
         } else {
+            MetricsMonitor.getUdpPushSuccessCount().increment();
             NamingTpsMonitor.udpPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
         }
     }
@@ -43,8 +45,10 @@ public class NacosMonitorPushResultHook implements PushResultHook {
     public void pushFailed(PushResult result) {
         MetricsMonitor.incrementFailPush();
         if (isRpc(result.getSubscriber())) {
+            MetricsMonitor.getGrpcPushFailedCount().increment();
             NamingTpsMonitor.rpcPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());
         } else {
+            MetricsMonitor.getUdpPushFailedCount().increment();
             NamingTpsMonitor.udpPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());
         }
     }

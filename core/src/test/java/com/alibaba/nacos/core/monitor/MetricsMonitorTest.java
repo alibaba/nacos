@@ -76,4 +76,18 @@ public class MetricsMonitorTest {
     
         Assert.assertEquals(30D, raftApplyReadTimer.totalTime(TimeUnit.SECONDS), 0.01);
     }
+    
+    @Test
+    public void testConnectionsTotal() {
+        AtomicInteger namingTotalConnection = MetricsMonitor.getNamingTotalConnection();
+        Assert.assertEquals(namingTotalConnection.get(), 0);
+        AtomicInteger configTotalConnection = MetricsMonitor.getConfigTotalConnection();
+        Assert.assertEquals(configTotalConnection.get(), 0);
+    }
+    
+    @Test
+    public void testRequestGrpcCount() {
+        MetricsMonitor.getRequestGrpcCount().increment();
+        Assert.assertEquals(1D, MetricsMonitor.getRequestGrpcCount().count(), 0.01);
+    }
 }
