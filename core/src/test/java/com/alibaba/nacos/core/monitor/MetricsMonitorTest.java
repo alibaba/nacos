@@ -87,6 +87,10 @@ public class MetricsMonitorTest {
     
     @Test
     public void testRequestGrpcCount() {
-        Assert.assertEquals(0D, MetricsMonitor.getRequestGrpcCount().count(), 0.01);
+        Assert.assertEquals(0D, MetricsMonitor.getHealthCheckRequestGrpcCount().count(), 0.01);
+        Assert.assertEquals(0D, MetricsMonitor.getServerCheckRequestGrpcCount().count(), 0.01);
+        Assert.assertEquals(0D, MetricsMonitor.getServerReloadRequestGrpcCount().count(), 0.01);
+        Assert.assertEquals(0D, MetricsMonitor.getPushAckRequestGrpcCount().count(), 0.01);
+        Assert.assertEquals(0D, MetricsMonitor.getClientDetectionRequestGrpcCount().count(), 0.01);
     }
 }
