@@ -15,10 +15,11 @@
  *
  */
 
-package com.alibaba.nacos.api.naming.selector;
+package com.alibaba.nacos.api.selector;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.context.CmdbContext;
+import com.alibaba.nacos.api.selector.context.CmdbContext;
 
 import java.util.List;
 
@@ -32,6 +33,34 @@ import static com.alibaba.nacos.api.common.Constants.Naming.CMDB_CONTEXT_TYPE;
  * @date 2021-07-09 21:29
  */
 public abstract class AbstractCmdbSelector<T extends Instance> implements Selector<List<T>, CmdbContext<T>, String> {
+    
+    /**
+     * the labels expression.
+     */
+    protected String expression;
+    
+    public String getExpression() {
+        return expression;
+    }
+    
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
+    
+    @Override
+    public Selector<List<T>, CmdbContext<T>, String> parse(String expression) throws NacosException {
+        this.expression = expression;
+        doParse(expression);
+        return this;
+    }
+    
+    /**
+     * The real parse logic implement by sub class.
+     *
+     * @param expression expression.
+     * @throws NacosException parse failed exception.
+     */
+    protected abstract void doParse(String expression) throws NacosException;
     
     @Override
     public List<T> select(CmdbContext<T> context) {
