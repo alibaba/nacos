@@ -50,8 +50,6 @@ public final class MetricsMonitor {
     
     private static AtomicInteger namingTotalConncetion = new AtomicInteger();
     
-    private static MeterRegistry counterRegistry = new SimpleMeterRegistry();
-    
     static {
         RAFT_READ_INDEX_FAILED = NacosMeterRegistry.summary("protocol", "raft_read_index_failed");
         RAFT_FROM_LEADER = NacosMeterRegistry.summary("protocol", "raft_read_from_leader");
@@ -74,8 +72,6 @@ public final class MetricsMonitor {
         tags.add(new ImmutableTag("module", "core"));
         tags.add(new ImmutableTag("client", "naming"));
         Metrics.gauge("nacos_connections_total", tags, namingTotalConncetion);
-        
-        Metrics.addRegistry(counterRegistry);
     }
     
     public static AtomicInteger getLongConnection() {
@@ -119,6 +115,6 @@ public final class MetricsMonitor {
     }
     
     public static Counter getRequestGrpcCount() {
-        return counterRegistry.counter("nacos_request_count", "module", "core", "type", "grpc");
+        return Metrics.counter("nacos_request_count", "module", "core", "type", "grpc");
     }
 }
