@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.core.monitor;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +46,12 @@ public final class MetricsMonitor {
     
     private static AtomicInteger longConnection = new AtomicInteger();
     
+    private static AtomicInteger configTotalConnection = new AtomicInteger();
+    
+    private static AtomicInteger namingTotalConncetion = new AtomicInteger();
+    
+    private static MeterRegistry counterRegistry = new SimpleMeterRegistry();
+    
     static {
         RAFT_READ_INDEX_FAILED = NacosMeterRegistry.summary("protocol", "raft_read_index_failed");
         RAFT_FROM_LEADER = NacosMeterRegistry.summary("protocol", "raft_read_from_leader");
@@ -54,7 +63,31 @@ public final class MetricsMonitor {
         tags.add(new ImmutableTag("module", "config"));
         tags.add(new ImmutableTag("name", "longConnection"));
         Metrics.gauge("nacos_monitor", tags, longConnection);
+    
+        // new metrics
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "core"));
+        tags.add(new ImmutableTag("client", "config"));
+        Metrics.gauge("nacos_connections_total", tags, configTotalConnection);
+    
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "core"));
+        tags.add(new ImmutableTag("client", "naming"));
+        Metrics.gauge("nacos_connections_total", tags, namingTotalConncetion);
         
+        Metrics.addRegistry(counterRegistry);
+    }
+    
+    public static AtomicInteger getLongConnection() {
+        return longConnection;
+    }
+    
+    public static AtomicInteger getConfigTotalConnection() {
+        return configTotalConnection;
+    }
+    
+    public static AtomicInteger getNamingTotalConnection() {
+        return namingTotalConncetion;
     }
     
     public static AtomicInteger getLongConnectionMonitor() {
@@ -83,5 +116,9 @@ public final class MetricsMonitor {
     
     public static DistributionSummary getRaftFromLeader() {
         return RAFT_FROM_LEADER;
+    }
+    
+    public static Counter getRequestGrpcCount() {
+        return counterRegistry.counter("nacos_request_count", "module", "core", "type", "grpc");
     }
 }

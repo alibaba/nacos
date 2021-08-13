@@ -33,4 +33,23 @@ public class MetricsMonitorTest {
         assertEquals(0, MetricsMonitor.getFailedPushMonitor().get());
         assertEquals(1, MetricsMonitor.getFailedPushMonitor().incrementAndGet());
     }
+    
+    @Test
+    public void testGrpcPushCount() {
+        MetricsMonitor.getGrpcPushSuccessCount().increment();
+        assertEquals(1D, MetricsMonitor.getGrpcPushSuccessCount().count(), 0.01);
+        
+        MetricsMonitor.getGrpcPushFailedCount().increment();
+        assertEquals(1D, MetricsMonitor.getGrpcPushFailedCount().count(), 0.01);
+    }
+    
+    @Test
+    public void testUdpPushCount() {
+        MetricsMonitor.getUdpPushSuccessCount().increment();
+        assertEquals(1D, MetricsMonitor.getUdpPushSuccessCount().count(), 0.01);
+    
+        MetricsMonitor.getUdpPushFailedCount().increment();
+        assertEquals(1D, MetricsMonitor.getUdpPushFailedCount().count(), 0.01);
+    }
+    
 }

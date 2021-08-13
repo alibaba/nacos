@@ -19,8 +19,10 @@ package com.alibaba.nacos.naming.monitor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -63,7 +65,10 @@ public class MetricsMonitor {
     
     private final AtomicInteger failedPush = new AtomicInteger();
     
+    private final MeterRegistry counterManager = new SimpleMeterRegistry();
+    
     private MetricsMonitor() {
+        Metrics.addRegistry(counterManager);
         for (Field each : MetricsMonitor.class.getDeclaredFields()) {
             if (Number.class.isAssignableFrom(each.getType())) {
                 each.setAccessible(true);
@@ -174,6 +179,22 @@ public class MetricsMonitor {
     
     public static Counter getLeaderSendBeatFailedException() {
         return Metrics.counter("nacos_exception", "module", "naming", "name", "leaderSendBeatFailed");
+    }
+    
+    public static Counter getGrpcPushSuccessCount() {
+        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "grpc", "success", "true");
+    }
+    
+    public static Counter getGrpcPushFailedCount() {
+        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "grpc", "success", "false");
+    }
+    
+    public static Counter getUdpPushSuccessCount() {
+        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "udp", "success", "true");
+    }
+    
+    public static Counter getUdpPushFailedCount() {
+        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "udp", "success", "false");
     }
     
     /**
