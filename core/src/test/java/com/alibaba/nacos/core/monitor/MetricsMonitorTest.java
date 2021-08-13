@@ -78,6 +78,20 @@ public class MetricsMonitorTest {
     }
     
     @Test
+    public void testConnectionsTotal() {
+        AtomicInteger namingTotalConnection = MetricsMonitor.getNamingTotalConnection();
+        Assert.assertEquals(namingTotalConnection.get(), 0);
+        AtomicInteger configTotalConnection = MetricsMonitor.getConfigTotalConnection();
+        Assert.assertEquals(configTotalConnection.get(), 0);
+    }
+    
+    @Test
+    public void testRequestGrpcCount() {
+        MetricsMonitor.getRequestGrpcCount().increment();
+        Assert.assertEquals(1D, MetricsMonitor.getRequestGrpcCount().count(), 0.01);
+    }
+    
+    @Test
     public void testClientTotalConnection() {
         MetricsMonitor.getClientTotalConnection().incrementAndGet();
         Assert.assertEquals(MetricsMonitor.getClientTotalConnection().get(), 1);

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +41,15 @@ public class ClientConnectionEventListenerRegistry {
      */
     public void notifyClientConnected(final Connection connection) {
         
+        if (connection.getAbilities() != null && connection.getAbilities().getConfigAbility() != null) {
+            if (connection.getAbilities().getConfigAbility().isSupportRemoteMetrics()) {
+                MetricsMonitor.getConfigTotalConnection().getAndIncrement();
+            }
+            if (connection.getAbilities().getNamingAbility().isSupportRemoteMetric()) {
+                MetricsMonitor.getNamingTotalConnection().getAndIncrement();
+            }
+        }
+        
         for (ClientConnectionEventListener clientConnectionEventListener : clientConnectionEventListeners) {
             try {
                 clientConnectionEventListener.clientConnected(connection);
@@ -59,6 +69,15 @@ public class ClientConnectionEventListenerRegistry {
      * @param connection connection that disconnected.
      */
     public void notifyClientDisConnected(final Connection connection) {
+    
+        if (connection.getAbilities() != null && connection.getAbilities().getConfigAbility() != null) {
+            if (connection.getAbilities().getConfigAbility().isSupportRemoteMetrics()) {
+                MetricsMonitor.getConfigTotalConnection().getAndDecrement();
+            }
+            if (connection.getAbilities().getNamingAbility().isSupportRemoteMetric()) {
+                MetricsMonitor.getNamingTotalConnection().getAndDecrement();
+            }
+        }
         
         for (ClientConnectionEventListener clientConnectionEventListener : clientConnectionEventListeners) {
             try {

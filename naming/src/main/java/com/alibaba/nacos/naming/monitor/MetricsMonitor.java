@@ -182,6 +182,22 @@ public class MetricsMonitor {
                 .record(amount, TimeUnit.MILLISECONDS);
     }
     
+    public static Counter getGrpcPushSuccessCount() {
+        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "grpc", "success", "true");
+    }
+    
+    public static Counter getGrpcPushFailedCount() {
+        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "grpc", "success", "false");
+    }
+    
+    public static Counter getUdpPushSuccessCount() {
+        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "udp", "success", "true");
+    }
+    
+    public static Counter getUdpPushFailedCount() {
+        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "udp", "success", "false");
+    }
+    
     /**
      * Reset all metrics.
      */
