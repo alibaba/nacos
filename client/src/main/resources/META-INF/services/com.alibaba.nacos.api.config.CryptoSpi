@@ -15,4 +15,3 @@
 #
 
 com.alibaba.nacos.client.config.AesCrypto
-com.alibaba.nacos.client.config.DesCrypto
