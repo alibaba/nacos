@@ -16,50 +16,48 @@
 
 package com.alibaba.nacos.api.config;
 
+import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 /**
  * CryptoExecuter.
  *
- * @author  lixiaoshuang
+ * @author lixiaoshuang
  */
 public class CryptoExecutor {
     
-    private static final String PREFIX = "chipher-";
-    
     /**
-     * Check if encryption and decryption is needed.
-     *
-     * @param dataId dataId
-     * @return boolean
+     * chipher-AES-dataId.
      */
-    public static boolean checkCipher(String dataId) {
-        if (dataId.startsWith(PREFIX)) {
-            return true;
-        }
-        return false;
-    }
+    private static final String PREFIX = "chipher-";
     
     /**
      * Execute encryption.
      *
-     * @param dataId  dataId
-     * @param content content
-     * @return
+     * @param secretKey secretKey
+     * @param content   content
+     * @return encrypt value
      */
-    public static String executeEncrypt(String dataId, String content) {
-        CryptoSpi cryptoSpi = cryptoInstance(dataId);
-        return cryptoSpi.encrypt(cryptoSpi.generateSecretKey(), content);
+    public static String executeEncrypt(BiFunction<String, String, String> biFunc, String secretKey, String content) {
+        return biFunc.apply(secretKey, content);
     }
     
     /**
      * Execute decryption.
      *
-     * @param dataId  dataId
-     * @param content content
-     * @return
+     * @param dataId    dataId
+     * @param secretKey secretKey
+     * @param content   content
+     * @return decrypt value
      */
-    public static String executeDecrypt(String dataId, String content) {
+    public static String executeDecrypt(String dataId, String secretKey, String content) {
         CryptoSpi cryptoSpi = cryptoInstance(dataId);
-        return cryptoSpi.decrypt("", content);
+        if (Objects.isNull(cryptoSpi)) {
+            return content;
+        }
+        return cryptoSpi.decrypt(secretKey, content);
     }
     
     /**
@@ -68,7 +66,22 @@ public class CryptoExecutor {
      * @param dataId dataId
      * @return Encryption algorithm instance
      */
-    private static CryptoSpi cryptoInstance(String dataId) {
-        return CryptoManager.instance("AES");
+    public static CryptoSpi cryptoInstance(String dataId) {
+        boolean result = checkCipher(dataId);
+        if (result) {
+            String algorithmName = Stream.of(dataId.split("-")).collect(Collectors.toList()).get(1);
+            return CryptoManager.instance(algorithmName);
+        }
+        return null;
+    }
+    
+    /**
+     * Check if encryption and decryption is needed.
+     *
+     * @param dataId dataId
+     * @return boolean
+     */
+    private static boolean checkCipher(String dataId) {
+        return dataId.startsWith(PREFIX);
     }
 }

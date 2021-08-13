@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.CryptoExecutor;
+import com.alibaba.nacos.api.config.CryptoSpi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
@@ -157,10 +158,10 @@ public class ConfigController {
                     dataId, group);
             throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
         }
-    
-        boolean result = CryptoExecutor.checkCipher(dataId);
-        if (result) {
-            content = CryptoExecutor.executeEncrypt(dataId, content);
+        CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
+        if (Objects.nonNull(cryptoSpi)) {
+            String secretKey = cryptoSpi.generateSecretKey();
+            content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, secretKey, content);
         }
         
         final Timestamp time = TimeUtils.getCurrentTime();
@@ -231,12 +232,10 @@ public class ConfigController {
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
-    
-        boolean result = CryptoExecutor.checkCipher(dataId);
-        if (result) {
-            String decrypt = CryptoExecutor.executeDecrypt(dataId, configAllInfo.getContent());
-            configAllInfo.setContent(decrypt);
-        }
+        
+        String encryptedDataKey = request.getParameter("encryptedDataKey");
+        String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, configAllInfo.getContent());
+        configAllInfo.setContent(decrypt);
         return configAllInfo;
     }
     
@@ -294,8 +293,8 @@ public class ConfigController {
                     new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
             ConfigTraceService
-                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), null,
+                            time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
         }
         return RestResultUtils.success(true);
     }
@@ -541,7 +540,7 @@ public class ConfigController {
         }
         ConfigMetadata configMetadata = new ConfigMetadata();
         configMetadata.setMetadata(configMetadataItems);
-    
+        
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
                 YamlParserUtil.dumpObject(configMetadata)));
         HttpHeaders headers = new HttpHeaders();
@@ -589,11 +588,9 @@ public class ConfigController {
             RestResult<Map<String, Object>> errorResult;
             if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
-                errorResult = parseImportDataV2(unziped, configInfoList,
-                        unrecognizedList, namespace);
+                errorResult = parseImportDataV2(unziped, configInfoList, unrecognizedList, namespace);
             } else {
-                errorResult = parseImportData(unziped, configInfoList, unrecognizedList,
-                        namespace);
+                errorResult = parseImportData(unziped, configInfoList, unrecognizedList, namespace);
             }
             if (errorResult != null) {
                 return errorResult;

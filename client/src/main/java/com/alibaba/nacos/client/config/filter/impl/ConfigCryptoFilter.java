@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.filter.impl;
 
+import com.alibaba.nacos.api.config.CryptoSpi;
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
@@ -50,26 +51,31 @@ public class ConfigCryptoFilter implements IConfigFilter {
     public void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
             throws NacosException {
         if (Objects.nonNull(request) && request instanceof ConfigRequest && Objects.isNull(response)) {
+            
             // Publish configuration, encrypt
             ConfigRequest configRequest = (ConfigRequest) request;
             String dataId = configRequest.getDataId();
-            boolean result = CryptoExecutor.checkCipher(dataId);
-            if (result) {
-                String content = configRequest.getContent();
-                String encrypt = CryptoExecutor.executeEncrypt(dataId, content);
+            String content = configRequest.getContent();
+            
+            CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
+            if (Objects.nonNull(cryptoSpi)) {
+                String secretKey = cryptoSpi.generateSecretKey();
+                String encrypt = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, secretKey, content);
                 ((ConfigRequest) request).setContent(encrypt);
+                ((ConfigRequest) request).setEncryptedDataKey(secretKey);
             }
         }
         if (Objects.nonNull(response) && response instanceof ConfigResponse && Objects.isNull(request)) {
+            
             // Get configuration, decrypt
             ConfigResponse configResponse = (ConfigResponse) response;
+            
             String dataId = configResponse.getDataId();
-            boolean result = CryptoExecutor.checkCipher(dataId);
-            if (result) {
-                String content = configResponse.getContent();
-                String decrypt = CryptoExecutor.executeDecrypt(dataId, content);
-                ((ConfigResponse) response).setContent(decrypt);
-            }
+            String encryptedDataKey = configResponse.getEncryptedDataKey();
+            String content = configResponse.getContent();
+            
+            String decryptContent = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, content);
+            ((ConfigResponse) response).setContent(decryptContent);
         }
         filterChain.doFilter(request, response);
     }
