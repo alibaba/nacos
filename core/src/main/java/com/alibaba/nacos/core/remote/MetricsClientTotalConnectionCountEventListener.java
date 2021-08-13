@@ -20,7 +20,7 @@ import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import org.springframework.stereotype.Component;
 
 /**
- * ClientConnectionCountEventListener.
+ * MetricsClientTotalConnectionCountEventListener.
  *
  * @author holdonbei
  */
