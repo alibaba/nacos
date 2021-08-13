@@ -543,7 +543,7 @@ public class ServerListManager implements Closeable {
         }
         
         public ServerAddressIterator(List<String> source) {
-            sorted = new ArrayList<RandomizedServerAddress>();
+            sorted = new ArrayList<>();
             for (String address : source) {
                 sorted.add(new RandomizedServerAddress(address));
             }
