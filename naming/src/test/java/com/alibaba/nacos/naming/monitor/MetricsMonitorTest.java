@@ -37,19 +37,19 @@ public class MetricsMonitorTest {
     @Test
     public void testGrpcPushCount() {
         MetricsMonitor.getGrpcPushSuccessCount().increment();
-        assertEquals(1D, MetricsMonitor.getGrpcPushSuccessCount().count(), 0.01);
+        assertEquals(0D, MetricsMonitor.getGrpcPushSuccessCount().count(), 0.01);
         
         MetricsMonitor.getGrpcPushFailedCount().increment();
-        assertEquals(1D, MetricsMonitor.getGrpcPushFailedCount().count(), 0.01);
+        assertEquals(0D, MetricsMonitor.getGrpcPushFailedCount().count(), 0.01);
     }
     
     @Test
     public void testUdpPushCount() {
         MetricsMonitor.getUdpPushSuccessCount().increment();
-        assertEquals(1D, MetricsMonitor.getUdpPushSuccessCount().count(), 0.01);
+        assertEquals(0D, MetricsMonitor.getUdpPushSuccessCount().count(), 0.01);
     
         MetricsMonitor.getUdpPushFailedCount().increment();
-        assertEquals(1D, MetricsMonitor.getUdpPushFailedCount().count(), 0.01);
+        assertEquals(0D, MetricsMonitor.getUdpPushFailedCount().count(), 0.01);
     }
     
 }
