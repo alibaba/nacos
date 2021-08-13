@@ -71,7 +71,7 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app,
                 meta.getClientIp(), namespaceId, groupedServiceName, 0, request.getClusters());
-        ServiceInfo serviceInfo = handleClusterData(serviceStorage.getData(service),
+        ServiceInfo serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceStorage.getData(service),
                 metadataManager.getServiceMetadata(service).orElse(null), subscriber);
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
@@ -92,6 +92,6 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     @Deprecated
     private ServiceInfo handleClusterData(ServiceInfo data, ServiceMetadata metadata, Subscriber subscriber) {
         return StringUtils.isBlank(subscriber.getCluster()) ? data
-                : ServiceUtil.selectInstancesWithHealthyProtection(data, metadata, subscriber.getCluster(), subscriber);
+                : ServiceUtil.selectInstancesWithHealthyProtection(data, metadata, subscriber);
     }
 }

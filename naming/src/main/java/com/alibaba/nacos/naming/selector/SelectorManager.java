@@ -164,7 +164,12 @@ public class SelectorManager {
             Loggers.SRV_LOG.info("[SelectorManager] cannot find the contextBuilder of type {}.", selector.getType());
             return providers;
         }
-        Object context = selectorContextBuilder.build(consumerIp, providers);
-        return (List<T>) selector.select(context);
+        try {
+            Object context = selectorContextBuilder.build(consumerIp, providers);
+            return (List<T>) selector.select(context);
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("[SelectorManager] execute select failed, will return all providers.", e);
+            return providers;
+        }
     }
 }

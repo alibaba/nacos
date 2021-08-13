@@ -253,13 +253,11 @@ public final class ServiceUtil {
      *
      * @param serviceInfo     original service info
      * @param serviceMetadata service meta info
-     * @param cluster         cluster of instances
      * @param subscriber subscriber
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, String cluster,
-            Subscriber subscriber) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, false, false, subscriber.getIp());
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, Subscriber subscriber) {
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, subscriber.getCluster(), false, false, subscriber.getIp());
     }
 
     /**
