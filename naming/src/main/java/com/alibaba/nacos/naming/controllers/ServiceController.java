@@ -63,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Service operation controller.
@@ -385,7 +386,13 @@ public class ServiceController {
         }
         
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
-        Selector selector = selectorManager.parseSelector(selectorJson.get("type").asText(), selectorJson.get("expression").asText());
+        String type = Optional.ofNullable(selectorJson.get("type"))
+                .orElseThrow(() -> new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!"))
+                .asText();
+        String expression = Optional.ofNullable(selectorJson.get("expression"))
+                .map(JsonNode::asText)
+                .orElse(null);
+        Selector selector = selectorManager.parseSelector(type, expression);
         if (Objects.isNull(selector)) {
             throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }

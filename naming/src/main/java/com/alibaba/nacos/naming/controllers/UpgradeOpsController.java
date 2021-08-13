@@ -21,8 +21,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -71,6 +71,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -375,7 +376,13 @@ public class UpgradeOpsController {
         }
     
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
-        Selector selector = selectorManager.parseSelector(selectorJson.get("type").asText(), selectorJson.get("expression").asText());
+        String type = Optional.ofNullable(selectorJson.get("type"))
+                .orElseThrow(() -> new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!"))
+                .asText();
+        String expression = Optional.ofNullable(selectorJson.get("expression"))
+                .map(JsonNode::asText)
+                .orElse(null);
+        Selector selector = selectorManager.parseSelector(type, expression);
         if (Objects.isNull(selector)) {
             throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }
