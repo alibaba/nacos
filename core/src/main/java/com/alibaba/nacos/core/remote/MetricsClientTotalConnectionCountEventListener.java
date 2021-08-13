@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
  * @author holdonbei
  */
 @Component
-public class MetricsClientConnectionTotalCountEventListener extends ClientConnectionEventListener {
+public class MetricsClientTotalConnectionCountEventListener extends ClientConnectionEventListener {
     
     @Override
     public void clientConnected(Connection connect) {
