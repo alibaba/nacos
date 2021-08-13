@@ -169,7 +169,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             serverIdentityKey = EnvUtil.getProperty("nacos.core.auth.server.identity.key", "");
             serverIdentityValue = EnvUtil.getProperty("nacos.core.auth.server.identity.value", "");
             enableUserAgentAuthWhite = EnvUtil.getProperty("nacos.core.auth.enable.userAgentAuthWhite", Boolean.class, false);
-            identifyPosition = IdentifyPositionTypes.valueOf(EnvUtil.getProperty("nacos.core.auth.identifyPosition", "HEADER"));
+            identifyPosition = IdentifyPositionTypes.valueOf(EnvUtil.getProperty("nacos.core.auth.identifyPosition", "HEADER_AND_PARAMETER"));
             authorityKey = EnvUtil.getProperty("nacos.core.auth.authorityKey", "").split(",");
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);

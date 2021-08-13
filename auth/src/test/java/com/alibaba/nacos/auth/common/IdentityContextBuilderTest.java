@@ -15,7 +15,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.class)
-public class HttpIdentityContextBuilderTest {
+public class IdentityContextBuilderTest {
 
     HttpIdentityContextBuilder httpIdentityContextBuilder;
     

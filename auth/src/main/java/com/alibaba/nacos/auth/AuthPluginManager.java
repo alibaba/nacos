@@ -17,6 +17,7 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,9 +53,9 @@ public class AuthPluginManager {
     private void initAuthServices() {
         Collection<AuthService> authServices = NacosServiceLoader.load(AuthService.class);
         for (AuthService authService : authServices) {
-            if (authService.getAuthServiceName().isEmpty()) {
+            if (StringUtils.isEmpty(authService.getAuthServiceName())) {
                 LOGGER.warn(
-                        "[AuthPluginManager] Load AuthService({}) AuthServiceName(null) fail. Please Add AuthServiceName to resolve.",
+                        "[AuthPluginManager] Load AuthService({}) AuthServiceName(null/empty) fail. Please Add AuthServiceName to resolve.",
                         authService.getClass());
                 continue;
             }
@@ -71,11 +72,6 @@ public class AuthPluginManager {
      * @return AuthService instance.
      */
     public Optional<AuthService> findAuthServiceSpiImpl(String authServiceName) {
-        for (Map.Entry<String, AuthService> entry : authServiceMap.entrySet()) {
-            if (authServiceMap.containsKey(entry.getKey())) {
-                return Optional.of(authServiceMap.get(authServiceName));
-            }
-        }
         return Optional.ofNullable(authServiceMap.get(authServiceName));
     }
     

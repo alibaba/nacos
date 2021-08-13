@@ -39,7 +39,7 @@ public class AuthConfigsTest {
     
     private static final boolean TEST_ENABLE_UA_WHITE = true;
     
-    private static final IdentifyPositionTypes IDENTIFYPOSITION = IdentifyPositionTypes.PARAMETER;
+    private static final IdentifyPositionTypes IDENTIFYPOSITION = IdentifyPositionTypes.HEADER_AND_PARAMETER;
     
     private static final String AUTHORITYKEY = "username,password,token,tenant";
     
