@@ -17,16 +17,12 @@
 package com.alibaba.nacos.core.remote.grpc.filter;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.ClientDetectionRequest;
-import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
-import com.alibaba.nacos.api.remote.request.PushAckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
-import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -39,18 +35,7 @@ public class MetricsGrpcRequestCountFilter extends AbstractRequestFilter {
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
-        if (request instanceof HealthCheckRequest) {
-            MetricsMonitor.getHealthCheckRequestGrpcCount().increment();
-        } else if (request instanceof ServerCheckRequest) {
-            MetricsMonitor.getServerCheckRequestGrpcCount().increment();
-        } else if (request instanceof ServerReloadRequest) {
-            MetricsMonitor.getServerReloadRequestGrpcCount().increment();
-        } else if (request instanceof PushAckRequest) {
-            MetricsMonitor.getPushAckRequestGrpcCount().increment();
-        } else if (request instanceof ClientDetectionRequest) {
-            MetricsMonitor.getClientDetectionRequestGrpcCount().increment();
-        }
+        MetricsMonitor.getGrpcRequestCount(StringUtils.lowerCase(request.getClass().getSimpleName()));
         return null;
     }
-    
 }

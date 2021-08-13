@@ -112,23 +112,7 @@ public final class MetricsMonitor {
         return RAFT_FROM_LEADER;
     }
     
-    public static Counter getHealthCheckRequestGrpcCount() {
-        return Metrics.counter("nacos_request_count", "module", "core", "type", "grpc", "name", "healthCheck");
-    }
-    
-    public static Counter getServerCheckRequestGrpcCount() {
-        return Metrics.counter("nacos_request_count", "module", "core", "type", "grpc", "name", "serverCheck");
-    }
-    
-    public static Counter getServerReloadRequestGrpcCount() {
-        return Metrics.counter("nacos_request_count", "module", "core", "type", "grpc", "name", "serverReload");
-    }
-    
-    public static Counter getPushAckRequestGrpcCount() {
-        return Metrics.counter("nacos_request_count", "module", "core", "type", "grpc", "name", "pushAck");
-    }
-    
-    public static Counter getClientDetectionRequestGrpcCount() {
-        return Metrics.counter("nacos_request_count", "module", "core", "type", "grpc", "name", "clientDetection");
+    public static Counter getGrpcRequestCount(String requestName) {
+        return Metrics.counter("nacos_request_count", "module", "core", "type", "grpc", "name", requestName);
     }
 }
