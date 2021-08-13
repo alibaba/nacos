@@ -47,7 +47,7 @@ public class AuthPluginManagerTest {
     @Mock
     private AuthService authService;
     
-    private static final String TYPE = "DefaultAuthServiceName";
+    private static final String TYPE = "test";
     
     @Mock
     private IdentityContext identityContext;
