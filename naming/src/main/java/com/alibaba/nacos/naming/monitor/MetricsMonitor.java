@@ -183,19 +183,19 @@ public class MetricsMonitor {
     }
     
     public static Counter getGrpcPushSuccessCount() {
-        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "grpc", "success", "true");
+        return Metrics.counter("nacos_push_count", "module", "naming", "type", "grpc", "success", "true");
     }
     
     public static Counter getGrpcPushFailedCount() {
-        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "grpc", "success", "false");
+        return Metrics.counter("nacos_push_count", "module", "naming", "type", "grpc", "success", "false");
     }
     
     public static Counter getUdpPushSuccessCount() {
-        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "udp", "success", "true");
+        return Metrics.counter("nacos_push_count", "module", "naming", "type", "udp", "success", "true");
     }
     
     public static Counter getUdpPushFailedCount() {
-        return INSTANCE.counterManager.counter("nacos_push_count", "module", "naming", "type", "udp", "success", "false");
+        return Metrics.counter("nacos_push_count", "module", "naming", "type", "udp", "success", "false");
     }
     
     /**

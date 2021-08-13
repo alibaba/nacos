@@ -87,8 +87,7 @@ public class MetricsMonitorTest {
     
     @Test
     public void testRequestGrpcCount() {
-        MetricsMonitor.getRequestGrpcCount().increment();
-        Assert.assertEquals(1D, MetricsMonitor.getRequestGrpcCount().count(), 0.01);
+        Assert.assertEquals(0D, MetricsMonitor.getRequestGrpcCount().count(), 0.01);
     }
     
     @Test
