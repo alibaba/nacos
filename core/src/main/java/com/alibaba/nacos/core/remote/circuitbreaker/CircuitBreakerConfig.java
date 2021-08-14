@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
-import com.alibaba.nacos.api.utils.StringUtils;
-
 /**
  * Config class for circuit breaker. Can be used as base config class.
  * TODO: design more generic configs

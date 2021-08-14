@@ -59,7 +59,6 @@ public abstract class CircuitBreakerStrategy {
      */
     public abstract CircuitBreakerStrategy getStrategy();
 
-
     /**
      * Get the strategy instance and save it in the container class.
      *

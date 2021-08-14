@@ -54,7 +54,6 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
         return true;
     }
 
-
     @Override
     public TpsDefaultStrategy getStrategy() {
         return this;

@@ -110,10 +110,10 @@ public class CircuitBreaker {
 
     /**
      * Get the current config for a specific point.
+     *
+     * @param pointName config's point name.
      */
     public  CircuitBreakerConfig getConfig(String pointName) {
         return pointConfigMap.getOrDefault(pointName, new CircuitBreakerConfig());
     }
-
-
 }
