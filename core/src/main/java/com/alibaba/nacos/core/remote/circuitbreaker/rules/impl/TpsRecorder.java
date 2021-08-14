@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.circuitbreaker;
+package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
-/**
- * Info class in charge of storing and monitoring current server point status (tps / tps window / network flow etc.)
- * Can be extended for custom implementations
- * TODO: design a generic status implementation that contains necessary fields
- *
- * @author chuzefang
- * @version $Id: MatchMode.java, v 0.1 2021年08月07日 22:50 PM chuzefang Exp $
- */
-public class CircuitBreakerStatus {
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
+
+import java.util.concurrent.TimeUnit;
+
+public class TpsRecorder extends CircuitBreakerRecorder {
+
+    private long startTime;
+
+    TimeUnit period;
+
+    private int slotSize;
+
+    private long maxCount;
+
+    private String model;
 }

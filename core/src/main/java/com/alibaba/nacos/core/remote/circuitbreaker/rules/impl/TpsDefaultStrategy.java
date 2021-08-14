@@ -17,15 +17,22 @@
 package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
-import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerStatus;
-import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRule;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerStrategy;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Default rule for circuit breaker.
  * @author czf
  * @version $Id: MatchMode.java, v 0.1 2021年08月08日 12:38 PM chuzefang Exp $
  */
-public class TpsDefaultRule extends CircuitBreakerRule {
+public class TpsDefaultStrategy extends CircuitBreakerStrategy {
+
+    private final Map<String, TpsConfig> pointConfigMap = new ConcurrentHashMap<>();
+
+    private final Map<String, TpsRecorder> pointToRecorderMap = new ConcurrentHashMap<>();
 
     @Override
     public String getRuleName() {
@@ -37,18 +44,36 @@ public class TpsDefaultRule extends CircuitBreakerRule {
      * TODO: implement this method
      */
     @Override
-    public boolean applyForTps(CircuitBreakerStatus status, CircuitBreakerConfig config) {
+    public boolean applyForTps(String pointName) {
         System.out.println("TpsDefaultRule#applyForTps");
         return true;
     }
 
-    /**
-     * Check for network flow condition for the current point.
-     * TODO: implement this method
-     */
     @Override
-    public boolean applyForFlowControl(CircuitBreakerStatus status, CircuitBreakerConfig config) {
-        System.out.println("TpsDefaultRule#applyForFLowControl");
+    public boolean applyRule(String pointName, CircuitBreakerConfig config) {
         return true;
+    }
+
+
+    @Override
+    public TpsDefaultStrategy getStrategy() {
+        return this;
+    }
+
+    @Override
+    public synchronized void updateConfig(Map<String, CircuitBreakerConfig> configMap) {
+        for (Map.Entry<String, CircuitBreakerConfig> entry : configMap.entrySet()) {
+            pointConfigMap.put(entry.getKey(), (TpsConfig) entry.getValue());
+        }
+    }
+
+    @Override
+    public Map<String, CircuitBreakerConfig> getAllConfig() {
+        return null;
+    }
+
+    @Override
+    public Map<String, CircuitBreakerRecorder> getPointRecorders() {
+        return null;
     }
 }

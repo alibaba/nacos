@@ -15,4 +15,4 @@
 #
 #
 
-com.alibaba.nacos.core.remote.circuitbreaker.rules.impl.TpsDefaultRule
+com.alibaba.nacos.core.remote.circuitbreaker.rules.impl.TpsDefaultStrategy

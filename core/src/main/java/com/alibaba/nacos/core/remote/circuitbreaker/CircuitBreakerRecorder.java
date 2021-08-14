@@ -16,21 +16,13 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
-import com.alibaba.nacos.api.utils.StringUtils;
-
 /**
- * Config class for circuit breaker. Can be used as base config class.
- * TODO: design more generic configs
+ * Info class in charge of storing and monitoring current server point status (tps / tps window / network flow etc.)
+ * Can be extended for custom implementations
+ * TODO: design a generic status implementation that contains necessary fields
  *
  * @author chuzefang
- * @version $Id: MatchMode.java, v 0.1 2021年08月06日 12:38 PM chuzefang Exp $
+ * @version $Id: MatchMode.java, v 0.1 2021年08月07日 22:50 PM chuzefang Exp $
  */
-public class CircuitBreakerConfig {
-
-    private String pointName;
-
-    private Long timePeriod;
-
-    private Long maxCount;
-
+public class CircuitBreakerRecorder {
 }
