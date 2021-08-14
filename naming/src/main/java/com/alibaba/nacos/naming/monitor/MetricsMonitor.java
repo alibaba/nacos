@@ -19,10 +19,8 @@ package com.alibaba.nacos.naming.monitor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
