@@ -101,6 +101,6 @@ public final class MetricsMonitor {
     }
     
     public static Counter getGrpcRequestCount(String requestName) {
-        return Metrics.counter("nacos_request_count", "module", "core", "type", "grpc", "name", requestName);
+        return Metrics.counter("nacos_grpc_request_count", "module", "core", "name", requestName);
     }
 }
