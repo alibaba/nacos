@@ -78,11 +78,9 @@ public class MetricsMonitorTest {
     }
     
     @Test
-    public void testConnectionsTotal() {
-        AtomicInteger namingTotalConnection = MetricsMonitor.getNamingTotalConnection();
-        Assert.assertEquals(namingTotalConnection.get(), 0);
-        AtomicInteger configTotalConnection = MetricsMonitor.getConfigTotalConnection();
-        Assert.assertEquals(configTotalConnection.get(), 0);
+    public void testClientTotalConnection() {
+        MetricsMonitor.getClientTotalConnection().incrementAndGet();
+        Assert.assertEquals(MetricsMonitor.getClientTotalConnection().get(), 1);
     }
     
     @Test
