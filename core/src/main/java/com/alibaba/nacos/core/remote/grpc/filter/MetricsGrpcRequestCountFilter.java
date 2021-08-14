@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,7 +34,7 @@ public class MetricsGrpcRequestCountFilter extends AbstractRequestFilter {
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
-        MetricsMonitor.getGrpcRequestCount(StringUtils.lowerCase(request.getClass().getSimpleName()));
+        MetricsMonitor.getGrpcRequestCount(request.getClass().getSimpleName());
         return null;
     }
 }

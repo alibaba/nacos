@@ -20,7 +20,7 @@ import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import org.springframework.stereotype.Component;
 
 /**
- * ClientConnectionCountEventListener.
+ * MetricsClientTotalConnectionCountEventListener.
  *
  * @author holdonbei
  */
@@ -29,25 +29,11 @@ public class MetricsClientTotalConnectionCountEventListener extends ClientConnec
     
     @Override
     public void clientConnected(Connection connect) {
-        if (connect.getAbilities() != null && connect.getAbilities().getConfigAbility() != null) {
-            if (connect.getAbilities().getConfigAbility().isSupportRemoteMetrics()) {
-                MetricsMonitor.getConfigTotalConnection().getAndIncrement();
-            }
-            if (connect.getAbilities().getNamingAbility().isSupportRemoteMetric()) {
-                MetricsMonitor.getNamingTotalConnection().getAndIncrement();
-            }
-        }
+        MetricsMonitor.getClientTotalConnection().incrementAndGet();
     }
     
     @Override
     public void clientDisConnected(Connection connect) {
-        if (connect.getAbilities() != null && connect.getAbilities().getConfigAbility() != null) {
-            if (connect.getAbilities().getConfigAbility().isSupportRemoteMetrics()) {
-                MetricsMonitor.getConfigTotalConnection().getAndDecrement();
-            }
-            if (connect.getAbilities().getNamingAbility().isSupportRemoteMetric()) {
-                MetricsMonitor.getNamingTotalConnection().getAndDecrement();
-            }
-        }
+        MetricsMonitor.getClientTotalConnection().incrementAndGet();
     }
 }
