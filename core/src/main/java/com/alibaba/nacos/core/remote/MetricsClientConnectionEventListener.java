@@ -20,12 +20,12 @@ import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import org.springframework.stereotype.Component;
 
 /**
- * MetricsClientTotalConnectionCountEventListener.
+ * MetricsClientConnectionEventListener.
  *
  * @author holdonbei
  */
 @Component
-public class MetricsClientTotalConnectionCountEventListener extends ClientConnectionEventListener {
+public class MetricsClientConnectionEventListener extends ClientConnectionEventListener {
     
     @Override
     public void clientConnected(Connection connect) {
@@ -34,6 +34,6 @@ public class MetricsClientTotalConnectionCountEventListener extends ClientConnec
     
     @Override
     public void clientDisConnected(Connection connect) {
-        MetricsMonitor.getClientTotalConnection().incrementAndGet();
+        MetricsMonitor.getClientTotalConnection().decrementAndGet();
     }
 }
