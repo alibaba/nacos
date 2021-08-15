@@ -180,6 +180,9 @@ public class MetricsMonitor {
     public static void setServerPushCost(Long amount, String type, String isSuccess) {
         Metrics.timer("nacos_server_push", "module", "naming", "type", type, "success", isSuccess)
                 .record(amount, TimeUnit.MILLISECONDS);
+    public static void setServerPushCost(Long amount, String type, String isSuccess) {
+        Metrics.timer("nacos_server_push", "module", "naming", "type", type, "success", isSuccess)
+                .record(amount, TimeUnit.MILLISECONDS);
     }
     
     public static Counter getGrpcPushSuccessCount() {
