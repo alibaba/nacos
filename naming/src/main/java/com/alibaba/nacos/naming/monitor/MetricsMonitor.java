@@ -25,6 +25,7 @@ import io.micrometer.core.instrument.Tag;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -176,20 +177,9 @@ public class MetricsMonitor {
         return Metrics.counter("nacos_exception", "module", "naming", "name", "leaderSendBeatFailed");
     }
     
-    public static Counter getGrpcPushSuccessCount() {
-        return Metrics.counter("nacos_server_push_count", "module", "naming", "type", "grpc", "success", "true");
-    }
-    
-    public static Counter getGrpcPushFailedCount() {
-        return Metrics.counter("nacos_server_push_count", "module", "naming", "type", "grpc", "success", "false");
-    }
-    
-    public static Counter getUdpPushSuccessCount() {
-        return Metrics.counter("nacos_server_push_count", "module", "naming", "type", "udp", "success", "true");
-    }
-    
-    public static Counter getUdpPushFailedCount() {
-        return Metrics.counter("nacos_server_push_count", "module", "naming", "type", "udp", "success", "false");
+    public static void setServerPushCost(Long amount, String type, String isSuccess) {
+        Metrics.timer("nacos_server_push", "module", "naming", "type", type, "success", isSuccess)
+                .record(amount, TimeUnit.MILLISECONDS);
     }
     
     /**
