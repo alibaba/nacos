@@ -31,10 +31,10 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
@@ -256,7 +256,7 @@ public abstract class GrpcClient extends RpcClient {
                 int threadNumber = ThreadUtils.getSuitableThreadCount(8);
                 grpcExecutor = new ThreadPoolExecutor(threadNumber, threadNumber, 10L, TimeUnit.SECONDS,
                         new LinkedBlockingQueue<>(10000),
-                        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-client-executor-%d")
+                        new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-%d")
                                 .build());
                 grpcExecutor.allowCoreThreadTimeOut(true);
                 

@@ -42,7 +42,6 @@ import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.google.common.base.Joiner;
 import org.apache.commons.collections.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
@@ -497,7 +496,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             @Override
             public List<ConfigInfo> doInTransaction(TransactionStatus status) {
                 try {
-                    String idsStr = Joiner.on(",").join(ids);
+                    String idsStr = StringUtils.join(ids, StringUtils.COMMA);
                     List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
                     if (!CollectionUtils.isEmpty(configInfoList)) {
                         removeConfigInfoByIdsAtomic(idsStr);

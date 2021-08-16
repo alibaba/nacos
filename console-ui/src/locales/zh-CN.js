@@ -168,6 +168,11 @@ const I18N_CONF = {
     protectThreshold: '保护阈值',
     serviceName: '服务名',
     editService: '编辑服务',
+    InstanceFilter: {
+      title: '元数据过滤',
+      addFilter: '添加过滤',
+      clear: '清空',
+    },
   },
   EditServiceDialog: {
     createService: '创建服务',
