@@ -51,7 +51,12 @@ if [ -z "$JAVA_HOME" ]; then
   fi
 fi
 
-export SERVER="nacos-server"
+VERSION=`awk '/<revision>[^<]+<\/revision>/{gsub(/<revision>|<\/revision>/,"",$1);print $1;exit;}' pom.xml`
+export SERVER="nacos-server-$VERSION/nacos/target//nacos-server"
+
+echo "nacos-server-$VERSION/nacos/target/nacos-server"
+echo "${SERVER}.jar"
+
 export MODE="cluster"
 export FUNCTION_MODE="all"
 export MEMBER_LIST=""
