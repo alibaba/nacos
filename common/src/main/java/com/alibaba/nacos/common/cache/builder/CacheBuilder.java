@@ -32,9 +32,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class CacheBuilder<K, V> {
     
-    private static final int DEFAULT_MAXIMUMSIZE = 1024;
+    private static final int DEFAULT_MAXIMUMSIZE = 2 << 9;
     
-    private static final int DEFAULT_INITIALIZE_CAPACITY = 1024;
+    private static final int DEFAULT_INITIALIZE_CAPACITY = 2 << 9;
     
     private static final int DEFAULT_EXPIRE_NANOS = -1;
     
