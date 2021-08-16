@@ -101,11 +101,16 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
 
  ![Nacos](https://nacos.io/img/nacos_dingding.jpg)
 
+## Enterprise Service
+If you need Nacos enterprise service support, or purchase cloud product services, you can join the discussion by scanning the following DingTalk group. It can also be directly activated and used through the microservice engine (MSE) provided by Alibaba Cloud.
+https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0
+
+![image](https://user-images.githubusercontent.com/17695352/128659442-65b030b8-c5f4-4bb7-baa2-e5b3ef0cbc15.png)
+
 ## Download
 
 - [Github Release](https://github.com/alibaba/nacos/releases)
 - [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`
-
 
 ## Who is using
 
