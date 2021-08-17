@@ -63,4 +63,9 @@ public class ConcurrentHashSet<E> extends AbstractSet<E> {
     public void clear() {
         map.clear();
     }
+    
+    @Override
+    public boolean isEmpty() {
+        return map.size() == 0;
+    }
 }
