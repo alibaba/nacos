@@ -375,7 +375,6 @@ public class ServiceController {
      * @return {@link Selector} types.
      */
     @GetMapping("/selector/types")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public RestResult<List<String>> listSelectorTypes() {
         return RestResultUtils.success(selectorManager.getAllSelectorTypes());
     }
