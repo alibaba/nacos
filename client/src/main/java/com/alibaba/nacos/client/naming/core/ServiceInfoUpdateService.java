@@ -166,7 +166,7 @@ public class ServiceInfoUpdateService implements Closeable {
             try {
                 if (!changeNotifier.isSubscribed(groupName, serviceName, clusters) && !futureMap.containsKey(serviceKey)) {
                     NAMING_LOGGER
-                            .info("update task is stopped, service:" + groupedServiceName + ", clusters:" + clusters);
+                            .info("update task is stopped, service:{}, clusters:{}", groupedServiceName, clusters);
                     return;
                 }
                 
@@ -192,7 +192,7 @@ public class ServiceInfoUpdateService implements Closeable {
                 resetFailCount();
             } catch (Throwable e) {
                 incFailCount();
-                NAMING_LOGGER.warn("[NA] failed to update serviceName: " + groupedServiceName, e);
+                NAMING_LOGGER.warn("[NA] failed to update serviceName: {}", groupedServiceName, e);
             } finally {
                 executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
             }
