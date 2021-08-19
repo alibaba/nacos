@@ -263,12 +263,7 @@ public class ServerListManager implements Closeable {
         
         String endpointPortTmp = TemplateUtils
                 .stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
-                        new Callable<String>() {
-                            @Override
-                            public String call() {
-                                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
-                            }
-                        });
+                        () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
         
         if (StringUtils.isNotBlank(endpointPortTmp)) {
             this.endpointPort = Integer.parseInt(endpointPortTmp);
@@ -543,7 +538,7 @@ public class ServerListManager implements Closeable {
         }
         
         public ServerAddressIterator(List<String> source) {
-            sorted = new ArrayList<RandomizedServerAddress>();
+            sorted = new ArrayList<>();
             for (String address : source) {
                 sorted.add(new RandomizedServerAddress(address));
             }

@@ -85,7 +85,7 @@ public class ConcurrentDiskUtil {
                 } catch (Exception e) {
                     ++i;
                     if (i > RETRY_COUNT) {
-                        LOGGER.error("read {} fail;retryed time:{}", file.getName(), i);
+                        LOGGER.error("read {} fail;retried time:{}", file.getName(), i);
                         throw new IOException("read " + file.getAbsolutePath() + " conflict");
                     }
                     sleep(SLEEP_BASETIME * i);
@@ -152,7 +152,7 @@ public class ConcurrentDiskUtil {
                 } catch (Exception e) {
                     ++i;
                     if (i > RETRY_COUNT) {
-                        LOGGER.error("write {} fail;retryed time:{}", file.getName(), i);
+                        LOGGER.error("write {} fail;retried time:{}", file.getName(), i);
                         throw new IOException("write " + file.getAbsolutePath() + " conflict");
                     }
                     sleep(SLEEP_BASETIME * i);

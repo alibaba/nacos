@@ -105,7 +105,7 @@ public class SpasAdapter {
     }
     
     /**
-     * Sign with hmac SHA1 encrtpt.
+     * Sign with hmac SHA1 encrypt.
      *
      * @param encryptText encrypt text
      * @param encryptKey  encrypt key

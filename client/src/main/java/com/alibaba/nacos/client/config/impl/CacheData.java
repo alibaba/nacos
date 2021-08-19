@@ -284,54 +284,51 @@ public class CacheData {
                     name, dataId, group, md5, listener);
             return;
         }
-        Runnable job = new Runnable() {
-            @Override
-            public void run() {
-                long start = System.currentTimeMillis();
-                ClassLoader myClassLoader = Thread.currentThread().getContextClassLoader();
-                ClassLoader appClassLoader = listener.getClass().getClassLoader();
-                try {
-                    if (listener instanceof AbstractSharedListener) {
-                        AbstractSharedListener adapter = (AbstractSharedListener) listener;
-                        adapter.fillContext(dataId, group);
-                        LOGGER.info("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
-                    }
-                    // Before executing the callback, set the thread classloader to the classloader of
-                    // the specific webapp to avoid exceptions or misuses when calling the spi interface in
-                    // the callback method (this problem occurs only in multi-application deployment).
-                    Thread.currentThread().setContextClassLoader(appClassLoader);
-                    
-                    ConfigResponse cr = new ConfigResponse();
-                    cr.setDataId(dataId);
-                    cr.setGroup(group);
-                    cr.setContent(content);
-                    cr.setEncryptedDataKey(encryptedDataKey);
-                    configFilterChainManager.doFilter(null, cr);
-                    String contentTmp = cr.getContent();
-                    listenerWrap.inNotifying = true;
-                    listener.receiveConfigInfo(contentTmp);
-                    // compare lastContent and content
-                    if (listener instanceof AbstractConfigChangeListener) {
-                        Map data = ConfigChangeHandler.getInstance()
-                                .parseChangeData(listenerWrap.lastContent, content, type);
-                        ConfigChangeEvent event = new ConfigChangeEvent(data);
-                        ((AbstractConfigChangeListener) listener).receiveConfigChange(event);
-                        listenerWrap.lastContent = content;
-                    }
-                    
-                    listenerWrap.lastCallMd5 = md5;
-                    LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ,cost={} millis.", name,
-                            dataId, group, md5, listener, (System.currentTimeMillis() - start));
-                } catch (NacosException ex) {
-                    LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}",
-                            name, dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
-                } catch (Throwable t) {
-                    LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId,
-                            group, md5, listener, t.getCause());
-                } finally {
-                    listenerWrap.inNotifying = false;
-                    Thread.currentThread().setContextClassLoader(myClassLoader);
+        Runnable job = () -> {
+            long start = System.currentTimeMillis();
+            ClassLoader myClassLoader = Thread.currentThread().getContextClassLoader();
+            ClassLoader appClassLoader = listener.getClass().getClassLoader();
+            try {
+                if (listener instanceof AbstractSharedListener) {
+                    AbstractSharedListener adapter = (AbstractSharedListener) listener;
+                    adapter.fillContext(dataId, group);
+                    LOGGER.info("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
                 }
+                // Before executing the callback, set the thread classloader to the classloader of
+                // the specific webapp to avoid exceptions or misuses when calling the spi interface in
+                // the callback method (this problem occurs only in multi-application deployment).
+                Thread.currentThread().setContextClassLoader(appClassLoader);
+
+                ConfigResponse cr = new ConfigResponse();
+                cr.setDataId(dataId);
+                cr.setGroup(group);
+                cr.setContent(content);
+                cr.setEncryptedDataKey(encryptedDataKey);
+                configFilterChainManager.doFilter(null, cr);
+                String contentTmp = cr.getContent();
+                listenerWrap.inNotifying = true;
+                listener.receiveConfigInfo(contentTmp);
+                // compare lastContent and content
+                if (listener instanceof AbstractConfigChangeListener) {
+                    Map data = ConfigChangeHandler.getInstance()
+                            .parseChangeData(listenerWrap.lastContent, content, type);
+                    ConfigChangeEvent event = new ConfigChangeEvent(data);
+                    ((AbstractConfigChangeListener) listener).receiveConfigChange(event);
+                    listenerWrap.lastContent = content;
+                }
+
+                listenerWrap.lastCallMd5 = md5;
+                LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ,cost={} millis.", name,
+                        dataId, group, md5, listener, (System.currentTimeMillis() - start));
+            } catch (NacosException ex) {
+                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}",
+                        name, dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
+            } catch (Throwable t) {
+                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId,
+                        group, md5, listener, t.getCause());
+            } finally {
+                listenerWrap.inNotifying = false;
+                Thread.currentThread().setContextClassLoader(myClassLoader);
             }
         };
         

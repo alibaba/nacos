@@ -76,14 +76,11 @@ public class FailoverReactor implements Closeable {
         this.serviceInfoHolder = serviceInfoHolder;
         this.failoverDir = cacheDir + FAILOVER_DIR;
         // init executorService
-        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.naming.failover");
-                return thread;
-            }
+        this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
+            Thread thread = new Thread(r);
+            thread.setDaemon(true);
+            thread.setName("com.alibaba.nacos.naming.failover");
+            return thread;
         });
         this.init();
     }
@@ -98,25 +95,22 @@ public class FailoverReactor implements Closeable {
         executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
         
         // backup file on startup if failover directory is empty.
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    File cacheDir = new File(failoverDir);
-                    
-                    if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                        throw new IllegalStateException("failed to create cache dir: " + failoverDir);
-                    }
-                    
-                    File[] files = cacheDir.listFiles();
-                    if (files == null || files.length <= 0) {
-                        new DiskFileWriter().run();
-                    }
-                } catch (Throwable e) {
-                    NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
+        executorService.schedule(() -> {
+            try {
+                File cacheDir = new File(failoverDir);
+
+                if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+                    throw new IllegalStateException("failed to create cache dir: " + failoverDir);
                 }
-                
+
+                File[] files = cacheDir.listFiles();
+                if (files == null || files.length <= 0) {
+                    new DiskFileWriter().run();
+                }
+            } catch (Throwable e) {
+                NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
             }
+
         }, 10000L, TimeUnit.MILLISECONDS);
     }
     
