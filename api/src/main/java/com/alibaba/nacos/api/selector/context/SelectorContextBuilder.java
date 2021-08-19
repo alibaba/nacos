@@ -15,10 +15,12 @@
  *
  */
 
-package com.alibaba.nacos.api.naming.selector.context;
+package com.alibaba.nacos.api.selector.context;
+
+import com.alibaba.nacos.api.selector.Selector;
 
 /**
- * The {@link SelectorContextBuilder} mainly for provide the context for {@link com.alibaba.nacos.api.naming.selector.Selector#select(Object)}.
+ * The {@link SelectorContextBuilder} mainly for provide the context for {@link Selector#select(Object)}.
  * It provides {@link #build(Object, Object)} method for build context. And also provide {@link #getContextType()} for get the contextType.
  *
  * @author chenglu
@@ -27,12 +29,12 @@ package com.alibaba.nacos.api.naming.selector.context;
 public interface SelectorContextBuilder<T, C, P> {
     
     /**
-     * build the context for {@link com.alibaba.nacos.api.naming.selector.Selector#select(Object)}. The user must provide consumer and provider.
+     * build the context for {@link Selector#select(Object)}. The user must provide consumer and provider.
      * we provide {@link CmdbContext} for user default who want to use the {@link com.alibaba.nacos.api.naming.pojo.Instance}'s CMDB info.
      *
      * @param consumer consumer who launch the select.
      * @param provider the provides who are selected by consumer.
-     * @return selectorContext use by {@link com.alibaba.nacos.api.naming.selector.Selector#select(Object)}.
+     * @return selectorContext use by {@link Selector#select(Object)}.
      */
     T build(C consumer, P provider);
     

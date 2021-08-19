@@ -16,3 +16,4 @@
 #
 
 com.alibaba.nacos.naming.selector.context.CmdbSelectorContextBuilder
+com.alibaba.nacos.naming.selector.context.NoneSelectorContextBuilder
