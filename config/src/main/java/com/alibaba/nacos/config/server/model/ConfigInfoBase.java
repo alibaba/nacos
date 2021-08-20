@@ -45,6 +45,8 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
     
     private String md5;
     
+    private String secretKey;
+    
     public ConfigInfoBase() {
     
     }
@@ -100,6 +102,14 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
     
     public void dump(PrintWriter writer) {
         writer.write(this.content);
+    }
+    
+    public String getSecretKey() {
+        return secretKey;
+    }
+    
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
     }
     
     @Override

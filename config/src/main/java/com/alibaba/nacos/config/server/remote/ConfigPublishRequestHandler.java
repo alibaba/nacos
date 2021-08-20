@@ -88,6 +88,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             MapUtil.putIfValNoNull(configAdvanceInfo, "effect", request.getAdditionParam("effect"));
             MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
             MapUtil.putIfValNoNull(configAdvanceInfo, "schema", request.getAdditionParam("schema"));
+            MapUtil.putIfValNoNull(configAdvanceInfo, "encryptedDataKey", request.getAdditionParam("encryptedDataKey"));
             ParamUtils.checkParam(configAdvanceInfo);
             
             if (AggrWhitelist.isAggrDataId(dataId)) {

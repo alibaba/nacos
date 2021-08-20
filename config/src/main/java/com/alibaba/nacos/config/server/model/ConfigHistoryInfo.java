@@ -46,6 +46,23 @@ public class ConfigHistoryInfo implements Serializable {
     
     private String md5;
     
+    private String content;
+    
+    private String srcIp;
+    
+    private String srcUser;
+    
+    /**
+     * Operation type, include inserting, updating and deleting.
+     */
+    private String opType;
+    
+    private Timestamp createdTime;
+    
+    private Timestamp lastModifiedTime;
+    
+    private String secretKey;
+    
     public long getId() {
         return id;
     }
@@ -150,18 +167,11 @@ public class ConfigHistoryInfo implements Serializable {
         this.md5 = md5;
     }
     
-    private String content;
+    public String getSecretKey() {
+        return secretKey;
+    }
     
-    private String srcIp;
-    
-    private String srcUser;
-    
-    /**
-     * Operation type, include inserting, updating and deleting.
-     */
-    private String opType;
-    
-    private Timestamp createdTime;
-    
-    private Timestamp lastModifiedTime;
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
 }

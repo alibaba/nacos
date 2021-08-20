@@ -140,6 +140,12 @@ public class ConfigController {
         if (!ConfigType.isValidType(type)) {
             type = ConfigType.getDefaultType().getType();
         }
+        CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
+        String secretKey = "";
+        if (Objects.nonNull(cryptoSpi)) {
+            secretKey = cryptoSpi.generateSecretKey();
+            content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, secretKey, content);
+        }
         // check tenant
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -151,17 +157,13 @@ public class ConfigController {
         MapUtil.putIfValNoNull(configAdvanceInfo, "effect", effect);
         MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
         MapUtil.putIfValNoNull(configAdvanceInfo, "schema", schema);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "encryptedDataKey", secretKey);
         ParamUtils.checkParam(configAdvanceInfo);
         
         if (AggrWhitelist.isAggrDataId(dataId)) {
             LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", RequestUtil.getRemoteIp(request),
                     dataId, group);
             throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
-        }
-        CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
-        if (Objects.nonNull(cryptoSpi)) {
-            String secretKey = cryptoSpi.generateSecretKey();
-            content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, secretKey, content);
         }
         
         final Timestamp time = TimeUtils.getCurrentTime();
@@ -232,10 +234,12 @@ public class ConfigController {
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
-        
-        String encryptedDataKey = request.getParameter("encryptedDataKey");
-        String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, configAllInfo.getContent());
-        configAllInfo.setContent(decrypt);
+    
+        if (Objects.nonNull(configAllInfo)) {
+            String encryptedDataKey = configAllInfo.getSecretKey();
+            String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, configAllInfo.getContent());
+            configAllInfo.setContent(decrypt);
+        }
         return configAllInfo;
     }
     

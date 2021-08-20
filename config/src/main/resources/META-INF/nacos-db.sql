@@ -35,6 +35,7 @@ CREATE TABLE `config_info` (
   `effect` varchar(64) DEFAULT NULL,
   `type` varchar(64) DEFAULT NULL,
   `c_schema` text,
+  `secret_key` text NOT NULL COMMENT '秘钥',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_configinfo_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info';
@@ -153,6 +154,7 @@ CREATE TABLE `his_config_info` (
   `src_ip` varchar(20) DEFAULT NULL,
   `op_type` char(10) DEFAULT NULL,
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
+  `secret_key` text NOT NULL COMMENT '秘钥',
   PRIMARY KEY (`nid`),
   KEY `idx_gmt_create` (`gmt_create`),
   KEY `idx_gmt_modified` (`gmt_modified`),
