@@ -15,16 +15,17 @@
  *
  */
 
-package com.alibaba.nacos.api.naming.selector.context;
+package com.alibaba.nacos.api.selector.context;
 
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.selector.Selector;
 
 import java.util.List;
 
 /**
  * The CMDB context is given by the {@link SelectorContextBuilder#build(Object, Object)} and used for the
- * {@link com.alibaba.nacos.api.naming.selector.Selector#select(Object)}.
+ * {@link Selector#select(Object)}.
  *
  * @author chenglu
  * @date 2021-07-09 21:31

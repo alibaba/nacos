@@ -15,7 +15,7 @@
  *
  */
 
-package com.alibaba.nacos.api.naming.selector;
+package com.alibaba.nacos.api.selector;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -36,17 +36,17 @@ import java.io.Serializable;
  * @author chenglu
  * @date 2021-07-09 21:24
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION, property = "type")
-public interface Selector<R, C, D> extends Serializable {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+public interface Selector<R, C, E> extends Serializable {
     
     /**
      * parse the selector, build the inner info which used by {@link #select(Object)}.
      *
-     * @param condition condition.
+     * @param expression expression.
      * @return selector.
      * @throws NacosException parse failed exception.
      */
-    Selector<R, C, D> parse(D condition) throws NacosException;
+    Selector<R, C, E> parse(E expression) throws NacosException;
     
     /**
      * select the target result.

@@ -20,11 +20,15 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Service;
@@ -38,14 +42,11 @@ import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -61,7 +62,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Service operation controller.
@@ -89,6 +91,9 @@ public class ServiceController {
     
     @Autowired
     private UpgradeJudgement upgradeJudgement;
+    
+    @Autowired
+    private SelectorManager selectorManager;
     
     /**
      * Create a new service. This API will create a persistence service.
@@ -364,26 +369,33 @@ public class ServiceController {
         }
     }
     
+    /**
+     * Get all {@link Selector} types.
+     *
+     * @return {@link Selector} types.
+     */
+    @GetMapping("/selector/types")
+    public RestResult<List<String>> listSelectorTypes() {
+        return RestResultUtils.success(selectorManager.getAllSelectorTypes());
+    }
+    
     private Selector parseSelector(String selectorJsonString) throws Exception {
-        
         if (StringUtils.isBlank(selectorJsonString)) {
             return new NoneSelector();
         }
         
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
-        switch (SelectorType.valueOf(selectorJson.get("type").asText())) {
-            case none:
-                return new NoneSelector();
-            case label:
-                String expression = selectorJson.get("expression").asText();
-                Set<String> labels = LabelSelector.parseExpression(expression);
-                LabelSelector labelSelector = new LabelSelector();
-                labelSelector.setExpression(expression);
-                labelSelector.setLabels(labels);
-                return labelSelector;
-            default:
-                throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
+        String type = Optional.ofNullable(selectorJson.get("type"))
+                .orElseThrow(() -> new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!"))
+                .asText();
+        String expression = Optional.ofNullable(selectorJson.get("expression"))
+                .map(JsonNode::asText)
+                .orElse(null);
+        Selector selector = selectorManager.parseSelector(type, expression);
+        if (Objects.isNull(selector)) {
+            throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }
+        return selector;
     }
     
     private ServiceOperator getServiceOperator() {
