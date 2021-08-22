@@ -40,9 +40,8 @@ public interface ClientAuthService {
     /**
      * package request and execute request.
      * @param properties login information.
-     * @param requestType HTTP or GRPC
      * @return Object request result.
      */
-    Object restRequest(Properties properties, String requestType);
+    boolean restRequest(Properties properties);
     
 }
