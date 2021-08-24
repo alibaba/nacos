@@ -318,7 +318,7 @@ public class LongPollingService {
     public static final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
     
     /**
-     * ClientLongPolling subscibers.
+     * ClientLongPolling subscribers.
      */
     final Queue<ClientLongPolling> allSubs;
     
