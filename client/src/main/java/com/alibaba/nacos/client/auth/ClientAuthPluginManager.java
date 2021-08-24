@@ -9,6 +9,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * ClientAuthService classLoader.
+ *
+ * @author wuyfee
+ */
 public class ClientAuthPluginManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientAuthPluginManager.class);
     
