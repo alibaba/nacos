@@ -14,27 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.circuitbreaker;
+package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
+
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
 
 /**
- * ConfigLoader is in charge of fetching remote configs and load them into memory.
+ * point configs for TPS strategy. Extends from CircuitBreakerConfig.
+ *
  * @author czf
  */
-public class ConfigLoader {
+public class TpsConfig extends CircuitBreakerConfig {
 
-    ConfigLoader() {
+    private String pointName;
 
-    }
-
-    public void fetchRemoteConfig() {
-
-    }
-
-    public void loadConfigFromCache() {
-
-    }
-
-    public void updateLocalConfig() {
-
-    }
 }

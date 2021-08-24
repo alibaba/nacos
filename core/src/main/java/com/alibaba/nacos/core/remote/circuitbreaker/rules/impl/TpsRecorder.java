@@ -14,27 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.circuitbreaker;
+package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
-/**
- * ConfigLoader is in charge of fetching remote configs and load them into memory.
- * @author czf
- */
-public class ConfigLoader {
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
 
-    ConfigLoader() {
+import java.util.concurrent.TimeUnit;
 
-    }
+public class TpsRecorder extends CircuitBreakerRecorder {
 
-    public void fetchRemoteConfig() {
+    private long startTime;
 
-    }
+    TimeUnit period;
 
-    public void loadConfigFromCache() {
+    private int slotSize;
 
-    }
+    private long maxCount;
 
-    public void updateLocalConfig() {
-
-    }
+    private String model;
 }
