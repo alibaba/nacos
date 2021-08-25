@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.config;
 
-import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,10 +53,7 @@ public class CryptoExecutor {
      */
     public static String executeDecrypt(String dataId, String secretKey, String content) {
         CryptoSpi cryptoSpi = cryptoInstance(dataId);
-        if (Objects.isNull(cryptoSpi)) {
-            return content;
-        }
-        return cryptoSpi.decrypt(secretKey, content);
+        return cryptoSpi == null ? content : cryptoSpi.decrypt(secretKey, content);
     }
     
     /**
@@ -67,8 +63,7 @@ public class CryptoExecutor {
      * @return Encryption algorithm instance
      */
     public static CryptoSpi cryptoInstance(String dataId) {
-        boolean result = checkCipher(dataId);
-        if (result) {
+        if (checkCipher(dataId)) {
             String algorithmName = Stream.of(dataId.split("-")).collect(Collectors.toList()).get(1);
             return CryptoManager.instance(algorithmName);
         }
