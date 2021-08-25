@@ -45,7 +45,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
     
     private String md5;
     
-    private String secretKey;
+    private String encryptedDataKey;
     
     public ConfigInfoBase() {
     
@@ -104,12 +104,12 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         writer.write(this.content);
     }
     
-    public String getSecretKey() {
-        return secretKey;
+    public String getEncryptedDataKey() {
+        return encryptedDataKey;
     }
     
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        this.encryptedDataKey = encryptedDataKey;
     }
     
     @Override

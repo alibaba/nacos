@@ -31,7 +31,7 @@ public class CryptoExecutor {
     /**
      * chipher-AES-dataId.
      */
-    private static final String PREFIX = "chipher-";
+    private static final String PREFIX = "cipher-";
     
     /**
      * Execute encryption.

@@ -61,7 +61,7 @@ public class ConfigHistoryInfo implements Serializable {
     
     private Timestamp lastModifiedTime;
     
-    private String secretKey;
+    private String encryptedDataKey;
     
     public long getId() {
         return id;
@@ -167,11 +167,11 @@ public class ConfigHistoryInfo implements Serializable {
         this.md5 = md5;
     }
     
-    public String getSecretKey() {
-        return secretKey;
+    public String getEncryptedDataKey() {
+        return encryptedDataKey;
     }
     
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        this.encryptedDataKey = encryptedDataKey;
     }
 }

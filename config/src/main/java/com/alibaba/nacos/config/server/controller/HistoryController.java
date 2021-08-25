@@ -100,7 +100,7 @@ public class HistoryController {
         // check if history config match the input
         checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
     
-        String encryptedDataKey = configHistoryInfo.getSecretKey();
+        String encryptedDataKey = configHistoryInfo.getEncryptedDataKey();
         String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, configHistoryInfo.getContent());
         configHistoryInfo.setContent(decrypt);
         

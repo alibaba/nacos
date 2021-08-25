@@ -218,7 +218,7 @@ public final class RowMapperManager {
             } catch (SQLException ignore) {
             }
             try {
-                info.setSecretKey(rs.getString("secret_key"));
+                info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
             } catch (SQLException ignore) {
         
             }
@@ -252,6 +252,10 @@ public final class RowMapperManager {
             }
             try {
                 info.setMd5(rs.getString("md5"));
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
             } catch (SQLException ignore) {
             }
             return info;
@@ -384,7 +388,7 @@ public final class RowMapperManager {
             info.setType(rs.getString("type"));
             info.setSchema(rs.getString("c_schema"));
             try {
-                info.setSecretKey(rs.getString("secret_key"));
+                info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
             } catch (SQLException ignore) {
         
             }
@@ -533,7 +537,7 @@ public final class RowMapperManager {
             configHistoryInfo.setCreatedTime(rs.getTimestamp("gmt_create"));
             configHistoryInfo.setLastModifiedTime(rs.getTimestamp("gmt_modified"));
             try {
-                configHistoryInfo.setSecretKey(rs.getString("secret_key"));
+                configHistoryInfo.setEncryptedDataKey(rs.getString("encrypted_data_key"));
             } catch (SQLException ignore) {
         
             }
