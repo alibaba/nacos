@@ -24,10 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/23 11:52 下午
+ * @author special.fy
  */
-public class EmptyXdsGenerator extends ApiGenerator<Any> {
+public class EmptyXdsGenerator implements ApiGenerator<Any> {
 
     private volatile static EmptyXdsGenerator singleton = null;
 

@@ -43,7 +43,7 @@ import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_COLLECTION;
 @Service
 public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     
-    private final Map<String, Connection<Mcp.Resources>> connections = new ConcurrentHashMap<>(16);
+    private final Map<String, AbstractConnection<Mcp.Resources>> connections = new ConcurrentHashMap<>(16);
 
     @Autowired
     ApiGeneratorFactory apiGeneratorFactory;
@@ -62,7 +62,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
 
         // Init snapshot of nacos service info.
         resourceManager.initResourceSnapshot();
-        Connection<Mcp.Resources> newConnection = new McpConnection(responseObserver);
+        AbstractConnection<Mcp.Resources> newConnection = new McpConnection(responseObserver);
 
         return new StreamObserver<Mcp.RequestResources>() {
             private boolean initRequest = true;
@@ -97,7 +97,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         };
     }
 
-    private void process(Mcp.RequestResources requestResources, Connection<Mcp.Resources> connection) {
+    private void process(Mcp.RequestResources requestResources, AbstractConnection<Mcp.Resources> connection) {
         if (!shouldPush(requestResources, connection)) {
             return;
         }
@@ -106,7 +106,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         connection.push(response, connection.getWatchedStatusByType(requestResources.getCollection()));
     }
 
-    private boolean shouldPush(Mcp.RequestResources requestResources, Connection<Mcp.Resources> connection) {
+    private boolean shouldPush(Mcp.RequestResources requestResources, AbstractConnection<Mcp.Resources> connection) {
         String type = requestResources.getCollection();
         String connectionId = connection.getConnectionId();
 
@@ -163,7 +163,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
 
                 Mcp.Resources serviceEntryMcpResponse = buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, resourceSnapshot);
 
-                for (Connection<Mcp.Resources> connection : connections.values()) {
+                for (AbstractConnection<Mcp.Resources> connection : connections.values()) {
                     WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
                     if (watchedStatus != null) {
                         connection.push(serviceEntryMcpResponse, watchedStatus);

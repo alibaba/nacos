@@ -24,10 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/24 3:27 下午
+ * @author special.fy
  */
-public class EmptyMcpGenerator extends ApiGenerator<Resource> {
+public class EmptyMcpGenerator implements ApiGenerator<Resource> {
 
     private volatile static EmptyMcpGenerator singleton = null;
 

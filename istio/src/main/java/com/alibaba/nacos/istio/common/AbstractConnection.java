@@ -23,12 +23,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 9:49 上午
+ * AbstractConnection maintains the life cycle of the connection.
+ *
+ * @author special.fy
  */
-public abstract class Connection<MessageT> {
+public abstract class AbstractConnection<MessageT> {
 
-    private static final AtomicLong connectIdGenerator = new AtomicLong(0);
+    private static AtomicLong connectIdGenerator = new AtomicLong(0);
 
     private String connectionId;
 
@@ -36,7 +37,7 @@ public abstract class Connection<MessageT> {
 
     private final Map<String, WatchedStatus> watchedResources;
 
-    public Connection(StreamObserver<MessageT> streamObserver) {
+    public AbstractConnection(StreamObserver<MessageT> streamObserver) {
         this.streamObserver = streamObserver;
         this.watchedResources = new HashMap<>(1 << 4);
     }
@@ -58,5 +59,11 @@ public abstract class Connection<MessageT> {
         return watchedResources.get(resourceType);
     }
 
+    /**
+     * Push data to grpc connection.
+     *
+     * @param message response
+     * @param watchedStatus watched status
+     */
     public abstract void push(MessageT message, WatchedStatus watchedStatus);
 }

@@ -17,12 +17,17 @@
 package com.alibaba.nacos.istio.common;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 12:38 上午
+ * @author special.fy
  */
 public enum EventType {
 
+    /**
+     * The service info of nacos changes.
+     */
     Service,
 
+    /**
+     * The endpoints of service change.
+     */
     Endpoint;
 }

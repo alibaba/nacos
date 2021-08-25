@@ -16,17 +16,16 @@
 
 package com.alibaba.nacos.istio.mcp;
 
-import com.alibaba.nacos.istio.common.Connection;
+import com.alibaba.nacos.istio.common.AbstractConnection;
 import com.alibaba.nacos.istio.common.WatchedStatus;
 import com.alibaba.nacos.istio.misc.Loggers;
 import io.grpc.stub.StreamObserver;
 import istio.mcp.v1alpha1.Mcp;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 12:27 下午
+ * @author special.fy
  */
-public class McpConnection extends Connection<Mcp.Resources> {
+public class McpConnection extends AbstractConnection<Mcp.Resources> {
 
     public McpConnection(StreamObserver<Mcp.Resources> streamObserver) {
         super(streamObserver);

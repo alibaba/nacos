@@ -16,17 +16,16 @@
 
 package com.alibaba.nacos.istio.xds;
 
-import com.alibaba.nacos.istio.common.Connection;
+import com.alibaba.nacos.istio.common.AbstractConnection;
 import com.alibaba.nacos.istio.common.WatchedStatus;
 import com.alibaba.nacos.istio.misc.Loggers;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.stub.StreamObserver;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 12:25 下午
+ * @author special.fy
  */
-public class XdsConnection extends Connection<DiscoveryResponse> {
+public class XdsConnection extends AbstractConnection<DiscoveryResponse> {
 
     public XdsConnection(StreamObserver<DiscoveryResponse> streamObserver) {
         super(streamObserver);

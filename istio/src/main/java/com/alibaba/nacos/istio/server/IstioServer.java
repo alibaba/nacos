@@ -31,8 +31,7 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 12:02 上午
+ * @author special.fy
  */
 @Service
 public class IstioServer {

@@ -27,8 +27,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/20 6:14 下午
+ * @author special.fy
  */
 @Component
 public class EventProcessor {

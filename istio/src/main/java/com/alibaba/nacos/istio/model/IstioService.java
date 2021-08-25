@@ -25,8 +25,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/22 12:46 下午
+ * @author special.fy
  */
 public class IstioService {
 

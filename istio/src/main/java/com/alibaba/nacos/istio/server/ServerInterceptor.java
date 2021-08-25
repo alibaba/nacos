@@ -26,8 +26,7 @@ import org.springframework.stereotype.Component;
 import java.net.SocketAddress;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 12:04 上午
+ * @author special.fy
  */
 @Component
 public class ServerInterceptor implements io.grpc.ServerInterceptor {

@@ -30,10 +30,9 @@ import java.util.List;
 import static com.alibaba.nacos.istio.api.ApiConstants.*;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 11:59 上午
+ * @author special.fy
  */
-public final class ServiceEntryXdsGenerator extends ApiGenerator<Any> {
+public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
 
     private volatile static ServiceEntryXdsGenerator singleton = null;
 

@@ -30,10 +30,9 @@ import java.util.List;
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/24 3:11 下午
+ * @author special.fy
  */
-public class ServiceEntryMcpGenerator extends ApiGenerator<Resource> {
+public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
 
     private volatile static ServiceEntryMcpGenerator singleton = null;
 

@@ -19,7 +19,7 @@ package com.alibaba.nacos.istio.common;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.model.IstioService;
-import com.alibaba.nacos.istio.util.IstioCRDUtil;
+import com.alibaba.nacos.istio.util.IstioCrdUtil;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -33,8 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/20 5:42 下午
+ * @author special.fy
  */
 @org.springframework.stereotype.Service
 public class NacosServiceInfoResourceWatcher {
@@ -71,7 +70,7 @@ public class NacosServiceInfoResourceWatcher {
                 }
 
                 for (Service service : services) {
-                    String serviceName = IstioCRDUtil.buildServiceNameForServiceEntry(service);
+                    String serviceName = IstioCrdUtil.buildServiceNameForServiceEntry(service);
                     allServices.add(serviceName);
 
                     IstioService old = serviceInfoMap.get(serviceName);
@@ -104,7 +103,7 @@ public class NacosServiceInfoResourceWatcher {
             }
 
             if (changed) {
-                eventProcessor.notify(Event.serviceUpdateEvent);
+                eventProcessor.notify(Event.SERVICE_UPDATE_EVENT);
             }
         }
     }

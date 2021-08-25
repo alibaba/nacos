@@ -34,10 +34,9 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/20 5:51 下午
+ * @author special.fy
  */
-public class IstioCRDUtil {
+public class IstioCrdUtil {
 
     public static final String VALID_DEFAULT_GROUP_NAME = "DEFAULT-GROUP";
 
@@ -83,7 +82,7 @@ public class IstioCRDUtil {
                 continue;
             }
 
-            Map<String, String> metadata = new HashMap<>();
+            Map<String, String> metadata = new HashMap<>(1 << 3);
             if (StringUtils.isNotEmpty(instance.getClusterName())) {
                 metadata.put("cluster", instance.getClusterName());
             }

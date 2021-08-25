@@ -17,29 +17,37 @@
 package com.alibaba.nacos.istio.api;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 12:03 下午
+ * @author special.fy
  */
 public class ApiConstants {
 
-    // Default api prefix of any type of google protocol buffer.
+    /**
+     * Default api prefix of any type of google protocol buffer.
+     */
     public static final String API_TYPE_PREFIX = "type.googleapis.com/";
 
-    // Istio crd type url for mcp over xds
+    /**
+     * Istio crd type url for mcp over xds
+     * TODO Support other Istio crd, such as gateway, vs, dr and so on.
+     */
     public static final String SERVICE_ENTRY_PROTO_PACKAGE = "networking.istio.io/v1alpha3/ServiceEntry";
-    // TODO Support other Istio crd, such as gateway, vs, dr and so on.
 
-    // Istio crd type url for mcp
+    /**
+     * Istio crd type url for mcp
+     */
     public static final String MCP_PREFIX = "istio/";
     public static final String SERVICE_ENTRY_COLLECTION = MCP_PREFIX + "networking/v1alpha3/serviceentries";
 
-    // Istio crd type url of api.
+    /**
+     * Istio crd type url of api.
+     */
     public static final String MCP_RESOURCE_PROTO = API_TYPE_PREFIX + "istio.mcp.v1alpha1.Resource";
     public static final String SERVICE_ENTRY_PROTO = API_TYPE_PREFIX + "istio.networking.v1alpha3.ServiceEntry";
-    // Standard xds type url
-    // cds
+
+    /**
+     * Standard xds type url
+     * TODO Support lds, rds and sds
+     */
     public static final String CLUSTER_TYPE = API_TYPE_PREFIX + "envoy.config.cluster.v3.Cluster";
-    // eds
     public static final String ENDPOINT_TYPE = API_TYPE_PREFIX + "envoy.config.endpoint.v3.ClusterLoadAssignment";
-    // TODO Support lds, rds and sds
 }

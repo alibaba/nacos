@@ -18,7 +18,7 @@ package com.alibaba.nacos.istio.common;
 
 import com.alibaba.nacos.istio.model.IstioService;
 import com.alibaba.nacos.istio.model.ServiceEntryWrapper;
-import com.alibaba.nacos.istio.util.IstioCRDUtil;
+import com.alibaba.nacos.istio.util.IstioCrdUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -28,11 +28,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 10:49 上午
+ * @author special.fy
  */
 public class ResourceSnapshot {
-    private static final AtomicLong versionSuffix = new AtomicLong(0);
+    private static AtomicLong versionSuffix = new AtomicLong(0);
 
     private final List<ServiceEntryWrapper> serviceEntries;
 
@@ -65,7 +64,7 @@ public class ResourceSnapshot {
     private void initServiceEntry(NacosResourceManager manager) {
        Map<String, IstioService> serviceInfoMap = manager.services();
        for (String serviceName : serviceInfoMap.keySet()) {
-           ServiceEntryWrapper serviceEntryWrapper = IstioCRDUtil.buildServiceEntry(serviceName, serviceInfoMap.get(serviceName));
+           ServiceEntryWrapper serviceEntryWrapper = IstioCrdUtil.buildServiceEntry(serviceName, serviceInfoMap.get(serviceName));
            if (serviceEntryWrapper != null) {
                serviceEntries.add(serviceEntryWrapper);
            }

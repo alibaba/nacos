@@ -28,8 +28,7 @@ import java.util.Map;
 import static com.alibaba.nacos.istio.api.ApiConstants.*;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 10:46 上午
+ * @author special.fy
  */
 @Component
 public class ApiGeneratorFactory {

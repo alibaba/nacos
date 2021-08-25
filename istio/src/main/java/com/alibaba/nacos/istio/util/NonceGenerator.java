@@ -19,8 +19,7 @@ package com.alibaba.nacos.istio.util;
 import com.alibaba.nacos.common.utils.UuidUtils;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/24 3:57 下午
+ * @author special.fy
  */
 public class NonceGenerator {
 

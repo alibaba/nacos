@@ -36,13 +36,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 12:06 上午
+ * @author special.fy
  */
 @Service
 public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase {
 
-    private final Map<String, Connection<DiscoveryResponse>> connections = new ConcurrentHashMap<>(16);
+    private final Map<String, AbstractConnection<DiscoveryResponse>> connections = new ConcurrentHashMap<>(16);
 
     public boolean hasClientConnection() {
         return connections.size() != 0;
@@ -60,7 +59,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
 
         // Init snapshot of nacos service info.
         resourceManager.initResourceSnapshot();
-        Connection<DiscoveryResponse> newConnection = new XdsConnection(responseObserver);
+        AbstractConnection<DiscoveryResponse> newConnection = new XdsConnection(responseObserver);
 
         return new StreamObserver<DiscoveryRequest>() {
             private boolean initRequest = true;
@@ -96,7 +95,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         };
     }
 
-    public void process(DiscoveryRequest discoveryRequest, Connection<DiscoveryResponse> connection) {
+    public void process(DiscoveryRequest discoveryRequest, AbstractConnection<DiscoveryResponse> connection) {
         if (!shouldPush(discoveryRequest, connection)) {
             return;
         }
@@ -105,7 +104,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         connection.push(response, connection.getWatchedStatusByType(discoveryRequest.getTypeUrl()));
     }
 
-    private boolean shouldPush(DiscoveryRequest discoveryRequest, Connection<DiscoveryResponse> connection) {
+    private boolean shouldPush(DiscoveryRequest discoveryRequest, AbstractConnection<DiscoveryResponse> connection) {
         String type = discoveryRequest.getTypeUrl();
         String connectionId = connection.getConnectionId();
 
@@ -167,7 +166,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
                 DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, resourceSnapshot);
                 // TODO CDS, EDS
 
-                for (Connection<DiscoveryResponse> connection : connections.values()) {
+                for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
                     // Service Entry via MCP
                     WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
                     if (watchedStatus != null) {

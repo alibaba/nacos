@@ -21,10 +21,17 @@ import com.alibaba.nacos.istio.common.ResourceSnapshot;
 import java.util.List;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 11:50 上午
+ * This interface is used to generator mcp resources or xds data.
+ *
+ * @author special.fy
  */
-public abstract class ApiGenerator<T> {
+public interface ApiGenerator<T> {
 
-    public abstract List<T> generate(ResourceSnapshot resourceSnapshot);
+    /**
+     * Generate data based on resource snapshot.
+     *
+     * @param resourceSnapshot Resource snapshot
+     * @return data
+     */
+    List<T> generate(ResourceSnapshot resourceSnapshot);
 }

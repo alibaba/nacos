@@ -23,8 +23,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/21 10:47 上午
+ * @author special.fy
  */
 @Component
 public class NacosResourceManager {

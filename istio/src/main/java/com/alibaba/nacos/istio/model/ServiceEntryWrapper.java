@@ -20,8 +20,7 @@ import istio.mcp.v1alpha1.MetadataOuterClass.Metadata;
 import istio.networking.v1alpha3.ServiceEntryOuterClass.ServiceEntry;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/22 1:18 下午
+ * @author special.fy
  */
 public class ServiceEntryWrapper {
 

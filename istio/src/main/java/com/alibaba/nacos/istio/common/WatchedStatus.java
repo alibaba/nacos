@@ -17,8 +17,7 @@
 package com.alibaba.nacos.istio.common;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/22 11:11 下午
+ * @author special.fy
  */
 public class WatchedStatus {
 

@@ -17,12 +17,11 @@
 package com.alibaba.nacos.istio.common;
 
 /**
- * @Author: special.fy
- * @Date: 2021/8/20 6:20 下午
+ * @author special.fy
  */
 public class Event {
 
-    public static final Event serviceUpdateEvent = new Event(EventType.Service);
+    public static final Event SERVICE_UPDATE_EVENT = new Event(EventType.Service);
 
     private EventType type;
 
