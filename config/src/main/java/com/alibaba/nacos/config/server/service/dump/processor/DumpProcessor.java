@@ -68,21 +68,23 @@ public class DumpProcessor implements NacosTaskProcessor {
             build.remove(Objects.isNull(cf));
             build.betaIps(Objects.isNull(cf) ? null : cf.getBetaIps());
             build.content(Objects.isNull(cf) ? null : cf.getContent());
+            build.encryptedDataKey(Objects.isNull(cf) ? null : cf.getEncryptedDataKey());
             
             return DumpConfigHandler.configDump(build.build());
         }
         if (StringUtils.isBlank(tag)) {
             ConfigInfo cf = persistService.findConfigInfo(dataId, group, tenant);
-
+            
             build.remove(Objects.isNull(cf));
             build.content(Objects.isNull(cf) ? null : cf.getContent());
             build.type(Objects.isNull(cf) ? null : cf.getType());
+            build.encryptedDataKey(Objects.isNull(cf) ? null : cf.getEncryptedDataKey());
         } else {
             ConfigInfo4Tag cf = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
-
+            
             build.remove(Objects.isNull(cf));
             build.content(Objects.isNull(cf) ? null : cf.getContent());
-
+            
         }
         return DumpConfigHandler.configDump(build.build());
     }

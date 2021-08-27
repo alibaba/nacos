@@ -1115,7 +1115,7 @@ public class ClientWorker implements Closeable {
                 request.putAdditionalParam(APP_NAME_PARAM, appName);
                 request.putAdditionalParam(BETAIPS_PARAM, betaIps);
                 request.putAdditionalParam(TYPE_PARAM, type);
-                request.putAdditionalParam(ENCRYPTED_DATA_KEY_PARAM, encryptedDataKey);
+                request.putAdditionalParam(ENCRYPTED_DATA_KEY_PARAM, encryptedDataKey == null ? "" : encryptedDataKey);
                 ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
                 if (!response.isSuccess()) {
                     LOGGER.warn("[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",

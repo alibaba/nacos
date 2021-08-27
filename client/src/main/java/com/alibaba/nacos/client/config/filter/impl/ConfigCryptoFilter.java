@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.config.CryptoSpi;
-import com.alibaba.nacos.api.config.filter.IConfigFilter;
+import com.alibaba.nacos.api.config.filter.AbstractConfigFilter;
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
@@ -33,7 +33,7 @@ import java.util.Properties;
  *
  * @author lixiaoshuang
  */
-public class ConfigCryptoFilter implements IConfigFilter {
+public class ConfigCryptoFilter extends AbstractConfigFilter {
     
     private static final String DEFAULT_NAME = ConfigCryptoFilter.class.getName();
     
