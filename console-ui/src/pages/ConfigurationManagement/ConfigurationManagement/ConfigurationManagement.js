@@ -611,7 +611,7 @@ class ConfigurationManagement extends React.Component {
         onOk: () => {
           const url = `v1/cs/configs?delType=ids&ids=${Array.from(configsTableSelected.keys()).join(
             ','
-          )}`;
+          )}&tenant=` + self.state.nownamespace_id;
           request({
             url,
             type: 'delete',
