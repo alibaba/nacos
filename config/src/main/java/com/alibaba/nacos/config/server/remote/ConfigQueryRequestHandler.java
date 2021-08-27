@@ -208,6 +208,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 if (PropertyUtil.isDirectRead()) {
                     response.setLastModified(lastModified);
                     response.setContent(configInfoBase.getContent());
+                    response.setEncryptedDataKey(configInfoBase.getEncryptedDataKey());
                     response.setResultCode(ResponseCode.SUCCESS.getCode());
                     
                 } else {

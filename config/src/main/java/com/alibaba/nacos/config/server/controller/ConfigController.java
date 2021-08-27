@@ -140,28 +140,30 @@ public class ConfigController {
         if (!ConfigType.isValidType(type)) {
             type = ConfigType.getDefaultType().getType();
         }
+        CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
+        String encryptedDataKey = "";
+        if (Objects.nonNull(cryptoSpi)) {
+            encryptedDataKey = cryptoSpi.generateSecretKey();
+            content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, encryptedDataKey, content);
+        }
         // check tenant
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
-        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(10);
         MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configTags);
         MapUtil.putIfValNoNull(configAdvanceInfo, "desc", desc);
         MapUtil.putIfValNoNull(configAdvanceInfo, "use", use);
         MapUtil.putIfValNoNull(configAdvanceInfo, "effect", effect);
         MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
         MapUtil.putIfValNoNull(configAdvanceInfo, "schema", schema);
+        MapUtil.putIfValNoNull(configAdvanceInfo, "encryptedDataKey", encryptedDataKey);
         ParamUtils.checkParam(configAdvanceInfo);
         
         if (AggrWhitelist.isAggrDataId(dataId)) {
             LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", RequestUtil.getRemoteIp(request),
                     dataId, group);
             throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
-        }
-        CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
-        if (Objects.nonNull(cryptoSpi)) {
-            String secretKey = cryptoSpi.generateSecretKey();
-            content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, secretKey, content);
         }
         
         final Timestamp time = TimeUtils.getCurrentTime();
@@ -180,6 +182,7 @@ public class ConfigController {
             }
         } else {
             // beta publish
+            configInfo.setEncryptedDataKey(encryptedDataKey);
             persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
             ConfigChangePublisher
                     .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
@@ -232,10 +235,12 @@ public class ConfigController {
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
-        
-        String encryptedDataKey = request.getParameter("encryptedDataKey");
-        String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, configAllInfo.getContent());
-        configAllInfo.setContent(decrypt);
+    
+        if (Objects.nonNull(configAllInfo)) {
+            String encryptedDataKey = configAllInfo.getEncryptedDataKey();
+            String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, configAllInfo.getContent());
+            configAllInfo.setContent(decrypt);
+        }
         return configAllInfo;
     }
     
@@ -446,6 +451,12 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
         try {
             ConfigInfo4Beta ci = persistService.findConfigInfo4Beta(dataId, group, tenant);
+    
+            if (Objects.nonNull(ci)) {
+                String encryptedDataKey = ci.getEncryptedDataKey();
+                String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, ci.getContent());
+                ci.setContent(decrypt);
+            }
             return RestResultUtils.success("stop beta ok", ci);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);

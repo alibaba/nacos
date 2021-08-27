@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.api.config.CryptoExecutor;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.auth.exception.AccessException;
@@ -98,6 +99,11 @@ public class HistoryController {
         }
         // check if history config match the input
         checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
+    
+        String encryptedDataKey = configHistoryInfo.getEncryptedDataKey();
+        String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, configHistoryInfo.getContent());
+        configHistoryInfo.setContent(decrypt);
+        
         return configHistoryInfo;
     }
     
