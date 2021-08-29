@@ -125,7 +125,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
 
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(type);
-            connection.addWatchedResource(type, new WatchedStatus());
+            connection.addWatchedResource(type, watchedStatus);
 
             return true;
         }
