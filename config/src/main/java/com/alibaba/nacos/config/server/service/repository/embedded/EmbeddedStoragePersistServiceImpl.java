@@ -1633,7 +1633,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                             + "config_tags_relation b ON a.id=b.id ";
 
             if (!StringUtils.isBlank(tenant)) {
-                where.append(" a.tenant_id LIKE ? ");
+                where.append(" AND a.tenant_id LIKE ? ");
                 params.add(generateLikeArgument(tenant));
             }
             if (!StringUtils.isBlank(dataId)) {
@@ -1665,7 +1665,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             where.append(") ");
         } else {
             if (!StringUtils.isBlank(tenant)) {
-                where.append(" a.tenant_id LIKE ? ");
+                where.append(" AND a.tenant_id LIKE ? ");
                 params.add(generateLikeArgument(tenant));
             }
             if (!StringUtils.isBlank(dataId)) {

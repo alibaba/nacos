@@ -1685,7 +1685,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             sqlFetchRows = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id ";
 
             if (!StringUtils.isBlank(tenant)) {
-                where.append(" a.tenant_id LIKE ? ");
+                where.append(" AND a.tenant_id LIKE ? ");
                 params.add(generateLikeArgument(tenant));
             }
             if (!StringUtils.isBlank(dataId)) {
@@ -1717,7 +1717,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             where.append(") ");
         } else {
             if (!StringUtils.isBlank(tenant)) {
-                where.append(" a.tenant_id LIKE ? ");
+                where.append(" AND a.tenant_id LIKE ? ");
                 params.add(generateLikeArgument(tenant));
             }
             if (!StringUtils.isBlank(dataId)) {
