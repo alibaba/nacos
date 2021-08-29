@@ -1619,22 +1619,23 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         String sqlCountRows = "SELECT count(*) FROM config_info";
         String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info";
-        StringBuilder where = new StringBuilder(" WHERE ");
+        StringBuilder where = new StringBuilder(" WHERE 1=1 ");
         List<String> params = new ArrayList<String>();
-        params.add(generateLikeArgument(tenantTmp));
         if (StringUtils.isNotBlank(configTags)) {
             sqlCountRows = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id ";
             sqlFetchRows =
                     "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
                             + "config_tags_relation b ON a.id=b.id ";
-            
-            where.append(" a.tenant_id LIKE ? ");
+
+            if (!StringUtils.isBlank(tenant)) {
+                where.append(" a.tenant_id LIKE ? ");
+                params.add(generateLikeArgument(tenant));
+            }
             if (!StringUtils.isBlank(dataId)) {
                 where.append(" AND a.data_id LIKE ? ");
                 params.add(generateLikeArgument(dataId));
@@ -1663,7 +1664,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
             where.append(") ");
         } else {
-            where.append(" tenant_id LIKE ? ");
+            if (!StringUtils.isBlank(tenant)) {
+                where.append(" a.tenant_id LIKE ? ");
+                params.add(generateLikeArgument(tenant));
+            }
             if (!StringUtils.isBlank(dataId)) {
                 where.append(" AND data_id LIKE ? ");
                 params.add(generateLikeArgument(dataId));
