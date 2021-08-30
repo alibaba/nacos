@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import org.junit.Before;
@@ -53,33 +54,36 @@ public class PushExecutorDelegateTest {
     
     private PushExecutorDelegate delegate;
     
+    private Service service;
+    
     @Before
     public void setUp() throws Exception {
+        service = Service.newService("", "G", "S");
         pushdata = new PushDataWrapper(new ServiceInfo("G@@S"));
         delegate = new PushExecutorDelegate(pushExecutorRpc, pushExecutorUdp);
     }
     
     @Test
     public void testDoPushForUdp() {
-        delegate.doPush(udpClientId, subscriber, pushdata);
-        verify(pushExecutorUdp).doPush(udpClientId, subscriber, pushdata);
+        delegate.doPush(service, udpClientId, subscriber, pushdata);
+        verify(pushExecutorUdp).doPush(service, udpClientId, subscriber, pushdata);
     }
     
     @Test
     public void testDoPushForRpc() {
-        delegate.doPush(rpcClientId, subscriber, pushdata);
-        verify(pushExecutorRpc).doPush(rpcClientId, subscriber, pushdata);
+        delegate.doPush(service, rpcClientId, subscriber, pushdata);
+        verify(pushExecutorRpc).doPush(service, rpcClientId, subscriber, pushdata);
     }
     
     @Test
     public void doPushWithCallbackForUdp() {
-        delegate.doPushWithCallback(udpClientId, subscriber, pushdata, pushCallBack);
-        verify(pushExecutorUdp).doPushWithCallback(udpClientId, subscriber, pushdata, pushCallBack);
+        delegate.doPushWithCallback(service, udpClientId, subscriber, pushdata, pushCallBack);
+        verify(pushExecutorUdp).doPushWithCallback(service, udpClientId, subscriber, pushdata, pushCallBack);
     }
     
     @Test
     public void doPushWithCallbackForRpc() {
-        delegate.doPushWithCallback(rpcClientId, subscriber, pushdata, pushCallBack);
-        verify(pushExecutorRpc).doPushWithCallback(rpcClientId, subscriber, pushdata, pushCallBack);
+        delegate.doPushWithCallback(service, rpcClientId, subscriber, pushdata, pushCallBack);
+        verify(pushExecutorRpc).doPushWithCallback(service, rpcClientId, subscriber, pushdata, pushCallBack);
     }
 }

@@ -16,12 +16,17 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,19 +39,26 @@ public class PushExecutorRpcImpl implements PushExecutor {
     
     private final RpcPushService pushService;
     
-    public PushExecutorRpcImpl(RpcPushService pushService) {
+    private final NamingMetadataManager metadataManager;
+    
+    public PushExecutorRpcImpl(RpcPushService pushService, NamingMetadataManager metadataManager) {
         this.pushService = pushService;
+        this.metadataManager = metadataManager;
     }
     
     @Override
-    public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
-        pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildSuccessResponse(data.getOriginalData()));
+    public void doPush(Service service, String clientId, Subscriber subscriber, PushDataWrapper data) {
+        pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(service, data.getOriginalData())));
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
-            PushCallBack callBack) {
-        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildSuccessResponse(data.getOriginalData()),
+    public void doPushWithCallback(Service service, String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
+        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(service, data.getOriginalData())),
                 callBack, GlobalExecutor.getCallbackExecutor());
+    }
+    
+    private ServiceInfo getServiceInfo(Service service, ServiceInfo serviceInfo) {
+        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
+        return ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true);
     }
 }

@@ -97,7 +97,7 @@ public class PushDelayTaskExecuteEngineTest {
         PushDelayTask pushDelayTask = new PushDelayTask(service, 0L);
         executeEngine.addTask(service, pushDelayTask);
         TimeUnit.MILLISECONDS.sleep(200L);
-        verify(pushExecutor).doPushWithCallback(anyString(), any(Subscriber.class), any(PushDataWrapper.class),
+        verify(pushExecutor).doPushWithCallback(service, anyString(), any(Subscriber.class), any(PushDataWrapper.class),
                 any(PushCallBack.class));
     }
 }

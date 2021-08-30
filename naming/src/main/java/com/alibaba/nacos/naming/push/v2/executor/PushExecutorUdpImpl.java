@@ -20,6 +20,9 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
@@ -40,19 +43,21 @@ public class PushExecutorUdpImpl implements PushExecutor {
     
     private final UdpPushService pushService;
     
-    public PushExecutorUdpImpl(UdpPushService pushService) {
+    private final NamingMetadataManager metadataManager;
+    
+    public PushExecutorUdpImpl(UdpPushService pushService, NamingMetadataManager metadataManager) {
         this.pushService = pushService;
+        this.metadataManager = metadataManager;
     }
     
     @Override
-    public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
-        pushService.pushDataWithoutCallback(subscriber, handleClusterData(replaceServiceInfoName(data), subscriber));
+    public void doPush(Service service, String clientId, Subscriber subscriber, PushDataWrapper data) {
+        pushService.pushDataWithoutCallback(subscriber, handleClusterData(replaceServiceInfoName(service, data), subscriber));
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
-            PushCallBack callBack) {
-        pushService.pushDataWithCallback(subscriber, handleClusterData(replaceServiceInfoName(data), subscriber),
+    public void doPushWithCallback(Service service, String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
+        pushService.pushDataWithCallback(subscriber, handleClusterData(replaceServiceInfoName(service, data), subscriber),
                 callBack);
     }
     
@@ -69,12 +74,12 @@ public class PushExecutorUdpImpl implements PushExecutor {
      * @param originalData original service info
      * @return new service info for 1.x
      */
-    private ServiceInfo replaceServiceInfoName(PushDataWrapper originalData) {
+    private ServiceInfo replaceServiceInfoName(Service service, PushDataWrapper originalData) {
         Optional<ServiceInfo> original = originalData.getProcessedPushData(UDP_PUSH_DATA_FOR_V1);
         if (original.isPresent()) {
             return original.get();
         }
-        ServiceInfo serviceInfo = originalData.getOriginalData();
+        ServiceInfo serviceInfo = getServiceInfo(service, originalData.getOriginalData());
         ServiceInfo result = new ServiceInfo();
         result.setName(NamingUtils.getGroupedName(serviceInfo.getName(), serviceInfo.getGroupName()));
         result.setClusters(serviceInfo.getClusters());
@@ -83,6 +88,11 @@ public class PushExecutorUdpImpl implements PushExecutor {
         result.setCacheMillis(serviceInfo.getCacheMillis());
         originalData.addProcessedPushData(UDP_PUSH_DATA_FOR_V1, result);
         return result;
+    }
+    
+    private ServiceInfo getServiceInfo(Service service, ServiceInfo serviceInfo) {
+        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
+        return ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true);
     }
     
     /**

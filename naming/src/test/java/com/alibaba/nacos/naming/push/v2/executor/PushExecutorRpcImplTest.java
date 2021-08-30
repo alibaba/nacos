@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
@@ -53,14 +55,20 @@ public class PushExecutorRpcImplTest {
     @Mock
     private PushCallBack pushCallBack;
     
+    @Mock
+    private NamingMetadataManager metadataManager;
+    
     private PushDataWrapper pushData;
     
     private PushExecutorRpcImpl pushExecutor;
     
+    private Service service;
+    
     @Before
     public void setUp() throws Exception {
+        service = Service.newService("", "G", "S");
         pushData = new PushDataWrapper(new ServiceInfo("G@@S"));
-        pushExecutor = new PushExecutorRpcImpl(pushService);
+        pushExecutor = new PushExecutorRpcImpl(pushService, metadataManager);
         doAnswer(new CallbackAnswer()).when(pushService)
                 .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
                         eq(GlobalExecutor.getCallbackExecutor()));
@@ -68,13 +76,13 @@ public class PushExecutorRpcImplTest {
     
     @Test
     public void testDoPush() {
-        pushExecutor.doPush(rpcClientId, subscriber, pushData);
+        pushExecutor.doPush(service, rpcClientId, subscriber, pushData);
         verify(pushService).pushWithoutAck(eq(rpcClientId), any(NotifySubscriberRequest.class));
     }
     
     @Test
     public void testDoPushWithCallback() {
-        pushExecutor.doPushWithCallback(rpcClientId, subscriber, pushData, pushCallBack);
+        pushExecutor.doPushWithCallback(service, rpcClientId, subscriber, pushData, pushCallBack);
         verify(pushCallBack).onSuccess();
     }
     
