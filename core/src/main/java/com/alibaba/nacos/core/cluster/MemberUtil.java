@@ -18,10 +18,9 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
@@ -182,7 +182,7 @@ public class MemberUtil {
     public static void syncToFile(Collection<Member> members) {
         try {
             StringBuilder builder = new StringBuilder();
-            builder.append("#").append(LocalDateTime.now()).append(StringUtils.LF);
+            builder.append('#').append(LocalDateTime.now()).append(StringUtils.LF);
             for (String member : simpleMembers(members)) {
                 builder.append(member).append(StringUtils.LF);
             }

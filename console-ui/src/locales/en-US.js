@@ -20,6 +20,7 @@ const I18N_CONF = {
     docs: 'DOCS',
     blog: 'BLOG',
     community: 'COMMUNITY',
+    enterprise: 'ENTERPRISE EDITION',
     languageSwitchButton: '中',
     logout: 'logout',
     changePassword: 'modify password',
@@ -142,6 +143,10 @@ const I18N_CONF = {
     pubNoData: 'No results found.',
     nodeState: 'NodeState',
     extendInfo: 'NodeMetaData',
+    operation: 'Operation',
+    leave: 'Leave',
+    confirm: 'Confirm',
+    confirmTxt: 'Confirm that you want to go offline this cluster node?',
   },
   EditClusterDialog: {
     updateCluster: 'Update Cluster',
@@ -164,6 +169,11 @@ const I18N_CONF = {
     protectThreshold: 'Protect Threshold',
     serviceName: 'Service Name',
     editService: 'Edit Service',
+    InstanceFilter: {
+      title: 'Metadata Filter',
+      addFilter: 'Add Filter',
+      clear: 'Clear',
+    },
   },
   EditServiceDialog: {
     createService: 'Create Service',

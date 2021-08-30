@@ -653,8 +653,12 @@ public class ClientWorker implements Closeable {
                     
                     CacheData cacheData = cacheMap.get().get(groupKey);
                     if (cacheData != null) {
-                        cacheData.setSyncWithServer(false);
-                        notifyListenConfig();
+                        synchronized (cacheData) {
+                            cacheData.getLastModifiedTs().set(System.currentTimeMillis());
+                            cacheData.setSyncWithServer(false);
+                            notifyListenConfig();
+                        }
+                        
                     }
                     return new ConfigChangeNotifyResponse();
                 }
@@ -812,7 +816,13 @@ public class ClientWorker implements Closeable {
             if (!listenCachesMap.isEmpty()) {
                 for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
+                    Map<String, Long> timestampMap = new HashMap<>(listenCachesMap.size() * 2);
+                    
                     List<CacheData> listenCaches = entry.getValue();
+                    for (CacheData cacheData : listenCaches) {
+                        timestampMap.put(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant),
+                                cacheData.getLastModifiedTs().longValue());
+                    }
                     
                     ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(listenCaches);
                     configChangeListenRequest.setListen(true);
@@ -846,8 +856,15 @@ public class ClientWorker implements Closeable {
                                     //sync:cache data md5 = server md5 && cache data md5 = all listeners md5.
                                     synchronized (cacheData) {
                                         if (!cacheData.getListeners().isEmpty()) {
+                                            
+                                            Long previousTimesStamp = timestampMap.get(groupKey);
+                                            if (previousTimesStamp != null) {
+                                                if (!cacheData.getLastModifiedTs().compareAndSet(previousTimesStamp,
+                                                        System.currentTimeMillis())) {
+                                                    continue;
+                                                }
+                                            }
                                             cacheData.setSyncWithServer(true);
-                                            continue;
                                         }
                                     }
                                 }

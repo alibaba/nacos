@@ -17,10 +17,15 @@
 package com.alibaba.nacos.auth.common;
 
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.jsonwebtoken.io.Decoders;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,10 +39,18 @@ import java.util.Objects;
  * @since 1.2.0
  */
 @Configuration
-public class AuthConfigs {
+public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthConfigs.class);
     
     @JustForTest
     private static Boolean cachingEnabled = null;
+    
+    /**
+     * Whether auth enabled.
+     */
+    @Value("${nacos.core.auth.enabled:false}")
+    private boolean authEnabled;
     
     /**
      * secret key.
@@ -68,8 +81,12 @@ public class AuthConfigs {
     @Value("${nacos.core.auth.server.identity.value:}")
     private String serverIdentityValue;
     
-    @Value("${nacos.core.auth.enable.userAgentAuthWhite:true}")
+    @Value("${nacos.core.auth.enable.userAgentAuthWhite:false}")
     private boolean enableUserAgentAuthWhite;
+    
+    public AuthConfigs() {
+        NotifyCenter.registerSubscriber(this);
+    }
     
     public byte[] getSecretKeyBytes() {
         if (secretKeyBytes == null) {
@@ -104,13 +121,7 @@ public class AuthConfigs {
      * @return auth function is open
      */
     public boolean isAuthEnabled() {
-        // Runtime -D parameter has higher priority:
-        String enabled = System.getProperty("nacos.core.auth.enabled");
-        if (StringUtils.isNotBlank(enabled)) {
-            return BooleanUtils.toBoolean(enabled);
-        }
-        return BooleanUtils
-                .toBoolean(EnvUtil.getProperty("nacos.core.auth.enabled", "false"));
+        return authEnabled;
     }
     
     /**
@@ -122,12 +133,29 @@ public class AuthConfigs {
         if (Objects.nonNull(AuthConfigs.cachingEnabled)) {
             return cachingEnabled;
         }
-        return BooleanUtils
-                .toBoolean(EnvUtil.getProperty("nacos.core.auth.caching.enabled", "true"));
+        return ConvertUtils.toBoolean(EnvUtil.getProperty("nacos.core.auth.caching.enabled", "true"));
     }
     
     @JustForTest
     public static void setCachingEnabled(boolean cachingEnabled) {
         AuthConfigs.cachingEnabled = cachingEnabled;
+    }
+    
+    @Override
+    public void onEvent(ServerConfigChangeEvent event) {
+        try {
+            authEnabled = EnvUtil.getProperty("nacos.core.auth.enabled", Boolean.class, false);
+            cachingEnabled = EnvUtil.getProperty("nacos.core.auth.caching.enabled", Boolean.class, true);
+            serverIdentityKey = EnvUtil.getProperty("nacos.core.auth.server.identity.key", "");
+            serverIdentityValue = EnvUtil.getProperty("nacos.core.auth.server.identity.value", "");
+            enableUserAgentAuthWhite = EnvUtil.getProperty("nacos.core.auth.enable.userAgentAuthWhite", Boolean.class, false);
+        } catch (Exception e) {
+            LOGGER.warn("Upgrade auth config from env failed, use old value", e);
+        }
+    }
+    
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return ServerConfigChangeEvent.class;
     }
 }

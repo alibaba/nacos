@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.RemoteConstants;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -295,6 +294,10 @@ public class ConnectionMeta {
     
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return "ConnectionMeta{" + "connectType='" + connectType + '\'' + ", clientIp='" + clientIp + '\''
+                + ", remoteIp='" + remoteIp + '\'' + ", remotePort=" + remotePort + ", localPort=" + localPort
+                + ", version='" + version + '\'' + ", connectionId='" + connectionId + '\'' + ", createTime="
+                + createTime + ", lastActiveTime=" + lastActiveTime + ", appName='" + appName + '\'' + ", tenant='"
+                + tenant + '\'' + ", labels=" + labels + '}';
     }
 }

@@ -131,10 +131,8 @@ class NewConfig extends React.Component {
       readOnly: false,
       lineNumbersMinChars: true,
       theme: 'vs-dark',
-      wordWrapColumn: 120,
       folding: true,
       showFoldingControls: 'always',
-      wordWrap: 'wordWrapColumn',
       cursorStyle: 'line',
       automaticLayout: true,
     });
@@ -365,6 +363,7 @@ class NewConfig extends React.Component {
       },
       complete: () => {
         this.closeLoading();
+        this.goList();
       },
       error: res => {
         this.closeLoading();
@@ -518,7 +517,13 @@ class NewConfig extends React.Component {
                 {locale.annotation}
               </Message>
             </FormItem>
-
+            <FormItem label=" ">
+              <div>
+                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
+                  {this.state.showmore ? locale.dataIdLength : locale.collapse}
+                </a>
+              </div>
+            </FormItem>
             <FormItem
               label={locale.tags}
               className={`more-item${!this.state.showmore ? ' hide' : ''}`}
@@ -546,13 +551,6 @@ class NewConfig extends React.Component {
               className={`more-item${!this.state.showmore ? ' hide' : ''}`}
             >
               <Input {...init('appName')} readOnly={this.inApp} />
-            </FormItem>
-            <FormItem label=" ">
-              <div className="more-container">
-                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                  {this.state.showmore ? locale.dataIdLength : locale.collapse}
-                </a>
-              </div>
             </FormItem>
 
             <FormItem label={locale.description}>
@@ -594,7 +592,7 @@ class NewConfig extends React.Component {
               }
               required
             >
-              <div id={'container'} className={editorClass} />
+              <div id={'container'} className={editorClass} style={{ minHeight: 450 }} />
             </FormItem>
 
             <FormItem label=" ">

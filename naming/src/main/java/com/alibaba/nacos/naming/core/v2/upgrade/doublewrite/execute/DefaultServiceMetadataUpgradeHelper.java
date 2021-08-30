@@ -21,19 +21,38 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
 
 /**
  * A default implementation for service/cluster upgrade/downgrade.
+ *
  * @author gengtuo.ygt
  * on 2021/2/25
  */
-@Component
-@ConditionalOnMissingBean(ServiceMetadataUpgradeHelper.class)
 public class DefaultServiceMetadataUpgradeHelper implements ServiceMetadataUpgradeHelper {
 
+    /**
+     * Fallback to default implementation when no other impls met.
+     */
+    @Configuration
+    public static class Config {
+        
+        /**
+         * A default impl of service/cluster upgrade helper.
+         *
+         * @return default impl of service/cluster upgrade helper
+         */
+        @Bean
+        @ConditionalOnMissingBean(ServiceMetadataUpgradeHelper.class)
+        public ServiceMetadataUpgradeHelper defaultServiceMetadataUpgradeHelper() {
+            return new DefaultServiceMetadataUpgradeHelper();
+        }
+        
+    }
+    
     @Override
     public Service toV1Service(Service v1, com.alibaba.nacos.naming.core.v2.pojo.Service v2, ServiceMetadata v2meta) {
         if (null == v1) {

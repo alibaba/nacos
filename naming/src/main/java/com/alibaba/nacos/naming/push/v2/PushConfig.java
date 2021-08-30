@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.push.v2;
 
+import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.naming.constants.PushConstants;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 /**
@@ -25,7 +25,9 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  *
  * @author xiweng.yy
  */
-public class PushConfig {
+public class PushConfig extends AbstractDynamicConfig {
+    
+    private static final String PUSH = "Push";
     
     private static final PushConfig INSTANCE = new PushConfig();
     
@@ -36,20 +38,23 @@ public class PushConfig {
     private long pushTaskRetryDelay = PushConstants.DEFAULT_PUSH_TASK_RETRY_DELAY;
     
     private PushConfig() {
-        try {
-            getPushConfigFromEnv();
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("Get Push config from env failed, will use default value", e);
-        }
+        super(PUSH);
     }
     
-    private void getPushConfigFromEnv() {
+    @Override
+    protected void getConfigFromEnv() {
         pushTaskDelay = EnvUtil
                 .getProperty(PushConstants.PUSH_TASK_DELAY, Long.class, PushConstants.DEFAULT_PUSH_TASK_DELAY);
         pushTaskTimeout = EnvUtil
                 .getProperty(PushConstants.PUSH_TASK_TIMEOUT, Long.class, PushConstants.DEFAULT_PUSH_TASK_TIMEOUT);
         pushTaskRetryDelay = EnvUtil.getProperty(PushConstants.PUSH_TASK_RETRY_DELAY, Long.class,
                 PushConstants.DEFAULT_PUSH_TASK_RETRY_DELAY);
+    }
+    
+    @Override
+    protected String printConfig() {
+        return "PushConfig{" + "pushTaskDelay=" + pushTaskDelay + ", pushTaskTimeout=" + pushTaskTimeout
+                + ", pushTaskRetryDelay=" + pushTaskRetryDelay + '}';
     }
     
     public static PushConfig getInstance() {

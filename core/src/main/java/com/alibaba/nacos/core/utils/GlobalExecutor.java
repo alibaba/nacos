@@ -18,8 +18,8 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,13 +46,13 @@ public class GlobalExecutor {
             EnvUtil.getAvailableProcessors(RemoteUtils.getRemoteExecutorTimesOfProcessors()),
             EnvUtil.getAvailableProcessors(RemoteUtils.getRemoteExecutorTimesOfProcessors()), 60L, TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(RemoteUtils.getRemoteExecutorQueueSize()),
-            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-executor-%d").build());
+            new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-executor-%d").build());
     
     public static final ThreadPoolExecutor clusterRpcExecutor = new ThreadPoolExecutor(
             EnvUtil.getAvailableProcessors(RemoteUtils.getRemoteExecutorTimesOfProcessors()),
             EnvUtil.getAvailableProcessors(RemoteUtils.getRemoteExecutorTimesOfProcessors()), 60L, TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(RemoteUtils.getRemoteExecutorQueueSize()),
-            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-cluster-grpc-executor-%d").build());
+            new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-cluster-grpc-executor-%d").build());
     
     public static void runWithoutThread(Runnable runnable) {
         runnable.run();

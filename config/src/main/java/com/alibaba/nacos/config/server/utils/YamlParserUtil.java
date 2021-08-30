@@ -44,24 +44,6 @@ import java.util.stream.Collectors;
  */
 public class YamlParserUtil {
     
-    private static Yaml yaml;
-    
-    static {
-        Representer representer = new Representer() {
-            
-            @Override
-            protected NodeTuple representJavaBeanProperty(Object javaBean, Property property, Object propertyValue,
-                    Tag customTag) {
-                if (propertyValue == null) {
-                    return null;
-                } else {
-                    return super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
-                }
-            }
-        };
-        yaml = new Yaml(new YamlParserConstructor(), representer);
-    }
-    
     /**
      * Serialize a Java object into a YAML string.
      *
@@ -69,7 +51,7 @@ public class YamlParserUtil {
      * @return YAML string.
      */
     public static String dumpObject(Object object) {
-        return yaml.dumpAsMap(object);
+        return new Yaml(new YamlParserConstructor(), new CustomRepresenter()).dumpAsMap(object);
     }
     
     /**
@@ -82,7 +64,7 @@ public class YamlParserUtil {
      * @return Java object.
      */
     public static <T> T loadObject(String content, Class<T> type) {
-        return yaml.loadAs(content, type);
+        return new Yaml(new YamlParserConstructor(), new CustomRepresenter()).loadAs(content, type);
     }
     
     public static class YamlParserConstructor extends SafeConstructor {
@@ -92,6 +74,19 @@ public class YamlParserUtil {
         public YamlParserConstructor() {
             super();
             yamlConstructors.put(configMetadataTag, new ConstructYamlConfigMetadata());
+        }
+    }
+    
+    public static class CustomRepresenter extends Representer {
+        
+        @Override
+        protected NodeTuple representJavaBeanProperty(Object javaBean, Property property, Object propertyValue,
+                Tag customTag) {
+            if (propertyValue == null) {
+                return null;
+            } else {
+                return super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
+            }
         }
     }
     

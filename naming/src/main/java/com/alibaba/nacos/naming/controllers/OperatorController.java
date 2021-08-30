@@ -29,9 +29,12 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
@@ -50,6 +53,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -78,9 +82,11 @@ public class OperatorController {
     
     private final RaftCore raftCore;
     
+    private final ClientManager clientManager;
+    
     public OperatorController(SwitchManager switchManager, ServerListManager serverListManager,
             ServiceManager serviceManager, ServerMemberManager memberManager, ServerStatusManager serverStatusManager,
-            SwitchDomain switchDomain, DistroMapper distroMapper, RaftCore raftCore) {
+            SwitchDomain switchDomain, DistroMapper distroMapper, RaftCore raftCore, ClientManager clientManager) {
         this.switchManager = switchManager;
         this.serverListManager = serverListManager;
         this.serviceManager = serviceManager;
@@ -89,6 +95,7 @@ public class OperatorController {
         this.switchDomain = switchDomain;
         this.distroMapper = distroMapper;
         this.raftCore = raftCore;
+        this.clientManager = clientManager;
     }
     
     /**
@@ -168,6 +175,26 @@ public class OperatorController {
         if (onlyStatus) {
             return result;
         }
+        Collection<String> allClientId = clientManager.allClientId();
+        int connectionBasedClient = 0;
+        int ephemeralIpPortClient = 0;
+        int persistentIpPortClient = 0;
+        int responsibleClientCount = 0;
+        for (String clientId : allClientId) {
+            if (clientId.contains(IpPortBasedClient.ID_DELIMITER)) {
+                if (clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX)) {
+                    persistentIpPortClient += 1;
+                } else {
+                    ephemeralIpPortClient += 1;
+                }
+            } else  {
+                connectionBasedClient += 1;
+            }
+            if (clientManager.isResponsibleClient(clientManager.getClient(clientId))) {
+                responsibleClientCount += 1;
+            }
+        }
+        
         int responsibleDomCount = serviceManager.getResponsibleServiceCount();
         int responsibleIpCount = serviceManager.getResponsibleInstanceCount();
         result.put("serviceCount", MetricsMonitor.getDomCountMonitor().get());
@@ -176,6 +203,11 @@ public class OperatorController {
         result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIpCount);
+        result.put("clientCount", allClientId.size());
+        result.put("connectionBasedClientCount", connectionBasedClient);
+        result.put("ephemeralIpPortClientCount", ephemeralIpPortClient);
+        result.put("persistentIpPortClientCount", persistentIpPortClient);
+        result.put("responsibleClientCount", responsibleClientCount);
         result.put("cpu", EnvUtil.getCPU());
         result.put("load", EnvUtil.getLoad());
         result.put("mem", EnvUtil.getMem());

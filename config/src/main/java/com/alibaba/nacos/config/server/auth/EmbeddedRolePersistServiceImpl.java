@@ -22,7 +22,7 @@ import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -52,9 +52,10 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-        
-        String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
-        String sqlFetchRows = "select role,username from roles where ";
+
+        String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
+
+        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " 1=1 ";
         
@@ -75,8 +76,9 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "select count(*) from roles where ";
-        String sqlFetchRows = "select role,username from roles where ";
+        String sqlCountRows = "SELECT count(*) FROM roles WHERE ";
+      
+        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
     
         String where = " username= ? ";
         List<String> params = new ArrayList<>();
@@ -100,7 +102,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     @Override
     public void addRole(String role, String userName) {
         
-        String sql = "INSERT into roles (role, username) VALUES (?, ?)";
+        String sql = "INSERT INTO roles (role, username) VALUES (?, ?)";
         
         try {
             EmbeddedStorageContextUtils.addSqlContext(sql, role, userName);
@@ -117,7 +119,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
      */
     @Override
     public void deleteRole(String role) {
-        String sql = "DELETE from roles WHERE role=?";
+        String sql = "DELETE FROM roles WHERE role=?";
         try {
             EmbeddedStorageContextUtils.addSqlContext(sql, role);
             databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
@@ -134,7 +136,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
      */
     @Override
     public void deleteRole(String role, String username) {
-        String sql = "DELETE from roles WHERE role=? and username=?";
+        String sql = "DELETE FROM roles WHERE role=? AND username=?";
         try {
             EmbeddedStorageContextUtils.addSqlContext(sql, role, username);
             databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
@@ -145,7 +147,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public List<String> findRolesLikeRoleName(String role) {
-        String sql = "SELECT role FROM roles WHERE role like ? ";
+        String sql = "SELECT role FROM roles WHERE role LIKE ? ";
         return databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
     }
     

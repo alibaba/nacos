@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionStandaloneEmbedStorage;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -117,8 +117,11 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
                     }
                 }
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-                return RestResult.<String>builder()
-                        .withCode(BooleanUtils.and(results.toArray(new Boolean[0])) ? 200 : 500).withData("").build();
+                int code = 500;
+                if (!CollectionUtils.isEmpty(results)) {
+                    code = (!results.stream().anyMatch(Boolean.FALSE::equals)) ? 200 : 500;
+                }
+                return RestResult.<String>builder().withCode(code).withData("").build();
             } catch (Throwable ex) {
                 LogUtil.DEFAULT_LOG.error("An exception occurred when external data was imported into Derby : ", ex);
                 return RestResultUtils.failed(ex.getMessage());

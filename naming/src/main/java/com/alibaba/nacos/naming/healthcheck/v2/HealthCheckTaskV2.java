@@ -29,7 +29,7 @@ import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2D
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.apache.commons.lang3.RandomUtils;
+import com.alibaba.nacos.common.utils.RandomUtils;
 
 import java.util.Optional;
 

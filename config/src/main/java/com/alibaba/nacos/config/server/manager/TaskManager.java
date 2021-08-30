@@ -127,7 +127,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
     public String getTaskInfos() {
         StringBuilder sb = new StringBuilder();
         for (Object taskType : getAllProcessorKey()) {
-            sb.append(taskType).append(":");
+            sb.append(taskType).append(':');
             AbstractDelayTask task = this.tasks.get(taskType);
             if (task != null) {
                 sb.append(new Date(task.getLastProcessTime()).toString());
