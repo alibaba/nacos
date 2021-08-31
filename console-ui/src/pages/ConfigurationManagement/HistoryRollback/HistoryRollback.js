@@ -262,6 +262,7 @@ class HistoryRollback extends React.Component {
                   placeholder={locale.dataId}
                   dataSource={this.state.dataIds}
                   hasClear
+                  showSearch
                   onSearch={val => {
                     const { dataIds } = this.state;
                     if (!dataIds.includes(val)) {
@@ -287,6 +288,7 @@ class HistoryRollback extends React.Component {
                   placeholder={locale.group}
                   dataSource={this.state.groups}
                   hasClear
+                  showSearch
                   onSearch={val => {
                     const { groups } = this.state;
                     if (!groups.includes(val)) {
