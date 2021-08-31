@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
@@ -47,18 +46,18 @@ public class PushExecutorRpcImpl implements PushExecutor {
     }
     
     @Override
-    public void doPush(Service service, String clientId, Subscriber subscriber, PushDataWrapper data) {
-        pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(service, data.getOriginalData())));
+    public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
+        pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(data)));
     }
     
     @Override
-    public void doPushWithCallback(Service service, String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
-        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(service, data.getOriginalData())),
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
+        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(data)),
                 callBack, GlobalExecutor.getCallbackExecutor());
     }
     
-    private ServiceInfo getServiceInfo(Service service, ServiceInfo serviceInfo) {
-        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
-        return ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true);
+    private ServiceInfo getServiceInfo(PushDataWrapper data) {
+        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(data.getService()).orElse(null);
+        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), serviceMetadata, false, true);
     }
 }

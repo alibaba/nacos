@@ -63,7 +63,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
                     continue;
                 }
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
-                delayTaskEngine.getPushExecutor().doPushWithCallback(service, each, subscriber, wrapper,
+                delayTaskEngine.getPushExecutor().doPushWithCallback(each, subscriber, wrapper,
                         new NamingPushCallback(each, subscriber, wrapper.getOriginalData(), delayTask.isPushToAll()));
             }
         } catch (Exception e) {
@@ -74,7 +74,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
     
     private PushDataWrapper generatePushData() {
         ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
-        return new PushDataWrapper(serviceInfo);
+        return new PushDataWrapper(service, serviceInfo);
     }
     
     private Collection<String> getTargetClientIds() {

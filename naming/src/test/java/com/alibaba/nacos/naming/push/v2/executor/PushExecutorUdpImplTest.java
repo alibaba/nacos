@@ -63,7 +63,7 @@ public class PushExecutorUdpImplTest {
     @Before
     public void setUp() throws Exception {
         service = Service.newService("", "G", "S");
-        pushData = new PushDataWrapper(new ServiceInfo("G@@S"));
+        pushData = new PushDataWrapper(service, new ServiceInfo("G@@S"));
         pushExecutor = new PushExecutorUdpImpl(pushService, metadataManager);
         doAnswer(new CallbackAnswer()).when(pushService)
                 .pushDataWithCallback(eq(subscriber), any(ServiceInfo.class), eq(pushCallBack));
@@ -71,13 +71,13 @@ public class PushExecutorUdpImplTest {
     
     @Test
     public void testDoPush() {
-        pushExecutor.doPush(service, rpcClientId, subscriber, pushData);
+        pushExecutor.doPush(rpcClientId, subscriber, pushData);
         verify(pushService).pushDataWithoutCallback(eq(subscriber), any(ServiceInfo.class));
     }
     
     @Test
     public void testDoPushWithCallback() {
-        pushExecutor.doPushWithCallback(service, rpcClientId, subscriber, pushData, pushCallBack);
+        pushExecutor.doPushWithCallback(rpcClientId, subscriber, pushData, pushCallBack);
         verify(pushCallBack).onSuccess();
     }
     

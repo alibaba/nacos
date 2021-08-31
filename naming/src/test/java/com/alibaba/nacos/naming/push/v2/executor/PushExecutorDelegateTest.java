@@ -59,31 +59,31 @@ public class PushExecutorDelegateTest {
     @Before
     public void setUp() throws Exception {
         service = Service.newService("", "G", "S");
-        pushdata = new PushDataWrapper(new ServiceInfo("G@@S"));
+        pushdata = new PushDataWrapper(service, new ServiceInfo("G@@S"));
         delegate = new PushExecutorDelegate(pushExecutorRpc, pushExecutorUdp);
     }
     
     @Test
     public void testDoPushForUdp() {
-        delegate.doPush(service, udpClientId, subscriber, pushdata);
-        verify(pushExecutorUdp).doPush(service, udpClientId, subscriber, pushdata);
+        delegate.doPush(udpClientId, subscriber, pushdata);
+        verify(pushExecutorUdp).doPush(udpClientId, subscriber, pushdata);
     }
     
     @Test
     public void testDoPushForRpc() {
-        delegate.doPush(service, rpcClientId, subscriber, pushdata);
-        verify(pushExecutorRpc).doPush(service, rpcClientId, subscriber, pushdata);
+        delegate.doPush(rpcClientId, subscriber, pushdata);
+        verify(pushExecutorRpc).doPush(rpcClientId, subscriber, pushdata);
     }
     
     @Test
     public void doPushWithCallbackForUdp() {
-        delegate.doPushWithCallback(service, udpClientId, subscriber, pushdata, pushCallBack);
-        verify(pushExecutorUdp).doPushWithCallback(service, udpClientId, subscriber, pushdata, pushCallBack);
+        delegate.doPushWithCallback(udpClientId, subscriber, pushdata, pushCallBack);
+        verify(pushExecutorUdp).doPushWithCallback(udpClientId, subscriber, pushdata, pushCallBack);
     }
     
     @Test
     public void doPushWithCallbackForRpc() {
-        delegate.doPushWithCallback(service, rpcClientId, subscriber, pushdata, pushCallBack);
-        verify(pushExecutorRpc).doPushWithCallback(service, rpcClientId, subscriber, pushdata, pushCallBack);
+        delegate.doPushWithCallback(rpcClientId, subscriber, pushdata, pushCallBack);
+        verify(pushExecutorRpc).doPushWithCallback(rpcClientId, subscriber, pushdata, pushCallBack);
     }
 }

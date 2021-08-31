@@ -67,7 +67,7 @@ public class PushExecutorRpcImplTest {
     @Before
     public void setUp() throws Exception {
         service = Service.newService("", "G", "S");
-        pushData = new PushDataWrapper(new ServiceInfo("G@@S"));
+        pushData = new PushDataWrapper(service, new ServiceInfo("G@@S"));
         pushExecutor = new PushExecutorRpcImpl(pushService, metadataManager);
         doAnswer(new CallbackAnswer()).when(pushService)
                 .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
@@ -76,13 +76,13 @@ public class PushExecutorRpcImplTest {
     
     @Test
     public void testDoPush() {
-        pushExecutor.doPush(service, rpcClientId, subscriber, pushData);
+        pushExecutor.doPush(rpcClientId, subscriber, pushData);
         verify(pushService).pushWithoutAck(eq(rpcClientId), any(NotifySubscriberRequest.class));
     }
     
     @Test
     public void testDoPushWithCallback() {
-        pushExecutor.doPushWithCallback(service, rpcClientId, subscriber, pushData, pushCallBack);
+        pushExecutor.doPushWithCallback(rpcClientId, subscriber, pushData, pushCallBack);
         verify(pushCallBack).onSuccess();
     }
     
