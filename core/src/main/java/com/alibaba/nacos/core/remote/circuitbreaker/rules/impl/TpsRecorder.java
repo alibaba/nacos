@@ -16,11 +16,18 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
-import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
+import com.alibaba.nacos.core.remote.control.MonitorType;
+import com.alibaba.nacos.core.remote.control.TpsControlRule;
+import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class TpsRecorder extends CircuitBreakerRecorder {
+public class TpsRecorder{
 
     private long startTime;
 
@@ -28,7 +35,153 @@ public class TpsRecorder extends CircuitBreakerRecorder {
 
     private int slotSize;
 
-    private long maxCount;
+    private List<TpsSlot> slotList;
 
     private String model;
+
+    /**
+     * monitor/intercept.
+     */
+    public TpsRecorder(long startTime, TimeUnit period, String model, int recordSize) {
+
+        this.startTime = startTime;
+        if (period.equals(TimeUnit.MINUTES)) {
+            this.startTime = TpsMonitorPoint.getTrimMillsOfMinute(startTime);
+        }
+        if (period.equals(TimeUnit.HOURS)) {
+            this.startTime = TpsMonitorPoint.getTrimMillsOfHour(startTime);
+        }
+        this.period = period;
+        this.model = model;
+        this.slotSize = recordSize + 1;
+        slotList = new ArrayList<>(slotSize);
+        for (int i = 0; i < slotSize; i++) {
+            slotList.add(isProtoModel() ? new MultiKeyTpsSlot() : new TpsSlot());
+        }
+    }
+
+    public boolean isProtoModel() {
+        return TpsControlRule.Rule.MODEL_PROTO.equalsIgnoreCase(this.model);
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    /**
+     * get slot of the timestamp second,create if not exist.
+     *
+     * @param timeStamp the timestamp second.
+     * @return tps slot.
+     */
+    public TpsSlot createSlotIfAbsent(long timeStamp) {
+        long distance = timeStamp - startTime;
+
+        long diff = (distance < 0 ? distance + period.toMillis(1) * slotSize : distance) / period.toMillis(1);
+        long currentWindowTime = startTime + diff * period.toMillis(1);
+        int index = (int) diff % slotSize;
+        if (slotList.get(index).time != currentWindowTime) {
+            slotList.get(index).reset(currentWindowTime);
+        }
+        return slotList.get(index);
+    }
+
+    /**
+     * get slot of the timestamp second,read only ,return nul if not exist.
+     *
+     * @param timeStamp the timestamp second.
+     * @return tps slot.
+     */
+    public TpsSlot getPoint(long timeStamp) {
+        long distance = timeStamp - startTime;
+        long diff = (distance < 0 ? distance + period.toMillis(1) * slotSize : distance) / period.toMillis(1);
+        long currentWindowTime = startTime + diff * period.toMillis(1);
+        int index = (int) diff % slotSize;
+        TpsSlot tpsSlot = slotList.get(index);
+        if (tpsSlot.time != currentWindowTime) {
+            return null;
+        }
+        return tpsSlot;
+    }
+
+    static class TpsSlot {
+
+        long time = 0L;
+
+        private SlotCountHolder countHolder = new SlotCountHolder();
+
+        public SlotCountHolder getCountHolder(String key) {
+            return countHolder;
+        }
+
+        public void reset(long second) {
+            synchronized (this) {
+                if (this.time != second) {
+                    this.time = second;
+                    countHolder.count.set(0L);
+                    countHolder.interceptedCount.set(0);
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "TpsSlot{" + "time=" + time + ", countHolder=" + countHolder + '}';
+        }
+
+    }
+
+    static class MultiKeyTpsSlot extends TpsSlot {
+
+        Map<String, SlotCountHolder> keySlots = new HashMap<>(16);
+
+        @Override
+        public SlotCountHolder getCountHolder(String key) {
+            if (!keySlots.containsKey(key)) {
+                keySlots.putIfAbsent(key, new SlotCountHolder());
+            }
+            return keySlots.get(key);
+        }
+
+        public Map<String, SlotCountHolder> getKeySlots() {
+            return keySlots;
+        }
+
+        @Override
+        public void reset(long second) {
+            synchronized (this) {
+                if (this.time != second) {
+                    this.time = second;
+                    keySlots.clear();
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "MultiKeyTpsSlot{" + "time=" + time + "}'";
+        }
+
+    }
+
+    static class SlotCountHolder {
+
+        AtomicLong count = new AtomicLong();
+
+        AtomicLong interceptedCount = new AtomicLong();
+
+        @Override
+        public String toString() {
+            return "{" + count + "|" + interceptedCount + '}';
+        }
+    }
+
+    public List<TpsSlot> getSlotList() {
+        return slotList;
+    }
 }
+

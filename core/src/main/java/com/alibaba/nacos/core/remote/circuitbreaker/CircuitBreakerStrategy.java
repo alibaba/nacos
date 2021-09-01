@@ -69,6 +69,13 @@ public abstract class CircuitBreakerStrategy {
     /**
      * Get the strategy instance and save it in the container class.
      *
+     * @param configMap the full or partial config map from the container
+     */
+    public abstract void updateConfig(Map<String, CircuitBreakerConfig> configMap, String pointName);
+
+    /**
+     * Get the strategy instance and save it in the container class.
+     *
      * @return the specific instance with implement class.
      */
     public abstract Map<String, CircuitBreakerConfig> getAllConfig();
@@ -78,6 +85,6 @@ public abstract class CircuitBreakerStrategy {
      *
      * @return the specific instance with implement class.
      */
-    public abstract Map<String, CircuitBreakerRecorder> getPointRecorders();
+    public abstract Map<String, CircuitBreakerMonitor> getPointRecorders();
 
 }

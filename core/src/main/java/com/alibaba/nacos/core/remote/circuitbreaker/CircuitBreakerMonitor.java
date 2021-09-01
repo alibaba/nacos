@@ -24,5 +24,5 @@ package com.alibaba.nacos.core.remote.circuitbreaker;
  * @author chuzefang
  * @version $Id: MatchMode.java, v 0.1 2021年08月07日 22:50 PM chuzefang Exp $
  */
-public class CircuitBreakerRecorder {
+public class CircuitBreakerMonitor {
 }

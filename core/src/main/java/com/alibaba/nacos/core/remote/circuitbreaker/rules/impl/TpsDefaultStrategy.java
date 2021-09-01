@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
-import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerMonitor;
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerStrategy;
 
 import java.util.Map;
@@ -30,9 +30,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TpsDefaultStrategy extends CircuitBreakerStrategy {
 
-    private final Map<String, TpsConfig> pointConfigMap = new ConcurrentHashMap<>();
+    private final Map<String, TpsMonitor> pointToMonitorMap = new ConcurrentHashMap<>();
 
-    private final Map<String, TpsRecorder> pointToRecorderMap = new ConcurrentHashMap<>();
+    private final Map<String, TpsConfig> pointToConfigMap = new ConcurrentHashMap<>();
 
     @Override
     public String getRuleName() {
@@ -45,8 +45,17 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
      */
     @Override
     public boolean applyForTps(String pointName) {
-        System.out.println("TpsDefaultRule#applyForTps");
-        return true;
+        if (!pointToMonitorMap.containsKey(pointName)) {
+            if (pointToConfigMap.containsKey(pointName)) {
+                TpsConfig config = pointToConfigMap.get(pointName);
+                pointToMonitorMap.put(pointName, new TpsMonitor(pointName, config));
+            } else {
+                pointToMonitorMap.put(pointName, new TpsMonitor(pointName));
+            }
+        }
+        //  TpsConfig config = pointConfigMap.getOrDefault(
+        TpsMonitor pointMonitor = pointToMonitorMap.get(pointName);
+        return pointMonitor.applyTps();
     }
 
     @Override
@@ -60,10 +69,24 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
     }
 
     @Override
-    public synchronized void updateConfig(Map<String, CircuitBreakerConfig> configMap) {
+    public void updateConfig(Map<String, CircuitBreakerConfig> configMap) {
         for (Map.Entry<String, CircuitBreakerConfig> entry : configMap.entrySet()) {
-            pointConfigMap.put(entry.getKey(), (TpsConfig) entry.getValue());
+            TpsConfig config = (TpsConfig) entry.getValue();
+            pointToConfigMap.put(entry.getKey(), config);
+            if (pointToMonitorMap.containsKey(entry.getKey())) {
+                pointToMonitorMap.get(entry.getKey()).setConfig(config);
+            }
         }
+    }
+
+    @Override
+    public void updateConfig(Map<String, CircuitBreakerConfig> configMap, String pointName) {
+        TpsConfig config = (TpsConfig) configMap.get(pointName);
+        pointToConfigMap.put(pointName, config);
+        if (pointToMonitorMap.containsKey(pointName)) {
+            pointToMonitorMap.get(pointName).setConfig(config);
+        }
+
     }
 
     @Override
@@ -72,7 +95,7 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
     }
 
     @Override
-    public Map<String, CircuitBreakerRecorder> getPointRecorders() {
+    public Map<String, CircuitBreakerMonitor> getPointRecorders() {
         return null;
     }
 }
