@@ -20,8 +20,6 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
-import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
-import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
@@ -38,11 +36,8 @@ public class PushExecutorRpcImpl implements PushExecutor {
     
     private final RpcPushService pushService;
     
-    private final NamingMetadataManager metadataManager;
-    
-    public PushExecutorRpcImpl(RpcPushService pushService, NamingMetadataManager metadataManager) {
+    public PushExecutorRpcImpl(RpcPushService pushService) {
         this.pushService = pushService;
-        this.metadataManager = metadataManager;
     }
     
     @Override
@@ -57,7 +52,6 @@ public class PushExecutorRpcImpl implements PushExecutor {
     }
     
     private ServiceInfo getServiceInfo(PushDataWrapper data) {
-        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(data.getService()).orElse(null);
-        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), serviceMetadata, false, true);
+        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true);
     }
 }

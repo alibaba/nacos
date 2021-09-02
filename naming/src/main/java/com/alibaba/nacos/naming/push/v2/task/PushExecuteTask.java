@@ -74,7 +74,8 @@ public class PushExecuteTask extends AbstractExecuteTask {
     
     private PushDataWrapper generatePushData() {
         ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
-        return new PushDataWrapper(service, serviceInfo);
+        ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
+        return new PushDataWrapper(serviceMetadata, serviceInfo);
     }
     
     private Collection<String> getTargetClientIds() {

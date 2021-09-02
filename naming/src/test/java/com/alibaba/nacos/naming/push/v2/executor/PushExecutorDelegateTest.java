@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import org.junit.Before;
@@ -54,12 +54,12 @@ public class PushExecutorDelegateTest {
     
     private PushExecutorDelegate delegate;
     
-    private Service service;
+    private ServiceMetadata serviceMetadata;
     
     @Before
     public void setUp() throws Exception {
-        service = Service.newService("", "G", "S");
-        pushdata = new PushDataWrapper(service, new ServiceInfo("G@@S"));
+        serviceMetadata = new ServiceMetadata();
+        pushdata = new PushDataWrapper(serviceMetadata, new ServiceInfo("G@@S"));
         delegate = new PushExecutorDelegate(pushExecutorRpc, pushExecutorUdp);
     }
     

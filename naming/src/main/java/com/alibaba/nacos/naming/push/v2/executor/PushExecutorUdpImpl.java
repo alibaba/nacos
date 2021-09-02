@@ -20,8 +20,6 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
-import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
@@ -42,11 +40,8 @@ public class PushExecutorUdpImpl implements PushExecutor {
     
     private final UdpPushService pushService;
     
-    private final NamingMetadataManager metadataManager;
-    
-    public PushExecutorUdpImpl(UdpPushService pushService, NamingMetadataManager metadataManager) {
+    public PushExecutorUdpImpl(UdpPushService pushService) {
         this.pushService = pushService;
-        this.metadataManager = metadataManager;
     }
     
     @Override
@@ -89,8 +84,7 @@ public class PushExecutorUdpImpl implements PushExecutor {
     }
     
     private ServiceInfo getServiceInfo(PushDataWrapper data) {
-        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(data.getService()).orElse(null);
-        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), serviceMetadata, false, true);
+        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true);
     }
     
     /**

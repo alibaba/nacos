@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.push.v2;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,14 +30,14 @@ import java.util.Optional;
  */
 public class PushDataWrapper {
     
-    private final Service service;
+    private final ServiceMetadata serviceMetadata;
     
     private final ServiceInfo originalData;
     
     private final Map<String, Object> processedDatum;
     
-    public PushDataWrapper(Service service, ServiceInfo originalData) {
-        this.service = service;
+    public PushDataWrapper(ServiceMetadata serviceMetadata, ServiceInfo originalData) {
+        this.serviceMetadata = serviceMetadata;
         this.originalData = originalData;
         processedDatum = new HashMap<>(1);
     }
@@ -46,8 +46,8 @@ public class PushDataWrapper {
         return originalData;
     }
     
-    public Service getService() {
-        return service;
+    public ServiceMetadata getServiceMetadata() {
+        return serviceMetadata;
     }
     
     public <T> Optional<T> getProcessedPushData(String key) {
