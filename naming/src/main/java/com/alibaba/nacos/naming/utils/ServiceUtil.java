@@ -292,16 +292,27 @@ public final class ServiceUtil {
             if (serviceMetadata == null) {
                 return;
             }
+            int originalTotal = allInstances.size();
             // filter ips using selector
             SelectorManager selectorManager = ApplicationUtils.getBean(SelectorManager.class);
             allInstances = selectorManager.select(serviceMetadata.getSelector(), subscriberIp, allInstances);
             filteredResult.setHosts(allInstances);
             
+            // will re-compute healthCount
+            long newHealthyCount = healthyCount;
+            if (originalTotal != allInstances.size()) {
+                for (com.alibaba.nacos.api.naming.pojo.Instance allInstance : allInstances) {
+                    if (allInstance.isHealthy()) {
+                        newHealthyCount++;
+                    }
+                }
+            }
+            
             float threshold = serviceMetadata.getProtectThreshold();
             if (threshold < 0) {
                 threshold = 0F;
             }
-            if ((float) healthyCount / allInstances.size() <= threshold) {
+            if ((float) newHealthyCount / allInstances.size() <= threshold) {
                 Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", filteredResult.getName());
                 filteredResult.setReachProtectionThreshold(true);
                 List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstances = allInstances.stream()

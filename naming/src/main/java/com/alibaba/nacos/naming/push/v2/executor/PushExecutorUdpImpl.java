@@ -46,12 +46,12 @@ public class PushExecutorUdpImpl implements PushExecutor {
     
     @Override
     public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
-        pushService.pushDataWithoutCallback(subscriber, handleClusterData(replaceServiceInfoName(data), subscriber));
+        pushService.pushDataWithoutCallback(subscriber, handleClusterData(replaceServiceInfoName(data, subscriber), subscriber));
     }
     
     @Override
     public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
-        pushService.pushDataWithCallback(subscriber, handleClusterData(replaceServiceInfoName(data), subscriber), callBack);
+        pushService.pushDataWithCallback(subscriber, handleClusterData(replaceServiceInfoName(data, subscriber), subscriber), callBack);
     }
     
     /**
@@ -67,12 +67,12 @@ public class PushExecutorUdpImpl implements PushExecutor {
      * @param originalData original service info
      * @return new service info for 1.x
      */
-    private ServiceInfo replaceServiceInfoName(PushDataWrapper originalData) {
+    private ServiceInfo replaceServiceInfoName(PushDataWrapper originalData, Subscriber subscriber) {
         Optional<ServiceInfo> original = originalData.getProcessedPushData(UDP_PUSH_DATA_FOR_V1);
         if (original.isPresent()) {
             return original.get();
         }
-        ServiceInfo serviceInfo = getServiceInfo(originalData);
+        ServiceInfo serviceInfo = getServiceInfo(originalData, subscriber);
         ServiceInfo result = new ServiceInfo();
         result.setName(NamingUtils.getGroupedName(serviceInfo.getName(), serviceInfo.getGroupName()));
         result.setClusters(serviceInfo.getClusters());
@@ -83,8 +83,8 @@ public class PushExecutorUdpImpl implements PushExecutor {
         return result;
     }
     
-    private ServiceInfo getServiceInfo(PushDataWrapper data) {
-        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true);
+    private ServiceInfo getServiceInfo(PushDataWrapper data, Subscriber subscriber) {
+        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true, subscriber);
     }
     
     /**
