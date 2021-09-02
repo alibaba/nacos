@@ -29,6 +29,7 @@ public interface PushExecutor {
     
     /**
      * Do push.
+     *
      *  @param clientId   client id
      * @param subscriber subscriber
      * @param data       push data
@@ -37,6 +38,7 @@ public interface PushExecutor {
     
     /**
      * Do push with callback.
+     *
      *  @param clientId   client id
      * @param subscriber subscriber
      * @param data       push data
