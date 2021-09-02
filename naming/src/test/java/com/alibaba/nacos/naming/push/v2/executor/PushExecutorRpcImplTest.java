@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
@@ -57,9 +58,12 @@ public class PushExecutorRpcImplTest {
     
     private PushExecutorRpcImpl pushExecutor;
     
+    private ServiceMetadata serviceMetadata;
+    
     @Before
     public void setUp() throws Exception {
-        pushData = new PushDataWrapper(new ServiceInfo("G@@S"));
+        serviceMetadata = new ServiceMetadata();
+        pushData = new PushDataWrapper(serviceMetadata, new ServiceInfo("G@@S"));
         pushExecutor = new PushExecutorRpcImpl(pushService);
         doAnswer(new CallbackAnswer()).when(pushService)
                 .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
