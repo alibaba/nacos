@@ -32,8 +32,7 @@ public class FixturePushExecutor implements PushExecutor {
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
-            PushCallBack callBack) {
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
         if (shouldSuccess) {
             callBack.onSuccess();
         } else {
