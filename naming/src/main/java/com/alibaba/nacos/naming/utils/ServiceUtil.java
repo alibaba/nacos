@@ -292,6 +292,7 @@ public final class ServiceUtil {
             if (serviceMetadata == null) {
                 return;
             }
+            allInstances = filteredResult.getHosts();
             int originalTotal = allInstances.size();
             // filter ips using selector
             SelectorManager selectorManager = ApplicationUtils.getBean(SelectorManager.class);
