@@ -25,9 +25,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 
 import javax.servlet.ServletContext;
 import java.util.Collections;
@@ -46,9 +45,6 @@ import static org.mockito.Mockito.when;
 public class ServerMemberManagerTest {
     
     @Mock
-    private ConfigurableEnvironment environment;
-    
-    @Mock
     private ServletContext servletContext;
     
     @Mock
@@ -60,10 +56,7 @@ public class ServerMemberManagerTest {
     
     @Before
     public void setUp() throws Exception {
-        when(environment.getProperty("server.port", Integer.class, 8848)).thenReturn(8848);
-        when(environment.getProperty("nacos.member-change-event.queue.size", Integer.class, 128)).thenReturn(128);
-        when(environment.getProperty("maxHealthCheckFailCount", Mockito.anyString())).thenReturn("12");
-        EnvUtil.setEnvironment(environment);
+        EnvUtil.setEnvironment(new MockEnvironment());
         when(servletContext.getContextPath()).thenReturn("");
         serverMemberManager = new ServerMemberManager(servletContext);
         serverMemberManager.updateMember(Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP).build());
