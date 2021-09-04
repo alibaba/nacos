@@ -123,6 +123,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
         }
     }
     
+    //
     private static File getEncryptDataKeyFailoverFile(String envName, String dataId, String group, String tenant) {
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
         tmp = new File(tmp, FAILOVER_CHILD_1);
