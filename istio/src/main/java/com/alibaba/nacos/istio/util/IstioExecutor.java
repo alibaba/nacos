@@ -43,14 +43,6 @@ public class IstioExecutor {
             .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
                     new NameThreadFactory("com.alibaba.nacos.istio.event.handle"));
 
-    private static final ExecutorService XDS_PUSH_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.istio.xds.push"));
-
-    private static final ExecutorService MCP_PUSH_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(ClassUtils.getCanonicalName(IstioApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.istio.mcp.push"));
-
 
     public static void registerNacosResourceWatcher(Runnable watcher, long initialDelay, long period) {
         NACOS_RESOURCE_WATCHER.scheduleAtFixedRate(watcher, initialDelay, period, TimeUnit.MILLISECONDS);
@@ -58,13 +50,5 @@ public class IstioExecutor {
 
     public static <V> Future<V> asyncHandleEvent(Callable<V> task) {
         return EVENT_HANDLE_EXECUTOR.submit(task);
-    }
-
-    public static void asyncXdsPush(Runnable task) {
-        XDS_PUSH_EXECUTOR.execute(task);
-    }
-
-    public static void asyncMcpPush(Runnable task) {
-        MCP_PUSH_EXECUTOR.execute(task);
     }
 }

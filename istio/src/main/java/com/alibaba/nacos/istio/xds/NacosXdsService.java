@@ -20,7 +20,6 @@ import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
 import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.misc.Loggers;
-import com.alibaba.nacos.istio.util.IstioExecutor;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
@@ -163,35 +162,33 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     }
 
     public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
-        IstioExecutor.asyncXdsPush(() -> {
-            switch (event.getType()) {
-                case Service:
-                    if (connections.size() == 0) {
-                        return;
-                    }
+        switch (event.getType()) {
+            case Service:
+                if (connections.size() == 0) {
+                    return;
+                }
 
-                    Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
+                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
 
+                // Service Entry via MCP
+                DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, resourceSnapshot);
+                // TODO CDS, EDS
+
+                for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
                     // Service Entry via MCP
-                    DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, resourceSnapshot);
-                    // TODO CDS, EDS
-
-                    for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                        // Service Entry via MCP
-                        WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
-                        if (watchedStatus != null) {
-                            connection.push(serviceEntryResponse, watchedStatus);
-                        }
-                        // TODO CDS, EDS
+                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
+                    if (watchedStatus != null) {
+                        connection.push(serviceEntryResponse, watchedStatus);
                     }
-                    break;
-                case Endpoint:
-                    Loggers.MAIN.warn("Currently, endpoint event is not supported.");
-                    break;
-                default:
-                    Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
-            }
-        });
+                    // TODO CDS, EDS
+                }
+                break;
+            case Endpoint:
+                Loggers.MAIN.warn("Currently, endpoint event is not supported.");
+                break;
+            default:
+                Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
+        }
     }
 
     private DiscoveryResponse buildDiscoveryResponse(String type, ResourceSnapshot resourceSnapshot) {
