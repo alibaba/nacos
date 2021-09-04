@@ -37,6 +37,8 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     private final List<IConfigFilter> filters = new ArrayList<IConfigFilter>();
     
     public ConfigFilterChainManager(Properties properties) {
+        // 读取所有IConfigFilter的插件化实现。
+        // 在单元测试中找到相应的插件化实现的例子（比如DemoFilter1）。
         ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
         for (IConfigFilter configFilter : configFilters) {
             configFilter.init(properties);
@@ -52,6 +54,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
      */
     public synchronized ConfigFilterChainManager addFilter(IConfigFilter filter) {
         // ordered by order value
+        // 在增加filter的时候，要注意filter的顺序，即添加的这个filter在所有filter中排第几。
         int i = 0;
         while (i < this.filters.size()) {
             IConfigFilter currentValue = this.filters.get(i);
@@ -72,11 +75,18 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         return this;
     }
     
+    /**
+     * 对于配置的增删改查request以及response进行拦截。
+     * 用户可以实现通过实现自己的插件，来对于request以及response进行一些操作。
+     * 比如可以在request中增加一个字段，参考单元测试中的 {@DemoFilter1.java}
+     */
     @Override
     public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
+        // 为什么要封装一个内部类VirtualFilterChain？其实完全可以直接通过一个for循环遍历所有的filters，然后一一filter呀。
         new VirtualFilterChain(this.filters).doFilter(request, response);
     }
     
+    // 封装一个内部类VirtualFilterChain，用来进行doFilter筛选过程的具体逻辑，个人感觉有些冗余。
     private static class VirtualFilterChain implements IConfigFilterChain {
         
         private final List<? extends IConfigFilter> additionalFilters;
